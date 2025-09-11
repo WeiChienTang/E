@@ -13,12 +13,6 @@ namespace ERPCore2.Services
 
         public PurchaseReturnService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<PurchaseReturn>> logger) : base(contextFactory, logger)
-        {
-        }
-
-        public PurchaseReturnService(
-            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReturn>> logger,
             IInventoryStockService inventoryStockService) : base(contextFactory, logger)
         {
@@ -588,27 +582,39 @@ namespace ERPCore2.Services
                     {
                         foreach (var detail in details.Where(d => !d.IsDeleted && d.ReturnQuantity > 0))
                         {
-                            // 取得倉庫ID
+                            // 從關聯的進貨明細取得倉庫ID
                             int? warehouseId = null;
-                            if (detail.WarehouseLocationId.HasValue)
+                            
+                            // 方法1：如果有關聯的進貨明細，直接從中取得倉庫ID
+                            if (detail.PurchaseReceivingDetailId.HasValue)
+                            {
+                                var receivingDetail = await context.PurchaseReceivingDetails
+                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value && !prd.IsDeleted);
+                                warehouseId = receivingDetail?.WarehouseId;
+                            }
+                            
+                            // 方法2：如果沒有進貨明細關聯，嘗試從倉庫位置反查
+                            if (!warehouseId.HasValue && detail.WarehouseLocationId.HasValue)
                             {
                                 var warehouseLocation = await context.WarehouseLocations
                                     .FirstOrDefaultAsync(wl => wl.Id == detail.WarehouseLocationId.Value);
                                 warehouseId = warehouseLocation?.WarehouseId;
                             }
 
-                            // 如果沒有倉庫ID，跳過此明細
+                            // 如果還是沒有倉庫ID，跳過此明細並記錄警告
                             if (!warehouseId.HasValue)
+                            {
+                                _logger?.LogWarning("退貨明細 ID:{DetailId} 無法取得倉庫ID，跳過庫存更新", detail.Id);
                                 continue;
+                            }
 
-                            // 退貨需要減少庫存，所以使用負數量
-                            var stockResult = await _inventoryStockService.AddStockAsync(
+                            // 退貨需要減少庫存，使用 ReduceStockAsync
+                            var stockResult = await _inventoryStockService.ReduceStockAsync(
                                 detail.ProductId,
                                 warehouseId.Value,
-                                -detail.ReturnQuantity, // 負數量表示減少庫存
+                                detail.ReturnQuantity, // 正數量，由 ReduceStockAsync 處理減少邏輯
                                 InventoryTransactionTypeEnum.Return,
                                 savedEntity.PurchaseReturnNumber,
-                                detail.ReturnUnitPrice,
                                 detail.WarehouseLocationId,
                                 $"採購退貨 - {savedEntity.PurchaseReturnNumber}"
                             );
