@@ -341,17 +341,19 @@
                     Label = "退回總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
+                    IsReadOnly = true,
                     Order = 7,
-                    HelpText = "請輸入退回總金額"
+                    HelpText = "系統自動計算的退回總金額"
                 },
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.ReturnTaxAmount),
-                    Label = "退回稅額",
+                    Label = "退回稅額(5%)",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
+                    IsReadOnly = true,
                     Order = 8,
-                    HelpText = "請輸入退回稅額"
+                    HelpText = "系統自動計算的退回稅額"
                 },
                 new()
                 {
@@ -359,8 +361,9 @@
                     Label = "退回含稅總金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
+                    IsReadOnly = true,
                     Order = 9,
-                    HelpText = "請輸入退回含稅總金額"
+                    HelpText = "系統自動計算的退回含稅總金額"
                 },
                 new()
                 {
@@ -401,9 +404,9 @@
                 { "FilterProductId", "基本資訊" },
                 { "FilterPurchaseReceivingId", "基本資訊" },
                 { nameof(PurchaseReturn.ReturnDate), "基本資訊" },
-                { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊" },
-                { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊" },
-                { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊" },
+                { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseReturn.IsRefunded), "退款資訊" },
                 { nameof(PurchaseReturn.RefundDate), "退款資訊" }
             };

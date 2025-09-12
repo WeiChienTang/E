@@ -278,6 +278,39 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                var calculateResult = await CalculateTotalsInContext(context, id);
+                if (!calculateResult.IsSuccess)
+                {
+                    return calculateResult;
+                }
+
+                await context.SaveChangesAsync();
+
+                result.IsSuccess = true;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalsAsync), GetType(), _logger, new { 
+                    Method = nameof(CalculateTotalsAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                result.IsSuccess = false;
+                result.ErrorMessage = "計算時發生錯誤";
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// 在指定的 DbContext 中計算採購退回總金額
+        /// </summary>
+        private async Task<ServiceResult> CalculateTotalsInContext(AppDbContext context, int id)
+        {
+            var result = new ServiceResult();
+
+            try
+            {
                 var purchaseReturn = await context.PurchaseReturns
                     .Include(pr => pr.PurchaseReturnDetails)
                     .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
@@ -300,6 +333,7 @@ namespace ERPCore2.Services
                 // 計算含稅總金額
                 purchaseReturn.TotalReturnAmountWithTax = purchaseReturn.TotalReturnAmount + purchaseReturn.ReturnTaxAmount;
 
+                // 保存總金額的變更 (在同一個交易中)
                 await context.SaveChangesAsync();
 
                 result.IsSuccess = true;
@@ -307,13 +341,13 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalsAsync), GetType(), _logger, new { 
-                    Method = nameof(CalculateTotalsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalsInContext), GetType(), _logger, new { 
+                    Method = nameof(CalculateTotalsInContext),
                     ServiceType = GetType().Name,
                     Id = id
                 });
                 result.IsSuccess = false;
-                result.ErrorMessage = "計算時發生錯誤";
+                result.ErrorMessage = "計算總金額時發生錯誤";
                 return result;
             }
         }
@@ -625,6 +659,14 @@ namespace ERPCore2.Services
                                 return ServiceResult<PurchaseReturn>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
                             }
                         }
+                    }
+
+                    // 計算並更新總金額
+                    var calculateResult = await CalculateTotalsInContext(context, savedEntity.Id);
+                    if (!calculateResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult<PurchaseReturn>.Failure($"計算總金額失敗：{calculateResult.ErrorMessage}");
                     }
 
                     await transaction.CommitAsync();
