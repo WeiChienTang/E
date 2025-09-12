@@ -80,7 +80,9 @@ namespace ERPCore2.Data
 
             // 採購相關服務
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+            services.AddScoped<IPurchaseOrderDetailService, PurchaseOrderDetailService>();
             services.AddScoped<IPurchaseReceivingService, PurchaseReceivingService>();
+            services.AddScoped<IPurchaseReceivingDetailService, PurchaseReceivingDetailService>();
             services.AddScoped<IPurchaseReturnService, PurchaseReturnService>();
             services.AddScoped<IPurchaseReturnDetailService, PurchaseReturnDetailService>();
 

@@ -1,13 +1,14 @@
-@* 多採購單採購入庫明細管理元件 - 使用 InteractiveTableComponent 統一UI *@
+@* 多採購單採購入庫明細管理元件 - 使用 InteractiveTableComponent 統一UI 
+   允許入庫量超過待入庫量，由服務層判斷完成狀態 *@
 
+@using ERPCore2.Data.Enums
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject INotificationService NotificationService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
-@using ERPCore2.Helpers
-@using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Components.Shared.Buttons
+@inject IProductService ProductService
+@inject IProductSupplierService ProductSupplierService
 
 @if (!SupplierId.HasValue || SupplierId.Value <= 0)
 {
@@ -74,10 +75,11 @@ else if ((IsEditMode && ReceivingItems.Any()) || (!IsEditMode && PendingOrderDet
             <div class="d-flex justify-content-end gap-2">
                 @if (!IsEditMode)
                 {
-                    <GenericButtonComponent Text="入庫量全填"
+                    <GenericButtonComponent Text="快速填入"
                                           Variant="ButtonVariant.Success"
                                           IconClass="fas fa-fill"
-                                          OnClick="FillAllOrderQuantities" />
+                                          OnClick="FillAllOrderQuantities"
+                                          Title="填入各商品的待進貨數量，如無待進貨則填入1" />
                 }
                 <GenericButtonComponent Text="入庫量清空"
                                       Variant="ButtonVariant.Danger"
@@ -100,13 +102,13 @@ else
                 }
                 else if (PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0)
                 {
-                    <h5 class="text-muted">該採購單尚無未完成進貨的商品</h5>
-                    <p class="text-muted">該採購單的所有商品都已完成進貨，或您可以選擇其他採購單</p>
+                    <h5 class="text-muted">該採購單尚無可進貨的商品</h5>
+                    <p class="text-muted">該採購單的所有商品都已處理完成，或您可以選擇其他採購單</p>
                 }
                 else
                 {
-                    <h5 class="text-muted">尚無未完成進貨的商品</h5>
-                    <p class="text-muted">該廠商的所有採購項目都已完成進貨</p>
+                    <h5 class="text-muted">尚無可進貨的商品</h5>
+                    <p class="text-muted">該廠商的所有採購項目都已處理完成</p>
                 }
             </div>
         </div>
@@ -131,6 +133,7 @@ else
     private List<ReceivingItem> ReceivingItems { get; set; } = new List<ReceivingItem>();
     private List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     private List<WarehouseLocation> AllWarehouseLocations { get; set; } = new List<WarehouseLocation>();
+    private List<Product> Products { get; set; } = new List<Product>(); // 商品資料
     private int? _previousSupplierId = null;
     private int? _previousPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
@@ -172,28 +175,12 @@ else
             Title = "採購單",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "14%",
+            Width = "15%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
                 var orderDetail = receivingItem.PurchaseOrderDetail;
                 return @<small class="text-primary fw-bold">@orderDetail.PurchaseOrder.PurchaseOrderNumber</small>;
-            }
-        });
-
-        // 廠商欄位
-        columns.Add(new()
-        {
-            Title = "廠商",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "18%",
-            HideOnMobile = true,
-            CustomTemplate = item =>
-            {
-                var receivingItem = (ReceivingItem)item;
-                var orderDetail = receivingItem.PurchaseOrderDetail;
-                return @<small class="text-success">@orderDetail.PurchaseOrder.Supplier.CompanyName</small>;
             }
         });
 
@@ -203,86 +190,76 @@ else
             Title = "商品",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
+            Width = "15%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
-                var orderDetail = receivingItem.PurchaseOrderDetail;
-                return @<div class="product-info">
-                    <strong>@orderDetail.Product.Code</strong>
-                    <br />
-                    <small class="text-muted">@orderDetail.Product.Name</small>
-                    @if (!string.IsNullOrEmpty(orderDetail.Remarks))
-                    {
+                
+                if (IsEditMode)
+                {
+                    // 編輯模式：顯示商品選擇器
+                    // 在編輯模式下，如果有現有明細實體，應該使用實際儲存的 ProductId
+                    var currentProductId = receivingItem.CurrentProductId > 0 ? 
+                        receivingItem.CurrentProductId : 
+                        (receivingItem.ExistingDetailEntity?.ProductId ?? receivingItem.PurchaseOrderDetail?.Product?.Id ?? 0);
+                    var availableProducts = GetAvailableProductsForEdit();
+                    
+                    return @<div class="product-selector">
+                        <select class="form-select form-select-sm @(receivingItem.ValidationError != null ? "is-invalid" : "")"
+                                value="@currentProductId"
+                                @onchange="(e) => OnProductChanged(receivingItem, e.Value?.ToString())">
+                            <option value="0">請選擇商品</option>
+                            @foreach (var product in availableProducts)
+                            {
+                                <option value="@product.Id">@product.Code - @product.Name</option>
+                            }
+                        </select>
+                        @if (receivingItem.ValidationError != null)
+                        {
+                            <div class="invalid-feedback">@receivingItem.ValidationError</div>
+                        }
+                        @if (receivingItem.IsProductChanged)
+                        {
+                            <small class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 商品已變更
+                            </small>
+                        }
+                    </div>;
+                }
+                else
+                {
+                    // 新增模式：唯讀顯示
+                    var orderDetail = receivingItem.PurchaseOrderDetail;
+                    return @<div class="product-info">
+                        <strong>@orderDetail.Product.Code</strong>
                         <br />
-                        <small class="text-info">
-                            <i class="fas fa-comment"></i> @orderDetail.Remarks
-                        </small>
-                    }
-                </div>;
+                        <small class="text-muted">@orderDetail.Product.Name</small>
+                        @if (!string.IsNullOrEmpty(orderDetail.Remarks))
+                        {
+                            <br />
+                            <small class="text-info">
+                                <i class="fas fa-comment"></i> @orderDetail.Remarks
+                            </small>
+                        }
+                    </div>;
+                }
             }
         });
 
-        // 訂購量欄位（唯讀）
+        // 訂購量欄位
         columns.Add(new()
         {
             Title = "訂購量",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "5%",
+            Width = "7%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
-                var orderDetail = receivingItem.PurchaseOrderDetail;
-                return @<input type="number" class="form-control form-control-sm text-end" 
-                               value="@orderDetail.OrderQuantity"
-                               readonly 
-                               tabindex="-1"
-                               style="background-color: #f8f9fa; cursor: not-allowed;" />;
-            }
-        });
-
-        // 已入庫欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "已入庫",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "5%",
-            CustomTemplate = item =>
-            {
-                var receivingItem = (ReceivingItem)item;
-                var orderDetail = receivingItem.PurchaseOrderDetail;
-                var isCompleted = orderDetail.ReceivedQuantity >= orderDetail.OrderQuantity;
-                return @<div class="input-group input-group-sm">
-                    <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "")" 
-                           value="@orderDetail.ReceivedQuantity"
-                           readonly 
-                           tabindex="-1"
-                           style="cursor: not-allowed;" />
-                </div>;
-            }
-        });
-
-        // 待入庫欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "待入庫",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "5%",
-            CustomTemplate = item =>
-            {
-                var receivingItem = (ReceivingItem)item;
-                var orderDetail = receivingItem.PurchaseOrderDetail;
-                var pendingQuantity = GetPendingQuantity(orderDetail);
-                var isCompleted = pendingQuantity <= 0;
-                return @<div class="input-group input-group-sm">
-                    <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "bg-warning text-dark")" 
-                           value="@pendingQuantity"
-                           readonly 
-                           tabindex="-1"
-                           style="cursor: not-allowed;" />
+                PurchaseOrderDetail? orderDetail = receivingItem.PurchaseOrderDetail;
+                
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold ">@orderDetail?.OrderQuantity</span>
                 </div>;
             }
         });
@@ -293,12 +270,10 @@ else
             Title = "入庫量",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "5%",
+            Width = "8%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
-                var orderDetail = receivingItem.PurchaseOrderDetail;
-                var pendingQuantity = GetPendingQuantity(orderDetail);
                 var value = receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString() : "";
                 
                 return @<div>
@@ -307,17 +282,10 @@ else
                            @oninput="(e) => OnReceivedQuantityChanged(receivingItem, e.Value?.ToString())"
                            placeholder="0" 
                            min="0" 
-                           max="@pendingQuantity"
                            step="1" />
                     @if (receivingItem.ValidationError != null)
                     {
                         <small class="text-danger">@receivingItem.ValidationError</small>
-                    }
-                    @if (pendingQuantity <= 0)
-                    {
-                        <small class="text-success">
-                            <i class="fas fa-check-circle"></i> 已完成進貨
-                        </small>
                     }
                 </div>;
             }
@@ -329,7 +297,7 @@ else
             Title = "倉庫",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
+            Width = "15%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -367,7 +335,7 @@ else
             Title = "庫位",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
+            Width = "15%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -403,17 +371,14 @@ else
             Title = "單價",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "12%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
-                var value = receivingItem.UnitPrice > 0 ? receivingItem.UnitPrice.ToString("F0") : "";
                 
-                return @<input type="number" class="form-control form-control-sm text-end" 
-                               value="@value"
-                               @oninput="(e) => OnUnitPriceChanged(receivingItem, e.Value?.ToString())"
-                               placeholder="0.00" 
-                               min="0" />;
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@receivingItem.UnitPrice.ToString("F0")</span>
+                </div>;
             }
         });
 
@@ -423,7 +388,7 @@ else
             Title = "完成",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "5%",
+            Width = "6%",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
@@ -460,6 +425,7 @@ else
         {
             await LoadWarehousesAsync();
             await LoadWarehouseLocationsAsync();
+            await LoadProductsAsync(); // 載入商品資料
             await LoadPendingOrderDetailsAsync();
             LoadExistingDetails();
             _isInitialized = true;
@@ -503,6 +469,22 @@ else
     }
 
     /// <summary>
+    /// 載入商品資料
+    /// </summary>
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            Products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
+            Products = new List<Product>();
+        }
+    }
+
+    /// <summary>
     /// 載入廠商的未完成進貨明細
     /// </summary>
     private async Task LoadPendingOrderDetailsAsync()
@@ -511,17 +493,16 @@ else
         {
             if (SupplierId.HasValue && SupplierId.Value > 0)
             {
-                if (IsEditMode)
+                // 無論是新增或編輯模式，都需要載入廠商的未完成進貨明細
+                // 編輯模式需要這些資料來提供可選的商品選項
+                PendingOrderDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(SupplierId.Value, false);
+                
+                if (!IsEditMode)
                 {
-                    // 編輯模式：不載入廠商的全部明細，只基於現有明細建立項目
-                    PendingOrderDetails = new List<PurchaseOrderDetail>();
+                    // 新增模式：建立入庫項目
+                    await CreateReceivingItems();
                 }
-                else
-                {
-                    // 新增模式：載入廠商的未完成進貨明細
-                    PendingOrderDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(SupplierId.Value, false);
-                }
-                await CreateReceivingItems();
+                // 編輯模式的項目將在 LoadExistingDetails 中建立
             }
             else
             {
@@ -601,18 +582,22 @@ else
             // 編輯模式：只在 ReceivingItems 為空時才基於現有明細建立入庫項目，避免重複創建
             if (!ReceivingItems.Any())
             {
-                ReceivingItems = ExistingDetails.Select(existingDetail => new ReceivingItem
-                {
-                    PurchaseOrderDetail = existingDetail.PurchaseOrderDetail,
-                    ReceivedQuantity = existingDetail.ReceivedQuantity,
-                    UnitPrice = existingDetail.UnitPrice,
-                    WarehouseId = existingDetail.WarehouseId,
-                    WarehouseLocationId = existingDetail.WarehouseLocationId,
-                    InspectionRemarks = existingDetail.InspectionRemarks,
-                    BatchNumber = existingDetail.BatchNumber,
-                    ExpiryDate = existingDetail.ExpiryDate,
-                    IsReceivingCompleted = existingDetail.IsReceivingCompleted,
-                    ExistingDetailEntity = existingDetail
+                ReceivingItems = ExistingDetails.Select(existingDetail => {
+
+                    return new ReceivingItem
+                    {
+                        PurchaseOrderDetail = existingDetail.PurchaseOrderDetail,
+                        CurrentProductId = existingDetail.ProductId, // 設定當前商品ID
+                        ReceivedQuantity = existingDetail.ReceivedQuantity,
+                        UnitPrice = existingDetail.UnitPrice,
+                        WarehouseId = existingDetail.WarehouseId,
+                        WarehouseLocationId = existingDetail.WarehouseLocationId,
+                        InspectionRemarks = existingDetail.InspectionRemarks,
+                        BatchNumber = existingDetail.BatchNumber,
+                        ExpiryDate = existingDetail.ExpiryDate,
+                        IsReceivingCompleted = existingDetail.IsReceivingCompleted,
+                        ExistingDetailEntity = existingDetail
+                    };
                 }).ToList();
             }
             else
@@ -626,6 +611,7 @@ else
                     
                     if (item != null)
                     {
+                        item.CurrentProductId = existingDetail.ProductId; // 設定當前商品ID
                         item.ReceivedQuantity = existingDetail.ReceivedQuantity;
                         item.UnitPrice = existingDetail.UnitPrice;
                         item.WarehouseId = existingDetail.WarehouseId;
@@ -649,6 +635,7 @@ else
                 var item = ReceivingItems.FirstOrDefault(ri => ri.PurchaseOrderDetail.Id == existingDetail.PurchaseOrderDetailId);
                 if (item != null)
                 {
+                    item.CurrentProductId = existingDetail.ProductId; // 設定當前商品ID，支援商品變更
                     item.ReceivedQuantity = existingDetail.ReceivedQuantity;
                     item.UnitPrice = existingDetail.UnitPrice;
                     item.WarehouseId = existingDetail.WarehouseId;
@@ -673,7 +660,7 @@ else
         foreach (var item in ReceivingItems)
         {
             var pendingQuantity = GetPendingQuantity(item.PurchaseOrderDetail);
-            item.ReceivedQuantity = pendingQuantity;
+            item.ReceivedQuantity = pendingQuantity > 0 ? pendingQuantity : 1; // 如果沒有待入庫量，填入1
             item.ValidationError = null;
         }
         
@@ -715,17 +702,8 @@ else
             }
             else
             {
-                var pendingQuantity = GetPendingQuantity(item.PurchaseOrderDetail);
-                if (quantity > pendingQuantity)
-                {
-                    item.ReceivedQuantity = pendingQuantity;
-                    item.ValidationError = $"入庫量不可超過待進貨量 ({pendingQuantity})";
-                }
-                else
-                {
-                    item.ReceivedQuantity = quantity;
-                    item.ValidationError = null;
-                }
+                item.ReceivedQuantity = quantity;
+                item.ValidationError = null;
             }
         }
         else
@@ -749,14 +727,7 @@ else
         }
         else if (decimal.TryParse(value, out decimal price))
         {
-            if (price >= 0)
-            {
-                item.UnitPrice = price;
-            }
-            else
-            {
-                item.UnitPrice = 0;
-            }
+            item.UnitPrice = item.UnitPrice >= 0 ? price : 0;
         }
 
         await NotifyDetailsChanged();
@@ -861,24 +832,21 @@ else
     {
         var details = new List<PurchaseReceivingDetail>();
 
+
         foreach (var item in ReceivingItems.Where(x => (x.ReceivedQuantity > 0 || x.IsReceivingCompleted) && x.WarehouseId.HasValue))
         {
-            PurchaseReceivingDetail detail;
-
-            if (item.ExistingDetailEntity != null)
-            {
-                // 更新現有實體
-                detail = item.ExistingDetailEntity;
-            }
-            else
-            {
-                // 建立新實體
-                detail = new PurchaseReceivingDetail();
-            }
+            // 編輯模式採用「先刪除再新增」策略：總是建立新實體，不重用現有實體
+            // 這樣可以避免 Entity Framework 上下文衝突問題
+            var detail = new PurchaseReceivingDetail();
 
             // 設定屬性
             detail.PurchaseOrderDetailId = item.PurchaseOrderDetail.Id;
-            detail.ProductId = item.PurchaseOrderDetail.ProductId;
+            // 在編輯模式下，優先使用 CurrentProductId，否則使用現有實體的 ProductId，最後才使用採購訂單的 ProductId
+            var finalProductId = item.CurrentProductId > 0 ? 
+                item.CurrentProductId : 
+                (item.ExistingDetailEntity?.ProductId ?? item.PurchaseOrderDetail.ProductId);
+            detail.ProductId = finalProductId;
+
             detail.ReceivedQuantity = item.ReceivedQuantity;
             detail.UnitPrice = item.UnitPrice;
             detail.WarehouseId = item.WarehouseId!.Value; // 確保倉庫ID有值，因為已在 Where 條件中檢查過
@@ -942,6 +910,64 @@ else
     }
 
     /// <summary>
+    /// 取得可選擇的商品 - 只包含該廠商且未完成進貨的商品
+    /// </summary>
+    private List<Product> GetAvailableProductsForEdit()
+    {
+        if (!SupplierId.HasValue || SupplierId.Value <= 0)
+            return new List<Product>();
+        
+        // 從 PendingOrderDetails 中取得該廠商尚未完成進貨的商品ID
+        var availableProductIds = PendingOrderDetails
+            .Where(pod => pod.PendingQuantity > 0) // 只要還有待進貨量就可選
+            .Select(pod => pod.ProductId)
+            .Distinct()
+            .ToHashSet();
+        
+        // 回傳對應的商品列表
+        return Products
+            .Where(p => availableProductIds.Contains(p.Id))
+            .OrderBy(p => p.Code)
+            .ToList();
+    }
+
+    /// <summary>
+    /// 根據ID取得商品
+    /// </summary>
+    private Product? GetProductById(int productId)
+    {
+        return Products.FirstOrDefault(p => p.Id == productId);
+    }
+
+    /// <summary>
+    /// 處理商品變更事件
+    /// </summary>
+    private async Task OnProductChanged(ReceivingItem item, string? productIdStr)
+    {
+        
+        if (int.TryParse(productIdStr, out int productId) && productId > 0)
+        {
+            var originalProductId = item.CurrentProductId;
+            item.CurrentProductId = productId;
+            item.ValidationError = null;
+            
+            // 可選：根據商品更新預設單價
+            var selectedProduct = GetProductById(productId);
+            
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+        else if (productId == 0)
+        {
+            // 清空選擇
+            item.CurrentProductId = 0;
+            item.ValidationError = null;
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
     /// 驗證所有入庫明細
     /// </summary>
     public async Task<bool> ValidateAsync()
@@ -968,15 +994,9 @@ else
             }
         }
         
-        // 檢查數量合理性和必填欄位
+        // 檢查基本數量合理性和必填欄位
         foreach (var item in validItems)
         {
-            var pendingQuantity = GetPendingQuantity(item.PurchaseOrderDetail);
-            if (item.ReceivedQuantity > pendingQuantity)
-            {
-                errors.Add($"商品 {item.PurchaseOrderDetail.Product.Code} 的入庫量超過待進貨量");
-            }
-            
             if (item.UnitPrice < 0)
             {
                 errors.Add($"商品 {item.PurchaseOrderDetail.Product.Code} 的單價不可為負數");
@@ -999,6 +1019,7 @@ else
     public class ReceivingItem
     {
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
+        public int CurrentProductId { get; set; } = 0; // 當前選中的商品ID，用於編輯模式
         public int ReceivedQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public int? WarehouseId { get; set; }
@@ -1010,5 +1031,11 @@ else
         public string? ValidationError { get; set; }
         public string? WarehouseValidationError { get; set; }
         public PurchaseReceivingDetail? ExistingDetailEntity { get; set; }
+        
+        /// <summary>
+        /// 輔助屬性：判斷是否變更了商品
+        /// </summary>
+        public bool IsProductChanged => CurrentProductId > 0 && 
+            CurrentProductId != (ExistingDetailEntity?.ProductId ?? PurchaseOrderDetail?.ProductId ?? 0);
     }
 }

@@ -932,10 +932,10 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定供應商的採購明細（可根據編輯模式決定是否隱藏已完成項目）
+        /// 取得指定供應商的採購明細（顯示所有已核准的採購項目，支援入庫量超過訂購量）
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
-        /// <param name="isEditMode">是否為編輯模式，true=顯示所有項目，false=隱藏已完成項目</param>
+        /// <param name="isEditMode">是否為編輯模式（此參數已不影響結果，保留用於向後相容性）</param>
         public async Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool isEditMode = false)
         {
             try
@@ -953,19 +953,11 @@ namespace ERPCore2.Services
                         !pod.PurchaseOrder.IsDeleted &&
                         pod.PurchaseOrder.IsApproved);
 
-                // 如果不是編輯模式，則過濾掉已完成的項目
-                if (!isEditMode)
-                {
-                    query = query.Where(pod =>
-                        // 檢查尚未完全進貨的明細 - 考慮手動完成標記
-                        !context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
-                            .Any(prd => prd.IsReceivingCompleted) &&
-                        pod.OrderQuantity > context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
-                            .Sum(prd => prd.ReceivedQuantity)
-                    );
-                }
+                // 移除過濾條件 - 商品應該一直顯示，不論入庫量是否大於採購量或是否已完成
+                // 這樣可以支援：
+                // 1. 允許入庫量超過訂購量
+                // 2. 允許對已完成的項目進行後續操作
+                // 3. 提供完整的商品列表供用戶選擇
                 
                 return await query
                     .OrderBy(pod => pod.PurchaseOrder.OrderDate)

@@ -89,6 +89,7 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 return await dbSet
+                    .AsNoTracking() // 避免 Entity Framework 追蹤衝突
                     .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
             }
             catch (Exception ex)

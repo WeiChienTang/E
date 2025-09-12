@@ -38,6 +38,13 @@ namespace ERPCore2.Services
         // 供應商相關進貨明細查詢 - 新增方法
         Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierAsync(int supplierId);
         Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierWithQuantityAsync(int supplierId);
+        
+        /// <summary>
+        /// 取得指定供應商的所有採購明細（支援入庫量超過訂購量，商品持續顯示）
+        /// </summary>
+        /// <param name="supplierId">供應商ID</param>
+        /// <param name="isEditMode">編輯模式標記（保留用於向後相容性）</param>
+        /// <returns>該供應商的所有已核准採購明細</returns>
         Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool isEditMode = false);
         
         // 新增：獲取供應商的未完成採購單（包含完整關聯資料用於判斷完成狀態）
