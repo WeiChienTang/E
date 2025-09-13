@@ -200,14 +200,10 @@ else
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
-                var isEmptyRow = IsEmptyRow(productItem);
-                var value = productItem.ReceivedQuantity > 0 ? productItem.ReceivedQuantity.ToString() : "";
                 
-                return @<input type="number" class="form-control form-control-sm" 
-                               value="@value"
-                               readonly
-                               placeholder="" 
-                               style="background-color: #f8f9fa; cursor: not-allowed;" />;
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@productItem.ReceivedQuantity.ToString("F0")</span>
+                </div>;
             }
         });
 

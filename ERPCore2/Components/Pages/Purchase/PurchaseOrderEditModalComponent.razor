@@ -599,7 +599,7 @@
                     // 檢查是否已選擇廠商
                     @if (editModalComponent.Entity.SupplierId > 0)
                     {
-                        <PurchaseOrderProductManagerComponent TMainEntity="PurchaseOrder" 
+                        <PurchaseOrderDetailManagerComponent TMainEntity="PurchaseOrder" 
                                                    TDetailEntity="PurchaseOrderDetail"
                                                    Products="@availableProducts"
                                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
@@ -610,7 +610,7 @@
                                                    QuantityPropertyName="OrderQuantity"
                                                    ReceivedQuantityPropertyName="ReceivedQuantity"
                                                    UnitPricePropertyName="UnitPrice"
-                                                   RemarksPropertyName="DetailRemarks"
+                                                   RemarksPropertyName="Remarks"
                                                    QuantityLabel="採購數量"
                                                    ReceivedQuantityLabel="已進貨數量"
                                                    PriceLabel="採購單價"
@@ -958,9 +958,7 @@
                 {
                     await NotificationService.ShowErrorAsync("儲存失敗，無法進行審核");
                     return false;
-                }
-                
-                await NotificationService.ShowInfoAsync("資料已儲存，正在進行審核...");
+                }                
             }
             
             // 呼叫服務進行審核
@@ -975,7 +973,6 @@
             
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("採購單審核通過");
                 return true;
             }
             else
