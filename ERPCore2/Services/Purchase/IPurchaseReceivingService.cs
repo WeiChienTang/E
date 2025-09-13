@@ -62,14 +62,6 @@ namespace ERPCore2.Services
         Task<ServiceResult<PurchaseReceiving>> SaveWithDetailsAsync(PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details);
 
         /// <summary>
-        /// 更新採購入庫明細
-        /// </summary>
-        /// <param name="purchaseReceivingId">採購入庫ID</param>
-        /// <param name="details">明細清單</param>
-        /// <returns>服務結果</returns>
-        Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details);
-
-        /// <summary>
         /// 取得指定產品最近一次進貨的倉庫和位置資訊
         /// </summary>
         /// <param name="productId">產品ID</param>

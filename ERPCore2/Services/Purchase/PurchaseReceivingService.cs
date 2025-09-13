@@ -13,6 +13,7 @@ namespace ERPCore2.Services
     public class PurchaseReceivingService : GenericManagementService<PurchaseReceiving>, IPurchaseReceivingService
     {
         private readonly IInventoryStockService? _inventoryStockService;
+        private readonly IPurchaseReceivingDetailService? _detailService;
 
         public PurchaseReceivingService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
@@ -30,6 +31,16 @@ namespace ERPCore2.Services
             IInventoryStockService inventoryStockService) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
+        }
+
+        public PurchaseReceivingService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<PurchaseReceiving>> logger,
+            IInventoryStockService inventoryStockService,
+            IPurchaseReceivingDetailService detailService) : base(contextFactory, logger)
+        {
+            _inventoryStockService = inventoryStockService;
+            _detailService = detailService;
         }
 
         #region 覆寫基本方法
@@ -482,45 +493,34 @@ namespace ERPCore2.Services
                     // 先儲存主檔以取得 ID
                     await context.SaveChangesAsync();
 
-                    // 儲存明細 - 編輯模式使用智能檢測
+                    // 儲存明細 - 統一使用 DetailService
                     bool hasDetailsChanged = false;
                     List<PurchaseReceivingDetail>? originalDetailsForStock = null;
                     
                     if (purchaseReceiving.Id > 0) // 編輯模式
                     {
-                        
-                        // 檢測明細是否有變更
-                        hasDetailsChanged = await HasDetailsChangedAsync(context, savedEntity.Id, details);
-                        
-                        if (hasDetailsChanged)
+                        // 取得舊明細用於庫存回滾
+                        if (_inventoryStockService != null)
                         {
-                            
-                            // 先取得舊明細用於庫存回滾（在刪除前）
-                            if (_inventoryStockService != null)
-                            {
-                                originalDetailsForStock = await context.PurchaseReceivingDetails
-                                    .Where(d => d.PurchaseReceivingId == savedEntity.Id && !d.IsDeleted)
-                                    .AsNoTracking()
-                                    .ToListAsync();
-                            }
-                            
-                            // 先刪除所有現有明細
-                            await DeleteAllExistingDetailsAsync(context, savedEntity.Id);
-                            
-                            // 然後新增所有新明細
-                            await AddAllNewDetailsAsync(context, savedEntity.Id, details);
-                            
-                            // 儲存明細變更
-                            await context.SaveChangesAsync();
-                            
-                            // 更新採購單明細的已進貨數量 - 編輯模式需要重新計算所有受影響的採購單明細
-                            await UpdatePurchaseOrderDetailsReceivedQuantityForEdit(context, details);
+                            originalDetailsForStock = await _detailService!.GetByPurchaseReceivingIdAsync(savedEntity.Id);
+                            hasDetailsChanged = originalDetailsForStock.Count != details.Count || 
+                                              originalDetailsForStock.Any(od => !details.Any(nd => nd.Id == od.Id && 
+                                                  Math.Abs(nd.ReceivedQuantity - od.ReceivedQuantity) < 0.0001m));
+                        }
+                        else
+                        {
+                            hasDetailsChanged = true; // 沒有庫存服務時預設有變更
                         }
                     }
                     else // 新增模式
                     {
-                        // 新增模式直接使用原有邏輯
-                        var detailResult = await UpdateDetailsInContext(context, savedEntity.Id, details);
+                        hasDetailsChanged = details.Any(d => d.ReceivedQuantity > 0);
+                    }
+
+                    // 使用 DetailService 更新明細
+                    if (_detailService != null && hasDetailsChanged)
+                    {
+                        var detailResult = await _detailService.UpdateDetailsAsync(savedEntity.Id, details);
                         if (!detailResult.IsSuccess)
                         {
                             await transaction.RollbackAsync();
@@ -528,8 +528,8 @@ namespace ERPCore2.Services
                         }
                     }
 
-                    // 自動計算並更新入庫狀態
-                    await UpdateReceivingStatusAsync(context, savedEntity, details);
+                    // 更新最後修改時間
+                    savedEntity.UpdatedAt = DateTime.UtcNow;
 
                     // 更新庫存邏輯 - 配合智能檢測
                     if (_inventoryStockService != null)
@@ -638,389 +638,23 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 在指定的 DbContext 中刪除所有現有的進貨入庫明細
-        /// </summary>
-        private async Task DeleteAllExistingDetailsAsync(AppDbContext context, int purchaseReceivingId)
-        {
-            var existingDetails = await context.PurchaseReceivingDetails
-                .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
-                .ToListAsync();
-
-            context.PurchaseReceivingDetails.RemoveRange(existingDetails);
-        }
-
-        /// <summary>
-        /// 新增所有新的進貨入庫明細
-        /// </summary>
-        private Task AddAllNewDetailsAsync(AppDbContext context, int purchaseReceivingId, 
-            List<PurchaseReceivingDetail> newDetails)
-        {            
-            foreach (var detail in newDetails)
-            {
-                // 確保設定正確的父記錄ID
-                detail.PurchaseReceivingId = purchaseReceivingId;
-                
-                // 清除任何可能的 Id 值，確保是新增
-                detail.Id = 0;
-
-                context.PurchaseReceivingDetails.Add(detail);
-            }
-            
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// 檢測明細是否有變更
-        /// </summary>
-        private async Task<bool> HasDetailsChangedAsync(AppDbContext context, int purchaseReceivingId, List<PurchaseReceivingDetail> newDetails)
-        {
-            try
-            {
-                var existingDetails = await context.PurchaseReceivingDetails
-                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                // 檢查數量是否相同
-                if (existingDetails.Count != newDetails.Count)
-                {
-                    return true;
-                }
-                
-                // 檢查每個明細是否相同
-                foreach (var newDetail in newDetails)
-                {
-                    var existingDetail = existingDetails.FirstOrDefault(ed => 
-                        ed.PurchaseOrderDetailId == newDetail.PurchaseOrderDetailId);
-                        
-                    if (existingDetail == null)
-                    {
-                        return true;
-                    }
-                    
-                    // 檢查關鍵欄位是否變更
-                    if (existingDetail.ProductId != newDetail.ProductId ||
-                        existingDetail.ReceivedQuantity != newDetail.ReceivedQuantity ||
-                        Math.Abs(existingDetail.UnitPrice - newDetail.UnitPrice) > 0.0001m ||
-                        existingDetail.WarehouseId != newDetail.WarehouseId ||
-                        existingDetail.WarehouseLocationId != newDetail.WarehouseLocationId ||
-                        existingDetail.BatchNumber != newDetail.BatchNumber ||
-                        existingDetail.IsReceivingCompleted != newDetail.IsReceivingCompleted ||
-                        existingDetail.InspectionRemarks != newDetail.InspectionRemarks)
-                    {
-                        return true;
-                    }
-                }
-                
-                return false;
-            }
-            catch (Exception)
-            {
-                // 如果檢測過程發生錯誤，預設為有變更以確保安全
-                return true;
-            }
-        }
-
-        /// <summary>
-        /// 更新採購入庫明細的核心邏輯
-        /// </summary>
-        private async Task<ServiceResult> UpdateDetailsCore(AppDbContext context, int purchaseReceivingId, List<PurchaseReceivingDetail> details)
-        {
-            try
-            {
-                // 取得現有的明細記錄
-                var existingDetails = await context.PurchaseReceivingDetails
-                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
-                    .ToListAsync();
-
-                // 準備新的明細資料
-                var newDetailsToAdd = new List<PurchaseReceivingDetail>();
-                var detailsToUpdate = new List<PurchaseReceivingDetail>();
-                var detailsToDelete = new List<PurchaseReceivingDetail>();
-
-                // 處理傳入的明細
-                foreach (var detail in (details ?? new List<PurchaseReceivingDetail>()).Where(d => d.ReceivedQuantity > 0 || d.IsReceivingCompleted))
-                {
-                    // 驗證必要欄位
-                    if (detail.PurchaseOrderDetailId <= 0)
-                    {
-                        continue; // 跳過無效的明細
-                    }
-                    
-                    detail.PurchaseReceivingId = purchaseReceivingId;
-                    
-                    if (detail.Id <= 0)
-                    {
-                        // 新增的明細
-                        detail.CreatedAt = DateTime.UtcNow;
-                        detail.UpdatedAt = DateTime.UtcNow;
-                        detail.IsDeleted = false;
-                        detail.Status = EntityStatus.Active;
-                        newDetailsToAdd.Add(detail);
-                    }
-                    else
-                    {
-                        // 更新的明細
-                        var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
-                        if (existingDetail != null)
-                        {
-                            // 更新現有明細的屬性
-                            existingDetail.ProductId = detail.ProductId; // 支援商品變更功能
-                            existingDetail.ReceivedQuantity = detail.ReceivedQuantity;
-                            existingDetail.UnitPrice = detail.UnitPrice;
-                            existingDetail.InspectionRemarks = detail.InspectionRemarks;
-                            existingDetail.BatchNumber = detail.BatchNumber;
-                            existingDetail.ExpiryDate = detail.ExpiryDate;
-                            existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
-                            existingDetail.IsReceivingCompleted = detail.IsReceivingCompleted;
-                            existingDetail.UpdatedAt = DateTime.UtcNow;
-                            detailsToUpdate.Add(existingDetail);
-                        }
-                    }
-                }
-
-                // 找出要刪除的明細（在現有明細中但不在新明細中）
-                var newDetailIds = (details ?? new List<PurchaseReceivingDetail>())
-                    .Where(d => d.Id > 0)
-                    .Select(d => d.Id)
-                    .ToList();
-                
-                detailsToDelete = existingDetails
-                    .Where(ed => !newDetailIds.Contains(ed.Id))
-                    .ToList();
-
-                // 執行資料庫操作
-                // 新增明細
-                if (newDetailsToAdd.Any())
-                {
-                    await context.PurchaseReceivingDetails.AddRangeAsync(newDetailsToAdd);
-                }
-
-                // 軟刪除不需要的明細
-                foreach (var detailToDelete in detailsToDelete)
-                {
-                    detailToDelete.IsDeleted = true;
-                    detailToDelete.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 儲存變更
-                await context.SaveChangesAsync();
-
-                // 更新採購單明細的已進貨數量
-                await UpdatePurchaseOrderDetailsReceivedQuantity(context, newDetailsToAdd, detailsToUpdate, detailsToDelete);
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsCore), GetType(), _logger, new { 
-                    Method = nameof(UpdateDetailsCore),
-                    ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceivingId 
-                });
-                return ServiceResult.Failure($"更新採購入庫明細時發生錯誤：{ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 在指定的 DbContext 中更新採購入庫明細
-        /// </summary>
-        private async Task<ServiceResult> UpdateDetailsInContext(AppDbContext context, int purchaseReceivingId, List<PurchaseReceivingDetail> details)
-        {
-            return await UpdateDetailsCore(context, purchaseReceivingId, details);
-        }
-
-        /// <summary>
-        /// 更新採購入庫明細
-        /// </summary>
-        public async Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-
-                try
-                {
-                    var result = await UpdateDetailsCore(context, purchaseReceivingId, details);
-                    
-                    if (!result.IsSuccess)
-                    {
-                        await transaction.RollbackAsync();
-                        return result;
-                    }
-
-                    await transaction.CommitAsync();
-                    return ServiceResult.Success();
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateDetailsAsync),
-                    ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceivingId 
-                });
-                return ServiceResult.Failure($"更新採購入庫明細時發生錯誤：{ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 更新採購單明細的已進貨數量
-        /// </summary>
-        private async Task UpdatePurchaseOrderDetailsReceivedQuantity(
-            AppDbContext context,
-            List<PurchaseReceivingDetail> newDetailsToAdd,
-            List<PurchaseReceivingDetail> detailsToUpdate,
-            List<PurchaseReceivingDetail> detailsToDelete)
-        {
-            // 收集所有受影響的採購單明細ID
-            var affectedPurchaseOrderDetailIds = new HashSet<int>();
-            
-            // 新增的明細
-            foreach (var detail in newDetailsToAdd)
-            {
-                affectedPurchaseOrderDetailIds.Add(detail.PurchaseOrderDetailId);
-            }
-            
-            // 更新的明細
-            foreach (var detail in detailsToUpdate)
-            {
-                affectedPurchaseOrderDetailIds.Add(detail.PurchaseOrderDetailId);
-            }
-            
-            // 刪除的明細
-            foreach (var detail in detailsToDelete)
-            {
-                affectedPurchaseOrderDetailIds.Add(detail.PurchaseOrderDetailId);
-            }
-
-            // 重新計算每個採購單明細的已進貨數量
-            foreach (var purchaseOrderDetailId in affectedPurchaseOrderDetailIds)
-            {
-                // 計算該採購單明細的總已進貨數量（所有有效的進貨明細）
-                var totalReceivedQuantity = await context.PurchaseReceivingDetails
-                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
-                    .SumAsync(prd => prd.ReceivedQuantity);
-
-                // 計算總已進貨金額
-                var totalReceivedAmount = await context.PurchaseReceivingDetails
-                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
-                    .SumAsync(prd => prd.ReceivedQuantity * prd.UnitPrice);
-
-                // 更新採購單明細
-                var purchaseOrderDetail = await context.PurchaseOrderDetails
-                    .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId && !pod.IsDeleted);
-
-                if (purchaseOrderDetail != null)
-                {
-                    purchaseOrderDetail.ReceivedQuantity = totalReceivedQuantity;
-                    purchaseOrderDetail.ReceivedAmount = totalReceivedAmount;
-                    purchaseOrderDetail.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-
-            // 儲存採購單明細的變更
-            await context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 更新採購單明細的已進貨數量 - 專為編輯模式設計
-        /// </summary>
-        private async Task UpdatePurchaseOrderDetailsReceivedQuantityForEdit(AppDbContext context, List<PurchaseReceivingDetail> newDetails)
-        {
-            // 收集所有受影響的採購單明細ID
-            var affectedPurchaseOrderDetailIds = newDetails
-                .Where(d => d.PurchaseOrderDetailId > 0)
-                .Select(d => d.PurchaseOrderDetailId)
-                .Distinct()
-                .ToHashSet();
-
-            // 重新計算每個採購單明細的已進貨數量
-            foreach (var purchaseOrderDetailId in affectedPurchaseOrderDetailIds)
-            {
-                // 計算該採購單明細的總已進貨數量（所有有效的進貨明細）
-                var totalReceivedQuantity = await context.PurchaseReceivingDetails
-                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
-                    .SumAsync(prd => prd.ReceivedQuantity);
-
-                // 計算總已進貨金額
-                var totalReceivedAmount = await context.PurchaseReceivingDetails
-                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
-                    .SumAsync(prd => prd.ReceivedQuantity * prd.UnitPrice);
-
-                // 更新採購單明細
-                var purchaseOrderDetail = await context.PurchaseOrderDetails
-                    .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId && !pod.IsDeleted);
-
-                if (purchaseOrderDetail != null)
-                {
-                    purchaseOrderDetail.ReceivedQuantity = totalReceivedQuantity;
-                    purchaseOrderDetail.ReceivedAmount = totalReceivedAmount;
-                    purchaseOrderDetail.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-
-            // 儲存採購單明細的變更
-            await context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 自動更新入庫狀態 - 根據進貨明細完成情況判定 (已移除狀態管理)
-        /// </summary>
-        private async Task UpdateReceivingStatusAsync(AppDbContext context, PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details)
-        {
-            try
-            {
-                // 移除狀態設定，僅保留基本邏輯檢查
-                if (!details.Any(d => d.ReceivedQuantity > 0))
-                {
-                    // 無進貨明細時的處理
-                    return;
-                }
-
-                // 收集所有相關的採購單明細ID
-                var purchaseOrderDetailIds = details
-                    .Where(d => d.ReceivedQuantity > 0)
-                    .Select(d => d.PurchaseOrderDetailId)
-                    .Distinct()
-                    .ToList();
-
-                if (!purchaseOrderDetailIds.Any())
-                {
-                    // 無對應採購明細時的處理
-                    return;
-                }
-
-                // 由於移除確認功能，此方法現在僅更新修改時間
-                // 原有的進貨狀態檢查邏輯已不再需要
-
-                // 更新最後修改時間
-                purchaseReceiving.UpdatedAt = DateTime.UtcNow;
-            }
-            catch (Exception ex)
-            {
-                // 如果狀態計算失敗，記錄錯誤但不中斷交易
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateReceivingStatusAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateReceivingStatusAsync),
-                    ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceiving.Id 
-                });
-            }
-        }
-
-        /// <summary>
         /// 取得指定產品最近一次進貨的倉庫和位置資訊
         /// </summary>
         public async Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId)
         {
             try
             {
+                if (_detailService != null)
+                {
+                    var details = await _detailService.GetByProductIdAsync(productId);
+                    var lastDetail = details
+                        .OrderByDescending(d => d.CreatedAt)
+                        .FirstOrDefault();
+                    
+                    return (lastDetail?.WarehouseId, lastDetail?.WarehouseLocationId);
+                }
+                
+                // 備用直接查詢方式
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var lastReceiving = await context.PurchaseReceivingDetails
                     .Where(prd => prd.ProductId == productId && !prd.IsDeleted)
@@ -1050,6 +684,12 @@ namespace ERPCore2.Services
         {
             try
             {
+                if (_detailService != null)
+                {
+                    return await _detailService.GetReturnableDetailsBySupplierAsync(supplierId);
+                }
+                
+                // 備用直接查詢方式
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 return await context.PurchaseReceivingDetails
