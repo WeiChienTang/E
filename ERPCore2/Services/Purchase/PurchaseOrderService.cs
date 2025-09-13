@@ -12,14 +12,21 @@ namespace ERPCore2.Services
     /// </summary>
     public class PurchaseOrderService : GenericManagementService<PurchaseOrder>, IPurchaseOrderService
     {
-        public PurchaseOrderService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        private readonly IPurchaseOrderDetailService _purchaseOrderDetailService;
+
+        public PurchaseOrderService(
+            IDbContextFactory<AppDbContext> contextFactory, 
+            IPurchaseOrderDetailService purchaseOrderDetailService) : base(contextFactory)
         {
+            _purchaseOrderDetailService = purchaseOrderDetailService;
         }
 
         public PurchaseOrderService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<PurchaseOrder>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<PurchaseOrder>> logger,
+            IPurchaseOrderDetailService purchaseOrderDetailService) : base(contextFactory, logger)
         {
+            _purchaseOrderDetailService = purchaseOrderDetailService;
         }
 
         // 採購服務專注於採購流程管理，不處理庫存邏輯
@@ -39,8 +46,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
+                    // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
                     .Where(po => !po.IsDeleted)
                     .OrderByDescending(po => po.OrderDate)
                     .ThenBy(po => po.PurchaseOrderNumber)
@@ -66,9 +72,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
-                            .ThenInclude(p => p.Unit)
+                    // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
                     .Include(po => po.PurchaseReceivings)
                         .ThenInclude(pr => pr.PurchaseReceivingDetails)
                     .FirstOrDefaultAsync(po => po.Id == id && !po.IsDeleted);
@@ -174,8 +178,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseOrders
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
+                    // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
                     .Where(po => po.SupplierId == supplierId && !po.IsDeleted)
                     .OrderByDescending(po => po.OrderDate)
                     .ToListAsync();
@@ -224,8 +227,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseOrders
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
+                    // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
                     .FirstOrDefaultAsync(po => po.PurchaseOrderNumber == purchaseOrderNumber && !po.IsDeleted);
             }
             catch (Exception ex)
@@ -249,13 +251,14 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var order = await context.PurchaseOrders
-                    .Include(po => po.PurchaseOrderDetails)
                     .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
                 
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
-                if (!order.PurchaseOrderDetails.Any())
+                // 使用 DetailService 檢查是否有明細
+                var details = await _purchaseOrderDetailService.GetByPurchaseOrderIdAsync(orderId);
+                if (!details.Any())
                     return ServiceResult.Failure("訂單必須包含至少一項商品");
                 
                 order.UpdatedAt = DateTime.Now;
@@ -284,7 +287,6 @@ namespace ERPCore2.Services
                 try
                 {
                     var order = await context.PurchaseOrders
-                        .Include(po => po.PurchaseOrderDetails)
                         .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
                     
                     if (order == null)
@@ -293,9 +295,9 @@ namespace ERPCore2.Services
                     if (order.IsApproved)
                         return ServiceResult.Failure("採購訂單已經核准，無需重複核准");
 
-                    // 檢查是否有明細
-                    if (!order.PurchaseOrderDetails.Any() || 
-                        !order.PurchaseOrderDetails.Any(pod => !pod.IsDeleted))
+                    // 使用 DetailService 檢查是否有明細
+                    var details = await _purchaseOrderDetailService.GetByPurchaseOrderIdAsync(orderId);
+                    if (!details.Any())
                         return ServiceResult.Failure("採購訂單沒有有效的商品明細，無法核准");
 
                     // 更新採購訂單狀態
@@ -338,7 +340,6 @@ namespace ERPCore2.Services
                 try
                 {
                     var order = await context.PurchaseOrders
-                        .Include(po => po.PurchaseOrderDetails)
                         .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
                     
                     if (order == null)
@@ -461,15 +462,14 @@ namespace ERPCore2.Services
                 try
                 {
                     var order = await context.PurchaseOrders
-                        .Include(po => po.PurchaseOrderDetails)
                         .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
                     
                     if (order == null)
                         return ServiceResult.Failure("找不到採購訂單");
                     
-                    // 計算已進貨金額
-                    var receivedAmount = order.PurchaseOrderDetails.Sum(pod => pod.ReceivedAmount);
-                    order.ReceivedAmount = receivedAmount;
+                    // 使用 DetailService 取得統計資料
+                    var statistics = await _purchaseOrderDetailService.GetStatisticsAsync(orderId);
+                    order.ReceivedAmount = statistics.ReceivedAmount;
                     
                     // 移除狀態更新邏輯，只更新金額
                     order.UpdatedAt = DateTime.Now;
@@ -633,380 +633,6 @@ namespace ERPCore2.Services
                     EndDate = endDate 
                 });
                 return 0;
-            }
-        }
-
-        #endregion
-
-        #region 明細相關
-
-        public async Task<List<PurchaseOrderDetail>> GetOrderDetailsAsync(int orderId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseOrderDetails
-                    .Include(pod => pod.Product)
-                        .ThenInclude(p => p.Unit)
-                    .Where(pod => pod.PurchaseOrderId == orderId && !pod.IsDeleted)
-                    .OrderBy(pod => pod.Product.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOrderDetailsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetOrderDetailsAsync),
-                    ServiceType = GetType().Name,
-                    OrderId = orderId 
-                });
-                return new List<PurchaseOrderDetail>();
-            }
-        }
-
-        public async Task<ServiceResult> AddOrderDetailAsync(PurchaseOrderDetail detail)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    // 移除重複商品檢查 - 允許同一商品在同一訂單中出現多次
-                    // 這樣可以支援不同價格、不同備註或不同交期的相同商品採購
-                    
-                    detail.Status = EntityStatus.Active;
-                    detail.CreatedAt = DateTime.Now;
-                    
-                    await context.PurchaseOrderDetails.AddAsync(detail);
-                    await context.SaveChangesAsync();
-                    
-                    // 更新訂單總金額
-                    var order = await context.PurchaseOrders
-                        .Include(po => po.PurchaseOrderDetails)
-                        .FirstOrDefaultAsync(po => po.Id == detail.PurchaseOrderId);
-                    
-                    if (order != null)
-                    {
-                        order.TotalAmount = order.PurchaseOrderDetails
-                            .Where(pod => !pod.IsDeleted)
-                            .Sum(pod => pod.SubtotalAmount);
-                        order.UpdatedAt = DateTime.Now;
-                        await context.SaveChangesAsync();
-                    }
-                    
-                    await transaction.CommitAsync();
-                    return ServiceResult.Success();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddOrderDetailAsync), GetType(), _logger, new { 
-                    Method = nameof(AddOrderDetailAsync),
-                    ServiceType = GetType().Name,
-                    OrderId = detail.PurchaseOrderId,
-                    ProductId = detail.ProductId 
-                });
-                return ServiceResult.Failure("新增訂單明細時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> UpdateOrderDetailAsync(PurchaseOrderDetail detail)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    var existing = await context.PurchaseOrderDetails
-                        .FirstOrDefaultAsync(pod => pod.Id == detail.Id && !pod.IsDeleted);
-                    
-                    if (existing == null)
-                        return ServiceResult.Failure("找不到訂單明細");
-                    
-                    existing.OrderQuantity = detail.OrderQuantity;
-                    existing.UnitPrice = detail.UnitPrice;
-                    existing.Remarks = detail.Remarks;
-                    existing.ExpectedDeliveryDate = detail.ExpectedDeliveryDate;
-                    existing.UpdatedAt = DateTime.Now;
-                    
-                    await context.SaveChangesAsync();
-                    
-                    // 更新訂單總金額
-                    var order = await context.PurchaseOrders
-                        .Include(po => po.PurchaseOrderDetails)
-                        .FirstOrDefaultAsync(po => po.Id == existing.PurchaseOrderId);
-                    
-                    if (order != null)
-                    {
-                        order.TotalAmount = order.PurchaseOrderDetails
-                            .Where(pod => !pod.IsDeleted)
-                            .Sum(pod => pod.SubtotalAmount);
-                        order.UpdatedAt = DateTime.Now;
-                        await context.SaveChangesAsync();
-                    }
-                    
-                    await transaction.CommitAsync();
-                    return ServiceResult.Success();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateOrderDetailAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateOrderDetailAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detail.Id 
-                });
-                return ServiceResult.Failure("更新訂單明細時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> DeleteOrderDetailAsync(int detailId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    var detail = await context.PurchaseOrderDetails
-                        .FirstOrDefaultAsync(pod => pod.Id == detailId && !pod.IsDeleted);
-                    
-                    if (detail == null)
-                        return ServiceResult.Failure("找不到訂單明細");
-                    
-                    // 檢查是否已有進貨記錄
-                    var hasReceipts = await context.PurchaseReceivingDetails
-                        .AnyAsync(prd => prd.PurchaseOrderDetailId == detailId && !prd.IsDeleted);
-                    
-                    if (hasReceipts)
-                        return ServiceResult.Failure("此明細已有進貨記錄，無法刪除");
-                    
-                    detail.IsDeleted = true;
-                    detail.UpdatedAt = DateTime.Now;
-                    
-                    await context.SaveChangesAsync();
-                    
-                    // 更新訂單總金額
-                    var order = await context.PurchaseOrders
-                        .Include(po => po.PurchaseOrderDetails)
-                        .FirstOrDefaultAsync(po => po.Id == detail.PurchaseOrderId);
-                    
-                    if (order != null)
-                    {
-                        order.TotalAmount = order.PurchaseOrderDetails
-                            .Where(pod => !pod.IsDeleted)
-                            .Sum(pod => pod.SubtotalAmount);
-                        order.UpdatedAt = DateTime.Now;
-                        await context.SaveChangesAsync();
-                    }
-                    
-                    await transaction.CommitAsync();
-                    return ServiceResult.Success();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteOrderDetailAsync), GetType(), _logger, new { 
-                    Method = nameof(DeleteOrderDetailAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detailId 
-                });
-                return ServiceResult.Failure("刪除訂單明細時發生錯誤");
-            }
-        }
-
-        /// <summary>
-        /// 取得指定供應商尚未完成進貨的採購明細
-        /// </summary>
-        public async Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierAsync(int supplierId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                return await context.PurchaseOrderDetails
-                    .Include(pod => pod.Product)
-                        .ThenInclude(p => p.Unit)
-                    .Include(pod => pod.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
-                    .Where(pod => 
-                        pod.PurchaseOrder.SupplierId == supplierId &&
-                        !pod.IsDeleted &&
-                        !pod.PurchaseOrder.IsDeleted &&
-                        pod.PurchaseOrder.IsApproved &&
-                        // 檢查尚未完全進貨的明細 - 考慮手動完成標記
-                        !context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
-                            .Any(prd => prd.IsReceivingCompleted) &&
-                        pod.OrderQuantity > context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
-                            .Sum(prd => prd.ReceivedQuantity)
-                    )
-                    .OrderBy(pod => pod.PurchaseOrder.OrderDate)
-                    .ThenBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)
-                    .ThenBy(pod => pod.Product.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingReceivingDetailsBySupplierAsync), GetType(), _logger, new { 
-                    Method = nameof(GetPendingReceivingDetailsBySupplierAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId 
-                });
-                return new List<PurchaseOrderDetail>();
-            }
-        }
-
-        /// <summary>
-        /// 取得指定供應商尚未完成進貨的採購明細（包含剩餘數量資訊）
-        /// </summary>
-        public async Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsBySupplierWithQuantityAsync(int supplierId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                var details = await context.PurchaseOrderDetails
-                    .Include(pod => pod.Product)
-                        .ThenInclude(p => p.Unit)
-                    .Include(pod => pod.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
-                    .Where(pod => 
-                        pod.PurchaseOrder.SupplierId == supplierId &&
-                        !pod.IsDeleted &&
-                        !pod.PurchaseOrder.IsDeleted &&
-                        pod.PurchaseOrder.IsApproved
-                    )
-                    .Select(pod => new 
-                    {
-                        Detail = pod,
-                        ReceivedQuantity = context.PurchaseReceivingDetails
-                            .Where(prd => prd.PurchaseOrderDetailId == pod.Id && !prd.IsDeleted)
-                            .Sum(prd => prd.ReceivedQuantity)
-                    })
-                    .Where(x => x.Detail.OrderQuantity > x.ReceivedQuantity)
-                    .OrderBy(x => x.Detail.PurchaseOrder.OrderDate)
-                    .ThenBy(x => x.Detail.PurchaseOrder.PurchaseOrderNumber)
-                    .ThenBy(x => x.Detail.Product.Code)
-                    .ToListAsync();
-
-                // 設定剩餘數量資訊到明細物件的備註或額外屬性
-                var result = details.Select(x => 
-                {
-                    var detail = x.Detail;
-                    // 可以在這裡計算並設定剩餘數量等額外資訊
-                    return detail;
-                }).ToList();
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingReceivingDetailsBySupplierWithQuantityAsync), GetType(), _logger, new { 
-                    Method = nameof(GetPendingReceivingDetailsBySupplierWithQuantityAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId 
-                });
-                return new List<PurchaseOrderDetail>();
-            }
-        }
-
-        /// <summary>
-        /// 取得指定供應商的採購明細（顯示所有已核准的採購項目，支援入庫量超過訂購量）
-        /// </summary>
-        /// <param name="supplierId">供應商ID</param>
-        /// <param name="isEditMode">是否為編輯模式（此參數已不影響結果，保留用於向後相容性）</param>
-        public async Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool isEditMode = false)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                var query = context.PurchaseOrderDetails
-                    .Include(pod => pod.Product)
-                        .ThenInclude(p => p.Unit)
-                    .Include(pod => pod.PurchaseOrder)
-                        .ThenInclude(po => po.Supplier)
-                    .Where(pod => 
-                        pod.PurchaseOrder.SupplierId == supplierId &&
-                        !pod.IsDeleted &&
-                        !pod.PurchaseOrder.IsDeleted &&
-                        pod.PurchaseOrder.IsApproved);
-
-                // 移除過濾條件 - 商品應該一直顯示，不論入庫量是否大於採購量或是否已完成
-                // 這樣可以支援：
-                // 1. 允許入庫量超過訂購量
-                // 2. 允許對已完成的項目進行後續操作
-                // 3. 提供完整的商品列表供用戶選擇
-                
-                return await query
-                    .OrderBy(pod => pod.PurchaseOrder.OrderDate)
-                    .ThenBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)
-                    .ThenBy(pod => pod.Product.Code)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReceivingDetailsBySupplierAsync), GetType(), _logger, new { 
-                    Method = nameof(GetReceivingDetailsBySupplierAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId,
-                    IsEditMode = isEditMode 
-                });
-                return new List<PurchaseOrderDetail>();
-            }
-        }
-
-        /// <summary>
-        /// 獲取供應商的未完成採購單（包含完整關聯資料用於判斷完成狀態）
-        /// </summary>
-        /// <param name="supplierId">供應商ID</param>
-        /// <returns>未完成的採購單清單</returns>
-        public async Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseOrders
-                    .Include(po => po.Supplier)
-                    .Include(po => po.Warehouse)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
-                    .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.PurchaseReceivingDetails)
-                    .Where(po => po.SupplierId == supplierId && 
-                               !po.IsDeleted && 
-                               po.IsApproved) // 只包含已核准的訂單
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIncompleteOrdersBySupplierAsync), GetType(), _logger, new { 
-                    Method = nameof(GetIncompleteOrdersBySupplierAsync),
-                    ServiceType = GetType().Name,
-                    SupplierId = supplierId 
-                });
-                return new List<PurchaseOrder>();
             }
         }
 
