@@ -31,5 +31,15 @@ namespace ERPCore2.Services
         
         // 自動產生編號
         Task<string> GenerateOrderNumberAsync();
+        
+        // 訂單明細管理
+        Task<List<PurchaseOrderDetail>> GetOrderDetailsAsync(int purchaseOrderId);
+        Task<ServiceResult> AddOrderDetailAsync(PurchaseOrderDetail detail);
+        Task<ServiceResult> UpdateOrderDetailAsync(PurchaseOrderDetail detail);
+        Task<ServiceResult> DeleteOrderDetailAsync(int detailId);
+        
+        // 進貨相關查詢
+        Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted);
+        Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId);
     }
 }

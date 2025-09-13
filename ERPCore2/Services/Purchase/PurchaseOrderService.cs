@@ -677,5 +677,159 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 訂單明細管理
+
+        /// <summary>
+        /// 獲取採購單的所有明細
+        /// </summary>
+        public async Task<List<PurchaseOrderDetail>> GetOrderDetailsAsync(int purchaseOrderId)
+        {
+            try
+            {
+                return await _purchaseOrderDetailService.GetByPurchaseOrderIdAsync(purchaseOrderId);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOrderDetailsAsync), GetType(), _logger, new { 
+                    PurchaseOrderId = purchaseOrderId 
+                });
+                return new List<PurchaseOrderDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 新增採購單明細
+        /// </summary>
+        public async Task<ServiceResult> AddOrderDetailAsync(PurchaseOrderDetail detail)
+        {
+            try
+            {
+                return await _purchaseOrderDetailService.CreateAsync(detail);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddOrderDetailAsync), GetType(), _logger, new { 
+                    PurchaseOrderId = detail.PurchaseOrderId,
+                    ProductId = detail.ProductId 
+                });
+                return ServiceResult.Failure("新增採購單明細時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 更新採購單明細
+        /// </summary>
+        public async Task<ServiceResult> UpdateOrderDetailAsync(PurchaseOrderDetail detail)
+        {
+            try
+            {
+                return await _purchaseOrderDetailService.UpdateAsync(detail);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateOrderDetailAsync), GetType(), _logger, new { 
+                    DetailId = detail.Id,
+                    PurchaseOrderId = detail.PurchaseOrderId,
+                    ProductId = detail.ProductId 
+                });
+                return ServiceResult.Failure("更新採購單明細時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 刪除採購單明細
+        /// </summary>
+        public async Task<ServiceResult> DeleteOrderDetailAsync(int detailId)
+        {
+            try
+            {
+                return await _purchaseOrderDetailService.DeleteAsync(detailId);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteOrderDetailAsync), GetType(), _logger, new { 
+                    DetailId = detailId 
+                });
+                return ServiceResult.Failure("刪除採購單明細時發生錯誤");
+            }
+        }
+
+        #endregion
+
+        #region 進貨相關查詢
+
+        /// <summary>
+        /// 獲取廠商的進貨明細
+        /// </summary>
+        public async Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var query = context.PurchaseOrderDetails
+                    .Include(pod => pod.PurchaseOrder)
+                        .ThenInclude(po => po.Supplier)
+                    .Include(pod => pod.Product)
+                    .Where(pod => !pod.IsDeleted 
+                                && pod.PurchaseOrder.SupplierId == supplierId
+                                && pod.PurchaseOrder.IsApproved);
+
+                if (!includeCompleted)
+                {
+                    // 只包含未完成的明細
+                    query = query.Where(pod => pod.ReceivedQuantity < pod.OrderQuantity);
+                }
+
+                return await query.OrderBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)
+                                .ThenBy(pod => pod.Product.Name)
+                                .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReceivingDetailsBySupplierAsync), GetType(), _logger, new { 
+                    SupplierId = supplierId,
+                    IncludeCompleted = includeCompleted 
+                });
+                return new List<PurchaseOrderDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 獲取廠商的未完成採購單
+        /// </summary>
+        public async Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.PurchaseOrders
+                    .Include(po => po.Company)
+                    .Include(po => po.Supplier)
+                    .Include(po => po.Warehouse)
+                    .Include(po => po.ApprovedByUser)
+                    .Include(po => po.PurchaseOrderDetails)
+                        .ThenInclude(pod => pod.Product)
+                    .Where(po => !po.IsDeleted 
+                                && po.SupplierId == supplierId
+                                && po.IsApproved
+                                && po.PurchaseOrderDetails.Any(pod => pod.ReceivedQuantity < pod.OrderQuantity))
+                    .OrderBy(po => po.ExpectedDeliveryDate)
+                    .ThenBy(po => po.PurchaseOrderNumber)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetIncompleteOrdersBySupplierAsync), GetType(), _logger, new { 
+                    SupplierId = supplierId 
+                });
+                return new List<PurchaseOrder>();
+            }
+        }
+
+        #endregion
+
     }
 }
