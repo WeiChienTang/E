@@ -225,3 +225,57 @@ existingDetail.InspectionRemarks = updatedDetail.InspectionRemarks;
 
 ### 修改檔
 - `Services/Purchase/PurchaseReceivingDetailService.cs`
+
+## 問題7 - 採購單已進貨量未更新
+
+### 描述
+進貨明細儲存成功且庫存正確更新，但採購單上的已進貨量（ReceivedQuantity）沒有同步更新，導致採購單狀態不正確。
+
+### 原因
+❌ 缺少採購單明細更新邏輯
+`SavePurchaseReceivingDetailsAsync` 方法中只處理了庫存更新，但沒有調用更新採購單明細已進貨量的服務：
+```csharp
+// 原始邏輯只更新了庫存
+var differenceResult = await PurchaseReceivingService.UpdateInventoryByDifferenceAsync(purchaseReceiving.Id, 0);
+// 缺少更新採購單明細的邏輯
+```
+
+❌ 服務存在但未調用
+`IPurchaseOrderDetailService.RecalculateReceivedQuantityAsync` 方法已存在，能重新計算並更新已進貨量，但在進貨流程中沒有被調用。
+
+### 解決
+✅ 注入採購單明細服務
+```csharp
+@inject IPurchaseOrderDetailService PurchaseOrderDetailService
+```
+
+✅ 新增採購單明細更新邏輯
+```csharp
+// 更新相關採購單明細的已進貨量
+if (validDetails.Any())
+{
+    var uniquePurchaseOrderDetailIds = validDetails
+        .Where(d => d.PurchaseOrderDetailId > 0)
+        .Select(d => d.PurchaseOrderDetailId)
+        .Distinct();
+
+    foreach (var purchaseOrderDetailId in uniquePurchaseOrderDetailIds)
+    {
+        var recalculateResult = await PurchaseOrderDetailService.RecalculateReceivedQuantityAsync(purchaseOrderDetailId);
+        if (!recalculateResult.IsSuccess)
+        {
+            await NotificationService.ShowWarningAsync($"採購單明細已進貨量更新失敗：{recalculateResult.ErrorMessage}");
+        }
+    }
+}
+```
+
+✅ 完整進貨流程
+現在進貨儲存流程包含：
+1. 儲存入庫明細
+2. 更新主檔總金額  
+3. 更新採購單明細已進貨量
+4. 更新庫存
+
+### 修改檔
+- `Components/Pages/Purchase/PurchaseReceivingEditModalComponent.razor`

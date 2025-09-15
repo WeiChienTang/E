@@ -2,6 +2,7 @@
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
@@ -790,6 +791,24 @@
                 if (!updateResult.IsSuccess)
                 {
                     await NotificationService.ShowWarningAsync($"總金額更新警告：{updateResult.ErrorMessage}");
+                }
+            }
+
+            // 更新相關採購單明細的已進貨量
+            if (validDetails.Any())
+            {
+                var uniquePurchaseOrderDetailIds = validDetails
+                    .Where(d => d.PurchaseOrderDetailId > 0)
+                    .Select(d => d.PurchaseOrderDetailId)
+                    .Distinct();
+
+                foreach (var purchaseOrderDetailId in uniquePurchaseOrderDetailIds)
+                {
+                    var recalculateResult = await PurchaseOrderDetailService.RecalculateReceivedQuantityAsync(purchaseOrderDetailId);
+                    if (!recalculateResult.IsSuccess)
+                    {
+                        await NotificationService.ShowWarningAsync($"採購單明細已進貨量更新失敗：{recalculateResult.ErrorMessage}");
+                    }
                 }
             }
 
