@@ -3,26 +3,38 @@
 @using System.Web
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Data.Enums
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
 @typeparam TItem
 
 <div class="table-responsive table-container-hover">
-    <table class="table @GetTableClass()">
+    <table class="table @GetTableClass() @(EnableColumnResize ? "resizable-table" : "")"
+           id="@TableId">
         @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
             <thead class="@GetHeaderClass()">
                 <tr>
                     @foreach (var column in ColumnDefinitions)
                     {
-                        <th scope="col" class="@column.HeaderCssClass" style="@column.HeaderStyle">
-                            @if (!string.IsNullOrEmpty(column.IconClass))
+                        <th scope="col" 
+                            class="@column.HeaderCssClass @(EnableColumnResize ? "resizable-column" : "")" 
+                            style="@GetColumnStyle(column)" 
+                            data-column="@column.PropertyName">
+                            <div class="column-header-content">
+                                @if (!string.IsNullOrEmpty(column.IconClass))
+                                {
+                                    <i class="@column.IconClass me-1"></i>
+                                }
+                                @column.Title
+                                @if (column.IsSortable && EnableSorting)
+                                {
+                                    <i class="fas fa-sort ms-1 text-muted" style="cursor: pointer;" 
+                                       @onclick="() => HandleSort(column.PropertyName)"></i>
+                                }
+                            </div>
+                            @if (EnableColumnResize)
                             {
-                                <i class="@column.IconClass me-1"></i>
-                            }
-                            @column.Title
-                            @if (column.IsSortable && EnableSorting)
-                            {
-                                <i class="fas fa-sort ms-1 text-muted" style="cursor: pointer;" 
-                                   @onclick="() => HandleSort(column.PropertyName)"></i>
+                                <div class="column-resizer" @onmousedown="@((e) => StartColumnResize(e, column.PropertyName))"></div>
                             }
                         </th>
                     }
@@ -187,6 +199,8 @@
     [Parameter] public bool EnableRowClick { get; set; } = false;    [Parameter] public string RowClickCursor { get; set; } = "pointer";
     [Parameter] public bool EnableSorting { get; set; } = false;
     [Parameter] public EventCallback<string> OnSort { get; set; }
+    [Parameter] public bool EnableColumnResize { get; set; } = true;
+    [Parameter] public string TableId { get; set; } = Guid.NewGuid().ToString("N")[..8];
 
     // 分頁相關參數
     [Parameter] public bool EnablePagination { get; set; } = false;
@@ -260,6 +274,31 @@
         {
             await OnSort.InvokeAsync(propertyName);
         }
+    }
+
+    private string GetColumnStyle(TableColumnDefinition column)
+    {
+        var styles = new List<string>();
+        
+        // 如果有設定寬度，加入 width 樣式
+        if (!string.IsNullOrEmpty(column.Width))
+        {
+            styles.Add($"width: {column.Width}");
+        }
+        
+        // 如果有設定標題樣式，加入
+        if (!string.IsNullOrEmpty(column.HeaderStyle))
+        {
+            styles.Add(column.HeaderStyle);
+        }
+        
+        return string.Join("; ", styles);
+    }
+
+    private void StartColumnResize(MouseEventArgs e, string columnName)
+    {
+        // 這個方法將配合 JavaScript 使用
+        // JavaScript 將處理實際的拖拽邏輯
     }
 
     private string FormatCellValue(TItem item, TableColumnDefinition column)
@@ -457,4 +496,97 @@
     {
         return "下一頁"; // 在所有螢幕大小都顯示文字
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && EnableColumnResize)
+        {
+            await JSRuntime.InvokeVoidAsync("tableColumnResizer.init", TableId);
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 }
+
+<script>
+window.tableColumnResizer = {
+    currentTable: null,
+    currentColumn: null,
+    currentResizer: null,
+    nextColumn: null,
+    startX: 0,
+    startWidth: 0,
+    nextStartWidth: 0,
+    
+    init: function(tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        
+        // 為所有 resizer 添加事件監聽器
+        const resizers = table.querySelectorAll('.column-resizer');
+        resizers.forEach(resizer => {
+            resizer.addEventListener('mousedown', (e) => this.startResize(e, table));
+        });
+        
+        // 添加全域事件監聽器
+        document.addEventListener('mousemove', (e) => this.doResize(e));
+        document.addEventListener('mouseup', () => this.stopResize());
+    },
+    
+    startResize: function(e, table) {
+        e.preventDefault();
+        
+        this.currentResizer = e.target;
+        this.currentTable = table;
+        this.currentColumn = e.target.parentElement;
+        
+        this.startX = e.clientX;
+        this.startWidth = parseInt(document.defaultView.getComputedStyle(this.currentColumn).width, 10);
+        
+        // 找到下一個欄位，用於調整時的補償
+        const currentIndex = Array.from(this.currentColumn.parentElement.children).indexOf(this.currentColumn);
+        this.nextColumn = this.currentColumn.parentElement.children[currentIndex + 1] || null;
+        this.nextStartWidth = this.nextColumn ? 
+            parseInt(document.defaultView.getComputedStyle(this.nextColumn).width, 10) : 0;
+        
+        this.currentResizer.classList.add('resizing');
+        this.currentTable.classList.add('resizing');
+        
+        document.body.style.cursor = 'col-resize';
+    },
+    
+    doResize: function(e) {
+        if (!this.currentColumn) return;
+        
+        const deltaX = e.clientX - this.startX;
+        const newWidth = this.startWidth + deltaX;
+        
+        // 設定最小寬度限制
+        if (newWidth < 50) return;
+        
+        // 只調整當前欄位寬度
+        this.currentColumn.style.width = newWidth + 'px';
+        
+        // 如果有下一個欄位，調整其寬度以保持表格總寬度不變
+        if (this.nextColumn && this.nextStartWidth - deltaX > 50) {
+            this.nextColumn.style.width = (this.nextStartWidth - deltaX) + 'px';
+        }
+    },
+    
+    stopResize: function() {
+        if (this.currentResizer) {
+            this.currentResizer.classList.remove('resizing');
+        }
+        if (this.currentTable) {
+            this.currentTable.classList.remove('resizing');
+        }
+        
+        document.body.style.cursor = '';
+        
+        this.currentTable = null;
+        this.currentColumn = null;
+        this.currentResizer = null;
+        this.nextColumn = null;
+        this.nextStartWidth = 0;
+    }
+};
+</script>

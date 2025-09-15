@@ -395,3 +395,54 @@
         z-index: 1 !important;
     }
 }
+
+/* 可調整欄位寬度的樣式 */
+.resizable-column {
+    position: relative;
+    user-select: none;
+}
+
+.column-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-right: 8px; /* 為調整手柄留出空間 */
+}
+
+.column-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    background-color: transparent;
+    border-right: 2px solid transparent;
+    transition: border-color 0.2s ease;
+    z-index: 10;
+}
+
+.column-resizer:hover {
+    border-right-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.column-resizer.resizing {
+    border-right-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.2);
+}
+
+/* 當在調整大小時，防止文字選取 */
+.table.resizing {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* 確保表格布局為固定，以便欄位調整生效 */
+.resizable-table {
+    table-layout: fixed;
+    width: 100%;
+}

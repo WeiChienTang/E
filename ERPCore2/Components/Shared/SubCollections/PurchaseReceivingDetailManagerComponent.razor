@@ -258,6 +258,10 @@ else
                     var receivingItem = (ReceivingItem)item;
                     var selectedWarehouseId = receivingItem.SelectedWarehouse?.Id.ToString() ?? "";
                     
+                    // ===== Console 調試輸出 =====
+                    Console.WriteLine($"[倉庫下拉] Warehouses 總數: {Warehouses.Count}");
+                    Console.WriteLine($"[倉庫下拉] SelectedWarehouse: {receivingItem.SelectedWarehouse?.Name ?? "null"}");
+                    
                     return @<select class="form-select form-select-sm"
                                    value="@selectedWarehouseId"
                                    @onchange="(e) => OnWarehouseSelectionChanged(receivingItem, e.Value?.ToString())"
@@ -286,10 +290,36 @@ else
                     var receivingItem = (ReceivingItem)item;
                     var selectedWarehouseLocationId = receivingItem.SelectedWarehouseLocation?.Id.ToString() ?? "";
                     
+                    // ===== Console 調試輸出 =====
+                    Console.WriteLine($"[倉庫位置下拉] 開始渲染");
+                    Console.WriteLine($"[倉庫位置下拉] WarehouseLocations 總數: {WarehouseLocations.Count}");
+                    Console.WriteLine($"[倉庫位置下拉] SelectedWarehouse: {receivingItem.SelectedWarehouse?.Name ?? "null"}");
+                    Console.WriteLine($"[倉庫位置下拉] SelectedWarehouse.Id: {receivingItem.SelectedWarehouse?.Id.ToString() ?? "null"}");
+                    Console.WriteLine($"[倉庫位置下拉] SelectedWarehouseLocation: {receivingItem.SelectedWarehouseLocation?.Name ?? "null"}");
+                    
                     // 根據選擇的倉庫篩選庫位
                     var availableLocations = receivingItem.SelectedWarehouse != null 
                         ? WarehouseLocations.Where(wl => wl.WarehouseId == receivingItem.SelectedWarehouse.Id).ToList()
                         : new List<WarehouseLocation>();
+                    
+                    Console.WriteLine($"[倉庫位置下拉] 篩選後的 availableLocations 數量: {availableLocations.Count}");
+                    
+                    if (availableLocations.Any())
+                    {
+                        foreach (var loc in availableLocations)
+                        {
+                            Console.WriteLine($"[倉庫位置下拉] 可用庫位: Id={loc.Id}, Name={loc.Name}, WarehouseId={loc.WarehouseId}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("[倉庫位置下拉] 沒有找到可用的庫位");
+                        // 檢查 WarehouseLocations 中的所有項目
+                        foreach (var wl in WarehouseLocations.Take(5)) // 只顯示前5個
+                        {
+                            Console.WriteLine($"[倉庫位置下拉] 全部庫位樣本: Id={wl.Id}, Name={wl.Name}, WarehouseId={wl.WarehouseId}");
+                        }
+                    }
                     
                     return @<select class="form-select form-select-sm"
                                    value="@selectedWarehouseLocationId"
@@ -744,18 +774,25 @@ else
 
     private async Task OnWarehouseSelectionChanged(ReceivingItem item, string? warehouseIdStr)
     {
+        Console.WriteLine($"[倉庫選擇變更] 開始處理");
+        Console.WriteLine($"[倉庫選擇變更] warehouseIdStr: {warehouseIdStr ?? "null"}");
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(warehouseIdStr) || !int.TryParse(warehouseIdStr, out var warehouseId))
         {
+            Console.WriteLine($"[倉庫選擇變更] 清空倉庫選擇");
             item.SelectedWarehouse = null;
         }
         else
         {
+            Console.WriteLine($"[倉庫選擇變更] 解析 warehouseId: {warehouseId}");
             item.SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == warehouseId);
+            Console.WriteLine($"[倉庫選擇變更] 找到的倉庫: {item.SelectedWarehouse?.Name ?? "null"}");
         }
         
         // 倉庫變更時清空庫位選擇
+        Console.WriteLine($"[倉庫選擇變更] 清空庫位選擇");
         item.SelectedWarehouseLocation = null;
         
         AutoEmptyRowHelper.ForAny<ReceivingItem>.HandleInputChange(
@@ -763,6 +800,8 @@ else
         
         await NotifyDetailsChanged();
         StateHasChanged();
+        
+        Console.WriteLine($"[倉庫選擇變更] 處理完成");
     }
 
     private async Task OnWarehouseLocationSelectionChanged(ReceivingItem item, string? warehouseLocationIdStr)

@@ -53,6 +53,11 @@ public class TableColumnDefinition
     public string? CellStyle { get; set; }
     
     /// <summary>
+    /// 欄位寬度 (CSS width 值，例如: "150px", "20%", "auto")
+    /// </summary>
+    public string? Width { get; set; }
+    
+    /// <summary>
     /// 標題的圖示 CSS 類別
     /// </summary>
     public string? IconClass { get; set; }
