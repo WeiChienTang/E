@@ -778,8 +778,8 @@ namespace ERPCore2.Services
 
                 if (!includeCompleted)
                 {
-                    // 只包含未完成的明細
-                    query = query.Where(pod => pod.ReceivedQuantity < pod.OrderQuantity);
+                    // 只包含未完成的明細：既未手動完成，且數量未滿
+                    query = query.Where(pod => !pod.IsReceivingCompleted && pod.ReceivedQuantity < pod.OrderQuantity);
                 }
 
                 return await query.OrderBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)

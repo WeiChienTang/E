@@ -29,6 +29,10 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 
+        [Required(ErrorMessage = "訂購數量為必填")]
+        [Display(Name = "訂購數量")]
+        public int OrderQuantity { get; set; }
+
         [Required(ErrorMessage = "進貨數量為必填")]
         [Display(Name = "進貨數量")]
         public int ReceivedQuantity { get; set; }
@@ -41,6 +45,17 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "小計金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalAmount => ReceivedQuantity * UnitPrice;
+
+        [Display(Name = "訂購金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal OrderAmount => OrderQuantity * UnitPrice;
+
+        [Display(Name = "未進貨數量")]
+        public int PendingQuantity => OrderQuantity - ReceivedQuantity;
+
+        [Display(Name = "進貨完成率")]
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal CompletionRate => OrderQuantity > 0 ? (decimal)ReceivedQuantity / OrderQuantity * 100 : 0;
 
         [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]

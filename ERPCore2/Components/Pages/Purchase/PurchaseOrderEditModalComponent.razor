@@ -414,7 +414,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.OrderDate),
-                    Label = "採購日期",
+                    Label = "採購日",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "採購單建立日期",
@@ -423,7 +423,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
-                    Label = "預定交貨日期",
+                    Label = "交貨日",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "預計廠商交貨的日期",
@@ -611,10 +611,6 @@
                                                    ReceivedQuantityPropertyName="ReceivedQuantity"
                                                    UnitPricePropertyName="UnitPrice"
                                                    RemarksPropertyName="Remarks"
-                                                   QuantityLabel="採購數量"
-                                                   ReceivedQuantityLabel="已進貨數量"
-                                                   PriceLabel="採購單價"
-                                                   RemarksLabel="採購備註"
                                                    IsReadOnly="@(editModalComponent.Entity.IsApproved)" />
                     }
                     else

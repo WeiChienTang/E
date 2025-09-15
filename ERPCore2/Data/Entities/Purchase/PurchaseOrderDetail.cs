@@ -32,6 +32,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "待進貨數量")]
         public int PendingQuantity => OrderQuantity - ReceivedQuantity;
 
+        [Display(Name = "已完成")]
+        public bool IsReceivingCompleted { get; set; } = false;
+
         [Required(ErrorMessage = "單價為必填")]
         [Display(Name = "單價")]
         [Column(TypeName = "decimal(18,4)")]

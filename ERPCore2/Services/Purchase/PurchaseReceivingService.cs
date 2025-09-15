@@ -8,31 +8,48 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 採購進貨服務實作
+    /// 採購進貨服務實作 - 管理採購進貨單的建立、修改、查詢及相關業務邏輯
+    /// 提供進貨單號自動產生、庫存更新、供應商退貨管理等核心功能
     /// </summary>
     public class PurchaseReceivingService : GenericManagementService<PurchaseReceiving>, IPurchaseReceivingService
     {
+        /// <summary>
+        /// 庫存管理服務 - 用於進貨確認時更新庫存數量
+        /// </summary>
         private readonly IInventoryStockService? _inventoryStockService;
+        
+        /// <summary>
+        /// 採購進貨明細服務 - 用於管理進貨單的明細資料
+        /// </summary>
         private readonly IPurchaseReceivingDetailService? _detailService;
 
+        /// <summary>
+        /// 簡易建構子 - 適用於測試環境或最小依賴場景
+        /// </summary>
+        /// <param name="contextFactory">資料庫上下文工廠</param>
         public PurchaseReceivingService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
+        /// <summary>
+        /// 標準建構子 - 包含日誌記錄功能，適用於一般生產環境
+        /// </summary>
+        /// <param name="contextFactory">資料庫上下文工廠</param>
+        /// <param name="logger">日誌記錄器</param>
         public PurchaseReceivingService(
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<PurchaseReceiving>> logger) : base(contextFactory, logger)
         {
         }
 
-        public PurchaseReceivingService(
-            IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<PurchaseReceiving>> logger,
-            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
-        {
-            _inventoryStockService = inventoryStockService;
-        }
-
+        /// <summary>
+        /// 完整建構子 - 注入所有相關服務，提供完整功能支援
+        /// 包含庫存管理和明細管理服務，支援進貨確認和明細操作
+        /// </summary>
+        /// <param name="contextFactory">資料庫上下文工廠</param>
+        /// <param name="logger">日誌記錄器</param>
+        /// <param name="inventoryStockService">庫存管理服務</param>
+        /// <param name="detailService">進貨明細服務</param>
         public PurchaseReceivingService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReceiving>> logger,
@@ -45,6 +62,13 @@ namespace ERPCore2.Services
 
         #region 覆寫基本方法
 
+        /// <summary>
+        /// 取得所有採購進貨單資料
+        /// 功能：載入所有未刪除的進貨單，包含完整的關聯資料
+        /// 關聯資料：採購訂單、供應商、進貨明細、商品、倉庫等
+        /// 排序：依進貨日期降序，再依進貨單號升序
+        /// </summary>
+        /// <returns>採購進貨單列表</returns>
         public override async Task<List<PurchaseReceiving>> GetAllAsync()
         {
             try
@@ -53,7 +77,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
+                    .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -73,23 +97,34 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 根據ID取得特定採購進貨單
+        /// 功能：載入指定ID的進貨單，包含所有相關的詳細資料
+        /// 關聯資料：
+        /// - 採購訂單及其供應商
+        /// - 直接關聯的供應商
+        /// - 進貨明細及其商品、單位
+        /// - 採購訂單明細及相關資料
+        /// - 倉庫和倉庫位置
+        /// </summary>
+        /// <param name="id">進貨單ID</param>
+        /// <returns>採購進貨單物件，找不到時回傳null</returns>
         public override async Task<PurchaseReceiving?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var result = await context.PurchaseReceivings
+                return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
+                    .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                             .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
                             .ThenInclude(pod => pod.Product)
-                                .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
                             .ThenInclude(pod => pod.PurchaseOrder)
@@ -100,8 +135,6 @@ namespace ERPCore2.Services
                         .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => !pr.IsDeleted)
                     .FirstOrDefaultAsync(pr => pr.Id == id);
-                
-                return result;
             }
             catch (Exception ex)
             {
@@ -114,22 +147,36 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 搜尋採購進貨單
+        /// 功能：根據關鍵字搜尋進貨單資料
+        /// 搜尋範圍：
+        /// - 進貨單號
+        /// - 供應商公司名稱
+        /// - 採購訂單號碼（如果有關聯採購訂單）
+        /// 空白或null搜尋詞會回傳所有資料
+        /// </summary>
+        /// <param name="searchTerm">搜尋關鍵字</param>
+        /// <returns>符合條件的採購進貨單列表</returns>
         public override async Task<List<PurchaseReceiving>> SearchAsync(string searchTerm)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllAsync();
+
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
-                    .Where(pr => !pr.IsDeleted && (
-                        pr.ReceiptNumber.Contains(searchTerm) ||
-                        (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm)) ||
-                        (pr.PurchaseOrder != null && pr.PurchaseOrder.Supplier != null && pr.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm)) ||
-                        (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
-                        (pr.Remarks != null && pr.Remarks.Contains(searchTerm))
-                    ))
+                    .Include(pr => pr.Supplier)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .Where(pr => !pr.IsDeleted && 
+                        (pr.ReceiptNumber.Contains(searchTerm) ||
+                         pr.Supplier.CompanyName.Contains(searchTerm) ||
+                         (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm))))
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)
                     .ToListAsync();
@@ -145,20 +192,30 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 驗證採購進貨單資料
+        /// 功能：執行完整的業務邏輯驗證
+        /// 驗證項目：
+        /// 1. 基本資料完整性（物件非null、進貨單號、供應商ID）
+        /// 2. 進貨單號唯一性（新增時不可重複，編輯時排除自己）
+        /// 3. 採購訂單存在性及核准狀態（僅限有指定採購訂單時）
+        /// 4. 供應商存在性驗證
+        /// </summary>
+        /// <param name="entity">要驗證的採購進貨單實體</param>
+        /// <returns>驗證結果，包含是否成功及錯誤訊息</returns>
         public override async Task<ServiceResult> ValidateAsync(PurchaseReceiving entity)
         {
-            if (entity == null)
-            {
-                return ServiceResult.Failure("進貨單資料不可為空");
-            }
-
-            if (string.IsNullOrWhiteSpace(entity.ReceiptNumber))
-            {
-                return ServiceResult.Failure("進貨單號為必填");
-            }
-
             try
             {
+                if (entity == null)
+                    return ServiceResult.Failure("進貨單資料不可為空");
+
+                if (string.IsNullOrWhiteSpace(entity.ReceiptNumber))
+                    return ServiceResult.Failure("進貨單號為必填");
+
+                if (entity.SupplierId <= 0)
+                    return ServiceResult.Failure("供應商為必填");
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查進貨單號是否重複
@@ -175,9 +232,7 @@ namespace ERPCore2.Services
                 }
                 
                 if (exists)
-                {
                     return ServiceResult.Failure("進貨單號已存在");
-                }
 
                 // 檢查採購訂單（僅當有指定採購單時）
                 if (entity.PurchaseOrderId.HasValue)
@@ -186,40 +241,18 @@ namespace ERPCore2.Services
                         .FirstOrDefaultAsync(po => po.Id == entity.PurchaseOrderId && !po.IsDeleted);
                     
                     if (purchaseOrder == null)
-                    {
                         return ServiceResult.Failure("指定的採購訂單不存在");
-                    }
                     
                     if (!purchaseOrder.IsApproved)
-                    {
                         return ServiceResult.Failure("只有已核准的採購訂單才能進行進貨作業");
-                    }
-                    
-                    // 驗證供應商一致性
-                    if (entity.SupplierId != purchaseOrder.SupplierId)
-                    {
-                        return ServiceResult.Failure("採購入庫的供應商必須與採購訂單的供應商一致");
-                    }
-                }
-                else
-                {
-                    // 多採購單模式，驗證必須有供應商
-                    if (entity.SupplierId <= 0)
-                    {
-                        return ServiceResult.Failure("多採購單模式下，供應商為必填");
-                    }
-                    
-                    // 驗證供應商是否存在
-                    var supplierExists = await context.Suppliers
-                        .AnyAsync(s => s.Id == entity.SupplierId && !s.IsDeleted);
-                    
-                    if (!supplierExists)
-                    {
-                        return ServiceResult.Failure("指定的供應商不存在");
-                    }
                 }
 
-
+                // 檢查供應商
+                var supplier = await context.Suppliers
+                    .FirstOrDefaultAsync(s => s.Id == entity.SupplierId && !s.IsDeleted);
+                
+                if (supplier == null)
+                    return ServiceResult.Failure("指定的供應商不存在");
 
                 return ServiceResult.Success();
             }
@@ -228,7 +261,8 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
-                    EntityId = entity.Id 
+                    EntityId = entity?.Id,
+                    EntityName = entity?.ReceiptNumber 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -238,30 +272,40 @@ namespace ERPCore2.Services
 
         #region 特定業務方法
 
+        /// <summary>
+        /// 自動產生進貨單號
+        /// 功能：根據日期和序號自動產生唯一的進貨單號
+        /// 格式：R + yyyyMMdd + 3位數序號 (例：R202501140001)
+        /// 邏輯：
+        /// 1. 取得當日最大序號
+        /// 2. 序號自動加1
+        /// 3. 發生錯誤時回傳預設格式
+        /// </summary>
+        /// <returns>新的進貨單號</returns>
         public async Task<string> GenerateReceiptNumberAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var today = DateTime.Today;
-                var dateString = today.ToString("yyyyMMdd");
                 
-                var lastReceipt = await context.PurchaseReceivings
-                    .Where(pr => pr.ReceiptNumber.StartsWith($"RCV{dateString}") && !pr.IsDeleted)
+                var today = DateTime.Today;
+                var prefix = $"R{today:yyyyMMdd}";
+                
+                var lastNumber = await context.PurchaseReceivings
+                    .Where(pr => pr.ReceiptNumber.StartsWith(prefix))
                     .OrderByDescending(pr => pr.ReceiptNumber)
+                    .Select(pr => pr.ReceiptNumber)
                     .FirstOrDefaultAsync();
 
-                int nextNumber = 1;
-                if (lastReceipt != null)
+                int sequence = 1;
+                if (!string.IsNullOrEmpty(lastNumber) && lastNumber.Length > prefix.Length)
                 {
-                    var lastNumberPart = lastReceipt.ReceiptNumber.Substring(11); // "RCV" + 8位日期 = 11位
-                    if (int.TryParse(lastNumberPart, out int lastNumber))
-                    {
-                        nextNumber = lastNumber + 1;
-                    }
+                    var sequencePart = lastNumber.Substring(prefix.Length);
+                    if (int.TryParse(sequencePart, out int lastSequence))
+                        sequence = lastSequence + 1;
                 }
 
-                return $"RCV{dateString}{nextNumber:D3}";
+                return $"{prefix}{sequence:D3}";
             }
             catch (Exception ex)
             {
@@ -269,29 +313,31 @@ namespace ERPCore2.Services
                     Method = nameof(GenerateReceiptNumberAsync),
                     ServiceType = GetType().Name 
                 });
-                return $"RCV{DateTime.Today:yyyyMMdd}001";
+                return $"R{DateTime.Today:yyyyMMdd}001";
             }
         }
 
+        /// <summary>
+        /// 檢查進貨單號是否已存在
+        /// 功能：驗證進貨單號的唯一性，支援編輯模式排除指定ID
+        /// 用途：
+        /// - 新增時檢查單號重複
+        /// - 編輯時排除自己檢查其他記錄是否重複
+        /// </summary>
+        /// <param name="receiptNumber">要檢查的進貨單號</param>
+        /// <param name="excludeId">要排除的ID（編輯模式時使用）</param>
+        /// <returns>true表示已存在，false表示不存在</returns>
         public async Task<bool> IsReceiptNumberExistsAsync(string receiptNumber, int? excludeId = null)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(receiptNumber))
-                    return false;
-
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
+                var query = context.PurchaseReceivings.Where(pr => pr.ReceiptNumber == receiptNumber && !pr.IsDeleted);
                 if (excludeId.HasValue)
-                {
-                    return await context.PurchaseReceivings
-                        .AnyAsync(pr => pr.ReceiptNumber == receiptNumber && pr.Id != excludeId.Value && !pr.IsDeleted);
-                }
-                else
-                {
-                    return await context.PurchaseReceivings
-                        .AnyAsync(pr => pr.ReceiptNumber == receiptNumber && !pr.IsDeleted);
-                }
+                    query = query.Where(pr => pr.Id != excludeId.Value);
+                
+                return await query.AnyAsync();
             }
             catch (Exception ex)
             {
@@ -299,21 +345,35 @@ namespace ERPCore2.Services
                     Method = nameof(IsReceiptNumberExistsAsync),
                     ServiceType = GetType().Name,
                     ReceiptNumber = receiptNumber,
-                    ExcludeId = excludeId
+                    ExcludeId = excludeId 
                 });
                 return false;
             }
         }
 
+        /// <summary>
+        /// 根據日期範圍查詢採購進貨單
+        /// 功能：取得指定日期區間內的所有進貨單資料
+        /// 包含完整的關聯資料載入，依進貨日期降序排列
+        /// 適用於報表查詢、期間統計等功能
+        /// </summary>
+        /// <param name="startDate">開始日期（包含）</param>
+        /// <param name="endDate">結束日期（包含）</param>
+        /// <returns>指定日期範圍內的採購進貨單列表</returns>
         public async Task<List<PurchaseReceiving>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
+                    .Include(pr => pr.Supplier)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => pr.ReceiptDate >= startDate && pr.ReceiptDate <= endDate && !pr.IsDeleted)
                     .OrderByDescending(pr => pr.ReceiptDate)
                     .ThenBy(pr => pr.ReceiptNumber)
@@ -331,15 +391,26 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 根據採購訂單查詢相關進貨單
+        /// 功能：取得指定採購訂單的所有進貨記錄
+        /// 用途：
+        /// - 查看採購訂單的進貨履歷
+        /// - 追蹤採購訂單的執行狀況
+        /// - 進貨數量統計分析
+        /// </summary>
+        /// <param name="purchaseOrderId">採購訂單ID</param>
+        /// <returns>與指定採購訂單相關的進貨單列表</returns>
         public async Task<List<PurchaseReceiving>> GetByPurchaseOrderAsync(int purchaseOrderId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                
                 return await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseOrder)
                         .ThenInclude(po => po!.Supplier)
-                    .Include(pr => pr.Supplier)  // 新增直接供應商關聯
+                    .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -360,33 +431,65 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 確認採購進貨單並更新庫存
+        /// 功能：執行進貨確認流程，將進貨數量加入庫存系統
+        /// 處理流程：
+        /// 1. 驗證進貨單存在性
+        /// 2. 逐項處理進貨明細，調用庫存服務增加庫存
+        /// 3. 建立庫存異動記錄
+        /// 4. 使用資料庫交易確保資料一致性
+        /// 5. 任何步驟失敗時回滾所有變更
+        /// </summary>
+        /// <param name="id">進貨單ID</param>
+        /// <param name="confirmedBy">確認人員ID（保留參數，未來可能使用）</param>
+        /// <returns>確認結果，包含成功狀態及錯誤訊息</returns>
         public async Task<ServiceResult> ConfirmReceiptAsync(int id, int confirmedBy)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 using var transaction = await context.Database.BeginTransactionAsync();
-
+                
                 try
                 {
-                    var receipt = await context.PurchaseReceivings
+                    var purchaseReceiving = await context.PurchaseReceivings
                         .Include(pr => pr.PurchaseReceivingDetails)
                         .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
-
-                    if (receipt == null)
-                    {
+                    
+                    if (purchaseReceiving == null)
                         return ServiceResult.Failure("找不到指定的進貨單");
+                    
+                    // 更新庫存
+                    foreach (var detail in purchaseReceiving.PurchaseReceivingDetails.Where(d => !d.IsDeleted))
+                    {
+                        if (_inventoryStockService != null)
+                        {
+                            var addStockResult = await _inventoryStockService.AddStockAsync(
+                                detail.ProductId,
+                                detail.WarehouseId,
+                                detail.ReceivedQuantity,
+                                InventoryTransactionTypeEnum.Purchase,
+                                purchaseReceiving.ReceiptNumber,
+                                detail.UnitPrice,
+                                detail.WarehouseLocationId,
+                                $"採購進貨確認 - {purchaseReceiving.ReceiptNumber}"
+                            );
+                            
+                            if (!addStockResult.IsSuccess)
+                            {
+                                await transaction.RollbackAsync();
+                                return ServiceResult.Failure($"庫存更新失敗：{addStockResult.ErrorMessage}");
+                            }
+                        }
                     }
-
-                    // 移除狀態檢查，直接確認（庫存更新已在儲存時處理）
-                    receipt.UpdatedAt = DateTime.Now;
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
-
+                    
                     return ServiceResult.Success();
                 }
-                catch (Exception)
+                catch
                 {
                     await transaction.RollbackAsync();
                     throw;
@@ -400,28 +503,35 @@ namespace ERPCore2.Services
                     Id = id,
                     ConfirmedBy = confirmedBy 
                 });
-                return ServiceResult.Failure("確認進貨單時發生錯誤");
+                return ServiceResult.Failure("確認進貨單過程發生錯誤");
             }
         }
 
+        /// <summary>
+        /// 取消採購進貨單
+        /// 功能：將進貨單標記為已刪除（軟刪除）
+        /// 注意：此方法只進行軟刪除，不處理庫存回退
+        /// 如需完整的取消流程，建議另外實作包含庫存回退的方法
+        /// </summary>
+        /// <param name="id">要取消的進貨單ID</param>
+        /// <returns>取消結果，包含成功狀態及錯誤訊息</returns>
         public async Task<ServiceResult> CancelReceiptAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var receipt = await context.PurchaseReceivings
+                
+                var purchaseReceiving = await context.PurchaseReceivings
                     .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
-
-                if (receipt == null)
-                {
+                
+                if (purchaseReceiving == null)
                     return ServiceResult.Failure("找不到指定的進貨單");
-                }
 
-                // 移除狀態檢查，直接標記更新時間
-                receipt.UpdatedAt = DateTime.Now;
-
+                purchaseReceiving.IsDeleted = true;
+                purchaseReceiving.UpdatedAt = DateTime.UtcNow;
+                
                 await context.SaveChangesAsync();
-
+                
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -431,196 +541,244 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     Id = id 
                 });
-                return ServiceResult.Failure("取消進貨單時發生錯誤");
+                return ServiceResult.Failure("取消進貨單過程發生錯誤");
             }
         }
 
         /// <summary>
-        /// 儲存採購入庫連同明細
+        /// 更新採購進貨單的庫存（差異更新模式）
+        /// 功能：比較編輯前後的明細差異，使用淨值計算方式確保庫存準確性
+        /// 處理邏輯：
+        /// 1. 查詢所有相關的庫存交易記錄（包含原始、_ADJ、_REVERT 等後綴）
+        /// 2. 計算已處理過的庫存淨值（所有交易記錄 Quantity 的總和）
+        /// 3. 計算當前明細應有的庫存數量
+        /// 4. 比較目標數量與已處理數量，計算需要調整的數量
+        /// 5. 根據調整數量進行庫存增減操作
+        /// 6. 使用資料庫交易確保資料一致性
+        /// 
+        /// 修復問題：
+        /// - 重複累加：每次編輯基於所有交易記錄的淨值進行計算
+        /// - 產品替換：舊產品自動減庫存，新產品自動加庫存
+        /// - 數量變更：精確計算差異，避免錯誤累加
         /// </summary>
+        /// <param name="id">進貨單ID</param>
+        /// <param name="updatedBy">更新人員ID（保留參數）</param>
+        /// <returns>更新結果，包含成功狀態及錯誤訊息</returns>
+        public async Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0)
+        {
+            try
+            {
+                if (_inventoryStockService == null)
+                    return ServiceResult.Failure("庫存服務未初始化");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 取得當前的進貨單及明細
+                    var currentReceiving = await context.PurchaseReceivings
+                        .Include(pr => pr.PurchaseReceivingDetails.Where(d => !d.IsDeleted))
+                        .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
+                    
+                    if (currentReceiving == null)
+                        return ServiceResult.Failure("找不到指定的進貨單");
+
+                    // 查詢所有與此進貨單相關的庫存交易記錄（包含原始、調整、回退等所有類型）
+                    var existingTransactions = await context.InventoryTransactions
+                        .Where(t => (t.TransactionNumber == currentReceiving.ReceiptNumber ||
+                                   t.TransactionNumber.StartsWith(currentReceiving.ReceiptNumber + "_")) &&
+                               !t.IsDeleted)
+                        .ToListAsync();
+
+                    // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity, decimal? UnitPrice)>();
+                    
+                    foreach (var trans in existingTransactions)
+                    {
+                        var key = $"{trans.ProductId}_{trans.WarehouseId}_{trans.WarehouseLocationId?.ToString() ?? "null"}";
+                        if (!processedInventory.ContainsKey(key))
+                        {
+                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0, trans.UnitCost);
+                        }
+                        // 累加所有交易的淨值（Quantity已經包含正負號）
+                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
+                                                  processedInventory[key].LocationId, processedInventory[key].NetProcessedQuantity + trans.Quantity, 
+                                                  trans.UnitCost);
+                    }
+
+                    // 建立當前明細字典
+                    var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int CurrentQuantity, decimal UnitPrice)>();
+                    
+                    foreach (var detail in currentReceiving.PurchaseReceivingDetails)
+                    {
+                        var key = $"{detail.ProductId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        if (!currentInventory.ContainsKey(key))
+                        {
+                            currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitPrice);
+                        }
+                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
+                                               currentInventory[key].LocationId, currentInventory[key].CurrentQuantity + detail.ReceivedQuantity, 
+                                               detail.UnitPrice);
+                    }
+
+                    // 處理庫存差異 - 使用淨值計算方式
+                    var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
+                    
+                    foreach (var key in allKeys)
+                    {
+                        var hasProcessed = processedInventory.ContainsKey(key);
+                        var hasCurrent = currentInventory.ContainsKey(key);
+                        
+                        // 計算目標庫存數量（當前明細中應該有的數量）
+                        int targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0;
+                        
+                        // 計算已處理的庫存數量（之前所有交易的淨值）
+                        int processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0;
+                        
+                        // 計算需要調整的數量
+                        int adjustmentNeeded = targetQuantity - processedQuantity;
+                        
+                        if (adjustmentNeeded != 0)
+                        {
+                            if (adjustmentNeeded > 0)
+                            {
+                                // 需要增加庫存
+                                var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                                var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
+                                var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
+                                var unitPrice = hasCurrent ? currentInventory[key].UnitPrice : processedInventory[key].UnitPrice;
+                                
+                                var addResult = await _inventoryStockService.AddStockAsync(
+                                    productId,
+                                    warehouseId,
+                                    adjustmentNeeded,
+                                    InventoryTransactionTypeEnum.Purchase,
+                                    currentReceiving.ReceiptNumber + "_ADJ",
+                                    unitPrice,
+                                    locationId,
+                                    $"採購進貨編輯調增 - {currentReceiving.ReceiptNumber}"
+                                );
+                                
+                                if (!addResult.IsSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存調增失敗：{addResult.ErrorMessage}");
+                                }
+                            }
+                            else
+                            {
+                                // 需要減少庫存
+                                var productId = hasProcessed ? processedInventory[key].ProductId : currentInventory[key].ProductId;
+                                var warehouseId = hasProcessed ? processedInventory[key].WarehouseId : currentInventory[key].WarehouseId;
+                                var locationId = hasProcessed ? processedInventory[key].LocationId : currentInventory[key].LocationId;
+                                
+                                var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                    productId,
+                                    warehouseId,
+                                    Math.Abs(adjustmentNeeded),
+                                    InventoryTransactionTypeEnum.Return,
+                                    currentReceiving.ReceiptNumber + "_ADJ",
+                                    locationId,
+                                    $"採購進貨編輯調減 - {currentReceiving.ReceiptNumber}"
+                                );
+                                
+                                if (!reduceResult.IsSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存調減失敗：{reduceResult.ErrorMessage}");
+                                }
+                            }
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInventoryByDifferenceAsync), GetType(), _logger, new { 
+                    Method = nameof(UpdateInventoryByDifferenceAsync),
+                    ServiceType = GetType().Name,
+                    Id = id,
+                    UpdatedBy = updatedBy 
+                });
+                return ServiceResult.Failure("更新庫存差異過程發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 儲存採購進貨單及其明細資料
+        /// 功能：完整的主檔與明細一併儲存流程
+        /// 處理邏輯：
+        /// 1. 驗證主檔資料完整性
+        /// 2. 儲存主檔（新增或更新）
+        /// 3. 委託明細服務處理所有明細資料
+        /// 4. 使用資料庫交易確保資料一致性
+        /// 5. 回傳包含完整關聯資料的實體物件
+        /// 適用場景：前端表單一次性提交主檔與明細
+        /// </summary>
+        /// <param name="purchaseReceiving">採購進貨單主檔</param>
+        /// <param name="details">進貨明細清單</param>
+        /// <returns>儲存結果，成功時包含完整的實體資料</returns>
         public async Task<ServiceResult<PurchaseReceiving>> SaveWithDetailsAsync(PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 using var transaction = await context.Database.BeginTransactionAsync();
-
+                
                 try
                 {
                     // 驗證主檔
                     var validationResult = await ValidateAsync(purchaseReceiving);
                     if (!validationResult.IsSuccess)
                     {
+                        await transaction.RollbackAsync();
                         return ServiceResult<PurchaseReceiving>.Failure(validationResult.ErrorMessage);
                     }
-
-                    // 儲存主檔 - 在同一個 context 中處理
-                    PurchaseReceiving savedEntity;
-                    var dbSet = context.Set<PurchaseReceiving>();
-
-                    if (purchaseReceiving.Id > 0)
+                    
+                    // 儲存主檔
+                    if (purchaseReceiving.Id == 0)
                     {
-                        // 更新模式
-                        var existingEntity = await dbSet
-                            .FirstOrDefaultAsync(x => x.Id == purchaseReceiving.Id && !x.IsDeleted);
-                            
-                        if (existingEntity == null)
-                        {
-                            await transaction.RollbackAsync();
-                            return ServiceResult<PurchaseReceiving>.Failure("找不到要更新的採購入庫資料");
-                        }
-
-                        // 更新主檔資訊
-                        purchaseReceiving.UpdatedAt = DateTime.UtcNow;
-                        purchaseReceiving.CreatedAt = existingEntity.CreatedAt; // 保持原建立時間
-                        purchaseReceiving.CreatedBy = existingEntity.CreatedBy; // 保持原建立者
-
-                        context.Entry(existingEntity).CurrentValues.SetValues(purchaseReceiving);
-                        savedEntity = existingEntity;
+                        purchaseReceiving.CreatedAt = DateTime.UtcNow;
+                        purchaseReceiving.Status = EntityStatus.Active;
+                        await context.PurchaseReceivings.AddAsync(purchaseReceiving);
                     }
                     else
                     {
-                        // 新增模式
-                        purchaseReceiving.CreatedAt = DateTime.UtcNow;
                         purchaseReceiving.UpdatedAt = DateTime.UtcNow;
-                        purchaseReceiving.IsDeleted = false;
-                        purchaseReceiving.Status = EntityStatus.Active;
-
-                        await dbSet.AddAsync(purchaseReceiving);
-                        savedEntity = purchaseReceiving;
+                        context.PurchaseReceivings.Update(purchaseReceiving);
                     }
-
-                    // 先儲存主檔以取得 ID
-                    await context.SaveChangesAsync();
-
-                    // 儲存明細 - 統一使用 DetailService
-                    bool hasDetailsChanged = false;
-                    List<PurchaseReceivingDetail>? originalDetailsForStock = null;
                     
-                    if (purchaseReceiving.Id > 0) // 編輯模式
+                    await context.SaveChangesAsync();
+                    
+                    // 儲存明細
+                    if (_detailService != null && details != null && details.Any())
                     {
-                        // 取得舊明細用於庫存回滾
-                        if (_inventoryStockService != null)
-                        {
-                            originalDetailsForStock = await _detailService!.GetByPurchaseReceivingIdAsync(savedEntity.Id);
-                            hasDetailsChanged = originalDetailsForStock.Count != details.Count || 
-                                              originalDetailsForStock.Any(od => !details.Any(nd => nd.Id == od.Id && 
-                                                  Math.Abs(nd.ReceivedQuantity - od.ReceivedQuantity) < 0.0001m));
-                        }
-                        else
-                        {
-                            hasDetailsChanged = true; // 沒有庫存服務時預設有變更
-                        }
-                    }
-                    else // 新增模式
-                    {
-                        hasDetailsChanged = details.Any(d => d.ReceivedQuantity > 0);
-                    }
-
-                    // 使用 DetailService 更新明細
-                    if (_detailService != null && hasDetailsChanged)
-                    {
-                        var detailResult = await _detailService.UpdateDetailsAsync(savedEntity.Id, details);
+                        var detailResult = await _detailService.UpdateDetailsAsync(purchaseReceiving.Id, details, transaction);
                         if (!detailResult.IsSuccess)
                         {
                             await transaction.RollbackAsync();
-                            return ServiceResult<PurchaseReceiving>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
+                            return ServiceResult<PurchaseReceiving>.Failure(detailResult.ErrorMessage);
                         }
                     }
-
-                    // 更新最後修改時間
-                    savedEntity.UpdatedAt = DateTime.UtcNow;
-
-                    // 更新庫存邏輯 - 配合智能檢測
-                    if (_inventoryStockService != null)
-                    {
-                        if (purchaseReceiving.Id > 0) // 編輯模式
-                        {
-                            if (hasDetailsChanged && originalDetailsForStock != null)
-                            {
-                                // 1. 先回滾所有舊的庫存影響
-                                foreach (var originalDetail in originalDetailsForStock)
-                                {
-                                    if (originalDetail.ReceivedQuantity > 0)
-                                    {
-                                        var rollbackResult = await _inventoryStockService.ReduceStockAsync(
-                                            originalDetail.ProductId,
-                                            originalDetail.WarehouseId,
-                                            originalDetail.ReceivedQuantity,
-                                            InventoryTransactionTypeEnum.Adjustment,
-                                            $"{savedEntity.ReceiptNumber}-回滾",
-                                            originalDetail.WarehouseLocationId,
-                                            $"編輯進貨單回滾 - {savedEntity.ReceiptNumber}"
-                                        );
-
-                                        if (!rollbackResult.IsSuccess)
-                                        {
-                                            await transaction.RollbackAsync();
-                                            return ServiceResult<PurchaseReceiving>.Failure($"回滾庫存失敗：{rollbackResult.ErrorMessage}");
-                                        }
-                                    }
-                                }
-                                
-                                // 2. 應用所有新的庫存影響
-                                foreach (var detail in details.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0))
-                                {
-                                    var stockResult = await _inventoryStockService.AddStockAsync(
-                                        detail.ProductId,
-                                        detail.WarehouseId,
-                                        detail.ReceivedQuantity,
-                                        InventoryTransactionTypeEnum.Purchase,
-                                        savedEntity.ReceiptNumber,
-                                        detail.UnitPrice,
-                                        detail.WarehouseLocationId,
-                                        $"編輯進貨單 - {savedEntity.ReceiptNumber}"
-                                    );
-
-                                    if (!stockResult.IsSuccess)
-                                    {
-                                        await transaction.RollbackAsync();
-                                        return ServiceResult<PurchaseReceiving>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
-                                    }
-                                }
-                            }
-                        }
-                        else // 新增模式
-                        {
-                            // 保持原有邏輯 - 直接增加庫存
-                            foreach (var detail in details.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0))
-                            {
-                                var stockResult = await _inventoryStockService.AddStockAsync(
-                                    detail.ProductId,
-                                    detail.WarehouseId,
-                                    detail.ReceivedQuantity,
-                                    InventoryTransactionTypeEnum.Purchase,
-                                    savedEntity.ReceiptNumber,
-                                    detail.UnitPrice,
-                                    detail.WarehouseLocationId,
-                                    $"採購進貨 - {savedEntity.ReceiptNumber}"
-                                );
-
-                                if (!stockResult.IsSuccess)
-                                {
-                                    await transaction.RollbackAsync();
-                                    return ServiceResult<PurchaseReceiving>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
-                                }
-                            }
-                        }
-                    }
-
-                    // 明確儲存變更
-                    await context.SaveChangesAsync();
                     
-                    // 驗證儲存結果
-                    var savedDetails = await context.PurchaseReceivingDetails
-                        .Where(d => d.PurchaseReceivingId == savedEntity.Id)
-                        .ToListAsync();
-
                     await transaction.CommitAsync();
                     
-                    return ServiceResult<PurchaseReceiving>.Success(savedEntity);
+                    // 重新載入包含關聯資料的完整物件
+                    var savedEntity = await GetByIdAsync(purchaseReceiving.Id);
+                    return ServiceResult<PurchaseReceiving>.Success(savedEntity!);
                 }
-                catch (Exception)
+                catch
                 {
                     await transaction.RollbackAsync();
                     throw;
@@ -631,38 +789,42 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SaveWithDetailsAsync), GetType(), _logger, new { 
                     Method = nameof(SaveWithDetailsAsync),
                     ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceiving.Id 
+                    EntityId = purchaseReceiving?.Id,
+                    EntityName = purchaseReceiving?.ReceiptNumber,
+                    DetailsCount = details?.Count ?? 0 
                 });
-                return ServiceResult<PurchaseReceiving>.Failure($"儲存採購入庫時發生錯誤：{ex.Message}");
+                return ServiceResult<PurchaseReceiving>.Failure("儲存進貨單過程發生錯誤");
             }
         }
 
         /// <summary>
-        /// 取得指定產品最近一次進貨的倉庫和位置資訊
+        /// 取得指定商品的最後進貨位置資訊
+        /// 功能：查詢商品最近一次的進貨倉庫和位置
+        /// 用途：
+        /// - 為新進貨提供預設倉庫位置建議
+        /// - 保持商品進貨位置的一致性
+        /// - 優化倉庫管理效率
+        /// 查詢邏輯：依進貨日期和建立時間降序，取得最新記錄
         /// </summary>
+        /// <param name="productId">商品ID</param>
+        /// <returns>倉庫ID和倉庫位置ID的元組，無歷史記錄時回傳(null, null)</returns>
         public async Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId)
         {
             try
             {
-                if (_detailService != null)
-                {
-                    var details = await _detailService.GetByProductIdAsync(productId);
-                    var lastDetail = details
-                        .OrderByDescending(d => d.CreatedAt)
-                        .FirstOrDefault();
-                    
-                    return (lastDetail?.WarehouseId, lastDetail?.WarehouseLocationId);
-                }
-                
-                // 備用直接查詢方式
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var lastReceiving = await context.PurchaseReceivingDetails
-                    .Where(prd => prd.ProductId == productId && !prd.IsDeleted)
-                    .OrderByDescending(prd => prd.CreatedAt)
-                    .Select(prd => new { prd.WarehouseId, prd.WarehouseLocationId })
+                
+                var lastDetail = await context.PurchaseReceivingDetails
+                    .Include(prd => prd.PurchaseReceiving)
+                    .Where(prd => prd.ProductId == productId && !prd.IsDeleted && !prd.PurchaseReceiving.IsDeleted)
+                    .OrderByDescending(prd => prd.PurchaseReceiving.ReceiptDate)
+                    .ThenByDescending(prd => prd.CreatedAt)
                     .FirstOrDefaultAsync();
-                    
-                return (lastReceiving?.WarehouseId, lastReceiving?.WarehouseLocationId);
+                
+                if (lastDetail != null)
+                    return (lastDetail.WarehouseId, lastDetail.WarehouseLocationId);
+                
+                return (null, null);
             }
             catch (Exception ex)
             {
@@ -676,36 +838,34 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定廠商的可退貨明細（已進貨但尚未全部退貨）
+        /// 取得指定供應商的可退貨明細清單
+        /// 功能：查詢指定供應商所有可進行退貨的進貨明細
+        /// 篩選條件：
+        /// 1. 指定供應商的進貨記錄
+        /// 2. 未被刪除的記錄
+        /// 3. 已有進貨數量的明細
+        /// 4. 進貨數量大於已退貨數量（部分或完全未退貨）
+        /// 用途：供應商退貨作業的資料來源
+        /// 排序：依進貨日期、進貨單號、商品代碼排序
         /// </summary>
-        /// <param name="supplierId">廠商ID</param>
+        /// <param name="supplierId">供應商ID</param>
         /// <returns>可退貨的進貨明細清單</returns>
         public async Task<List<PurchaseReceivingDetail>> GetReturnableDetailsBySupplierAsync(int supplierId)
         {
             try
             {
-                if (_detailService != null)
-                {
-                    return await _detailService.GetReturnableDetailsBySupplierAsync(supplierId);
-                }
-                
-                // 備用直接查詢方式
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 return await context.PurchaseReceivingDetails
                     .Include(prd => prd.PurchaseReceiving)
-                        .ThenInclude(pr => pr.Supplier)
                     .Include(prd => prd.Product)
-                        .ThenInclude(p => p.Unit)
-                    .Include(prd => prd.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
                     .Include(prd => prd.Warehouse)
                     .Include(prd => prd.WarehouseLocation)
                     .Where(prd => 
                         prd.PurchaseReceiving.SupplierId == supplierId &&
                         !prd.IsDeleted &&
                         !prd.PurchaseReceiving.IsDeleted &&
-                        prd.ReceivedQuantity > 0 && // 已進貨的明細
+                        prd.ReceivedQuantity > 0 &&
                         // 檢查是否已全部退貨 - 計算已退貨數量
                         prd.ReceivedQuantity > context.PurchaseReturnDetails
                             .Where(prt => prt.PurchaseReceivingDetailId == prd.Id && !prt.IsDeleted)

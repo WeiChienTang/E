@@ -1,5 +1,6 @@
 @* 採購入庫編輯模態組件 *@
 @inject IPurchaseReceivingService PurchaseReceivingService
+@inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
@@ -31,8 +32,8 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReceivingData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          UseGenericSave="false"
-                          SaveHandler="@SavePurchaseReceivingWithDetails"
+                          UseGenericSave="true"
+                          AfterSave="@SavePurchaseReceivingDetailsAsync"
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "採購入庫更新成功" : "採購入庫新增成功")"
                           SaveFailureMessage="採購入庫儲存失敗"
                           RequiredPermission="PurchaseReceiving.Read"
@@ -412,12 +413,12 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.SupplierId),
-                    Label = "廠商",
+                    Label = "篩選廠商",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
+                    HelpText = "輸入廠商名稱進行篩選，或直接選擇",
                     ActionButtons = GetSupplierActionButtonsAsync()
                 },
                 new()
@@ -432,18 +433,18 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
-                    Label = "採購單",
+                    Label = "篩選採購單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,  // 改為非必填，支援多採購單模式
-                    HelpText = "可選擇特定採購單，或留空使用多採購單模式"
+                    HelpText = "可選擇特定採購單進行篩選，或留空使用多採購單模式"
                 },
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.ReceiptDate),
-                    Label = "入庫日期",
+                    Label = "進貨日",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    HelpText = "貨品實際入庫日期"
+                    HelpText = "貨品實際進貨日"
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<PurchaseReceiving>()
             };
@@ -722,50 +723,152 @@
     }
 
     /// <summary>
-    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// AfterSave 回調方法 - 在主檔儲存後處理明細並使用差異比較更新庫存
+    /// 處理流程：
+    /// 1. 儲存有效的明細資料（有選擇商品和倉庫的記錄）
+    /// 2. 更新主檔總金額
+    /// 3. 使用新的 UpdateInventoryByDifferenceAsync 方法進行庫存差異更新
+    /// 4. 差異更新邏輯：
+    ///    - 比較編輯前後明細的變化
+    ///    - 只針對變更的部分進行庫存調整
+    ///    - 新增：直接增加庫存
+    ///    - 修改：調整庫存差異（增加或減少）
+    ///    - 刪除：回退庫存
+    ///    - 產品替換：從原產品減去庫存，向新產品增加庫存
     /// </summary>
-    private async Task<bool> SavePurchaseReceivingWithDetails(PurchaseReceiving purchaseReceiving)
+    private async Task SavePurchaseReceivingDetailsAsync(PurchaseReceiving purchaseReceiving)
     {
         try
         {
-            if (purchaseReceiving == null)
+            // 只有在進貨單ID存在時才處理明細（新增進貨單時可能ID還是0）
+            if (purchaseReceiving.Id <= 0)
             {
-                await NotificationService.ShowErrorAsync("採購入庫資料不能為空");
-                return false;
+                return; // 新增的進貨單，ID可能還沒設定，跳過明細儲存
             }
 
-            // 更新總金額
-            purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
-
-            // 過濾有效的明細（有進貨數量的或標記為已完成進貨的）
+            // 過濾有效的明細（有選擇商品和倉庫的）
             var validDetails = purchaseReceivingDetails
-                .Where(detail => detail.ReceivedQuantity > 0 || detail.IsReceivingCompleted)
+                .Where(detail => detail.ProductId > 0 && detail.WarehouseId > 0)
                 .ToList();
 
-            if (!validDetails.Any())
+            if (validDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("請至少輸入一筆進貨明細 (包括本次入庫、倉庫或已完成進貨的)");
-                return false;
+                // 更新明細資訊 - 使用獨立的服務調用，避免嵌套交易
+                foreach (var detail in validDetails)
+                {
+                    detail.PurchaseReceivingId = purchaseReceiving.Id;
+                    
+                    if (detail.Id == 0)
+                    {
+                        // 新記錄 - 使用基本的 Create 方法
+                        var createResult = await PurchaseReceivingDetailService.CreateAsync(detail);
+                        if (!createResult.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync($"明細儲存警告：{createResult.ErrorMessage}");
+                        }
+                    }
+                    else
+                    {
+                        // 更新現有記錄 - 使用基本的 Update 方法
+                        var updateResult = await PurchaseReceivingDetailService.UpdateAsync(detail);
+                        if (!updateResult.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync($"明細更新警告：{updateResult.ErrorMessage}");
+                        }
+                    }
+                }
+
+                // 重新載入明細資料以更新UI顯示
+                purchaseReceivingDetails = await PurchaseReceivingDetailService.GetByPurchaseReceivingIdAsync(purchaseReceiving.Id);
             }
 
-            // 使用服務層一次性儲存主檔和明細
-            var result = await PurchaseReceivingService.SaveWithDetailsAsync(purchaseReceiving, validDetails);
+            // 更新主檔的總金額
+            purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+            if (purchaseReceiving.TotalAmount > 0)
+            {
+                var updateResult = await PurchaseReceivingService.UpdateAsync(purchaseReceiving);
+                if (!updateResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"總金額更新警告：{updateResult.ErrorMessage}");
+                }
+            }
 
-            if (result.IsSuccess && result.Data != null)
+            // 使用差異比較進行庫存更新 - 避免重複累加和產品替換問題
+            if (validDetails.Any())
             {
-                await NotificationService.ShowSuccessAsync("採購入庫儲存成功");
-                return true;
+                try
+                {
+                    // 判斷是新增還是編輯模式
+                    bool isEditMode = PurchaseReceivingId.HasValue && PurchaseReceivingId.Value > 0;
+                    
+                    if (isEditMode)
+                    {
+                        // 編輯模式：使用差異比較更新庫存
+                        var differenceResult = await PurchaseReceivingService.UpdateInventoryByDifferenceAsync(purchaseReceiving.Id, 0);
+                        if (differenceResult.IsSuccess)
+                        {
+                            await NotificationService.ShowSuccessAsync("進貨明細儲存成功，庫存已差異更新");
+                        }
+                        else
+                        {
+                            await NotificationService.ShowWarningAsync($"明細儲存成功，但庫存差異更新失敗：{differenceResult.ErrorMessage}");
+                        }
+                    }
+                    else
+                    {
+                        // 新增模式：只在第一次新增時使用確認流程，避免重複更新庫存
+                        // 檢查是否已經有庫存交易記錄，避免重複確認
+                        var hasExistingTransactions = await HasExistingInventoryTransactions(purchaseReceiving.ReceiptNumber);
+                        
+                        if (!hasExistingTransactions)
+                        {
+                            var confirmResult = await PurchaseReceivingService.ConfirmReceiptAsync(purchaseReceiving.Id, 0);
+                            if (confirmResult.IsSuccess)
+                            {
+                                await NotificationService.ShowSuccessAsync("進貨明細儲存成功，庫存已自動更新");
+                            }
+                            else
+                            {
+                                await NotificationService.ShowWarningAsync($"明細儲存成功，但庫存更新失敗：{confirmResult.ErrorMessage}");
+                            }
+                        }
+                        else
+                        {
+                            await NotificationService.ShowInfoAsync("進貨明細儲存成功，庫存已存在無需重複更新");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await NotificationService.ShowWarningAsync($"明細儲存成功，但庫存更新發生錯誤：{ex.Message}");
+                }
             }
-            else
-            {
-                await NotificationService.ShowErrorAsync($"儲存採購入庫失敗：{result.ErrorMessage}");
-                return false;
-            }
+
+            StateHasChanged(); // 通知UI更新
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
-            return false;
+            // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
+            await NotificationService.ShowWarningAsync($"明細處理時發生警告：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 檢查是否已經存在庫存交易記錄
+    /// </summary>
+    private Task<bool> HasExistingInventoryTransactions(string receiptNumber)
+    {
+        try
+        {
+            // 這裡可以通過庫存服務檢查是否已存在相關交易記錄
+            // 暫時返回 false，表示總是允許進行庫存更新
+            // 如果需要更嚴格的檢查，可以注入 IInventoryTransactionService 進行查詢
+            return Task.FromResult(false);
+        }
+        catch
+        {
+            // 發生錯誤時返回 false，允許庫存更新
+            return Task.FromResult(false);
         }
     }
 
@@ -815,13 +918,26 @@
                     // 多採購單模式
                     try
                     {
-                        <PurchaseReceivingDetailManagerComponent 
-                            SupplierId="@editModalComponent.Entity.SupplierId"
-                            PurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
-                            FilterProductId="@filterProductId"
-                            ExistingDetails="@purchaseReceivingDetails"
-                            OnDetailsChanged="@HandleReceivingDetailsChanged"
-                            IsEditMode="@(PurchaseReceivingId.HasValue)" />
+                        <PurchaseReceivingDetailManagerComponent TMainEntity="PurchaseReceiving" 
+                                                               TDetailEntity="PurchaseReceivingDetail"
+                                                               SelectedSupplierId="@editModalComponent.Entity.SupplierId"
+                                                               SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
+                                                               FilterProductId="@filterProductId"
+                                                               MainEntity="@editModalComponent.Entity"
+                                                               ExistingDetails="@purchaseReceivingDetails"
+                                                               OnDetailsChanged="@HandleReceivingDetailsChanged"
+                                                               MainEntityIdPropertyName="PurchaseReceivingId"
+                                                               QuantityPropertyName="ReceivedQuantity"
+                                                               UnitPricePropertyName="UnitPrice"
+                                                               RemarksPropertyName="InspectionRemarks"
+                                                               PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
+                                                               ReceivedQuantityLabel="入庫數量"
+                                                               PriceLabel="單價"
+                                                               RemarksLabel="備註"
+                                                               ShowWarehouse="true"
+                                                               WarehouseIdPropertyName="WarehouseId"
+                                                               Warehouses="@warehouses"
+                                                               IsReadOnly="false" />
                     }
                     catch
                     {

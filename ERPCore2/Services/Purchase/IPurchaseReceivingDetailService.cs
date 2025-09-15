@@ -51,6 +51,15 @@ namespace ERPCore2.Services
         Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details);
 
         /// <summary>
+        /// 批次更新採購入庫明細 - 支援外部交易
+        /// </summary>
+        /// <param name="purchaseReceivingId">採購入庫單ID</param>
+        /// <param name="details">明細清單</param>
+        /// <param name="externalTransaction">外部交易</param>
+        /// <returns>服務結果</returns>
+        Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details, Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? externalTransaction);
+
+        /// <summary>
         /// 檢查商品在指定採購入庫單中是否已存在
         /// </summary>
         /// <param name="purchaseReceivingId">採購入庫單ID</param>
@@ -59,6 +68,17 @@ namespace ERPCore2.Services
         /// <param name="excludeId">排除的明細ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
         Task<bool> IsProductExistsInReceivingAsync(int purchaseReceivingId, int productId, int purchaseOrderDetailId, int? excludeId = null);
+
+        /// <summary>
+        /// 檢查商品在指定採購入庫單的特定倉庫位置是否已存在
+        /// </summary>
+        /// <param name="purchaseReceivingId">採購入庫單ID</param>
+        /// <param name="productId">商品ID</param>
+        /// <param name="warehouseId">倉庫ID</param>
+        /// <param name="warehouseLocationId">庫位ID</param>
+        /// <param name="excludeId">排除的明細ID（編輯時使用）</param>
+        /// <returns>是否已存在</returns>
+        Task<bool> IsProductWarehouseLocationExistsInReceivingAsync(int purchaseReceivingId, int productId, int warehouseId, int? warehouseLocationId, int? excludeId = null);
 
         /// <summary>
         /// 計算採購入庫明細的小計金額

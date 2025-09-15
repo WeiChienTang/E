@@ -40,6 +40,15 @@ namespace ERPCore2.Services
         Task<ServiceResult> CancelReceiptAsync(int id);
 
         /// <summary>
+        /// 更新採購進貨單的庫存（差異更新模式）
+        /// 功能：比較編輯前後的明細差異，只更新變更的部分，避免重複累加
+        /// </summary>
+        /// <param name="id">進貨單ID</param>
+        /// <param name="updatedBy">更新人員ID</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
+
+        /// <summary>
         /// 生成進貨單號
         /// </summary>
         /// <returns>進貨單號</returns>

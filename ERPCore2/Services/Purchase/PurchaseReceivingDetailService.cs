@@ -133,45 +133,33 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                // 基本欄位驗證
+                // 基本欄位驗證 - 只檢查必要的欄位
                 if (entity.PurchaseReceivingId <= 0)
                     errors.Add("採購入庫單不能為空");
-
-                if (entity.PurchaseOrderDetailId <= 0)
-                    errors.Add("採購訂單明細不能為空");
 
                 if (entity.ProductId <= 0)
                     errors.Add("商品不能為空");
 
-                if (entity.ReceivedQuantity <= 0 && !entity.IsReceivingCompleted)
-                    errors.Add("入庫數量必須大於 0 或標記為已完成進貨");
-
-                if (entity.UnitPrice < 0)
-                    errors.Add("單價不能小於 0");
-
                 if (entity.WarehouseId <= 0)
                     errors.Add("倉庫不能為空");
 
-                // 檢查商品在同一採購入庫單中是否重複
-                if (await IsProductExistsInReceivingAsync(
+                // 數量驗證 - 允許為 0，但不能為負數
+                if (entity.ReceivedQuantity < 0)
+                    errors.Add("入庫數量不能小於 0");
+
+                // 單價驗證 - 允許為 0，但不能為負數
+                if (entity.UnitPrice < 0)
+                    errors.Add("單價不能小於 0");
+
+                // 重複檢查：檢查相同商品+倉庫+庫位組合是否已存在
+                if (await IsProductWarehouseLocationExistsInReceivingAsync(
                     entity.PurchaseReceivingId, 
                     entity.ProductId, 
-                    entity.PurchaseOrderDetailId, 
+                    entity.WarehouseId, 
+                    entity.WarehouseLocationId, 
                     entity.Id == 0 ? null : entity.Id))
                 {
-                    errors.Add("該商品在此採購入庫單中已存在");
-                }
-
-                // 驗證入庫數量是否超過訂購數量
-                if (entity.ReceivedQuantity > 0)
-                {
-                    var quantityValidation = await ValidateReceivingQuantityAsync(
-                        entity.PurchaseOrderDetailId, 
-                        entity.ReceivedQuantity, 
-                        entity.Id == 0 ? null : entity.Id);
-                    
-                    if (!quantityValidation.IsSuccess)
-                        errors.Add(quantityValidation.ErrorMessage);
+                    errors.Add("該商品在此倉庫位置中已存在入庫記錄");
                 }
 
                 if (errors.Any())
@@ -352,13 +340,28 @@ namespace ERPCore2.Services
         /// </summary>
         public async Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details)
         {
+            return await UpdateDetailsAsync(purchaseReceivingId, details, null);
+        }
+
+        /// <summary>
+        /// 批次更新採購入庫明細 - 支援外部交易
+        /// </summary>
+        public async Task<ServiceResult> UpdateDetailsAsync(int purchaseReceivingId, List<PurchaseReceivingDetail> details, Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? externalTransaction)
+        {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
+                Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+                bool shouldCommitTransaction = false;
 
                 try
                 {
+                    // 如果沒有外部交易，則創建新的交易
+                    if (externalTransaction == null)
+                    {
+                        transaction = await context.Database.BeginTransactionAsync();
+                        shouldCommitTransaction = true;
+                    }
                     // 取得現有的明細記錄
                     var existingDetails = await context.PurchaseReceivingDetails
                         .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
@@ -374,10 +377,10 @@ namespace ERPCore2.Services
                     // 處理傳入的明細
                     if (details != null)
                     {
-                        foreach (var detail in details.Where(d => d.ReceivedQuantity > 0 || d.IsReceivingCompleted))
+                        foreach (var detail in details)
                         {
-                            // 驗證必要欄位
-                            if (detail.ProductId <= 0 || detail.PurchaseOrderDetailId <= 0 || detail.WarehouseId <= 0)
+                            // 驗證必要欄位：只檢查產品和倉庫是否已選擇
+                            if (detail.ProductId <= 0 || detail.WarehouseId <= 0)
                                 continue;
 
                             detail.PurchaseReceivingId = purchaseReceivingId;
@@ -400,6 +403,7 @@ namespace ERPCore2.Services
                                     // 更新現有明細的屬性
                                     existingDetail.ProductId = detail.ProductId;
                                     existingDetail.PurchaseOrderDetailId = detail.PurchaseOrderDetailId;
+                                    existingDetail.OrderQuantity = detail.OrderQuantity;
                                     existingDetail.ReceivedQuantity = detail.ReceivedQuantity;
                                     existingDetail.UnitPrice = detail.UnitPrice;
                                     existingDetail.WarehouseId = detail.WarehouseId;
@@ -429,14 +433,31 @@ namespace ERPCore2.Services
                     }
 
                     await context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+                    
+                    // 只有在創建了自己的交易時才提交
+                    if (shouldCommitTransaction && transaction != null)
+                    {
+                        await transaction.CommitAsync();
+                    }
 
                     return ServiceResult.Success();
                 }
                 catch
                 {
-                    await transaction.RollbackAsync();
+                    // 只有在創建了自己的交易時才回滾
+                    if (shouldCommitTransaction && transaction != null)
+                    {
+                        await transaction.RollbackAsync();
+                    }
                     throw;
+                }
+                finally
+                {
+                    // 只釋放自己創建的交易
+                    if (shouldCommitTransaction && transaction != null)
+                    {
+                        transaction.Dispose();
+                    }
                 }
             }
             catch (Exception ex)
@@ -489,7 +510,47 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 驗證入庫數量是否超過訂購數量
+        /// 檢查商品在指定採購入庫單的特定倉庫位置是否已存在
+        /// </summary>
+        public async Task<bool> IsProductWarehouseLocationExistsInReceivingAsync(
+            int purchaseReceivingId, 
+            int productId, 
+            int warehouseId, 
+            int? warehouseLocationId, 
+            int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.PurchaseReceivingDetails.Where(d => 
+                    d.PurchaseReceivingId == purchaseReceivingId && 
+                    d.ProductId == productId && 
+                    d.WarehouseId == warehouseId && 
+                    d.WarehouseLocationId == warehouseLocationId && 
+                    !d.IsDeleted);
+                    
+                if (excludeId.HasValue)
+                    query = query.Where(d => d.Id != excludeId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductWarehouseLocationExistsInReceivingAsync), GetType(), _logger, new { 
+                    Method = nameof(IsProductWarehouseLocationExistsInReceivingAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    WarehouseLocationId = warehouseLocationId,
+                    ExcludeId = excludeId 
+                });
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 驗證入庫數量是否超過訂購數量（已簡化，現在主要驗證在 ValidateAsync 中進行）
         /// </summary>
         public async Task<ServiceResult> ValidateReceivingQuantityAsync(int purchaseOrderDetailId, int newReceivedQuantity, int? excludeDetailId = null)
         {
@@ -511,12 +572,17 @@ namespace ERPCore2.Services
                                (excludeDetailId == null || d.Id != excludeDetailId.Value))
                     .SumAsync(d => d.ReceivedQuantity);
 
-                // 檢查總入庫數量是否超過訂購數量
+                // 計算該訂單明細的總訂購數量
+                var totalOrderQuantity = await context.PurchaseReceivingDetails
+                    .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId && !d.IsDeleted)
+                    .SumAsync(d => d.OrderQuantity);
+
+                // 檢查總入庫數量是否超過總訂購數量
                 var totalReceivedQuantity = existingReceivedQuantity + newReceivedQuantity;
-                if (totalReceivedQuantity > purchaseOrderDetail.OrderQuantity)
+                if (totalReceivedQuantity > totalOrderQuantity && totalOrderQuantity > 0)
                 {
                     return ServiceResult.Failure(
-                        $"入庫數量超過訂購數量。訂購：{purchaseOrderDetail.OrderQuantity}，已入庫：{existingReceivedQuantity}，本次入庫：{newReceivedQuantity}");
+                        $"入庫數量超過訂購數量。總訂購：{totalOrderQuantity}，已入庫：{existingReceivedQuantity}，本次入庫：{newReceivedQuantity}");
                 }
 
                 return ServiceResult.Success();
@@ -544,6 +610,76 @@ namespace ERPCore2.Services
         public decimal CalculateSubtotalAmount(int receivedQuantity, decimal unitPrice)
         {
             return receivedQuantity * unitPrice;
+        }
+
+        /// <summary>
+        /// 計算採購入庫明細的訂購金額
+        /// </summary>
+        public decimal CalculateOrderAmount(int orderQuantity, decimal unitPrice)
+        {
+            return orderQuantity * unitPrice;
+        }
+
+        /// <summary>
+        /// 計算未進貨數量
+        /// </summary>
+        public int CalculatePendingQuantity(int orderQuantity, int receivedQuantity)
+        {
+            return Math.Max(0, orderQuantity - receivedQuantity);
+        }
+
+        /// <summary>
+        /// 計算進貨完成率（百分比）
+        /// </summary>
+        public decimal CalculateCompletionRate(int orderQuantity, int receivedQuantity)
+        {
+            return orderQuantity > 0 ? Math.Round((decimal)receivedQuantity / orderQuantity * 100, 2) : 0;
+        }
+
+        /// <summary>
+        /// 計算指定採購入庫單的總訂購金額
+        /// </summary>
+        public async Task<decimal> CalculateTotalOrderAmountAsync(int purchaseReceivingId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.PurchaseReceivingDetails
+                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                    .SumAsync(d => d.OrderQuantity * d.UnitPrice);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalOrderAmountAsync), GetType(), _logger, new { 
+                    Method = nameof(CalculateTotalOrderAmountAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId 
+                });
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// 計算指定採購入庫單的總未進貨數量
+        /// </summary>
+        public async Task<int> CalculateTotalPendingQuantityAsync(int purchaseReceivingId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.PurchaseReceivingDetails
+                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                    .SumAsync(d => d.OrderQuantity - d.ReceivedQuantity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalPendingQuantityAsync), GetType(), _logger, new { 
+                    Method = nameof(CalculateTotalPendingQuantityAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseReceivingId = purchaseReceivingId 
+                });
+                return 0;
+            }
         }
 
         #endregion

@@ -146,7 +146,9 @@ namespace ERPCore2.Services
                 if (entity.ReceivedQuantity > entity.OrderQuantity)
                     errors.Add("已進貨數量不能大於訂購數量");
 
-                // 檢查商品在同一採購訂單中是否重複
+                // 注釋：允許同一商品在同一採購訂單中多次出現
+                // 檢查商品在同一採購訂單中是否重複 (已停用 - 允許同一商品多次輸入)
+                /*
                 if (await IsProductExistsInOrderAsync(
                     entity.PurchaseOrderId, 
                     entity.ProductId, 
@@ -154,6 +156,7 @@ namespace ERPCore2.Services
                 {
                     errors.Add("該商品在此採購訂單中已存在");
                 }
+                */
 
                 // 檢查預計到貨日期不能早於訂單日期
                 if (entity.ExpectedDeliveryDate.HasValue)

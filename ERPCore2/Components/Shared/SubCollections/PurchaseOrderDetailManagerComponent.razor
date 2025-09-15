@@ -166,12 +166,12 @@ else
             onItemMouseEnter: EventCallback.Factory.Create<(ProductItem item, int index)>(this, args => OnProductItemMouseEnter(args.item, args.index)),
             isReadOnly: IsReadOnly
         ));
-
+        
         // 數量欄位
         columns.Add(new() 
         { 
             Title = QuantityLabel, 
-            PropertyName = "",
+            PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
             CustomTemplate = item => 
@@ -194,7 +194,7 @@ else
         columns.Add(new() 
         { 
             Title = ReceivedQuantityLabel, 
-            PropertyName = "",
+            PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
             CustomTemplate = item => 
@@ -211,7 +211,7 @@ else
         columns.Add(new() 
         { 
             Title = PriceLabel, 
-            PropertyName = "",
+            PropertyName = "Price",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
             CustomTemplate = item => 
@@ -236,7 +236,7 @@ else
             columns.Add(new() 
             { 
                 Title = IsReceivingCompletedLabel, 
-                PropertyName = "",
+                PropertyName = "IsReceivingCompleted",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "8%",
                 CustomTemplate = item => 
@@ -267,7 +267,7 @@ else
         columns.Add(new() 
         { 
             Title = RemarksLabel, 
-            PropertyName = "",
+            PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
             Width = ShowIsReceivingCompleted ? "10%" : "15%",
             HideOnMobile = true,
