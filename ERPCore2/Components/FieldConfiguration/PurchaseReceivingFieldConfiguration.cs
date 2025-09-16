@@ -47,13 +47,25 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
+                        nameof(PurchaseReceiving.BatchNumber),
+                        new FieldDefinition<PurchaseReceiving>
+                        {
+                            PropertyName = nameof(PurchaseReceiving.BatchNumber),
+                            DisplayName = "批號",
+                            FilterPlaceholder = "輸入批號搜尋",
+                            TableOrder = 2,
+                            HeaderStyle = "width: 120px;",
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, nameof(PurchaseReceiving.BatchNumber), pr => pr.BatchNumber)
+                        }
+                    },
+                    {
                         "SupplierName",
                         new FieldDefinition<PurchaseReceiving>
                         {
                             PropertyName = "Supplier.CompanyName", // 直接使用供應商關聯顯示供應商名稱
                             DisplayName = "供應商",
                             TableOrder = 3,
-                            FilterOrder = 3,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入供應商名稱搜尋",
                             HeaderStyle = "width: 180px;",
@@ -82,7 +94,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PurchaseReceiving.TotalAmount),
                             DisplayName = "總金額",
                             ColumnType = ColumnDataType.Currency,
-                            TableOrder = 6,
+                            TableOrder = 5,
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
                         }

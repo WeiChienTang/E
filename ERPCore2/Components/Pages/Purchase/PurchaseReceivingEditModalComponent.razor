@@ -759,6 +759,12 @@
                 {
                     detail.PurchaseReceivingId = purchaseReceiving.Id;
                     
+                    // 同步主檔的批號到明細
+                    if (!string.IsNullOrWhiteSpace(purchaseReceiving.BatchNumber))
+                    {
+                        detail.BatchNumber = purchaseReceiving.BatchNumber;
+                    }
+                    
                     if (detail.Id == 0)
                     {
                         // 新記錄 - 使用基本的 Create 方法

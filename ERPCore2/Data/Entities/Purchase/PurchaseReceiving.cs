@@ -29,6 +29,10 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TaxAmount { get; set; } = 0;
 
+        [Display(Name = "批號")]
+        [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
+        public string? BatchNumber { get; set; }
+
         // Foreign Keys
         [Display(Name = "採購訂單")]
         [ForeignKey(nameof(PurchaseOrder))]

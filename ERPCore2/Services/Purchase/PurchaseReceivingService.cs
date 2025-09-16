@@ -318,6 +318,51 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 自動產生批號
+        /// 功能：根據日期和序號自動產生唯一的批號
+        /// 格式：yyyyMMdd + 3位數序號 (例：20250917001)
+        /// 邏輯：
+        /// 1. 取得當日最大批號序號
+        /// 2. 序號自動加1
+        /// 3. 發生錯誤時回傳預設格式
+        /// </summary>
+        /// <returns>新的批號</returns>
+        public async Task<string> GenerateBatchNumberAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var today = DateTime.Today;
+                var prefix = today.ToString("yyyyMMdd");
+                
+                var lastBatchNumber = await context.PurchaseReceivings
+                    .Where(pr => pr.BatchNumber != null && pr.BatchNumber.StartsWith(prefix))
+                    .OrderByDescending(pr => pr.BatchNumber)
+                    .Select(pr => pr.BatchNumber)
+                    .FirstOrDefaultAsync();
+
+                int sequence = 1;
+                if (!string.IsNullOrEmpty(lastBatchNumber) && lastBatchNumber.Length > prefix.Length)
+                {
+                    var sequencePart = lastBatchNumber.Substring(prefix.Length);
+                    if (int.TryParse(sequencePart, out int lastSequence))
+                        sequence = lastSequence + 1;
+                }
+
+                return $"{prefix}{sequence:D3}";
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GenerateBatchNumberAsync), GetType(), _logger, new { 
+                    Method = nameof(GenerateBatchNumberAsync),
+                    ServiceType = GetType().Name 
+                });
+                return $"{DateTime.Today:yyyyMMdd}001";
+            }
+        }
+
+        /// <summary>
         /// 檢查進貨單號是否已存在
         /// 功能：驗證進貨單號的唯一性，支援編輯模式排除指定ID
         /// 用途：
@@ -716,84 +761,35 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 儲存採購進貨單及其明細資料
-        /// 功能：完整的主檔與明細一併儲存流程
-        /// 處理邏輯：
-        /// 1. 驗證主檔資料完整性
-        /// 2. 儲存主檔（新增或更新）
-        /// 3. 委託明細服務處理所有明細資料
-        /// 4. 使用資料庫交易確保資料一致性
-        /// 5. 回傳包含完整關聯資料的實體物件
-        /// 適用場景：前端表單一次性提交主檔與明細
+        /// 覆寫新增方法 - 自動生成批號
+        /// 功能：在新增採購進貨單時自動生成批號
+        /// 邏輯：如果 BatchNumber 為空，則自動生成唯一批號
         /// </summary>
-        /// <param name="purchaseReceiving">採購進貨單主檔</param>
-        /// <param name="details">進貨明細清單</param>
-        /// <returns>儲存結果，成功時包含完整的實體資料</returns>
-        public async Task<ServiceResult<PurchaseReceiving>> SaveWithDetailsAsync(PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details)
+        /// <param name="entity">要新增的採購進貨單</param>
+        /// <returns>新增結果，包含完整的實體資料</returns>
+        public override async Task<ServiceResult<PurchaseReceiving>> CreateAsync(PurchaseReceiving entity)
         {
             try
             {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
+                // 新增時自動生成批號（如果未提供）
+                if (string.IsNullOrWhiteSpace(entity.BatchNumber))
+                {
+                    entity.BatchNumber = await GenerateBatchNumberAsync();
+                }
                 
-                try
-                {
-                    // 驗證主檔
-                    var validationResult = await ValidateAsync(purchaseReceiving);
-                    if (!validationResult.IsSuccess)
-                    {
-                        await transaction.RollbackAsync();
-                        return ServiceResult<PurchaseReceiving>.Failure(validationResult.ErrorMessage);
-                    }
-                    
-                    // 儲存主檔
-                    if (purchaseReceiving.Id == 0)
-                    {
-                        purchaseReceiving.CreatedAt = DateTime.UtcNow;
-                        purchaseReceiving.Status = EntityStatus.Active;
-                        await context.PurchaseReceivings.AddAsync(purchaseReceiving);
-                    }
-                    else
-                    {
-                        purchaseReceiving.UpdatedAt = DateTime.UtcNow;
-                        context.PurchaseReceivings.Update(purchaseReceiving);
-                    }
-                    
-                    await context.SaveChangesAsync();
-                    
-                    // 儲存明細
-                    if (_detailService != null && details != null && details.Any())
-                    {
-                        var detailResult = await _detailService.UpdateDetailsAsync(purchaseReceiving.Id, details, transaction);
-                        if (!detailResult.IsSuccess)
-                        {
-                            await transaction.RollbackAsync();
-                            return ServiceResult<PurchaseReceiving>.Failure(detailResult.ErrorMessage);
-                        }
-                    }
-                    
-                    await transaction.CommitAsync();
-                    
-                    // 重新載入包含關聯資料的完整物件
-                    var savedEntity = await GetByIdAsync(purchaseReceiving.Id);
-                    return ServiceResult<PurchaseReceiving>.Success(savedEntity!);
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                // 調用基類的 CreateAsync 方法
+                return await base.CreateAsync(entity);
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SaveWithDetailsAsync), GetType(), _logger, new { 
-                    Method = nameof(SaveWithDetailsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger, new { 
+                    Method = nameof(CreateAsync),
                     ServiceType = GetType().Name,
-                    EntityId = purchaseReceiving?.Id,
-                    EntityName = purchaseReceiving?.ReceiptNumber,
-                    DetailsCount = details?.Count ?? 0 
+                    EntityId = entity?.Id,
+                    EntityName = entity?.ReceiptNumber,
+                    BatchNumber = entity?.BatchNumber
                 });
-                return ServiceResult<PurchaseReceiving>.Failure("儲存進貨單過程發生錯誤");
+                return ServiceResult<PurchaseReceiving>.Failure("新增進貨單過程發生錯誤");
             }
         }
 

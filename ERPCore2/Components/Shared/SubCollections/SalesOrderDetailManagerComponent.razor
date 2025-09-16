@@ -457,10 +457,11 @@
             {
                 SetProductId(salesOrderDetail, productId);
                 
-                // 自動填入產品預設單價（如果產品有價格資訊）
+                // 自動填入產品預設單價和單位（如果產品有相關資訊）
                 var selectedProduct = ProductOptions.FirstOrDefault(p => GetProductOptionId(p) == productId);
                 if (selectedProduct != null)
                 {
+                    // 自動填入產品預設單價
                     var priceProperty = selectedProduct.GetType().GetProperty("Price");
                     if (priceProperty != null)
                     {
@@ -468,6 +469,22 @@
                         if (price != null && decimal.TryParse(price.ToString(), out var priceValue) && priceValue > 0)
                         {
                             SetUnitPrice(salesOrderDetail, priceValue);
+                        }
+                    }
+                    
+                    // 自動填入產品預設單位
+                    var unitIdProperty = selectedProduct.GetType().GetProperty("UnitId");
+                    if (unitIdProperty != null)
+                    {
+                        var unitIdValue = unitIdProperty.GetValue(selectedProduct);
+                        if (unitIdValue != null && int.TryParse(unitIdValue.ToString(), out var defaultUnitId) && defaultUnitId > 0)
+                        {
+                            // 確認該單位存在於選項中
+                            var unitExists = UnitOptions.Any(u => GetUnitOptionId(u) == defaultUnitId);
+                            if (unitExists)
+                            {
+                                SetUnitId(salesOrderDetail, defaultUnitId);
+                            }
                         }
                     }
                 }

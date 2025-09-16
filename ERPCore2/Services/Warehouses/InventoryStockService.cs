@@ -163,6 +163,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
+                    .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
                     .Where(i => i.ProductId == productId && !i.IsDeleted)
@@ -1027,6 +1028,77 @@ namespace ERPCore2.Services
                     IsReduce = isReduce
                 });
                 return ServiceResult.Failure("庫存操作驗證失敗");
+            }
+        }
+
+        #endregion
+
+        #region 覆寫基底類別方法
+
+        /// <summary>
+        /// 覆寫基底類別的 CanDeleteAsync 方法，實作庫存特定的刪除檢查和級聯刪除
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(InventoryStock entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 檢查是否還有庫存數量
+                if (entity.CurrentStock > 0 || entity.ReservedStock > 0)
+                {
+                    return ServiceResult.Failure($"無法刪除此庫存記錄，目前庫存：{entity.CurrentStock}，預留庫存：{entity.ReservedStock}");
+                }
+
+                // 檢查是否有相關的交易記錄，如果有則先軟刪除相關記錄
+                var relatedTransactions = await context.InventoryTransactions
+                    .Where(t => t.InventoryStockId == entity.Id && !t.IsDeleted)
+                    .ToListAsync();
+
+                if (relatedTransactions.Any())
+                {
+                    // 軟刪除相關的交易記錄
+                    foreach (var transaction in relatedTransactions)
+                    {
+                        transaction.IsDeleted = true;
+                        transaction.UpdatedAt = DateTime.UtcNow;
+                        transaction.InventoryStockId = null; // 移除外鍵關聯
+                    }
+                }
+
+                // 檢查是否有相關的預留記錄
+                var relatedReservations = await context.InventoryReservations
+                    .Where(r => r.InventoryStockId == entity.Id && !r.IsDeleted)
+                    .ToListAsync();
+
+                if (relatedReservations.Any())
+                {
+                    // 軟刪除相關的預留記錄
+                    foreach (var reservation in relatedReservations)
+                    {
+                        reservation.IsDeleted = true;
+                        reservation.UpdatedAt = DateTime.UtcNow;
+                        reservation.InventoryStockId = null; // 移除外鍵關聯
+                    }
+                }
+
+                // 儲存級聯軟刪除的變更
+                if (relatedTransactions.Any() || relatedReservations.Any())
+                {
+                    await context.SaveChangesAsync();
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
+                    EntityId = entity.Id,
+                    ProductId = entity.ProductId,
+                    WarehouseId = entity.WarehouseId,
+                    WarehouseLocationId = entity.WarehouseLocationId
+                });
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
 

@@ -63,14 +63,6 @@ namespace ERPCore2.Services
         Task<bool> IsReceiptNumberExistsAsync(string receiptNumber, int? excludeId = null);
 
         /// <summary>
-        /// 儲存採購入庫連同明細
-        /// </summary>
-        /// <param name="purchaseReceiving">採購入庫主檔</param>
-        /// <param name="details">入庫明細清單</param>
-        /// <returns>服務結果</returns>
-        Task<ServiceResult<PurchaseReceiving>> SaveWithDetailsAsync(PurchaseReceiving purchaseReceiving, List<PurchaseReceivingDetail> details);
-
-        /// <summary>
         /// 取得指定產品最近一次進貨的倉庫和位置資訊
         /// </summary>
         /// <param name="productId">產品ID</param>
