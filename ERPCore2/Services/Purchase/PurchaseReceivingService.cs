@@ -311,7 +311,7 @@ namespace ERPCore2.Services
                     // 2. 檢查是否有庫存服務可用
                     if (_inventoryStockService != null)
                     {
-                        var eligibleDetails = purchaseReceiving.PurchaseReceivingDetails.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0).ToList();
+                        var eligibleDetails = purchaseReceiving.PurchaseReceivingDetails?.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0).ToList() ?? new List<PurchaseReceivingDetail>();
                         Console.WriteLine($"符合庫存回退條件的明細數量: {eligibleDetails.Count}");
                         
                         // 3. 對每個明細進行庫存回退

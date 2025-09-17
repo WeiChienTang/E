@@ -36,6 +36,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "PaperSetting.Read", Name = "檢視紙張設定", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視紙張設定基本資料與相關資訊" },
                 new Permission { Code = "PrinterSetting.Read", Name = "檢視印表機設定", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視印表機設定基本資料與相關資訊" },
                 new Permission { Code = "ReportPrintConfiguration.Read", Name = "檢視報表列印設定", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視報表列印設定基本資料與相關資訊" },
+                new Permission { Code = "SystemParameter.Read", Name = "檢視系統參數", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統全域參數設定" },
+
                 // 使用者管理權限
                 new Permission { Code = "User.Read", Name = "檢視使用者", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統使用者基本資料" },
                 
