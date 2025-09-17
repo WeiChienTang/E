@@ -4,6 +4,7 @@
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject INotificationService NotificationService
 @inject IWarehouseLocationService WarehouseLocationService
+@inject ISystemParameterService SystemParameterService
 @using ERPCore2.Helpers
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Components.Shared.Buttons
@@ -114,6 +115,7 @@ else
     private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
     private List<WarehouseLocation> AllWarehouseLocations { get; set; } = new List<WarehouseLocation>();
     private Dictionary<int, int> _returnedQuantityCache = new Dictionary<int, int>(); // 快取已退貨數量
+    private decimal _taxRate = 5.00m; // 系統稅率，預設5%
     private int? _previousSupplierId = null;
     private int? _previousFilterPurchaseReceivingId = null;
     private int? _previousFilterProductId = null;
@@ -407,6 +409,7 @@ else
     {
         try
         {
+            await LoadTaxRateAsync();
             await LoadWarehouseLocationsAsync();
             await LoadReturnableDetailsAsync();
             await LoadReturnedQuantitiesAsync();
@@ -416,6 +419,22 @@ else
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 載入系統稅率
+    /// </summary>
+    private async Task LoadTaxRateAsync()
+    {
+        try
+        {
+            _taxRate = await SystemParameterService.GetTaxRateAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入系統稅率時發生錯誤，使用預設稅率：{ex.Message}");
+            _taxRate = 5.00m; // 發生錯誤時使用預設稅率
         }
     }
 
@@ -790,9 +809,12 @@ else
 
     private decimal GetTotalReturnAmount()
     {
-        return ReturnItems
+        var subtotal = ReturnItems
             .Where(item => item.ReturnQuantity > 0)
             .Sum(item => item.ReturnQuantity * item.ReturnUnitPrice);
+        
+        // 計算含稅總額
+        return subtotal * (1 + _taxRate / 100);
     }
 
     /// <summary>

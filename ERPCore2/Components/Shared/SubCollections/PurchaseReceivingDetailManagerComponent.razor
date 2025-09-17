@@ -2,6 +2,7 @@
 
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject INotificationService NotificationService
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
@@ -589,6 +590,21 @@ else
         await OnDetailsChanged.InvokeAsync(details);
     }
 
+    private async Task<(Warehouse? warehouse, WarehouseLocation? location)> GetLastReceivingWarehouseAsync(int productId)
+    {
+        try
+        {
+            var receivingDetails = await PurchaseReceivingDetailService.GetByProductIdAsync(productId);
+            var latestDetail = receivingDetails.FirstOrDefault();
+            
+            return (latestDetail?.Warehouse, latestDetail?.WarehouseLocation);
+        }
+        catch
+        {
+            return (null, null);
+        }
+    }
+
     private T? GetPropertyValue<T>(object obj, string propertyName)
     {
         var property = obj.GetType().GetProperty(propertyName);
@@ -656,6 +672,20 @@ else
         item.SelectedProduct = detail.Product; // 同時更新 SelectedProduct 以保持向下相容
         item.UnitPrice = detail.UnitPrice; // 預填採購單價
         item.ProductSearch = item.DisplayName; // 使用包含採購單號的顯示名稱
+        
+        // 自動帶出最近進貨的倉庫和庫位（只有在尚未選擇時才自動填入）
+        if (item.SelectedWarehouse == null && detail.Product != null)
+        {
+            var (warehouse, location) = await GetLastReceivingWarehouseAsync(detail.Product.Id);
+            if (warehouse != null)
+            {
+                item.SelectedWarehouse = warehouse;
+                if (location != null && item.SelectedWarehouseLocation == null)
+                {
+                    item.SelectedWarehouseLocation = location;
+                }
+            }
+        }
         
         item.ShowDropdown = false;
         item.SelectedIndex = -1;
