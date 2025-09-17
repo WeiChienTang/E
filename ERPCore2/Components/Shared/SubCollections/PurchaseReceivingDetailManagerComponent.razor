@@ -303,9 +303,7 @@ else
                     </select>;
                 }
             });
-        }
-
-        
+        }        
 
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
@@ -846,36 +844,13 @@ else
         
         return filteredDetails.ToList();
     }
-    
-    /// <summary>
-    /// 根據選擇的商品獲取對應的採購明細清單
-    /// </summary>
-    private List<PurchaseOrderDetail> GetPurchaseDetailsForProduct(Product product)
-    {
-        return AvailablePurchaseDetails
-            .Where(pd => pd.ProductId == product.Id)
-            .ToList();
-    }
+
 
     private decimal GetTotalAmount()
     {
         return ReceivingItems
             .Where(item => !IsEmptyRow(item) && item.SelectedPurchaseDetail != null && item.ReceivedQuantity > 0)
             .Sum(item => item.ReceivedQuantity * item.UnitPrice);
-    }
-
-    private int GetTotalReceivedQuantity()
-    {
-        return ReceivingItems
-            .Where(item => !IsEmptyRow(item) && item.SelectedPurchaseDetail != null)
-            .Sum(item => item.ReceivedQuantity);
-    }
-
-    private int GetTotalOrderQuantity()
-    {
-        return ReceivingItems
-            .Where(item => !IsEmptyRow(item) && item.SelectedPurchaseDetail != null)
-            .Sum(item => item.OrderQuantity);
     }
 
     public async Task<bool> ValidateAsync()
@@ -890,29 +865,44 @@ else
         {
             var nonEmptyItems = AutoEmptyRowHelper.ForAny<ReceivingItem>.GetNonEmptyItems(ReceivingItems, IsEmptyRow);
             
-            // 檢查相同商品在相同倉庫位置的重複
-            var itemGroups = nonEmptyItems
-                .Where(item => item.SelectedProduct != null && item.SelectedWarehouse != null)
-                .GroupBy(item => new { 
-                    ProductId = item.SelectedProduct!.Id, 
-                    WarehouseId = item.SelectedWarehouse!.Id, 
-                    WarehouseLocationId = item.SelectedWarehouseLocation?.Id 
-                })
-                .Where(g => g.Count() > 1)
-                .ToList();
-                
-            if (itemGroups.Any())
-            {
-                errors.Add("存在相同商品在相同倉庫位置的重複記錄");
-            }
-            
             // 檢查是否有選擇倉庫（如果啟用倉庫功能）
             if (ShowWarehouse)
             {
                 var itemsWithoutWarehouse = nonEmptyItems.Where(item => item.SelectedWarehouse == null).ToList();
                 if (itemsWithoutWarehouse.Any())
                 {
-                    errors.Add("所有商品都必須選擇倉庫");
+                    var productNames = itemsWithoutWarehouse
+                        .Select(item => item.SelectedProduct?.Name ?? item.DisplayName)
+                        .Where(name => !string.IsNullOrEmpty(name))
+                        .ToList();
+                    
+                    if (productNames.Any())
+                    {
+                        errors.Add($"以下商品必須選擇倉庫：{string.Join("、", productNames)}");
+                    }
+                    else
+                    {
+                        errors.Add("所有商品都必須選擇倉庫");
+                    }
+                }
+            }
+            
+            // 檢查相同商品在相同倉庫位置的重複（只有在倉庫都已選擇的情況下才檢查）
+            var itemsWithWarehouse = nonEmptyItems.Where(item => item.SelectedProduct != null && item.SelectedWarehouse != null).ToList();
+            if (itemsWithWarehouse.Any())
+            {
+                var itemGroups = itemsWithWarehouse
+                    .GroupBy(item => new { 
+                        ProductId = item.SelectedProduct!.Id, 
+                        WarehouseId = item.SelectedWarehouse!.Id, 
+                        WarehouseLocationId = item.SelectedWarehouseLocation?.Id 
+                    })
+                    .Where(g => g.Count() > 1)
+                    .ToList();
+                    
+                if (itemGroups.Any())
+                {
+                    errors.Add("存在相同商品在相同倉庫位置的重複記錄");
                 }
             }
         }

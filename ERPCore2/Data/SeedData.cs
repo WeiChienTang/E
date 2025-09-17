@@ -62,6 +62,7 @@ namespace ERPCore2.Data
             return new List<IDataSeeder>
             {
                 new CompanySeeder(),            // 公司資料 - 基礎資料，優先執行
+                new SystemParameterSeeder(),    // 系統參數 - 系統基礎設定
                 new PermissionSeeder(),
                 new RoleSeeder(),
                 new RolePermissionSeeder(),

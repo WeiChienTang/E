@@ -34,6 +34,7 @@
                           DataLoader="@LoadPurchaseReceivingData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
+                          CustomValidator="@ValidatePurchaseReceivingDetailsAsync"
                           AfterSave="@SavePurchaseReceivingDetailsAsync"
                           SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "採購入庫更新成功" : "採購入庫新增成功")"
                           SaveFailureMessage="採購入庫儲存失敗"
@@ -73,6 +74,7 @@
     
     // ===== 採購入庫明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
+    private PurchaseReceivingDetailManagerComponent<PurchaseReceiving, PurchaseReceivingDetail>? purchaseReceivingDetailManager;
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
@@ -724,6 +726,29 @@
     }
 
     /// <summary>
+    /// 驗證採購入庫明細 - 在儲存主檔之前執行
+    /// </summary>
+    private async Task<bool> ValidatePurchaseReceivingDetailsAsync(PurchaseReceiving purchaseReceiving)
+    {
+        try
+        {
+            // 如果明細管理組件存在，執行驗證
+            if (purchaseReceivingDetailManager != null)
+            {
+                return await purchaseReceivingDetailManager.ValidateAsync();
+            }
+            
+            // 如果組件不存在，預設通過驗證
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"驗證明細時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// AfterSave 回調方法 - 在主檔儲存後處理明細並使用差異比較更新庫存
     /// 處理流程：
     /// 1. 儲存有效的明細資料（有選擇商品和倉庫的記錄）
@@ -943,7 +968,8 @@
                     // 多採購單模式
                     try
                     {
-                        <PurchaseReceivingDetailManagerComponent TMainEntity="PurchaseReceiving" 
+                        <PurchaseReceivingDetailManagerComponent @ref="purchaseReceivingDetailManager"
+                                                               TMainEntity="PurchaseReceiving" 
                                                                TDetailEntity="PurchaseReceivingDetail"
                                                                SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                                SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"

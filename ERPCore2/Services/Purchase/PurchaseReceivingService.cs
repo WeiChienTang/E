@@ -24,6 +24,11 @@ namespace ERPCore2.Services
         private readonly IPurchaseReceivingDetailService? _detailService;
 
         /// <summary>
+        /// 採購訂單明細服務 - 用於更新已進貨數量
+        /// </summary>
+        private readonly IPurchaseOrderDetailService? _purchaseOrderDetailService;
+
+        /// <summary>
         /// 簡易建構子 - 適用於測試環境或最小依賴場景
         /// </summary>
         /// <param name="contextFactory">資料庫上下文工廠</param>
@@ -50,14 +55,17 @@ namespace ERPCore2.Services
         /// <param name="logger">日誌記錄器</param>
         /// <param name="inventoryStockService">庫存管理服務</param>
         /// <param name="detailService">進貨明細服務</param>
+        /// <param name="purchaseOrderDetailService">採購訂單明細服務</param>
         public PurchaseReceivingService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReceiving>> logger,
             IInventoryStockService inventoryStockService,
-            IPurchaseReceivingDetailService detailService) : base(contextFactory, logger)
+            IPurchaseReceivingDetailService detailService,
+            IPurchaseOrderDetailService purchaseOrderDetailService) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
+            _purchaseOrderDetailService = purchaseOrderDetailService;
         }
 
         #region 覆寫基本方法
@@ -265,6 +273,288 @@ namespace ERPCore2.Services
                     EntityName = entity?.ReceiptNumber 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 覆寫刪除方法 - 刪除主檔時同步回退庫存
+        /// 功能：刪除採購進貨單時，自動回退已進貨的庫存數量
+        /// 處理流程：
+        /// 1. 驗證進貨單存在性
+        /// 2. 對每個明細進行庫存回退操作
+        /// 3. 執行原本的軟刪除（主檔 + EF級聯刪除明細）
+        /// 4. 使用資料庫交易確保資料一致性
+        /// 5. 任何步驟失敗時回滾所有變更
+        /// </summary>
+        /// <param name="id">要刪除的進貨單ID</param>
+        /// <returns>刪除結果，包含成功狀態及錯誤訊息</returns>
+        public override async Task<ServiceResult> DeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 1. 獲取進貨單及明細資料（在刪除前）
+                    var purchaseReceiving = await GetByIdAsync(id);
+                    if (purchaseReceiving == null)
+                        return ServiceResult.Failure("找不到要刪除的進貨單");
+
+                    // 調試日誌：記錄基本資訊
+                    Console.WriteLine($"=== 開始刪除進貨單 ===");
+                    Console.WriteLine($"進貨單 ID: {id}, 單號: {purchaseReceiving.ReceiptNumber}");
+                    Console.WriteLine($"明細數量: {purchaseReceiving.PurchaseReceivingDetails?.Count ?? 0}");
+                    Console.WriteLine($"庫存服務狀態: {(_inventoryStockService != null ? "已注入" : "未注入")}");
+
+                    // 2. 檢查是否有庫存服務可用
+                    if (_inventoryStockService != null)
+                    {
+                        var eligibleDetails = purchaseReceiving.PurchaseReceivingDetails.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0).ToList();
+                        Console.WriteLine($"符合庫存回退條件的明細數量: {eligibleDetails.Count}");
+                        
+                        // 3. 對每個明細進行庫存回退
+                        foreach (var detail in eligibleDetails)
+                        {
+                            Console.WriteLine($"處理明細 - 產品ID: {detail.ProductId}, 倉庫ID: {detail.WarehouseId}, " +
+                                             $"進貨數量: {detail.ReceivedQuantity}, 位置ID: {detail.WarehouseLocationId}");
+                            
+                            var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                detail.ProductId,
+                                detail.WarehouseId,
+                                detail.ReceivedQuantity,
+                                InventoryTransactionTypeEnum.Return,
+                                $"{purchaseReceiving.ReceiptNumber}_DEL",
+                                detail.WarehouseLocationId,
+                                $"刪除採購進貨單 - {purchaseReceiving.ReceiptNumber}"
+                            );
+                            
+                            Console.WriteLine($"庫存回退結果: {(reduceResult.IsSuccess ? "成功" : $"失敗 - {reduceResult.ErrorMessage}")}");
+                            
+                            if (!reduceResult.IsSuccess)
+                            {
+                                await transaction.RollbackAsync();
+                                return ServiceResult.Failure($"庫存回退失敗：{reduceResult.ErrorMessage}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("庫存服務未注入，跳過庫存回退操作");
+                    }
+
+                    // 4. 執行原本的軟刪除（主檔 + EF級聯刪除明細）
+                    Console.WriteLine($"開始執行軟刪除操作 - 進貨單ID: {id}");
+                    
+                    var entity = await context.PurchaseReceivings
+                        .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                        
+                    if (entity == null)
+                    {
+                        await transaction.RollbackAsync();
+                        Console.WriteLine($"在軟刪除階段找不到進貨單 - ID: {id}");
+                        return ServiceResult.Failure("找不到要刪除的資料");
+                    }
+
+                    entity.IsDeleted = true;
+                    entity.UpdatedAt = DateTime.UtcNow;
+                    
+                    Console.WriteLine($"軟刪除完成 - 進貨單: {entity.ReceiptNumber}");
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    
+                    Console.WriteLine($"刪除操作成功完成 - 進貨單ID: {id}");
+                    Console.WriteLine("=== 刪除操作結束 ===");
+                    
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(DeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id 
+                });
+                return ServiceResult.Failure("刪除進貨單過程發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 永久刪除進貨驗收單（含庫存回滾）
+        /// 這是UI實際調用的刪除方法
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            Console.WriteLine($"=== PurchaseReceivingService.PermanentDeleteAsync 開始執行 ===");
+            Console.WriteLine($"要刪除的 PurchaseReceiving ID: {id}");
+            
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                Console.WriteLine("資料庫交易已開始");
+                
+                try
+                {
+                    // 1. 先取得主記錄（含詳細資料，包含採購訂單明細關聯）
+                    var entity = await context.PurchaseReceivings
+                        .Include(pr => pr.PurchaseReceivingDetails)
+                            .ThenInclude(prd => prd.PurchaseOrderDetail)
+                        .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                        
+                    if (entity == null)
+                    {
+                        Console.WriteLine($"找不到 ID 為 {id} 的 PurchaseReceiving");
+                        return ServiceResult.Failure("找不到要刪除的資料");
+                    }
+                    
+                    Console.WriteLine($"找到要刪除的 PurchaseReceiving: {entity.ReceiptNumber}");
+                    Console.WriteLine($"包含 {entity.PurchaseReceivingDetails.Count} 筆明細資料");
+                    
+                    // 2. 檢查是否可以刪除
+                    var canDeleteResult = await CanDeleteAsync(entity);
+                    if (!canDeleteResult.IsSuccess)
+                    {
+                        Console.WriteLine($"無法刪除: {canDeleteResult.ErrorMessage}");
+                        return canDeleteResult;
+                    }
+                    
+                    Console.WriteLine("通過刪除檢查");
+                    
+                    // 3. 檢查是否有庫存服務可用並進行庫存回滾
+                    if (_inventoryStockService != null)
+                    {
+                        var eligibleDetails = entity.PurchaseReceivingDetails.Where(d => !d.IsDeleted && d.ReceivedQuantity > 0).ToList();
+                        Console.WriteLine($"符合庫存回退條件的明細數量: {eligibleDetails.Count}");
+                        
+                        foreach (var detail in eligibleDetails)
+                        {
+                            Console.WriteLine($"處理明細 - 產品ID: {detail.ProductId}, 倉庫ID: {detail.WarehouseId}, " +
+                                             $"進貨數量: {detail.ReceivedQuantity}, 位置ID: {detail.WarehouseLocationId}");
+                            
+                            var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                detail.ProductId,
+                                detail.WarehouseId,
+                                detail.ReceivedQuantity,
+                                InventoryTransactionTypeEnum.Return,
+                                $"{entity.ReceiptNumber}_DEL",
+                                detail.WarehouseLocationId,
+                                $"永久刪除採購進貨單 - {entity.ReceiptNumber}"
+                            );
+                            
+                            Console.WriteLine($"庫存回退結果: {(reduceResult.IsSuccess ? "成功" : $"失敗 - {reduceResult.ErrorMessage}")}");
+                            
+                            if (!reduceResult.IsSuccess)
+                            {
+                                Console.WriteLine($"庫存回退失敗，取消刪除操作: {reduceResult.ErrorMessage}");
+                                await transaction.RollbackAsync();
+                                return ServiceResult.Failure($"庫存回退失敗：{reduceResult.ErrorMessage}");
+                            }
+                        }
+                        
+                        Console.WriteLine("庫存回滾處理完成");
+                    }
+                    else
+                    {
+                        Console.WriteLine("庫存服務未注入，跳過庫存回退操作");
+                    }
+                    
+                    // 4. 更新對應的採購訂單明細已進貨數量
+                    if (_purchaseOrderDetailService != null)
+                    {
+                        Console.WriteLine("開始更新採購訂單明細的已進貨數量");
+                        
+                        // 收集需要更新的採購訂單明細
+                        var purchaseOrderDetailUpdates = entity.PurchaseReceivingDetails
+                            .Where(d => !d.IsDeleted && d.ReceivedQuantity > 0)
+                            .GroupBy(d => d.PurchaseOrderDetailId)
+                            .ToList();
+                            
+                        Console.WriteLine($"需要更新的採購訂單明細數量: {purchaseOrderDetailUpdates.Count}");
+                        
+                        foreach (var group in purchaseOrderDetailUpdates)
+                        {
+                            var purchaseOrderDetailId = group.Key;
+                            var totalReceivedQuantityToReduce = group.Sum(d => d.ReceivedQuantity);
+                            
+                            Console.WriteLine($"採購訂單明細ID: {purchaseOrderDetailId}, 需要減少的已進貨數量: {totalReceivedQuantityToReduce}");
+                            
+                            // 獲取當前的採購訂單明細
+                            var purchaseOrderDetail = group.First().PurchaseOrderDetail;
+                            if (purchaseOrderDetail != null)
+                            {
+                                var newReceivedQuantity = Math.Max(0, purchaseOrderDetail.ReceivedQuantity - totalReceivedQuantityToReduce);
+                                var newReceivedAmount = newReceivedQuantity * purchaseOrderDetail.UnitPrice;
+                                
+                                Console.WriteLine($"原已進貨數量: {purchaseOrderDetail.ReceivedQuantity}, 新已進貨數量: {newReceivedQuantity}");
+                                
+                                var updateResult = await _purchaseOrderDetailService.UpdateReceivedQuantityAsync(
+                                    purchaseOrderDetailId, 
+                                    newReceivedQuantity, 
+                                    newReceivedAmount
+                                );
+                                
+                                if (!updateResult.IsSuccess)
+                                {
+                                    Console.WriteLine($"更新採購訂單明細失敗: {updateResult.ErrorMessage}");
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"更新採購訂單明細已進貨數量失敗：{updateResult.ErrorMessage}");
+                                }
+                                
+                                Console.WriteLine($"成功更新採購訂單明細ID {purchaseOrderDetailId} 的已進貨數量");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"警告：找不到採購訂單明細ID {purchaseOrderDetailId} 的關聯資料");
+                            }
+                        }
+                        
+                        Console.WriteLine("採購訂單明細已進貨數量更新完成");
+                    }
+                    else
+                    {
+                        Console.WriteLine("採購訂單明細服務未注入，跳過已進貨數量更新操作");
+                    }
+                    
+                    // 5. 永久刪除主記錄（EF Core 會自動刪除相關的明細）
+                    context.PurchaseReceivings.Remove(entity);
+                    Console.WriteLine("標記主記錄為永久刪除狀態");
+                    
+                    // 6. 保存變更
+                    var changesCount = await context.SaveChangesAsync();
+                    Console.WriteLine($"資料庫變更已保存，影響 {changesCount} 筆記錄");
+                    
+                    // 7. 提交交易
+                    await transaction.CommitAsync();
+                    Console.WriteLine("資料庫交易已提交");
+                    
+                    Console.WriteLine("=== PurchaseReceivingService.PermanentDeleteAsync 執行成功 ===");
+                    return ServiceResult.Success();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"刪除過程中發生錯誤，正在回滾交易: {ex.Message}");
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== PurchaseReceivingService.PermanentDeleteAsync 執行失敗 ===");
+                Console.WriteLine($"錯誤訊息: {ex.Message}");
+                Console.WriteLine($"堆疊追蹤: {ex.StackTrace}");
+                
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger);
+                return ServiceResult.Failure($"永久刪除資料時發生錯誤: {ex.Message}");
             }
         }
 

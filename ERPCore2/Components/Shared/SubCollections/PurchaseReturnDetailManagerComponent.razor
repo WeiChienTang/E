@@ -222,10 +222,10 @@ else
             }
         });
 
-        // 原進貨量欄位（唯讀）
+        // 進貨量欄位（唯讀）
         columns.Add(new()
         {
-            Title = "原進貨量",
+            Title = "進貨量",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "7%",
@@ -233,11 +233,9 @@ else
             {
                 var returnItem = (ReturnItem)item;
                 var receivingDetail = returnItem.PurchaseReceivingDetail;
-                return @<input type="number" class="form-control form-control-sm text-end" 
-                               value="@receivingDetail.ReceivedQuantity"
-                               readonly 
-                               tabindex="-1"
-                               style="background-color: #f8f9fa; cursor: not-allowed;" />;
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@receivingDetail.ReceivedQuantity</span>
+                </div>;
             }
         });
 
@@ -253,12 +251,8 @@ else
                 var returnItem = (ReturnItem)item;
                 var returnedQuantity = GetReturnedQuantity(returnItem.PurchaseReceivingDetail);
                 var isCompleted = returnedQuantity >= returnItem.PurchaseReceivingDetail.ReceivedQuantity;
-                return @<div class="input-group input-group-sm">
-                    <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "")" 
-                           value="@returnedQuantity"
-                           readonly 
-                           tabindex="-1"
-                           style="cursor: not-allowed;" />
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold @(isCompleted ? "text-success" : "")">@returnedQuantity</span>
                 </div>;
             }
         });
@@ -275,12 +269,8 @@ else
                 var returnItem = (ReturnItem)item;
                 var returnableQuantity = GetReturnableQuantity(returnItem.PurchaseReceivingDetail);
                 var isCompleted = returnableQuantity <= 0;
-                return @<div class="input-group input-group-sm">
-                    <input type="number" class="form-control text-end @(isCompleted ? "bg-success text-white" : "bg-warning text-dark")" 
-                           value="@returnableQuantity"
-                           readonly 
-                           tabindex="-1"
-                           style="cursor: not-allowed;" />
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold @(isCompleted ? "text-success" : "text-warning")">@returnableQuantity</span>
                 </div>;
             }
         });
@@ -324,7 +314,7 @@ else
             CustomTemplate = item =>
             {
                 var returnItem = (ReturnItem)item;
-                var value = returnItem.ReturnUnitPrice > 0 ? returnItem.ReturnUnitPrice.ToString("F2") : returnItem.PurchaseReceivingDetail.UnitPrice.ToString("F2");
+                var value = returnItem.ReturnUnitPrice > 0 ? returnItem.ReturnUnitPrice.ToString("F0") : returnItem.PurchaseReceivingDetail.UnitPrice.ToString("F0");
                 
                 return @<input type="number" class="form-control form-control-sm text-end" 
                                value="@value"
@@ -406,7 +396,7 @@ else
     {
         if (column.Title == "退貨單價")
         {
-            <strong class="text-danger">退貨總計不含稅: @GetTotalReturnAmount().ToString("C")</strong>
+            <strong class="text-danger">總計(含稅): @GetTotalReturnAmount().ToString("C")</strong>
         }
     };
 

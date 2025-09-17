@@ -75,6 +75,7 @@ namespace ERPCore2.Data.Context
       public DbSet<DeletedRecord> DeletedRecords { get; set; }
       
       // System Settings
+      public DbSet<SystemParameter> SystemParameters { get; set; }
       public DbSet<Company> Companies { get; set; }
       public DbSet<PaperSetting> PaperSettings { get; set; }
       public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
@@ -562,6 +563,17 @@ namespace ERPCore2.Data.Context
                         // 建立複合索引確保報表類型的唯一性
                         entity.HasIndex(e => e.ReportType)
                               .IsUnique();
+                  });
+
+                  // 系統參數相關
+                  modelBuilder.Entity<SystemParameter>(entity =>
+                  {
+                        // 欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.TaxRate)
+                              .HasPrecision(5, 2); // 總共5位數，小數點後2位（可表示 0.00 到 999.99）
                   });
             }
     }
