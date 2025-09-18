@@ -1,0 +1,194 @@
+@page "/salesReturns"
+@inject ISalesReturnService SalesReturnService
+@inject ISalesOrderService SalesOrderService
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="SalesReturn" 
+                          TService="ISalesReturnService"
+                          Service="@SalesReturnService"
+                          EntityBasePath="/salesReturns"
+                          PageTitle="退貨管理"
+                          PageSubtitle="管理所有退貨單資料與退貨狀態"
+                          EntityName="退貨單"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadSalesReturnsAsync"
+                          InitializeBasicData="@LoadBasicDataAsync"
+                          FilterApplier="@ApplySalesReturnFilters"
+                          GetEntityDisplayName="@(salesReturn => salesReturn.SalesReturnNumber)"
+                          RequiredPermission="SalesReturn.Read"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+@* 退貨單編輯 Modal *@
+<SalesReturnEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               SalesReturnId="@editingSalesReturnId"
+                               OnSalesReturnSaved="@modalHandler.OnEntitySavedAsync"
+                               OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<SalesReturn, ISalesReturnService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingSalesReturnId = null;
+    
+    // Modal 處理器
+    private ModalHandler<SalesReturn, GenericIndexPageComponent<SalesReturn, ISalesReturnService>> modalHandler = default!;
+    
+    // 欄位配置
+    private SalesReturnFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 相關資料
+    private List<SalesOrder> salesOrders = new();
+    private List<Warehouse> warehouses = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<SalesReturn, GenericIndexPageComponent<SalesReturn, ISalesReturnService>>(
+                id => editingSalesReturnId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadSalesOrdersAsync();
+            await LoadWarehousesAsync();
+            
+            // 建立欄位配置
+            fieldConfiguration = new SalesReturnFieldConfiguration(salesOrders, warehouses, NotificationService);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化退貨頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化退貨頁面失敗");
+        }
+    }
+
+    /// <summary>
+    /// 初始化麵包屑導航
+    /// </summary>
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("銷售管理", "#"),
+                new("退貨管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    /// <summary>
+    /// 載入退貨單資料
+    /// </summary>
+    private async Task<List<SalesReturn>> LoadSalesReturnsAsync()
+    {
+        try
+        {
+            return await SalesReturnService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesReturnsAsync), GetType(), additionalData: "載入退貨單資料失敗");
+            await NotificationService.ShowErrorAsync("載入退貨單資料失敗");
+            return new List<SalesReturn>();
+        }
+    }
+
+    /// <summary>
+    /// 載入基礎資料
+    /// </summary>
+    private async Task LoadBasicDataAsync()
+    {
+        try
+        {
+            await LoadSalesOrdersAsync();
+            await LoadWarehousesAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBasicDataAsync), GetType(), additionalData: "載入基礎資料失敗");
+            await NotificationService.ShowErrorAsync("載入基礎資料失敗");
+        }
+    }
+
+    /// <summary>
+    /// 載入銷售訂單資料
+    /// </summary>
+    private async Task LoadSalesOrdersAsync()
+    {
+        try
+        {
+            // 載入所有銷售訂單
+            salesOrders = await SalesOrderService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesOrdersAsync), GetType(), additionalData: "載入銷售訂單資料失敗");
+            await NotificationService.ShowErrorAsync("載入銷售訂單資料失敗");
+            salesOrders = new List<SalesOrder>();
+        }
+    }
+
+    /// <summary>
+    /// 載入倉庫資料
+    /// </summary>
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    /// <summary>
+    /// 應用退貨單篩選器
+    /// </summary>
+    private IQueryable<SalesReturn> ApplySalesReturnFilters(SearchFilterModel searchModel, IQueryable<SalesReturn> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(sr => sr.ReturnDate)
+                       .ThenByDescending(sr => sr.SalesReturnNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesReturnFilters), GetType());
+    }
+}

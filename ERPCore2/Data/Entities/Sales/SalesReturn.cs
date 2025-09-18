@@ -10,7 +10,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(SalesReturnNumber), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(ReturnDate))]
-    [Index(nameof(ReturnStatus), nameof(ReturnDate))]
     [Index(nameof(SalesOrderId), nameof(ReturnDate))]
     public class SalesReturn : BaseEntity
     {
@@ -23,31 +22,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;
 
-        [Display(Name = "預計處理日期")]
-        public DateTime? ExpectedProcessDate { get; set; }
-
-        [Display(Name = "實際處理日期")]
-        public DateTime? ActualProcessDate { get; set; }
-
-        [Required(ErrorMessage = "退回狀態為必填")]
-        [Display(Name = "退回狀態")]
-        public SalesReturnStatus ReturnStatus { get; set; } = SalesReturnStatus.Draft;
-
         [Required(ErrorMessage = "退回原因為必填")]
         [Display(Name = "退回原因")]
         public SalesReturnReason ReturnReason { get; set; } = SalesReturnReason.CustomerRequest;
-
-        [MaxLength(100, ErrorMessage = "處理人員不可超過100個字元")]
-        [Display(Name = "處理人員")]
-        public string? ProcessPersonnel { get; set; }
-
-        [MaxLength(500, ErrorMessage = "退回說明不可超過500個字元")]
-        [Display(Name = "退回說明")]
-        public string? ReturnDescription { get; set; }
-
-        [MaxLength(500, ErrorMessage = "處理備註不可超過500個字元")]
-        [Display(Name = "處理備註")]
-        public string? ProcessRemarks { get; set; }
 
         [Display(Name = "退回總金額")]
         [Column(TypeName = "decimal(18,2)")]
@@ -67,14 +44,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "退款日期")]
         public DateTime? RefundDate { get; set; }
 
-        [Display(Name = "退款金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal RefundAmount { get; set; } = 0;
-
-        [MaxLength(200, ErrorMessage = "退款備註不可超過200個字元")]
-        [Display(Name = "退款備註")]
-        public string? RefundRemarks { get; set; }
-
         // Foreign Keys
         [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
@@ -84,8 +53,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "原始銷貨訂單")]
         [ForeignKey(nameof(SalesOrder))]
         public int? SalesOrderId { get; set; }
-
-
 
         [Display(Name = "處理員工")]
         [ForeignKey(nameof(Employee))]

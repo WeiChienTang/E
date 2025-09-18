@@ -34,10 +34,10 @@ namespace ERPCore2.Services
         Task<SalesOrder?> GetWithDetailsAsync(int orderId);
 
         /// <summary>
-        /// 驗證銷貨訂單明細的庫存是否足夠
+        /// 驗證指定倉庫的銷貨訂單明細庫存是否足夠
         /// </summary>
         /// <param name="salesOrderDetails">銷貨訂單明細清單</param>
         /// <returns>驗證結果，包含庫存不足的詳細訊息</returns>
-        Task<ServiceResult> ValidateInventoryStockAsync(List<SalesOrderDetail> salesOrderDetails);
+        Task<ServiceResult> ValidateWarehouseInventoryStockAsync(List<SalesOrderDetail> salesOrderDetails);
     }
 }

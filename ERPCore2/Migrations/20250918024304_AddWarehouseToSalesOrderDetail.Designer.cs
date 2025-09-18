@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250918024304_AddWarehouseToSalesOrderDetail")]
+    partial class AddWarehouseToSalesOrderDetail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -962,13 +965,6 @@ namespace ERPCore2.Migrations
                     b.Property<decimal?>("AverageCost")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<DateTime?>("BatchDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("BatchNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -982,9 +978,6 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("CurrentStock")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("InTransitStock")
                         .HasColumnType("int");
@@ -1033,9 +1026,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.HasIndex("ProductId", "WarehouseId", "WarehouseLocationId", "BatchNumber")
+                    b.HasIndex("ProductId", "WarehouseId", "WarehouseLocationId")
                         .IsUnique()
-                        .HasFilter("[WarehouseId] IS NOT NULL AND [WarehouseLocationId] IS NOT NULL AND [BatchNumber] IS NOT NULL");
+                        .HasFilter("[WarehouseId] IS NOT NULL AND [WarehouseLocationId] IS NOT NULL");
 
                     b.ToTable("InventoryStocks");
                 });

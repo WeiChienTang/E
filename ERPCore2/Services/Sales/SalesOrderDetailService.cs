@@ -81,15 +81,15 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證訂單數量
-                if (entity.OrderQuantity <= 0)
+                if (entity.OrderQuantity < 0)
                 {
-                    errors.Add("訂單數量必須大於0");
+                    errors.Add("訂單數量不可為負數");
                 }
 
                 // 驗證單價
-                if (entity.UnitPrice <= 0)
+                if (entity.UnitPrice < 0)
                 {
-                    errors.Add("單價必須大於0");
+                    errors.Add("單價不可為負數");
                 }
 
                 // 驗證折扣比例

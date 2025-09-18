@@ -57,8 +57,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
                 // 產品管理權限
                 new Permission { Code = "Product.Read", Name = "檢視產品", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視產品基本資料與規格" },
-
-                // 產品分類管理權限
                 new Permission { Code = "ProductCategory.Read", Name = "檢視產品分類", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視產品分類階層與設定" },
                 
                 // 產品定價管理權限
@@ -77,6 +75,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "Warehouse.Read", Name = "檢視倉庫", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫基本資料與儲位設定" },
                 new Permission { Code = "Inventory.Read", Name = "檢視庫存", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存數量與庫存狀況" },
                 new Permission { Code = "WarehouseLocation.Read", Name = "檢視倉庫位置", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫內部位置與儲位設定" },
+
                 // 庫存明細權限
                 new Permission { Code = "InventoryStock.Read", Name = "檢視庫存明細", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視詳細庫存明細與批號資訊" },
                 

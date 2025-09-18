@@ -795,7 +795,7 @@ namespace ERPCore2.Services
                     if (purchaseReceiving == null)
                         return ServiceResult.Failure("找不到指定的進貨單");
                     
-                    // 更新庫存
+                    // 更新庫存，傳遞批號資訊
                     foreach (var detail in purchaseReceiving.PurchaseReceivingDetails.Where(d => !d.IsDeleted))
                     {
                         if (_inventoryStockService != null)
@@ -808,7 +808,10 @@ namespace ERPCore2.Services
                                 purchaseReceiving.ReceiptNumber,
                                 detail.UnitPrice,
                                 detail.WarehouseLocationId,
-                                $"採購進貨確認 - {purchaseReceiving.ReceiptNumber}"
+                                $"採購進貨確認 - {purchaseReceiving.ReceiptNumber}",
+                                detail.BatchNumber,           // 傳遞批號
+                                purchaseReceiving.ReceiptDate, // 批次日期
+                                detail.ExpiryDate             // 到期日期
                             );
                             
                             if (!addStockResult.IsSuccess)

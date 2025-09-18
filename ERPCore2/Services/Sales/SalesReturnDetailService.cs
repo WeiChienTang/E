@@ -433,7 +433,7 @@ namespace ERPCore2.Services
                     return false;
 
                 // 如果已經有處理數量，則不允許刪除
-                return detail.ProcessedQuantity == 0 && detail.SalesReturn.ReturnStatus == Data.Enums.SalesReturnStatus.Draft;
+                return detail.ProcessedQuantity == 0;
             }
             catch (Exception ex)
             {

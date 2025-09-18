@@ -25,13 +25,6 @@ namespace ERPCore2.Services
         Task<List<SalesReturn>> GetByCustomerIdAsync(int customerId);
 
         /// <summary>
-        /// 根據狀態取得銷貨退回清單
-        /// </summary>
-        /// <param name="status">退回狀態</param>
-        /// <returns>銷貨退回清單</returns>
-        Task<List<SalesReturn>> GetByStatusAsync(SalesReturnStatus status);
-
-        /// <summary>
         /// 根據銷貨訂單取得銷貨退回清單
         /// </summary>
         /// <param name="salesOrderId">銷貨訂單ID</param>
@@ -49,30 +42,11 @@ namespace ERPCore2.Services
         Task<List<SalesReturn>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
 
         /// <summary>
-        /// 更新退回狀態
-        /// </summary>
-        /// <param name="id">銷貨退回ID</param>
-        /// <param name="status">新狀態</param>
-        /// <param name="remarks">狀態更新備註</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> UpdateStatusAsync(int id, SalesReturnStatus status, string? remarks = null);
-
-        /// <summary>
         /// 計算退回總金額
         /// </summary>
         /// <param name="salesReturnId">銷貨退回ID</param>
         /// <returns>總金額</returns>
         Task<decimal> CalculateTotalReturnAmountAsync(int salesReturnId);
-
-        /// <summary>
-        /// 設定退款資訊
-        /// </summary>
-        /// <param name="salesReturnId">銷貨退回ID</param>
-        /// <param name="refundAmount">退款金額</param>
-        /// <param name="refundDate">退款日期</param>
-        /// <param name="refundRemarks">退款備註</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> SetRefundInfoAsync(int salesReturnId, decimal refundAmount, DateTime refundDate, string? refundRemarks = null);
 
         /// <summary>
         /// 產生退回單號
@@ -98,11 +72,6 @@ namespace ERPCore2.Services
     {
         public int TotalReturns { get; set; }
         public decimal TotalReturnAmount { get; set; }
-        public decimal TotalRefundAmount { get; set; }
-        public int PendingReturns { get; set; }
-        public int CompletedReturns { get; set; }
-        public int CancelledReturns { get; set; }
         public Dictionary<SalesReturnReason, int> ReturnReasonCounts { get; set; } = new();
-        public Dictionary<SalesReturnStatus, int> StatusCounts { get; set; } = new();
     }
 }

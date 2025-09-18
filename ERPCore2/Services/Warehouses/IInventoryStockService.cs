@@ -16,6 +16,7 @@ namespace ERPCore2.Services
         Task<InventoryStock?> GetByProductWarehouseAsync(int productId, int? warehouseId = null, int? locationId = null);
         Task<List<InventoryStock>> GetLowStockItemsAsync();
         Task<int> GetAvailableStockAsync(int productId, int warehouseId, int? locationId = null);
+        Task<int> GetTotalAvailableStockByWarehouseAsync(int productId, int warehouseId);
         
         // 庫存總覽查詢
         Task<List<InventoryStock>> GetInventoryOverviewAsync(int? warehouseId = null, int? categoryId = null, int? locationId = null);
@@ -25,7 +26,8 @@ namespace ERPCore2.Services
         // 庫存異動
         Task<ServiceResult> AddStockAsync(int productId, int warehouseId, int quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
-            decimal? unitCost = null, int? locationId = null, string? remarks = null);
+            decimal? unitCost = null, int? locationId = null, string? remarks = null,
+            string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null);
         
         Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, int quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
@@ -50,6 +52,11 @@ namespace ERPCore2.Services
         // 庫存驗證
         Task<bool> IsStockAvailableAsync(int productId, int warehouseId, int requiredQuantity, int? locationId = null);
         Task<ServiceResult> ValidateStockOperationAsync(int productId, int warehouseId, int quantity, bool isReduce);
+        
+        // FIFO 庫存扣減
+        Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, int quantity,
+            InventoryTransactionTypeEnum transactionType, string transactionNumber,
+            int? locationId = null, string? remarks = null);
     }
 }
 

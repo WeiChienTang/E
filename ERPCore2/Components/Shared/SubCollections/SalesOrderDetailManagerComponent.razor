@@ -29,6 +29,7 @@
     [Parameter] public List<TSalesOrderDetailEntity> Items { get; set; } = new();
     [Parameter] public List<TProductEntity> ProductOptions { get; set; } = new(); // 產品選項
     [Parameter] public List<Unit> UnitOptions { get; set; } = new(); // 單位選項
+    [Parameter] public List<Warehouse> WarehouseOptions { get; set; } = new(); // 倉庫選項
     [Parameter] public int ParentEntityId { get; set; } // 銷售訂單ID
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
@@ -46,6 +47,7 @@
     [Parameter] public Func<TSalesOrderDetailEntity, decimal?> GetUnitPrice { get; set; } = item => null;
     [Parameter] public Func<TSalesOrderDetailEntity, decimal?> GetDiscount { get; set; } = item => null;
     [Parameter] public Func<TSalesOrderDetailEntity, int?> GetUnitId { get; set; } = item => null;
+    [Parameter] public Func<TSalesOrderDetailEntity, int?> GetWarehouseId { get; set; } = item => null;
     [Parameter] public Func<TSalesOrderDetailEntity, string?> GetRemark { get; set; } = item => null;
     [Parameter] public Func<TProductEntity, int> GetProductOptionId { get; set; } = product => product.Id;
     [Parameter] public Func<TProductEntity, string> GetProductOptionDisplayText { get; set; } = product => 
@@ -87,6 +89,8 @@
     };
     [Parameter] public Func<Unit, int> GetUnitOptionId { get; set; } = unit => unit.Id;
     [Parameter] public Func<Unit, string> GetUnitOptionDisplayText { get; set; } = unit => unit.Name;
+    [Parameter] public Func<Warehouse, int> GetWarehouseOptionId { get; set; } = warehouse => warehouse.Id;
+    [Parameter] public Func<Warehouse, string> GetWarehouseOptionDisplayText { get; set; } = warehouse => warehouse.Name;
     
     // ===== 委派參數 - Setter =====
     [Parameter] public Action<TSalesOrderDetailEntity, int?> SetProductId { get; set; } = (item, productId) => { };
@@ -94,6 +98,7 @@
     [Parameter] public Action<TSalesOrderDetailEntity, decimal?> SetUnitPrice { get; set; } = (item, value) => { };
     [Parameter] public Action<TSalesOrderDetailEntity, decimal?> SetDiscount { get; set; } = (item, value) => { };
     [Parameter] public Action<TSalesOrderDetailEntity, int?> SetUnitId { get; set; } = (item, value) => { };
+    [Parameter] public Action<TSalesOrderDetailEntity, int?> SetWarehouseId { get; set; } = (item, value) => { };
     [Parameter] public Action<TSalesOrderDetailEntity, string?> SetRemark { get; set; } = (item, value) => { };
     [Parameter] public Action<TSalesOrderDetailEntity, int> SetSalesOrderId { get; set; } = (item, salesOrderId) => { }; // 設定銷售訂單ID
     
@@ -167,7 +172,7 @@
                 Title = "產品", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "25%",
+                Width = "20%",
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
@@ -181,10 +186,7 @@
                         <option value="">請選擇產品</option>
                         @foreach (var product in ProductOptions)
                         {
-                            var optionValue = GetProductOptionId(product).ToString();
-                            <option value="@optionValue" selected="@(optionValue == selectedValue)">
-                                @GetProductOptionDisplayText(product)
-                            </option>
+                            <option value="@GetProductOptionId(product)">@GetProductOptionDisplayText(product)</option>
                         }
                     </select>;
                 }
@@ -201,7 +203,7 @@
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
                     var quantity = GetQuantity(salesOrderDetail) ?? 0;
-                    var value = quantity > 0 ? quantity.ToString("F0") : "";
+                    var value = quantity > 0 ? quantity.ToString("F0") : ""; // 只有大於0才顯示，否則空白
                     
                     return @<input type="number" 
                                    class="form-control form-control-sm text-end" 
@@ -280,13 +282,42 @@
                 }
             },
             
+            // 倉庫選擇欄位
+            new() 
+            { 
+                Title = "倉庫", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "12%",
+                CustomTemplate = item => 
+                {
+                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
+                    var warehouseId = GetWarehouseId(salesOrderDetail);
+                    var selectedValue = warehouseId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="(e) => OnWarehouseSelectionChanged(salesOrderDetail, e.Value?.ToString())">
+                        <option value="">請選擇倉庫</option>
+                        @if (WarehouseOptions != null)
+                        {
+                            @foreach (var warehouse in WarehouseOptions)
+                            {
+                                <option value="@warehouse.Id">@warehouse.Name</option>
+                            }
+                        }
+                    </select>;
+                }
+            },
+            
             // 單位選擇欄位
             new() 
             { 
                 Title = "單位", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "10%",
+                Width = "8%",
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
@@ -300,10 +331,7 @@
                         <option value="">請選擇單位</option>
                         @foreach (var unit in UnitOptions)
                         {
-                            var optionValue = GetUnitOptionId(unit).ToString();
-                            <option value="@optionValue" selected="@(optionValue == selectedValue)">
-                                @GetUnitOptionDisplayText(unit)
-                            </option>
+                            <option value="@GetUnitOptionId(unit)">@GetUnitOptionDisplayText(unit)</option>
                         }
                     </select>;
                 }
@@ -315,7 +343,7 @@
                 Title = "備註", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "19%",
+                Width = "17%",
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
@@ -438,6 +466,20 @@
         return "-";
     }
 
+    private string GetWarehouseDisplayText(TSalesOrderDetailEntity item)
+    {
+        var warehouseId = GetWarehouseId(item);
+        if (warehouseId.HasValue)
+        {
+            var warehouse = WarehouseOptions.FirstOrDefault(w => GetWarehouseOptionId(w) == warehouseId.Value);
+            if (warehouse != null)
+            {
+                return GetWarehouseOptionDisplayText(warehouse);
+            }
+        }
+        return "-";
+    }
+
     // ===== InteractiveTableComponent 事件處理 =====
     private async Task OnProductChanged((object item, object? value) args)
     {
@@ -511,7 +553,8 @@
         
         if (string.IsNullOrEmpty(args.value))
         {
-            SetQuantity(salesOrderDetail, null);
+            // 如果沒有輸入數量，預設為 0
+            SetQuantity(salesOrderDetail, 0);
         }
         else if (decimal.TryParse(args.value, out var quantity))
         {
@@ -594,6 +637,50 @@
         StateHasChanged();
     }
 
+    private async Task OnWarehouseChanged((object item, object? value) args)
+    {
+        var salesOrderDetail = (TSalesOrderDetailEntity)args.item;
+        var wasEmpty = IsEmptyRow(salesOrderDetail);
+        
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var warehouseId))
+        {
+            SetWarehouseId(salesOrderDetail, warehouseId);
+        }
+        else
+        {
+            SetWarehouseId(salesOrderDetail, null);
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TSalesOrderDetailEntity>.HandleInputChangeAdvanced(
+            Items, salesOrderDetail, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSalesOrderId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    // 非異步的倉庫選擇事件處理（對應 PurchaseReceivingDetailManagerComponent 的寫法）
+    private void OnWarehouseSelectionChanged(TSalesOrderDetailEntity salesOrderDetail, string? warehouseIdStr)
+    {
+        var wasEmpty = IsEmptyRow(salesOrderDetail);
+        
+        if (string.IsNullOrEmpty(warehouseIdStr) || !int.TryParse(warehouseIdStr, out var warehouseId))
+        {
+            SetWarehouseId(salesOrderDetail, null);
+        }
+        else
+        {
+            SetWarehouseId(salesOrderDetail, warehouseId);
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<TSalesOrderDetailEntity>.HandleInputChangeAdvanced(
+            Items, salesOrderDetail, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSalesOrderId, ParentEntityId);
+        
+        _ = ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
     private async Task OnRemarkChanged((object item, string? value) args)
     {
         var salesOrderDetail = (TSalesOrderDetailEntity)args.item;
@@ -650,16 +737,58 @@
             {
                 var quantity = GetQuantity(item);
                 var unitPrice = GetUnitPrice(item);
+                var productId = GetProductId(item);
                 
-                if (!quantity.HasValue || quantity.Value <= 0)
+                // 取得產品名稱用於錯誤訊息
+                var productName = "未知產品";
+                if (productId.HasValue && productId.Value > 0)
                 {
-                    errors.Add("所有產品都必須填寫數量且大於0");
+                    var product = ProductOptions.FirstOrDefault(p => GetProductOptionId(p) == productId.Value);
+                    if (product != null)
+                    {
+                        // 嘗試取得產品代碼和名稱
+                        var codeProperty = product.GetType().GetProperty("Code");
+                        var nameProperty = product.GetType().GetProperty("Name");
+                        var code = codeProperty?.GetValue(product) as string ?? "";
+                        var name = nameProperty?.GetValue(product) as string ?? "";
+                        
+                        if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(name))
+                        {
+                            productName = $"{code} - {name}";
+                        }
+                        else if (!string.IsNullOrEmpty(name))
+                        {
+                            productName = name;
+                        }
+                        else if (!string.IsNullOrEmpty(code))
+                        {
+                            productName = code;
+                        }
+                    }
+                }
+                
+                if (!quantity.HasValue)
+                {
+                    // 如果沒有填寫數量，設定預設值為 0
+                    SetQuantity(item, 0);
+                    quantity = 0;
+                }
+                
+                if (quantity.Value < 0)
+                {
+                    errors.Add($"產品「{productName}」的數量不可為負數");
                     break;
                 }
                 
-                if (!unitPrice.HasValue || unitPrice.Value <= 0)
+                if (!unitPrice.HasValue)
                 {
-                    errors.Add("所有產品都必須填寫單價且大於0");
+                    errors.Add($"產品「{productName}」必須填寫單價");
+                    break;
+                }
+                
+                if (unitPrice.Value < 0)
+                {
+                    errors.Add($"產品「{productName}」的單價不可為負數");
                     break;
                 }
             }

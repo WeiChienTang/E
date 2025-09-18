@@ -1,10 +1,12 @@
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
+@inject IInventoryStockService InventoryStockService
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IProductService ProductService
 @inject IEmployeeService EmployeeService
 @inject IUnitService UnitService
+@inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
@@ -72,9 +74,13 @@
     private List<Employee> availableEmployees = new();
     private List<Product> availableProducts = new();
     private List<Unit> availableUnits = new();
+    private List<Warehouse> availableWarehouses = new();
     
     // 銷貨訂單明細
     private List<SalesOrderDetail> salesOrderDetails = new();
+    
+    // 明細管理組件引用
+    private SalesOrderDetailManagerComponent<SalesOrderDetail, Product, SalesOrder>? salesOrderDetailManager;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -267,6 +273,9 @@
 
             // 載入單位資料
             availableUnits = await UnitService.GetAllAsync();
+
+            // 載入倉庫資料
+            availableWarehouses = await WarehouseService.GetAllAsync();
 
             // 初始化狀態選項
             statusOptions = new List<SelectOption>
@@ -535,12 +544,14 @@
                     // 檢查是否已選擇客戶
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
-                        <SalesOrderDetailManagerComponent TSalesOrderDetailEntity="SalesOrderDetail" 
+                        <SalesOrderDetailManagerComponent @ref="salesOrderDetailManager"
+                                                          TSalesOrderDetailEntity="SalesOrderDetail" 
                                                           TProductEntity="Product"
                                                           TSalesOrderEntity="SalesOrder"
                                                           Items="@salesOrderDetails"
                                                           ProductOptions="@availableProducts"
                                                           UnitOptions="@availableUnits"
+                                                          WarehouseOptions="@availableWarehouses"
                                                           ParentEntityId="@(editModalComponent.Entity.Id)"
                                                           IsReadOnly="false"
                                                           GetProductId="@(item => item.ProductId)"
@@ -553,6 +564,8 @@
                                                           SetDiscount="@((item, value) => item.DiscountPercentage = value ?? 0m)"
                                                           GetUnitId="@(item => item.UnitId)"
                                                           SetUnitId="@((item, value) => item.UnitId = value)"
+                                                          GetWarehouseId="@(item => item.WarehouseId)"
+                                                          SetWarehouseId="@((item, value) => item.WarehouseId = value)"
                                                           GetRemark="@(item => item.DetailRemarks)"
                                                           SetRemark="@((item, value) => item.DetailRemarks = value)"
                                                           SetSalesOrderId="@((item, value) => item.SalesOrderId = value)"
@@ -766,11 +779,35 @@
                 return false;
             }
 
-            // 儲存前先檢查庫存
-            var stockValidationResult = await SalesOrderService.ValidateInventoryStockAsync(salesOrderDetails);
+            // 1. 先進行明細驗證 (檢查單價是否為0)
+            if (salesOrderDetailManager != null)
+            {
+                var isValid = await salesOrderDetailManager.ValidateAsync();
+                if (!isValid)
+                {
+                    // ValidateAsync 內部已顯示錯誤訊息，直接返回
+                    return false;
+                }
+            }
+            else
+            {
+                // 如果沒有管理器引用，進行基本檢查
+                var invalidPriceDetails = salesOrderDetails
+                    .Where(d => d.ProductId > 0 && d.UnitPrice < 0)
+                    .ToList();
+                
+                if (invalidPriceDetails.Any())
+                {
+                    await NotificationService.ShowErrorAsync("所有產品的單價不可為負數，請檢查並修正");
+                    return false;
+                }
+            }
+
+            // 2. 儲存前檢查倉庫選擇和庫存
+            var stockValidationResult = await SalesOrderService.ValidateWarehouseInventoryStockAsync(salesOrderDetails);
             if (!stockValidationResult.IsSuccess)
             {
-                await NotificationService.ShowErrorAsync($"庫存不足，無法儲存：\n{stockValidationResult.ErrorMessage}");
+                await NotificationService.ShowErrorAsync($"驗證失敗，無法儲存：\n{stockValidationResult.ErrorMessage}");
                 return false;
             }
 
@@ -796,6 +833,9 @@
 
             // 儲存明細
             await SaveSalesOrderDetails(result.Data.Id);
+
+            // 使用FIFO方式扣減庫存
+            await ReduceInventoryWithFIFOAsync(result.Data.Id);
 
             return true;
         }
@@ -876,6 +916,56 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesOrderDetails), GetType(), 
                 additionalData: $"儲存銷貨訂單明細失敗 - OrderId: {salesOrderId}");
             throw; // 重新拋出例外，讓上層處理
+        }
+    }
+
+    /// <summary>
+    /// 使用FIFO方式扣減庫存
+    /// </summary>
+    private async Task ReduceInventoryWithFIFOAsync(int salesOrderId)
+    {
+        try
+        {
+            // 只處理有效的明細（已選擇產品和倉庫的）
+            var validDetails = salesOrderDetails
+                .Where(d => d.ProductId > 0 && d.OrderQuantity > 0 && d.WarehouseId.HasValue)
+                .ToList();
+
+            Console.WriteLine($"ReduceInventoryWithFIFO: 準備扣減 {validDetails.Count} 筆明細的庫存");
+
+            foreach (var detail in validDetails)
+            {
+                if (!detail.WarehouseId.HasValue) continue;
+
+                Console.WriteLine($"FIFO扣減庫存 - 產品ID: {detail.ProductId}, 倉庫ID: {detail.WarehouseId.Value}, 數量: {detail.OrderQuantity}");
+
+                var result = await InventoryStockService.ReduceStockWithFIFOAsync(
+                    detail.ProductId,
+                    detail.WarehouseId.Value,
+                    (int)Math.Ceiling(detail.OrderQuantity),
+                    InventoryTransactionTypeEnum.Sale,
+                    $"SO-{salesOrderId}",
+                    null, // WarehouseLocationId - SalesOrderDetail沒有此欄位，傳入null
+                    $"銷貨訂單出貨 - SO-{salesOrderId}"
+                );
+
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"商品 {detail.Product?.Name} 庫存扣減失敗：{result.ErrorMessage}");
+                    Console.WriteLine($"FIFO庫存扣減失敗: {result.ErrorMessage}");
+                    // 不中斷流程，只記錄警告
+                }
+                else
+                {
+                    Console.WriteLine($"FIFO庫存扣減成功 - 產品ID: {detail.ProductId}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ReduceInventoryWithFIFOAsync), GetType(), 
+                additionalData: $"FIFO庫存扣減失敗 - OrderId: {salesOrderId}");
+            await NotificationService.ShowWarningAsync("庫存扣減時發生錯誤，請檢查庫存記錄");
         }
     }
 }

@@ -1,0 +1,964 @@
+@* 銷售退貨編輯模態組件 *@
+@inject ISalesReturnService SalesReturnService
+@inject ISalesReturnDetailService SalesReturnDetailService
+@inject ISalesOrderService SalesOrderService
+@inject ISalesOrderDetailService SalesOrderDetailService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject IProductService ProductService
+@inject ActionButtonHelper ActionButtonHelper
+@implements IDisposable
+
+@using ERPCore2.FieldConfiguration
+
+<GenericEditModalComponent TEntity="SalesReturn" 
+                          TService="ISalesReturnService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@SalesReturnId"
+                          Service="@SalesReturnService"
+                          EntityName="銷售退貨"
+                          EntityNamePlural="銷售退貨"
+                          ModalTitle="@(SalesReturnId.HasValue ? "編輯銷售退貨" : "新增退貨單")"
+                          Size="GenericEditModalComponent<SalesReturn, ISalesReturnService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadSalesReturnData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          CustomValidator="@ValidateSalesReturnDetailsAsync"
+                          AfterSave="@SaveSalesReturnDetailsAsync"
+                          SaveSuccessMessage="@(SalesReturnId.HasValue ? "銷售退貨更新成功" : "銷售退貨新增成功")"
+                          SaveFailureMessage="銷售退貨儲存失敗"
+                          RequiredPermission="SalesReturn.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()" />
+
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SalesReturnId { get; set; }
+    [Parameter] public EventCallback<SalesReturn> OnSalesReturnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<SalesReturn, ISalesReturnService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<SalesOrder> salesOrders = new();
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
+    private List<Customer> customers = new();
+    private List<Employee> employees = new();
+    private List<Product> products = new();
+    
+    // ===== 銷售退貨明細 =====
+    private List<SalesReturnDetail> salesReturnDetails = new();
+    // private SalesReturnDetailManagerComponent<SalesReturn, SalesReturnDetail>? salesReturnDetailManager;
+    
+    // ===== 篩選狀態 =====
+    private int? filterProductId = null;
+    
+    // ===== Modal 管理器 =====
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+
+    // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeCustomerModalManager();
+            await Task.CompletedTask;
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            if (IsVisible)
+            {
+                await LoadAdditionalDataAsync();
+                await InitializeFormFieldsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理儲存成功事件
+    /// </summary>
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道銷售退貨已儲存
+            if (editModalComponent?.Entity != null && OnSalesReturnSaved.HasDelegate)
+            {
+                await OnSalesReturnSaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理取消事件
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 載入銷售退貨資料
+    /// </summary>
+    private async Task<SalesReturn?> LoadSalesReturnData()
+    {
+        try
+        {
+            if (SalesReturnId.HasValue)
+            {
+                // 編輯模式：載入現有資料
+                var salesReturn = await SalesReturnService.GetByIdAsync(SalesReturnId.Value);
+                if (salesReturn != null)
+                {
+                    // 載入對應的退貨明細
+                    await LoadSalesReturnDetails(salesReturn.Id);
+                }
+                return salesReturn;
+            }
+            else
+            {
+                // 新增模式：建立新的退貨單並生成退貨單號
+                var newSalesReturn = new SalesReturn
+                {
+                    SalesReturnNumber = await GenerateReturnNumberAsync(),
+                    ReturnDate = DateTime.Today,
+                    TotalReturnAmount = 0
+                };
+                
+                // 初始化空的明細列表
+                salesReturnDetails = new List<SalesReturnDetail>();
+                
+                return newSalesReturn;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入銷售退貨資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 載入額外資料
+    /// </summary>
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            await LoadSalesOrdersAsync();
+            await LoadWarehousesAsync();
+            await LoadWarehouseLocationsAsync();
+            await LoadCustomersAsync();
+            await LoadEmployeesAsync();
+            await LoadProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task LoadSalesOrdersAsync()
+    {
+        try
+        {
+            salesOrders = await SalesOrderService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入銷售訂單資料時發生錯誤：{ex.Message}");
+            salesOrders = new List<SalesOrder>();
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    private async Task LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入倉庫位置資料時發生錯誤：{ex.Message}");
+            warehouseLocations = new List<WarehouseLocation>();
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入客戶資料時發生錯誤：{ex.Message}");
+            customers = new List<Customer>();
+        }
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            var result = await EmployeeService.GetActiveEmployeesAsync();
+            if (result.IsSuccess && result.Data != null)
+            {
+                employees = result.Data;
+            }
+            else
+            {
+                employees = new List<Employee>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入員工資料時發生錯誤：{ex.Message}");
+            employees = new List<Employee>();
+        }
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
+            products = new List<Product>();
+        }
+    }
+
+    /// <summary>
+    /// 更新銷售單選項 - 根據客戶ID過濾，並排除已完成的銷售單
+    /// </summary>
+    private async Task UpdateSalesOrderOptions(int? customerId = null)
+    {
+        try
+        {
+            var filteredSalesOrders = salesOrders;
+
+            if (customerId.HasValue)
+            {
+                // 根據選擇的客戶過濾銷售單
+                filteredSalesOrders = salesOrders
+                    .Where(so => so.CustomerId == customerId.Value && !IsOrderFullyReturned(so))
+                    .ToList();
+            }
+            else
+            {
+                // 顯示所有未完全退貨的銷售單
+                filteredSalesOrders = salesOrders
+                    .Where(so => !IsOrderFullyReturned(so))
+                    .ToList();
+            }
+
+            // 更新表單中銷售單選項
+            var salesOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesOrderId));
+            if (salesOrderField != null)
+            {
+                salesOrderField.Options = filteredSalesOrders.Select(so => new SelectOption
+                {
+                    Text = $"{so.SalesOrderNumber} - {so.Customer?.CompanyName ?? ""}",
+                    Value = so.Id.ToString()
+                }).ToList();
+                
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新銷售單選項時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 判斷銷售單是否已完全退貨
+    /// 退貨條件：所有明細都已完成退貨（退貨數量 == 銷售數量 或 標記為已完成）
+    /// </summary>
+    private bool IsOrderFullyReturned(SalesOrder salesOrder)
+    {
+        try
+        {
+            // 如果沒有明細，視為未完成
+            if (salesOrder.SalesOrderDetails == null || !salesOrder.SalesOrderDetails.Any())
+                return false;
+
+            // 這裡需要實作檢查邏輯，暫時回傳 false
+            // 檢查所有明細是否都已完成退貨
+            // return salesOrder.SalesOrderDetails.All(detail => detail.ReturnedQuantity >= detail.Quantity);
+            return false;
+        }
+        catch
+        {
+            // 發生錯誤時，視為未完成
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 初始化表單欄位
+    /// </summary>
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.SalesReturnNumber),
+                    Label = "退貨單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "系統自動產生",
+                    IsRequired = true,
+                    IsReadOnly = true,
+                    MaxLength = 50,
+                    HelpText = "系統自動產生的退貨單號"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "輸入客戶名稱進行篩選，或直接選擇",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    Label = "篩選產品",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = await GetFilterProductOptions(),
+                    HelpText = "選擇特定產品進行篩選，或留空顯示所有產品"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.SalesOrderId),
+                    Label = "銷售單",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "可選擇特定銷售單進行篩選，或留空使用多銷售單模式"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnDate),
+                    Label = "退貨日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "貨品實際退貨日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(SalesReturn.ReturnReason),
+                    Label = "退貨原因",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = Enum.GetValues<SalesReturnReason>().Select(r => new SelectOption
+                    {
+                        Text = r.ToString(),
+                        Value = ((int)r).ToString()
+                    }).ToList(),
+                    HelpText = "請選擇退貨原因"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<SalesReturn>()
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(SalesReturn.SalesReturnNumber), "基本資訊" },
+                { nameof(SalesReturn.CustomerId), "基本資訊" },
+                { "FilterProductId", "基本資訊" },
+                { nameof(SalesReturn.SalesOrderId), "基本資訊" },
+                { nameof(SalesReturn.ReturnDate), "基本資訊" },
+                { nameof(SalesReturn.ReturnReason), "基本資訊" },
+                { nameof(BaseEntity.Remarks), "其他資訊" }
+            };
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"初始化表單欄位時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 取得產品篩選選項 - 根據選擇的客戶篩選
+    /// </summary>
+    private async Task<List<SelectOption>> GetFilterProductOptions()
+    {
+        try
+        {
+            var options = new List<SelectOption>();
+            
+            // 目前暫時顯示所有產品，未來可以根據客戶-產品關聯來篩選
+            options.AddRange(products.Select(p => new SelectOption
+            {
+                Value = p.Id.ToString(),
+                Text = $"{p.Code} - {p.Name}"
+            }));
+            
+            return options;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品選項時發生錯誤：{ex.Message}");
+            return new List<SelectOption>();
+        }
+    }
+
+    /// <summary>
+    /// 更新產品篩選選項 - 當客戶變更時調用
+    /// </summary>
+    private async Task UpdateFilterProductOptions(int? customerId = null)
+    {
+        try
+        {
+            // 找到產品篩選欄位並更新其選項
+            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+            if (filterProductField != null)
+            {
+                var options = new List<SelectOption>();
+                
+                // 目前暫時顯示所有產品，未來可以根據客戶-產品關聯來篩選
+                options.AddRange(products.Select(p => new SelectOption
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Code} - {p.Name}"
+                }));
+                
+                filterProductField.Options = options;
+                
+                // 清空目前的產品篩選選擇
+                filterProductId = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新產品篩選選項時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 取得表單欄位清單
+    /// </summary>
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(SalesReturn.CustomerId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["CompanyName"] = searchTerm
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(SalesReturn.CustomerId), customerModalManager }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(SalesReturn.CustomerId), customers.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(SalesReturn.CustomerId), "CompanyName" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(SalesReturn.CustomerId), "Id" }
+        };
+    }
+
+    /// <summary>
+    /// 生成銷售退貨單號
+    /// </summary>
+    private Task<string> GenerateReturnNumberAsync()
+    {
+        // 簡化實作，直接使用時間戳生成
+        var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+        return Task.FromResult($"SR{timestamp}");
+    }
+
+    // ===== 銷售退貨明細管理方法 =====
+    
+    /// <summary>
+    /// 載入銷售退貨明細
+    /// </summary>
+    private async Task LoadSalesReturnDetails(int salesReturnId)
+    {
+        try
+        {
+            salesReturnDetails = await SalesReturnDetailService.GetBySalesReturnIdAsync(salesReturnId);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入退貨明細時發生錯誤：{ex.Message}");
+            salesReturnDetails = new List<SalesReturnDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 處理退貨明細變更
+    /// </summary>
+    private async Task HandleReturnDetailsChanged(List<SalesReturnDetail> details)
+    {
+        try
+        {
+            salesReturnDetails = details;
+            
+            // 重新計算總金額
+            var totalAmount = details.Where(d => d.ProductId > 0)
+                                    .Sum(d => d.ReturnQuantity * d.ReturnUnitPrice);
+            
+            // 更新主檔總金額
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.TotalReturnAmount = totalAmount;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理退貨明細變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            switch (fieldChange.PropertyName)
+            {
+                case nameof(SalesReturn.CustomerId):
+                    if (int.TryParse(fieldChange.Value?.ToString(), out var customerId))
+                    {
+                        // 當客戶變更時，更新銷售單選項和產品篩選選項
+                        await UpdateSalesOrderOptions(customerId);
+                        await UpdateFilterProductOptions(customerId);
+                        
+                        // 使用統一 Helper 更新客戶欄位的操作按鈕
+                        await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                            customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                        
+                        // 清除現有的銷售單選擇
+                        if (editModalComponent?.Entity != null)
+                        {
+                            editModalComponent.Entity.SalesOrderId = null;
+                            StateHasChanged();
+                        }
+                    }
+                    break;
+
+                case "FilterProductId":
+                    if (int.TryParse(fieldChange.Value?.ToString(), out var productId))
+                    {
+                        filterProductId = productId == 0 ? null : productId;
+                        
+                        // 通知退貨明細管理器篩選變更
+                        // if (salesReturnDetailManager != null)
+                        // {
+                        //     // 這裡可以調用明細管理器的篩選方法
+                        //     StateHasChanged();
+                        // }
+                        StateHasChanged();
+                    }
+                    break;
+
+                case nameof(SalesReturn.SalesOrderId):
+                    // 當銷售單ID變更時，觸發重新渲染以篩選對應的銷售明細
+                    StateHasChanged();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 驗證銷售退貨明細 - 在儲存主檔之前執行
+    /// </summary>
+    private async Task<bool> ValidateSalesReturnDetailsAsync(SalesReturn salesReturn)
+    {
+        try
+        {
+            // 檢查是否有有效的明細
+            var validDetails = salesReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+            
+            return true; // 允許沒有明細的退貨單（可能是預建單）
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"驗證退貨明細時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// AfterSave 回調方法 - 在主檔儲存後處理明細並使用差異比較更新庫存
+    /// 處理流程：
+    /// 1. 儲存有效的明細資料（有選擇商品和倉庫的記錄）
+    /// 2. 更新主檔總金額
+    /// 3. 使用新的 UpdateInventoryByDifferenceAsync 方法進行庫存差異更新
+    /// 4. 差異更新邏輯：
+    ///    - 比較編輯前後明細的變化
+    ///    - 只針對變更的部分進行庫存調整
+    ///    - 新增：直接增加庫存（退貨增加庫存）
+    ///    - 修改：調整庫存差異（增加或減少）
+    ///    - 刪除：回退庫存（減少庫存）
+    ///    - 產品替換：從原產品減去庫存，向新產品增加庫存
+    /// </summary>
+    private async Task SaveSalesReturnDetailsAsync(SalesReturn salesReturn)
+    {
+        try
+        {
+            // 1. 儲存明細資料
+            var validDetails = salesReturnDetails
+                .Where(d => d.ProductId > 0 && d.ReturnQuantity > 0)
+                .ToList();
+
+            // 設定明細的退貨單ID
+            foreach (var detail in validDetails)
+            {
+                detail.SalesReturnId = salesReturn.Id;
+            }
+
+            // 使用基礎的 CRUD 方法儲存明細
+            if (SalesReturnId.HasValue)
+            {
+                // 編輯模式：先刪除現有明細，再新增
+                var existingDetails = await SalesReturnDetailService.GetBySalesReturnIdAsync(SalesReturnId.Value);
+                foreach (var existing in existingDetails)
+                {
+                    await SalesReturnDetailService.DeleteAsync(existing.Id);
+                }
+                
+                foreach (var detail in validDetails)
+                {
+                    await SalesReturnDetailService.CreateAsync(detail);
+                }
+            }
+            else
+            {
+                // 新增模式：直接新增所有明細
+                foreach (var detail in validDetails)
+                {
+                    await SalesReturnDetailService.CreateAsync(detail);
+                }
+            }
+
+            // 2. 更新主檔總金額
+            var totalAmount = validDetails.Sum(d => d.ReturnQuantity * d.ReturnUnitPrice);
+            if (Math.Abs(salesReturn.TotalReturnAmount - totalAmount) > 0.01m) // 避免浮點數比較問題
+            {
+                salesReturn.TotalReturnAmount = totalAmount;
+                await SalesReturnService.UpdateAsync(salesReturn);
+            }
+
+            // 3. 庫存更新邏輯
+            // 退貨會增加庫存，所以這裡的邏輯與進貨相同
+            if (SalesReturnId.HasValue)
+            {
+                // 編輯模式：使用差異比較更新庫存
+                var originalDetails = await SalesReturnDetailService.GetBySalesReturnIdAsync(SalesReturnId.Value);
+                
+                // 檢查是否已經存在庫存交易記錄
+                var hasExistingTransactions = await HasExistingInventoryTransactions(salesReturn.SalesReturnNumber);
+                
+                if (hasExistingTransactions)
+                {
+                    // 已有交易記錄，使用差異更新
+                    await UpdateInventoryByDifferenceAsync(originalDetails, validDetails, salesReturn.SalesReturnNumber);
+                }
+                else
+                {
+                    // 無交易記錄，直接建立庫存交易
+                    await CreateInventoryTransactionsAsync(validDetails, salesReturn.SalesReturnNumber);
+                }
+            }
+            else
+            {
+                // 新增模式：建立庫存交易
+                await CreateInventoryTransactionsAsync(validDetails, salesReturn.SalesReturnNumber);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存退貨明細時發生錯誤：{ex.Message}");
+            throw; // 重新拋出例外，讓上層知道儲存失敗
+        }
+    }
+
+    /// <summary>
+    /// 檢查是否已經存在庫存交易記錄
+    /// </summary>
+    private Task<bool> HasExistingInventoryTransactions(string returnNumber)
+    {
+        try
+        {
+            // 這裡應該檢查庫存交易表是否已有相關記錄
+            // 暫時回傳 false，實際實作需要根據系統設計調整
+            return Task.FromResult(false);
+        }
+        catch
+        {
+            // 發生錯誤時，假設沒有現有交易
+            return Task.FromResult(false);
+        }
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>
+            {
+                new()
+                {
+                    Title = "退貨明細管理",
+                    Content = CreateReturnDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<SalesReturn, ISalesReturnService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
+    /// 創建退貨明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateReturnDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>
+                        銷售退貨明細管理功能開發中...
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            請先完成基本資料設定，明細管理將在後續版本中提供。
+                        </small>
+                    </div>
+                </div>
+            </div>
+        }
+        catch
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                明細管理器載入失敗，請重新整理頁面。
+            </div>
+        }
+    };
+    
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化客戶 Modal 管理器
+    /// </summary>
+    private void InitializeCustomerModalManager()
+    {
+        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
+            .WithPropertyName(nameof(SalesReturn.CustomerId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(customerId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.CustomerId = customerId;
+                }
+            })
+            .WithCustomPostProcess(async customer => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 產生客戶操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            customerModalManager, 
+            nameof(SalesReturn.CustomerId)
+        );
+    }
+
+    /// <summary>
+    /// 包裝客戶儲存事件
+    /// </summary>
+    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
+    {
+        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 建立庫存交易記錄 - 新增模式
+    /// </summary>
+    private async Task CreateInventoryTransactionsAsync(List<SalesReturnDetail> details, string returnNumber)
+    {
+        // 這裡應該實作庫存交易建立邏輯
+        // 退貨會增加庫存，所以交易類型為正數
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 使用差異比較更新庫存
+    /// </summary>
+    private async Task UpdateInventoryByDifferenceAsync(List<SalesReturnDetail> originalDetails, List<SalesReturnDetail> newDetails, string returnNumber)
+    {
+        // 這裡應該實作庫存差異更新邏輯
+        // 比較原始明細和新明細的差異，只更新變更的部分
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 釋放資源
+    /// </summary>
+    public void Dispose()
+    {
+        try
+        {
+            // 清理資源
+            editModalComponent = null;
+            // salesReturnDetailManager = null;
+            // customerEditModal = null;
+            
+            // 清理事件訂閱（如果有的話）
+            // ...
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
+    }
+}

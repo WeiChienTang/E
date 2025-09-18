@@ -93,9 +93,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Employee)
                     .Where(sr => !sr.IsDeleted &&
                         (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
-                         sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm) ||
-                         (sr.ReturnDescription != null && sr.ReturnDescription.ToLower().Contains(lowerSearchTerm)) ||
-                         (sr.ProcessPersonnel != null && sr.ProcessPersonnel.ToLower().Contains(lowerSearchTerm))))
+                         sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
                     .ToListAsync();
@@ -140,17 +138,8 @@ namespace ERPCore2.Services
                 if (entity.ReturnTaxAmount < 0)
                     errors.Add("退回稅額不能為負數");
 
-                if (entity.RefundAmount < 0)
-                    errors.Add("退款金額不能為負數");
-
                 if (entity.IsRefunded && entity.RefundDate == null)
                     errors.Add("已標示為退款但未設定退款日期");
-
-                if (entity.ExpectedProcessDate.HasValue && entity.ExpectedProcessDate < entity.ReturnDate)
-                    errors.Add("預計處理日期不能早於退回日期");
-
-                if (entity.ActualProcessDate.HasValue && entity.ActualProcessDate < entity.ReturnDate)
-                    errors.Add("實際處理日期不能早於退回日期");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -220,32 +209,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesReturn>> GetByStatusAsync(SalesReturnStatus status)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SalesReturns
-                    .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
-                    .Include(sr => sr.Employee)
-                    .Where(sr => sr.ReturnStatus == status && !sr.IsDeleted)
-                    .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByStatusAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetByStatusAsync),
-                    ServiceType = GetType().Name,
-                    Status = status
-                });
-                return new List<SalesReturn>();
-            }
-        }
-
         public async Task<List<SalesReturn>> GetBySalesOrderIdAsync(int salesOrderId)
         {
             try
@@ -301,55 +264,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> UpdateStatusAsync(int id, SalesReturnStatus status, string? remarks = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var salesReturn = await context.SalesReturns.FindAsync(id);
-
-                if (salesReturn == null || salesReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的銷貨退回記錄");
-
-                salesReturn.ReturnStatus = status;
-                if (!string.IsNullOrWhiteSpace(remarks))
-                    salesReturn.ProcessRemarks = remarks;
-
-                salesReturn.UpdatedAt = DateTime.UtcNow;
-
-                // 根據狀態更新相關日期
-                switch (status)
-                {
-                    case SalesReturnStatus.Processing:
-                        if (salesReturn.ActualProcessDate == null)
-                            salesReturn.ActualProcessDate = DateTime.Today;
-                        break;
-                    case SalesReturnStatus.Completed:
-                        if (salesReturn.ActualProcessDate == null)
-                            salesReturn.ActualProcessDate = DateTime.Today;
-                        break;
-                    case SalesReturnStatus.Cancelled:
-                        salesReturn.ActualProcessDate = null;
-                        break;
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateStatusAsync), GetType(), _logger, new
-                {
-                    Method = nameof(UpdateStatusAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    Status = status,
-                    Remarks = remarks
-                });
-                return ServiceResult.Failure("更新狀態時發生錯誤");
-            }
-        }
-
         public async Task<decimal> CalculateTotalReturnAmountAsync(int salesReturnId)
         {
             try
@@ -368,46 +282,6 @@ namespace ERPCore2.Services
                     SalesReturnId = salesReturnId
                 });
                 return 0;
-            }
-        }
-
-        public async Task<ServiceResult> SetRefundInfoAsync(int salesReturnId, decimal refundAmount, DateTime refundDate, string? refundRemarks = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var salesReturn = await context.SalesReturns.FindAsync(salesReturnId);
-
-                if (salesReturn == null || salesReturn.IsDeleted)
-                    return ServiceResult.Failure("找不到指定的銷貨退回記錄");
-
-                if (refundAmount < 0)
-                    return ServiceResult.Failure("退款金額不能為負數");
-
-                if (refundDate < salesReturn.ReturnDate)
-                    return ServiceResult.Failure("退款日期不能早於退回日期");
-
-                salesReturn.IsRefunded = true;
-                salesReturn.RefundAmount = refundAmount;
-                salesReturn.RefundDate = refundDate;
-                salesReturn.RefundRemarks = refundRemarks;
-                salesReturn.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetRefundInfoAsync), GetType(), _logger, new
-                {
-                    Method = nameof(SetRefundInfoAsync),
-                    ServiceType = GetType().Name,
-                    SalesReturnId = salesReturnId,
-                    RefundAmount = refundAmount,
-                    RefundDate = refundDate,
-                    RefundRemarks = refundRemarks
-                });
-                return ServiceResult.Failure("設定退款資訊時發生錯誤");
             }
         }
 
@@ -467,13 +341,7 @@ namespace ERPCore2.Services
                 {
                     TotalReturns = returns.Count,
                     TotalReturnAmount = returns.Sum(sr => sr.TotalReturnAmount),
-                    TotalRefundAmount = returns.Sum(sr => sr.RefundAmount),
-                    PendingReturns = returns.Count(sr => sr.ReturnStatus == SalesReturnStatus.Submitted),
-                    CompletedReturns = returns.Count(sr => sr.ReturnStatus == SalesReturnStatus.Completed),
-                    CancelledReturns = returns.Count(sr => sr.ReturnStatus == SalesReturnStatus.Cancelled),
                     ReturnReasonCounts = returns.GroupBy(sr => sr.ReturnReason)
-                        .ToDictionary(g => g.Key, g => g.Count()),
-                    StatusCounts = returns.GroupBy(sr => sr.ReturnStatus)
                         .ToDictionary(g => g.Key, g => g.Count())
                 };
 

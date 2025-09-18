@@ -290,11 +290,11 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 驗證銷貨訂單明細的庫存是否足夠
+        /// 驗證銷貨訂單明細的倉庫選擇和庫存是否足夠
         /// </summary>
         /// <param name="salesOrderDetails">銷貨訂單明細清單</param>
-        /// <returns>驗證結果，包含庫存不足的詳細訊息</returns>
-        public async Task<ServiceResult> ValidateInventoryStockAsync(List<SalesOrderDetail> salesOrderDetails)
+        /// <returns>驗證結果，包含倉庫和庫存不足的詳細訊息</returns>
+        public async Task<ServiceResult> ValidateWarehouseInventoryStockAsync(List<SalesOrderDetail> salesOrderDetails)
         {
             try
             {
@@ -303,75 +303,48 @@ namespace ERPCore2.Services
                     return ServiceResult.Success();
                 }
 
-                // 按產品分組統計所需數量
-                var requiredQuantities = salesOrderDetails
-                    .Where(d => d.ProductId > 0 && d.OrderQuantity > 0)
-                    .GroupBy(d => d.ProductId)
-                    .ToDictionary(g => g.Key, g => g.Sum(d => d.OrderQuantity));
-
-                if (!requiredQuantities.Any())
-                {
-                    return ServiceResult.Success();
-                }
-
-                var insufficientStockMessages = new List<string>();
+                var errors = new List<string>();
                 
-                foreach (var (productId, requiredQty) in requiredQuantities)
+                foreach (var detail in salesOrderDetails.Where(d => d.ProductId > 0 && d.OrderQuantity > 0))
                 {
-                    // 取得該商品在所有倉庫的庫存
-                    var productStocks = await _inventoryStockService.GetByProductIdAsync(productId);
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var product = await context.Products.FindAsync(detail.ProductId);
+                    var productName = $"{product?.Code ?? "N/A"} - {product?.Name ?? "未知商品"}";
                     
-                    if (!productStocks.Any())
+                    // 1. 檢查是否選擇倉庫
+                    if (!detail.WarehouseId.HasValue)
                     {
-                        // 沒有庫存記錄
-                        using var context = await _contextFactory.CreateDbContextAsync();
-                        var product = await context.Products.FindAsync(productId);
-                        insufficientStockMessages.Add($"{product?.Code ?? "N/A"} - {product?.Name ?? "未知商品"} [ 無庫存記錄數量:0 ]");
-                        insufficientStockMessages.Add($"合計: 0");
-                        insufficientStockMessages.Add($"不足: {requiredQty}");
+                        errors.Add($"{productName} 必須選擇倉庫");
                         continue;
                     }
 
-                    var totalAvailable = productStocks.Sum(s => s.AvailableStock);
-                    
-                    if (totalAvailable < (int)Math.Ceiling(requiredQty))
+                    // 2. 檢查指定倉庫的庫存（合併計算該倉庫內所有位置的庫存）
+                    var availableStock = await _inventoryStockService.GetTotalAvailableStockByWarehouseAsync(
+                        detail.ProductId, detail.WarehouseId.Value);
+                        
+                    if (availableStock < detail.OrderQuantity)
                     {
-                        var product = productStocks.FirstOrDefault()?.Product;
+                        var warehouse = await context.Warehouses.FindAsync(detail.WarehouseId.Value);
+                        var warehouseName = warehouse?.Name ?? "未知倉庫";
                         
-                        // 只顯示有庫存的倉庫
-                        var stockDetails = productStocks
-                            .Where(s => s.AvailableStock > 0)
-                            .Select(s => $"{product?.Code ?? "N/A"} - {product?.Name ?? "未知商品"} [ {s.Warehouse?.Name ?? "未知倉庫"}數量:{s.AvailableStock} ]")
-                            .ToList();
-                        
-                        if (!stockDetails.Any())
-                        {
-                            // 所有倉庫都沒有可用庫存
-                            insufficientStockMessages.Add($"{product?.Code ?? "N/A"} - {product?.Name ?? "未知商品"} [ 所有倉庫數量:0 ]");
-                        }
-                        else
-                        {
-                            insufficientStockMessages.AddRange(stockDetails);
-                        }
-                        
-                        insufficientStockMessages.Add($"合計: {totalAvailable}");
-                        insufficientStockMessages.Add($"不足: {(int)Math.Ceiling(requiredQty) - totalAvailable}");
-                        insufficientStockMessages.Add(""); // 空行分隔不同商品
+                        errors.Add($"{productName} 在倉庫 {warehouseName} 庫存不足");
+                        errors.Add($"可用庫存: {availableStock}，需要: {detail.OrderQuantity}");
+                        errors.Add(""); // 空行分隔
                     }
                 }
                 
-                return insufficientStockMessages.Any() 
-                    ? ServiceResult.Failure(string.Join("\n", insufficientStockMessages).TrimEnd())
+                return errors.Any() 
+                    ? ServiceResult.Failure(string.Join("\n", errors).TrimEnd())
                     : ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateInventoryStockAsync), GetType(), _logger, new {
-                    Method = nameof(ValidateInventoryStockAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateWarehouseInventoryStockAsync), GetType(), _logger, new {
+                    Method = nameof(ValidateWarehouseInventoryStockAsync),
                     ServiceType = GetType().Name,
                     DetailCount = salesOrderDetails?.Count ?? 0
                 });
-                return ServiceResult.Failure("驗證庫存時發生錯誤");
+                return ServiceResult.Failure("驗證倉庫庫存時發生錯誤");
             }
         }
 
