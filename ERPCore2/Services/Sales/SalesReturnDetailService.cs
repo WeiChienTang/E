@@ -508,5 +508,28 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("驗證退回數量時發生錯誤");
             }
         }
+
+        /// <summary>
+        /// 取得指定銷售訂單明細的已退貨數量
+        /// </summary>
+        public async Task<decimal> GetReturnedQuantityByOrderDetailAsync(int salesOrderDetailId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.SalesReturnDetails
+                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId && !srd.IsDeleted)
+                    .SumAsync(srd => srd.ReturnQuantity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnedQuantityByOrderDetailAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReturnedQuantityByOrderDetailAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderDetailId = salesOrderDetailId 
+                });
+                return 0;
+            }
+        }
     }
 }

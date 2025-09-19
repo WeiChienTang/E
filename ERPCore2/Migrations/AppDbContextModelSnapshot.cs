@@ -1033,9 +1033,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseLocationId");
 
-                    b.HasIndex("ProductId", "WarehouseId", "WarehouseLocationId", "BatchNumber")
+                    b.HasIndex("ProductId", "WarehouseId", "WarehouseLocationId")
                         .IsUnique()
-                        .HasFilter("[WarehouseId] IS NOT NULL AND [WarehouseLocationId] IS NOT NULL AND [BatchNumber] IS NOT NULL");
+                        .HasFilter("[WarehouseId] IS NOT NULL AND [WarehouseLocationId] IS NOT NULL");
 
                     b.ToTable("InventoryStocks");
                 });
@@ -1088,7 +1088,17 @@ namespace ERPCore2.Migrations
                     b.Property<int>("StockBefore")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("TransactionBatchDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionBatchNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("TransactionExpiryDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("TransactionNumber")

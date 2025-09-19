@@ -48,6 +48,17 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "參考單號")]
         public string? ReferenceNumber { get; set; }
         
+        // === 批號追蹤欄位 ===
+        [Display(Name = "交易批號")]
+        [MaxLength(50, ErrorMessage = "交易批號不可超過50個字元")]
+        public string? TransactionBatchNumber { get; set; }
+        
+        [Display(Name = "交易批次進貨日期")]
+        public DateTime? TransactionBatchDate { get; set; }
+        
+        [Display(Name = "交易批次到期日期")]
+        public DateTime? TransactionExpiryDate { get; set; }
+        
         // Foreign Keys
         [Required(ErrorMessage = "商品為必填")]
         [Display(Name = "商品")]

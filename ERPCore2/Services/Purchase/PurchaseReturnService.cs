@@ -611,10 +611,12 @@ namespace ERPCore2.Services
                         return ServiceResult<PurchaseReturn>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
                     }
 
-                    // 更新庫存邏輯 - 退貨需要減少庫存
+                    // 更新庫存邏輯 - 退貨需要減少庫存 (只處理有數量變更的明細)
                     if (_inventoryStockService != null)
                     {
-                        foreach (var detail in details.Where(d => !d.IsDeleted && d.ReturnQuantity > 0))
+                        var stockChanges = detailResult.Data ?? new List<(PurchaseReturnDetail, int)>();
+                        
+                        foreach (var (detail, quantityDiff) in stockChanges.Where(sc => sc.Item2 != 0))
                         {
                             // 從關聯的進貨明細取得倉庫ID
                             int? warehouseId = null;
@@ -642,16 +644,35 @@ namespace ERPCore2.Services
                                 continue;
                             }
 
-                            // 退貨需要減少庫存，使用 ReduceStockAsync
-                            var stockResult = await _inventoryStockService.ReduceStockAsync(
-                                detail.ProductId,
-                                warehouseId.Value,
-                                detail.ReturnQuantity, // 正數量，由 ReduceStockAsync 處理減少邏輯
-                                InventoryTransactionTypeEnum.Return,
-                                savedEntity.PurchaseReturnNumber,
-                                detail.WarehouseLocationId,
-                                $"採購退貨 - {savedEntity.PurchaseReturnNumber}"
-                            );
+                            // 根據數量差異進行庫存調整
+                            ServiceResult stockResult;
+                            if (quantityDiff > 0)
+                            {
+                                // 退貨數量增加，需要減少庫存
+                                stockResult = await _inventoryStockService.ReduceStockAsync(
+                                    detail.ProductId,
+                                    warehouseId.Value,
+                                    quantityDiff, // 只處理增加的數量
+                                    InventoryTransactionTypeEnum.Return,
+                                    savedEntity.PurchaseReturnNumber,
+                                    detail.WarehouseLocationId,
+                                    $"採購退貨增量 - {savedEntity.PurchaseReturnNumber}"
+                                );
+                            }
+                            else
+                            {
+                                // 退貨數量減少，需要增加庫存 (撤銷部分退貨)
+                                stockResult = await _inventoryStockService.AddStockAsync(
+                                    detail.ProductId,
+                                    warehouseId.Value,
+                                    Math.Abs(quantityDiff), // 轉為正數
+                                    InventoryTransactionTypeEnum.Return,
+                                    savedEntity.PurchaseReturnNumber,
+                                    detail.OriginalUnitPrice, // 使用原始單價
+                                    detail.WarehouseLocationId,
+                                    $"採購退貨撤銷 - {savedEntity.PurchaseReturnNumber}"
+                                );
+                            }
 
                             if (!stockResult.IsSuccess)
                             {
@@ -692,7 +713,8 @@ namespace ERPCore2.Services
         /// <summary>
         /// 在指定的 DbContext 中更新採購退貨明細
         /// </summary>
-        private async Task<ServiceResult> UpdateDetailsInContext(AppDbContext context, int purchaseReturnId, List<PurchaseReturnDetail> details)
+        /// <returns>ServiceResult，其中Data包含數量變更資訊的列表</returns>
+        private async Task<ServiceResult<List<(PurchaseReturnDetail detail, int quantityDifference)>>> UpdateDetailsInContext(AppDbContext context, int purchaseReturnId, List<PurchaseReturnDetail> details)
         {
             try
             {
@@ -701,9 +723,10 @@ namespace ERPCore2.Services
                     .Where(d => d.PurchaseReturnId == purchaseReturnId && !d.IsDeleted)
                     .ToListAsync();
 
-                // 準備新的明細資料
+                // 準備新的明細資料和數量變更追蹤
                 var newDetailsToAdd = new List<PurchaseReturnDetail>();
                 var updatedDetailsToUpdate = new List<(PurchaseReturnDetail existing, PurchaseReturnDetail updated)>();
+                var quantityChanges = new List<(PurchaseReturnDetail detail, int quantityDifference)>();
 
                 foreach (var detail in details.Where(d => !d.IsDeleted))
                 {
@@ -711,30 +734,39 @@ namespace ERPCore2.Services
 
                     if (detail.Id > 0)
                     {
-                        // 更新現有明細
+                        // 更新現有明細 - 追蹤數量變更
                         var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
                         if (existingDetail != null)
                         {
+                            // 計算數量差異 (新數量 - 原數量)
+                            var quantityDiff = detail.ReturnQuantity - existingDetail.ReturnQuantity;
+                            quantityChanges.Add((detail, quantityDiff));
+                            
                             updatedDetailsToUpdate.Add((existingDetail, detail));
                         }
                     }
                     else
                     {
-                        // 新增明細
+                        // 新增明細 - 整個數量都是新增
                         detail.CreatedAt = DateTime.UtcNow;
                         detail.UpdatedAt = DateTime.UtcNow;
                         detail.IsDeleted = false;
                         newDetailsToAdd.Add(detail);
+                        
+                        // 新增的明細，數量差異就是全部數量
+                        quantityChanges.Add((detail, detail.ReturnQuantity));
                     }
                 }
 
-                // 標記刪除的明細
+                // 標記刪除的明細 - 追蹤被刪除的數量
                 var detailIdsToKeep = details.Where(d => d.Id > 0 && !d.IsDeleted).Select(d => d.Id).ToList();
                 var detailsToDelete = existingDetails.Where(ed => !detailIdsToKeep.Contains(ed.Id)).ToList();
-
-                // 執行資料庫操作
+                
                 foreach (var detailToDelete in detailsToDelete)
                 {
+                    // 被刪除的明細，數量差異是負的原數量 (撤銷退貨)
+                    quantityChanges.Add((detailToDelete, -detailToDelete.ReturnQuantity));
+                    
                     detailToDelete.IsDeleted = true;
                     detailToDelete.UpdatedAt = DateTime.UtcNow;
                 }
@@ -752,7 +784,7 @@ namespace ERPCore2.Services
                 }
 
                 await context.SaveChangesAsync();
-                return ServiceResult.Success();
+                return ServiceResult<List<(PurchaseReturnDetail detail, int quantityDifference)>>.Success(quantityChanges);
             }
             catch (Exception ex)
             {
@@ -761,7 +793,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     PurchaseReturnId = purchaseReturnId 
                 });
-                return ServiceResult.Failure($"更新明細時發生錯誤：{ex.Message}");
+                return ServiceResult<List<(PurchaseReturnDetail detail, int quantityDifference)>>.Failure($"更新明細時發生錯誤：{ex.Message}");
             }
         }
 
@@ -785,7 +817,125 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure($"更新採購退貨明細時發生錯誤：{ex.Message}");
             }
         }
+
+        /// <summary>
+        /// 永久刪除採購退貨單（含庫存回復）
+        /// 刪除退貨單時，需要將之前因退貨而扣減的庫存回復到退貨前的狀態
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 1. 取得要刪除的退貨單（含明細資料）
+                    var entity = await context.PurchaseReturns
+                        .Include(pr => pr.PurchaseReturnDetails)
+                            .ThenInclude(prd => prd.PurchaseReceivingDetail)
+                        .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                        
+                    if (entity == null)
+                    {
+                        return ServiceResult.Failure("找不到要刪除的退貨單");
+                    }
+                    
+                    _logger?.LogInformation("開始刪除退貨單: {ReturnNumber}, ID: {Id}", entity.PurchaseReturnNumber, entity.Id);
+                    
+                    // 2. 檢查是否可以刪除
+                    var canDeleteResult = await CanDeleteAsync(entity);
+                    if (!canDeleteResult.IsSuccess)
+                    {
+                        return canDeleteResult;
+                    }
+                    
+                    // 3. 回復庫存 - 將之前因退貨而扣減的庫存回復
+                    if (_inventoryStockService != null)
+                    {
+                        var eligibleDetails = entity.PurchaseReturnDetails.Where(d => !d.IsDeleted && d.ReturnQuantity > 0).ToList();
+                        _logger?.LogInformation("需要回復庫存的明細數量: {Count}", eligibleDetails.Count);
+                        
+                        foreach (var detail in eligibleDetails)
+                        {
+                            // 從關聯的進貨明細取得倉庫ID
+                            int? warehouseId = null;
+                            
+                            // 方法1：從關聯的進貨明細取得倉庫ID
+                            if (detail.PurchaseReceivingDetailId.HasValue)
+                            {
+                                var receivingDetail = await context.PurchaseReceivingDetails
+                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value && !prd.IsDeleted);
+                                warehouseId = receivingDetail?.WarehouseId;
+                            }
+                            
+                            // 方法2：如果沒有進貨明細關聯，嘗試從倉庫位置反查
+                            if (!warehouseId.HasValue && detail.WarehouseLocationId.HasValue)
+                            {
+                                var warehouseLocation = await context.WarehouseLocations
+                                    .FirstOrDefaultAsync(wl => wl.Id == detail.WarehouseLocationId.Value);
+                                warehouseId = warehouseLocation?.WarehouseId;
+                            }
+
+                            // 如果還是沒有倉庫ID，跳過此明細並記錄警告
+                            if (!warehouseId.HasValue)
+                            {
+                                _logger?.LogWarning("退貨明細 ID:{DetailId} 無法取得倉庫ID，跳過庫存回復", detail.Id);
+                                continue;
+                            }
+
+                            _logger?.LogInformation("回復庫存 - 產品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
+                                detail.ProductId, warehouseId.Value, detail.ReturnQuantity);
+
+                            // 刪除退貨單時需要增加庫存（回復之前扣減的數量）
+                            var addResult = await _inventoryStockService.AddStockAsync(
+                                detail.ProductId,
+                                warehouseId.Value,
+                                detail.ReturnQuantity, // 回復退貨的數量
+                                InventoryTransactionTypeEnum.Return,
+                                $"{entity.PurchaseReturnNumber}_DEL", // 標記為刪除操作
+                                detail.OriginalUnitPrice, // 使用原始單價
+                                detail.WarehouseLocationId,
+                                $"刪除採購退貨單回復庫存 - {entity.PurchaseReturnNumber}"
+                            );
+
+                            if (!addResult.IsSuccess)
+                            {
+                                await transaction.RollbackAsync();
+                                return ServiceResult.Failure($"回復庫存失敗：{addResult.ErrorMessage}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _logger?.LogWarning("庫存服務未注入，無法回復庫存");
+                    }
+
+                    // 4. 執行實體刪除
+                    context.PurchaseReturns.Remove(entity);
+                    await context.SaveChangesAsync();
+                    
+                    await transaction.CommitAsync();
+                    
+                    _logger?.LogInformation("成功刪除退貨單: {ReturnNumber}", entity.PurchaseReturnNumber);
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(PermanentDeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id 
+                });
+                return ServiceResult.Failure($"刪除退貨單時發生錯誤：{ex.Message}");
+            }
+        }
     }
-
-
 }

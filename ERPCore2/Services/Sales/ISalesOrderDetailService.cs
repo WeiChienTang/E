@@ -47,5 +47,20 @@ namespace ERPCore2.Services
         /// 根據銷貨訂單ID取得明細包含關聯資料
         /// </summary>
         Task<List<SalesOrderDetail>> GetBySalesOrderIdWithIncludesAsync(int salesOrderId);
+
+        /// <summary>
+        /// 更新銷貨明細並處理庫存回滾/重新分配
+        /// </summary>
+        Task<ServiceResult> UpdateDetailsWithInventoryAsync(
+            int salesOrderId, 
+            List<SalesOrderDetail> newDetails, 
+            List<SalesOrderDetail> originalDetails);
+
+        /// <summary>
+        /// 根據客戶取得可退貨的銷售訂單明細
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <returns>可退貨的銷售訂單明細清單</returns>
+        Task<List<SalesOrderDetail>> GetReturnableDetailsByCustomerAsync(int customerId);
     }
 }

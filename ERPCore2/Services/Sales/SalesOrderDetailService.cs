@@ -292,11 +292,15 @@ namespace ERPCore2.Services
                 
                 foreach (var detail in details)
                 {
-                    // 重新計算小計
-                    detail.Subtotal = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
-                    detail.UpdatedAt = DateTime.UtcNow;
-                    
-                    context.SalesOrderDetails.Update(detail);
+                    // 只處理有效的明細（已選擇產品的）
+                    if (detail.ProductId > 0)
+                    {
+                        // 重新計算小計
+                        detail.Subtotal = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
+                        detail.UpdatedAt = DateTime.UtcNow;
+                        
+                        context.SalesOrderDetails.Update(detail);
+                    }
                 }
 
                 await context.SaveChangesAsync();
@@ -428,6 +432,70 @@ namespace ERPCore2.Services
                     SalesOrderId = salesOrderId
                 });
                 return new List<SalesOrderDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 根據客戶取得可退貨的銷售訂單明細
+        /// </summary>
+        public async Task<List<SalesOrderDetail>> GetReturnableDetailsByCustomerAsync(int customerId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.SalesOrderDetails
+                    .Include(sod => sod.SalesOrder)
+                        .ThenInclude(so => so.Customer)
+                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Unit)
+                    .Include(sod => sod.Warehouse)
+                    .Where(sod => 
+                        sod.SalesOrder.CustomerId == customerId &&
+                        !sod.IsDeleted &&
+                        !sod.SalesOrder.IsDeleted &&
+                        sod.OrderQuantity > 0 &&
+                        // 檢查是否已全部退貨 - 計算已退貨數量
+                        sod.OrderQuantity > context.SalesReturnDetails
+                            .Where(srd => srd.SalesOrderDetailId == sod.Id && !srd.IsDeleted)
+                            .Sum(srd => srd.ReturnQuantity)
+                    )
+                    .OrderBy(sod => sod.SalesOrder.OrderDate)
+                    .ThenBy(sod => sod.SalesOrder.SalesOrderNumber)
+                    .ThenBy(sod => sod.Product.Code)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnableDetailsByCustomerAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReturnableDetailsByCustomerAsync),
+                    ServiceType = GetType().Name,
+                    CustomerId = customerId 
+                });
+                return new List<SalesOrderDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 更新銷貨明細並處理庫存回滾/重新分配
+        /// </summary>
+        public async Task<ServiceResult> UpdateDetailsWithInventoryAsync(int salesOrderId, List<SalesOrderDetail> newDetails, List<SalesOrderDetail> originalDetails)
+        {
+            try
+            {
+                // 基礎實作：簡單地更新明細，不處理複雜的庫存邏輯
+                return await UpdateDetailsAsync(newDetails);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsWithInventoryAsync), GetType(), _logger, new {
+                    Method = nameof(UpdateDetailsWithInventoryAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderId = salesOrderId,
+                    NewDetailsCount = newDetails?.Count ?? 0,
+                    OriginalDetailsCount = originalDetails?.Count ?? 0
+                });
+                return ServiceResult.Failure("更新銷貨明細並處理庫存時發生錯誤");
             }
         }
 

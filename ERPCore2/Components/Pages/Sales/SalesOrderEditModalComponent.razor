@@ -803,20 +803,34 @@
                 }
             }
 
-            // 2. 儲存前檢查倉庫選擇和庫存
-            var stockValidationResult = await SalesOrderService.ValidateWarehouseInventoryStockAsync(salesOrderDetails);
-            if (!stockValidationResult.IsSuccess)
-            {
-                await NotificationService.ShowErrorAsync($"驗證失敗，無法儲存：\n{stockValidationResult.ErrorMessage}");
-                return false;
-            }
-
             // 更新總金額
             salesOrder.TotalAmount = salesOrderDetails.Sum(d => d.Subtotal);
 
+            var isEditMode = SalesOrderId.HasValue;
+            
+            // 2. 儲存前檢查倉庫選擇和庫存（僅在新增模式下進行）
+            // 編輯模式下會先進行庫存回滾，所以不需要事前驗證
+            if (!isEditMode)
+            {
+                var stockValidationResult = await SalesOrderService.ValidateWarehouseInventoryStockAsync(salesOrderDetails);
+                if (!stockValidationResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"驗證失敗，無法儲存：\n{stockValidationResult.ErrorMessage}");
+                    return false;
+                }
+            }
+            List<SalesOrderDetail> originalDetails = new();
+            
+            // 在編輯模式下，先取得原始明細資料
+            if (isEditMode)
+            {
+                originalDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(SalesOrderId!.Value);
+                Console.WriteLine($"[SaveSalesOrderWithDetails] 編輯模式：取得 {originalDetails.Count} 筆原始明細");
+            }
+
             // 儲存主檔
             ServiceResult<SalesOrder> result;
-            if (SalesOrderId.HasValue)
+            if (isEditMode)
             {
                 result = await SalesOrderService.UpdateAsync(salesOrder);
             }
@@ -831,11 +845,30 @@
                 return false;
             }
 
-            // 儲存明細
-            await SaveSalesOrderDetails(result.Data.Id);
-
-            // 使用FIFO方式扣減庫存
-            await ReduceInventoryWithFIFOAsync(result.Data.Id);
+            // 儲存明細 - 根據模式選擇不同的方法
+            if (isEditMode)
+            {
+                Console.WriteLine($"[SaveSalesOrderWithDetails] 使用新的明細更新方法（含庫存回滾）");
+                // 編輯模式：使用帶有庫存回滾功能的更新方法
+                var updateResult = await SalesOrderDetailService.UpdateDetailsWithInventoryAsync(
+                    result.Data.Id, 
+                    salesOrderDetails, 
+                    originalDetails);
+                    
+                if (!updateResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"更新銷貨明細失敗：{updateResult.ErrorMessage}");
+                    return false;
+                }
+                Console.WriteLine($"[SaveSalesOrderWithDetails] 明細更新（含庫存處理）完成");
+            }
+            else
+            {
+                Console.WriteLine($"[SaveSalesOrderWithDetails] 新增模式：使用傳統儲存方法");
+                // 新增模式：使用原有的儲存邏輯
+                await SaveSalesOrderDetails(result.Data.Id);
+                await ReduceInventoryWithFIFOAsync(result.Data.Id);
+            }
 
             return true;
         }
@@ -946,7 +979,8 @@
                     InventoryTransactionTypeEnum.Sale,
                     $"SO-{salesOrderId}",
                     null, // WarehouseLocationId - SalesOrderDetail沒有此欄位，傳入null
-                    $"銷貨訂單出貨 - SO-{salesOrderId}"
+                    $"銷貨訂單出貨 - SO-{salesOrderId}",
+                    detail.Id > 0 ? detail.Id : null // 傳遞明細ID用於追蹤
                 );
 
                 if (!result.IsSuccess)

@@ -24,6 +24,9 @@ namespace ERPCore2.Services
         Task<Dictionary<string, object>> GetInventoryStatisticsAsync();
         
         // 庫存異動
+        Task<ServiceResult> RevertStockToOriginalAsync(int inventoryStockId, int quantity, 
+            InventoryTransactionTypeEnum transactionType, string transactionNumber, string? remarks = null);
+            
         Task<ServiceResult> AddStockAsync(int productId, int warehouseId, int quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             decimal? unitCost = null, int? locationId = null, string? remarks = null,
@@ -53,10 +56,13 @@ namespace ERPCore2.Services
         Task<bool> IsStockAvailableAsync(int productId, int warehouseId, int requiredQuantity, int? locationId = null);
         Task<ServiceResult> ValidateStockOperationAsync(int productId, int warehouseId, int quantity, bool isReduce);
         
+        // 庫存交易查詢
+        Task<List<InventoryTransaction>> GetInventoryTransactionsBySalesOrderAsync(int salesOrderId);
+        
         // FIFO 庫存扣減
         Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, int quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
-            int? locationId = null, string? remarks = null);
+            int? locationId = null, string? remarks = null, int? salesOrderDetailId = null);
     }
 }
 

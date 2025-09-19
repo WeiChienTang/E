@@ -185,9 +185,7 @@ else
             onInputBlur: EventCallback.Factory.Create<ReceivingItem>(this, async item => await OnPurchaseDetailInputBlur(item)),
             onItemMouseEnter: EventCallback.Factory.Create<(ReceivingItem item, int index)>(this, args => OnPurchaseDetailItemMouseEnter(args.item, args.index)),
             isReadOnly: IsReadOnly
-        ));
-
-        
+        ));        
 
         // 採購數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition

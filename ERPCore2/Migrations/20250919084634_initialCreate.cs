@@ -423,6 +423,27 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SystemParameters",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TaxRate = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SystemParameters", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Units",
                 columns: table => new
                 {
@@ -755,13 +776,9 @@ namespace ERPCore2.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    MinStockLevel = table.Column<int>(type: "int", nullable: false),
-                    MaxStockLevel = table.Column<int>(type: "int", nullable: false),
                     UnitId = table.Column<int>(type: "int", nullable: true),
                     SizeId = table.Column<int>(type: "int", nullable: true),
                     ProductCategoryId = table.Column<int>(type: "int", nullable: true),
-                    WarehouseId = table.Column<int>(type: "int", nullable: true),
-                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -797,16 +814,6 @@ namespace ERPCore2.Migrations
                         principalTable: "Units",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Products_WarehouseLocations_WarehouseLocationId",
-                        column: x => x.WarehouseLocationId,
-                        principalTable: "WarehouseLocations",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Products_Warehouses_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouses",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -822,6 +829,9 @@ namespace ERPCore2.Migrations
                     MaxStockLevel = table.Column<int>(type: "int", nullable: true),
                     AverageCost = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
                     LastTransactionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    BatchDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     WarehouseId = table.Column<int>(type: "int", nullable: true),
                     WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
@@ -1101,6 +1111,9 @@ namespace ERPCore2.Migrations
                     StockAfter = table.Column<int>(type: "int", nullable: false),
                     TransactionRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     ReferenceNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    TransactionBatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    TransactionBatchDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TransactionExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     WarehouseId = table.Column<int>(type: "int", nullable: false),
                     WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
@@ -1278,11 +1291,6 @@ namespace ERPCore2.Migrations
                     SalesOrderNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ActualDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    OrderStatus = table.Column<int>(type: "int", nullable: false),
-                    SalesType = table.Column<int>(type: "int", nullable: false),
-                    SalesPersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    OrderRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalAmountWithTax = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -1382,6 +1390,7 @@ namespace ERPCore2.Migrations
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     OrderQuantity = table.Column<int>(type: "int", nullable: false),
                     ReceivedQuantity = table.Column<int>(type: "int", nullable: false),
+                    IsReceivingCompleted = table.Column<bool>(type: "bit", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1421,11 +1430,9 @@ namespace ERPCore2.Migrations
                     ReceiptDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ConfirmedBy = table.Column<int>(type: "int", nullable: true),
+                    BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     PurchaseOrderId = table.Column<int>(type: "int", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
-                    WarehouseId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -1439,12 +1446,6 @@ namespace ERPCore2.Migrations
                 {
                     table.PrimaryKey("PK_PurchaseReceivings", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PurchaseReceivings_Employees_ConfirmedBy",
-                        column: x => x.ConfirmedBy,
-                        principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
                         name: "FK_PurchaseReceivings_PurchaseOrders_PurchaseOrderId",
                         column: x => x.PurchaseOrderId,
                         principalTable: "PurchaseOrders",
@@ -1456,58 +1457,6 @@ namespace ERPCore2.Migrations
                         principalTable: "Suppliers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PurchaseReceivings_Warehouses_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SalesDeliveries",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DeliveryNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    DeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ExpectedArrivalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ActualArrivalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeliveryStatus = table.Column<int>(type: "int", nullable: false),
-                    DeliveryPersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ShippingMethod = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    TrackingNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    DeliveryRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    DeliveryAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    DeliveryContact = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    DeliveryPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    SalesOrderId = table.Column<int>(type: "int", nullable: false),
-                    EmployeeId = table.Column<int>(type: "int", nullable: true),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SalesDeliveries", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SalesDeliveries_Employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_SalesDeliveries_SalesOrders_SalesOrderId",
-                        column: x => x.SalesOrderId,
-                        principalTable: "SalesOrders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1527,6 +1476,7 @@ namespace ERPCore2.Migrations
                     SalesOrderId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     UnitId = table.Column<int>(type: "int", nullable: true),
+                    WarehouseId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -1555,6 +1505,60 @@ namespace ERPCore2.Migrations
                         name: "FK_SalesOrderDetails_Units_UnitId",
                         column: x => x.UnitId,
                         principalTable: "Units",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SalesOrderDetails_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SalesReturns",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SalesReturnNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ReturnDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReturnReason = table.Column<int>(type: "int", nullable: false),
+                    TotalReturnAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ReturnTaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalReturnAmountWithTax = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsRefunded = table.Column<bool>(type: "bit", nullable: false),
+                    RefundDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CustomerId = table.Column<int>(type: "int", nullable: false),
+                    SalesOrderId = table.Column<int>(type: "int", nullable: true),
+                    EmployeeId = table.Column<int>(type: "int", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesReturns", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalesReturns_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SalesReturns_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SalesReturns_SalesOrders_SalesOrderId",
+                        column: x => x.SalesOrderId,
+                        principalTable: "SalesOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                 });
@@ -1618,8 +1622,10 @@ namespace ERPCore2.Migrations
                     PurchaseReceivingId = table.Column<int>(type: "int", nullable: false),
                     PurchaseOrderDetailId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
+                    OrderQuantity = table.Column<int>(type: "int", nullable: false),
                     ReceivedQuantity = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: false),
                     WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
                     InspectionRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1661,6 +1667,12 @@ namespace ERPCore2.Migrations
                         principalTable: "WarehouseLocations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_PurchaseReceivingDetails_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1671,28 +1683,13 @@ namespace ERPCore2.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PurchaseReturnNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     ReturnDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ExpectedProcessDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ActualProcessDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReturnStatus = table.Column<int>(type: "int", nullable: false),
-                    ReturnReason = table.Column<int>(type: "int", nullable: false),
-                    ProcessPersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ReturnDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ProcessRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     TotalReturnAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ReturnTaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalReturnAmountWithTax = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsRefunded = table.Column<bool>(type: "bit", nullable: false),
                     RefundDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RefundAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    RefundRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ProcessCompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
-                    PurchaseOrderId = table.Column<int>(type: "int", nullable: true),
                     PurchaseReceivingId = table.Column<int>(type: "int", nullable: true),
-                    EmployeeId = table.Column<int>(type: "int", nullable: true),
-                    WarehouseId = table.Column<int>(type: "int", nullable: true),
-                    ConfirmedBy = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -1706,22 +1703,6 @@ namespace ERPCore2.Migrations
                 {
                     table.PrimaryKey("PK_PurchaseReturns", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PurchaseReturns_Employees_ConfirmedBy",
-                        column: x => x.ConfirmedBy,
-                        principalTable: "Employees",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_PurchaseReturns_Employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalTable: "Employees",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_PurchaseReturns_PurchaseOrders_PurchaseOrderId",
-                        column: x => x.PurchaseOrderId,
-                        principalTable: "PurchaseOrders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
                         name: "FK_PurchaseReturns_PurchaseReceivings_PurchaseReceivingId",
                         column: x => x.PurchaseReceivingId,
                         principalTable: "PurchaseReceivings",
@@ -1733,92 +1714,30 @@ namespace ERPCore2.Migrations
                         principalTable: "Suppliers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_PurchaseReturns_Warehouses_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
-                name: "SalesReturns",
+                name: "SalesReturnDetails",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    SalesReturnNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    ReturnDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ExpectedProcessDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ActualProcessDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReturnStatus = table.Column<int>(type: "int", nullable: false),
-                    ReturnReason = table.Column<int>(type: "int", nullable: false),
-                    ProcessPersonnel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ReturnDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ProcessRemarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    TotalReturnAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ReturnTaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TotalReturnAmountWithTax = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    IsRefunded = table.Column<bool>(type: "bit", nullable: false),
-                    RefundDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RefundAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    RefundRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    CustomerId = table.Column<int>(type: "int", nullable: false),
-                    SalesOrderId = table.Column<int>(type: "int", nullable: true),
-                    SalesDeliveryId = table.Column<int>(type: "int", nullable: true),
-                    EmployeeId = table.Column<int>(type: "int", nullable: true),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SalesReturns", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SalesReturns_Customers_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Customers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SalesReturns_Employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_SalesReturns_SalesDeliveries_SalesDeliveryId",
-                        column: x => x.SalesDeliveryId,
-                        principalTable: "SalesDeliveries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_SalesReturns_SalesOrders_SalesOrderId",
-                        column: x => x.SalesOrderId,
-                        principalTable: "SalesOrders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SalesDeliveryDetails",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DeliveryQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ReturnQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    OriginalUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ReturnUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DiscountPercentage = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ReturnSubtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ProcessedQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    PendingQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    IsRestocked = table.Column<bool>(type: "bit", nullable: false),
+                    RestockedQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    ScrapQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     DetailRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    SalesDeliveryId = table.Column<int>(type: "int", nullable: false),
+                    QualityCondition = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    SalesReturnId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
-                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: false),
-                    UnitId = table.Column<int>(type: "int", nullable: true),
+                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -1830,31 +1749,25 @@ namespace ERPCore2.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SalesDeliveryDetails", x => x.Id);
+                    table.PrimaryKey("PK_SalesReturnDetails", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SalesDeliveryDetails_Products_ProductId",
+                        name: "FK_SalesReturnDetails_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_SalesDeliveryDetails_SalesDeliveries_SalesDeliveryId",
-                        column: x => x.SalesDeliveryId,
-                        principalTable: "SalesDeliveries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SalesDeliveryDetails_SalesOrderDetails_SalesOrderDetailId",
+                        name: "FK_SalesReturnDetails_SalesOrderDetails_SalesOrderDetailId",
                         column: x => x.SalesOrderDetailId,
                         principalTable: "SalesOrderDetails",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SalesDeliveryDetails_Units_UnitId",
-                        column: x => x.UnitId,
-                        principalTable: "Units",
-                        principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SalesReturnDetails_SalesReturns_SalesReturnId",
+                        column: x => x.SalesReturnId,
+                        principalTable: "SalesReturns",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1929,67 +1842,6 @@ namespace ERPCore2.Migrations
                         principalTable: "WarehouseLocations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SalesReturnDetails",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ReturnQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    OriginalUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ReturnUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DiscountPercentage = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
-                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ReturnSubtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ProcessedQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    PendingQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    IsRestocked = table.Column<bool>(type: "bit", nullable: false),
-                    RestockedQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    ScrapQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    DetailRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    QualityCondition = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    SalesReturnId = table.Column<int>(type: "int", nullable: false),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: true),
-                    SalesDeliveryDetailId = table.Column<int>(type: "int", nullable: true),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SalesReturnDetails", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SalesReturnDetails_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SalesReturnDetails_SalesDeliveryDetails_SalesDeliveryDetailId",
-                        column: x => x.SalesDeliveryDetailId,
-                        principalTable: "SalesDeliveryDetails",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_SalesReturnDetails_SalesOrderDetails_SalesOrderDetailId",
-                        column: x => x.SalesOrderDetailId,
-                        principalTable: "SalesOrderDetails",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_SalesReturnDetails_SalesReturns_SalesReturnId",
-                        column: x => x.SalesReturnId,
-                        principalTable: "SalesReturns",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -2232,16 +2084,6 @@ namespace ERPCore2.Migrations
                 column: "UnitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_WarehouseId",
-                table: "Products",
-                column: "WarehouseId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Products_WarehouseLocationId",
-                table: "Products",
-                column: "WarehouseLocationId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ProductSuppliers_ProductId",
                 table: "ProductSuppliers",
                 column: "ProductId");
@@ -2308,14 +2150,14 @@ namespace ERPCore2.Migrations
                 columns: new[] { "PurchaseReceivingId", "ProductId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseReceivingDetails_WarehouseId",
+                table: "PurchaseReceivingDetails",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseReceivingDetails_WarehouseLocationId",
                 table: "PurchaseReceivingDetails",
                 column: "WarehouseLocationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReceivings_ConfirmedBy",
-                table: "PurchaseReceivings",
-                column: "ConfirmedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseReceivings_PurchaseOrderId_ReceiptDate",
@@ -2332,11 +2174,6 @@ namespace ERPCore2.Migrations
                 name: "IX_PurchaseReceivings_SupplierId",
                 table: "PurchaseReceivings",
                 column: "SupplierId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReceivings_WarehouseId",
-                table: "PurchaseReceivings",
-                column: "WarehouseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseReturnDetails_ProductId",
@@ -2369,21 +2206,6 @@ namespace ERPCore2.Migrations
                 column: "WarehouseLocationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReturns_ConfirmedBy",
-                table: "PurchaseReturns",
-                column: "ConfirmedBy");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReturns_EmployeeId",
-                table: "PurchaseReturns",
-                column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReturns_PurchaseOrderId_ReturnDate",
-                table: "PurchaseReturns",
-                columns: new[] { "PurchaseOrderId", "ReturnDate" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseReturns_PurchaseReceivingId",
                 table: "PurchaseReturns",
                 column: "PurchaseReceivingId");
@@ -2395,19 +2217,9 @@ namespace ERPCore2.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReturns_ReturnStatus_ReturnDate",
-                table: "PurchaseReturns",
-                columns: new[] { "ReturnStatus", "ReturnDate" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseReturns_SupplierId_ReturnDate",
                 table: "PurchaseReturns",
                 columns: new[] { "SupplierId", "ReturnDate" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseReturns_WarehouseId",
-                table: "PurchaseReturns",
-                column: "WarehouseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReportPrintConfigurations_PaperSettingId",
@@ -2436,47 +2248,6 @@ namespace ERPCore2.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveries_DeliveryNumber",
-                table: "SalesDeliveries",
-                column: "DeliveryNumber",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveries_DeliveryStatus_DeliveryDate",
-                table: "SalesDeliveries",
-                columns: new[] { "DeliveryStatus", "DeliveryDate" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveries_EmployeeId",
-                table: "SalesDeliveries",
-                column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveries_SalesOrderId_DeliveryDate",
-                table: "SalesDeliveries",
-                columns: new[] { "SalesOrderId", "DeliveryDate" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveryDetails_ProductId",
-                table: "SalesDeliveryDetails",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveryDetails_SalesDeliveryId_ProductId",
-                table: "SalesDeliveryDetails",
-                columns: new[] { "SalesDeliveryId", "ProductId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveryDetails_SalesOrderDetailId",
-                table: "SalesDeliveryDetails",
-                column: "SalesOrderDetailId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesDeliveryDetails_UnitId",
-                table: "SalesDeliveryDetails",
-                column: "UnitId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SalesOrderDetails_ProductId",
                 table: "SalesOrderDetails",
                 column: "ProductId");
@@ -2492,6 +2263,11 @@ namespace ERPCore2.Migrations
                 column: "UnitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderDetails_WarehouseId",
+                table: "SalesOrderDetails",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SalesOrders_CustomerId_OrderDate",
                 table: "SalesOrders",
                 columns: new[] { "CustomerId", "OrderDate" });
@@ -2500,11 +2276,6 @@ namespace ERPCore2.Migrations
                 name: "IX_SalesOrders_EmployeeId",
                 table: "SalesOrders",
                 column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesOrders_OrderStatus_OrderDate",
-                table: "SalesOrders",
-                columns: new[] { "OrderStatus", "OrderDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesOrders_SalesOrderNumber",
@@ -2516,11 +2287,6 @@ namespace ERPCore2.Migrations
                 name: "IX_SalesReturnDetails_ProductId",
                 table: "SalesReturnDetails",
                 column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesReturnDetails_SalesDeliveryDetailId",
-                table: "SalesReturnDetails",
-                column: "SalesDeliveryDetailId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesReturnDetails_SalesOrderDetailId",
@@ -2541,16 +2307,6 @@ namespace ERPCore2.Migrations
                 name: "IX_SalesReturns_EmployeeId",
                 table: "SalesReturns",
                 column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesReturns_ReturnStatus_ReturnDate",
-                table: "SalesReturns",
-                columns: new[] { "ReturnStatus", "ReturnDate" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesReturns_SalesDeliveryId",
-                table: "SalesReturns",
-                column: "SalesDeliveryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesReturns_SalesOrderId_ReturnDate",
@@ -2737,6 +2493,9 @@ namespace ERPCore2.Migrations
                 name: "SupplierPricings");
 
             migrationBuilder.DropTable(
+                name: "SystemParameters");
+
+            migrationBuilder.DropTable(
                 name: "UnitConversions");
 
             migrationBuilder.DropTable(
@@ -2767,7 +2526,7 @@ namespace ERPCore2.Migrations
                 name: "Permissions");
 
             migrationBuilder.DropTable(
-                name: "SalesDeliveryDetails");
+                name: "SalesOrderDetails");
 
             migrationBuilder.DropTable(
                 name: "SalesReturns");
@@ -2782,22 +2541,19 @@ namespace ERPCore2.Migrations
                 name: "PurchaseReceivings");
 
             migrationBuilder.DropTable(
-                name: "SalesOrderDetails");
+                name: "SalesOrders");
 
             migrationBuilder.DropTable(
-                name: "SalesDeliveries");
-
-            migrationBuilder.DropTable(
-                name: "PurchaseOrders");
+                name: "WarehouseLocations");
 
             migrationBuilder.DropTable(
                 name: "Products");
 
             migrationBuilder.DropTable(
-                name: "SalesOrders");
+                name: "PurchaseOrders");
 
             migrationBuilder.DropTable(
-                name: "Companies");
+                name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "ProductCategories");
@@ -2806,25 +2562,22 @@ namespace ERPCore2.Migrations
                 name: "Sizes");
 
             migrationBuilder.DropTable(
-                name: "Suppliers");
-
-            migrationBuilder.DropTable(
                 name: "Units");
 
             migrationBuilder.DropTable(
-                name: "WarehouseLocations");
+                name: "Companies");
 
             migrationBuilder.DropTable(
-                name: "Customers");
-
-            migrationBuilder.DropTable(
-                name: "SupplierTypes");
+                name: "Suppliers");
 
             migrationBuilder.DropTable(
                 name: "Warehouses");
 
             migrationBuilder.DropTable(
                 name: "CustomerTypes");
+
+            migrationBuilder.DropTable(
+                name: "SupplierTypes");
 
             migrationBuilder.DropTable(
                 name: "Employees");

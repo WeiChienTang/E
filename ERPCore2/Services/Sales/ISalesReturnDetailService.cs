@@ -91,6 +91,13 @@ namespace ERPCore2.Services
         /// <param name="detail">明細實體</param>
         /// <returns>驗證結果</returns>
         Task<ServiceResult> ValidateReturnQuantityAsync(SalesReturnDetail detail);
+
+        /// <summary>
+        /// 取得指定銷售訂單明細的已退貨數量
+        /// </summary>
+        /// <param name="salesOrderDetailId">銷售訂單明細ID</param>
+        /// <returns>已退貨數量</returns>
+        Task<decimal> GetReturnedQuantityByOrderDetailAsync(int salesOrderDetailId);
     }
 
     /// <summary>
