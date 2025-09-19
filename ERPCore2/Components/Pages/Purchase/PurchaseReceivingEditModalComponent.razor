@@ -1,4 +1,4 @@
-@* 採購入庫編輯模態組件 *@
+@* 進貨編輯模態組件 *@
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseOrderService PurchaseOrderService
@@ -19,9 +19,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           Id="@PurchaseReceivingId"
                           Service="@PurchaseReceivingService"
-                          EntityName="採購入庫"
-                          EntityNamePlural="採購入庫"
-                          ModalTitle="@(PurchaseReceivingId.HasValue ? "編輯採購入庫" : "新增入庫單")"
+                          EntityName="進貨"
+                          EntityNamePlural="進貨"
+                          ModalTitle="@(PurchaseReceivingId.HasValue ? "編輯進貨" : "新增進貨單")"
                           Size="GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
@@ -36,8 +36,8 @@
                           UseGenericSave="true"
                           CustomValidator="@ValidatePurchaseReceivingDetailsAsync"
                           AfterSave="@SavePurchaseReceivingDetailsAsync"
-                          SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "採購入庫更新成功" : "採購入庫新增成功")"
-                          SaveFailureMessage="採購入庫儲存失敗"
+                          SaveSuccessMessage="@(PurchaseReceivingId.HasValue ? "進貨更新成功" : "進貨新增成功")"
+                          SaveFailureMessage="進貨儲存失敗"
                           RequiredPermission="PurchaseReceiving.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
@@ -72,7 +72,7 @@
     private List<Employee> employees = new();
     private List<Product> products = new();
     
-    // ===== 採購入庫明細 =====
+    // ===== 進貨明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
     private PurchaseReceivingDetailManagerComponent<PurchaseReceiving, PurchaseReceivingDetail>? purchaseReceivingDetailManager;
     
@@ -120,7 +120,7 @@
     {
         try
         {
-            // 如果父組件需要知道採購入庫已儲存
+            // 如果父組件需要知道進貨已儲存
             if (OnPurchaseReceivingSaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 await OnPurchaseReceivingSaved.InvokeAsync(editModalComponent.Entity);
@@ -153,7 +153,7 @@
     }
 
     /// <summary>
-    /// 載入採購入庫資料
+    /// 載入進貨資料
     /// </summary>
     private async Task<PurchaseReceiving?> LoadPurchaseReceivingData()
     {
@@ -179,7 +179,7 @@
             
             if (purchaseReceiving != null)
             {
-                // 載入採購入庫明細
+                // 載入進貨明細
                 await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
                 
                 // 如果有廠商ID，更新採購單選項和產品篩選選項
@@ -203,7 +203,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入採購入庫資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入進貨資料時發生錯誤：{ex.Message}");
             return null;
         }
     }
@@ -405,13 +405,13 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.ReceiptNumber),
-                    Label = "入庫單號",
+                    Label = "進貨單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "系統自動產生",
                     IsRequired = true,
                     IsReadOnly = true,
                     MaxLength = 50,
-                    HelpText = "系統自動產生的入庫單號"
+                    HelpText = "系統自動產生的進貨單號"
                 },
                 new()
                 {
@@ -602,7 +602,7 @@
     }
 
     /// <summary>
-    /// 生成採購入庫單號
+    /// 生成進貨單號
     /// </summary>
     private async Task<string> GenerateReceiptNumberAsync()
     {
@@ -613,28 +613,28 @@
         );
     }
 
-    // ===== 採購入庫明細管理方法 =====
+    // ===== 進貨明細管理方法 =====
     
     /// <summary>
-    /// 載入採購入庫明細
+    /// 載入進貨明細
     /// </summary>
     private async Task LoadPurchaseReceivingDetails(int purchaseReceivingId)
     {
         try
         {
-            // 從服務載入採購入庫明細
+            // 從服務載入進貨明細
             var receiving = await PurchaseReceivingService.GetByIdAsync(purchaseReceivingId);
             purchaseReceivingDetails = receiving?.PurchaseReceivingDetails?.ToList() ?? new List<PurchaseReceivingDetail>();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入採購入庫明細失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入進貨明細失敗：{ex.Message}");
             purchaseReceivingDetails = new List<PurchaseReceivingDetail>();
         }
     }
 
     /// <summary>
-    /// 處理入庫明細變更
+    /// 處理進貨明細變更
     /// </summary>
     private async Task HandleReceivingDetailsChanged(List<PurchaseReceivingDetail> details)
     {
@@ -726,7 +726,7 @@
     }
 
     /// <summary>
-    /// 驗證採購入庫明細 - 在儲存主檔之前執行
+    /// 驗證進貨明細 - 在儲存主檔之前執行
     /// </summary>
     private async Task<bool> ValidatePurchaseReceivingDetailsAsync(PurchaseReceiving purchaseReceiving)
     {
@@ -954,7 +954,7 @@
     }
 
     /// <summary>
-    /// 創建入庫明細管理器內容的 RenderFragment
+    /// 創建進貨明細管理器內容的 RenderFragment
     /// </summary>
     private RenderFragment CreateReceivingDetailManagerContent() => __builder =>
     {
@@ -982,7 +982,7 @@
                                                                UnitPricePropertyName="UnitPrice"
                                                                RemarksPropertyName="InspectionRemarks"
                                                                PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
-                                                               ReceivedQuantityLabel="入庫數量"
+                                                               ReceivedQuantityLabel="進貨數量"
                                                                PriceLabel="單價"
                                                                RemarksLabel="備註"
                                                                ShowWarehouse="true"
@@ -1011,7 +1011,7 @@
             else
             {
                 <div class="text-center py-3">
-                    <span class="text-muted">請先選擇廠商後再管理入庫明細</span>
+                    <span class="text-muted">請先選擇廠商後再管理進貨明細</span>
                 </div>
             }
         }

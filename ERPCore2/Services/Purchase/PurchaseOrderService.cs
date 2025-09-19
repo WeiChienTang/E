@@ -127,7 +127,7 @@ namespace ERPCore2.Services
                     errors.Add("採購單號不能為空");
                 
                 if (entity.SupplierId <= 0)
-                    errors.Add("必須選擇供應商");
+                    errors.Add("必須選擇廠商");
                 
                 if (entity.CompanyId <= 0)
                     errors.Add("必須選擇採購公司");

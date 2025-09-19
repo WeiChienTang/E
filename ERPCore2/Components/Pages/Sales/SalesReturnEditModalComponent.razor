@@ -75,7 +75,7 @@
     
     // ===== 銷售退貨明細 =====
     private List<SalesReturnDetail> salesReturnDetails = new();
-    // private SalesReturnDetailManagerComponent<SalesReturn, SalesReturnDetail>? salesReturnDetailManager;
+    private SalesReturnDetailManagerComponent? salesReturnDetailManager;
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
@@ -700,10 +700,25 @@
     {
         try
         {
+            // 首先呼叫明細管理器的驗證方法
+            if (salesReturnDetailManager != null)
+            {
+                bool isValidDetails = await salesReturnDetailManager.ValidateAsync();
+                if (!isValidDetails)
+                {
+                    return false;
+                }
+            }
+            
             // 檢查是否有有效的明細
             var validDetails = salesReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+            if (!validDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("至少需要一筆退貨明細");
+                return false;
+            }
             
-            return true; // 允許沒有明細的退貨單（可能是預建單）
+            return true;
         }
         catch (Exception ex)
         {
@@ -863,7 +878,7 @@
                     // 檢查是否已選擇客戶
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
-                        <SalesReturnDetailManagerComponent 
+                        <SalesReturnDetailManagerComponent @ref="salesReturnDetailManager"
                             CustomerId="@(editModalComponent?.Entity?.CustomerId)"
                             FilterSalesOrderId="@FilterSalesOrderId"
                             FilterProductId="@FilterProductId"
@@ -979,7 +994,7 @@
         {
             // 清理資源
             editModalComponent = null;
-            // salesReturnDetailManager = null;
+            salesReturnDetailManager = null;
             // customerEditModal = null;
             
             // 清理事件訂閱（如果有的話）

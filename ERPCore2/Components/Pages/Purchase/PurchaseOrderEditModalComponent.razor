@@ -38,6 +38,7 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          CustomValidator="@ValidatePurchaseOrderDetailsAsync"
                           CustomModules="@GetCustomModules()"
                           ShowPrintButton = "false"
                           OnPrint="@HandlePrint"
@@ -82,6 +83,7 @@
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
+    private PurchaseOrderDetailManagerComponent<PurchaseOrder, PurchaseOrderDetail>? purchaseOrderDetailManager;
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
@@ -390,17 +392,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseOrder.CompanyId),
-                    Label = "採購公司",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇採購公司",
-                    IsRequired = true,
-                    MinSearchLength = 0,
-                    HelpText = "選擇進行此次採購的公司",
-                    IsReadOnly = isApproved
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseOrder.SupplierId),
                     Label = "廠商",
                     FieldType = FormFieldType.AutoComplete,
@@ -409,6 +400,17 @@
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetSupplierActionButtonsAsync(),
+                    IsReadOnly = isApproved
+                },
+                                new()
+                {
+                    PropertyName = nameof(PurchaseOrder.CompanyId),
+                    Label = "採購公司",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇採購公司",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "選擇進行此次採購的公司",
                     IsReadOnly = isApproved
                 },
                 new()
@@ -446,9 +448,9 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },
-                { nameof(PurchaseOrder.CompanyId), "基本資訊" },
+                { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },                
                 { nameof(PurchaseOrder.SupplierId), "基本資訊" },
+                { nameof(PurchaseOrder.CompanyId), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
                 { nameof(PurchaseOrder.ExpectedDeliveryDate), "基本資訊" },
                 { nameof(PurchaseOrder.Remarks), "額外資訊" }
@@ -599,7 +601,8 @@
                     // 檢查是否已選擇廠商
                     @if (editModalComponent.Entity.SupplierId > 0)
                     {
-                        <PurchaseOrderDetailManagerComponent TMainEntity="PurchaseOrder" 
+                        <PurchaseOrderDetailManagerComponent @ref="purchaseOrderDetailManager"
+                                                   TMainEntity="PurchaseOrder" 
                                                    TDetailEntity="PurchaseOrderDetail"
                                                    Products="@availableProducts"
                                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
@@ -791,10 +794,47 @@
     }
 
     /// <summary>
+    /// 驗證採購單明細 - 確保至少有一筆明細
+    /// </summary>
+    private async Task<bool> ValidatePurchaseOrderDetailsAsync(PurchaseOrder purchaseOrder)
+    {
+        try
+        {
+            // 如果明細管理組件存在，執行驗證
+            if (purchaseOrderDetailManager != null)
+            {
+                return await purchaseOrderDetailManager.ValidateAsync();
+            }
+            
+            // 如果組件不存在，檢查是否有有效的明細（至少選擇了商品）
+            var validDetails = purchaseOrderDetails.Where(d => d.ProductId > 0).ToList();
+            
+            if (!validDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("採購單必須至少包含一筆明細資料");
+                return false;
+            }
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"驗證明細時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// 包裝方法 - 提供給 GenericEditModalComponent 使用的儲存處理器
     /// </summary>
     private async Task<bool> SavePurchaseOrderWrapper(PurchaseOrder purchaseOrder)
     {
+        // 先執行自訂驗證
+        if (!await ValidatePurchaseOrderDetailsAsync(purchaseOrder))
+        {
+            return false;
+        }
+        
         return await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
     }
 

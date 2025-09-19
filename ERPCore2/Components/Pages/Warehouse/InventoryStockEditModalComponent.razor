@@ -308,43 +308,23 @@
                     IsRequired = false,
                     HelpText = "商品目前的實際庫存數量（預設為0）",
                 },
-                new()
-                {
-                    PropertyName = nameof(InventoryStock.ReservedStock),
-                    Label = "預留庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
-                    IsRequired = false,
-                    IsReadOnly = true,
-                    HelpText = "已預留但尚未出庫的數量（系統會自動計算，不可手動修改）",
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryStock.InTransitStock),
-                    Label = "在途庫存",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
-                    IsRequired = false,
-                    IsReadOnly = true,
-                    HelpText = "已下單但尚未到貨的數量（系統會自動計算，不可手動修改）",
-                },
                 
                 // 庫存警戒線區段
                 new()
                 {
                     PropertyName = nameof(InventoryStock.MinStockLevel),
-                    Label = "最低庫存警戒線",
+                    Label = "最低庫存量",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入最低庫存警戒線",
+                    Placeholder = "請輸入最低庫存量",
                     IsRequired = false,
                     HelpText = "當庫存低於此數量時會發出警告",
                 },
                 new()
                 {
                     PropertyName = nameof(InventoryStock.MaxStockLevel),
-                    Label = "最高庫存警戒線",
+                    Label = "最高庫存量",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入最高庫存警戒線",
+                    Placeholder = "請輸入最高庫存量",
                     IsRequired = false,
                     HelpText = "建議的最大庫存數量",
                 },
@@ -379,9 +359,7 @@
                 { nameof(InventoryStock.CurrentStock), "數量資訊" },                              
                 { nameof(InventoryStock.MinStockLevel), "數量資訊" },
                 { nameof(InventoryStock.MaxStockLevel), "數量資訊" },     
-                { nameof(InventoryStock.AverageCost), "系統計算" },    
-                { nameof(InventoryStock.InTransitStock), "系統計算" },    
-                { nameof(InventoryStock.ReservedStock), "系統計算" },  
+                { nameof(InventoryStock.AverageCost), "數量資訊" },     
                 { nameof(InventoryStock.Remarks), "額外資料" }
             };
         }

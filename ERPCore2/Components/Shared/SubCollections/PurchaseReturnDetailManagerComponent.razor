@@ -11,6 +11,7 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Tables
+@using System.Linq
 
 @if (!SupplierId.HasValue || SupplierId.Value <= 0)
 {
@@ -119,6 +120,7 @@ else
     private int? _previousSupplierId = null;
     private int? _previousFilterPurchaseReceivingId = null;
     private int? _previousFilterProductId = null;
+    private List<PurchaseReturnDetail>? _previousExistingReturnDetails = null;
     private bool _isInitialized = false;
 
     protected override async Task OnInitializedAsync()
@@ -128,20 +130,25 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        // 檢查廠商、進貨單或產品篩選是否變更
+        // 檢查廠商、進貨單、產品篩選或現有退貨明細是否變更
+        var existingReturnDetailsChanged = !AreListsEqual(_previousExistingReturnDetails, ExistingReturnDetails);
+        
         if (_previousSupplierId != SupplierId || 
             _previousFilterPurchaseReceivingId != FilterPurchaseReceivingId ||
-            _previousFilterProductId != FilterProductId)
+            _previousFilterProductId != FilterProductId ||
+            existingReturnDetailsChanged)
         {
             _previousSupplierId = SupplierId;
             _previousFilterPurchaseReceivingId = FilterPurchaseReceivingId;
             _previousFilterProductId = FilterProductId;
+            _previousExistingReturnDetails = ExistingReturnDetails?.ToList(); // 建立副本以比較
             
             // 只在已初始化後才重新載入資料，避免與 OnInitializedAsync 重複
             if (_isInitialized)
             {
                 await LoadReturnableDetailsAsync();
-                LoadExistingReturnDetails();
+                LoadExistingReturnDetails(); // 先載入現有明細，建立 ReturnItems
+                await LoadReturnedQuantitiesAsync(); // 再載入已退貨數量快取
             }
         }
     }
@@ -255,24 +262,6 @@ else
                 var isCompleted = returnedQuantity >= returnItem.PurchaseReceivingDetail.ReceivedQuantity;
                 return @<div class="d-flex align-items-center justify-content-end">
                     <span class="fw-bold @(isCompleted ? "text-success" : "")">@returnedQuantity</span>
-                </div>;
-            }
-        });
-
-        // 可退貨量欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "可退貨",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "7%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var returnableQuantity = GetReturnableQuantity(returnItem.PurchaseReceivingDetail);
-                var isCompleted = returnableQuantity <= 0;
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold @(isCompleted ? "text-success" : "text-warning")">@returnableQuantity</span>
                 </div>;
             }
         });
@@ -412,8 +401,8 @@ else
             await LoadTaxRateAsync();
             await LoadWarehouseLocationsAsync();
             await LoadReturnableDetailsAsync();
-            await LoadReturnedQuantitiesAsync();
-            LoadExistingReturnDetails();
+            LoadExistingReturnDetails(); // 先載入現有明細，建立 ReturnItems
+            await LoadReturnedQuantitiesAsync(); // 再載入已退貨數量快取
             _isInitialized = true;
         }
         catch (Exception ex)
@@ -462,14 +451,40 @@ else
         try
         {
             _returnedQuantityCache.Clear();
+            
+            // 收集所有需要載入快取的進貨明細ID
+            var receivingDetailIds = new HashSet<int>();
+            
+            // 從 ReturnableDetails 收集ID
             if (ReturnableDetails?.Any() == true)
             {
                 foreach (var detail in ReturnableDetails)
                 {
-                    var returnedQuantity = await PurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync(detail.Id);
-                    _returnedQuantityCache[detail.Id] = returnedQuantity;
+                    receivingDetailIds.Add(detail.Id);
                 }
             }
+            
+            // 從 ReturnItems 中的 PurchaseReceivingDetail 收集ID（可能包含更多項目）
+            if (ReturnItems?.Any() == true)
+            {
+                foreach (var item in ReturnItems)
+                {
+                    if (item.PurchaseReceivingDetail != null)
+                    {
+                        receivingDetailIds.Add(item.PurchaseReceivingDetail.Id);
+                    }
+                }
+            }
+            
+            // 載入快取
+            foreach (var detailId in receivingDetailIds)
+            {
+                var returnedQuantity = await PurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync(detailId);
+                _returnedQuantityCache[detailId] = returnedQuantity;
+            }
+                
+            // 除錯：確認快取載入情況
+            // await NotificationService.ShowInfoAsync($"已載入 {_returnedQuantityCache.Count} 個進貨明細的退貨數量快取");
         }
         catch (Exception ex)
         {
@@ -823,7 +838,16 @@ else
     private int GetReturnedQuantity(PurchaseReceivingDetail receivingDetail)
     {
         // 從快取中獲取已退貨數量，如果沒有則返回 0
-        return _returnedQuantityCache.GetValueOrDefault(receivingDetail.Id, 0);
+        var result = _returnedQuantityCache.GetValueOrDefault(receivingDetail.Id, 0);
+        
+        // 除錯：如果快取中沒有找到，可能是因為快取沒有正確載入
+        if (!_returnedQuantityCache.ContainsKey(receivingDetail.Id))
+        {
+            // 可以在這裡加入日誌或除錯訊息
+            // Console.WriteLine($"快取中找不到進貨明細 ID {receivingDetail.Id} 的退貨數量");
+        }
+        
+        return result;
     }
 
     /// <summary>
@@ -872,6 +896,30 @@ else
             var errorMessage = string.Join("\n", errors);
             await NotificationService.ShowErrorAsync(errorMessage);
             return false;
+        }
+        
+        return true;
+    }
+
+    /// <summary>
+    /// 比較兩個退貨明細列表是否相等
+    /// </summary>
+    private bool AreListsEqual(List<PurchaseReturnDetail>? list1, List<PurchaseReturnDetail>? list2)
+    {
+        if (list1 == null && list2 == null) return true;
+        if (list1 == null || list2 == null) return false;
+        if (list1.Count != list2.Count) return false;
+        
+        // 使用 ID 和 ReturnQuantity 作為比較標準，不依賴順序
+        var dict1 = list1.ToDictionary(x => x.Id, x => x.ReturnQuantity);
+        var dict2 = list2.ToDictionary(x => x.Id, x => x.ReturnQuantity);
+        
+        foreach (var kvp in dict1)
+        {
+            if (!dict2.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
+            {
+                return false;
+            }
         }
         
         return true;

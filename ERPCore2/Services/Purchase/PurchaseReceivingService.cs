@@ -222,7 +222,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("進貨單號為必填");
 
                 if (entity.SupplierId <= 0)
-                    return ServiceResult.Failure("供應商為必填");
+                    return ServiceResult.Failure("廠商為必填");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 

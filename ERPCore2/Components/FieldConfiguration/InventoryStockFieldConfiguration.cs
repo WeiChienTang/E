@@ -132,18 +132,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(InventoryStock.ReservedStock),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.ReservedStock),
-                            DisplayName = "預留庫存",
-                            TableOrder = 6,
-                            FilterOrder = 0, // 不在篩選器中顯示
-                            HeaderStyle = "width: 100px; text-align: right;",
-                            ShowInFilter = false
-                        }
-                    },
-                    {
                         nameof(InventoryStock.AvailableStock),
                         new FieldDefinition<InventoryStock>
                         {
@@ -156,23 +144,11 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(InventoryStock.InTransitStock),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.InTransitStock),
-                            DisplayName = "在途庫存",
-                            TableOrder = 8,
-                            FilterOrder = 0, // 不在篩選器中顯示
-                            HeaderStyle = "width: 100px; text-align: right;",
-                            ShowInFilter = false
-                        }
-                    },
-                    {
                         nameof(InventoryStock.MinStockLevel),
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = nameof(InventoryStock.MinStockLevel),
-                            DisplayName = "最低警戒線",
+                            DisplayName = "最低量",
                             FilterType = SearchFilterType.NumberRange,
                             TableOrder = 9,
                             FilterOrder = 6,
@@ -186,7 +162,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = nameof(InventoryStock.MaxStockLevel),
-                            DisplayName = "最高警戒線",
+                            DisplayName = "最高量",
                             FilterType = SearchFilterType.NumberRange,
                             TableOrder = 10,
                             FilterOrder = 7,

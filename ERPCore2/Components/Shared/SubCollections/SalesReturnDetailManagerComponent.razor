@@ -259,24 +259,6 @@ else
             }
         });
 
-        // 可退貨量欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "可退貨",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "7%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var returnableQuantity = GetReturnableQuantity(returnItem.SalesOrderDetail);
-                var isCompleted = returnableQuantity <= 0;
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold @(isCompleted ? "text-success" : "text-warning")">@returnableQuantity.ToString("N0")</span>
-                </div>;
-            }
-        });
-
         // 退貨數量欄位
         columns.Add(new()
         {
@@ -323,49 +305,6 @@ else
                                step="1"
                                @onchange="@(async (e) => await OnReturnUnitPriceChanged(returnItem, e.Value?.ToString()))" 
                                title="可調整退貨單價，預設為原訂單單價" />;
-            }
-        });
-
-        // 倉庫位置欄位（可選擇，用於指定退貨到哪個位置）
-        columns.Add(new()
-        {
-            Title = "退貨位置",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var orderDetail = returnItem.SalesOrderDetail;
-                
-                // 取得可用倉庫位置選項
-                var availableLocations = GetAvailableLocations(orderDetail.WarehouseId);
-                
-                if (availableLocations.Any())
-                {
-                    return @<select class="form-select form-select-sm" 
-                                    @onchange="@(async (e) => await OnWarehouseLocationChanged(returnItem, e.Value?.ToString()))">
-                        <option value="">選擇位置</option>
-                        @foreach (var location in availableLocations)
-                        {
-                            <option value="@location.Id" selected="@(returnItem.WarehouseLocationId == location.Id)">
-                                @location.Code - @location.Name
-                            </option>
-                        }
-                    </select>;
-                }
-                else
-                {
-                    // 如果沒有可用位置，顯示倉庫名稱
-                    var warehouse = orderDetail.Warehouse;
-                    var warehouseText = warehouse?.Name ?? "未指定倉庫";
-                    
-                    return @<input type="text" class="form-control form-control-sm text-muted" 
-                                   value="@warehouseText"
-                                   readonly 
-                                   tabindex="-1"
-                                   style="background-color: #f8f9fa;" />;
-                }
             }
         });
 

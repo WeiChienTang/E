@@ -29,6 +29,7 @@
                           DataLoader="@LoadPurchaseReturnData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="false"
+                          CustomValidator="@ValidatePurchaseReturnDetailsAsync"
                           SaveHandler="@SavePurchaseReturnWithDetails"
                           SaveSuccessMessage="@(PurchaseReturnId.HasValue ? "進貨退出更新成功" : "進貨退出新增成功")"
                           SaveFailureMessage="進貨退出儲存失敗"
@@ -73,6 +74,7 @@
     
     // ===== 退貨明細 =====
     private List<PurchaseReturnDetail> purchaseReturnDetails = new();
+    private PurchaseReturnDetailManagerComponent? purchaseReturnDetailManager;
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
@@ -830,7 +832,7 @@
                     try
                     {
 
-                        <PurchaseReturnDetailManagerComponent 
+                        <PurchaseReturnDetailManagerComponent @ref="purchaseReturnDetailManager"
                             SupplierId="@editModalComponent.Entity.SupplierId"
                             FilterPurchaseReceivingId="@filterPurchaseReceivingId"
                             FilterProductId="@filterProductId"
@@ -906,6 +908,40 @@
     }
 
     /// <summary>
+    /// 驗證進貨退出明細 - 在儲存主檔之前執行
+    /// </summary>
+    private async Task<bool> ValidatePurchaseReturnDetailsAsync(PurchaseReturn purchaseReturn)
+    {
+        try
+        {
+            // 首先呼叫明細管理器的驗證方法
+            if (purchaseReturnDetailManager != null)
+            {
+                bool isValidDetails = await purchaseReturnDetailManager.ValidateAsync();
+                if (!isValidDetails)
+                {
+                    return false;
+                }
+            }
+            
+            // 檢查是否有有效的明細
+            var validDetails = purchaseReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+            if (!validDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("至少需要一筆退貨明細");
+                return false;
+            }
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"驗證退貨明細時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// 自訂儲存邏輯 - 同時儲存主檔和明細
     /// </summary>
     private async Task<bool> SavePurchaseReturnWithDetails(PurchaseReturn purchaseReturn)
@@ -913,6 +949,12 @@
         try
         {
             if (purchaseReturn == null)
+            {
+                return false;
+            }
+            
+            // 先執行自訂驗證
+            if (!await ValidatePurchaseReturnDetailsAsync(purchaseReturn))
             {
                 return false;
             }
