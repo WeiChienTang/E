@@ -2,9 +2,9 @@
 class ToastManager {
     constructor() {
         this.container = null;
-        this.maxToasts = 3; // 最多同時顯示3個toast
-        this.autoHideDelay = 3000; // 預設3秒自動關閉
-        this.collapseDelay = 2000; // 收合後2秒關閉
+        this.maxToasts = 3; // 最多同時顯示1個toast
+        this.autoHideDelay = 2000; // 預設2秒自動關閉
+        this.collapseDelay = 1000; // 收合後1秒關閉
         this.initContainer();
     }
 
@@ -18,10 +18,11 @@ class ToastManager {
                 this.container.id = 'toast-container';
                 this.container.className = 'toast-container-slide position-fixed';
                 this.container.style.zIndex = '9999';
-                this.container.style.top = '50%';
+                this.container.style.bottom = '20px';
                 this.container.style.right = '20px';
-                this.container.style.transform = 'translateY(-50%)';
-                this.container.style.width = '320px';
+                // 移除固定寬度，讓CSS響應式設計接管
+                // this.container.style.width = '320px';
+                this.container.style.width = '320px'; // 桌面版預設寬度，手機版由CSS覆蓋
                 this.container.style.maxHeight = 'calc(100vh - 40px)';
                 this.container.style.overflowY = 'visible'; // 改為 visible 避免拉桿
                 this.container.style.pointerEvents = 'none'; // 讓容器本身不阻擋事件
@@ -66,7 +67,7 @@ class ToastManager {
     }
 
     limitToasts() {
-        const existingToasts = this.container.querySelectorAll('.toast');
+        const existingToasts = this.container.querySelectorAll('.toast-slide');
         if (existingToasts.length >= this.maxToasts) {
             // 移除最舊的toast（從最前面開始移除）
             const toastsToRemove = existingToasts.length - this.maxToasts + 1;
@@ -189,7 +190,7 @@ class ToastManager {
     // 清除所有toast
     clearAll() {
         if (this.container) {
-            const toasts = this.container.querySelectorAll('.toast');
+            const toasts = this.container.querySelectorAll('.toast-slide');
             toasts.forEach(toast => this.hide(toast));
         }
     }

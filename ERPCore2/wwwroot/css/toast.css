@@ -194,10 +194,11 @@
 /* 響應式調整 */
 @media (max-width: 768px) {
     .toast-container-slide {
-        top: 50% !important;
+        bottom: 20px !important;
+        top: auto !important;
         right: 10px !important;
         left: 10px !important;
-        transform: translateY(-50%) !important;
+        transform: none !important;
         width: auto !important;
         max-width: calc(100vw - 20px) !important; /* 確保不超過螢幕寬度 */
     }
@@ -222,10 +223,11 @@
 
 @media (max-width: 480px) {
     .toast-container-slide {
-        top: 50% !important;
+        bottom: 15px !important;
+        top: auto !important;
         right: 8px !important;
         left: 8px !important;
-        transform: translateY(-50%) !important;
+        transform: none !important;
         max-width: calc(100vw - 16px) !important; /* 確保不超過螢幕寬度 */
     }
     
