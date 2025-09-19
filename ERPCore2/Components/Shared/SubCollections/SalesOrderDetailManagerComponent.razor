@@ -1,9 +1,11 @@
 @* 銷售訂單產品管理組件 - 管理銷售訂單的多個產品資訊 - 使用 InteractiveTableComponent 統一UI *@
 
 @inject INotificationService NotificationService
+@inject IInventoryStockService InventoryStockService
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Services
 @typeparam TSalesOrderDetailEntity where TSalesOrderDetailEntity : BaseEntity, new()
 @typeparam TProductEntity where TProductEntity : BaseEntity
 @typeparam TSalesOrderEntity where TSalesOrderEntity : BaseEntity
@@ -107,6 +109,57 @@
     [Parameter] public EventCallback<TSalesOrderDetailEntity> ItemAdded { get; set; }
     [Parameter] public EventCallback<TSalesOrderDetailEntity> ItemRemoved { get; set; }
     
+    // ===== 倉庫庫存快取 =====
+    private Dictionary<string, int> _warehouseStockCache = new();
+    
+    /// <summary>
+    /// 取得快取的倉庫庫存數量
+    /// </summary>
+    /// <param name="productId">產品ID</param>
+    /// <param name="warehouseId">倉庫ID</param>
+    /// <returns>庫存數量，未快取時返回 null</returns>
+    private int? GetCachedWarehouseStock(int? productId, int? warehouseId)
+    {
+        if (!productId.HasValue || !warehouseId.HasValue || productId.Value <= 0 || warehouseId.Value <= 0)
+            return null;
+            
+        var cacheKey = $"{productId}_{warehouseId}";
+        return _warehouseStockCache.TryGetValue(cacheKey, out var stock) ? stock : null;
+    }
+    
+    /// <summary>
+    /// 更新倉庫庫存快取
+    /// </summary>
+    /// <param name="productId">產品ID</param>
+    /// <param name="warehouseId">倉庫ID</param>
+    /// <param name="stockQuantity">庫存數量</param>
+    private void SetCachedWarehouseStock(int productId, int warehouseId, int stockQuantity)
+    {
+        if (productId > 0 && warehouseId > 0)
+        {
+            var cacheKey = $"{productId}_{warehouseId}";
+            _warehouseStockCache[cacheKey] = stockQuantity;
+        }
+    }
+    
+    /// <summary>
+    /// 清除指定產品的庫存快取
+    /// </summary>
+    /// <param name="productId">產品ID</param>
+    private void ClearProductStockCache(int? productId)
+    {
+        if (!productId.HasValue || productId.Value <= 0) return;
+        
+        var keysToRemove = _warehouseStockCache.Keys
+            .Where(key => key.StartsWith($"{productId}_"))
+            .ToList();
+            
+        foreach (var key in keysToRemove)
+        {
+            _warehouseStockCache.Remove(key);
+        }
+    }
+    
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
@@ -172,7 +225,7 @@
                 Title = "產品", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "20%",
+                Width = "18%",
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
@@ -191,97 +244,6 @@
                     </select>;
                 }
             },
-            
-            // 數量 - 數字輸入
-            new() 
-            { 
-                Title = "數量", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "12%",
-                CustomTemplate = item => 
-                {
-                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var quantity = GetQuantity(salesOrderDetail) ?? 0;
-                    var value = quantity > 0 ? quantity.ToString("F0") : ""; // 只有大於0才顯示，否則空白
-                    
-                    return @<input type="number" 
-                                   class="form-control form-control-sm text-end" 
-                                   value="@value"
-                                   min="0"
-                                   placeholder=""
-                                   disabled="@IsReadOnly"
-                                   @oninput="@(async (e) => await OnQuantityChanged((salesOrderDetail, e.Value?.ToString())))" />;
-                }
-            },
-            
-            // 單價 - 數字輸入
-            new() 
-            { 
-                Title = "單價", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "12%",
-                CustomTemplate = item => 
-                {
-                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var unitPrice = GetUnitPrice(salesOrderDetail) ?? 0;
-                    var value = unitPrice > 0 ? unitPrice.ToString("F0") : "";
-                    
-                    return @<input type="number" 
-                                   class="form-control form-control-sm text-end" 
-                                   value="@value"
-                                   min="0"
-                                   step="1"
-                                   placeholder=""
-                                   disabled="@IsReadOnly"
-                                   @oninput="@(async (e) => await OnUnitPriceChanged((salesOrderDetail, e.Value?.ToString())))" />;
-                }
-            },
-            
-            // 折扣 - 數字輸入
-            new() 
-            { 
-                Title = "折扣(%)", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "10%",
-                CustomTemplate = item => 
-                {
-                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var discount = GetDiscount(salesOrderDetail) ?? 0;
-                    var value = discount > 0 ? discount.ToString("F0") : "";
-                    
-                    return @<input type="number" 
-                                   class="form-control form-control-sm text-end" 
-                                   value="@value"
-                                   min="0"
-                                   max="100"
-                                   placeholder=""
-                                   disabled="@IsReadOnly"
-                                   @oninput="@(async (e) => await OnDiscountChanged((salesOrderDetail, e.Value?.ToString())))" />;
-                }
-            },
-            
-            // 小計 - 計算欄位（唯讀）
-            new() 
-            { 
-                Title = "小計", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "12%",
-                CustomTemplate = item => 
-                {
-                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var subtotal = CalculateSubtotal(salesOrderDetail);
-                    var displayValue = subtotal > 0 ? subtotal.ToString("N0") : "";
-                    
-                    return @<div class="form-control form-control-sm text-end bg-light" style="border: 1px solid #dee2e6;">
-                        @displayValue
-                    </div>;
-                }
-            },
-            
             // 倉庫選擇欄位
             new() 
             { 
@@ -310,6 +272,153 @@
                     </select>;
                 }
             },
+            // 倉庫數量欄位（顯示可用庫存）
+            new() 
+            { 
+                Title = "庫存量", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                CustomTemplate = item => 
+                {
+                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
+                    var productId = GetProductId(salesOrderDetail);
+                    var warehouseId = GetWarehouseId(salesOrderDetail);
+                    var cachedStock = GetCachedWarehouseStock(productId, warehouseId);
+                    
+                    string displayText = "";
+                    string spanClass = "fw-bold";
+                    
+                    if (cachedStock.HasValue)
+                    {
+                        if (cachedStock.Value == -1)
+                        {
+                            displayText = "查詢失敗";
+                            spanClass += " text-danger";
+                        }
+                        else
+                        {
+                            displayText = cachedStock.Value.ToString("N0");
+                            // 根據庫存數量設定顏色提示
+                            if (cachedStock.Value <= 0)
+                            {
+                                spanClass += " text-danger"; // 庫存不足時顯示紅色
+                            }
+                            else
+                            {
+                                spanClass += " text-success"; // 庫存充足時顯示綠色
+                            }
+                        }
+                    }
+                    else if (productId.HasValue && productId.Value > 0 && warehouseId.HasValue && warehouseId.Value > 0)
+                    {
+                        displayText = "查詢中...";
+                        spanClass += " text-muted";
+                    }
+                    else
+                    {
+                        displayText = "-";
+                        spanClass += " text-muted";
+                    }
+                    
+                    return @<div class="d-flex align-items-center justify-content-end">
+                        <span class="@spanClass">@displayText</span>
+                    </div>;
+                }
+            },
+
+            
+            // 數量 - 數字輸入
+            new() 
+            { 
+                Title = "數量", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                CustomTemplate = item => 
+                {
+                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
+                    var quantity = GetQuantity(salesOrderDetail) ?? 0;
+                    var value = quantity > 0 ? quantity.ToString("F0") : ""; // 只有大於0才顯示，否則空白
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm text-end" 
+                                   value="@value"
+                                   min="0"
+                                   placeholder=""
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnQuantityChanged((salesOrderDetail, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 單價 - 數字輸入
+            new() 
+            { 
+                Title = "單價", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                CustomTemplate = item => 
+                {
+                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
+                    var unitPrice = GetUnitPrice(salesOrderDetail) ?? 0;
+                    var value = unitPrice > 0 ? unitPrice.ToString("F0") : "";
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm text-end" 
+                                   value="@value"
+                                   min="0"
+                                   step="1"
+                                   placeholder=""
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnUnitPriceChanged((salesOrderDetail, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 折扣 - 數字輸入
+            new() 
+            { 
+                Title = "折扣(%)", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "8%",
+                CustomTemplate = item => 
+                {
+                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
+                    var discount = GetDiscount(salesOrderDetail) ?? 0;
+                    var value = discount > 0 ? discount.ToString("F0") : "";
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm text-end" 
+                                   value="@value"
+                                   min="0"
+                                   max="100"
+                                   placeholder=""
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnDiscountChanged((salesOrderDetail, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 小計 - 計算欄位（唯讀）
+            new() 
+            { 
+                Title = "小計", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "10%",
+                CustomTemplate = item => 
+                {
+                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
+                    var subtotal = CalculateSubtotal(salesOrderDetail);
+                    var displayValue = subtotal > 0 ? subtotal.ToString("N0") : "";
+                    
+                    return @<div class="form-control form-control-sm text-end bg-light" style="border: 1px solid #dee2e6;">
+                        @displayValue
+                    </div>;
+                }
+            },
+            
+
             
             // 單位選擇欄位
             new() 
@@ -343,7 +452,7 @@
                 Title = "備註", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "17%",
+                Width = "15%",
                 CustomTemplate = item => 
                 {
                     var salesOrderDetail = (TSalesOrderDetailEntity)item;
@@ -485,6 +594,7 @@
     {
         var salesOrderDetail = (TSalesOrderDetailEntity)args.item;
         var wasEmpty = IsEmptyRow(salesOrderDetail);
+        var previousProductId = GetProductId(salesOrderDetail);
         
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
         {
@@ -497,6 +607,12 @@
             }
             else
             {
+                // 清除舊產品的庫存快取
+                if (previousProductId.HasValue)
+                {
+                    ClearProductStockCache(previousProductId.Value);
+                }
+                
                 SetProductId(salesOrderDetail, productId);
                 
                 // 自動填入產品預設單價和單位（如果產品有相關資訊）
@@ -531,6 +647,26 @@
                     }
                 }
                 
+                // 如果已經選擇了倉庫，立即查詢庫存
+                var warehouseId = GetWarehouseId(salesOrderDetail);
+                if (warehouseId.HasValue && warehouseId.Value > 0)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var availableStock = await InventoryStockService.GetTotalAvailableStockByWarehouseAsync(productId, warehouseId.Value);
+                            SetCachedWarehouseStock(productId, warehouseId.Value, availableStock);
+                            await InvokeAsync(StateHasChanged);
+                        }
+                        catch
+                        {
+                            SetCachedWarehouseStock(productId, warehouseId.Value, -1);
+                            await InvokeAsync(StateHasChanged);
+                        }
+                    });
+                }
+                
                 // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
                 var added = AutoEmptyRowHelper.For<TSalesOrderDetailEntity>.HandleInputChangeAdvanced(
                     Items, salesOrderDetail, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSalesOrderId, ParentEntityId);
@@ -540,6 +676,12 @@
         }
         else
         {
+            // 清除舊產品的庫存快取
+            if (previousProductId.HasValue)
+            {
+                ClearProductStockCache(previousProductId.Value);
+            }
+            
             SetProductId(salesOrderDetail, null);
             await ItemsChanged.InvokeAsync(Items);
         }
@@ -663,6 +805,7 @@
     private void OnWarehouseSelectionChanged(TSalesOrderDetailEntity salesOrderDetail, string? warehouseIdStr)
     {
         var wasEmpty = IsEmptyRow(salesOrderDetail);
+        var productId = GetProductId(salesOrderDetail);
         
         if (string.IsNullOrEmpty(warehouseIdStr) || !int.TryParse(warehouseIdStr, out var warehouseId))
         {
@@ -671,6 +814,28 @@
         else
         {
             SetWarehouseId(salesOrderDetail, warehouseId);
+            
+            // 查詢並更新倉庫庫存（背景執行，不阻塞UI）
+            if (productId.HasValue && productId.Value > 0)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var availableStock = await InventoryStockService.GetTotalAvailableStockByWarehouseAsync(productId.Value, warehouseId);
+                        SetCachedWarehouseStock(productId.Value, warehouseId, availableStock);
+                        
+                        // 在主執行緒上更新UI
+                        await InvokeAsync(StateHasChanged);
+                    }
+                    catch
+                    {
+                        // 發生錯誤時設定為 -1 表示查詢失敗
+                        SetCachedWarehouseStock(productId.Value, warehouseId, -1);
+                        await InvokeAsync(StateHasChanged);
+                    }
+                });
+            }
         }
         
         // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
