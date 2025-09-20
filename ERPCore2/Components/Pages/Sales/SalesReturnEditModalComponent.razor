@@ -35,9 +35,9 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesReturnData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          UseGenericSave="true"
+                          UseGenericSave="false"
                           CustomValidator="@ValidateSalesReturnDetailsAsync"
-                          AfterSave="@SaveSalesReturnDetailsAsync"
+                          SaveHandler="@SaveSalesReturnWithDetails"
                           SaveSuccessMessage="@(SalesReturnId.HasValue ? "銷售退貨更新成功" : "銷售退貨新增成功")"
                           SaveFailureMessage="銷售退貨儲存失敗"
                           RequiredPermission="SalesReturn.Read"
@@ -728,115 +728,55 @@
     }
 
     /// <summary>
-    /// AfterSave 回調方法 - 在主檔儲存後處理明細並使用差異比較更新庫存
-    /// 處理流程：
-    /// 1. 儲存有效的明細資料（有選擇商品和倉庫的記錄）
-    /// 2. 更新主檔總金額
-    /// 3. 使用新的 UpdateInventoryByDifferenceAsync 方法進行庫存差異更新
-    /// 4. 差異更新邏輯：
-    ///    - 比較編輯前後明細的變化
-    ///    - 只針對變更的部分進行庫存調整
-    ///    - 新增：直接增加庫存（退貨增加庫存）
-    ///    - 修改：調整庫存差異（增加或減少）
-    ///    - 刪除：回退庫存（減少庫存）
-    ///    - 產品替換：從原產品減去庫存，向新產品增加庫存
+    /// 自訂儲存邏輯 - 同時儲存主檔和明細，並更新庫存
     /// </summary>
-    private async Task SaveSalesReturnDetailsAsync(SalesReturn salesReturn)
+    private async Task<bool> SaveSalesReturnWithDetails(SalesReturn salesReturn)
     {
         try
         {
-            // 1. 儲存明細資料
-            var validDetails = salesReturnDetails
-                .Where(d => d.ProductId > 0 && d.ReturnQuantity > 0)
-                .ToList();
-
-            // 設定明細的退貨單ID
-            foreach (var detail in validDetails)
+            if (salesReturn == null)
             {
-                detail.SalesReturnId = salesReturn.Id;
+                return false;
             }
-
-            // 使用基礎的 CRUD 方法儲存明細
-            if (SalesReturnId.HasValue)
+            
+            // 先執行自訂驗證
+            if (!await ValidateSalesReturnDetailsAsync(salesReturn))
             {
-                // 編輯模式：先刪除現有明細，再新增
-                var existingDetails = await SalesReturnDetailService.GetBySalesReturnIdAsync(SalesReturnId.Value);
-                foreach (var existing in existingDetails)
-                {
-                    await SalesReturnDetailService.DeleteAsync(existing.Id);
-                }
-                
-                foreach (var detail in validDetails)
-                {
-                    await SalesReturnDetailService.CreateAsync(detail);
-                }
+                return false;
             }
-            else
+            
+            if (SalesReturnService == null)
             {
-                // 新增模式：直接新增所有明細
-                foreach (var detail in validDetails)
-                {
-                    await SalesReturnDetailService.CreateAsync(detail);
-                }
+                return false;
             }
-
-            // 2. 更新主檔總金額
-            var totalAmount = validDetails.Sum(d => d.ReturnQuantity * d.ReturnUnitPrice);
-            if (Math.Abs(salesReturn.TotalReturnAmount - totalAmount) > 0.01m) // 避免浮點數比較問題
+            
+            if (salesReturnDetails == null)
             {
-                salesReturn.TotalReturnAmount = totalAmount;
-                await SalesReturnService.UpdateAsync(salesReturn);
+                salesReturnDetails = new List<SalesReturnDetail>();
             }
-
-            // 3. 庫存更新邏輯
-            // 退貨會增加庫存，所以這裡的邏輯與進貨相同
-            if (SalesReturnId.HasValue)
+                        
+            // 呼叫服務的 SaveWithDetailsAsync 方法
+            var result = await SalesReturnService.SaveWithDetailsAsync(salesReturn, salesReturnDetails);
+            
+            if (result == null)
             {
-                // 編輯模式：使用差異比較更新庫存
-                var originalDetails = await SalesReturnDetailService.GetBySalesReturnIdAsync(SalesReturnId.Value);
-                
-                // 檢查是否已經存在庫存交易記錄
-                var hasExistingTransactions = await HasExistingInventoryTransactions(salesReturn.SalesReturnNumber);
-                
-                if (hasExistingTransactions)
-                {
-                    // 已有交易記錄，使用差異更新
-                    await UpdateInventoryByDifferenceAsync(originalDetails, validDetails, salesReturn.SalesReturnNumber);
-                }
-                else
-                {
-                    // 無交易記錄，直接建立庫存交易
-                    await CreateInventoryTransactionsAsync(validDetails, salesReturn.SalesReturnNumber);
-                }
+                return false;
+            }
+            
+            if (result.IsSuccess)
+            {
+                return true;
             }
             else
             {
-                // 新增模式：建立庫存交易
-                await CreateInventoryTransactionsAsync(validDetails, salesReturn.SalesReturnNumber);
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+                return false;
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存退貨明細時發生錯誤：{ex.Message}");
-            throw; // 重新拋出例外，讓上層知道儲存失敗
-        }
-    }
-
-    /// <summary>
-    /// 檢查是否已經存在庫存交易記錄
-    /// </summary>
-    private Task<bool> HasExistingInventoryTransactions(string returnNumber)
-    {
-        try
-        {
-            // 這裡應該檢查庫存交易表是否已有相關記錄
-            // 暫時回傳 false，實際實作需要根據系統設計調整
-            return Task.FromResult(false);
-        }
-        catch
-        {
-            // 發生錯誤時，假設沒有現有交易
-            return Task.FromResult(false);
+            await NotificationService.ShowErrorAsync($"儲存銷貨退回時發生錯誤：{ex.Message}");
+            return false;
         }
     }
 

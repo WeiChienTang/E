@@ -56,6 +56,22 @@ namespace ERPCore2.Services
         Task<string> GenerateSalesReturnNumberAsync(DateTime returnDate);
 
         /// <summary>
+        /// 儲存銷貨退回連同明細
+        /// </summary>
+        /// <param name="salesReturn">銷貨退回主檔</param>
+        /// <param name="details">銷貨退回明細清單</param>
+        /// <returns>儲存結果</returns>
+        Task<ServiceResult<SalesReturn>> SaveWithDetailsAsync(SalesReturn salesReturn, List<SalesReturnDetail> details);
+
+        /// <summary>
+        /// 更新銷貨退回明細
+        /// </summary>
+        /// <param name="salesReturnId">銷貨退回ID</param>
+        /// <param name="details">銷貨退回明細清單</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateDetailsAsync(int salesReturnId, List<SalesReturnDetail> details);
+
+        /// <summary>
         /// 取得統計資訊
         /// </summary>
         /// <param name="customerId">客戶ID（選填）</param>
