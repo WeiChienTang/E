@@ -771,6 +771,8 @@ namespace ERPCore2.Services
                 var query = context.PurchaseOrderDetails
                     .Include(pod => pod.PurchaseOrder)
                         .ThenInclude(po => po.Supplier)
+                    .Include(pod => pod.PurchaseOrder)
+                        .ThenInclude(po => po.Warehouse)
                     .Include(pod => pod.Product)
                     .Where(pod => !pod.IsDeleted 
                                 && pod.PurchaseOrder.SupplierId == supplierId

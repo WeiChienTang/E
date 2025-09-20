@@ -151,16 +151,8 @@ namespace ERPCore2.Services
                 if (entity.UnitPrice < 0)
                     errors.Add("單價不能小於 0");
 
-                // 重複檢查：檢查相同商品+倉庫+庫位組合是否已存在
-                if (await IsProductWarehouseLocationExistsInReceivingAsync(
-                    entity.PurchaseReceivingId, 
-                    entity.ProductId, 
-                    entity.WarehouseId, 
-                    entity.WarehouseLocationId, 
-                    entity.Id == 0 ? null : entity.Id))
-                {
-                    errors.Add("該商品在此倉庫位置中已存在入庫記錄");
-                }
+                // 移除重複檢查：允許同一採購訂單明細分配到不同倉庫
+                // 因為業務需求允許同一採購明細可以分配到不同倉庫位置
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

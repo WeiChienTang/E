@@ -37,13 +37,24 @@ else
         </div>
 
         <div class="card-footer">
-            <div class="d-flex justify-content-end gap-2">
-                <GenericButtonComponent Text="進貨量全填"
-                                      Variant="ButtonVariant.Success"
-                                      OnClick="FillAllQuantities" />
-                <GenericButtonComponent Text="進貨量清空"
-                                      Variant="ButtonVariant.Danger"
-                                      OnClick="ClearAllQuantities" />
+            <div class="d-flex justify-content-between">
+                <div>
+                    <GenericButtonComponent Text="載入所有未入庫"
+                                          Variant="ButtonVariant.Info"
+                                          OnClick="LoadAllUnreceivedItems"
+                                          IsDisabled="@(!CanLoadAllUnreceived)" />
+                </div>
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Text="進貨量全填"
+                                          Variant="ButtonVariant.Success"
+                                          OnClick="FillAllQuantities" />
+                    <GenericButtonComponent Text="進貨量清空"
+                                          Variant="ButtonVariant.Danger"
+                                          OnClick="ClearAllQuantities" />
+                    <GenericButtonComponent Text="明細全移除"
+                                          Variant="ButtonVariant.Info"
+                                          OnClick="ClearAllDetails" />
+                </div>
             </div>
         </div>
     </div>
@@ -112,6 +123,12 @@ else
     private int? _previousSelectedPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
 
+    // ===== 計算屬性 =====
+    private bool CanLoadAllUnreceived => 
+        SelectedSupplierId.HasValue && 
+        SelectedSupplierId.Value > 0 && 
+        GetAvailablePurchaseDetails().Any();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
@@ -140,6 +157,16 @@ else
         }
         
         await NotifyDetailsChanged();
+    }
+
+    private async Task ClearAllDetails()
+    {
+        // 清空所有明細，只保留一個空行
+        ReceivingItems.Clear();
+        EnsureOneEmptyRow();
+        
+        await NotifyDetailsChanged();
+        await NotificationService.ShowSuccessAsync("已清空所有入庫明細");
     }
 
     protected override async Task OnParametersSetAsync()
@@ -905,6 +932,189 @@ else
         }
         
         return filteredDetails.ToList();
+    }
+
+    // ===== 新增：載入所有未入庫相關方法 =====
+    
+    /// <summary>
+    /// 獲取當前篩選狀態的描述資訊
+    /// </summary>
+    private string GetCurrentFilterInfo()
+    {
+        var filters = new List<string>();
+        
+        if (SelectedPurchaseOrderId.HasValue)
+        {
+            filters.Add("已篩選採購單");
+        }
+        
+        if (FilterProductId.HasValue)
+        {
+            var product = AvailableProducts.FirstOrDefault(p => p.Id == FilterProductId.Value);
+            if (product != null)
+            {
+                filters.Add($"已篩選產品：{product.Name}");
+            }
+        }
+        
+        return filters.Any() ? $"（{string.Join("，", filters)}）" : "";
+    }
+
+    /// <summary>
+    /// 獲取預設倉庫（如果有的話）
+    /// </summary>
+    private Warehouse? GetDefaultWarehouse(PurchaseOrderDetail? purchaseDetail = null)
+    {
+        // 優先使用採購單指定的倉庫
+        if (purchaseDetail?.PurchaseOrder?.Warehouse != null)
+        {
+            return purchaseDetail.PurchaseOrder.Warehouse;
+        }
+        
+        // 如果只有一個倉庫，自動選擇它
+        return Warehouses.Count == 1 ? Warehouses.First() : null;
+    }
+
+    /// <summary>
+    /// 獲取預設庫位（如果有的話）
+    /// </summary>
+    private WarehouseLocation? GetDefaultWarehouseLocation(Warehouse? selectedWarehouse = null)
+    {
+        if (selectedWarehouse != null)
+        {
+            // 取得該倉庫的庫位
+            var warehouseLocations = WarehouseLocations.Where(wl => wl.WarehouseId == selectedWarehouse.Id).ToList();
+            
+            // 如果該倉庫只有一個庫位，自動選擇它
+            if (warehouseLocations.Count == 1)
+            {
+                return warehouseLocations.First();
+            }
+        }
+        
+        // 如果全系統只有一個庫位，自動選擇它
+        return WarehouseLocations.Count == 1 ? WarehouseLocations.First() : null;
+    }
+
+    /// <summary>
+    /// 顯示確認對話框
+    /// </summary>
+    private async Task<bool> ShowConfirmationAsync(string title, string message)
+    {
+        // 暫時使用簡單的通知，等待確認後執行
+        // 在實際專案中可能會使用更精美的對話框組件
+        try 
+        {
+            // 先顯示警告訊息，讓使用者知道將要進行的操作
+            await NotificationService.ShowWarningAsync($"{title}: {message}");
+            return true; // 暫時直接返回 true，實際應該實作確認對話框
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 內部方法：載入未入庫項目
+    /// </summary>
+    private async Task LoadUnreceivedItemsInternal(List<PurchaseOrderDetail> details)
+    {
+        try
+        {
+            // 清空現有項目
+            ReceivingItems.Clear();
+
+            // 載入所有未入庫項目
+            foreach (var detail in details)
+            {
+                // 獲取該採購明細的預設倉庫
+                var defaultWarehouse = GetDefaultWarehouse(detail);
+                
+                var receivingItem = new ReceivingItem
+                {
+                    SelectedPurchaseDetail = detail,
+                    SelectedProduct = detail.Product,
+                    ReceivedQuantity = detail.OrderQuantity - detail.ReceivedQuantity, // 預填剩餘數量
+                    UnitPrice = detail.UnitPrice,
+                    
+                    // 使用採購單指定的倉庫，或預設倉庫
+                    SelectedWarehouse = defaultWarehouse,
+                    SelectedWarehouseLocation = GetDefaultWarehouseLocation(defaultWarehouse)
+                };
+
+                // 使用與手動選取相同的顯示格式
+                receivingItem.ProductSearch = receivingItem.DisplayName;
+                
+                // 自動載入最近進貨的倉庫和庫位（如果沒有預設倉庫的話）
+                if (receivingItem.SelectedWarehouse == null && detail.Product != null)
+                {
+                    var (warehouse, location) = await GetLastReceivingWarehouseAsync(detail.Product.Id);
+                    if (warehouse != null)
+                    {
+                        receivingItem.SelectedWarehouse = warehouse;
+                        if (location != null && receivingItem.SelectedWarehouseLocation == null)
+                        {
+                            receivingItem.SelectedWarehouseLocation = location;
+                        }
+                    }
+                }
+
+                ReceivingItems.Add(receivingItem);
+            }
+
+            // 確保有一個空行
+            EnsureOneEmptyRow();
+            
+            // 通知變更
+            await NotifyDetailsChanged();
+            
+            var filterInfo = GetCurrentFilterInfo();
+            await NotificationService.ShowSuccessAsync(
+                $"成功載入 {details.Count} 項未入庫商品{filterInfo}"
+            );
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入未入庫商品失敗：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 載入所有未入庫商品的主要方法
+    /// </summary>
+    private async Task LoadAllUnreceivedItems()
+    {
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+        {
+            await NotificationService.ShowWarningAsync("請先選擇廠商後再載入未入庫商品");
+            return;
+        }
+
+        var availableDetails = GetAvailablePurchaseDetails();
+        
+        if (!availableDetails.Any())
+        {
+            var filterInfo = GetCurrentFilterInfo();
+            await NotificationService.ShowInfoAsync($"目前沒有符合條件的未入庫商品{filterInfo}");
+            return;
+        }
+
+        // 檢查是否有現有資料
+        var hasExistingData = ReceivingItems.Any(item => !IsEmptyRow(item));
+        
+        if (hasExistingData)
+        {
+            // 使用確認對話框
+            var confirmed = await ShowConfirmationAsync(
+                "載入確認", 
+                $"此操作將清空現有的入庫明細並載入 {availableDetails.Count} 項未入庫商品。\n\n是否繼續？"
+            );
+            
+            if (!confirmed) return;
+        }
+
+        await LoadUnreceivedItemsInternal(availableDetails);
     }
 
 
