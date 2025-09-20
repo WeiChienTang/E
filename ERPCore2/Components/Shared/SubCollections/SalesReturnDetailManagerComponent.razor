@@ -63,9 +63,11 @@ else if ((IsEditMode && ReturnItems.Any()) || (!IsEditMode && ReturnableDetails 
         
         <div class="card-footer">
             <div class="d-flex justify-content-end gap-2">
+                <GenericButtonComponent Text="退貨量全填"
+                                      Variant="ButtonVariant.Success"
+                                      OnClick="FillAllQuantities" />
                 <GenericButtonComponent Text="退貨量清空"
                                       Variant="ButtonVariant.Danger"
-                                      IconClass="fas fa-times"
                                       OnClick="ClearAllQuantities" />
             </div>
         </div>
@@ -270,7 +272,7 @@ else
             {
                 var returnItem = (ReturnItem)item;
                 var returnableQuantity = GetReturnableQuantity(returnItem.SalesOrderDetail);
-                var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString() : "";
+                var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString("N0") : "";
                 
                 return @<div>
                     <input type="number" class="form-control form-control-sm text-end" 
@@ -287,24 +289,21 @@ else
             }
         });
 
-        // 退貨單價欄位（可編輯，但預設從原訂單單價帶出）
+        // 退貨單價欄位（唯讀顯示）
         columns.Add(new()
         {
             Title = "退貨單價",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "7%",
             CustomTemplate = item =>
             {
                 var returnItem = (ReturnItem)item;
-                var value = returnItem.ReturnUnitPrice > 0 ? returnItem.ReturnUnitPrice.ToString("F0") : returnItem.SalesOrderDetail.UnitPrice.ToString("F0");
+                var value = returnItem.ReturnUnitPrice > 0 ? returnItem.ReturnUnitPrice : returnItem.SalesOrderDetail.UnitPrice;
                 
-                return @<input type="number" class="form-control form-control-sm text-end" 
-                               value="@value"
-                               min="0"
-                               step="1"
-                               @onchange="@(async (e) => await OnReturnUnitPriceChanged(returnItem, e.Value?.ToString()))" 
-                               title="可調整退貨單價，預設為原訂單單價" />;
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@value.ToString("N0")</span>
+                </div>;
             }
         });
 
@@ -589,6 +588,25 @@ else
     // ===== 事件處理 =====
 
     /// <summary>
+    /// 填滿所有可退貨數量
+    /// </summary>
+    private async Task FillAllQuantities()
+    {
+        foreach (var item in ReturnItems)
+        {
+            if (item.SalesOrderDetail != null)
+            {
+                var returnableQuantity = GetReturnableQuantity(item.SalesOrderDetail);
+                item.ReturnQuantity = returnableQuantity;
+                item.ValidationError = null;
+            }
+        }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
     /// 清空所有數量
     /// </summary>
     private async Task ClearAllQuantities()
@@ -626,7 +644,7 @@ else
                 if (quantity > returnableQuantity)
                 {
                     item.ReturnQuantity = returnableQuantity;
-                    item.ValidationError = $"退貨數量不可超過可退貨量 {returnableQuantity}";
+                    item.ValidationError = $"退貨數量不可超過可退貨量 {returnableQuantity:N0}";
                 }
                 else
                 {

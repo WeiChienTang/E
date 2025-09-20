@@ -35,6 +35,17 @@ else
                                       ShowTotalRow="true"
                                       TotalRowTemplate="@GetTotalRowTemplate" />
         </div>
+
+        <div class="card-footer">
+            <div class="d-flex justify-content-end gap-2">
+                <GenericButtonComponent Text="進貨量全填"
+                                      Variant="ButtonVariant.Success"
+                                      OnClick="FillAllQuantities" />
+                <GenericButtonComponent Text="進貨量清空"
+                                      Variant="ButtonVariant.Danger"
+                                      OnClick="ClearAllQuantities" />
+            </div>
+        </div>
     </div>
 }
 
@@ -106,6 +117,29 @@ else
         await LoadAvailableProductsAsync();
         LoadExistingDetailsAsync();
         EnsureOneEmptyRow();
+    }
+
+    private void FillAllQuantities()
+    {
+        foreach (var item in ReceivingItems)
+        {
+            if (item.SelectedPurchaseDetail != null)
+            {
+                item.ReceivedQuantity = item.OrderQuantity;
+            }
+        }
+        
+        _ = NotifyDetailsChanged();
+    }
+
+    private async Task ClearAllQuantities()
+    {
+        foreach (var item in ReceivingItems)
+        {
+            item.ReceivedQuantity = 0;
+        }
+        
+        await NotifyDetailsChanged();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -913,26 +947,8 @@ else
                         errors.Add("所有商品都必須選擇倉庫");
                     }
                 }
-            }
-            
-            // 檢查相同商品在相同倉庫位置的重複（只有在倉庫都已選擇的情況下才檢查）
-            var itemsWithWarehouse = nonEmptyItems.Where(item => item.SelectedProduct != null && item.SelectedWarehouse != null).ToList();
-            if (itemsWithWarehouse.Any())
-            {
-                var itemGroups = itemsWithWarehouse
-                    .GroupBy(item => new { 
-                        ProductId = item.SelectedProduct!.Id, 
-                        WarehouseId = item.SelectedWarehouse!.Id, 
-                        WarehouseLocationId = item.SelectedWarehouseLocation?.Id 
-                    })
-                    .Where(g => g.Count() > 1)
-                    .ToList();
-                    
-                if (itemGroups.Any())
-                {
-                    errors.Add("存在相同商品在相同倉庫位置的重複記錄");
-                }
-            }
+            }           
+
         }
           
         if (errors.Any())

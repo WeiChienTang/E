@@ -64,9 +64,11 @@ else if ((IsEditMode && ReturnItems.Any()) || (!IsEditMode && ReturnableDetails 
         
         <div class="card-footer">
             <div class="d-flex justify-content-end gap-2">
+                <GenericButtonComponent Text="退貨量全填"
+                                      Variant="ButtonVariant.Success"
+                                      OnClick="FillAllQuantities" />
                 <GenericButtonComponent Text="退貨量清空"
                                       Variant="ButtonVariant.Danger"
-                                      IconClass="fas fa-times"
                                       OnClick="ClearAllQuantities" />
             </div>
         </div>
@@ -687,6 +689,19 @@ else
         foreach (var item in ReturnItems)
         {
             item.ReturnQuantity = 0;
+            item.ValidationError = null;
+        }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task FillAllQuantities()
+    {
+        foreach (var item in ReturnItems)
+        {
+            var returnableQuantity = GetReturnableQuantity(item.PurchaseReceivingDetail);
+            item.ReturnQuantity = returnableQuantity;
             item.ValidationError = null;
         }
         
