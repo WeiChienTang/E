@@ -45,6 +45,39 @@ else
                                           IsDisabled="@(!CanLoadAllUnreceived)" />
                 </div>
                 <div class="d-flex gap-2">
+                    @* 統一倉庫下拉選單 *@
+                    <div class="dropdown">
+                        <GenericButtonComponent Text="統一倉庫"
+                                              Variant="ButtonVariant.Warning"
+                                              IconClass="fas fa-warehouse"
+                                              IsDisabled="@(ReceivingItems.Count == 0 || IsReadOnly || !ReceivingItems.Any(x => !IsEmptyRow(x)))"
+                                              AdditionalAttributes="@(new Dictionary<string, object> 
+                                              { 
+                                                  { "data-bs-toggle", "dropdown" },
+                                                  { "aria-expanded", "false" }
+                                              })" />
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">選擇要統一設定的倉庫</h6></li>
+                            @if (Warehouses.Any())
+                            {
+                                @foreach (var warehouse in Warehouses)
+                                {
+                                    <li>
+                                        <a class="dropdown-item" href="#" 
+                                           @onclick="() => ApplyUnifyWarehouse(warehouse.Id)" 
+                                           @onclick:preventDefault="true">
+                                            <i class="fas fa-warehouse me-2"></i>@warehouse.Name
+                                        </a>
+                                    </li>
+                                }
+                            }
+                            else
+                            {
+                                <li><span class="dropdown-item-text text-muted">沒有可用的倉庫</span></li>
+                            }
+                        </ul>
+                    </div>
+                
                     <GenericButtonComponent Text="進貨量全填"
                                           Variant="ButtonVariant.Success"
                                           OnClick="FillAllQuantities" />
@@ -167,6 +200,55 @@ else
         
         await NotifyDetailsChanged();
         await NotificationService.ShowSuccessAsync("已清空所有入庫明細");
+    }
+
+    /// <summary>
+    /// 統一設定所有明細項目的倉庫
+    /// </summary>
+    /// <param name="warehouseId">要設定的倉庫ID</param>
+    private async Task ApplyUnifyWarehouse(int warehouseId)
+    {
+        if (IsReadOnly) return;
+
+        try
+        {
+            var selectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == warehouseId);
+            if (selectedWarehouse == null)
+            {
+                await NotificationService.ShowErrorAsync("選擇的倉庫不存在", "錯誤");
+                return;
+            }
+
+            // 取得所有非空行的明細項目
+            var nonEmptyItems = ReceivingItems.Where(item => !IsEmptyRow(item)).ToList();
+            
+            if (!nonEmptyItems.Any())
+            {
+                await NotificationService.ShowWarningAsync("沒有可更新的明細項目", "提示");
+                return;
+            }
+
+            // 批量更新所有非空行的倉庫
+            foreach (var item in nonEmptyItems)
+            {
+                item.SelectedWarehouse = selectedWarehouse;
+                // 重置庫位選擇，因為倉庫改變了
+                item.SelectedWarehouseLocation = null;
+            }
+
+            // 通知父組件資料已變更
+            await NotifyDetailsChanged();
+            
+            // 顯示成功通知
+            await NotificationService.ShowSuccessAsync($"已統一設定 {nonEmptyItems.Count} 項明細的倉庫為：{selectedWarehouse.Name}", "統一設定完成");
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApplyUnifyWarehouse), GetType());
+            await NotificationService.ShowErrorAsync("統一設定倉庫時發生錯誤", "錯誤");
+        }
     }
 
     protected override async Task OnParametersSetAsync()

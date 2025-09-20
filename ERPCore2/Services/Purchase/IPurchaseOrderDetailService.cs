@@ -36,6 +36,13 @@ namespace ERPCore2.Services
         Task<List<PurchaseOrderDetail>> GetPendingReceivingDetailsAsync(int? supplierId = null);
 
         /// <summary>
+        /// 獲取廠商最近一次完整的採購訂單明細（智能下單用）
+        /// </summary>
+        /// <param name="supplierId">供應商ID</param>
+        /// <returns>最近一次採購的商品明細清單</returns>
+        Task<List<PurchaseOrderDetail>> GetLastCompletePurchaseAsync(int supplierId);
+
+        /// <summary>
         /// 根據供應商ID取得有待進貨數量的採購訂單明細
         /// </summary>
         /// <param name="supplierId">供應商ID</param>

@@ -667,6 +667,45 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 獲取廠商最近一次完整的採購訂單明細（智能下單用）
+        /// </summary>
+        public async Task<List<PurchaseOrderDetail>> GetLastCompletePurchaseAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢該廠商最近一次已核准的採購單
+                var lastPurchaseOrder = await context.PurchaseOrders
+                    .Include(po => po.PurchaseOrderDetails)
+                        .ThenInclude(pod => pod.Product)
+                    .Where(po => po.SupplierId == supplierId 
+                              && po.IsApproved 
+                              && !po.IsDeleted 
+                              && po.PurchaseOrderDetails.Any(pod => !pod.IsDeleted))
+                    .OrderByDescending(po => po.OrderDate)
+                    .ThenByDescending(po => po.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (lastPurchaseOrder == null)
+                    return new List<PurchaseOrderDetail>();
+
+                // 返回該採購單的所有明細
+                return lastPurchaseOrder.PurchaseOrderDetails
+                    .Where(pod => !pod.IsDeleted && pod.Product != null)
+                    .OrderBy(pod => pod.Id)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastCompletePurchaseAsync), GetType(), _logger, new { 
+                    SupplierId = supplierId
+                });
+                return new List<PurchaseOrderDetail>();
+            }
+        }
+
+        /// <summary>
         /// 重新計算並更新已進貨數量和金額
         /// </summary>
         public async Task<ServiceResult> RecalculateReceivedQuantityAsync(int purchaseOrderDetailId)
