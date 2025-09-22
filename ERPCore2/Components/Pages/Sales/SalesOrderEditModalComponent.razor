@@ -553,6 +553,7 @@
                                                           UnitOptions="@availableUnits"
                                                           WarehouseOptions="@availableWarehouses"
                                                           ParentEntityId="@(editModalComponent.Entity.Id)"
+                                                          CustomerId="@editModalComponent.Entity.CustomerId"
                                                           IsReadOnly="false"
                                                           GetProductId="@(item => item.ProductId)"
                                                           SetProductId="@((item, value) => item.ProductId = value ?? 0)"

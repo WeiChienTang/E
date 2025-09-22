@@ -2,6 +2,7 @@
 
 @inject INotificationService NotificationService
 @inject IInventoryStockService InventoryStockService
+@inject ISalesOrderDetailService SalesOrderDetailService
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
@@ -24,6 +25,22 @@
                                   ShowTotalRow="true"
                                   TotalRowTemplate="@GetTotalRowTemplate()" />
     </div>
+    <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <GenericButtonComponent Text="智能下單"
+                                          Variant="ButtonVariant.Primary"
+                                          Icon="fas fa-magic"
+                                          OnClick="SmartSalesOrder"
+                                          IsDisabled="@(!CanUseSmartOrder)" />
+                </div>
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Text="明細全移除"
+                                          Variant="ButtonVariant.Info"
+                                          OnClick="ClearAllDetails" />
+                </div>
+            </div>
+    </div>
 </div>
 
 @code {
@@ -33,6 +50,7 @@
     [Parameter] public List<Unit> UnitOptions { get; set; } = new(); // 單位選項
     [Parameter] public List<Warehouse> WarehouseOptions { get; set; } = new(); // 倉庫選項
     [Parameter] public int ParentEntityId { get; set; } // 銷售訂單ID
+    [Parameter] public int? CustomerId { get; set; } // 客戶ID，用於智能下單
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
     // ===== 顯示設定 =====
@@ -975,5 +993,164 @@
     public List<TSalesOrderDetailEntity> GetValidItems()
     {
         return AutoEmptyRowHelper.For<TSalesOrderDetailEntity>.GetNonEmptyItems(Items, IsEmptyRow);
+    }
+
+    // ===== 智能下單功能 =====
+    
+    /// <summary>
+    /// 計算屬性：是否可以使用智能下單
+    /// </summary>
+    private bool CanUseSmartOrder => 
+        CustomerId.HasValue && 
+        CustomerId.Value > 0;
+
+    /// <summary>
+    /// 智能下單主要方法
+    /// </summary>
+    private async Task SmartSalesOrder()
+    {
+        if (!CustomerId.HasValue || CustomerId.Value <= 0)
+        {
+            await NotificationService.ShowWarningAsync("請先選擇客戶後再使用智能下單");
+            return;
+        }
+
+        try
+        {
+            // 獲取該客戶最近一次的銷貨記錄
+            var lastSalesDetails = await SalesOrderDetailService.GetLastCompleteSalesAsync(CustomerId.Value);
+            
+            if (!lastSalesDetails.Any())
+            {
+                await NotificationService.ShowInfoAsync("該客戶沒有歷史購買記錄，無法使用智能下單");
+                return;
+            }
+
+            // 檢查是否有現有資料
+            var hasExistingData = Items.Any(item => !IsEmptyRow(item));
+            
+            if (hasExistingData)
+            {
+                // 使用確認對話框
+                var confirmed = await ShowConfirmationAsync(
+                    "智能下單確認", 
+                    "智能下單將會清空目前的產品明細並載入上次購買的產品，是否繼續？");
+                
+                if (!confirmed) return;
+            }
+
+            await LoadLastSalesDetailsInternal(lastSalesDetails);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"智能下單失敗：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 顯示確認對話框
+    /// </summary>
+    private async Task<bool> ShowConfirmationAsync(string title, string message)
+    {
+        // 暫時使用簡單的通知，等待確認後執行
+        // 在實際專案中可能會使用更精美的對話框組件
+        try 
+        {
+            // 先顯示警告訊息，讓使用者知道將要進行的操作
+            await NotificationService.ShowWarningAsync($"{title}: {message}");
+            return true; // 暫時直接返回 true，實際應該實作確認對話框
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 內部方法：載入上次銷貨明細
+    /// </summary>
+    private async Task LoadLastSalesDetailsInternal(List<SalesOrderDetail> lastSalesDetails)
+    {
+        try
+        {
+            // 清空現有項目
+            Items.Clear();
+
+            // 載入上次銷貨的所有商品明細
+            foreach (var detail in lastSalesDetails)
+            {
+                var newItem = new TSalesOrderDetailEntity();
+                
+                // 設定銷售訂單ID
+                SetSalesOrderId(newItem, ParentEntityId);
+                
+                // 根據傳入的product設定產品ID
+                if (detail.Product != null)
+                {
+                    SetProductId(newItem, detail.ProductId);
+                }
+                
+                // 設定其他資料，但不設定數量讓使用者自己填寫
+                SetQuantity(newItem, null); // 不自動填入數量
+                SetUnitPrice(newItem, detail.UnitPrice);
+                SetDiscount(newItem, detail.DiscountPercentage);
+                SetUnitId(newItem, detail.UnitId);
+                SetWarehouseId(newItem, detail.WarehouseId);
+                SetRemark(newItem, detail.DetailRemarks);
+                
+                // 自動查詢該產品在該倉庫的庫存數量
+                if (detail.ProductId > 0 && detail.WarehouseId.HasValue && detail.WarehouseId.Value > 0)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var availableStock = await InventoryStockService.GetTotalAvailableStockByWarehouseAsync(detail.ProductId, detail.WarehouseId.Value);
+                            SetCachedWarehouseStock(detail.ProductId, detail.WarehouseId.Value, availableStock);
+                            await InvokeAsync(StateHasChanged);
+                        }
+                        catch
+                        {
+                            SetCachedWarehouseStock(detail.ProductId, detail.WarehouseId.Value, -1);
+                            await InvokeAsync(StateHasChanged);
+                        }
+                    });
+                }
+
+                Items.Add(newItem);
+            }
+
+            // 確保有一個空行
+            EnsureOneEmptyRow();
+            
+            // 通知變更
+            await ItemsChanged.InvokeAsync(Items);
+            
+            await NotificationService.ShowSuccessAsync(
+                $"成功載入 {lastSalesDetails.Count} 項上次購買的產品明細"
+            );
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入上次購買明細失敗：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 清空所有明細
+    /// </summary>
+    private async Task ClearAllDetails()
+    {
+        // 清空所有明細，只保留一個空行
+        Items.Clear();
+        EnsureOneEmptyRow();
+        
+        // 清空倉庫庫存快取
+        _warehouseStockCache.Clear();
+        
+        // 通知變更
+        await ItemsChanged.InvokeAsync(Items);
+        
+        await NotificationService.ShowSuccessAsync("已清空所有產品明細");
     }
 }

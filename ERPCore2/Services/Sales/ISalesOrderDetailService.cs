@@ -62,5 +62,12 @@ namespace ERPCore2.Services
         /// <param name="customerId">客戶ID</param>
         /// <returns>可退貨的銷售訂單明細清單</returns>
         Task<List<SalesOrderDetail>> GetReturnableDetailsByCustomerAsync(int customerId);
+
+        /// <summary>
+        /// 獲取客戶最近一次完整的銷貨訂單明細（智能下單用）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <returns>最近一次銷貨訂單的明細清單</returns>
+        Task<List<SalesOrderDetail>> GetLastCompleteSalesAsync(int customerId);
     }
 }

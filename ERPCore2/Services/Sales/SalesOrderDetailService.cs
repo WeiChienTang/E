@@ -499,6 +499,44 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 獲取客戶最近一次完整的銷貨訂單明細（智能下單用）
+        /// </summary>
+        public async Task<List<SalesOrderDetail>> GetLastCompleteSalesAsync(int customerId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢該客戶最近一次的銷貨單
+                var lastSalesOrder = await context.SalesOrders
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Product)
+                    .Where(so => so.CustomerId == customerId 
+                              && !so.IsDeleted 
+                              && so.SalesOrderDetails.Any(sod => !sod.IsDeleted))
+                    .OrderByDescending(so => so.OrderDate)
+                    .ThenByDescending(so => so.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (lastSalesOrder == null)
+                    return new List<SalesOrderDetail>();
+
+                // 返回該銷貨單的所有明細
+                return lastSalesOrder.SalesOrderDetails
+                    .Where(sod => !sod.IsDeleted && sod.Product != null)
+                    .OrderBy(sod => sod.Id)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastCompleteSalesAsync), GetType(), _logger, new { 
+                    CustomerId = customerId
+                });
+                return new List<SalesOrderDetail>();
+            }
+        }
+
         #endregion
     }
 }
