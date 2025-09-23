@@ -109,6 +109,8 @@ else
     [Parameter] public TMainEntity? MainEntity { get; set; }
     [Parameter] public List<TDetailEntity> ExistingDetails { get; set; } = new List<TDetailEntity>();
     [Parameter] public EventCallback<List<TDetailEntity>> OnDetailsChanged { get; set; }
+    [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
+    [Parameter] public EventCallback<ReceivingItem> OnItemRemoved { get; set; }
     
     // ===== 欄位映射參數 =====
     [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty;
@@ -155,6 +157,7 @@ else
     private int? _previousSelectedSupplierId = null;
     private int? _previousSelectedPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
+    private List<int> _deletedDetailIds { get; set; } = new List<int>();
 
     // ===== 計算屬性 =====
     private bool CanLoadAllUnreceived => 
@@ -194,6 +197,25 @@ else
 
     private async Task ClearAllDetails()
     {
+        // 通知父組件所有項目即將被移除
+        if (OnItemRemoved.HasDelegate)
+        {
+            foreach (var item in ReceivingItems.Where(item => !IsEmptyRow(item)))
+            {
+                await OnItemRemoved.InvokeAsync(item);
+            }
+        }
+        
+        // 記錄所有現有明細的 ID 以便刪除
+        foreach (var item in ReceivingItems.Where(item => item.ExistingDetailEntity != null))
+        {
+            var entityId = GetExistingDetailId(item.ExistingDetailEntity!);
+            if (entityId > 0)
+            {
+                _deletedDetailIds.Add(entityId);
+            }
+        }
+        
         // 清空所有明細，只保留一個空行
         ReceivingItems.Clear();
         EnsureOneEmptyRow();
@@ -729,6 +751,13 @@ else
     {
         var details = ConvertToDetailEntities();
         await OnDetailsChanged.InvokeAsync(details);
+        
+        // 通知已刪除的明細 ID
+        if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
+        {
+            await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
+            _deletedDetailIds.Clear(); // 清空已通知的刪除ID
+        }
     }
 
     private async Task<(Warehouse? warehouse, WarehouseLocation? location)> GetLastReceivingWarehouseAsync(int productId)
@@ -971,11 +1000,45 @@ else
         
         var removedItem = ReceivingItems[index];
         
+        // 記錄要刪除的資料庫實體ID
+        if (removedItem.ExistingDetailEntity != null)
+        {
+            var entityId = GetExistingDetailId(removedItem.ExistingDetailEntity);
+            if (entityId > 0)
+            {
+                _deletedDetailIds.Add(entityId);
+            }
+        }
+        
+        // 通知父組件項目即將被移除
+        if (OnItemRemoved.HasDelegate)
+        {
+            await OnItemRemoved.InvokeAsync(removedItem);
+        }
+        
         AutoEmptyRowHelper.ForAny<ReceivingItem>.HandleItemRemove(
             ReceivingItems, removedItem, IsEmptyRow, CreateEmptyItem);
         
         await NotifyDetailsChanged();
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得現有明細實體的ID
+    /// </summary>
+    private int GetExistingDetailId(TDetailEntity entity)
+    {
+        if (entity == null) return 0;
+        
+        // 假設所有的 BaseEntity 都有 Id 屬性
+        var idProperty = entity.GetType().GetProperty("Id");
+        if (idProperty != null && idProperty.PropertyType == typeof(int))
+        {
+            var value = idProperty.GetValue(entity);
+            return value != null ? (int)value : 0;
+        }
+        
+        return 0;
     }
 
     private List<Product> GetAvailableProducts()

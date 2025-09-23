@@ -13,14 +13,26 @@ namespace ERPCore2.Services
     /// </summary>
     public class PurchaseReceivingDetailService : GenericManagementService<PurchaseReceivingDetail>, IPurchaseReceivingDetailService
     {
+        private readonly IInventoryStockService? _inventoryStockService;
+
         public PurchaseReceivingDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
+            _inventoryStockService = null;
         }
 
         public PurchaseReceivingDetailService(
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<PurchaseReceivingDetail>> logger) : base(contextFactory, logger)
         {
+            _inventoryStockService = null;
+        }
+
+        public PurchaseReceivingDetailService(
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<PurchaseReceivingDetail>> logger,
+            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+        {
+            _inventoryStockService = inventoryStockService;
         }
 
         #region 覆寫基底類別方法
@@ -718,5 +730,84 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// 覆蓋永久刪除方法，加入庫存回滾邏輯
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                // 查詢要刪除的明細，包含相關資訊
+                var entity = await context.PurchaseReceivingDetails
+                    .Include(d => d.Product)
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.PurchaseOrderDetail)
+                    .FirstOrDefaultAsync(d => d.Id == id);
+                    
+                if (entity == null)
+                {
+                    return ServiceResult.Failure($"找不到ID為 {id} 的進貨明細");
+                }
+
+                // 回滾採購訂單明細的已進貨數量
+                if (entity.PurchaseOrderDetailId > 0 && entity.ReceivedQuantity > 0)
+                {
+                    var purchaseOrderDetail = entity.PurchaseOrderDetail ?? 
+                        await context.PurchaseOrderDetails.FirstOrDefaultAsync(pod => pod.Id == entity.PurchaseOrderDetailId);
+                        
+                    if (purchaseOrderDetail != null)
+                    {
+                        // 減少已進貨數量
+                        purchaseOrderDetail.ReceivedQuantity = Math.Max(0, purchaseOrderDetail.ReceivedQuantity - entity.ReceivedQuantity);
+                        purchaseOrderDetail.UpdatedAt = DateTime.UtcNow;
+                        
+                        _logger?.LogInformation($"已回滾採購訂單明細 - 訂單明細ID: {purchaseOrderDetail.Id}, 商品ID: {entity.ProductId}, 回滾數量: {entity.ReceivedQuantity}");
+                    }
+                }
+
+                // 庫存回滾：因為取消進貨，所以要扣減庫存
+                if (_inventoryStockService != null && entity.ReceivedQuantity > 0)
+                {
+                    // 使用 ReduceStockAsync 扣減庫存（因為取消進貨，實際收到的商品應該從庫存中減少）
+                    var stockResult = await _inventoryStockService.ReduceStockAsync(
+                        productId: entity.ProductId,
+                        warehouseId: entity.WarehouseId,
+                        quantity: entity.ReceivedQuantity,
+                        transactionType: Data.Enums.InventoryTransactionTypeEnum.Adjustment,
+                        transactionNumber: $"取消進貨-{entity.Id}",
+                        locationId: entity.WarehouseLocationId,
+                        remarks: $"取消進貨明細ID: {entity.Id}"
+                    );
+
+                    if (!stockResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult.Failure($"庫存回滾失敗: {stockResult.ErrorMessage}");
+                    }
+                    
+                    _logger?.LogInformation($"已回滾庫存 - 商品ID: {entity.ProductId}, 倉庫ID: {entity.WarehouseId}, 扣減數量: {entity.ReceivedQuantity}");
+                }
+
+                // 執行實際刪除
+                context.PurchaseReceivingDetails.Remove(entity);
+                await context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(PermanentDeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id 
+                });
+                return ServiceResult.Failure($"永久刪除進貨明細時發生錯誤：{ex.Message}");
+            }
+        }
     }
 }

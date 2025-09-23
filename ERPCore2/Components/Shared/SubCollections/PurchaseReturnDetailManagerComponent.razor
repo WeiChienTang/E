@@ -1,75 +1,18 @@
-@* 採購退回商品明細管理元件 - 使用 InteractiveTableComponent 統一UI *@
+@* 採購退回明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@inject IProductService ProductService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject INotificationService NotificationService
-@inject IWarehouseLocationService WarehouseLocationService
-@inject ISystemParameterService SystemParameterService
 @using ERPCore2.Helpers
-@using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Data.Entities
-@using ERPCore2.Services
-@using ERPCore2.Components.Shared.Tables
-@using System.Linq
 
-@if (!SupplierId.HasValue || SupplierId.Value <= 0)
+@if (!EffectiveSupplierId.HasValue || EffectiveSupplierId.Value <= 0)
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
             <div class="supplier-warning">
-                <p class="text-muted">選擇廠商後即可查看該廠商可退貨的商品</p>
-            </div>
-        </div>
-    </div>
-}
-else if ((IsEditMode && ReturnItems.Any()) || (!IsEditMode && ReturnableDetails != null && ReturnableDetails.Any()))
-{
-    <div class="card border-0 shadow-sm">
-        @* 篩選資訊顯示 *@
-        @if (FilterPurchaseReceivingId.HasValue && FilterPurchaseReceivingId.Value > 0 && !IsEditMode)
-        {
-            var selectedReceiving = ReturnableDetails.FirstOrDefault(rd => rd.PurchaseReceivingId == FilterPurchaseReceivingId.Value)?.PurchaseReceiving;
-            @if (selectedReceiving != null)
-            {
-                <div class="card-header bg-info text-white">
-                    <i class="fas fa-filter me-2"></i>
-                    <span>正在顯示進貨單：<strong>@selectedReceiving.ReceiptNumber</strong> 的商品明細</span>
-                </div>
-            }
-        }
-        
-        @if (FilterProductId.HasValue && FilterProductId.Value > 0 && !IsEditMode)
-        {
-            var selectedProduct = ReturnableDetails.FirstOrDefault(rd => rd.ProductId == FilterProductId.Value)?.Product;
-            @if (selectedProduct != null)
-            {
-                <div class="card-header bg-warning text-dark">
-                    <i class="fas fa-filter me-2"></i>
-                    <span>正在篩選產品：<strong>@selectedProduct.Code - @selectedProduct.Name</strong></span>
-                </div>
-            }
-        }
-        
-        <div class="card-body p-0">
-            <InteractiveTableComponent TItem="ReturnItem" 
-                                      Items="@ReturnItems"
-                                      ColumnDefinitions="@GetColumnDefinitions()"
-                                      IsReadOnly="false"
-                                      ShowRowNumbers="false"
-                                      EmptyMessage="@EmptyMessage"
-                                      ShowTotalRow="true"
-                                      TotalRowTemplate="@GetTotalRowTemplate" />
-        </div>
-        
-        <div class="card-footer">
-            <div class="d-flex justify-content-end gap-2">
-                <GenericButtonComponent Text="退貨量全填"
-                                      Variant="ButtonVariant.Success"
-                                      OnClick="FillAllQuantities" />
-                <GenericButtonComponent Text="退貨量清空"
-                                      Variant="ButtonVariant.Danger"
-                                      OnClick="ClearAllQuantities" />
+                <p class="text-muted">選擇廠商後即可查看該廠商的退回商品</p>
             </div>
         </div>
     </div>
@@ -77,24 +20,39 @@ else if ((IsEditMode && ReturnItems.Any()) || (!IsEditMode && ReturnableDetails 
 else
 {
     <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5">
-            <div class="empty-state">
-                <i class="fas fa-undo-alt fa-3x mb-3 text-muted"></i>
-                @if (IsEditMode)
-                {
-                    <h5 class="text-muted">此退貨單尚無明細資料</h5>
-                    <p class="text-muted">請檢查資料載入狀況或聯繫系統管理員</p>
-                }
-                else if (FilterPurchaseReceivingId.HasValue && FilterPurchaseReceivingId.Value > 0)
-                {
-                    <h5 class="text-muted">該進貨單尚無可退貨的商品</h5>
-                    <p class="text-muted">該進貨單的所有商品都已退貨完成，或您可以選擇其他進貨單</p>
-                }
-                else
-                {
-                    <h5 class="text-muted">尚無可退貨的商品</h5>
-                    <p class="text-muted">該廠商的所有進貨項目都已退貨完成</p>
-                }
+        <div class="card-body p-0">
+            <InteractiveTableComponent TItem="ReturnItem" 
+                                      Items="@ReturnItems"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      IsReadOnly="@IsReadOnly"
+                                      ShowRowNumbers="false"
+                                      EmptyMessage="@EmptyMessage"
+                                      ShowBuiltInActions="true"
+                                      ShowBuiltInDeleteButton="true"
+                                      OnItemDelete="@HandleItemDelete"
+                                      ShowTotalRow="true"
+                                      TotalRowTemplate="@GetTotalRowTemplate" />
+        </div>
+
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <GenericButtonComponent Text="載入所有可退回"
+                                          Variant="ButtonVariant.Info"
+                                          OnClick="LoadAllReturnableItems"
+                                          IsDisabled="@(!CanLoadAllReturnable)" />
+                </div>
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Text="退回量全填"
+                                          Variant="ButtonVariant.Success"
+                                          OnClick="FillAllQuantities" />
+                    <GenericButtonComponent Text="退回量清空"
+                                          Variant="ButtonVariant.Danger"
+                                          OnClick="ClearAllQuantities" />
+                    <GenericButtonComponent Text="明細全移除"
+                                          Variant="ButtonVariant.Info"
+                                          OnClick="ClearAllDetails" />
+                </div>
             </div>
         </div>
     </div>
@@ -102,57 +60,184 @@ else
 
 @code {
     // ===== 基本參數 =====
-    [Parameter] public int? SupplierId { get; set; }
-    [Parameter] public int? FilterPurchaseReceivingId { get; set; }
-    [Parameter] public int? FilterProductId { get; set; }
-    [Parameter] public List<PurchaseReturnDetail> ExistingReturnDetails { get; set; } = new List<PurchaseReturnDetail>();
-    [Parameter] public EventCallback<List<PurchaseReturnDetail>> OnReturnDetailsChanged { get; set; }
-    [Parameter] public bool IsEditMode { get; set; } = false;
-
-    // ===== 顯示設定 =====
-    [Parameter] public string Title { get; set; } = "退貨明細";
-    [Parameter] public string EmptyMessage { get; set; } = "尚無退貨明細";
+    [Parameter] public List<Product> Products { get; set; } = new List<Product>();
+    [Parameter] public EventCallback<List<ReturnItem>> OnReturnItemsChanged { get; set; }
     
-    // ===== 內部狀態 =====
-    private List<PurchaseReceivingDetail> ReturnableDetails { get; set; } = new List<PurchaseReceivingDetail>();
+    // ===== 供應商過濾參數 =====
+    [Parameter] public int? SupplierId { get; set; }
+    [Parameter] public int? SelectedSupplierId { get; set; }
+    
+    // ===== 篩選參數 =====
+    [Parameter] public int? SelectedPurchaseReceivingId { get; set; }
+    [Parameter] public int? FilterProductId { get; set; }
+    [Parameter] public int? FilterPurchaseReceivingId { get; set; }
+    
+    // ===== 現有明細參數 =====
+    [Parameter] public List<PurchaseReturnDetail> ExistingReturnDetails { get; set; } = new List<PurchaseReturnDetail>();
+    [Parameter] public EventCallback<List<PurchaseReturnDetail>> OnDetailsChanged { get; set; }
+    [Parameter] public EventCallback<List<PurchaseReturnDetail>> OnReturnDetailsChanged { get; set; }
+    [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
+    [Parameter] public EventCallback<ReturnItem> OnItemRemoved { get; set; }
+    
+    // ===== 編輯模式參數 =====
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    
+    // ===== 顯示標籤參數 =====
+    [Parameter] public string OriginalQuantityLabel { get; set; } = "原始數量";
+    [Parameter] public string ReturnQuantityLabel { get; set; } = "退回數量";
+    [Parameter] public string ReturnPriceLabel { get; set; } = "退回單價";
+    [Parameter] public string RemarksLabel { get; set; } = "備註";
+    [Parameter] public string QualityConditionLabel { get; set; } = "品質狀況";
+    [Parameter] public string BatchNumberLabel { get; set; } = "批號";
+    
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "退回明細";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "undo";
+    [Parameter] public string ItemDisplayName { get; set; } = "商品";
+    [Parameter] public string EmptyIcon { get; set; } = "box-open";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增退回商品";
+    
+    // ===== 唯讀模式參數 =====
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+
     private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
-    private List<WarehouseLocation> AllWarehouseLocations { get; set; } = new List<WarehouseLocation>();
-    private Dictionary<int, int> _returnedQuantityCache = new Dictionary<int, int>(); // 快取已退貨數量
-    private decimal _taxRate = 5.00m; // 系統稅率，預設5%
-    private int? _previousSupplierId = null;
-    private int? _previousFilterPurchaseReceivingId = null;
+    private List<Product> AvailableProducts { get; set; } = new List<Product>();
+    private List<PurchaseReceivingDetail> AvailableReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
+    private int? _previousSelectedSupplierId = null;
+    private int? _previousSelectedPurchaseReceivingId = null;
     private int? _previousFilterProductId = null;
-    private List<PurchaseReturnDetail>? _previousExistingReturnDetails = null;
-    private bool _isInitialized = false;
+    private List<int> _deletedDetailIds { get; set; } = new List<int>();
+
+    // ===== 計算屬性 =====
+    private int? EffectiveSupplierId => SupplierId ?? SelectedSupplierId;
+    private int? EffectivePurchaseReceivingId => FilterPurchaseReceivingId ?? SelectedPurchaseReceivingId;
+    private int? EffectiveFilterProductId => FilterProductId;
+    private EventCallback<List<PurchaseReturnDetail>> EffectiveDetailsChangedCallback => 
+        OnReturnDetailsChanged.HasDelegate ? OnReturnDetailsChanged : OnDetailsChanged;
+    
+    private bool CanLoadAllReturnable => 
+        EffectiveSupplierId.HasValue && 
+        EffectiveSupplierId.Value > 0 && 
+        GetAvailableReceivingDetails().Any();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadDataAsync();
+        await LoadAvailableProductsAsync();
+        LoadExistingDetailsAsync();
+        EnsureOneEmptyRow();
+    }
+
+    private async Task FillAllQuantities()
+    {
+        foreach (var item in ReturnItems)
+        {
+            if (item.SelectedReceivingDetail != null)
+            {
+                // 退回量設為可退回的最大數量
+                var maxReturnQuantity = item.AvailableQuantity;
+                item.ReturnQuantity = maxReturnQuantity > 0 ? maxReturnQuantity : 0;
+            }
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
+    private async Task ClearAllQuantities()
+    {
+        foreach (var item in ReturnItems)
+        {
+            item.ReturnQuantity = 0;
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
+    private async Task ClearAllDetails()
+    {
+        // 通知父組件所有項目即將被移除
+        if (OnItemRemoved.HasDelegate)
+        {
+            foreach (var item in ReturnItems.ToList()) // 創建副本避免修改集合時的問題
+            {
+                if (!IsEmptyRow(item)) // 只通知非空行
+                {
+                    await OnItemRemoved.InvokeAsync(item);
+                }
+            }
+        }
+        
+        // 記錄所有現有明細的 ID 以便刪除
+        foreach (var item in ReturnItems.Where(item => item.ExistingDetailEntity?.Id > 0))
+        {
+            _deletedDetailIds.Add(item.ExistingDetailEntity!.Id);
+        }
+        
+        // 清空所有明細，只保留一個空行
+        ReturnItems.Clear();
+        EnsureOneEmptyRow();
+        
+        await NotifyDetailsChanged();
+        await NotificationService.ShowSuccessAsync("已清空所有退回明細");
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 檢查廠商、進貨單、產品篩選或現有退貨明細是否變更
-        var existingReturnDetailsChanged = !AreListsEqual(_previousExistingReturnDetails, ExistingReturnDetails);
+        base.OnParametersSet();
         
-        if (_previousSupplierId != SupplierId || 
-            _previousFilterPurchaseReceivingId != FilterPurchaseReceivingId ||
-            _previousFilterProductId != FilterProductId ||
-            existingReturnDetailsChanged)
+        // 檢查篩選參數是否變更
+        bool supplierChanged = _previousSelectedSupplierId != EffectiveSupplierId;
+        bool purchaseReceivingChanged = _previousSelectedPurchaseReceivingId != EffectivePurchaseReceivingId;
+        bool productFilterChanged = _previousFilterProductId != EffectiveFilterProductId;
+        
+        // 如果廠商變更，需要重新載入所有資料
+        if (supplierChanged)
         {
-            _previousSupplierId = SupplierId;
-            _previousFilterPurchaseReceivingId = FilterPurchaseReceivingId;
-            _previousFilterProductId = FilterProductId;
-            _previousExistingReturnDetails = ExistingReturnDetails?.ToList(); // 建立副本以比較
+            _previousSelectedSupplierId = EffectiveSupplierId;
+            _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
+            _previousFilterProductId = EffectiveFilterProductId;
             
-            // 只在已初始化後才重新載入資料，避免與 OnInitializedAsync 重複
-            if (_isInitialized)
-            {
-                await LoadReturnableDetailsAsync();
-                LoadExistingReturnDetails(); // 先載入現有明細，建立 ReturnItems
-                await LoadReturnedQuantitiesAsync(); // 再載入已退貨數量快取
-            }
+            await LoadAvailableProductsAsync();
+            
+            // 廠商變更時清空現有選項並重新載入
+            ReturnItems.Clear();
+            LoadExistingDetailsAsync();
+            return;
         }
+        
+        // 如果只是進貨單或商品篩選變更，只需要更新篩選狀態並重新渲染
+        if (purchaseReceivingChanged || productFilterChanged)
+        {
+            _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
+            _previousFilterProductId = EffectiveFilterProductId;
+            
+            // 觸發重新渲染以套用新的篩選
+            StateHasChanged();
+            return;
+        }
+        
+        // 總是確保有一行空行可以輸入，不論是否已有資料
+        EnsureOneEmptyRow();
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    private bool IsEmptyRow(ReturnItem item)
+    {
+        return item.SelectedReceivingDetail == null && item.SelectedProduct == null;
+    }
+    
+    private ReturnItem CreateEmptyItem()
+    {
+        return new ReturnItem();
+    }
+    
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.ForAny<ReturnItem>.EnsureOneEmptyRow(
+            ReturnItems, 
+            IsEmptyRow, 
+            CreateEmptyItem
+        );
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -160,225 +245,124 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 進貨單號欄位
-        columns.Add(new()
-        {
-            Title = "進貨單",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "14%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var receivingDetail = returnItem.PurchaseReceivingDetail;
-                
-                // 加強空值檢查
-                if (receivingDetail?.PurchaseReceiving == null)
-                {
-                    return @<small class="text-muted">-</small>;
-                }
-                
-                return @<small class="text-primary fw-bold">@receivingDetail.PurchaseReceiving.ReceiptNumber</small>;
-            }
-        });
+        // 進貨明細選擇欄位 - 使用 SearchableSelectHelper 創建
+        columns.Add(SearchableSelectHelper.CreateSearchableSelect<ReturnItem, PurchaseReceivingDetail>(
+            title: "商品",
+            width: "25%",
+            searchValuePropertyName: "ReceivingDetailSearch",
+            selectedItemPropertyName: "SelectedReceivingDetail",
+            filteredItemsPropertyName: "FilteredReceivingDetails",
+            showDropdownPropertyName: "ShowDropdown",
+            selectedIndexPropertyName: "SelectedIndex",
+            availableItemsProvider: () => GetAvailableReceivingDetails(),
+            itemDisplayFormatter: detail => FormatReceivingDetailDisplay(detail),
+            searchFilter: (detail, searchValue) => FilterReceivingDetail(detail, searchValue),
+            onSearchInputChanged: EventCallback.Factory.Create<(ReturnItem item, string? searchValue)>(this, args => OnReceivingDetailSearchInput(args.item, args.searchValue)),
+            onItemSelected: EventCallback.Factory.Create<(ReturnItem item, PurchaseReceivingDetail? selectedDetail)>(this, async args => {
+                if (args.selectedDetail != null)
+                    await OnReceivingDetailSelected(args.item, args.selectedDetail);
+            }),
+            onInputFocus: EventCallback.Factory.Create<ReturnItem>(this, item => OnReceivingDetailInputFocus(item)),
+            onInputBlur: EventCallback.Factory.Create<ReturnItem>(this, async item => await OnReceivingDetailInputBlur(item)),
+            onItemMouseEnter: EventCallback.Factory.Create<(ReturnItem item, int index)>(this, args => OnReceivingDetailItemMouseEnter(args.item, args.index)),
+            isReadOnly: IsReadOnly
+        ));
 
-        // 進貨日期欄位
-        columns.Add(new()
-        {
-            Title = "進貨日期",
+        // 原始進貨數量欄位 (只讀顯示)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = OriginalQuantityLabel, 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
-            HideOnMobile = true,
-            CustomTemplate = item =>
+            CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                var receivingDetail = returnItem.PurchaseReceivingDetail;
                 
-                // 加強空值檢查
-                if (receivingDetail?.PurchaseReceiving == null)
-                {
-                    return @<small class="text-muted">-</small>;
-                }
-                
-                return @<small class="text-muted">@receivingDetail.PurchaseReceiving.ReceiptDate.ToString("MM/dd")</small>;
-            }
-        });
-
-        // 商品欄位
-        columns.Add(new()
-        {
-            Title = "商品",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "18%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var receivingDetail = returnItem.PurchaseReceivingDetail;
-                
-                // 加強空值檢查
-                if (receivingDetail?.Product == null)
-                {
-                    return @<div class="product-info">
-                        <small class="text-muted">商品資訊載入中...</small>
-                    </div>;
-                }
-                
-                return @<div class="product-info">
-                    <strong>@receivingDetail.Product.Code</strong>
-                    <br />
-                    <small class="text-muted">@receivingDetail.Product.Name</small>
-                </div>;
-            }
-        });
-
-        // 進貨量欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "進貨量",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "7%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var receivingDetail = returnItem.PurchaseReceivingDetail;
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@receivingDetail.ReceivedQuantity</span>
+                    <span class="fw-bold">@returnItem.OriginalQuantity.ToString("N0")</span>
                 </div>;
             }
         });
 
-        // 已退貨量欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "已退貨",
+        // 退回數量欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = ReturnQuantityLabel, 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "7%",
-            CustomTemplate = item =>
+            Width = "10%",
+            CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                var returnedQuantity = GetReturnedQuantity(returnItem.PurchaseReceivingDetail);
-                var isCompleted = returnedQuantity >= returnItem.PurchaseReceivingDetail.ReceivedQuantity;
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold @(isCompleted ? "text-success" : "")">@returnedQuantity</span>
-                </div>;
-            }
-        });
-
-        // 退貨數量欄位
-        columns.Add(new()
-        {
-            Title = "退貨量",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "7%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var returnableQuantity = GetReturnableQuantity(returnItem.PurchaseReceivingDetail);
                 var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString() : "";
+                var maxQuantity = returnItem.OriginalQuantity - returnItem.AlreadyReturnedQuantity;
                 
-                return @<div>
-                    <input type="number" class="form-control form-control-sm text-end" 
-                           step="1" 
-                           min="0"
-                           max="@returnableQuantity"
-                           value="@value"
-                           @onchange="(e) => OnReturnQuantityChanged(returnItem, e.Value?.ToString())"
-                           placeholder="0" />
-                    @if (returnItem.ValidationError != null)
-                    {
-                        <small class="text-danger">@returnItem.ValidationError</small>
-                    }
+                return @<input type="number" class="form-control form-control-sm" 
+                               value="@value"
+                               @oninput="(e) => OnReturnQuantityInput(returnItem, e.Value?.ToString())"
+                               placeholder="" 
+                               min="0" 
+                               max="@maxQuantity"
+                               step="1" 
+                               readonly="@IsReadOnly" />;
+            }
+        });
+
+        // 單價欄位 (只讀顯示)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "單價", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "10%",
+            CustomTemplate = item => 
+            {
+                var returnItem = (ReturnItem)item;
+                
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@returnItem.OriginalUnitPrice.ToString("F0")</span>
                 </div>;
             }
         });
 
-        // 退貨單價欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "退貨單價",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                var value = returnItem.ReturnUnitPrice > 0 ? returnItem.ReturnUnitPrice.ToString("F0") : returnItem.PurchaseReceivingDetail.UnitPrice.ToString("F0");
-                
-                return @<input type="number" class="form-control form-control-sm text-end" 
-                               value="@value"
-                               readonly 
-                               tabindex="-1"
-                               style="background-color: #f8f9fa; cursor: not-allowed;" 
-                               title="退貨單價自動從原進貨單價帶出，不可修改" />;
-            }
-        });
-
-        // 倉庫位置欄位（唯讀）
-        columns.Add(new()
-        {
-            Title = "退貨位置",
+        // 品質狀況欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = QualityConditionLabel, 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "12%",
-            CustomTemplate = item =>
+            HideOnMobile = true,
+            CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                var receivingDetail = returnItem.PurchaseReceivingDetail;
                 
-                // 顯示倉庫位置資訊
-                if (receivingDetail.WarehouseLocationId.HasValue)
-                {
-                    var location = AllWarehouseLocations.FirstOrDefault(loc => loc.Id == receivingDetail.WarehouseLocationId.Value);
-                    var locationText = location != null ? $"{location.Code} - {location.Name}" : "未知位置";
-                    
-                    return @<input type="text" class="form-control form-control-sm" 
-                                   value="@locationText"
-                                   readonly 
-                                   tabindex="-1"
-                                   style="background-color: #f8f9fa; cursor: not-allowed;" 
-                                   title="退貨位置自動從原進貨位置帶出，不可修改" />;
-                }
-                else
-                {
-                    // 如果原進貨沒有位置，顯示倉庫名稱
-                    var warehouse = receivingDetail.Warehouse;
-                    var warehouseText = warehouse?.Name ?? "未指定倉庫";
-                    
-                    return @<input type="text" class="form-control form-control-sm text-muted" 
-                                   value="@warehouseText"
-                                   readonly 
-                                   tabindex="-1"
-                                   style="background-color: #fff3cd; cursor: not-allowed;" 
-                                   title="原進貨單未指定具體位置，僅顯示倉庫名稱" />;
-                }
+                return @<input type="text" class="form-control form-control-sm" 
+                               value="@returnItem.QualityCondition"
+                               @oninput="(e) => OnQualityConditionInput(returnItem, e.Value?.ToString())"
+                               placeholder="品質狀況..."
+                               readonly="@IsReadOnly" />;
             }
         });
 
-        // 退貨原因欄位
-        columns.Add(new()
-        {
-            Title = "退貨原因",
+        // 備註欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = RemarksLabel, 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
-            CustomTemplate = item =>
+            Width = "12%",
+            HideOnMobile = true,
+            CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
                 
-                return @<select class="form-select form-select-sm" 
-                                @onchange="@(async (e) => await OnReturnReasonChanged(returnItem, e.Value?.ToString()))">
-                    <option value="">請選擇</option>
-                    <option value="品質問題" selected="@(returnItem.ReturnReason == "品質問題")">品質問題</option>
-                    <option value="數量錯誤" selected="@(returnItem.ReturnReason == "數量錯誤")">數量錯誤</option>
-                    <option value="規格不符" selected="@(returnItem.ReturnReason == "規格不符")">規格不符</option>
-                    <option value="過期商品" selected="@(returnItem.ReturnReason == "過期商品")">過期商品</option>
-                    <option value="其他" selected="@(returnItem.ReturnReason == "其他")">其他</option>
-                </select>;
+                return @<input type="text" class="form-control form-control-sm" 
+                               value="@returnItem.Remarks"
+                               @oninput="(e) => OnRemarksInput(returnItem, e.Value?.ToString())"
+                               placeholder="選填..."
+                               readonly="@IsReadOnly" />;
             }
         });
 
@@ -387,573 +371,539 @@ else
 
     private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
     {
-        if (column.Title == "退貨單價")
+        if (column.Title == "單價")
         {
-            <strong class="text-danger">總計(含稅): @GetTotalReturnAmount().ToString("C")</strong>
+            <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
         }
     };
 
-    /// <summary>
-    /// 載入所有必要資料
-    /// </summary>
-    private async Task LoadDataAsync()
+    private async Task HandleItemDelete(ReturnItem item)
     {
-        try
-        {
-            await LoadTaxRateAsync();
-            await LoadWarehouseLocationsAsync();
-            await LoadReturnableDetailsAsync();
-            LoadExistingReturnDetails(); // 先載入現有明細，建立 ReturnItems
-            await LoadReturnedQuantitiesAsync(); // 再載入已退貨數量快取
-            _isInitialized = true;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
+        var index = ReturnItems.IndexOf(item);
+        await RemoveItemAsync(index);
     }
 
-    /// <summary>
-    /// 載入系統稅率
-    /// </summary>
-    private async Task LoadTaxRateAsync()
+    // ===== 內部方法 =====
+    private async Task LoadAvailableProductsAsync()
     {
         try
         {
-            _taxRate = await SystemParameterService.GetTaxRateAsync();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入系統稅率時發生錯誤，使用預設稅率：{ex.Message}");
-            _taxRate = 5.00m; // 發生錯誤時使用預設稅率
-        }
-    }
-
-    /// <summary>
-    /// 載入倉庫位置資料
-    /// </summary>
-    private async Task LoadWarehouseLocationsAsync()
-    {
-        try
-        {
-            AllWarehouseLocations = await WarehouseLocationService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入倉庫位置資料時發生錯誤：{ex.Message}");
-            AllWarehouseLocations = new List<WarehouseLocation>();
-        }
-    }
-
-    /// <summary>
-    /// 載入已退貨數量快取
-    /// </summary>
-    private async Task LoadReturnedQuantitiesAsync()
-    {
-        try
-        {
-            _returnedQuantityCache.Clear();
-            
-            // 收集所有需要載入快取的進貨明細ID
-            var receivingDetailIds = new HashSet<int>();
-            
-            // 從 ReturnableDetails 收集ID
-            if (ReturnableDetails?.Any() == true)
+            if (EffectiveSupplierId.HasValue && EffectiveSupplierId.Value > 0)
             {
-                foreach (var detail in ReturnableDetails)
-                {
-                    receivingDetailIds.Add(detail.Id);
-                }
-            }
-            
-            // 從 ReturnItems 中的 PurchaseReceivingDetail 收集ID（可能包含更多項目）
-            if (ReturnItems?.Any() == true)
-            {
-                foreach (var item in ReturnItems)
-                {
-                    if (item.PurchaseReceivingDetail != null)
-                    {
-                        receivingDetailIds.Add(item.PurchaseReceivingDetail.Id);
-                    }
-                }
-            }
-            
-            // 載入快取
-            foreach (var detailId in receivingDetailIds)
-            {
-                var returnedQuantity = await PurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync(detailId);
-                _returnedQuantityCache[detailId] = returnedQuantity;
-            }
+                // 載入該廠商的可退貨進貨明細
+                AvailableReceivingDetails = await PurchaseReceivingService.GetReturnableDetailsBySupplierAsync(EffectiveSupplierId.Value);
                 
-            // 除錯：確認快取載入情況
-            // await NotificationService.ShowInfoAsync($"已載入 {_returnedQuantityCache.Count} 個進貨明細的退貨數量快取");
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入已退貨數量時發生錯誤：{ex.Message}");
-            _returnedQuantityCache.Clear();
-        }
-    }
-
-    /// <summary>
-    /// 載入廠商的可退貨明細
-    /// </summary>
-    private async Task LoadReturnableDetailsAsync()
-    {
-        try
-        {
-            if (SupplierId.HasValue && SupplierId.Value > 0)
-            {
-                if (IsEditMode)
-                {
-                    // 編輯模式：根據現有退貨明細，載入對應的進貨明細以提供完整的導航屬性
-                    if (ExistingReturnDetails?.Any() == true)
-                    {
-                        var receivingDetailIds = ExistingReturnDetails
-                            .Where(rd => rd.PurchaseReceivingDetailId.HasValue)
-                            .Select(rd => rd.PurchaseReceivingDetailId!.Value)
-                            .Distinct()
-                            .ToList();
-                        
-                        if (receivingDetailIds.Any())
-                        {
-                            // 透過服務獲取進貨明細（暫時先載入廠商的所有可退貨明細，然後篩選）
-                            var allReturnableDetails = await PurchaseReceivingService.GetReturnableDetailsBySupplierAsync(SupplierId.Value);
-                            ReturnableDetails = allReturnableDetails
-                                .Where(prd => receivingDetailIds.Contains(prd.Id))
-                                .ToList();
-                        }
-                        else
-                        {
-                            ReturnableDetails = new List<PurchaseReceivingDetail>();
-                        }
-                    }
-                    else
-                    {
-                        ReturnableDetails = new List<PurchaseReceivingDetail>();
-                    }
-                }
-                else
-                {
-                    // 新增模式：載入廠商的可退貨明細
-                    ReturnableDetails = await PurchaseReceivingService.GetReturnableDetailsBySupplierAsync(SupplierId.Value);
-                }
-                await CreateReturnItems();
+                // 從進貨明細中提取商品清單（向下相容）
+                AvailableProducts = AvailableReceivingDetails
+                    .Where(rd => rd.Product != null)
+                    .Select(rd => rd.Product!)
+                    .Distinct()
+                    .ToList();
             }
             else
             {
-                ReturnableDetails = new List<PurchaseReceivingDetail>();
-                ReturnItems = new List<ReturnItem>();
+                AvailableProducts = new List<Product>();
+                AvailableReceivingDetails = new List<PurchaseReceivingDetail>();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            await NotificationService.ShowErrorAsync($"載入可退貨明細時發生錯誤：{ex.Message}");
-            ReturnableDetails = new List<PurchaseReceivingDetail>();
-            ReturnItems = new List<ReturnItem>();
+            AvailableProducts = new List<Product>();
+            AvailableReceivingDetails = new List<PurchaseReceivingDetail>();
         }
     }
 
-    /// <summary>
-    /// 從可退貨明細建立退貨項目
-    /// </summary>
-    private Task CreateReturnItems()
+    private void LoadExistingDetailsAsync()
     {
-        if (IsEditMode)
+        if (ExistingReturnDetails?.Any() != true) 
         {
-            // 編輯模式：只在沒有項目時初始化空列表，項目將在 LoadExistingReturnDetails 中建立
-            if (!ReturnItems.Any())
+            EnsureOneEmptyRow();
+            return;
+        }
+
+        ReturnItems.Clear();
+        
+        foreach (var detail in ExistingReturnDetails)
+        {
+            var item = new ReturnItem
             {
-                ReturnItems = new List<ReturnItem>();
+                // 使用 Navigation Properties
+                SelectedProduct = detail.Product,
+                SelectedReceivingDetail = detail.PurchaseReceivingDetail,
+                
+                // 使用屬性值
+                ReturnQuantity = detail.ReturnQuantity,
+                OriginalUnitPrice = detail.OriginalUnitPrice,
+                ReturnUnitPrice = detail.ReturnUnitPrice,
+                QualityCondition = detail.QualityCondition ?? string.Empty,
+                Remarks = detail.DetailRemarks ?? string.Empty,
+                BatchNumber = detail.BatchNumber ?? string.Empty,
+                ExistingDetailEntity = detail
+            };
+            
+            // 設置原始數量和已退回數量
+            if (item.SelectedReceivingDetail != null)
+            {
+                item.OriginalQuantity = item.SelectedReceivingDetail.ReceivedQuantity;
+                // 已退回數量需要從資料庫計算，暫時設為0
+                item.AlreadyReturnedQuantity = 0; // TODO: 需要實作計算已退回數量的邏輯
+                
+                // 設置搜尋顯示文字 - 使用 DisplayName 計算屬性
+                item.ReceivingDetailSearch = item.DisplayName;
+            }
+            
+            ReturnItems.Add(item);
+        }
+        
+        EnsureOneEmptyRow();
+    }
+
+    private List<PurchaseReceivingDetail> GetAvailableReceivingDetails()
+    {
+        var filteredDetails = AvailableReceivingDetails.AsQueryable();
+        
+        // 根據進貨單篩選
+        if (EffectivePurchaseReceivingId.HasValue && EffectivePurchaseReceivingId.Value > 0)
+        {
+            filteredDetails = filteredDetails.Where(rd => rd.PurchaseReceivingId == EffectivePurchaseReceivingId.Value);
+        }
+        
+        // 根據商品篩選
+        if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
+        {
+            filteredDetails = filteredDetails.Where(rd => rd.ProductId == EffectiveFilterProductId.Value);
+        }
+        
+        // 只顯示還有可退回數量的明細 (暫時顯示所有已進貨的明細)
+        return filteredDetails.ToList();
+    }
+
+    // ===== 事件處理方法 =====
+    
+    // ===== SearchableSelect 相關方法 =====
+    private string FormatReceivingDetailDisplay(PurchaseReceivingDetail detail)
+    {
+        if (detail?.Product == null || detail.PurchaseReceiving == null) return "";
+        
+        var product = detail.Product;
+        var receiptNumber = detail.PurchaseReceiving.ReceiptNumber ?? "N/A";
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"<strong>[{product.Code}]</strong> {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? $"<strong>[{product.Code}]</strong>" : product.Name);
+        
+        return $"<span class='text-primary'>[{receiptNumber}]</span> {productDisplay}";
+    }
+    
+    /// <summary>
+    /// 格式化進貨明細顯示文字（純文字版本，用於搜尋輸入框）
+    /// </summary>
+    private string FormatReceivingDetailDisplayText(PurchaseReceivingDetail detail)
+    {
+        if (detail?.Product == null || detail.PurchaseReceiving == null) return "";
+        
+        var product = detail.Product;
+        var receiptNumber = detail.PurchaseReceiving.ReceiptNumber ?? "N/A";
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"[{product.Code}] {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? "");
+        
+        return $"[{receiptNumber}] {productDisplay}";
+    }
+
+    private bool FilterReceivingDetail(PurchaseReceivingDetail detail, string searchValue)
+    {
+        if (string.IsNullOrWhiteSpace(searchValue))
+            return true;
+
+        var search = searchValue.ToLower();
+        return (detail.Product?.Code?.ToLower().Contains(search) == true) ||
+               (detail.Product?.Name?.ToLower().Contains(search) == true) ||
+               (detail.PurchaseReceiving?.ReceiptNumber?.ToLower().Contains(search) == true); // 新增進貨單號搜尋
+    }
+
+    private void OnReceivingDetailSearchInput(ReturnItem returnItem, string? searchValue)
+    {
+        var availableDetails = GetAvailableReceivingDetails();
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            returnItem.FilteredReceivingDetails = availableDetails.Take(20).ToList();
+        }
+        else
+        {
+            returnItem.FilteredReceivingDetails = availableDetails
+                .Where(detail => FilterReceivingDetail(detail, searchValue))
+                .Take(20)
+                .ToList();
+        }
+        
+        returnItem.ShowDropdown = returnItem.FilteredReceivingDetails.Any();
+        returnItem.SelectedIndex = -1;
+        StateHasChanged();
+    }
+
+    private void OnReceivingDetailInputFocus(ReturnItem returnItem)
+    {
+        if (!string.IsNullOrWhiteSpace(returnItem.ReceivingDetailSearch))
+        {
+            OnReceivingDetailSearchInput(returnItem, returnItem.ReceivingDetailSearch);
+        }
+        else
+        {
+            returnItem.SelectedIndex = -1;
+            var availableDetails = GetAvailableReceivingDetails();
+            returnItem.FilteredReceivingDetails = availableDetails.Take(20).ToList();
+            returnItem.ShowDropdown = returnItem.FilteredReceivingDetails.Any();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnReceivingDetailInputBlur(ReturnItem returnItem)
+    {
+        // 延遲隱藏下拉選單以允許點擊
+        await Task.Delay(200);
+        returnItem.ShowDropdown = false;
+        StateHasChanged();
+    }
+
+    private void OnReceivingDetailItemMouseEnter(ReturnItem returnItem, int index)
+    {
+        returnItem.SelectedIndex = index;
+        StateHasChanged();
+    }
+
+    private async Task OnReceivingDetailSelected(ReturnItem returnItem, PurchaseReceivingDetail selectedDetail)
+    {
+        if (selectedDetail != null)
+        {
+            returnItem.SelectedReceivingDetail = selectedDetail;
+            returnItem.SelectedProduct = selectedDetail.Product;
+            returnItem.ReceivingDetailSearch = FormatReceivingDetailDisplayText(selectedDetail); // 使用純文字版本
+            
+            // 設置數量資訊
+            returnItem.OriginalQuantity = selectedDetail.ReceivedQuantity;
+            returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要從資料庫計算已退回數量
+            
+            // 設置單價資訊
+            returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
+            returnItem.ReturnUnitPrice = selectedDetail.UnitPrice; // 預設為原始單價
+            
+            // 確保有空行可以輸入新項目
+            EnsureOneEmptyRow();
+            
+            await NotifyDetailsChanged();
+        }
+        
+        returnItem.ShowDropdown = false;
+        StateHasChanged();
+    }
+
+    private async Task OnReceivingDetailSelected(ReturnItem returnItem, int? receivingDetailId)
+    {
+        if (receivingDetailId.HasValue)
+        {
+            var selectedDetail = AvailableReceivingDetails.FirstOrDefault(rd => rd.Id == receivingDetailId.Value);
+            if (selectedDetail != null)
+            {
+                returnItem.SelectedReceivingDetail = selectedDetail;
+                returnItem.SelectedProduct = selectedDetail.Product;
+                
+                // 設置數量資訊
+                returnItem.OriginalQuantity = selectedDetail.ReceivedQuantity;
+                returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要從資料庫計算已退回數量
+                
+                // 設置單價資訊
+                returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
+                returnItem.ReturnUnitPrice = selectedDetail.UnitPrice; // 預設為原始單價
+                
+                // 確保有空行可以輸入新項目
+                EnsureOneEmptyRow();
+                
+                await NotifyDetailsChanged();
             }
         }
         else
         {
-            // 新增模式：從可退貨明細建立項目
-            var filteredDetails = ReturnableDetails.AsEnumerable();
+            // 清除選擇
+            returnItem.SelectedReceivingDetail = null;
+            returnItem.SelectedProduct = null;
+            returnItem.OriginalQuantity = 0;
+            returnItem.AlreadyReturnedQuantity = 0;
+            returnItem.ReturnQuantity = 0;
+            returnItem.OriginalUnitPrice = 0;
+            returnItem.ReturnUnitPrice = 0;
+            returnItem.QualityCondition = string.Empty;
+            returnItem.Remarks = string.Empty;
             
-            // 如果有指定進貨單ID，只顯示該進貨單的明細
-            if (FilterPurchaseReceivingId.HasValue && FilterPurchaseReceivingId.Value > 0)
+            await NotifyDetailsChanged();
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task OnReturnQuantityInput(ReturnItem returnItem, string? value)
+    {
+        if (int.TryParse(value, out var quantity) && quantity >= 0)
+        {
+            var maxQuantity = returnItem.OriginalQuantity - returnItem.AlreadyReturnedQuantity;
+            returnItem.ReturnQuantity = Math.Min(quantity, maxQuantity);
+        }
+        else
+        {
+            returnItem.ReturnQuantity = 0;
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
+    private async Task OnReturnPriceInput(ReturnItem returnItem, string? value)
+    {
+        if (decimal.TryParse(value, out var price) && price >= 0)
+        {
+            returnItem.ReturnUnitPrice = price;
+        }
+        else
+        {
+            returnItem.ReturnUnitPrice = 0;
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
+    private async Task OnQualityConditionInput(ReturnItem returnItem, string? value)
+    {
+        returnItem.QualityCondition = value ?? string.Empty;
+        await NotifyDetailsChanged();
+    }
+
+    private async Task OnRemarksInput(ReturnItem returnItem, string? value)
+    {
+        returnItem.Remarks = value ?? string.Empty;
+        await NotifyDetailsChanged();
+    }
+
+    private async Task LoadAllReturnableItems()
+    {
+        try
+        {
+            var availableDetails = GetAvailableReceivingDetails();
+            
+            // 清除現有項目但保留已有資料的項目
+            var existingItems = ReturnItems.Where(item => item.SelectedReceivingDetail != null).ToList();
+            ReturnItems.Clear();
+            ReturnItems.AddRange(existingItems);
+            
+            // 新增所有可退回的項目
+            foreach (var detail in availableDetails)
             {
-                filteredDetails = filteredDetails.Where(rd => rd.PurchaseReceivingId == FilterPurchaseReceivingId.Value);
-            }
-            
-            // 如果有指定產品篩選，只顯示該產品的明細
-            if (FilterProductId.HasValue && FilterProductId.Value > 0)
-            {
-                filteredDetails = filteredDetails.Where(rd => rd.ProductId == FilterProductId.Value);
-            }
-            
-            var detailsList = filteredDetails.ToList();
-            ReturnItems = new List<ReturnItem>();
-            
-            foreach (var rd in detailsList)
-            {
-                var returnItem = new ReturnItem
+                // 檢查是否已經存在
+                if (ReturnItems.Any(item => item.SelectedReceivingDetail?.Id == detail.Id))
+                    continue;
+                
+                var newItem = new ReturnItem
                 {
-                    PurchaseReceivingDetail = rd,
+                    SelectedReceivingDetail = detail,
+                    SelectedProduct = detail.Product,
+                    OriginalQuantity = detail.ReceivedQuantity,
+                    AlreadyReturnedQuantity = 0, // TODO: 需要從資料庫計算已退回數量
                     ReturnQuantity = 0,
-                    ReturnUnitPrice = rd.UnitPrice, // 預設為原進貨單價
-                    WarehouseLocationId = rd.WarehouseLocationId, // 直接使用原進貨的倉庫位置（唯讀）
-                    ReturnReason = "",
-                    QualityCondition = "",
-                    BatchNumber = rd.BatchNumber,
-                    ExpiryDate = rd.ExpiryDate
+                    OriginalUnitPrice = detail.UnitPrice,
+                    ReturnUnitPrice = detail.UnitPrice
                 };
                 
-                ReturnItems.Add(returnItem);
+                // 設置搜尋顯示文字
+                newItem.ReceivingDetailSearch = newItem.DisplayName;
+                
+                ReturnItems.Add(newItem);
             }
-        }
-        
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// 載入現有退貨明細
-    /// </summary>
-    private void LoadExistingReturnDetails()
-    {
-        if (ExistingReturnDetails?.Any() != true) return;
-
-        if (IsEditMode)
-        {
-            // 編輯模式：只在 ReturnItems 為空時才基於現有明細建立退貨項目，避免重複創建
-            if (!ReturnItems.Any())
-            {
-                ReturnItems = ExistingReturnDetails.Select(existingDetail => new ReturnItem
-                {
-                    ExistingReturnDetail = existingDetail,
-                    // 從 ReturnableDetails 中找到對應的 PurchaseReceivingDetail 以獲得完整的導航屬性
-                    PurchaseReceivingDetail = ReturnableDetails
-                        .FirstOrDefault(rd => rd.Id == existingDetail.PurchaseReceivingDetailId) 
-                        ?? existingDetail.PurchaseReceivingDetail!,
-                    ReturnQuantity = existingDetail.ReturnQuantity,
-                    ReturnUnitPrice = existingDetail.ReturnUnitPrice,
-                    WarehouseLocationId = existingDetail.PurchaseReceivingDetail?.WarehouseLocationId, // 直接使用原進貨的倉庫位置
-                    ReturnReason = existingDetail.DetailRemarks ?? "",
-                    QualityCondition = existingDetail.QualityCondition ?? "",
-                    BatchNumber = existingDetail.BatchNumber ?? "",
-                    ExpiryDate = existingDetail.ExpiryDate
-                }).ToList();
-            }
-            else
-            {
-                // 如果已有項目，則更新現有項目而不是重新創建
-                foreach (var existingDetail in ExistingReturnDetails)
-                {
-                    var item = ReturnItems.FirstOrDefault(ri => ri.PurchaseReceivingDetail.Id == existingDetail.PurchaseReceivingDetailId);
-                    if (item != null)
-                    {
-                        item.ExistingReturnDetail = existingDetail;
-                        item.ReturnQuantity = existingDetail.ReturnQuantity;
-                        item.ReturnUnitPrice = existingDetail.ReturnUnitPrice;
-                        item.WarehouseLocationId = existingDetail.PurchaseReceivingDetail?.WarehouseLocationId; // 直接使用原進貨的倉庫位置
-                        item.ReturnReason = existingDetail.DetailRemarks ?? "";
-                        item.QualityCondition = existingDetail.QualityCondition ?? "";
-                        item.BatchNumber = existingDetail.BatchNumber ?? "";
-                        item.ExpiryDate = existingDetail.ExpiryDate;
-                    }
-                }
-            }
-        }
-        else
-        {
-            // 新增模式：將現有明細套用到項目上
-            if (!ReturnItems.Any()) return;
-
-            foreach (var existingDetail in ExistingReturnDetails)
-            {
-                var item = ReturnItems.FirstOrDefault(ri => ri.PurchaseReceivingDetail.Id == existingDetail.PurchaseReceivingDetailId);
-                if (item != null)
-                {
-                    item.ExistingReturnDetail = existingDetail;
-                    item.ReturnQuantity = existingDetail.ReturnQuantity;
-                    item.ReturnUnitPrice = existingDetail.ReturnUnitPrice;
-                    item.WarehouseLocationId = item.PurchaseReceivingDetail.WarehouseLocationId; // 保持原進貨的倉庫位置
-                    item.ReturnReason = existingDetail.DetailRemarks ?? "";
-                    item.QualityCondition = existingDetail.QualityCondition ?? "";
-                    item.BatchNumber = existingDetail.BatchNumber ?? "";
-                    item.ExpiryDate = existingDetail.ExpiryDate;
-                }
-            }
-        }
-    }
-
-    // ===== 事件處理 =====
-
-    /// <summary>
-    /// 清空所有數量
-    /// </summary>
-    private async Task ClearAllQuantities()
-    {
-        foreach (var item in ReturnItems)
-        {
-            item.ReturnQuantity = 0;
-            item.ValidationError = null;
-        }
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    private async Task FillAllQuantities()
-    {
-        foreach (var item in ReturnItems)
-        {
-            var returnableQuantity = GetReturnableQuantity(item.PurchaseReceivingDetail);
-            item.ReturnQuantity = returnableQuantity;
-            item.ValidationError = null;
-        }
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 退貨數量變更
-    /// </summary>
-    private async Task OnReturnQuantityChanged(ReturnItem item, string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.ReturnQuantity = 0;
-            item.ValidationError = null;
-        }
-        else if (int.TryParse(value, out int quantity))
-        {
-            if (quantity < 0)
-            {
-                item.ReturnQuantity = 0;
-                item.ValidationError = "數量不可為負數";
-            }
-            else
-            {
-                var returnableQuantity = GetReturnableQuantity(item.PurchaseReceivingDetail);
-                if (quantity > returnableQuantity)
-                {
-                    // 自動調整為最大可退貨量，不顯示錯誤
-                    item.ReturnQuantity = returnableQuantity;
-                    item.ValidationError = null;
-                }
-                else
-                {
-                    item.ReturnQuantity = quantity;
-                    item.ValidationError = null;
-                }
-            }
-        }
-        else
-        {
-            // 保持原值，但顯示錯誤
-            item.ValidationError = "請輸入有效的數字";
-        }
-
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-
-    /// <summary>
-    /// 退貨原因變更
-    /// </summary>
-    private async Task OnReturnReasonChanged(ReturnItem item, string? value)
-    {
-        item.ReturnReason = value ?? "";
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 取得指定倉庫的可用位置
-    /// </summary>
-    private List<WarehouseLocation> GetAvailableLocations(int? warehouseId)
-    {
-        if (!warehouseId.HasValue)
-            return new List<WarehouseLocation>();
             
-        return AllWarehouseLocations
-            .Where(loc => loc.WarehouseId == warehouseId.Value)
-            .OrderBy(loc => loc.Code)
-            .ToList();
-    }
-
-
-
-    // ===== 資料轉換和通知 =====
-
-    /// <summary>
-    /// 轉換為退貨明細實體
-    /// </summary>
-    private List<PurchaseReturnDetail> ConvertToReturnDetails()
-    {
-        var details = new List<PurchaseReturnDetail>();
-
-        foreach (var item in ReturnItems.Where(x => x.ReturnQuantity > 0))
-        {
-            PurchaseReturnDetail detail;
-
-            if (item.ExistingReturnDetail != null)
-            {
-                // 更新現有實體
-                detail = item.ExistingReturnDetail;
-            }
-            else
-            {
-                // 建立新實體
-                detail = new PurchaseReturnDetail();
-            }
-
-            // 設定屬性
-            detail.PurchaseReceivingDetailId = item.PurchaseReceivingDetail.Id;
-            detail.ProductId = item.PurchaseReceivingDetail.ProductId;
-            detail.ReturnQuantity = item.ReturnQuantity;
-            detail.OriginalUnitPrice = item.PurchaseReceivingDetail.UnitPrice;
-            detail.ReturnUnitPrice = item.ReturnUnitPrice;
-            detail.WarehouseLocationId = item.WarehouseLocationId;
-            detail.DetailRemarks = item.ReturnReason;
-            detail.QualityCondition = item.QualityCondition;
-            detail.BatchNumber = item.BatchNumber;
-            detail.ExpiryDate = item.ExpiryDate;
-
-            details.Add(detail);
+            EnsureOneEmptyRow();
+            await NotifyDetailsChanged();
+            await NotificationService.ShowSuccessAsync($"已載入 {availableDetails.Count} 項可退回商品");
         }
-
-        return details;
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入可退回商品時發生錯誤：{ex.Message}");
+        }
     }
 
-    /// <summary>
-    /// 通知明細變更
-    /// </summary>
+    private async Task RemoveItemAsync(int index)
+    {
+        if (index >= 0 && index < ReturnItems.Count)
+        {
+            var itemToRemove = ReturnItems[index];
+            
+            // 如果被刪除的項目有對應的資料庫實體，記錄其 ID 以便後續刪除
+            if (itemToRemove.ExistingDetailEntity?.Id > 0)
+            {
+                _deletedDetailIds.Add(itemToRemove.ExistingDetailEntity.Id);
+            }
+            
+            // 通知父組件項目即將被移除（讓父組件可以處理實際的資料庫刪除）
+            if (OnItemRemoved.HasDelegate)
+            {
+                await OnItemRemoved.InvokeAsync(itemToRemove);
+            }
+            
+            ReturnItems.RemoveAt(index);
+            EnsureOneEmptyRow();
+            await NotifyDetailsChanged();
+        }
+    }
+
+    private decimal GetTotalAmount()
+    {
+        return ReturnItems.Where(item => !IsEmptyRow(item))
+                          .Sum(item => item.ReturnQuantity * item.OriginalUnitPrice);
+    }
+
     private async Task NotifyDetailsChanged()
     {
-        var details = ConvertToReturnDetails();
-        await OnReturnDetailsChanged.InvokeAsync(details);
-    }
-
-    // ===== 統計方法 =====
-
-    private int GetTotalReturnQuantity()
-    {
-        return ReturnItems.Sum(item => item.ReturnQuantity);
-    }
-
-    private decimal GetTotalReturnAmount()
-    {
-        var subtotal = ReturnItems
-            .Where(item => item.ReturnQuantity > 0)
-            .Sum(item => item.ReturnQuantity * item.ReturnUnitPrice);
+        // 轉換為 PurchaseReturnDetail 實體
+        var details = ReturnItems.Where(item => !IsEmptyRow(item) && item.ReturnQuantity > 0)
+                                 .Select(ConvertToEntity)
+                                 .Where(detail => detail != null)
+                                 .Cast<PurchaseReturnDetail>()
+                                 .ToList();
         
-        // 計算含稅總額
-        return subtotal * (1 + _taxRate / 100);
-    }
-
-    /// <summary>
-    /// 計算已退貨數量
-    /// </summary>
-    private int GetReturnedQuantity(PurchaseReceivingDetail receivingDetail)
-    {
-        // 從快取中獲取已退貨數量，如果沒有則返回 0
-        var result = _returnedQuantityCache.GetValueOrDefault(receivingDetail.Id, 0);
-        
-        // 除錯：如果快取中沒有找到，可能是因為快取沒有正確載入
-        if (!_returnedQuantityCache.ContainsKey(receivingDetail.Id))
+        if (EffectiveDetailsChangedCallback.HasDelegate)
         {
-            // 可以在這裡加入日誌或除錯訊息
-            // Console.WriteLine($"快取中找不到進貨明細 ID {receivingDetail.Id} 的退貨數量");
+            await EffectiveDetailsChangedCallback.InvokeAsync(details);
         }
         
-        return result;
+        // 通知已刪除的明細 ID
+        if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
+        {
+            await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
+            // 清空已通知的刪除 ID，避免重複刪除
+            _deletedDetailIds.Clear();
+        }
+        
+        if (OnReturnItemsChanged.HasDelegate)
+        {
+            await OnReturnItemsChanged.InvokeAsync(ReturnItems);
+        }
     }
 
-    /// <summary>
-    /// 計算可退貨數量
-    /// </summary>
-    private int GetReturnableQuantity(PurchaseReceivingDetail receivingDetail)
+    private PurchaseReturnDetail? ConvertToEntity(ReturnItem item)
     {
-        var returnedQuantity = GetReturnedQuantity(receivingDetail);
-        return receivingDetail.ReceivedQuantity - returnedQuantity;
+        if (item.SelectedReceivingDetail == null || item.SelectedProduct == null || item.ReturnQuantity <= 0)
+        {
+            return null;
+        }
+        
+        // 如果已有實體，更新它
+        if (item.ExistingDetailEntity != null)
+        {
+            var existingDetail = item.ExistingDetailEntity;
+            existingDetail.ReturnQuantity = item.ReturnQuantity;
+            existingDetail.OriginalUnitPrice = item.OriginalUnitPrice;
+            existingDetail.ReturnUnitPrice = item.ReturnUnitPrice;
+            existingDetail.QualityCondition = item.QualityCondition;
+            existingDetail.DetailRemarks = item.Remarks;
+            existingDetail.BatchNumber = item.BatchNumber;
+            existingDetail.PurchaseReceivingDetailId = item.SelectedReceivingDetail.Id;
+            existingDetail.ProductId = item.SelectedProduct.Id;
+            
+            return existingDetail;
+        }
+        
+        // 創建新實體
+        return new PurchaseReturnDetail
+        {
+            ProductId = item.SelectedProduct.Id,
+            PurchaseReceivingDetailId = item.SelectedReceivingDetail.Id,
+            ReturnQuantity = item.ReturnQuantity,
+            OriginalUnitPrice = item.OriginalUnitPrice,
+            ReturnUnitPrice = item.ReturnUnitPrice,
+            QualityCondition = item.QualityCondition,
+            DetailRemarks = item.Remarks,
+            BatchNumber = item.BatchNumber,
+            ProcessedQuantity = 0,
+            IsShipped = false,
+            ShippedQuantity = 0,
+            ScrapQuantity = 0
+        };
     }
 
-    /// <summary>
-    /// 驗證所有退貨明細
-    /// </summary>
+    // ===== 公開方法 - 供父組件調用 =====
     public async Task<bool> ValidateAsync()
     {
-        var errors = new List<string>();
-        
-        // 檢查是否有退貨項目
-        var potentialItems = ReturnItems.Where(item => item.ReturnQuantity > 0).ToList();
-        if (!potentialItems.Any())
+        try
         {
-            errors.Add("至少需要一個退貨項目");
-        }
-        
-        // 檢查必填欄位和基本驗證
-        foreach (var item in potentialItems)
-        {
-            // 自動調整超出範圍的退貨量（與輸入時的邏輯保持一致）
-            var returnableQuantity = GetReturnableQuantity(item.PurchaseReceivingDetail);
-            if (item.ReturnQuantity > returnableQuantity)
-            {
-                item.ReturnQuantity = returnableQuantity;
-                item.ValidationError = null;
-                await NotifyDetailsChanged(); // 通知變更以更新UI
-            }
+            // 檢查是否有有效的退回明細
+            var validItems = ReturnItems.Where(item => !IsEmptyRow(item) && item.ReturnQuantity > 0).ToList();
             
-            if (item.ReturnUnitPrice < 0)
+            if (!validItems.Any())
             {
-                errors.Add($"商品 {item.PurchaseReceivingDetail.Product.Code} 的退貨單價不可為負數");
-            }
-        }
-        
-        if (errors.Any())
-        {
-            var errorMessage = string.Join("\n", errors);
-            await NotificationService.ShowErrorAsync(errorMessage);
-            return false;
-        }
-        
-        return true;
-    }
-
-    /// <summary>
-    /// 比較兩個退貨明細列表是否相等
-    /// </summary>
-    private bool AreListsEqual(List<PurchaseReturnDetail>? list1, List<PurchaseReturnDetail>? list2)
-    {
-        if (list1 == null && list2 == null) return true;
-        if (list1 == null || list2 == null) return false;
-        if (list1.Count != list2.Count) return false;
-        
-        // 使用 ID 和 ReturnQuantity 作為比較標準，不依賴順序
-        var dict1 = list1.ToDictionary(x => x.Id, x => x.ReturnQuantity);
-        var dict2 = list2.ToDictionary(x => x.Id, x => x.ReturnQuantity);
-        
-        foreach (var kvp in dict1)
-        {
-            if (!dict2.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
-            {
+                await NotificationService.ShowWarningAsync("至少需要一筆有效的退回明細");
                 return false;
             }
+            
+            // 檢查退回數量是否超過可退回數量
+            foreach (var item in validItems)
+            {
+                var maxQuantity = item.OriginalQuantity - item.AlreadyReturnedQuantity;
+                if (item.ReturnQuantity > maxQuantity)
+                {
+                    await NotificationService.ShowErrorAsync($"商品 {item.SelectedProduct?.Name} 的退回數量 ({item.ReturnQuantity}) 超過可退回數量 ({maxQuantity})");
+                    return false;
+                }
+            }
+            
+            return true;
         }
-        
-        return true;
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"驗證退回明細時發生錯誤：{ex.Message}");
+            return false;
+        }
     }
-
-    /// <summary>
-    /// 退貨項目類別
-    /// </summary>
+    
+    // ===== ReturnItem 內部類別 =====
     public class ReturnItem
     {
-        public PurchaseReceivingDetail PurchaseReceivingDetail { get; set; } = null!;
+        public Product? SelectedProduct { get; set; }
+        public PurchaseReceivingDetail? SelectedReceivingDetail { get; set; }
+        
+        public int OriginalQuantity { get; set; } = 0;
+        public int AlreadyReturnedQuantity { get; set; } = 0;
         public int ReturnQuantity { get; set; } = 0;
+        
+        public decimal OriginalUnitPrice { get; set; } = 0;
         public decimal ReturnUnitPrice { get; set; } = 0;
-        public int? WarehouseLocationId { get; set; }
-        public string? ReturnReason { get; set; }
-        public string? QualityCondition { get; set; }
-        public string? BatchNumber { get; set; }
-        public DateTime? ExpiryDate { get; set; }
-        public string? ValidationError { get; set; }
-        public PurchaseReturnDetail? ExistingReturnDetail { get; set; }
+        
+        public string QualityCondition { get; set; } = string.Empty;
+        public string Remarks { get; set; } = string.Empty;
+        public string BatchNumber { get; set; } = string.Empty;
+        
+        public PurchaseReturnDetail? ExistingDetailEntity { get; set; }
+        
+        // SearchableSelect 支援屬性
+        public string ReceivingDetailSearch { get; set; } = string.Empty;
+        public List<PurchaseReceivingDetail> FilteredReceivingDetails { get; set; } = new();
+        public bool ShowDropdown { get; set; } = false;
+        public int SelectedIndex { get; set; } = -1;
+        
+        // 計算屬性
+        public decimal ReturnSubtotal => ReturnQuantity * ReturnUnitPrice;
+        public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
+        
+        /// <summary>
+        /// 取得顯示用的商品名稱（包含進貨單號）
+        /// </summary>
+        public string DisplayName => 
+            SelectedReceivingDetail?.Product != null && !string.IsNullOrEmpty(SelectedReceivingDetail.PurchaseReceiving?.ReceiptNumber)
+                ? $"[{SelectedReceivingDetail.PurchaseReceiving.ReceiptNumber}] [{SelectedReceivingDetail.Product.Code}] {SelectedReceivingDetail.Product.Name}"
+                : SelectedProduct != null 
+                    ? $"[{SelectedProduct.Code}] {SelectedProduct.Name}" 
+                    : ReceivingDetailSearch;
+        
+        // 顯示名稱（舊版，保持向下相容）
+        public string DisplayNameLegacy => SelectedProduct != null 
+            ? $"{SelectedProduct.Code} - {SelectedProduct.Name}"
+            : "";
     }
 }

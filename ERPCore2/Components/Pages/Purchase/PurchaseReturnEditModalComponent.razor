@@ -1,6 +1,7 @@
 @* 進貨退出編輯模態組件 *@
 @using Microsoft.AspNetCore.Components.Rendering
 @inject IPurchaseReturnService PurchaseReturnService
+@inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject ISupplierService SupplierService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IProductService ProductService
@@ -192,6 +193,7 @@
                     }
                     else
                     {
+                        // 使用硬刪除後不需要篩選 IsDeleted，因為已刪除的記錄不會存在於資料庫中
                         purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
                     }
                     
@@ -838,7 +840,8 @@
                             FilterProductId="@filterProductId"
                             IsEditMode="@(PurchaseReturnId.HasValue)"
                             ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
-                            OnReturnDetailsChanged="@HandleReturnDetailsChanged" />
+                            OnReturnDetailsChanged="@HandleReturnDetailsChanged"
+                            OnDeletedDetailsChanged="@HandleDeletedDetailsChanged" />
                     }
                     catch (Exception ex)
                     {
@@ -904,6 +907,45 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理退貨明細變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理已刪除的退貨明細ID
+    /// </summary>
+    private async Task HandleDeletedDetailsChanged(List<int> deletedDetailIds)
+    {
+        try
+        {
+            if (deletedDetailIds?.Any() == true)
+            {
+                // 如果是編輯模式，實際從資料庫永久刪除
+                if (PurchaseReturnId.HasValue)
+                {
+                    foreach (var detailId in deletedDetailIds)
+                    {
+                        var result = await PurchaseReturnDetailService.PermanentDeleteAsync(detailId);
+                        if (!result.IsSuccess)
+                        {
+                            await NotificationService.ShowErrorAsync($"刪除明細ID {detailId} 失敗: {result.ErrorMessage}");
+                            return;
+                        }
+                    }
+                    await NotificationService.ShowSuccessAsync($"已永久刪除 {deletedDetailIds.Count} 筆退貨明細");
+                }
+                
+                // 從本地狀態中移除已刪除的明細
+                if (purchaseReturnDetails != null)
+                {
+                    purchaseReturnDetails = purchaseReturnDetails
+                        .Where(detail => !deletedDetailIds.Contains(detail.Id))
+                        .ToList();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"永久刪除退貨明細時發生錯誤：{ex.Message}");
         }
     }
 

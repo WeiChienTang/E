@@ -12,14 +12,26 @@ namespace ERPCore2.Services
     /// </summary>
     public class PurchaseReturnDetailService : GenericManagementService<PurchaseReturnDetail>, IPurchaseReturnDetailService
     {
+        private readonly IInventoryStockService? _inventoryStockService;
+
         public PurchaseReturnDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
+            _inventoryStockService = null;
         }
 
         public PurchaseReturnDetailService(
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<PurchaseReturnDetail>> logger) : base(contextFactory, logger)
         {
+            _inventoryStockService = null;
+        }
+
+        public PurchaseReturnDetailService(
+            IDbContextFactory<AppDbContext> contextFactory, 
+            ILogger<GenericManagementService<PurchaseReturnDetail>> logger,
+            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+        {
+            _inventoryStockService = inventoryStockService;
         }
 
         public override async Task<List<PurchaseReturnDetail>> GetAllAsync()
@@ -771,6 +783,87 @@ namespace ERPCore2.Services
                     PurchaseReceivingDetailId = purchaseReceivingDetailId 
                 });
                 return 0;
+            }
+        }
+
+        /// <summary>
+        /// 覆蓋永久刪除方法，加入庫存回滾邏輯
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                var dbSet = context.Set<PurchaseReturnDetail>();
+                
+                // 先取得要刪除的明細（包含相關資訊）
+                var entity = await dbSet
+                    .Include(prd => prd.PurchaseReturn)
+                    .Include(prd => prd.PurchaseReceivingDetail)
+                        .ThenInclude(prd => prd!.Warehouse)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+                    
+                if (entity == null)
+                {
+                    return ServiceResult.Failure("找不到要刪除的退回明細");
+                }
+
+                // 檢查是否可以刪除
+                var canDeleteResult = await CanDeleteAsync(entity);
+                if (!canDeleteResult.IsSuccess)
+                {
+                    return canDeleteResult;
+                }
+
+                // 執行庫存回滾（撤銷退回 = 增加庫存）
+                if (_inventoryStockService != null && entity.ReturnQuantity > 0)
+                {
+                    // 確定倉庫ID
+                    var warehouseId = entity.PurchaseReceivingDetail?.WarehouseId;
+                    if (warehouseId.HasValue)
+                    {
+                        var operationDescription = $"撤銷採購退回 - {entity.PurchaseReturn?.PurchaseReturnNumber} (明細ID: {entity.Id})";
+                        var stockResult = await _inventoryStockService.AddStockAsync(
+                            entity.ProductId,
+                            warehouseId.Value,
+                            entity.ReturnQuantity,
+                            InventoryTransactionTypeEnum.Return,
+                            entity.PurchaseReturn?.PurchaseReturnNumber ?? $"DELETED-{entity.Id}",
+                            entity.OriginalUnitPrice,
+                            entity.WarehouseLocationId,
+                            operationDescription
+                        );
+
+                        if (!stockResult.IsSuccess)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger?.LogError("刪除退回明細時庫存回滾失敗 - 明細ID: {DetailId}, 錯誤: {Error}", 
+                                            id, stockResult.ErrorMessage);
+                            return ServiceResult.Failure($"庫存回滾失敗：{stockResult.ErrorMessage}");
+                        }
+
+                        _logger?.LogInformation("刪除退回明細成功回滾庫存 - 明細ID: {DetailId}, 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
+                                              id, entity.ProductId, warehouseId.Value, entity.ReturnQuantity);
+                    }
+                }
+
+                // 執行實際刪除
+                dbSet.Remove(entity);
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new { 
+                    Method = nameof(PermanentDeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id 
+                });
+                return ServiceResult.Failure($"永久刪除退回明細時發生錯誤: {ex.Message}");
             }
         }
     }

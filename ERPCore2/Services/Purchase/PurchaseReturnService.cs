@@ -611,7 +611,7 @@ namespace ERPCore2.Services
                         return ServiceResult<PurchaseReturn>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
                     }
 
-                    // 更新庫存邏輯 - 退貨需要減少庫存 (只處理有數量變更的明細)
+                    // 更新庫存邏輯 - 處理退貨的庫存變更（包含商品變更和數量變更）
                     if (_inventoryStockService != null)
                     {
                         var stockChanges = detailResult.Data ?? new List<(PurchaseReturnDetail, int)>();
@@ -646,36 +646,48 @@ namespace ERPCore2.Services
 
                             // 根據數量差異進行庫存調整
                             ServiceResult stockResult;
+                            string operationDescription;
+                            
                             if (quantityDiff > 0)
                             {
                                 // 退貨數量增加，需要減少庫存
+                                operationDescription = $"採購退貨增量 - {savedEntity.PurchaseReturnNumber} (商品ID: {detail.ProductId})";
                                 stockResult = await _inventoryStockService.ReduceStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
-                                    quantityDiff, // 只處理增加的數量
+                                    quantityDiff,
                                     InventoryTransactionTypeEnum.Return,
                                     savedEntity.PurchaseReturnNumber,
                                     detail.WarehouseLocationId,
-                                    $"採購退貨增量 - {savedEntity.PurchaseReturnNumber}"
+                                    operationDescription
                                 );
+                                
+                                _logger?.LogInformation("執行庫存扣減 - 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
+                                                      detail.ProductId, warehouseId.Value, quantityDiff);
                             }
                             else
                             {
                                 // 退貨數量減少，需要增加庫存 (撤銷部分退貨)
+                                operationDescription = $"採購退貨撤銷 - {savedEntity.PurchaseReturnNumber} (商品ID: {detail.ProductId})";
                                 stockResult = await _inventoryStockService.AddStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
-                                    Math.Abs(quantityDiff), // 轉為正數
+                                    Math.Abs(quantityDiff),
                                     InventoryTransactionTypeEnum.Return,
                                     savedEntity.PurchaseReturnNumber,
-                                    detail.OriginalUnitPrice, // 使用原始單價
+                                    detail.OriginalUnitPrice,
                                     detail.WarehouseLocationId,
-                                    $"採購退貨撤銷 - {savedEntity.PurchaseReturnNumber}"
+                                    operationDescription
                                 );
+                                
+                                _logger?.LogInformation("執行庫存回復 - 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
+                                                      detail.ProductId, warehouseId.Value, Math.Abs(quantityDiff));
                             }
 
                             if (!stockResult.IsSuccess)
                             {
+                                _logger?.LogError("庫存更新失敗 - 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量差異: {QuantityDiff}, 錯誤: {Error}", 
+                                                detail.ProductId, warehouseId.Value, quantityDiff, stockResult.ErrorMessage);
                                 await transaction.RollbackAsync();
                                 return ServiceResult<PurchaseReturn>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
                             }
@@ -734,13 +746,54 @@ namespace ERPCore2.Services
 
                     if (detail.Id > 0)
                     {
-                        // 更新現有明細 - 追蹤數量變更
+                        // 更新現有明細 - 檢查商品變更和數量變更
                         var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
                         if (existingDetail != null)
                         {
-                            // 計算數量差異 (新數量 - 原數量)
-                            var quantityDiff = detail.ReturnQuantity - existingDetail.ReturnQuantity;
-                            quantityChanges.Add((detail, quantityDiff));
+                            // 檢查是否有商品變更（關鍵修正點）
+                            bool productChanged = existingDetail.ProductId != detail.ProductId || 
+                                                 existingDetail.PurchaseReceivingDetailId != detail.PurchaseReceivingDetailId;
+                            
+                            if (productChanged)
+                            {
+                                // 商品變更：需要完整的庫存回滾和重新扣減
+                                // 1. 創建原商品的庫存回滾記錄（使用原始資料）
+                                if (existingDetail.ReturnQuantity > 0)
+                                {
+                                    var originalProductDetail = new PurchaseReturnDetail
+                                    {
+                                        Id = existingDetail.Id,
+                                        ProductId = existingDetail.ProductId, // 保持原商品ID
+                                        PurchaseReceivingDetailId = existingDetail.PurchaseReceivingDetailId, // 保持原進貨明細ID
+                                        WarehouseLocationId = existingDetail.WarehouseLocationId,
+                                        ReturnQuantity = existingDetail.ReturnQuantity,
+                                        OriginalUnitPrice = existingDetail.OriginalUnitPrice
+                                    };
+                                    
+                                    quantityChanges.Add((originalProductDetail, -existingDetail.ReturnQuantity));
+                                    _logger?.LogInformation("檢測到退貨明細商品變更 - 明細ID: {DetailId}, 原商品: {OldProductId}, 新商品: {NewProductId}, 回滾數量: {Quantity}", 
+                                                          detail.Id, existingDetail.ProductId, detail.ProductId, existingDetail.ReturnQuantity);
+                                }
+                                
+                                // 2. 扣減新商品的庫存（減少新的退回數量）
+                                if (detail.ReturnQuantity > 0)
+                                {
+                                    quantityChanges.Add((detail, detail.ReturnQuantity));
+                                    _logger?.LogInformation("商品變更後新增庫存扣減 - 明細ID: {DetailId}, 新商品: {ProductId}, 扣減數量: {Quantity}", 
+                                                          detail.Id, detail.ProductId, detail.ReturnQuantity);
+                                }
+                            }
+                            else
+                            {
+                                // 只有數量變更：計算差異
+                                var quantityDiff = detail.ReturnQuantity - existingDetail.ReturnQuantity;
+                                if (quantityDiff != 0)
+                                {
+                                    quantityChanges.Add((detail, quantityDiff));
+                                    _logger?.LogInformation("退貨明細數量變更 - 明細ID: {DetailId}, 商品: {ProductId}, 數量差異: {QuantityDiff}", 
+                                                          detail.Id, detail.ProductId, quantityDiff);
+                                }
+                            }
                             
                             updatedDetailsToUpdate.Add((existingDetail, detail));
                         }

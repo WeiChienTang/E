@@ -29,6 +29,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "已進貨數量")]
         public int ReceivedQuantity { get; set; } = 0;
 
+        [Display(Name = "已退回數量")]
+        public int ReturnedQuantity { get; set; } = 0;
+
+        [Display(Name = "淨進貨數量")]
+        public int NetReceivedQuantity => ReceivedQuantity - ReturnedQuantity;
+
         [Display(Name = "待進貨數量")]
         public int PendingQuantity => OrderQuantity - ReceivedQuantity;
 
