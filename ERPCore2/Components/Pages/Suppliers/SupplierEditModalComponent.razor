@@ -704,6 +704,30 @@
     }
 
     /// <summary>
+    /// 處理已刪除的供應商產品ID - 實際從資料庫刪除
+    /// </summary>
+    private async Task HandleDeletedSupplierProductsChanged(List<int> deletedProductSupplierIds)
+    {
+        try
+        {
+            if (deletedProductSupplierIds?.Any() == true)
+            {
+                foreach (var productSupplierId in deletedProductSupplierIds)
+                {
+                    await ProductSupplierService.DeleteAsync(productSupplierId);
+                }
+                
+                // 顯示成功通知
+                await NotificationService.ShowSuccessAsync($"已刪除 {deletedProductSupplierIds.Count} 個供應商產品");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除供應商產品時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// 處理供應商產品變更事件
     /// </summary>
     private Task OnSupplierProductsChanged(List<ProductSupplier> updatedProducts)
@@ -837,7 +861,8 @@
                                                    SetSupplierId="@SetSupplierIdDelegate"
                                                    ItemsChanged="@OnSupplierProductsChanged"
                                                    ItemAdded="@OnSupplierProductAdded"
-                                                   ItemRemoved="@OnSupplierProductRemoved" />
+                                                   ItemRemoved="@OnSupplierProductRemoved"
+                                                   OnDeletedDetailsChanged="@HandleDeletedSupplierProductsChanged" />
                 </div>
             </div>
         </div>;

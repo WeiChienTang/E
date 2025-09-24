@@ -19,6 +19,7 @@
                           FilterApplier="@ApplyPermissionFilters"
                           GetEntityDisplayName="@(permission => permission.Name)"
                           RequiredPermission="Permission.Read"
+                          ShowActions = "false"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
