@@ -96,7 +96,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "SalesOrder.Read", Name = "檢視銷貨訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷貨訂單詳細資料" },
                 new Permission { Code = "SalesDelivery.Read", Name = "檢視銷貨出貨", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷貨出貨單與配送記錄" },
                 new Permission { Code = "SalesReturn.Read", Name = "檢視銷貨退回", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷貨退回與退貨處理" },
-                
+                new Permission { Code = "SalesReturnReason.Read", Name = "檢視銷貨退回原因", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷貨退回原因設定與管理" },
 
                 // 採購管理權限
                 new Permission { Code = "PurchaseOrder.Read", Name = "檢視採購訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購訂單與供應商交易" },

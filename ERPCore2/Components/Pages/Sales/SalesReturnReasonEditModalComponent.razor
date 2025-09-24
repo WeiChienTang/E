@@ -1,0 +1,209 @@
+@* 銷貨退貨原因編輯組件 *@
+@inject ISalesReturnReasonService SalesReturnReasonService
+@inject INotificationService NotificationService
+
+@using ERPCore2.Services.Sales
+
+<GenericEditModalComponent TEntity="SalesReturnReason" 
+                          TService="ISalesReturnReasonService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@SalesReturnReasonId"
+                          Service="@SalesReturnReasonService"
+                          EntityName="退貨原因"
+                          EntityNamePlural="退貨原因"
+                          ModalTitle="@(SalesReturnReasonId.HasValue ? "編輯退貨原因" : "新增退貨原因")"
+                          Size="GenericEditModalComponent<SalesReturnReason, ISalesReturnReasonService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          DataLoader="@LoadSalesReturnReasonData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(SalesReturnReasonId.HasValue ? "退貨原因更新成功" : "退貨原因新增成功")"
+                          SaveFailureMessage="退貨原因儲存失敗"
+                          RequiredPermission="SalesReturnReason.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SalesReturnReasonId { get; set; }
+    [Parameter] public EventCallback<SalesReturnReason> OnSalesReturnReasonSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<SalesReturnReason, ISalesReturnReasonService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task<SalesReturnReason?> LoadSalesReturnReasonData()
+    {
+        try
+        {
+            if (!SalesReturnReasonId.HasValue)
+            {
+                // 新增模式 - 返回預設值
+                var newReason = new SalesReturnReason
+                {
+                    Name = string.Empty,
+                    Code = await GenerateReasonCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(SalesReturnReason).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newReason, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換錯誤
+                            }
+                        }
+                    }
+                }
+                
+                return newReason;
+            }
+            else
+            {
+                // 編輯模式 - 載入現有資料
+                return await SalesReturnReasonService.GetByIdAsync(SalesReturnReasonId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesReturnReasonData), GetType(), additionalData: "載入退貨原因資料失敗");
+            await NotificationService.ShowErrorAsync("載入退貨原因資料失敗");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入相關資料（如果需要）
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), additionalData: "載入額外資料失敗");
+            await NotificationService.ShowErrorAsync("載入額外資料失敗");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(SalesReturnReason.Code),
+                Label = "原因代碼",
+                FieldType = FormFieldType.Text,
+                Placeholder = "系統自動生成",
+                IsRequired = true,
+                IsReadOnly = true,
+                MaxLength = 20,
+                HelpText = "退貨原因的唯一識別代碼，系統自動生成"
+            },
+            new()
+            {
+                PropertyName = nameof(SalesReturnReason.Name),
+                Label = "原因名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入原因名稱",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "退貨原因的顯示名稱"
+            },
+            new()
+            {
+                PropertyName = nameof(SalesReturnReason.Remarks),
+                Label = "備註說明",
+                FieldType = FormFieldType.TextArea,
+                Placeholder = "請輸入備註說明",
+                IsRequired = false,
+                MaxLength = 500,
+                Rows = 3,
+                HelpText = "退貨原因的詳細說明或補充資訊",
+                ContainerCssClass = "col-12"
+            }
+        };
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = GetFormFields();
+    }
+
+    private async Task<string> GenerateReasonCodeAsync()
+    {
+        try
+        {
+            return await CodeGenerationHelper.GenerateEntityCodeAsync(
+                SalesReturnReasonService,
+                "RR",
+                (service, code, excludeId) => service.IsSalesReturnReasonCodeExistsAsync(code, excludeId)
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateReasonCodeAsync), GetType(), additionalData: "生成退貨原因代碼失敗");
+            return "RR001"; // 預設值
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnSalesReturnReasonSaved.HasDelegate)
+            {
+                // 傳遞實際儲存的實體資料
+                await OnSalesReturnReasonSaved.InvokeAsync(editModalComponent?.Entity ?? new SalesReturnReason());
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), additionalData: "處理儲存成功事件失敗");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), additionalData: "處理取消事件失敗");
+        }
+    }
+}

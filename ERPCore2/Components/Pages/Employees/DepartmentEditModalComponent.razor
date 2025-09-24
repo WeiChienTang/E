@@ -217,13 +217,17 @@
                     Options = managerOptions,
                     HelpText = "選擇負責管理此部門的員工"
                 },
-                FormFieldConfigurationHelper.CreateRemarksField<Department>(
-                    label: "部門備註",
-                    placeholder: "請輸入部門備註",
-                    helpText: "其他需要補充的資訊",
-                    rows: 2,
-                    containerCssClass: "col-12"
-                )
+                new()
+                {
+                    PropertyName = nameof(Department.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    Rows = 2,
+                    HelpText = "關於此部門的補充說明",
+                    ContainerCssClass = "col-12"
+                }
             };
 
             formSections = new Dictionary<string, string>

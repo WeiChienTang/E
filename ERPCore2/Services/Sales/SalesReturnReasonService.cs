@@ -83,9 +83,16 @@ namespace ERPCore2.Services.Sales
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("原因名稱為必填欄位");
                 
+                if (string.IsNullOrWhiteSpace(entity.Code))
+                    errors.Add("原因代碼為必填欄位");
+                
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 
                     await IsNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
                     errors.Add("原因名稱已存在");
+                    
+                if (!string.IsNullOrWhiteSpace(entity.Code) && 
+                    await IsSalesReturnReasonCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                    errors.Add("原因代碼已存在");
                 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -121,6 +128,37 @@ namespace ERPCore2.Services.Sales
                     ServiceType = GetType().Name 
                 });
                 return new List<EntitySalesReturnReason>();
+            }
+        }
+
+        public async Task<bool> IsSalesReturnReasonCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.SalesReturnReasons
+                    .Where(r => !r.IsDeleted && r.Code == code);
+
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(r => r.Id != excludeId.Value);
+                }
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSalesReturnReasonCodeExistsAsync), GetType(), _logger, new
+                {
+                    Method = nameof(IsSalesReturnReasonCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    Code = code,
+                    ExcludeId = excludeId
+                });
+                return false;
             }
         }
     }

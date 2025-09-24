@@ -39,6 +39,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new EntitySalesReturnReason
                 {
+                    Code = "RR001",
                     Name = "品質不良",
                     Remarks = "產品品質不符合標準或有瑕疵",
                     Status = EntityStatus.Active,
@@ -47,6 +48,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new EntitySalesReturnReason
                 {
+                    Code = "RR002",
                     Name = "規格不符",
                     Remarks = "產品規格與訂單要求不符",
                     Status = EntityStatus.Active,
@@ -55,6 +57,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new EntitySalesReturnReason
                 {
+                    Code = "RR003",
                     Name = "數量錯誤",
                     Remarks = "出貨數量與訂單不符",
                     Status = EntityStatus.Active,
@@ -63,6 +66,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new EntitySalesReturnReason
                 {
+                    Code = "RR004",
                     Name = "客戶要求",
                     Remarks = "客戶主動要求退貨",
                     Status = EntityStatus.Active,
@@ -71,6 +75,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new EntitySalesReturnReason
                 {
+                    Code = "RR005",
                     Name = "過期商品",
                     Remarks = "商品已過有效期限",
                     Status = EntityStatus.Active,
@@ -79,6 +84,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new EntitySalesReturnReason
                 {
+                    Code = "RR006",
                     Name = "運送損壞",
                     Remarks = "運送過程中造成的損壞",
                     Status = EntityStatus.Active,
