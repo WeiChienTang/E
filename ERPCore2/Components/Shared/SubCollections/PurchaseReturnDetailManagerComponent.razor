@@ -245,23 +245,16 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 進貨明細選擇欄位 - 使用 SearchableSelectHelper 創建
-        columns.Add(SearchableSelectHelper.CreateSearchableSelect<ReturnItem, PurchaseReceivingDetail>(
+        // 進貨明細選擇欄位 - 使用新的 ProductSelectHelper
+        columns.Add(ProductSelectHelper.CreateReceivingDetailSelect<ReturnItem>(
             title: "商品",
             width: "25%",
-            searchValuePropertyName: "ReceivingDetailSearch",
-            selectedItemPropertyName: "SelectedReceivingDetail",
-            filteredItemsPropertyName: "FilteredReceivingDetails",
-            showDropdownPropertyName: "ShowDropdown",
-            selectedIndexPropertyName: "SelectedIndex",
-            availableItemsProvider: () => GetAvailableReceivingDetails(),
-            itemDisplayFormatter: detail => FormatReceivingDetailDisplay(detail),
-            searchFilter: (detail, searchValue) => FilterReceivingDetail(detail, searchValue),
-            onSearchInputChanged: EventCallback.Factory.Create<(ReturnItem item, string? searchValue)>(this, args => OnReceivingDetailSearchInput(args.item, args.searchValue)),
-            onItemSelected: EventCallback.Factory.Create<(ReturnItem item, PurchaseReceivingDetail? selectedDetail)>(this, async args => {
+            availableReceivingDetailsProvider: () => GetAvailableReceivingDetails(),
+            onReceivingDetailSelected: EventCallback.Factory.Create<(ReturnItem item, PurchaseReceivingDetail? selectedDetail)>(this, async args => {
                 if (args.selectedDetail != null)
                     await OnReceivingDetailSelected(args.item, args.selectedDetail);
             }),
+            onSearchInputChanged: EventCallback.Factory.Create<(ReturnItem item, string? searchValue)>(this, args => OnReceivingDetailSearchInput(args.item, args.searchValue)),
             onInputFocus: EventCallback.Factory.Create<ReturnItem>(this, item => OnReceivingDetailInputFocus(item)),
             onInputBlur: EventCallback.Factory.Create<ReturnItem>(this, async item => await OnReceivingDetailInputBlur(item)),
             onItemMouseEnter: EventCallback.Factory.Create<(ReturnItem item, int index)>(this, args => OnReceivingDetailItemMouseEnter(args.item, args.index)),

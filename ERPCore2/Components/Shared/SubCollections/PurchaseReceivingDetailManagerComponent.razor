@@ -337,8 +337,8 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 採購明細選擇欄位
-        columns.Add(PurchaseOrderDetailSelectHelper.CreatePurchaseDetailSearchableSelect<ReceivingItem>(
+        // 採購明細選擇欄位 - 使用新的 ProductSelectHelper
+        columns.Add(ProductSelectHelper.CreatePurchaseDetailSelect<ReceivingItem>(
             title: "商品",
             availablePurchaseDetailsProvider: () => GetAvailablePurchaseDetails(),
             onSearchInputChanged: EventCallback.Factory.Create<(ReceivingItem item, string? searchValue)>(this, async args => await OnPurchaseDetailSearchInput(args.item, args.searchValue)),

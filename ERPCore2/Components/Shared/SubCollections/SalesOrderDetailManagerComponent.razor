@@ -3,10 +3,9 @@
 @inject INotificationService NotificationService
 @inject IInventoryStockService InventoryStockService
 @inject ISalesOrderDetailService SalesOrderDetailService
+
 @using ERPCore2.Helpers
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
+
 @typeparam TSalesOrderDetailEntity where TSalesOrderDetailEntity : BaseEntity, new()
 @typeparam TProductEntity where TProductEntity : BaseEntity
 @typeparam TSalesOrderEntity where TSalesOrderEntity : BaseEntity
@@ -122,6 +121,18 @@
     [Parameter] public Action<TSalesOrderDetailEntity, string?> SetRemark { get; set; } = (item, value) => { };
     [Parameter] public Action<TSalesOrderDetailEntity, int> SetSalesOrderId { get; set; } = (item, salesOrderId) => { }; // 設定銷售訂單ID
     
+    // ===== 搜尋相關委派參數 - 支援可搜尋商品選擇 =====
+    [Parameter] public Func<TSalesOrderDetailEntity, string?> GetProductSearch { get; set; } = item => null;
+    [Parameter] public Action<TSalesOrderDetailEntity, string?> SetProductSearch { get; set; } = (item, value) => { };
+    [Parameter] public Func<TSalesOrderDetailEntity, List<TProductEntity>?> GetFilteredProducts { get; set; } = item => null;
+    [Parameter] public Action<TSalesOrderDetailEntity, List<TProductEntity>?> SetFilteredProducts { get; set; } = (item, value) => { };
+    [Parameter] public Func<TSalesOrderDetailEntity, bool> GetShowDropdown { get; set; } = item => false;
+    [Parameter] public Action<TSalesOrderDetailEntity, bool> SetShowDropdown { get; set; } = (item, value) => { };
+    [Parameter] public Func<TSalesOrderDetailEntity, int> GetSelectedIndex { get; set; } = item => -1;
+    [Parameter] public Action<TSalesOrderDetailEntity, int> SetSelectedIndex { get; set; } = (item, value) => { };
+    [Parameter] public Func<TSalesOrderDetailEntity, TProductEntity?> GetSelectedProduct { get; set; } = item => default(TProductEntity);
+    [Parameter] public Action<TSalesOrderDetailEntity, TProductEntity?> SetSelectedProduct { get; set; } = (item, value) => { };
+    
     // ===== 事件參數 =====
     [Parameter] public EventCallback<List<TSalesOrderDetailEntity>> ItemsChanged { get; set; }
     [Parameter] public EventCallback<TSalesOrderDetailEntity> ItemAdded { get; set; }
@@ -235,33 +246,29 @@
     // ===== InteractiveTableComponent 方法 =====
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
-        return new List<InteractiveColumnDefinition>
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 產品選擇欄位 - 使用 ProductSelectHelper
+        if (ProductOptions is IEnumerable<Product> productList)
         {
-            // 產品選擇欄位
-            new() 
-            { 
-                Title = "產品", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "18%",
-                CustomTemplate = item => 
-                {
-                    var salesOrderDetail = (TSalesOrderDetailEntity)item;
-                    var productId = GetProductId(salesOrderDetail);
-                    var selectedValue = productId?.ToString() ?? "";
-                    
-                    return @<select class="form-select form-select-sm" 
-                                    value="@selectedValue"
-                                    disabled="@IsReadOnly"
-                                    @onchange="@(async (e) => await OnProductChanged((salesOrderDetail, e.Value)))">
-                        <option value="">請選擇產品</option>
-                        @foreach (var product in ProductOptions)
-                        {
-                            <option value="@GetProductOptionId(product)">@GetProductOptionDisplayText(product)</option>
-                        }
-                    </select>;
-                }
-            },
+            columns.Add(ProductSelectHelper.CreateProductSelect<TSalesOrderDetailEntity>(
+                title: "產品",
+                width: "18%",
+                availableProductsProvider: () => productList,
+                onProductSelected: EventCallback.Factory.Create<(TSalesOrderDetailEntity item, Product? selectedProduct)>(this, async args => {
+                    if (args.selectedProduct != null)
+                        await OnProductSelected(args.item, args.selectedProduct);
+                }),
+                onSearchInputChanged: EventCallback.Factory.Create<(TSalesOrderDetailEntity item, string? searchValue)>(this, async args => await OnProductSearchInput(args.item, args.searchValue)),
+                onInputFocus: EventCallback.Factory.Create<TSalesOrderDetailEntity>(this, item => OnProductInputFocus(item)),
+                onInputBlur: EventCallback.Factory.Create<TSalesOrderDetailEntity>(this, async item => await OnProductInputBlur(item)),
+                onItemMouseEnter: EventCallback.Factory.Create<(TSalesOrderDetailEntity item, int index)>(this, args => OnProductItemMouseEnter(args.item, args.index)),
+                isReadOnly: IsReadOnly
+            ));
+        }
+
+        return new List<InteractiveColumnDefinition>(columns)
+        {
             // 倉庫選擇欄位
             new() 
             { 
@@ -1152,5 +1159,140 @@
         await ItemsChanged.InvokeAsync(Items);
         
         await NotificationService.ShowSuccessAsync("已清空所有產品明細");
+    }
+
+    // ===== 產品搜尋相關事件處理 =====
+    
+    /// <summary>
+    /// 處理產品搜尋輸入
+    /// </summary>
+    private async Task OnProductSearchInput(TSalesOrderDetailEntity item, string? searchValue)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        // 設定搜尋值
+        SetProductSearch?.Invoke(item, searchValue ?? "");
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            // 清空選中的產品
+            SetSelectedProduct?.Invoke(item, default(TProductEntity));
+            SetProductId(item, null);
+            SetSelectedIndex?.Invoke(item, -1);
+            
+            // 顯示所有商品
+            var allProducts = ProductOptions.Take(20).ToList();
+            SetFilteredProducts?.Invoke(item, allProducts);
+            SetShowDropdown?.Invoke(item, allProducts.Any());
+        }
+        else
+        {
+            // 過濾商品
+            var filtered = ProductOptions
+                .Where(p => FilterGenericProduct(p, searchValue))
+                .Take(20)
+                .ToList();
+            
+            SetFilteredProducts?.Invoke(item, filtered);
+            SetShowDropdown?.Invoke(item, filtered.Any());
+            SetSelectedIndex?.Invoke(item, filtered.Any() ? 0 : -1);
+        }
+        
+        // 處理空行邏輯
+        AutoEmptyRowHelper.ForAny<TSalesOrderDetailEntity>.HandleInputChange(
+            Items, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理產品輸入框焦點事件
+    /// </summary>
+    private void OnProductInputFocus(TSalesOrderDetailEntity item)
+    {
+        var searchValue = GetProductSearch?.Invoke(item) ?? "";
+        if (!string.IsNullOrWhiteSpace(searchValue))
+        {
+            _ = OnProductSearchInput(item, searchValue);
+        }
+        else
+        {
+            SetSelectedIndex?.Invoke(item, -1);
+            var allProducts = ProductOptions.Take(20).ToList();
+            SetFilteredProducts?.Invoke(item, allProducts);
+            SetShowDropdown?.Invoke(item, allProducts.Any());
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 處理產品輸入框失焦事件
+    /// </summary>
+    private async Task OnProductInputBlur(TSalesOrderDetailEntity item)
+    {
+        await Task.Delay(100);
+        SetShowDropdown?.Invoke(item, false);
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理產品項目滑鼠移入事件
+    /// </summary>
+    private void OnProductItemMouseEnter(TSalesOrderDetailEntity item, int index)
+    {
+        SetSelectedIndex?.Invoke(item, index);
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理產品項目選擇事件
+    /// </summary>
+    private async Task OnProductItemSelected(TSalesOrderDetailEntity item, TProductEntity product)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        // 設定選中的產品
+        SetSelectedProduct?.Invoke(item, product);
+        SetProductId(item, GetProductOptionId(product));
+        SetProductSearch?.Invoke(item, GetProductOptionDisplayText(product));
+        SetShowDropdown?.Invoke(item, false);
+        SetSelectedIndex?.Invoke(item, -1);
+        
+        // 原有的產品變更邏輯
+        await OnProductChanged((item, GetProductOptionId(product).ToString()));
+        
+        // 處理空行邏輯
+        AutoEmptyRowHelper.ForAny<TSalesOrderDetailEntity>.HandleInputChange(
+            Items, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理產品選擇事件（用於 ProductSelectHelper - Product 類型）
+    /// </summary>
+    private async Task OnProductSelected(TSalesOrderDetailEntity item, Product? product)
+    {
+        if (product == null) return;
+        
+        // 將 Product 轉換為 TProductEntity
+        if (product is TProductEntity productEntity)
+        {
+            await OnProductItemSelected(item, productEntity);
+        }
+    }
+    
+    /// <summary>
+    /// 過濾泛型商品 - 支援Code和Name搜尋
+    /// </summary>
+    private bool FilterGenericProduct(TProductEntity product, string searchValue)
+    {
+        if (product == null || string.IsNullOrWhiteSpace(searchValue)) return true;
+        
+        // 使用現有的顯示格式函數來檢查
+        var displayText = GetProductOptionDisplayText(product);
+        return displayText?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
     }
 }

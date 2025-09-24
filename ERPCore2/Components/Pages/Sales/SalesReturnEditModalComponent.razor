@@ -819,6 +819,7 @@
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
                         <SalesReturnDetailManagerComponent @ref="salesReturnDetailManager"
+                            Products="@products"
                             CustomerId="@(editModalComponent?.Entity?.CustomerId)"
                             FilterSalesOrderId="@FilterSalesOrderId"
                             FilterProductId="@FilterProductId"
