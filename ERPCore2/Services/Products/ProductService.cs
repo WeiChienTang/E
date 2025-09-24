@@ -125,8 +125,13 @@ namespace ERPCore2.Services
                 {
                     errors.Add("商品名稱為必填欄位");
                 }
+                
+                if (!entity.ProductCategoryId.HasValue || entity.ProductCategoryId <= 0)
+                {
+                    errors.Add("商品類別為必填欄位");
+                }
 
-                return errors.Any() 
+                return errors.Any()
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();
             }

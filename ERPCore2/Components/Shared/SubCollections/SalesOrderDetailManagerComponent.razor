@@ -212,7 +212,12 @@ else
         {
             if (SelectedCustomerId.HasValue && SelectedCustomerId.Value > 0)
             {
-                AvailableProducts = Products.Where(p => !p.IsDeleted).ToList();
+                // 只顯示產品類別為"成品"的商品 (PC003)
+                AvailableProducts = Products
+                    .Where(p => !p.IsDeleted && 
+                               p.ProductCategory != null && 
+                               p.ProductCategory.Code == "PC001")
+                    .ToList();
             }
             else
             {

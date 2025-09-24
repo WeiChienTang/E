@@ -414,10 +414,7 @@
             if (deleteSuccess)
             {
                 var successMessage = GetDeleteSuccessMessage();
-                await NotificationService.ShowSuccessAsync(successMessage);
-                
-                // 延遲1秒後再刷新，讓用戶看到成功訊息
-                await Task.Delay(1000);
+                await NotificationService.ShowSuccessAsync(successMessage);                
                 await Refresh();
             }
         }            

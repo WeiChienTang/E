@@ -32,30 +32,30 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new ProductCategory
                 {
                     Code = "PC001",
-                    Name = "原物料",
-                    Remarks = "生產原料材料",
+                    Name = "成品",
+                    Remarks = "已完成製造的產品",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new ProductCategory
                 {
                     Code = "PC002",
-                    Name = "半成品",
-                    Remarks = "半成品",
+                    Name = "原物料",
+                    Remarks = "生產原料材料",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "測試"
                 },
                 new ProductCategory
                 {
                     Code = "PC003",
-                    Name = "成品",
-                    Remarks = "已完成製造的產品",
+                    Name = "半成品",
+                    Remarks = "半成品",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-30),
-                    CreatedBy = "System"
-                }
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "測試"
+                },
             };
 
             await context.ProductCategories.AddRangeAsync(categories);

@@ -321,7 +321,7 @@
                 Label = "產品分類",
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = "請輸入或選擇產品分類",
-                IsRequired = false,
+                IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "輸入分類名稱進行搜尋，或直接選擇",
                 ActionButtons = await GetProductCategoryActionButtonsAsync()
@@ -366,8 +366,8 @@
         {
             { nameof(Product.Code), "基本資訊" },
             { nameof(Product.Name), "基本資訊" },
-            { nameof(Product.SizeId), "基本資訊" },
             { nameof(Product.ProductCategoryId), "基本資訊" },
+            { nameof(Product.SizeId), "基本資訊" },
             { nameof(Product.UnitId), "基本資訊" },
             { nameof(Product.Remarks), "額外資訊" }
         };
