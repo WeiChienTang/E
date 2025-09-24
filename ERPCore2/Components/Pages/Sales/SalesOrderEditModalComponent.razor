@@ -80,7 +80,7 @@
     private List<SalesOrderDetail> salesOrderDetails = new();
     
     // 明細管理組件引用
-    private SalesOrderDetailManagerComponent<SalesOrderDetail, Product, SalesOrder>? salesOrderDetailManager;
+    private SalesOrderDetailManagerComponent<SalesOrder, SalesOrderDetail>? salesOrderDetailManager;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -545,32 +545,22 @@
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
                         <SalesOrderDetailManagerComponent @ref="salesOrderDetailManager"
-                                                          TSalesOrderDetailEntity="SalesOrderDetail" 
-                                                          TProductEntity="Product"
-                                                          TSalesOrderEntity="SalesOrder"
-                                                          Items="@salesOrderDetails"
-                                                          ProductOptions="@availableProducts"
-                                                          UnitOptions="@availableUnits"
-                                                          WarehouseOptions="@availableWarehouses"
-                                                          ParentEntityId="@(editModalComponent.Entity.Id)"
-                                                          CustomerId="@editModalComponent.Entity.CustomerId"
+                                                          TMainEntity="SalesOrder" 
+                                                          TDetailEntity="SalesOrderDetail"
+                                                          MainEntity="@editModalComponent.Entity"
+                                                          ExistingDetails="@salesOrderDetails"
+                                                          Products="@availableProducts"
+                                                          Warehouses="@availableWarehouses"
+                                                          SelectedCustomerId="@editModalComponent.Entity.CustomerId"
                                                           IsReadOnly="false"
-                                                          GetProductId="@(item => item.ProductId)"
-                                                          SetProductId="@((item, value) => item.ProductId = value ?? 0)"
-                                                          GetQuantity="@(item => item.OrderQuantity)"
-                                                          SetQuantity="@((item, value) => item.OrderQuantity = value ?? 0m)"
-                                                          GetUnitPrice="@(item => item.UnitPrice)"
-                                                          SetUnitPrice="@((item, value) => item.UnitPrice = value ?? 0m)"
-                                                          GetDiscount="@(item => item.DiscountPercentage)"
-                                                          SetDiscount="@((item, value) => item.DiscountPercentage = value ?? 0m)"
-                                                          GetUnitId="@(item => item.UnitId)"
-                                                          SetUnitId="@((item, value) => item.UnitId = value)"
-                                                          GetWarehouseId="@(item => item.WarehouseId)"
-                                                          SetWarehouseId="@((item, value) => item.WarehouseId = value)"
-                                                          GetRemark="@(item => item.DetailRemarks)"
-                                                          SetRemark="@((item, value) => item.DetailRemarks = value)"
-                                                          SetSalesOrderId="@((item, value) => item.SalesOrderId = value)"
-                                                          ItemsChanged="@HandleDetailsChanged"
+                                                          MainEntityIdPropertyName="SalesOrderId"
+                                                          QuantityPropertyName="OrderQuantity"
+                                                          UnitPricePropertyName="UnitPrice"
+                                                          DiscountPercentagePropertyName="DiscountPercentage"
+                                                          UnitIdPropertyName="UnitId"
+                                                          WarehouseIdPropertyName="WarehouseId"
+                                                          RemarksPropertyName="DetailRemarks"
+                                                          OnDetailsChanged="@HandleDetailsChanged"
                                                           ItemDisplayName="銷售產品"
                                                           EmptyMessage="尚未新增銷售產品" />
                     }

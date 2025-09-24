@@ -206,6 +206,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
+                    .Include(sod => sod.Warehouse)
                     .Where(sod => sod.SalesOrderId == salesOrderId && !sod.IsDeleted)
                     .OrderBy(sod => sod.Id)
                     .ToListAsync();
@@ -512,6 +513,8 @@ namespace ERPCore2.Services
                 var lastSalesOrder = await context.SalesOrders
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Product)
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Warehouse)
                     .Where(so => so.CustomerId == customerId 
                               && !so.IsDeleted 
                               && so.SalesOrderDetails.Any(sod => !sod.IsDeleted))
