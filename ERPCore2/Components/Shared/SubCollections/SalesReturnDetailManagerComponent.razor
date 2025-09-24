@@ -31,6 +31,8 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="@EmptyMessage"
                                       ShowTotalRow="true"
+                                      ShowBuiltInActions="true"
+                                      ShowBuiltInDeleteButton="true"                                      
                                       TotalRowTemplate="@GetTotalRowTemplate"
                                       OnItemDelete="@HandleItemDelete" />
         </div>
@@ -95,7 +97,6 @@ else
     [Parameter] public string ReturnPriceLabel { get; set; } = "退回單價";
     [Parameter] public string RemarksLabel { get; set; } = "備註";
     [Parameter] public string QualityConditionLabel { get; set; } = "品質狀況";
-    [Parameter] public string ReturnReasonLabel { get; set; } = "退貨原因";
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "退貨明細";
@@ -274,50 +275,6 @@ else
                 return @<div class="d-flex align-items-center justify-content-end">
                     <span class="fw-bold">@value.ToString("N0")</span>
                 </div>;
-            }
-        });
-
-        // 退貨原因欄位
-        columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = ReturnReasonLabel, 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "15%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                
-                return @<select class="form-select form-select-sm" 
-                                @onchange="@(async (e) => await OnReturnReasonInput(returnItem, e.Value?.ToString()))"
-                                disabled="@(IsReadOnly || returnItem.SelectedOrderDetail == null)">
-                    <option value="">請選擇</option>
-                    <option value="客戶不滿意" selected="@(returnItem.ReturnReason == "客戶不滿意")">客戶不滿意</option>
-                    <option value="商品瑕疵" selected="@(returnItem.ReturnReason == "商品瑕疵")">商品瑕疵</option>
-                    <option value="規格錯誤" selected="@(returnItem.ReturnReason == "規格錯誤")">規格錯誤</option>
-                    <option value="過期商品" selected="@(returnItem.ReturnReason == "過期商品")">過期商品</option>
-                    <option value="數量錯誤" selected="@(returnItem.ReturnReason == "數量錯誤")">數量錯誤</option>
-                    <option value="其他" selected="@(returnItem.ReturnReason == "其他")">其他</option>
-                </select>;
-            }
-        });
-
-        // 品質狀況欄位
-        columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = QualityConditionLabel, 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
-            CustomTemplate = item =>
-            {
-                var returnItem = (ReturnItem)item;
-                
-                return @<input type="text" class="form-control form-control-sm" 
-                               value="@returnItem.QualityCondition"
-                               @onchange="@(async (e) => await OnQualityConditionInput(returnItem, e.Value?.ToString()))"
-                               placeholder="品質狀況"
-                               disabled="@(IsReadOnly || returnItem.SelectedOrderDetail == null)" />;
             }
         });
 
