@@ -932,7 +932,7 @@
             Console.WriteLine($"準備刪除 {detailsToDelete.Count} 筆明細");
             foreach (var detailToDelete in detailsToDelete)
             {
-                await SalesOrderDetailService.DeleteAsync(detailToDelete.Id);
+                await SalesOrderDetailService.PermanentDeleteAsync(detailToDelete.Id);
             }
         }
         catch (Exception ex)

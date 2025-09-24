@@ -744,7 +744,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                return await _purchaseOrderDetailService.DeleteAsync(detailId);
+                return await _purchaseOrderDetailService.PermanentDeleteAsync(detailId);
             }
             catch (Exception ex)
             {

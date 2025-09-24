@@ -379,7 +379,7 @@ namespace ERPCore2.Services
                 if (isUsed)
                     return ServiceResult.Failure("無法刪除此權限，因為仍有角色使用此權限");
 
-                return await base.DeleteAsync(id);
+                return await base.PermanentDeleteAsync(id);
             }
             catch (Exception ex)
             {

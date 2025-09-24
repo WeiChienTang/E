@@ -162,7 +162,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("無法刪除，此聯絡類型已被聯絡資料使用");
 
                 // 使用基底類別的刪除邏輯
-                return await base.DeleteAsync(id);
+                return await base.PermanentDeleteAsync(id);
             }
             catch (Exception ex)
             {

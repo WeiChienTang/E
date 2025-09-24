@@ -28,7 +28,7 @@ namespace ERPCore2.Services
             {
                 // 偵錯：先查詢所有相關記錄
                 var result = await _context.Addresses
-                    .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId && !a.IsDeleted)
+                    .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId)
                     .Include(a => a.AddressType)
                     .OrderBy(a => a.CreatedAt)
                     .ToListAsync();
@@ -48,7 +48,7 @@ namespace ERPCore2.Services
             {
                 return await _context.Addresses
                     .Include(a => a.AddressType)
-                    .FirstOrDefaultAsync(a => a.Id == addressId && !a.IsDeleted);
+                    .FirstOrDefaultAsync(a => a.Id == addressId);
             }
             catch (Exception ex)
             {
@@ -66,8 +66,7 @@ namespace ERPCore2.Services
                     .Include(a => a.AddressType)
                     .FirstOrDefaultAsync(a => 
                         a.OwnerType == ownerType && 
-                        a.OwnerId == ownerId && 
-                        !a.IsDeleted);
+                        a.OwnerId == ownerId);
             }
             catch (Exception ex)
             {
@@ -153,7 +152,7 @@ namespace ERPCore2.Services
             try
             {
                 var existingAddress = await _context.Addresses.FindAsync(address.Id);
-                if (existingAddress == null || existingAddress.IsDeleted)
+                if (existingAddress == null)
                 {
                     throw new ArgumentException($"地址不存在: ID {address.Id}");
                 }
@@ -182,14 +181,17 @@ namespace ERPCore2.Services
             try
             {
                 var address = await _context.Addresses.FindAsync(addressId);
-                if (address == null || address.IsDeleted)
+                if (address == null)
                 {
                     throw new ArgumentException($"地址不存在: ID {addressId}");
                 }
 
-                // 軟刪除
-                address.IsDeleted = true;
-                address.UpdatedAt = DateTime.Now;
+                // 檢查是否有其他資料依賴此地址
+                // 由於地址是被其他實體擁有的，而不是被引用的，所以通常可以直接刪除
+                // 但為了安全起見，可以添加額外的檢查
+
+                // 硬刪除
+                _context.Addresses.Remove(address);
 
                 await _context.SaveChangesAsync();
 

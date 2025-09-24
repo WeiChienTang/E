@@ -594,7 +594,7 @@ namespace ERPCore2.Services
                 if (!canDeleteResult.Data)
                     return ServiceResult.Failure("此角色無法刪除，因為仍有員工使用此角色或為系統角色");
 
-                return await base.DeleteAsync(id);
+                return await base.PermanentDeleteAsync(id);
             }
             catch (Exception ex)
             {

@@ -444,7 +444,7 @@ else
 
             foreach (var errorId in selectedErrorIds.ToList())
             {
-                await ErrorLogService.DeleteAsync(errorId);
+                await ErrorLogService.PermanentDeleteAsync(errorId);
             }
             
             selectedErrorIds.Clear();

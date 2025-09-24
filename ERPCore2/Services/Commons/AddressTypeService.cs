@@ -204,7 +204,7 @@ namespace ERPCore2.Services
                     return canDeleteResult;
 
                 // 呼叫基底類別的刪除方法
-                return await base.DeleteAsync(id);
+                return await base.PermanentDeleteAsync(id);
             }
             catch (Exception ex)
             {
