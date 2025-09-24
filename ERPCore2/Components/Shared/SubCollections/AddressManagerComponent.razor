@@ -21,6 +21,9 @@
     </div>
 </div>
 @code {
+    // ===== 私有欄位 =====
+    private readonly HashSet<int> _deletedDetailIds = new HashSet<int>();
+
     // ===== 基本參數 =====
     [Parameter] public List<TAddressEntity> Items { get; set; } = new();
     [Parameter] public List<ERPCore2.Data.BaseEntity> Options { get; set; } = new(); // 地址類型選項
@@ -63,6 +66,7 @@
     [Parameter] public EventCallback<List<TAddressEntity>> ItemsChanged { get; set; }
     [Parameter] public EventCallback<TAddressEntity> ItemAdded { get; set; }
     [Parameter] public EventCallback<TAddressEntity> ItemRemoved { get; set; }
+    [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
     
     protected override void OnParametersSet()
     {
@@ -293,6 +297,13 @@
         if (IsReadOnly || index < 0 || index >= Items.Count) return;
         
         var removedItem = Items[index];
+        if (removedItem == null) return;
+        
+        // 記錄要刪除的資料庫實體ID
+        if (removedItem.Id > 0)
+        {
+            _deletedDetailIds.Add(removedItem.Id);
+        }
         
         // 使用 Helper 處理移除，自動確保空行
         AutoEmptyRowHelper.For<TAddressEntity>.HandleItemRemove(
@@ -300,6 +311,10 @@
         
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
+        
+        // 通知已刪除的明細ID
+        await NotifyDeletedDetailsChanged();
+        
         StateHasChanged();
     }
     
@@ -356,5 +371,17 @@
         }
         
         return true;
+    }
+    
+    /// <summary>
+    /// 通知已刪除的明細ID
+    /// </summary>
+    private async Task NotifyDeletedDetailsChanged()
+    {
+        if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
+        {
+            await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
+            _deletedDetailIds.Clear(); // 清空已通知的刪除ID
+        }
     }
 }

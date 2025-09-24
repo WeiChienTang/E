@@ -57,7 +57,8 @@
                                         SetTypeId="@((contact, typeId) => contact.ContactTypeId = typeId)"
                                         SetContactValue="@((contact, value) => contact.ContactValue = value)"
                                         SetParentId="@((contact, parentId) => { contact.OwnerType = ContactOwnerTypes.Customer; contact.OwnerId = parentId; })"
-                                        ItemsChanged="@OnContactsChanged" />
+                                        ItemsChanged="@OnContactsChanged"
+                                        OnDeletedDetailsChanged="@HandleDeletedContactsChanged" />
             </div>
             <div class="col-md-6">
                 @* 地址管理 *@
@@ -76,7 +77,8 @@
                                         SetTypeId="@((address, typeId) => address.AddressTypeId = typeId)"
                                         SetAddress="@((address, value) => address.AddressLine = value)"
                                         SetParentId="@((address, parentId) => { address.OwnerType = AddressOwnerTypes.Customer; address.OwnerId = parentId; })"
-                                        ItemsChanged="@OnAddressesChanged" />
+                                        ItemsChanged="@OnAddressesChanged"
+                                        OnDeletedDetailsChanged="@HandleDeletedAddressesChanged" />
             </div>
         </div>
     </AdditionalSections>
@@ -369,6 +371,54 @@
         customerAddresses = updatedAddresses;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 處理已刪除的聯絡方式ID - 實際從資料庫刪除
+    /// </summary>
+    private async Task HandleDeletedContactsChanged(List<int> deletedContactIds)
+    {
+        try
+        {
+            if (deletedContactIds?.Any() == true)
+            {
+                foreach (var contactId in deletedContactIds)
+                {
+                    await ContactService.DeleteAsync(contactId);
+                }
+                
+                // 顯示成功通知
+                await NotificationService.ShowSuccessAsync($"已刪除 {deletedContactIds.Count} 個聯絡方式");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除聯絡方式時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理已刪除的地址ID - 實際從資料庫刪除
+    /// </summary>
+    private async Task HandleDeletedAddressesChanged(List<int> deletedAddressIds)
+    {
+        try
+        {
+            if (deletedAddressIds?.Any() == true)
+            {
+                foreach (var addressId in deletedAddressIds)
+                {
+                    await AddressService.DeleteAddressAsync(addressId);
+                }
+                
+                // 顯示成功通知
+                await NotificationService.ShowSuccessAsync($"已刪除 {deletedAddressIds.Count} 個地址");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除地址時發生錯誤：{ex.Message}");
+        }
     }
 
     private async Task SaveSubCollectionsAsync(Customer customer)

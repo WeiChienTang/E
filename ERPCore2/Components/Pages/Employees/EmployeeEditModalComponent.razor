@@ -1056,6 +1056,30 @@
     }
 
     /// <summary>
+    /// 處理已刪除的員工聯絡方式ID - 實際從資料庫刪除
+    /// </summary>
+    private async Task HandleDeletedEmployeeContactsChanged(List<int> deletedContactIds)
+    {
+        try
+        {
+            if (deletedContactIds?.Any() == true)
+            {
+                foreach (var contactId in deletedContactIds)
+                {
+                    await ContactService.DeleteAsync(contactId);
+                }
+                
+                // 顯示成功通知
+                await NotificationService.ShowSuccessAsync($"已刪除 {deletedContactIds.Count} 個聯絡方式");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除聯絡方式時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// 處理員工地址變更事件
     /// </summary>
     private Task OnEmployeeAddressesChanged(List<Address> updatedAddresses)
@@ -1070,6 +1094,30 @@
         {
             _ = NotificationService.ShowErrorAsync("更新地址資料時發生錯誤");
             return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// 處理已刪除的員工地址ID - 實際從資料庫刪除
+    /// </summary>
+    private async Task HandleDeletedEmployeeAddressesChanged(List<int> deletedAddressIds)
+    {
+        try
+        {
+            if (deletedAddressIds?.Any() == true)
+            {
+                foreach (var addressId in deletedAddressIds)
+                {
+                    await AddressService.DeleteAddressAsync(addressId);
+                }
+                
+                // 顯示成功通知
+                await NotificationService.ShowSuccessAsync($"已刪除 {deletedAddressIds.Count} 個員工地址");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除員工地址時發生錯誤：{ex.Message}");
         }
     }
 
@@ -1098,7 +1146,8 @@
                                                SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
                                                SetContactValue="@((c, value) => c.ContactValue = value)"
                                                SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Employee; c.OwnerId = parentId; })"
-                                               ItemsChanged="@OnEmployeeContactsChanged" />
+                                               ItemsChanged="@OnEmployeeContactsChanged"
+                                               OnDeletedDetailsChanged="@HandleDeletedEmployeeContactsChanged" />
                     </div>
                 </div>
             </div>
@@ -1121,7 +1170,8 @@
                                                SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
                                                SetAddress="@((a, address) => a.AddressLine = address)"
                                                SetParentId="@((a, parentId) => SetEmployeeIdForAddress(a, parentId))"
-                                               ItemsChanged="@OnEmployeeAddressesChanged" />
+                                               ItemsChanged="@OnEmployeeAddressesChanged"
+                                               OnDeletedDetailsChanged="@HandleDeletedEmployeeAddressesChanged" />
                     </div>
                 </div>
             </div>
