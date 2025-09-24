@@ -222,6 +222,21 @@
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public RenderFragment<TEntity>? CustomActionsTemplate { get; set; }
     
+    /// <summary>
+    /// 判斷特定實體是否可以刪除的函數
+    /// 如果返回 false，則該實體的刪除按鈕將被隱藏
+    /// 預設所有實體都可以刪除，除非明確指定判斷邏輯
+    /// 例如：entity => entity.CreatedBy != "System"
+    /// </summary>
+    [Parameter] public Func<TEntity, bool>? CanDelete { get; set; }
+    
+    /// <summary>
+    /// 是否啟用預設的系統資料保護機制
+    /// 當啟用時，CreatedBy 為 "System" 的資料將不可刪除
+    /// 預設值：true
+    /// </summary>
+    [Parameter] public bool EnableSystemDataProtection { get; set; } = true;
+    
     // 自訂刪除處理函數 - 如果提供此參數，將會使用自訂邏輯而非預設刪除
     [Parameter] public Func<TEntity, Task<bool>>? CustomDeleteHandler { get; set; }
     
@@ -306,6 +321,13 @@
         
         try
         {
+            // 步驟0：檢查是否允許刪除此實體（雙重保護）
+            if (!IsEntityDeletable(entity))
+            {
+                await NotificationService.ShowWarningAsync($"此{EntityName}「{displayName}」無法刪除");
+                return;
+            }
+            
             // 步驟1：先檢查是否可以刪除（檢查關聯）
             bool canDelete = false;
             string? canDeleteErrorMessage = null;
@@ -435,7 +457,7 @@
                 {
                     @CustomActionsTemplate(entity)
                 }
-                @if (ShowDeleteButton)
+                @if (ShowDeleteButton && IsEntityDeletable(entity))
                 {
                     <GenericButtonComponent 
                         Variant="ButtonVariant.Danger"
@@ -465,6 +487,28 @@
         {
             return entity => @<div></div>;
         }
+    }
+
+    /// <summary>
+    /// 判斷實體是否可以刪除
+    /// 結合預設系統資料保護和自訂判斷邏輯
+    /// </summary>
+    private bool IsEntityDeletable(TEntity entity)
+    {
+        // 優先檢查自訂的 CanDelete 函數
+        if (CanDelete != null)
+        {
+            return CanDelete(entity);
+        }
+        
+        // 如果啟用系統資料保護，則檢查 CreatedBy
+        if (EnableSystemDataProtection)
+        {
+            return entity.CreatedBy != "System";
+        }
+        
+        // 預設允許刪除
+        return true;
     }
 
     // ===== 智能文字產生方法 =====

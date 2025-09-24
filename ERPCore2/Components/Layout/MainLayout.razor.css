@@ -2,6 +2,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100vh; /* 確保頁面至少有視口高度 */
 }
 
 main {
@@ -79,20 +80,25 @@ main {
 @media (min-width: 641px) {
     .page {
         flex-direction: row;
+        min-height: 100vh; /* 確保頁面至少有視口高度 */
+        max-height: 100vh; /* 限制頁面最大高度為視口高度 */
+        overflow: hidden; /* 防止頁面整體滾動 */
     }
 
     .sidebar {
         width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
         flex-shrink: 0; /* 防止側邊欄被壓縮 */
+        display: flex; /* 使用 flex 讓 NavMenu 能夠填充 */
+        flex-direction: column;
+        height: 100vh; /* 固定 sidebar 高度為視口高度 */
+        overflow: hidden; /* 防止 sidebar 本身滾動 */
     }
 
     .main-content {
         flex: 1;
         min-width: 0; /* 允許內容收縮 */
-        overflow-x: auto; /* 當內容超出時顯示水平滾動條 */
+        overflow-y: auto; /* 允許主內容垂直滾動 */
+        height: 100vh; /* 固定主內容高度為視口高度 */
     }
 
     .top-row {

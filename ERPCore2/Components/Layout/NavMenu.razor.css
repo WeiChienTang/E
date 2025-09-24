@@ -1,4 +1,13 @@
 ㄅ/* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
+
+/* 主導航容器 */
+.nav-menu-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 填充整個 sidebar */
+    flex: 1; /* 讓容器在 sidebar 中展開 */
+}
+
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
@@ -20,7 +29,17 @@
 .top-row {
     min-height: 3.5rem;
     background-color: var(--primary-blue-alt);
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    flex-shrink: 0; /* 防止頂部列被壓縮 */
+}
+
+/* 桌面版本中調整頂部列定位 */
+@media (min-width: 641px) {
+    .top-row {
+        position: relative; /* 在桌面版本中使用相對定位 */
+    }
 }
 
 .navbar-brand {
@@ -64,6 +83,43 @@
 
 .navbar-toggler:checked ~ .nav-scrollable {
     display: block;
+}
+
+/* 桌面版本中顯示導航選單並填充剩餘空間 */
+@media (min-width: 641px) {
+    .nav-scrollable {
+        display: block !important;
+        flex: 1; /* 填充 sidebar 的剩餘空間 */
+        overflow-y: auto; /* 允許垂直滾動 */
+        min-height: 0; /* 允許收縮 */
+        max-height: calc(100vh - 3.5rem); /* 限制最大高度為視口高度減去頂部列高度 */
+        padding-bottom: 1rem; /* 為底部項目添加額外間距 */
+        scroll-behavior: smooth; /* 平滑滾動 */
+    }
+    
+    /* 確保導航選單內容有足夠的底部邊距 */
+    .nav-scrollable .nav {
+        padding-bottom: 1rem;
+    }
+    
+    /* 自訂滾動條樣式（可選） */
+    .nav-scrollable::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .nav-scrollable::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    
+    .nav-scrollable::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+    
+    .nav-scrollable::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
 }
 
 /* ========================================= */
