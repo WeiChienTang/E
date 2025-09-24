@@ -87,6 +87,7 @@ namespace ERPCore2.Data
                 new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
                 new InventorySeeder(),
                 new WeatherSeeder(),
+                new SalesReturnReasonSeeder(),  // 銷貨退貨原因
             };
         }
     }

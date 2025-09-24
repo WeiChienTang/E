@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Data.Enums;
+
+// 使用別名來避免命名衝突
+using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;
 
 namespace ERPCore2.Data.Entities
 {
@@ -21,10 +23,6 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "退回日期為必填")]
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;
-
-        [Required(ErrorMessage = "退回原因為必填")]
-        [Display(Name = "退回原因")]
-        public SalesReturnReason ReturnReason { get; set; } = SalesReturnReason.CustomerRequest;
 
         [Display(Name = "退回總金額")]
         [Column(TypeName = "decimal(18,2)")]
@@ -58,10 +56,16 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
 
+        [Required(ErrorMessage = "退回原因為必填")]
+        [Display(Name = "退回原因")]
+        [ForeignKey(nameof(ReturnReason))]
+        public int ReturnReasonId { get; set; }
+
         // Navigation Properties
         public Customer Customer { get; set; } = null!;
         public SalesOrder? SalesOrder { get; set; }
         public Employee? Employee { get; set; }
+        public EntitySalesReturnReason ReturnReason { get; set; } = null!;
         public ICollection<SalesReturnDetail> SalesReturnDetails { get; set; } = new List<SalesReturnDetail>();
     }
 }

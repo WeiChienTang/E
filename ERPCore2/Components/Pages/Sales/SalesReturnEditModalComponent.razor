@@ -5,6 +5,7 @@
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
+@inject ISalesReturnReasonService SalesReturnReasonService
 @inject INotificationService NotificationService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -13,6 +14,7 @@
 @implements IDisposable
 
 @using ERPCore2.FieldConfiguration
+@using ERPCore2.Services.Sales
 
 <GenericEditModalComponent TEntity="SalesReturn" 
                           TService="ISalesReturnService"
@@ -72,6 +74,7 @@
     private List<Customer> customers = new();
     private List<Employee> employees = new();
     private List<Product> products = new();
+    private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
     
     // ===== 銷售退貨明細 =====
     private List<SalesReturnDetail> salesReturnDetails = new();
@@ -208,6 +211,7 @@
             await LoadCustomersAsync();
             await LoadEmployeesAsync();
             await LoadProductsAsync();
+            await LoadReturnReasonsAsync();
         }
         catch (Exception ex)
         {
@@ -298,6 +302,19 @@
         {
             await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
             products = new List<Product>();
+        }
+    }
+
+    private async Task LoadReturnReasonsAsync()
+    {
+        try
+        {
+            returnReasons = await SalesReturnReasonService.GetActiveReasonsAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入退貨原因資料時發生錯誤：{ex.Message}");
+            returnReasons = new List<ERPCore2.Data.Entities.SalesReturnReason>();
         }
     }
 
@@ -430,10 +447,10 @@
                     Label = "退貨原因",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Options = Enum.GetValues<SalesReturnReason>().Select(r => new SelectOption
+                    Options = returnReasons.Select(r => new SelectOption
                     {
-                        Text = r.ToString(),
-                        Value = ((int)r).ToString()
+                        Text = r.Name,
+                        Value = r.Id.ToString()
                     }).ToList(),
                     HelpText = "請選擇退貨原因"
                 },

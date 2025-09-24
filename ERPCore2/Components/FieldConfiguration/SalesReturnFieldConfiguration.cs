@@ -3,8 +3,12 @@ using ERPCore2.Components.Shared.Tables;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
+using ERPCore2.Services.Sales;
 using Microsoft.AspNetCore.Components;
 using ERPCore2.Helpers;
+
+// 使用別名來避免命名衝突
+using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -15,15 +19,18 @@ namespace ERPCore2.FieldConfiguration
     {
         private readonly List<SalesOrder> _salesOrders;
         private readonly List<Warehouse> _warehouses;
+        private readonly List<EntitySalesReturnReason> _returnReasons;
         private readonly INotificationService? _notificationService;
 
         public SalesReturnFieldConfiguration(
             List<SalesOrder> salesOrders, 
             List<Warehouse> warehouses, 
+            List<EntitySalesReturnReason> returnReasons,
             INotificationService? notificationService = null)
         {
             _salesOrders = salesOrders;
             _warehouses = warehouses;
+            _returnReasons = returnReasons;
             _notificationService = notificationService;
         }
 
@@ -78,18 +85,18 @@ namespace ERPCore2.FieldConfiguration
                         "ReturnReason",
                         new FieldDefinition<SalesReturn>
                         {
-                            PropertyName = nameof(SalesReturn.ReturnReason),
+                            PropertyName = "ReturnReason.Name",
                             DisplayName = "退貨原因",
                             TableOrder = 4,
                             FilterType = SearchFilterType.Select,
                             HeaderStyle = "width: 150px;",
-                            Options = Enum.GetValues<SalesReturnReason>().Select(r => new SelectOption
+                            Options = _returnReasons.Select(r => new SelectOption
                             {
-                                Text = r.ToString(), // 這裡可能需要本地化
-                                Value = ((int)r).ToString()
+                                Text = r.Name,
+                                Value = r.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SalesReturn.ReturnReason), sr => sr.ReturnReason.ToString())
+                                model, query, "ReturnReason.Name", sr => sr.ReturnReason != null ? sr.ReturnReason.Name : "")
                         }
                     },
                     {
@@ -114,7 +121,8 @@ namespace ERPCore2.FieldConfiguration
                     await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), 
                         additionalData: new { 
                             SalesOrdersCount = _salesOrders?.Count ?? 0,
-                            WarehousesCount = _warehouses?.Count ?? 0
+                            WarehousesCount = _warehouses?.Count ?? 0,
+                            ReturnReasonsCount = _returnReasons?.Count ?? 0
                         });
                 });
 

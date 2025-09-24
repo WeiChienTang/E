@@ -2,8 +2,11 @@
 @inject ISalesReturnService SalesReturnService
 @inject ISalesOrderService SalesOrderService
 @inject IWarehouseService WarehouseService
+@inject ISalesReturnReasonService SalesReturnReasonService
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
+
+@using ERPCore2.Services.Sales
 
 <GenericIndexPageComponent TEntity="SalesReturn" 
                           TService="ISalesReturnService"
@@ -53,6 +56,7 @@
     // 相關資料
     private List<SalesOrder> salesOrders = new();
     private List<Warehouse> warehouses = new();
+    private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,9 +75,10 @@
             // 載入相關資料
             await LoadSalesOrdersAsync();
             await LoadWarehousesAsync();
+            await LoadReturnReasonsAsync();
             
             // 建立欄位配置
-            fieldConfiguration = new SalesReturnFieldConfiguration(salesOrders, warehouses, NotificationService);
+            fieldConfiguration = new SalesReturnFieldConfiguration(salesOrders, warehouses, returnReasons, NotificationService);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }
@@ -133,6 +138,7 @@
         {
             await LoadSalesOrdersAsync();
             await LoadWarehousesAsync();
+            await LoadReturnReasonsAsync();
         }
         catch (Exception ex)
         {
@@ -173,6 +179,23 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
             await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
             warehouses = new List<Warehouse>();
+        }
+    }
+
+    /// <summary>
+    /// 載入退貨原因資料
+    /// </summary>
+    private async Task LoadReturnReasonsAsync()
+    {
+        try
+        {
+            returnReasons = await SalesReturnReasonService.GetActiveReasonsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReturnReasonsAsync), GetType(), additionalData: "載入退貨原因資料失敗");
+            await NotificationService.ShowErrorAsync("載入退貨原因資料失敗");
+            returnReasons = new List<ERPCore2.Data.Entities.SalesReturnReason>();
         }
     }
 

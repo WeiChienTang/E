@@ -2,6 +2,9 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 
+// 使用別名來避免命名衝突
+using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;
+
 namespace ERPCore2.Services
 {
     /// <summary>
@@ -88,6 +91,6 @@ namespace ERPCore2.Services
     {
         public int TotalReturns { get; set; }
         public decimal TotalReturnAmount { get; set; }
-        public Dictionary<SalesReturnReason, int> ReturnReasonCounts { get; set; } = new();
+        public Dictionary<EntitySalesReturnReason, int> ReturnReasonCounts { get; set; } = new();
     }
 }

@@ -63,6 +63,7 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
       public DbSet<SalesReturn> SalesReturns { get; set; }
       public DbSet<SalesReturnDetail> SalesReturnDetails { get; set; }
+      public DbSet<ERPCore2.Data.Entities.SalesReturnReason> SalesReturnReasons { get; set; }
       
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
@@ -487,12 +488,22 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(sr => sr.SalesOrderId)
                         .OnDelete(DeleteBehavior.SetNull);
 
-
-
                         entity.HasOne(sr => sr.Employee)
                         .WithMany()
                         .HasForeignKey(sr => sr.EmployeeId)
                         .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(sr => sr.ReturnReason)
+                        .WithMany(srr => srr.SalesReturns)
+                        .HasForeignKey(sr => sr.ReturnReasonId)
+                        .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  modelBuilder.Entity<ERPCore2.Data.Entities.SalesReturnReason>(entity =>
+                  {
+                        entity.HasKey(srr => srr.Id);
+                        
+                        entity.HasIndex(srr => srr.Name).IsUnique();
                   });
 
                   modelBuilder.Entity<SalesReturnDetail>(entity =>

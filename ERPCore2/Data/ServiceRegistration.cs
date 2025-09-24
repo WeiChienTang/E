@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
+using ERPCore2.Services.Sales;
 using ERPCore2.Services.Reports;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -92,6 +93,7 @@ namespace ERPCore2.Data
 
             services.AddScoped<ISalesReturnService, SalesReturnService>();
             services.AddScoped<ISalesReturnDetailService, SalesReturnDetailService>();
+            services.AddScoped<ISalesReturnReasonService, SalesReturnReasonService>();
 
             // BOM基礎資料表服務
             services.AddScoped<IWeatherService, WeatherService>();
