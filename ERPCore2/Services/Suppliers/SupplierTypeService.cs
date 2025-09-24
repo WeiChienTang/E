@@ -37,7 +37,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierTypes
-                    .Where(st => !st.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(st => st.TypeName)
                     .ToListAsync();
             }
@@ -59,8 +59,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierTypes
-                    .Where(st => !st.IsDeleted &&
-                               st.TypeName.Contains(searchTerm))
+                    .Where(st => st.TypeName.Contains(searchTerm))
                     .OrderBy(st => st.TypeName)
                     .ToListAsync();
             }
@@ -158,7 +157,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SupplierTypes.Where(st => st.TypeName == typeName && !st.IsDeleted);
+                var query = context.SupplierTypes.Where(st => st.TypeName == typeName);
                 
                 if (excludeId.HasValue)
                     query = query.Where(st => st.Id != excludeId.Value);
@@ -184,7 +183,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SupplierTypes.Where(st => st.Code == typeCode && !st.IsDeleted);
+                var query = context.SupplierTypes.Where(st => st.Code == typeCode);
                 
                 if (excludeId.HasValue)
                     query = query.Where(st => st.Id != excludeId.Value);
@@ -208,7 +207,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierTypes
-                    .FirstOrDefaultAsync(st => st.TypeName == typeName && !st.IsDeleted);
+                    .FirstOrDefaultAsync(st => st.TypeName == typeName);
             }
             catch (Exception ex)
             {
@@ -227,7 +226,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否有廠商使用此類型
                 var hasSuppliers = await context.Suppliers
-                    .AnyAsync(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted);
+                    .AnyAsync(s => s.SupplierTypeId == supplierTypeId);
 
                 return !hasSuppliers;
             }
@@ -244,4 +243,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

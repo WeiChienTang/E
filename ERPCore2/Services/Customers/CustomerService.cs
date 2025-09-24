@@ -38,7 +38,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Where(c => !c.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
             }
@@ -56,7 +56,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+                    .FirstOrDefaultAsync(c => c.Id == id);
             }
             catch (Exception ex)
             {
@@ -75,8 +75,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Where(c => !c.IsDeleted && 
-                               ((c.Code != null && c.Code.Contains(searchTerm)) ||
+                    .Where(c => ((c.Code != null && c.Code.Contains(searchTerm)) ||
                                 (c.CompanyName != null && c.CompanyName.Contains(searchTerm)) ||
                                 (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)) ||
                                 (c.TaxNumber != null && c.TaxNumber.Contains(searchTerm))))
@@ -121,7 +120,7 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isDuplicate = await context.Customers
-                        .Where(c => c.Code == entity.Code && !c.IsDeleted)
+                        .Where(c => c.Code == entity.Code)
                         .Where(c => c.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -133,7 +132,7 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.CompanyName))
                 {
                     var isCompanyNameDuplicate = await context.Customers
-                        .Where(c => c.CompanyName == entity.CompanyName && !c.IsDeleted)
+                        .Where(c => c.CompanyName == entity.CompanyName)
                         .Where(c => c.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -180,7 +179,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .FirstOrDefaultAsync(c => c.Code == customerCode && !c.IsDeleted);
+                    .FirstOrDefaultAsync(c => c.Code == customerCode);
             }
             catch (Exception ex)
             {
@@ -199,7 +198,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Where(c => c.CompanyName.Contains(companyName) && !c.IsDeleted)
+                    .Where(c => c.CompanyName.Contains(companyName))
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
             }
@@ -218,7 +217,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Customers.Where(c => c.Code == customerCode && !c.IsDeleted);
+                var query = context.Customers.Where(c => c.Code == customerCode);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -243,7 +242,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Customers.Where(c => c.CompanyName == companyName && !c.IsDeleted);
+                var query = context.Customers.Where(c => c.CompanyName == companyName);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -422,4 +421,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

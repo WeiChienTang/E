@@ -40,7 +40,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Where(e => !e.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(e => e.Code)
                     .ToListAsync();
             }
@@ -64,7 +64,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Id == id);
             }
             catch (Exception ex)
             {
@@ -92,7 +92,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .FirstOrDefaultAsync(e => e.Account == account && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Account == account);
 
                 if (employee == null)
                     return ServiceResult<Employee>.Failure("找不到指定的員工");
@@ -125,7 +125,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .FirstOrDefaultAsync(e => e.Code == Code && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Code == Code);
 
                 if (employee == null)
                     return ServiceResult<Employee>.Failure("找不到指定的員工");
@@ -156,7 +156,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 只檢查非空白帳號的重複性
-                var query = context.Employees.Where(e => e.Account == account && !e.IsDeleted);
+                var query = context.Employees.Where(e => e.Account == account);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -187,7 +187,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("員工編號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Employees.Where(e => e.Code == Code && !e.IsDeleted);
+                var query = context.Employees.Where(e => e.Code == Code);
 
                 if (excludeEmployeeId.HasValue)
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
@@ -222,8 +222,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Where(e => !e.IsDeleted && 
-                               ((e.Name != null && e.Name.Contains(searchTerm)) ||
+                    .Where(e => ((e.Name != null && e.Name.Contains(searchTerm)) ||
                                 (e.Code != null && e.Code.Contains(searchTerm)) ||
                                 (e.Account != null && e.Account.Contains(searchTerm)) ||
                                 (e.Department != null && e.Department.Name != null && e.Department.Name.Contains(searchTerm))))
@@ -255,7 +254,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
+                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId)
                     .OrderBy(e => e.Code)
                     .ToListAsync();
 
@@ -287,7 +286,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Where(e => e.Department != null && e.Department.Name == department && !e.IsDeleted)
+                    .Where(e => e.Department != null && e.Department.Name == department)
                     .OrderBy(e => e.Code)
                     .ToListAsync();
 
@@ -312,12 +311,12 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
                 if (employee == null)
                     return ServiceResult.Failure("員工不存在");
 
                 // 檢查新角色是否存在
-                var roleExists = await context.Roles.AnyAsync(r => r.Id == newRoleId && !r.IsDeleted);
+                var roleExists = await context.Roles.AnyAsync(r => r.Id == newRoleId);
                 if (!roleExists)
                     return ServiceResult.Failure("指定的角色不存在");
 
@@ -374,7 +373,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .Where(e => !e.IsDeleted && e.Status == EntityStatus.Active)
+                    .Where(e => e.Status == EntityStatus.Active)
                     .OrderBy(e => e.Code)
                     .ToListAsync();
 
@@ -511,7 +510,7 @@ namespace ERPCore2.Services
                 if (entity.IsSystemUser && !string.IsNullOrWhiteSpace(entity.Account))
                 {
                     var isDuplicate = await context.Employees
-                        .Where(e => e.Account == entity.Account && !e.IsDeleted)
+                        .Where(e => e.Account == entity.Account)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -523,7 +522,7 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isCodeDuplicate = await context.Employees
-                        .Where(e => e.Code == entity.Code && !e.IsDeleted)
+                        .Where(e => e.Code == entity.Code)
                         .Where(e => e.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
@@ -535,7 +534,7 @@ namespace ERPCore2.Services
                 if (entity.RoleId.HasValue && entity.RoleId.Value > 0)
                 {
                     var roleExists = await context.Roles
-                        .AnyAsync(r => r.Id == entity.RoleId.Value && !r.IsDeleted && r.Status == EntityStatus.Active);
+                        .AnyAsync(r => r.Id == entity.RoleId.Value && r.Status == EntityStatus.Active);
 
                     if (!roleExists)
                         errors.Add("指定的角色不存在或已停用");
@@ -605,11 +604,10 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var query = context.Employees
+                IQueryable<Employee> query = context.Employees
                     .Include(e => e.Role)
                     .Include(e => e.Department)
-                    .Include(e => e.EmployeePosition)
-                    .Where(e => e.IsDeleted);
+                    .Include(e => e.EmployeePosition);
 
                 if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(Code))
                 {
@@ -663,7 +661,7 @@ namespace ERPCore2.Services
                         .Include(e => e.Role)
                         .Include(e => e.Department)
                         .Include(e => e.EmployeePosition)
-                        .FirstOrDefaultAsync(e => e.Account == username && e.IsDeleted && e.IsSystemUser);
+                        .FirstOrDefaultAsync(e => e.Account == username && e.IsSystemUser);
                     
                     if (usernameConflict != null)
                     {
@@ -679,7 +677,7 @@ namespace ERPCore2.Services
                         .Include(e => e.Role)
                         .Include(e => e.Department)
                         .Include(e => e.EmployeePosition)
-                        .FirstOrDefaultAsync(e => e.Code == Code && e.IsDeleted);
+                        .FirstOrDefaultAsync(e => e.Code == Code);
                     
                     if (codeConflict != null)
                     {
@@ -728,14 +726,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && e.IsDeleted);
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
                 if (employee == null)
                 {
                     return ServiceResult.Failure("找不到要復原的員工資料");
                 }
 
                 // 復原員工
-                employee.IsDeleted = false;
                 employee.Status = EntityStatus.Active; // 復原時預設為啟用狀態
                 employee.FailedLoginAttempts = 0; // 重設失敗次數
                 employee.UpdatedAt = DateTime.Now;
@@ -763,7 +760,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId && e.IsDeleted);
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
                 if (employee == null)
                 {
                     return ServiceResult<Employee>.Failure("找不到要復原的員工資料");
@@ -773,7 +770,7 @@ namespace ERPCore2.Services
                 if (updateData.RoleId.HasValue && updateData.RoleId.Value > 0)
                 {
                     var roleExists = await context.Roles
-                        .AnyAsync(r => r.Id == updateData.RoleId.Value && !r.IsDeleted && r.Status == EntityStatus.Active);
+                        .AnyAsync(r => r.Id == updateData.RoleId.Value && r.Status == EntityStatus.Active);
                     
                     if (!roleExists)
                     {
@@ -785,7 +782,7 @@ namespace ERPCore2.Services
                 if (updateData.DepartmentId.HasValue && updateData.DepartmentId > 0)
                 {
                     var departmentExists = await context.Departments
-                        .AnyAsync(d => d.Id == updateData.DepartmentId && !d.IsDeleted && d.Status == EntityStatus.Active);
+                        .AnyAsync(d => d.Id == updateData.DepartmentId && d.Status == EntityStatus.Active);
                     
                     if (!departmentExists)
                     {
@@ -797,7 +794,7 @@ namespace ERPCore2.Services
                 if (updateData.EmployeePositionId.HasValue && updateData.EmployeePositionId > 0)
                 {
                     var positionExists = await context.EmployeePositions
-                        .AnyAsync(p => p.Id == updateData.EmployeePositionId && !p.IsDeleted && p.Status == EntityStatus.Active);
+                        .AnyAsync(p => p.Id == updateData.EmployeePositionId && p.Status == EntityStatus.Active);
                     
                     if (!positionExists)
                     {
@@ -806,7 +803,6 @@ namespace ERPCore2.Services
                 }
 
                 // 復原員工並更新資料
-                employee.IsDeleted = false;
                 employee.Status = EntityStatus.Active;
                 employee.FailedLoginAttempts = 0;
                 employee.UpdatedAt = DateTime.Now;
@@ -851,4 +847,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

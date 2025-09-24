@@ -47,7 +47,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
                     // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
-                    .Where(po => !po.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(po => po.OrderDate)
                     .ThenBy(po => po.PurchaseOrderNumber)
                     .ToListAsync();
@@ -75,7 +75,7 @@ namespace ERPCore2.Services
                     // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
                     .Include(po => po.PurchaseReceivings)
                         .ThenInclude(pr => pr.PurchaseReceivingDetails)
-                    .FirstOrDefaultAsync(po => po.Id == id && !po.IsDeleted);
+                    .FirstOrDefaultAsync(po => po.Id == id);
             }
             catch (Exception ex)
             {
@@ -97,8 +97,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Where(po => !po.IsDeleted && 
-                               (po.PurchaseOrderNumber.Contains(searchTerm) ||
+                    .Where(po => (po.PurchaseOrderNumber.Contains(searchTerm) ||
                                 po.Supplier.CompanyName.Contains(searchTerm) ||
                                 po.Company != null && po.Company.CompanyName.Contains(searchTerm) ||
                                 po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm) ||
@@ -144,7 +143,7 @@ namespace ERPCore2.Services
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var exists = await context.PurchaseOrders
                         .AnyAsync(po => po.PurchaseOrderNumber == entity.PurchaseOrderNumber && 
-                                       po.Id != entity.Id && !po.IsDeleted);
+                                       po.Id != entity.Id);
                     if (exists)
                         errors.Add("採購單號已存在");
                 }
@@ -179,7 +178,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
-                    .Where(po => po.SupplierId == supplierId && !po.IsDeleted)
+                    .Where(po => po.SupplierId == supplierId)
                     .OrderByDescending(po => po.OrderDate)
                     .ToListAsync();
             }
@@ -203,7 +202,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => po.OrderDate >= startDate && 
-                               po.OrderDate <= endDate && !po.IsDeleted)
+                               po.OrderDate <= endDate)
                     .OrderByDescending(po => po.OrderDate)
                     .ToListAsync();
             }
@@ -228,7 +227,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
-                    .FirstOrDefaultAsync(po => po.PurchaseOrderNumber == purchaseOrderNumber && !po.IsDeleted);
+                    .FirstOrDefaultAsync(po => po.PurchaseOrderNumber == purchaseOrderNumber);
             }
             catch (Exception ex)
             {
@@ -251,7 +250,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var order = await context.PurchaseOrders
-                    .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                    .FirstOrDefaultAsync(po => po.Id == orderId);
                 
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
@@ -287,7 +286,7 @@ namespace ERPCore2.Services
                 try
                 {
                     var order = await context.PurchaseOrders
-                        .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                        .FirstOrDefaultAsync(po => po.Id == orderId);
                     
                     if (order == null)
                         return ServiceResult.Failure("找不到採購訂單");
@@ -340,7 +339,7 @@ namespace ERPCore2.Services
                 try
                 {
                     var order = await context.PurchaseOrders
-                        .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                        .FirstOrDefaultAsync(po => po.Id == orderId);
                     
                     if (order == null)
                         return ServiceResult.Failure("找不到採購訂單");
@@ -391,7 +390,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var order = await context.PurchaseOrders
-                    .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                    .FirstOrDefaultAsync(po => po.Id == orderId);
                 
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
@@ -426,7 +425,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var order = await context.PurchaseOrders
-                    .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                    .FirstOrDefaultAsync(po => po.Id == orderId);
                 
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
@@ -462,7 +461,7 @@ namespace ERPCore2.Services
                 try
                 {
                     var order = await context.PurchaseOrders
-                        .FirstOrDefaultAsync(po => po.Id == orderId && !po.IsDeleted);
+                        .FirstOrDefaultAsync(po => po.Id == orderId);
                     
                     if (order == null)
                         return ServiceResult.Failure("找不到採購訂單");
@@ -564,8 +563,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseOrders
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Where(po => !po.IsDeleted && 
-                               po.IsApproved && // 只包含已核准的訂單
+                    .Where(po => po.IsApproved && // 只包含已核准的訂單
                                po.ReceivedAmount < po.TotalAmount) // 改為用進貨金額判斷
                     .OrderBy(po => po.ExpectedDeliveryDate ?? po.OrderDate.AddDays(7))
                     .ToListAsync();
@@ -589,8 +587,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseOrders
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Where(po => !po.IsDeleted && 
-                               po.IsApproved && // 只包含已核准的訂單
+                    .Where(po => po.IsApproved && // 只包含已核准的訂單
                                po.ReceivedAmount < po.TotalAmount && // 改為用進貨金額判斷
                                po.ExpectedDeliveryDate.HasValue && 
                                po.ExpectedDeliveryDate.Value < today)
@@ -613,7 +610,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseOrders
-                    .Where(po => po.SupplierId == supplierId && !po.IsDeleted);
+                    .Where(po => po.SupplierId == supplierId);
                 
                 if (startDate.HasValue)
                     query = query.Where(po => po.OrderDate >= startDate.Value);
@@ -774,8 +771,7 @@ namespace ERPCore2.Services
                     .Include(pod => pod.PurchaseOrder)
                         .ThenInclude(po => po.Warehouse)
                     .Include(pod => pod.Product)
-                    .Where(pod => !pod.IsDeleted 
-                                && pod.PurchaseOrder.SupplierId == supplierId
+                    .Where(pod => pod.PurchaseOrder.SupplierId == supplierId
                                 && pod.PurchaseOrder.IsApproved);
 
                 if (!includeCompleted)
@@ -814,8 +810,7 @@ namespace ERPCore2.Services
                     .Include(po => po.ApprovedByUser)
                     .Include(po => po.PurchaseOrderDetails)
                         .ThenInclude(pod => pod.Product)
-                    .Where(po => !po.IsDeleted 
-                                && po.SupplierId == supplierId
+                    .Where(po => po.SupplierId == supplierId
                                 && po.IsApproved
                                 && po.PurchaseOrderDetails.Any(pod => pod.ReceivedQuantity < pod.OrderQuantity))
                     .OrderBy(po => po.ExpectedDeliveryDate)
@@ -835,3 +830,4 @@ namespace ERPCore2.Services
 
     }
 }
+

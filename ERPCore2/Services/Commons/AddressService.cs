@@ -230,9 +230,9 @@ namespace ERPCore2.Services
         {
             return ownerType switch
             {
-                AddressOwnerTypes.Customer => await _context.Customers.AnyAsync(c => c.Id == ownerId && !c.IsDeleted),
-                AddressOwnerTypes.Supplier => await _context.Suppliers.AnyAsync(s => s.Id == ownerId && !s.IsDeleted),
-                AddressOwnerTypes.Employee => await _context.Employees.AnyAsync(e => e.Id == ownerId && !e.IsDeleted),
+                AddressOwnerTypes.Customer => await _context.Customers.AnyAsync(c => c.Id == ownerId),
+                AddressOwnerTypes.Supplier => await _context.Suppliers.AnyAsync(s => s.Id == ownerId),
+                AddressOwnerTypes.Employee => await _context.Employees.AnyAsync(e => e.Id == ownerId),
                 _ => false
             };
         }
@@ -258,3 +258,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

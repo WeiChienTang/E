@@ -27,7 +27,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => !pr.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
@@ -50,7 +50,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
+                    .FirstOrDefaultAsync(pr => pr.Id == id);
             }
             catch (Exception ex)
             {
@@ -92,7 +92,7 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.PurchaseReceivingDetail)
                             .ThenInclude(prd => prd!.WarehouseLocation)
-                    .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
+                    .FirstOrDefaultAsync(pr => pr.Id == id);
             }
             catch (Exception ex)
             {
@@ -113,7 +113,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => pr.SupplierId == supplierId && !pr.IsDeleted)
+                    .Where(pr => pr.SupplierId == supplierId)
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
@@ -137,7 +137,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => pr.ReturnDate >= startDate && pr.ReturnDate <= endDate && !pr.IsDeleted)
+                    .Where(pr => pr.ReturnDate >= startDate && pr.ReturnDate <= endDate)
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
@@ -162,7 +162,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => pr.PurchaseReceivingId == purchaseReceivingId && !pr.IsDeleted)
+                    .Where(pr => pr.PurchaseReceivingId == purchaseReceivingId)
                     .OrderByDescending(pr => pr.ReturnDate)
                     .ThenBy(pr => pr.PurchaseReturnNumber)
                     .ToListAsync();
@@ -183,7 +183,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.PurchaseReturns.Where(pr => pr.PurchaseReturnNumber == purchaseReturnNumber && !pr.IsDeleted);
+                var query = context.PurchaseReturns.Where(pr => pr.PurchaseReturnNumber == purchaseReturnNumber);
                 
                 if (excludeId.HasValue)
                 {
@@ -212,8 +212,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => !pr.IsDeleted &&
-                        (pr.PurchaseReturnNumber.Contains(searchTerm) ||
+                    .Where(pr => (pr.PurchaseReturnNumber.Contains(searchTerm) ||
                          (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
                          (pr.PurchaseReceiving != null && pr.PurchaseReceiving.ReceiptNumber.Contains(searchTerm))))
                     .OrderByDescending(pr => pr.ReturnDate)
@@ -247,7 +246,7 @@ namespace ERPCore2.Services
 
                 // 檢查供應商是否存在
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var supplierExists = await context.Suppliers.AnyAsync(s => s.Id == entity.SupplierId && !s.IsDeleted);
+                var supplierExists = await context.Suppliers.AnyAsync(s => s.Id == entity.SupplierId);
                 if (!supplierExists)
                 {
                     result.IsSuccess = false;
@@ -313,7 +312,7 @@ namespace ERPCore2.Services
             {
                 var purchaseReturn = await context.PurchaseReturns
                     .Include(pr => pr.PurchaseReturnDetails)
-                    .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
+                    .FirstOrDefaultAsync(pr => pr.Id == id);
 
                 if (purchaseReturn == null)
                 {
@@ -324,7 +323,7 @@ namespace ERPCore2.Services
 
                 // 計算總金額
                 purchaseReturn.TotalReturnAmount = purchaseReturn.PurchaseReturnDetails
-                    .Where(prd => !prd.IsDeleted)
+                    .AsQueryable()
                     .Sum(prd => prd.ReturnQuantity * prd.ReturnUnitPrice);
 
                 // 計算稅額 (假設稅率為 5%)
@@ -360,7 +359,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var purchaseReturn = await context.PurchaseReturns
-                    .FirstOrDefaultAsync(pr => pr.Id == id && !pr.IsDeleted);
+                    .FirstOrDefaultAsync(pr => pr.Id == id);
 
                 if (purchaseReturn == null)
                 {
@@ -403,7 +402,7 @@ namespace ERPCore2.Services
                 try
                 {
                     var purchaseReceiving = await context.PurchaseReceivings
-                        .FirstOrDefaultAsync(pr => pr.Id == purchaseReceivingId && !pr.IsDeleted);
+                        .FirstOrDefaultAsync(pr => pr.Id == purchaseReceivingId);
 
                     if (purchaseReceiving == null)
                     {
@@ -455,7 +454,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var query = context.PurchaseReturns.Where(pr => !pr.IsDeleted);
+                var query = context.PurchaseReturns.AsQueryable();
 
                 if (startDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate >= startDate.Value);
@@ -490,7 +489,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 var query = context.PurchaseReturns
-                    .Where(pr => pr.SupplierId == supplierId && !pr.IsDeleted);
+                    .Where(pr => pr.SupplierId == supplierId);
 
                 if (startDate.HasValue)
                     query = query.Where(pr => pr.ReturnDate >= startDate.Value);
@@ -572,7 +571,7 @@ namespace ERPCore2.Services
                     {
                         // 更新模式
                         var existingEntity = await dbSet
-                            .FirstOrDefaultAsync(x => x.Id == purchaseReturn.Id && !x.IsDeleted);
+                            .FirstOrDefaultAsync(x => x.Id == purchaseReturn.Id);
                             
                         if (existingEntity == null)
                         {
@@ -593,7 +592,6 @@ namespace ERPCore2.Services
                         // 新增模式
                         purchaseReturn.CreatedAt = DateTime.UtcNow;
                         purchaseReturn.UpdatedAt = DateTime.UtcNow;
-                        purchaseReturn.IsDeleted = false;
                         purchaseReturn.Status = EntityStatus.Active;
 
                         await dbSet.AddAsync(purchaseReturn);
@@ -625,7 +623,7 @@ namespace ERPCore2.Services
                             if (detail.PurchaseReceivingDetailId.HasValue)
                             {
                                 var receivingDetail = await context.PurchaseReceivingDetails
-                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value && !prd.IsDeleted);
+                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value);
                                 warehouseId = receivingDetail?.WarehouseId;
                             }
                             
@@ -732,7 +730,7 @@ namespace ERPCore2.Services
             {
                 // 取得現有的明細記錄
                 var existingDetails = await context.PurchaseReturnDetails
-                    .Where(d => d.PurchaseReturnId == purchaseReturnId && !d.IsDeleted)
+                    .Where(d => d.PurchaseReturnId == purchaseReturnId)
                     .ToListAsync();
 
                 // 準備新的明細資料和數量變更追蹤
@@ -740,7 +738,7 @@ namespace ERPCore2.Services
                 var updatedDetailsToUpdate = new List<(PurchaseReturnDetail existing, PurchaseReturnDetail updated)>();
                 var quantityChanges = new List<(PurchaseReturnDetail detail, int quantityDifference)>();
 
-                foreach (var detail in details.Where(d => !d.IsDeleted))
+                foreach (var detail in details.AsQueryable())
                 {
                     detail.PurchaseReturnId = purchaseReturnId;
 
@@ -803,7 +801,6 @@ namespace ERPCore2.Services
                         // 新增明細 - 整個數量都是新增
                         detail.CreatedAt = DateTime.UtcNow;
                         detail.UpdatedAt = DateTime.UtcNow;
-                        detail.IsDeleted = false;
                         newDetailsToAdd.Add(detail);
                         
                         // 新增的明細，數量差異就是全部數量
@@ -812,7 +809,7 @@ namespace ERPCore2.Services
                 }
 
                 // 標記刪除的明細 - 追蹤被刪除的數量
-                var detailIdsToKeep = details.Where(d => d.Id > 0 && !d.IsDeleted).Select(d => d.Id).ToList();
+                var detailIdsToKeep = details.Where(d => d.Id > 0).Select(d => d.Id).ToList();
                 var detailsToDelete = existingDetails.Where(ed => !detailIdsToKeep.Contains(ed.Id)).ToList();
                 
                 foreach (var detailToDelete in detailsToDelete)
@@ -820,7 +817,6 @@ namespace ERPCore2.Services
                     // 被刪除的明細，數量差異是負的原數量 (撤銷退貨)
                     quantityChanges.Add((detailToDelete, -detailToDelete.ReturnQuantity));
                     
-                    detailToDelete.IsDeleted = true;
                     detailToDelete.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -888,7 +884,7 @@ namespace ERPCore2.Services
                     var entity = await context.PurchaseReturns
                         .Include(pr => pr.PurchaseReturnDetails)
                             .ThenInclude(prd => prd.PurchaseReceivingDetail)
-                        .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                        .FirstOrDefaultAsync(x => x.Id == id);
                         
                     if (entity == null)
                     {
@@ -907,7 +903,7 @@ namespace ERPCore2.Services
                     // 3. 回復庫存 - 將之前因退貨而扣減的庫存回復
                     if (_inventoryStockService != null)
                     {
-                        var eligibleDetails = entity.PurchaseReturnDetails.Where(d => !d.IsDeleted && d.ReturnQuantity > 0).ToList();
+                        var eligibleDetails = entity.PurchaseReturnDetails.Where(d => d.ReturnQuantity > 0).ToList();
                         _logger?.LogInformation("需要回復庫存的明細數量: {Count}", eligibleDetails.Count);
                         
                         foreach (var detail in eligibleDetails)
@@ -919,7 +915,7 @@ namespace ERPCore2.Services
                             if (detail.PurchaseReceivingDetailId.HasValue)
                             {
                                 var receivingDetail = await context.PurchaseReceivingDetails
-                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value && !prd.IsDeleted);
+                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value);
                                 warehouseId = receivingDetail?.WarehouseId;
                             }
                             
@@ -992,3 +988,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

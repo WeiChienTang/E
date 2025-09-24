@@ -44,7 +44,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => !sp.IsDeleted && (
+                    .Where(sp => (
                         (sp.Product != null && sp.Product.Name != null && sp.Product.Name.Contains(searchTerm)) ||
                         (sp.Product != null && sp.Product.Code != null && sp.Product.Code.Contains(searchTerm)) ||
                         (sp.Supplier != null && sp.Supplier.CompanyName != null && sp.Supplier.CompanyName.Contains(searchTerm)) ||
@@ -105,7 +105,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var productExists = await context.Products
-                        .AnyAsync(p => p.Id == entity.ProductId && !p.IsDeleted);
+                        .AnyAsync(p => p.Id == entity.ProductId);
                     if (!productExists)
                         errors.Add("指定的商品不存在");
                 }
@@ -115,7 +115,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var supplierExists = await context.Suppliers
-                        .AnyAsync(s => s.Id == entity.SupplierId && !s.IsDeleted);
+                        .AnyAsync(s => s.Id == entity.SupplierId);
                     if (!supplierExists)
                         errors.Add("指定的供應商不存在");
                 }
@@ -161,7 +161,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => !sp.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
@@ -186,7 +186,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .FirstOrDefaultAsync(sp => sp.Id == id && !sp.IsDeleted);
+                    .FirstOrDefaultAsync(sp => sp.Id == id);
             }
             catch (Exception ex)
             {
@@ -214,7 +214,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => sp.ProductId == productId && !sp.IsDeleted)
+                    .Where(sp => sp.ProductId == productId)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
@@ -240,7 +240,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => sp.SupplierId == supplierId && !sp.IsDeleted)
+                    .Where(sp => sp.SupplierId == supplierId)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
@@ -266,7 +266,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => sp.ProductId == productId && sp.SupplierId == supplierId && !sp.IsDeleted)
+                    .Where(sp => sp.ProductId == productId && sp.SupplierId == supplierId)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
@@ -296,7 +296,6 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.ProductId == productId && 
-                                !sp.IsDeleted &&
                                 sp.EffectiveDate <= checkDate &&
                                 (sp.ExpiryDate == null || sp.ExpiryDate > checkDate))
                     .OrderBy(sp => sp.PurchasePrice)
@@ -327,8 +326,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SupplierPricings
                     .Where(sp => sp.SupplierId == supplierId && 
-                                sp.SupplierProductCode == supplierProductCode && 
-                                !sp.IsDeleted);
+                                sp.SupplierProductCode == supplierProductCode);
 
                 if (excludeId.HasValue)
                     query = query.Where(sp => sp.Id != excludeId.Value);
@@ -363,8 +361,7 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.SupplierId == supplierId && 
-                                sp.SupplierProductCode == supplierProductCode && 
-                                !sp.IsDeleted)
+                                sp.SupplierProductCode == supplierProductCode)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
@@ -393,8 +390,7 @@ namespace ERPCore2.Services
                 return await context.SupplierPricings
                     .Include(sp => sp.Product)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => !sp.IsDeleted &&
-                                sp.ExpiryDate.HasValue &&
+                    .Where(sp => sp.ExpiryDate.HasValue &&
                                 sp.ExpiryDate <= checkDate &&
                                 sp.ExpiryDate > DateTime.Today)
                     .OrderBy(sp => sp.ExpiryDate)
@@ -414,3 +410,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

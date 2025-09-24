@@ -43,7 +43,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .Include(e => e.Department)
                     .Include(e => e.EmployeePosition)
-                    .FirstOrDefaultAsync(e => e.Account == account && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Account == account);
 
                 if (employee == null)
                 {
@@ -398,3 +398,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

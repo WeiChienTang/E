@@ -49,7 +49,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrders
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
-                    .Where(so => !so.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(so => so.OrderDate)
                     .ThenBy(so => so.SalesOrderNumber)
                     .ToListAsync();
@@ -74,7 +74,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Employee)
                     .Include(so => so.SalesOrderDetails)
                     .ThenInclude(sod => sod.Product)
-                    .FirstOrDefaultAsync(so => so.Id == id && !so.IsDeleted);
+                    .FirstOrDefaultAsync(so => so.Id == id);
             }
             catch (Exception ex)
             {
@@ -100,7 +100,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrders
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
-                    .Where(so => !so.IsDeleted && (
+                    .Where(so => (
                         so.SalesOrderNumber.ToLower().Contains(lowerSearchTerm) ||
                         so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)
                     ))
@@ -164,7 +164,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesOrders.Where(so => so.SalesOrderNumber == salesOrderNumber && !so.IsDeleted);
+                var query = context.SalesOrders.Where(so => so.SalesOrderNumber == salesOrderNumber);
                 if (excludeId.HasValue)
                     query = query.Where(so => so.Id != excludeId.Value);
 
@@ -190,7 +190,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrders
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
-                    .Where(so => so.CustomerId == customerId && !so.IsDeleted)
+                    .Where(so => so.CustomerId == customerId)
                     .OrderByDescending(so => so.OrderDate)
                     .ToListAsync();
             }
@@ -215,7 +215,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrders
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
-                    .Where(so => so.OrderDate >= startDate && so.OrderDate <= endDate && !so.IsDeleted)
+                    .Where(so => so.OrderDate >= startDate && so.OrderDate <= endDate)
                     .OrderByDescending(so => so.OrderDate)
                     .ToListAsync();
             }
@@ -240,7 +240,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var order = await context.SalesOrders
                     .Include(so => so.SalesOrderDetails)
-                    .FirstOrDefaultAsync(so => so.Id == orderId && !so.IsDeleted);
+                    .FirstOrDefaultAsync(so => so.Id == orderId);
 
                 if (order == null)
                     return ServiceResult.Failure("找不到指定的銷貨訂單");
@@ -280,7 +280,7 @@ namespace ERPCore2.Services
                         .ThenInclude(sod => sod.Product)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Unit)
-                    .FirstOrDefaultAsync(so => so.Id == orderId && !so.IsDeleted);
+                    .FirstOrDefaultAsync(so => so.Id == orderId);
             }
             catch (Exception ex)
             {
@@ -447,7 +447,7 @@ namespace ERPCore2.Services
                     Console.WriteLine($"開始執行軟刪除操作 - 銷貨訂單ID: {id}");
                     
                     var entity = await context.SalesOrders
-                        .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                        .FirstOrDefaultAsync(x => x.Id == id);
                         
                     if (entity == null)
                     {
@@ -456,7 +456,6 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到要刪除的資料");
                     }
 
-                    entity.IsDeleted = true;
                     entity.UpdatedAt = DateTime.UtcNow;
                     
                     Console.WriteLine($"軟刪除完成 - 銷貨訂單: {entity.SalesOrderNumber}");
@@ -515,7 +514,7 @@ namespace ERPCore2.Services
                     var entity = await context.SalesOrders
                         .Include(so => so.SalesOrderDetails)
                             .ThenInclude(sod => sod.Product)
-                        .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                        .FirstOrDefaultAsync(x => x.Id == id);
                         
                     if (entity == null)
                     {
@@ -621,3 +620,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

@@ -43,8 +43,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.SalesOrder)
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
-                    .Where(sod => !sod.IsDeleted &&
-                                 (sod.Product.Name.Contains(searchTerm) ||
+                    .Where(sod => (sod.Product.Name.Contains(searchTerm) ||
                                   sod.SalesOrder.SalesOrderNumber.Contains(searchTerm) ||
                                   (!string.IsNullOrEmpty(sod.DetailRemarks) && sod.DetailRemarks.Contains(searchTerm))))
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
@@ -154,7 +153,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.SalesOrder)
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
-                    .Where(sod => !sod.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
                     .ThenBy(sod => sod.Id)
                     .ToListAsync();
@@ -178,7 +177,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.SalesOrder)
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
-                    .FirstOrDefaultAsync(sod => sod.Id == id && !sod.IsDeleted);
+                    .FirstOrDefaultAsync(sod => sod.Id == id);
             }
             catch (Exception ex)
             {
@@ -207,7 +206,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
                     .Include(sod => sod.Warehouse)
-                    .Where(sod => sod.SalesOrderId == salesOrderId && !sod.IsDeleted)
+                    .Where(sod => sod.SalesOrderId == salesOrderId)
                     .OrderBy(sod => sod.Id)
                     .ToListAsync();
             }
@@ -233,7 +232,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                     .Include(sod => sod.Unit)
-                    .Where(sod => sod.ProductId == productId && !sod.IsDeleted)
+                    .Where(sod => sod.ProductId == productId)
                     .OrderByDescending(sod => sod.SalesOrder.OrderDate)
                     .ToListAsync();
             }
@@ -328,12 +327,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 var details = await context.SalesOrderDetails
-                    .Where(sod => sod.SalesOrderId == salesOrderId && !sod.IsDeleted)
+                    .Where(sod => sod.SalesOrderId == salesOrderId)
                     .ToListAsync();
 
                 foreach (var detail in details)
                 {
-                    detail.IsDeleted = true;
                     detail.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -361,8 +359,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SalesOrderDetails
                     .Where(sod => sod.SalesOrderId == salesOrderId && 
-                                  sod.ProductId == productId && 
-                                  !sod.IsDeleted);
+                                  sod.ProductId == productId);
 
                 if (excludeDetailId.HasValue)
                 {
@@ -397,7 +394,7 @@ namespace ERPCore2.Services
                         .ThenInclude(so => so.Customer)
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
-                    .FirstOrDefaultAsync(sod => sod.Id == detailId && !sod.IsDeleted);
+                    .FirstOrDefaultAsync(sod => sod.Id == detailId);
             }
             catch (Exception ex)
             {
@@ -421,7 +418,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
-                    .Where(sod => sod.SalesOrderId == salesOrderId && !sod.IsDeleted)
+                    .Where(sod => sod.SalesOrderId == salesOrderId)
                     .OrderBy(sod => sod.Id)
                     .ToListAsync();
             }
@@ -453,12 +450,10 @@ namespace ERPCore2.Services
                     .Include(sod => sod.Warehouse)
                     .Where(sod => 
                         sod.SalesOrder.CustomerId == customerId &&
-                        !sod.IsDeleted &&
-                        !sod.SalesOrder.IsDeleted &&
                         sod.OrderQuantity > 0 &&
                         // 檢查是否已全部退貨 - 計算已退貨數量
                         sod.OrderQuantity > context.SalesReturnDetails
-                            .Where(srd => srd.SalesOrderDetailId == sod.Id && !srd.IsDeleted)
+                            .Where(srd => srd.SalesOrderDetailId == sod.Id)
                             .Sum(srd => srd.ReturnQuantity)
                     )
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
@@ -516,8 +511,7 @@ namespace ERPCore2.Services
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Warehouse)
                     .Where(so => so.CustomerId == customerId 
-                              && !so.IsDeleted 
-                              && so.SalesOrderDetails.Any(sod => !sod.IsDeleted))
+                              && so.SalesOrderDetails.Any())
                     .OrderByDescending(so => so.OrderDate)
                     .ThenByDescending(so => so.CreatedAt)
                     .FirstOrDefaultAsync();
@@ -527,7 +521,7 @@ namespace ERPCore2.Services
 
                 // 返回該銷貨單的所有明細
                 return lastSalesOrder.SalesOrderDetails
-                    .Where(sod => !sod.IsDeleted && sod.Product != null)
+                    .Where(sod => sod.Product != null)
                     .OrderBy(sod => sod.Id)
                     .ToList();
             }
@@ -543,3 +537,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

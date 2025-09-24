@@ -28,13 +28,6 @@ namespace ERPCore2.Data
         [Display(Name = "實體狀態")]
         [Required(ErrorMessage = "請設定實體狀態")]
         public EntityStatus Status { get; set; } = EntityStatus.Active;
-
-        /// <summary>
-        /// 是否已刪除（軟刪除標記）
-        /// </summary>
-        [Display(Name = "已刪除")]
-        [Required(ErrorMessage = "請設定是否已刪除")]
-        public bool IsDeleted { get; set; } = false;
         
         /// <summary>
         /// 建立時間

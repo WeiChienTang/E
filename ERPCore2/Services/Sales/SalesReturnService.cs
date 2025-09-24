@@ -44,7 +44,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.Product)
-                    .Where(sr => !sr.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
                     .ToListAsync();
@@ -73,7 +73,7 @@ namespace ERPCore2.Services
                         .ThenInclude(srd => srd.Product)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.SalesOrderDetail)
-                    .FirstOrDefaultAsync(sr => sr.Id == id && !sr.IsDeleted);
+                    .FirstOrDefaultAsync(sr => sr.Id == id);
             }
             catch (Exception ex)
             {
@@ -101,8 +101,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
-                    .Where(sr => !sr.IsDeleted &&
-                        (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
+                    .Where(sr => (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
                          sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
@@ -174,7 +173,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesReturns.Where(sr => sr.SalesReturnNumber == salesReturnNumber && !sr.IsDeleted);
+                var query = context.SalesReturns.Where(sr => sr.SalesReturnNumber == salesReturnNumber);
                 if (excludeId.HasValue)
                     query = query.Where(sr => sr.Id != excludeId.Value);
 
@@ -202,7 +201,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
-                    .Where(sr => sr.CustomerId == customerId && !sr.IsDeleted)
+                    .Where(sr => sr.CustomerId == customerId)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
                     .ToListAsync();
@@ -228,7 +227,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
-                    .Where(sr => sr.SalesOrderId == salesOrderId && !sr.IsDeleted)
+                    .Where(sr => sr.SalesOrderId == salesOrderId)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
                     .ToListAsync();
@@ -256,7 +255,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
-                    .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate && !sr.IsDeleted)
+                    .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
                     .ToListAsync();
@@ -280,7 +279,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnDetails
-                    .Where(srd => srd.SalesReturnId == salesReturnId && !srd.IsDeleted)
+                    .Where(srd => srd.SalesReturnId == salesReturnId)
                     .SumAsync(srd => srd.ReturnSubtotal);
             }
             catch (Exception ex)
@@ -334,7 +333,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesReturns.Where(sr => !sr.IsDeleted);
+                var query = context.SalesReturns.AsQueryable();
 
                 if (customerId.HasValue)
                     query = query.Where(sr => sr.CustomerId == customerId.Value);
@@ -398,7 +397,7 @@ namespace ERPCore2.Services
                     {
                         // 更新模式
                         var existingEntity = await dbSet
-                            .FirstOrDefaultAsync(x => x.Id == salesReturn.Id && !x.IsDeleted);
+                            .FirstOrDefaultAsync(x => x.Id == salesReturn.Id);
                             
                         if (existingEntity == null)
                         {
@@ -419,7 +418,6 @@ namespace ERPCore2.Services
                         // 新增模式
                         salesReturn.CreatedAt = DateTime.UtcNow;
                         salesReturn.UpdatedAt = DateTime.UtcNow;
-                        salesReturn.IsDeleted = false;
                         salesReturn.Status = EntityStatus.Active;
 
                         await dbSet.AddAsync(salesReturn);
@@ -451,7 +449,7 @@ namespace ERPCore2.Services
                             if (detail.SalesOrderDetailId.HasValue)
                             {
                                 var orderDetail = await context.SalesOrderDetails
-                                    .FirstOrDefaultAsync(sod => sod.Id == detail.SalesOrderDetailId.Value && !sod.IsDeleted);
+                                    .FirstOrDefaultAsync(sod => sod.Id == detail.SalesOrderDetailId.Value);
                                 warehouseId = orderDetail?.WarehouseId;
                             }
 
@@ -538,7 +536,7 @@ namespace ERPCore2.Services
             {
                 // 取得現有明細
                 var existingDetails = await context.SalesReturnDetails
-                    .Where(d => d.SalesReturnId == salesReturnId && !d.IsDeleted)
+                    .Where(d => d.SalesReturnId == salesReturnId)
                     .ToListAsync();
 
                 var quantityChanges = new List<(SalesReturnDetail detail, decimal quantityDifference)>();
@@ -575,7 +573,6 @@ namespace ERPCore2.Services
                     {
                         // 新增明細
                         detail.CreatedAt = DateTime.UtcNow;
-                        detail.IsDeleted = false;
                         detail.Status = EntityStatus.Active;
                         newDetailsToAdd.Add(detail);
 
@@ -588,7 +585,6 @@ namespace ERPCore2.Services
                 var detailsToDelete = existingDetails.Where(ed => !existingDetailsToKeep.Contains(ed.Id)).ToList();
                 foreach (var detail in detailsToDelete)
                 {
-                    detail.IsDeleted = true;
                     detail.UpdatedAt = DateTime.UtcNow;
                     // 被刪除的明細，數量差異是負的原數量
                     quantityChanges.Add((detail, -detail.ReturnQuantity));
@@ -629,7 +625,7 @@ namespace ERPCore2.Services
             try
             {
                 var salesReturn = await context.SalesReturns
-                    .FirstOrDefaultAsync(sr => sr.Id == salesReturnId && !sr.IsDeleted);
+                    .FirstOrDefaultAsync(sr => sr.Id == salesReturnId);
 
                 if (salesReturn == null)
                 {
@@ -637,7 +633,7 @@ namespace ERPCore2.Services
                 }
 
                 var details = await context.SalesReturnDetails
-                    .Where(d => d.SalesReturnId == salesReturnId && !d.IsDeleted)
+                    .Where(d => d.SalesReturnId == salesReturnId)
                     .ToListAsync();
 
                 // 計算總金額
@@ -701,9 +697,9 @@ namespace ERPCore2.Services
                 {
                     // 1. 先取得主記錄（含明細資料，包含關聯的銷售訂單明細）
                     var entity = await context.SalesReturns
-                        .Include(sr => sr.SalesReturnDetails.Where(srd => !srd.IsDeleted))
+                        .Include(sr => sr.SalesReturnDetails.AsQueryable())
                             .ThenInclude(srd => srd.Product)
-                        .Include(sr => sr.SalesReturnDetails.Where(srd => !srd.IsDeleted))
+                        .Include(sr => sr.SalesReturnDetails.AsQueryable())
                             .ThenInclude(srd => srd.SalesOrderDetail)
                                 .ThenInclude(sod => sod != null ? sod.SalesOrder : null)
                         .FirstOrDefaultAsync(sr => sr.Id == id);
@@ -726,7 +722,7 @@ namespace ERPCore2.Services
                     // 3. 回滾庫存 - 將之前因退貨而增加的庫存減少回去
                     if (_inventoryStockService != null)
                     {
-                        var eligibleDetails = entity.SalesReturnDetails.Where(d => !d.IsDeleted && d.ReturnQuantity > 0).ToList();
+                        var eligibleDetails = entity.SalesReturnDetails.Where(d => d.ReturnQuantity > 0).ToList();
                         Console.WriteLine($"需要進行庫存回滾的明細數量: {eligibleDetails.Count}");
 
                         foreach (var detail in eligibleDetails)
@@ -816,3 +812,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

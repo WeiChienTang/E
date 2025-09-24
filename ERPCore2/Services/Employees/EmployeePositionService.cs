@@ -24,7 +24,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.EmployeePositions
-                    .Where(ep => !ep.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(ep => ep.Name)
                     .ToListAsync();
             }
@@ -49,8 +49,7 @@ namespace ERPCore2.Services
                 var normalizedSearch = searchTerm.Trim().ToUpper();
                 
                 return await context.EmployeePositions
-                    .Where(ep => !ep.IsDeleted && 
-                                (ep.Name.ToUpper().Contains(normalizedSearch) ||
+                    .Where(ep => (ep.Name.ToUpper().Contains(normalizedSearch) ||
                                  (ep.Code != null && ep.Code.ToUpper().Contains(normalizedSearch))))
                     .OrderBy(ep => ep.Name)
                     .ToListAsync();
@@ -111,7 +110,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.EmployeePositions.Where(ep => ep.Code == code && !ep.IsDeleted);
+                var query = context.EmployeePositions.Where(ep => ep.Code == code);
                 if (excludeId.HasValue)
                     query = query.Where(ep => ep.Id != excludeId.Value);
                 
@@ -137,7 +136,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.EmployeePositions.Where(ep => ep.Name == name && !ep.IsDeleted);
+                var query = context.EmployeePositions.Where(ep => ep.Name == name);
                 if (excludeId.HasValue)
                     query = query.Where(ep => ep.Id != excludeId.Value);
                 
@@ -182,3 +181,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

@@ -121,8 +121,8 @@ namespace ERPCore2.Data
             // 錯誤記錄服務
             services.AddScoped<IErrorLogService, ErrorLogService>();
             
-            // 刪除記錄服務
-            services.AddScoped<IDeletedRecordService, DeletedRecordService>();
+            // 刪除記錄服務 (已棄用 - 不再使用軟刪除)
+            // services.AddScoped<IDeletedRecordService, DeletedRecordService>();
             
             // 公司設定服務
             services.AddScoped<ICompanyService, CompanyService>();

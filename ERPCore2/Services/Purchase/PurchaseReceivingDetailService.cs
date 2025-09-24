@@ -52,7 +52,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => !d.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(d => d.CreatedAt)
                     .ThenBy(d => d.Id)
                     .ToListAsync();
@@ -82,7 +82,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == id);
             }
             catch (Exception ex)
             {
@@ -113,7 +113,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => !d.IsDeleted && (
+                    .Where(d => (
                         d.PurchaseReceiving.ReceiptNumber.Contains(searchTerm) ||
                         d.Product.Name.Contains(searchTerm) ||
                         (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
@@ -202,7 +202,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
                     .OrderBy(d => d.Id)
                     .ToListAsync();
             }
@@ -230,7 +230,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId && !d.IsDeleted)
+                    .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
@@ -259,7 +259,7 @@ namespace ERPCore2.Services
                         .ThenInclude(pod => pod.PurchaseOrder)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.ProductId == productId && !d.IsDeleted)
+                    .Where(d => d.ProductId == productId)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
@@ -288,7 +288,7 @@ namespace ERPCore2.Services
                         .ThenInclude(pod => pod.PurchaseOrder)
                     .Include(d => d.Product)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.WarehouseId == warehouseId && !d.IsDeleted)
+                    .Where(d => d.WarehouseId == warehouseId)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
@@ -318,8 +318,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => !d.IsDeleted && 
-                               d.PurchaseReceiving.SupplierId == supplierId &&
+                    .Where(d => d.PurchaseReceiving.SupplierId == supplierId &&
                                d.ReceivedQuantity > 0)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
@@ -368,7 +367,7 @@ namespace ERPCore2.Services
                     }
                     // 取得現有的明細記錄
                     var existingDetails = await context.PurchaseReceivingDetails
-                        .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                        .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
                         .ToListAsync();
 
                     // 準備新的明細資料
@@ -394,7 +393,6 @@ namespace ERPCore2.Services
                             {
                                 // 新增的明細
                                 detail.CreatedAt = DateTime.UtcNow;
-                                detail.IsDeleted = false;
                                 detail.Status = EntityStatus.Active;
                                 newDetailsToAdd.Add(detail);
                             }
@@ -432,7 +430,6 @@ namespace ERPCore2.Services
                     // 軟刪除不需要的明細
                     foreach (var detailToDelete in detailsToDelete)
                     {
-                        detailToDelete.IsDeleted = true;
                         detailToDelete.UpdatedAt = DateTime.UtcNow;
                     }
 
@@ -491,8 +488,7 @@ namespace ERPCore2.Services
                 var query = context.PurchaseReceivingDetails.Where(d => 
                     d.PurchaseReceivingId == purchaseReceivingId && 
                     d.ProductId == productId && 
-                    d.PurchaseOrderDetailId == purchaseOrderDetailId && 
-                    !d.IsDeleted);
+                    d.PurchaseOrderDetailId == purchaseOrderDetailId);
                     
                 if (excludeId.HasValue)
                     query = query.Where(d => d.Id != excludeId.Value);
@@ -530,8 +526,7 @@ namespace ERPCore2.Services
                     d.PurchaseReceivingId == purchaseReceivingId && 
                     d.ProductId == productId && 
                     d.WarehouseId == warehouseId && 
-                    d.WarehouseLocationId == warehouseLocationId && 
-                    !d.IsDeleted);
+                    d.WarehouseLocationId == warehouseLocationId);
                     
                 if (excludeId.HasValue)
                     query = query.Where(d => d.Id != excludeId.Value);
@@ -564,7 +559,7 @@ namespace ERPCore2.Services
                 
                 // 取得採購訂單明細
                 var purchaseOrderDetail = await context.PurchaseOrderDetails
-                    .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId && !pod.IsDeleted);
+                    .FirstOrDefaultAsync(pod => pod.Id == purchaseOrderDetailId);
                 
                 if (purchaseOrderDetail == null)
                     return ServiceResult.Failure("找不到對應的採購訂單明細");
@@ -572,13 +567,12 @@ namespace ERPCore2.Services
                 // 計算已入庫數量（排除當前編輯的明細）
                 var existingReceivedQuantity = await context.PurchaseReceivingDetails
                     .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId && 
-                               !d.IsDeleted && 
                                (excludeDetailId == null || d.Id != excludeDetailId.Value))
                     .SumAsync(d => d.ReceivedQuantity);
 
                 // 計算該訂單明細的總訂購數量
                 var totalOrderQuantity = await context.PurchaseReceivingDetails
-                    .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId && !d.IsDeleted)
+                    .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId)
                     .SumAsync(d => d.OrderQuantity);
 
                 // 檢查總入庫數量是否超過總訂購數量
@@ -649,7 +643,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivingDetails
-                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
                     .SumAsync(d => d.OrderQuantity * d.UnitPrice);
             }
             catch (Exception ex)
@@ -672,7 +666,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivingDetails
-                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId && !d.IsDeleted)
+                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
                     .SumAsync(d => d.OrderQuantity - d.ReceivedQuantity);
             }
             catch (Exception ex)
@@ -702,7 +696,7 @@ namespace ERPCore2.Services
                 // 取得採購入庫明細資訊
                 var detail = await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
-                    .FirstOrDefaultAsync(d => d.Id == purchaseReceivingDetailId && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == purchaseReceivingDetailId);
                 
                 if (detail == null)
                     return new List<InventoryTransaction>();
@@ -712,8 +706,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => !t.IsDeleted && 
-                               (t.ReferenceNumber != null && t.ReferenceNumber.Contains(detail.PurchaseReceiving.ReceiptNumber)) &&
+                    .Where(t => (t.ReferenceNumber != null && t.ReferenceNumber.Contains(detail.PurchaseReceiving.ReceiptNumber)) &&
                                t.ProductId == detail.ProductId)
                     .OrderByDescending(t => t.CreatedAt)
                     .ToListAsync();

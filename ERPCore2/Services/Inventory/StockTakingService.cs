@@ -41,7 +41,7 @@ namespace ERPCore2.Services
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
-                    .Where(st => st.WarehouseId == warehouseId && !st.IsDeleted)
+                    .Where(st => st.WarehouseId == warehouseId)
                     .OrderByDescending(st => st.TakingDate)
                     .ToListAsync();
             }
@@ -63,7 +63,7 @@ namespace ERPCore2.Services
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
-                    .Where(st => st.TakingStatus == status && !st.IsDeleted)
+                    .Where(st => st.TakingStatus == status)
                     .OrderByDescending(st => st.TakingDate)
                     .ToListAsync();
             }
@@ -85,7 +85,7 @@ namespace ERPCore2.Services
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
-                    .Where(st => st.TakingDate >= startDate && st.TakingDate <= endDate && !st.IsDeleted)
+                    .Where(st => st.TakingDate >= startDate && st.TakingDate <= endDate)
                     .OrderByDescending(st => st.TakingDate)
                     .ToListAsync();
             }
@@ -107,7 +107,7 @@ namespace ERPCore2.Services
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
-                    .FirstOrDefaultAsync(st => st.TakingNumber == takingNumber && !st.IsDeleted);
+                    .FirstOrDefaultAsync(st => st.TakingNumber == takingNumber);
             }
             catch (Exception ex)
             {
@@ -131,7 +131,7 @@ namespace ERPCore2.Services
                         .ThenInclude(std => std.Product)
                     .Include(st => st.StockTakingDetails)
                         .ThenInclude(std => std.WarehouseLocation)
-                    .FirstOrDefaultAsync(st => st.Id == id && !st.IsDeleted);
+                    .FirstOrDefaultAsync(st => st.Id == id);
             }
             catch (Exception ex)
             {
@@ -390,7 +390,7 @@ namespace ERPCore2.Services
                 return await context.StockTakingDetails
                     .Include(std => std.Product)
                     .Include(std => std.WarehouseLocation)
-                    .Where(std => std.StockTakingId == stockTakingId && !std.IsDeleted)
+                    .Where(std => std.StockTakingId == stockTakingId)
                     .OrderBy(std => std.Product.Code)
                     .ToListAsync();
             }
@@ -478,8 +478,7 @@ namespace ERPCore2.Services
                     .Include(std => std.WarehouseLocation)
                     .Where(std => std.StockTakingId == stockTakingId && 
                                   std.ActualStock.HasValue && 
-                                  std.ActualStock.Value != std.SystemStock && 
-                                  !std.IsDeleted)
+                                  std.ActualStock.Value != std.SystemStock)
                     .OrderBy(std => std.Product.Code)
                     .ToListAsync();
             }
@@ -619,8 +618,7 @@ namespace ERPCore2.Services
                 return await context.StockTakings.CountAsync(st => 
                     (st.TakingStatus == StockTakingStatusEnum.Draft || 
                      st.TakingStatus == StockTakingStatusEnum.InProgress ||
-                     st.TakingStatus == StockTakingStatusEnum.PendingApproval) && 
-                    !st.IsDeleted);
+                     st.TakingStatus == StockTakingStatusEnum.PendingApproval));
             }
             catch (Exception ex)
             {
@@ -636,7 +634,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var stockTakings = await context.StockTakings
                     .Include(st => st.StockTakingDetails)
-                    .Where(st => st.TakingDate >= startDate && st.TakingDate <= endDate && !st.IsDeleted)
+                    .Where(st => st.TakingDate >= startDate && st.TakingDate <= endDate)
                     .ToListAsync();
 
                 var statistics = stockTakings
@@ -693,7 +691,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查倉庫是否存在
-                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == stockTaking.WarehouseId && !w.IsDeleted);
+                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == stockTaking.WarehouseId);
                 if (!warehouseExists)
                     errors.Add("指定的倉庫不存在");
 
@@ -702,8 +700,7 @@ namespace ERPCore2.Services
                 {
                     var locationExists = await context.WarehouseLocations.AnyAsync(wl => 
                         wl.Id == stockTaking.WarehouseLocationId.Value && 
-                        wl.WarehouseId == stockTaking.WarehouseId && 
-                        !wl.IsDeleted);
+                        wl.WarehouseId == stockTaking.WarehouseId);
                     if (!locationExists)
                         errors.Add("指定的倉庫位置不存在");
                 }
@@ -727,7 +724,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.StockTakings.Where(st => st.TakingNumber == takingNumber && !st.IsDeleted);
+                var query = context.StockTakings.Where(st => st.TakingNumber == takingNumber);
                 
                 if (excludeId.HasValue)
                     query = query.Where(st => st.Id != excludeId.Value);
@@ -756,7 +753,7 @@ namespace ERPCore2.Services
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
-                    .Where(st => !st.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(st => st.TakingDate)
                     .ToListAsync();
             }
@@ -779,8 +776,7 @@ namespace ERPCore2.Services
                     .Include(st => st.Warehouse)
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
-                    .Where(st => !st.IsDeleted && 
-                                (st.TakingNumber.Contains(searchTerm) ||
+                    .Where(st => (st.TakingNumber.Contains(searchTerm) ||
                                  st.Warehouse.Name.Contains(searchTerm) ||
                                  (st.TakingPersonnel != null && st.TakingPersonnel.Contains(searchTerm))))
                     .OrderByDescending(st => st.TakingDate)
@@ -828,7 +824,7 @@ namespace ERPCore2.Services
         {
             var query = context.InventoryStocks
                 .Include(i => i.Product)
-                .Where(i => i.WarehouseId == warehouseId && !i.IsDeleted);
+                .Where(i => i.WarehouseId == warehouseId);
 
             // 依盤點類型篩選
             switch (takingType)
@@ -865,3 +861,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

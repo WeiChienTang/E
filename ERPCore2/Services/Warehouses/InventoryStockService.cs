@@ -44,7 +44,7 @@ namespace ERPCore2.Services
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
-                    .Where(i => !i.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(i => i.Product!.Code)
                     .ThenBy(i => i.Warehouse!.Code)
                     .ToListAsync();
@@ -68,9 +68,9 @@ namespace ERPCore2.Services
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
-                    .Include(i => i.InventoryTransactions.Where(t => !t.IsDeleted))
-                    .Include(i => i.InventoryReservations.Where(r => !r.IsDeleted))
-                    .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+                    .Include(i => i.InventoryTransactions.AsQueryable())
+                    .Include(i => i.InventoryReservations.AsQueryable())
+                    .FirstOrDefaultAsync(i => i.Id == id);
             }
             catch (Exception ex)
             {
@@ -97,8 +97,7 @@ namespace ERPCore2.Services
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
-                    .Where(i => !i.IsDeleted && 
-                        ((i.Product!.Code != null && i.Product.Code.ToLower().Contains(term)) ||
+                    .Where(i => ((i.Product!.Code != null && i.Product.Code.ToLower().Contains(term)) ||
                          (i.Product!.Name != null && i.Product.Name.ToLower().Contains(term)) ||
                          (i.Warehouse!.Code != null && i.Warehouse.Code.ToLower().Contains(term)) ||
                          (i.Warehouse!.Name != null && i.Warehouse.Name.ToLower().Contains(term))))
@@ -140,7 +139,7 @@ namespace ERPCore2.Services
                     .FirstOrDefaultAsync(i => i.ProductId == entity.ProductId && 
                                             i.WarehouseId == entity.WarehouseId &&
                                             i.WarehouseLocationId == entity.WarehouseLocationId &&
-                                            i.Id != entity.Id && !i.IsDeleted);
+                                            i.Id != entity.Id);
 
                 if (existing != null)
                     errors.Add("該商品在此倉庫位置已有庫存記錄");
@@ -176,7 +175,7 @@ namespace ERPCore2.Services
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
-                    .Where(i => i.ProductId == productId && !i.IsDeleted)
+                    .Where(i => i.ProductId == productId)
                     .OrderBy(i => i.Warehouse!.Code)
                     .ToListAsync();
             }
@@ -199,7 +198,7 @@ namespace ERPCore2.Services
                 return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.WarehouseLocation)
-                    .Where(i => i.WarehouseId == warehouseId && !i.IsDeleted)
+                    .Where(i => i.WarehouseId == warehouseId)
                     .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -225,8 +224,7 @@ namespace ERPCore2.Services
                     .Include(i => i.WarehouseLocation)
                     .FirstOrDefaultAsync(i => i.ProductId == productId && 
                                             i.WarehouseId == warehouseId &&
-                                            i.WarehouseLocationId == locationId && 
-                                            !i.IsDeleted);
+                                            i.WarehouseLocationId == locationId);
             }
             catch (Exception ex)
             {
@@ -252,8 +250,7 @@ namespace ERPCore2.Services
                     .Include(i => i.WarehouseLocation)
                     .FirstOrDefaultAsync(i => i.ProductId == productId && 
                                             i.WarehouseId == warehouseId &&
-                                            i.WarehouseLocationId == locationId && 
-                                            !i.IsDeleted);
+                                            i.WarehouseLocationId == locationId);
             }
             catch (Exception ex)
             {
@@ -276,8 +273,7 @@ namespace ERPCore2.Services
                 return await context.InventoryStocks
                     .Include(i => i.Product)
                     .Include(i => i.Warehouse)
-                    .Where(i => !i.IsDeleted && 
-                              i.MinStockLevel.HasValue && 
+                    .Where(i => i.MinStockLevel.HasValue && 
                               i.CurrentStock <= i.MinStockLevel.Value)
                     .OrderBy(i => i.Product.Code)
                     .ToListAsync();
@@ -327,8 +323,7 @@ namespace ERPCore2.Services
                 // 取得該商品在指定倉庫內所有位置的庫存記錄
                 var stocks = await context.InventoryStocks
                     .Where(i => i.ProductId == productId && 
-                               i.WarehouseId == warehouseId &&
-                               !i.IsDeleted)
+                               i.WarehouseId == warehouseId)
                     .ToListAsync();
                 
                 // 在記憶體中計算總可用庫存 (CurrentStock - ReservedStock)
@@ -363,8 +358,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
                     .Include(t => t.InventoryStock)
-                    .Where(t => t.TransactionNumber.StartsWith($"SO-{salesOrderId}") &&
-                               !t.IsDeleted)
+                    .Where(t => t.TransactionNumber.StartsWith($"SO-{salesOrderId}"))
                     .OrderBy(t => t.TransactionDate)
                     .ThenBy(t => t.Id)
                     .ToListAsync();
@@ -476,7 +470,7 @@ namespace ERPCore2.Services
                 {
                     // 直接根據 InventoryStockId 找到原記錄
                     var originalStock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.Id == inventoryStockId && !i.IsDeleted);
+                        .FirstOrDefaultAsync(i => i.Id == inventoryStockId);
 
                     if (originalStock == null)
                     {
@@ -556,8 +550,7 @@ namespace ERPCore2.Services
                     var stock = await context.InventoryStocks
                         .FirstOrDefaultAsync(i => i.ProductId == productId && 
                                                  i.WarehouseId == warehouseId &&
-                                                 i.WarehouseLocationId == locationId && 
-                                                 !i.IsDeleted);
+                                                 i.WarehouseLocationId == locationId);
                     
                     if (stock == null)
                     {
@@ -679,7 +672,7 @@ namespace ERPCore2.Services
                 {
                     // 重新取得庫存記錄以確保資料一致性
                     var contextStock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.Id == stock.Id && !i.IsDeleted);
+                        .FirstOrDefaultAsync(i => i.Id == stock.Id);
                     
                     if (contextStock == null)
                         return ServiceResult.Failure("找不到庫存記錄");
@@ -921,8 +914,7 @@ namespace ERPCore2.Services
             var query = context.InventoryStocks
                 .Where(i => i.ProductId == productId && 
                            i.WarehouseId == warehouseId &&
-                           i.CurrentStock > 0 &&
-                           !i.IsDeleted);
+                           i.CurrentStock > 0);
             
             // 如果指定了位置，才篩選特定位置；否則查詢整個倉庫
             if (locationId.HasValue)
@@ -952,7 +944,7 @@ namespace ERPCore2.Services
                 try
                 {
                     var stock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.Id == batchStockId && !i.IsDeleted);
+                        .FirstOrDefaultAsync(i => i.Id == batchStockId);
                     
                     if (stock == null)
                         return ServiceResult.Failure("找不到批號庫存記錄");
@@ -1025,7 +1017,7 @@ namespace ERPCore2.Services
                         .ThenInclude(p => p.Unit)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
-                    .Where(i => !i.IsDeleted);
+                    .AsQueryable();
 
                 // 篩選條件
                 if (warehouseId.HasValue)
@@ -1079,8 +1071,7 @@ namespace ERPCore2.Services
                         .ThenInclude(p => p.Unit)
                     .Include(i => i.Warehouse)
                     .Include(i => i.WarehouseLocation)
-                    .Where(i => !i.IsDeleted && 
-                               i.MinStockLevel.HasValue && 
+                    .Where(i => i.MinStockLevel.HasValue && 
                                i.CurrentStock <= i.MinStockLevel.Value)
                     .OrderBy(i => i.CurrentStock)
                     .ThenBy(i => i.Product.Code)
@@ -1111,59 +1102,54 @@ namespace ERPCore2.Services
 
                 // 總商品數量
                 var totalProducts = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted)
+                    .AsQueryable()
                     .Select(i => i.ProductId)
                     .Distinct()
                     .CountAsync();
 
                 // 總庫存價值
                 var totalInventoryValue = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted && i.AverageCost.HasValue)
+                    .Where(i => i.AverageCost.HasValue)
                     .SumAsync(i => i.CurrentStock * (i.AverageCost ?? 0));
 
                 // 低庫存商品數量
                 var lowStockCount = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted &&
-                               i.MinStockLevel.HasValue &&
+                    .Where(i => i.MinStockLevel.HasValue &&
                                i.CurrentStock <= i.MinStockLevel.Value)
                     .CountAsync();
 
                 // 零庫存商品數量
                 var zeroStockCount = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted && i.CurrentStock == 0)
+                    .Where(i => i.CurrentStock == 0)
                     .CountAsync();
 
                 // 倉庫數量
                 var warehouseCount = await context.Warehouses
-                    .Where(w => !w.IsDeleted)
+                    .AsQueryable()
                     .CountAsync();
 
                 // 新增：未設定警戒線的商品數量（MinStockLevel 或 MaxStockLevel 任一為 null 或 <= 0）
                 var noWarningLevelCount = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted &&
-                               (!i.MinStockLevel.HasValue || i.MinStockLevel.Value <= 0 ||
+                    .Where(i => (!i.MinStockLevel.HasValue || i.MinStockLevel.Value <= 0 ||
                                 !i.MaxStockLevel.HasValue || i.MaxStockLevel.Value <= 0))
                     .CountAsync();
 
                 // 新增：超過最高警戒線的商品數量（庫存過多）
                 var overStockCount = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted &&
-                               i.MaxStockLevel.HasValue &&
+                    .Where(i => i.MaxStockLevel.HasValue &&
                                i.MaxStockLevel.Value > 0 &&
                                i.CurrentStock > i.MaxStockLevel.Value)
                     .CountAsync();
 
                 // 新增：呆滯庫存數量（30天沒有異動）
                 var staleStockCount = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted &&
-                               (!i.LastTransactionDate.HasValue ||
+                    .Where(i => (!i.LastTransactionDate.HasValue ||
                                 i.LastTransactionDate.Value <= DateTime.Now.AddDays(-30)))
                     .CountAsync();
 
                 // 新增：預留庫存過高的商品數量（預留庫存佔總庫存比例 > 50%）
                 var highReservedStockCount = await context.InventoryStocks
-                    .Where(i => !i.IsDeleted &&
-                               i.CurrentStock > 0 &&
+                    .Where(i => i.CurrentStock > 0 &&
                                i.ReservedStock > 0 &&
                                (decimal)i.ReservedStock / i.CurrentStock > 0.5m)
                     .CountAsync();
@@ -1224,8 +1210,7 @@ namespace ERPCore2.Services
                     var stock = await context.InventoryStocks
                         .FirstOrDefaultAsync(i => i.ProductId == productId && 
                                                  i.WarehouseId == warehouseId &&
-                                                 i.WarehouseLocationId == locationId && 
-                                                 !i.IsDeleted);
+                                                 i.WarehouseLocationId == locationId);
                     
                     if (stock == null)
                         return ServiceResult.Failure("找不到庫存記錄");
@@ -1287,7 +1272,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var reservation = await context.InventoryReservations
                     .Include(r => r.InventoryStock)
-                    .FirstOrDefaultAsync(r => r.Id == reservationId && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Id == reservationId);
 
                 if (reservation == null)
                     return ServiceResult.Failure("找不到預留記錄");
@@ -1369,7 +1354,6 @@ namespace ERPCore2.Services
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ProductId == productId && 
                               r.WarehouseId == warehouseId && 
-                              !r.IsDeleted &&
                               (r.ReservationStatus == InventoryReservationStatus.Reserved ||
                                r.ReservationStatus == InventoryReservationStatus.PartiallyReleased))
                     .OrderBy(r => r.ReservationDate)
@@ -1467,15 +1451,14 @@ namespace ERPCore2.Services
 
                 // 檢查是否有相關的交易記錄，如果有則先軟刪除相關記錄
                 var relatedTransactions = await context.InventoryTransactions
-                    .Where(t => t.InventoryStockId == entity.Id && !t.IsDeleted)
+                    .Where(t => t.InventoryStockId == entity.Id)
                     .ToListAsync();
 
                 if (relatedTransactions.Any())
                 {
-                    // 軟刪除相關的交易記錄
+                    // 移除相關的交易記錄的外鍵關聯
                     foreach (var transaction in relatedTransactions)
                     {
-                        transaction.IsDeleted = true;
                         transaction.UpdatedAt = DateTime.UtcNow;
                         transaction.InventoryStockId = null; // 移除外鍵關聯
                     }
@@ -1483,21 +1466,20 @@ namespace ERPCore2.Services
 
                 // 檢查是否有相關的預留記錄
                 var relatedReservations = await context.InventoryReservations
-                    .Where(r => r.InventoryStockId == entity.Id && !r.IsDeleted)
+                    .Where(r => r.InventoryStockId == entity.Id)
                     .ToListAsync();
 
                 if (relatedReservations.Any())
                 {
-                    // 軟刪除相關的預留記錄
+                    // 移除相關的預留記錄的外鍵關聯，或直接刪除
                     foreach (var reservation in relatedReservations)
                     {
-                        reservation.IsDeleted = true;
                         reservation.UpdatedAt = DateTime.UtcNow;
                         reservation.InventoryStockId = null; // 移除外鍵關聯
                     }
                 }
 
-                // 儲存級聯軟刪除的變更
+                // 儲存級聯刪除的變更
                 if (relatedTransactions.Any() || relatedReservations.Any())
                 {
                     await context.SaveChangesAsync();
@@ -1520,4 +1502,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

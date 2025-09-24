@@ -45,7 +45,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => !ph.IsDeleted && (
+                    .Where(ph => (
                         (ph.Product.Name != null && ph.Product.Name.Contains(searchTerm)) ||
                         (ph.Product.Code != null && ph.Product.Code.Contains(searchTerm)) ||
                         (ph.ChangeReason != null && ph.ChangeReason.Contains(searchTerm)) ||
@@ -100,7 +100,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var productExists = await context.Products
-                        .AnyAsync(p => p.Id == entity.ProductId && !p.IsDeleted);
+                        .AnyAsync(p => p.Id == entity.ProductId);
                     if (!productExists)
                         errors.Add("指定的商品不存在");
                 }
@@ -110,7 +110,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var customerExists = await context.Customers
-                        .AnyAsync(c => c.Id == entity.RelatedCustomerId && !c.IsDeleted);
+                        .AnyAsync(c => c.Id == entity.RelatedCustomerId);
                     if (!customerExists)
                         errors.Add("指定的關聯客戶不存在");
                 }
@@ -120,7 +120,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var supplierExists = await context.Suppliers
-                        .AnyAsync(s => s.Id == entity.RelatedSupplierId && !s.IsDeleted);
+                        .AnyAsync(s => s.Id == entity.RelatedSupplierId);
                     if (!supplierExists)
                         errors.Add("指定的關聯供應商不存在");
                 }
@@ -158,7 +158,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => !ph.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
@@ -184,7 +184,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .FirstOrDefaultAsync(ph => ph.Id == id && !ph.IsDeleted);
+                    .FirstOrDefaultAsync(ph => ph.Id == id);
             }
             catch (Exception ex)
             {
@@ -213,7 +213,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ProductId == productId && !ph.IsDeleted)
+                    .Where(ph => ph.ProductId == productId)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
@@ -240,7 +240,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ProductId == productId && ph.PriceType == priceType && !ph.IsDeleted)
+                    .Where(ph => ph.ProductId == productId && ph.PriceType == priceType)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
@@ -268,7 +268,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ChangeDate >= startDate && ph.ChangeDate <= endDate && !ph.IsDeleted)
+                    .Where(ph => ph.ChangeDate >= startDate && ph.ChangeDate <= endDate)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
@@ -296,7 +296,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ChangedByUserId == userId && !ph.IsDeleted)
+                    .Where(ph => ph.ChangedByUserId == userId)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
@@ -323,7 +323,7 @@ namespace ERPCore2.Services
                     .Include(ph => ph.Product)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ProductId == productId && ph.PriceType == priceType && !ph.IsDeleted)
+                    .Where(ph => ph.ProductId == productId && ph.PriceType == priceType)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .FirstOrDefaultAsync();
             }
@@ -384,3 +384,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

@@ -37,7 +37,7 @@ namespace ERPCore2.Services
                 return await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                    .Where(r => !r.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(r => r.Name)
                     .ToListAsync();
             }
@@ -57,7 +57,7 @@ namespace ERPCore2.Services
                 return await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Id == id);
             }
             catch (Exception ex)
             {
@@ -80,7 +80,7 @@ namespace ERPCore2.Services
                 var role = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                    .FirstOrDefaultAsync(r => r.Name == roleName && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Name == roleName);
 
                 if (role == null)
                     return ServiceResult<Role>.Failure("找不到指定的角色");
@@ -105,7 +105,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("角色名稱不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Roles.Where(r => r.Name == roleName && !r.IsDeleted);
+                var query = context.Roles.Where(r => r.Name == roleName);
 
                 if (excludeRoleId.HasValue)
                     query = query.Where(r => r.Id != excludeRoleId.Value);
@@ -128,7 +128,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Roles.Where(r => r.Code == roleCode && !r.IsDeleted);
+                var query = context.Roles.Where(r => r.Code == roleCode);
 
                 if (excludeRoleId.HasValue)
                     query = query.Where(r => r.Id != excludeRoleId.Value);
@@ -166,7 +166,7 @@ namespace ERPCore2.Services
                 
                 // 取得所有權限（包括要新增的權限）
                 var allPermissions = await context.Permissions
-                    .Where(p => !p.IsDeleted)
+                    .AsQueryable()
                     .Select(p => p.Id)
                     .ToListAsync();
 
@@ -189,14 +189,12 @@ namespace ERPCore2.Services
                     {
                         // 應該啟用的權限
                         rolePermission.Status = EntityStatus.Active;
-                        rolePermission.IsDeleted = false;
                         rolePermission.UpdatedAt = now;
                     }
                     else
                     {
                         // 應該停用的權限
                         rolePermission.Status = EntityStatus.Inactive;
-                        rolePermission.IsDeleted = true;
                         rolePermission.UpdatedAt = now;
                     }
                 }
@@ -212,7 +210,7 @@ namespace ERPCore2.Services
                     CreatedAt = now,
                     UpdatedAt = now,
                     Status = EntityStatus.Active,
-                    IsDeleted = false
+                    
                 }).ToList();
 
                 await context.RolePermissions.AddRangeAsync(newRolePermissions);
@@ -324,7 +322,7 @@ namespace ERPCore2.Services
 
                 // 取得來源角色的權限
                 var sourcePermissionIds = sourceRole.RolePermissions
-                    .Where(rp => !rp.IsDeleted)
+                    .AsQueryable()
                     .Select(rp => rp.PermissionId)
                     .ToList();
 
@@ -350,7 +348,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var count = await context.Employees
-                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
+                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId)
                     .CountAsync();
 
                 return ServiceResult<int>.Success(count);
@@ -440,8 +438,7 @@ namespace ERPCore2.Services
                 var roles = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                    .Where(r => !r.IsDeleted && 
-                               r.Name.Contains(searchTerm))
+                    .Where(r => r.Name.Contains(searchTerm))
                     .OrderBy(r => r.Name)
                     .ToListAsync();
 
@@ -463,7 +460,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var roles = await context.Roles
-                    .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active)
+                    .Where(r => r.Status == EntityStatus.Active)
                     .OrderBy(r => r.Name)
                     .ToListAsync();
 
@@ -485,7 +482,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.Roles
-                    .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active);
+                    .Where(r => r.Status == EntityStatus.Active);
 
                 // 檢查當前使用者是否為管理員
                 var currentRoleLower = currentUserRole?.Trim().ToLower() ?? "";
@@ -614,7 +611,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employeeIds = await context.Employees
-                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId && !e.IsDeleted)
+                    .Where(e => e.RoleId.HasValue && e.RoleId.Value == roleId)
                     .Select(e => e.Id)
                     .ToListAsync();
 
@@ -634,4 +631,5 @@ namespace ERPCore2.Services
         }
     }
 }
+
 

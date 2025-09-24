@@ -33,7 +33,7 @@ namespace ERPCore2.Services.Sales
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnReasons
-                    .Where(r => !r.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(r => r.Name)
                     .ToListAsync();
             }
@@ -52,7 +52,7 @@ namespace ERPCore2.Services.Sales
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesReturnReasons.Where(r => !r.IsDeleted);
+                var query = context.SalesReturnReasons.AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
@@ -117,7 +117,7 @@ namespace ERPCore2.Services.Sales
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnReasons
-                    .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active)
+                    .Where(r => r.Status == EntityStatus.Active)
                     .OrderBy(r => r.Name)
                     .ToListAsync();
             }
@@ -140,7 +140,7 @@ namespace ERPCore2.Services.Sales
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SalesReturnReasons
-                    .Where(r => !r.IsDeleted && r.Code == code);
+                    .Where(r => r.Code == code);
 
                 if (excludeId.HasValue)
                 {

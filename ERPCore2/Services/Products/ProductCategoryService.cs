@@ -36,8 +36,8 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.Products.Where(p => !p.IsDeleted))
-                    .Where(pc => !pc.IsDeleted)
+                    .Include(pc => pc.Products.AsQueryable())
+                    .AsQueryable()
                     .OrderBy(pc => pc.Name)
                     .ToListAsync();
             }
@@ -54,8 +54,8 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Include(pc => pc.Products.Where(p => !p.IsDeleted))
-                    .FirstOrDefaultAsync(pc => pc.Id == id && !pc.IsDeleted);
+                    .Include(pc => pc.Products.AsQueryable())
+                    .FirstOrDefaultAsync(pc => pc.Id == id);
             }
             catch (Exception ex)
             {
@@ -73,8 +73,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .Where(pc => !pc.IsDeleted &&
-                               (pc.Name.Contains(searchTerm) ||
+                    .Where(pc => (pc.Name.Contains(searchTerm) ||
                                 (pc.Code != null && pc.Code.Contains(searchTerm))))
                     .OrderBy(pc => pc.Name)
                     .ToListAsync();
@@ -174,7 +173,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCategories.Where(pc => pc.Name == categoryName && !pc.IsDeleted);
+                var query = context.ProductCategories.Where(pc => pc.Name == categoryName);
                 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -196,7 +195,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCategories.Where(pc => pc.Code == categoryCode && !pc.IsDeleted);
+                var query = context.ProductCategories.Where(pc => pc.Code == categoryCode);
                 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -219,7 +218,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .FirstOrDefaultAsync(pc => pc.Name == categoryName && !pc.IsDeleted);
+                    .FirstOrDefaultAsync(pc => pc.Name == categoryName);
             }
             catch (Exception ex)
             {
@@ -236,7 +235,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCategories
-                    .FirstOrDefaultAsync(pc => pc.Code == categoryCode && !pc.IsDeleted);
+                    .FirstOrDefaultAsync(pc => pc.Code == categoryCode);
             }
             catch (Exception ex)
             {
@@ -254,7 +253,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否有商品使用此分類
                 var hasProducts = await context.Products
-                    .AnyAsync(p => p.ProductCategoryId == categoryId && !p.IsDeleted);
+                    .AnyAsync(p => p.ProductCategoryId == categoryId);
 
                 return !hasProducts;
             }
@@ -270,4 +269,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

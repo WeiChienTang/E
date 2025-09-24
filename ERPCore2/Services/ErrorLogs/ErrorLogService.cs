@@ -73,7 +73,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ErrorLogs
-                    .Where(x => x.ErrorId == errorId && !x.IsDeleted)
+                    .Where(x => x.ErrorId == errorId)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -92,7 +92,7 @@ namespace ERPCore2.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.ErrorLogs
-                .Where(x => x.Level == level && !x.IsDeleted)
+                .Where(x => x.Level == level)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
         }
@@ -104,7 +104,7 @@ namespace ERPCore2.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.ErrorLogs
-                .Where(x => x.Source == source && !x.IsDeleted)
+                .Where(x => x.Source == source)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
         }
@@ -116,7 +116,7 @@ namespace ERPCore2.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.ErrorLogs
-                .Where(x => x.OccurredAt >= startDate && x.OccurredAt <= endDate && !x.IsDeleted)
+                .Where(x => x.OccurredAt >= startDate && x.OccurredAt <= endDate)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
         }
@@ -128,7 +128,7 @@ namespace ERPCore2.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.ErrorLogs
-                .Where(x => !x.IsResolved && !x.IsDeleted)
+                .Where(x => !x.IsResolved)
                 .OrderByDescending(x => x.OccurredAt)
                 .ToListAsync();
         }
@@ -163,7 +163,7 @@ namespace ERPCore2.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             var errorLogs = await context.ErrorLogs
-                .Where(x => errorIds.Contains(x.ErrorId) && !x.IsDeleted)
+                .Where(x => errorIds.Contains(x.ErrorId))
                 .ToListAsync();
 
             if (!errorLogs.Any())
@@ -340,7 +340,7 @@ namespace ERPCore2.Services
             }
 
             return await context.ErrorLogs
-                .Where(x => !x.IsDeleted && (
+                .Where(x => (
                     x.Message.Contains(searchTerm) ||
                     x.ErrorId.Contains(searchTerm) ||
                     x.Category.Contains(searchTerm) ||
@@ -374,8 +374,7 @@ namespace ERPCore2.Services
             {
                 var exists = await context.ErrorLogs.AnyAsync(x => 
                     x.ErrorId == entity.ErrorId && 
-                    x.Id != entity.Id && 
-                    !x.IsDeleted);
+                    x.Id != entity.Id);
                 
                 if (exists)
                     errors.Add("錯誤ID已存在");
@@ -433,4 +432,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

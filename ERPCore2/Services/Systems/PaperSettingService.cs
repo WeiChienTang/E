@@ -27,8 +27,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PaperSettings
-                    .Where(p => !p.IsDeleted &&
-                        (p.Code!.Contains(searchTerm) ||
+                    .Where(p => (p.Code!.Contains(searchTerm) ||
                          p.Name.Contains(searchTerm) ||
                          (p.Remarks != null && p.Remarks.Contains(searchTerm))))
                     .OrderBy(p => p.Code)
@@ -100,7 +99,7 @@ namespace ERPCore2.Services
 
                 // 返回第一個啟用的 A4 紙張設定作為預設，如果沒有則返回第一個啟用的
                 var a4Setting = await context.PaperSettings
-                    .Where(p => !p.IsDeleted && p.Status == EntityStatus.Active && p.PaperType == "A4")
+                    .Where(p => p.Status == EntityStatus.Active && p.PaperType == "A4")
                     .FirstOrDefaultAsync();
 
                 if (a4Setting != null)
@@ -108,7 +107,7 @@ namespace ERPCore2.Services
 
                 // 如果沒有 A4，返回第一個啟用的紙張設定
                 return await context.PaperSettings
-                    .Where(p => !p.IsDeleted && p.Status == EntityStatus.Active)
+                    .Where(p => p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Code)
                     .FirstOrDefaultAsync();
             }
@@ -132,7 +131,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PaperSettings
-                    .Where(p => p.Code == code && !p.IsDeleted)
+                    .Where(p => p.Code == code)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -155,7 +154,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.PaperSettings.Where(p => p.Code == code && !p.IsDeleted);
+                var query = context.PaperSettings.Where(p => p.Code == code);
 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -187,7 +186,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PaperSettings
-                    .Where(p => !p.IsDeleted && p.Status == EntityStatus.Active)
+                    .Where(p => p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Code)
                     .ToListAsync();
             }
@@ -211,7 +210,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PaperSettings
-                    .Where(p => !p.IsDeleted && p.Status == EntityStatus.Active && p.PaperType == paperType)
+                    .Where(p => p.Status == EntityStatus.Active && p.PaperType == paperType)
                     .OrderBy(p => p.Code)
                     .ToListAsync();
             }
@@ -235,7 +234,7 @@ namespace ERPCore2.Services
 
                 // 檢查目標紙張設定是否存在且啟用
                 var targetSetting = await context.PaperSettings
-                    .Where(p => p.Id == id && !p.IsDeleted && p.Status == EntityStatus.Active)
+                    .Where(p => p.Id == id && p.Status == EntityStatus.Active)
                     .FirstOrDefaultAsync();
 
                 if (targetSetting == null)
@@ -313,3 +312,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

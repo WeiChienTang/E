@@ -33,7 +33,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => t.ProductId == productId && !t.IsDeleted)
+                    .Where(t => t.ProductId == productId)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -53,7 +53,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => t.WarehouseId == warehouseId && !t.IsDeleted)
+                    .Where(t => t.WarehouseId == warehouseId)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -73,7 +73,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => t.TransactionNumber == transactionNumber && !t.IsDeleted)
+                    .Where(t => t.TransactionNumber == transactionNumber)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -93,7 +93,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => t.TransactionType == transactionType && !t.IsDeleted)
+                    .Where(t => t.TransactionType == transactionType)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -113,7 +113,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate && !t.IsDeleted)
+                    .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -135,8 +135,7 @@ namespace ERPCore2.Services
                     .Include(t => t.WarehouseLocation)
                     .Where(t => t.ProductId == productId && 
                                t.TransactionDate >= startDate && 
-                               t.TransactionDate <= endDate && 
-                               !t.IsDeleted)
+                               t.TransactionDate <= endDate)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -158,8 +157,7 @@ namespace ERPCore2.Services
                     .Include(t => t.WarehouseLocation)
                     .Where(t => t.WarehouseId == warehouseId && 
                                t.TransactionDate >= startDate && 
-                               t.TransactionDate <= endDate && 
-                               !t.IsDeleted)
+                               t.TransactionDate <= endDate)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -179,7 +177,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+                    .FirstOrDefaultAsync(t => t.Id == id);
             }
             catch (Exception ex)
             {
@@ -198,8 +196,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryTransactions.Where(t => t.ProductId == productId && 
-                                             t.Quantity > 0 && 
-                                             !t.IsDeleted);
+                                             t.Quantity > 0);
 
                 if (startDate.HasValue)
                     query = query.Where(t => t.TransactionDate >= startDate.Value);
@@ -222,8 +219,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryTransactions.Where(t => t.ProductId == productId && 
-                                             t.Quantity < 0 && 
-                                             !t.IsDeleted);
+                                             t.Quantity < 0);
 
                 if (startDate.HasValue)
                     query = query.Where(t => t.TransactionDate >= startDate.Value);
@@ -247,8 +243,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryTransactions
                     .Where(t => t.TransactionDate >= startDate && 
-                               t.TransactionDate <= endDate && 
-                               !t.IsDeleted)
+                               t.TransactionDate <= endDate)
                     .GroupBy(t => t.TransactionType)
                     .ToDictionaryAsync(g => g.Key, g => g.Count());
             }
@@ -285,7 +280,7 @@ namespace ERPCore2.Services
                     TransactionRemarks = remarks,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 var validationResult = await ValidateTransactionAsync(transaction);
@@ -326,7 +321,7 @@ namespace ERPCore2.Services
                     TransactionRemarks = remarks,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 var validationResult = await ValidateTransactionAsync(transaction);
@@ -369,7 +364,7 @@ namespace ERPCore2.Services
                     TransactionRemarks = remarks ?? $"庫存調整：{originalQuantity} → {adjustedQuantity}",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 var validationResult = await ValidateTransactionAsync(transaction);
@@ -414,7 +409,7 @@ namespace ERPCore2.Services
                     TransactionRemarks = remarks ?? $"調撥至倉庫ID:{toWarehouseId}",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 // 建立入庫異動記錄
@@ -430,7 +425,7 @@ namespace ERPCore2.Services
                     TransactionRemarks = remarks ?? $"從倉庫ID:{fromWarehouseId}調撥",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 var outValidation = await ValidateTransactionAsync(outboundTransaction);
@@ -467,7 +462,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => t.ProductId == productId && !t.IsDeleted);
+                    .Where(t => t.ProductId == productId);
 
                 if (warehouseId.HasValue)
                     query = query.Where(t => t.WarehouseId == warehouseId.Value);
@@ -491,9 +486,6 @@ namespace ERPCore2.Services
                 if (originalTransaction == null)
                     return ServiceResult.Failure("找不到指定的異動記錄");
 
-                if (originalTransaction.IsDeleted)
-                    return ServiceResult.Failure("該異動記錄已被刪除");
-
                 var reverseTransaction = new InventoryTransaction
                 {
                     ProductId = originalTransaction.ProductId,
@@ -506,7 +498,7 @@ namespace ERPCore2.Services
                     TransactionRemarks = $"沖銷異動ID:{transactionId} - {reason}",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 var validationResult = await ValidateTransactionAsync(reverseTransaction);
@@ -556,12 +548,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查產品是否存在
-                var productExists = await context.Products.AnyAsync(p => p.Id == transaction.ProductId && !p.IsDeleted);
+                var productExists = await context.Products.AnyAsync(p => p.Id == transaction.ProductId);
                 if (!productExists)
                     errors.Add("指定的產品不存在");
 
                 // 檢查倉庫是否存在
-                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == transaction.WarehouseId && !w.IsDeleted);
+                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == transaction.WarehouseId);
                 if (!warehouseExists)
                     errors.Add("指定的倉庫不存在");
 
@@ -570,8 +562,7 @@ namespace ERPCore2.Services
                 {
                     var locationExists = await context.WarehouseLocations
                         .AnyAsync(l => l.Id == transaction.WarehouseLocationId.Value && 
-                                      l.WarehouseId == transaction.WarehouseId && 
-                                      !l.IsDeleted);
+                                      l.WarehouseId == transaction.WarehouseId);
                     if (!locationExists)
                         errors.Add("指定的倉庫位置不存在或不屬於該倉庫");
                 }
@@ -593,7 +584,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.InventoryTransactions.Where(t => t.TransactionNumber == transactionNumber && !t.IsDeleted);
+                var query = context.InventoryTransactions.Where(t => t.TransactionNumber == transactionNumber);
                 
                 if (excludeId.HasValue)
                     query = query.Where(t => t.Id != excludeId.Value);
@@ -620,7 +611,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => !t.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
@@ -640,7 +631,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+                    .FirstOrDefaultAsync(t => t.Id == id);
             }
             catch (Exception ex)
             {
@@ -658,8 +649,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => !t.IsDeleted && 
-                               (t.TransactionNumber.Contains(searchTerm) ||
+                    .Where(t => (t.TransactionNumber.Contains(searchTerm) ||
                                 (t.TransactionRemarks != null && t.TransactionRemarks.Contains(searchTerm)) ||
                                 (t.ReferenceNumber != null && t.ReferenceNumber.Contains(searchTerm))))
                     .OrderByDescending(t => t.TransactionDate)
@@ -675,4 +665,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

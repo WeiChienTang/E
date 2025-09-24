@@ -144,7 +144,7 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .ThenInclude(r => r != null ? r.RolePermissions : null!)
                     .ThenInclude(rp => rp.Permission)
-                    .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted);
+                    .FirstOrDefaultAsync(e => e.Id == employeeId);
 
                 if (employee == null)
                     return ServiceResult<List<Permission>>.Failure("員工不存在");
@@ -156,7 +156,7 @@ namespace ERPCore2.Services
                     return ServiceResult<List<Permission>>.Success(new List<Permission>());
 
                 var permissions = employee.Role.RolePermissions
-                    .Where(rp => !rp.IsDeleted && rp.Status == EntityStatus.Active && rp.Permission != null && !rp.Permission.IsDeleted)
+                    .Where(rp => rp.Status == EntityStatus.Active && rp.Permission != null)
                     .Select(rp => rp.Permission!)
                     .ToList();
 
@@ -223,13 +223,13 @@ namespace ERPCore2.Services
                 var role = await context.Roles
                     .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                    .FirstOrDefaultAsync(r => r.Id == roleId && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Id == roleId);
 
                 if (role == null)
                     return ServiceResult<List<Permission>>.Failure("角色不存在");
 
                 var permissions = role.RolePermissions
-                    .Where(rp => !rp.IsDeleted && rp.Status == EntityStatus.Active && rp.Permission != null && !rp.Permission.IsDeleted)
+                    .Where(rp => rp.Status == EntityStatus.Active && rp.Permission != null)
                     .Select(rp => rp.Permission)
                     .ToList();
 
@@ -266,7 +266,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var exists = await context.Permissions
-                    .AnyAsync(p => p.Code == permissionCode && !p.IsDeleted);
+                    .AnyAsync(p => p.Code == permissionCode);
 
                 return ServiceResult<bool>.Success(exists);
             }
@@ -359,7 +359,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
-                    .Where(p => p.Code != null && p.Code.StartsWith(modulePrefix + ".") && !p.IsDeleted)
+                    .Where(p => p.Code != null && p.Code.StartsWith(modulePrefix + "."))
                     .OrderBy(p => p.Code)
                     .ToListAsync();
 
@@ -436,4 +436,5 @@ namespace ERPCore2.Services
         }
     }
 }
+
 

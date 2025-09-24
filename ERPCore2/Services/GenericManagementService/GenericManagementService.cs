@@ -35,7 +35,7 @@ namespace ERPCore2.Services
         #region 基本 CRUD 操作
 
         /// <summary>
-        /// 取得所有資料（不含已刪除）
+        /// 取得所有資料
         /// </summary>
         public virtual async Task<List<T>> GetAllAsync()
         {
@@ -45,7 +45,6 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 return await dbSet
-                    .Where(x => !x.IsDeleted)
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
             }
@@ -67,7 +66,7 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 return await dbSet
-                    .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
+                    .Where(x => x.Status == EntityStatus.Active)
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
             }
@@ -90,7 +89,7 @@ namespace ERPCore2.Services
                 
                 return await dbSet
                     .AsNoTracking() // 避免 Entity Framework 追蹤衝突
-                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                    .FirstOrDefaultAsync(x => x.Id == id);
             }
             catch (Exception ex)
             {
@@ -116,7 +115,6 @@ namespace ERPCore2.Services
                 // 設定建立資訊
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
-                entity.IsDeleted = false;
                 
                 if (entity.Status == default)
                 {
@@ -150,7 +148,7 @@ namespace ERPCore2.Services
                 
                 // 檢查實體是否存在
                 var existingEntity = await dbSet
-                    .FirstOrDefaultAsync(x => x.Id == entity.Id && !x.IsDeleted);
+                    .FirstOrDefaultAsync(x => x.Id == entity.Id);
                     
                 if (existingEntity == null)
                 {
@@ -182,34 +180,13 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 刪除資料（軟刪除）
+        /// 刪除資料（硬刪除）
+        /// 不要再調用此方法，已經不再使用軟除 2025/09/24
         /// </summary>
         public virtual async Task<ServiceResult> DeleteAsync(int id)
         {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var dbSet = context.Set<T>();
-                
-                var entity = await dbSet
-                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-                    
-                if (entity == null)
-                {
-                    return ServiceResult.Failure("找不到要刪除的資料");
-                }
-
-                entity.IsDeleted = true;
-                entity.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger);
-                return ServiceResult.Failure($"刪除資料時發生錯誤: {ex.Message}");
-            }
+            // 直接調用永久刪除方法，不再使用軟刪除
+            return await PermanentDeleteAsync(id);
         }
 
         /// <summary>
@@ -327,7 +304,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 批次刪除
+        /// 批次刪除（硬刪除）
         /// </summary>
         public virtual async Task<ServiceResult> DeleteBatchAsync(List<int> ids)
         {
@@ -337,7 +314,7 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 var entities = await dbSet
-                    .Where(x => ids.Contains(x.Id) && !x.IsDeleted)
+                    .Where(x => ids.Contains(x.Id))
                     .ToListAsync();
 
                 if (!entities.Any())
@@ -345,12 +322,18 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到要刪除的資料");
                 }
 
+                // 檢查每個實體是否可以刪除
                 foreach (var entity in entities)
                 {
-                    entity.IsDeleted = true;
-                    entity.UpdatedAt = DateTime.UtcNow;
+                    var canDeleteResult = await CanDeleteAsync(entity);
+                    if (!canDeleteResult.IsSuccess)
+                    {
+                        return ServiceResult.Failure($"無法刪除 ID {entity.Id} 的資料: {canDeleteResult.ErrorMessage}");
+                    }
                 }
 
+                // 執行硬刪除
+                dbSet.RemoveRange(entities);
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
@@ -375,7 +358,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var dbSet = context.Set<T>();
                 
-                var query = dbSet.Where(x => !x.IsDeleted);
+                var query = dbSet.AsQueryable();
 
                 // 如果有搜尋條件，使用子類別的搜尋邏輯
                 if (!string.IsNullOrEmpty(searchTerm))
@@ -417,7 +400,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var dbSet = context.Set<T>();
                 
-                return await dbSet.AnyAsync(x => x.Id == id && !x.IsDeleted);
+                return await dbSet.AnyAsync(x => x.Id == id);
             }
             catch (Exception ex)
             {
@@ -436,7 +419,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var dbSet = context.Set<T>();
                 
-                return await dbSet.CountAsync(x => !x.IsDeleted);
+                return await dbSet.CountAsync();
             }
             catch (Exception ex)
             {
@@ -460,7 +443,7 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 var entity = await dbSet
-                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                    .FirstOrDefaultAsync(x => x.Id == id);
                     
                 if (entity == null)
                 {
@@ -491,7 +474,7 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 var entity = await dbSet
-                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+                    .FirstOrDefaultAsync(x => x.Id == id);
                     
                 if (entity == null)
                 {
@@ -525,7 +508,7 @@ namespace ERPCore2.Services
                 var dbSet = context.Set<T>();
                 
                 var entities = await dbSet
-                    .Where(x => ids.Contains(x.Id) && !x.IsDeleted)
+                    .Where(x => ids.Contains(x.Id))
                     .ToListAsync();
 
                 if (!entities.Any())

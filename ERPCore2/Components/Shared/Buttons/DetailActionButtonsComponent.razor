@@ -182,8 +182,8 @@
             {
                 try
                 {
-                    // 使用反射調用服務的 DeleteAsync 方法
-                    var deleteMethod = EntityService.GetType().GetMethod("DeleteAsync");
+                    // 使用反射調用服務的 PermanentDeleteAsync 方法（改為硬刪除）
+                    var deleteMethod = EntityService.GetType().GetMethod("PermanentDeleteAsync");
                     if (deleteMethod != null)
                     {
                         var entityId = int.Parse(EntityId);

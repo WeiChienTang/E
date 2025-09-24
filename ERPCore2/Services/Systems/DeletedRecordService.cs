@@ -11,7 +11,9 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 刪除記錄服務實作
+    /// 注意：此服務已棄用，因為系統不再使用軟刪除功能
     /// </summary>
+    [Obsolete("此服務已棄用，因為系統不再使用軟刪除功能", false)]
     public class DeletedRecordService : GenericManagementService<DeletedRecord>, IDeletedRecordService
     {
         public DeletedRecordService(
@@ -29,8 +31,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.DeletedRecords
-                    .Where(dr => !dr.IsDeleted &&
-                        (dr.TableName.Contains(searchTerm) ||
+                    .Where(dr => (dr.TableName.Contains(searchTerm) ||
                          (dr.RecordDisplayName != null && dr.RecordDisplayName.Contains(searchTerm)) ||
                          (dr.DeletedBy != null && dr.DeletedBy.Contains(searchTerm)) ||
                          (dr.DeleteReason != null && dr.DeleteReason.Contains(searchTerm))))
@@ -84,7 +85,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.DeletedRecords
-                    .Where(dr => !dr.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(dr => dr.DeletedAt)
                     .ToListAsync();
             }
@@ -112,8 +113,6 @@ namespace ERPCore2.Services
                     DeletedAt = DateTime.Now,
                     CreatedAt = DateTime.Now,
                     CreatedBy = deletedBy,
-                    // DeletedRecord 本身不應該被標記為已刪除，因為它是刪除歷史記錄
-                    IsDeleted = false,
                     Status = EntityStatus.Active
                 };
 
@@ -147,7 +146,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.DeletedRecords
-                    .Where(dr => !dr.IsDeleted && dr.TableName == tableName && dr.RecordId == recordId)
+                    .Where(dr => dr.TableName == tableName && dr.RecordId == recordId)
                     .OrderByDescending(dr => dr.DeletedAt)
                     .FirstOrDefaultAsync();
             }
@@ -169,7 +168,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.DeletedRecords
-                    .Where(dr => !dr.IsDeleted && dr.TableName == tableName)
+                    .Where(dr => dr.TableName == tableName)
                     .OrderByDescending(dr => dr.DeletedAt)
                     .ToListAsync();
             }
@@ -190,7 +189,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.DeletedRecords
-                    .Where(dr => !dr.IsDeleted && dr.DeletedBy == deletedBy)
+                    .Where(dr => dr.DeletedBy == deletedBy)
                     .OrderByDescending(dr => dr.DeletedAt)
                     .ToListAsync();
             }
@@ -216,7 +215,7 @@ namespace ERPCore2.Services
                 {
                     // 1. 首先確認 DeletedRecord 存在
                     var deletedRecord = await context.DeletedRecords
-                        .FirstOrDefaultAsync(dr => dr.Id == deletedRecordId && !dr.IsDeleted);
+                        .FirstOrDefaultAsync(dr => dr.Id == deletedRecordId);
 
                     if (deletedRecord == null)
                     {
@@ -376,9 +375,9 @@ namespace ERPCore2.Services
                     return null;
                 }
 
-                // 查找符合條件的實體：Id == recordId && IsDeleted == true
+                // 查找符合條件的實體：Id == recordId（已不再使用軟刪除）
                 var entity = await set
-                    .Where(e => e.Id == recordId && e.IsDeleted)
+                    .Where(e => e.Id == recordId)
                     .FirstOrDefaultAsync();
 
                 return entity;
@@ -391,3 +390,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

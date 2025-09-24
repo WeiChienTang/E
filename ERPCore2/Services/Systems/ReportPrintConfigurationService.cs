@@ -29,8 +29,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => !r.IsDeleted &&
-                        (r.ReportType.Contains(searchTerm) ||
+                    .Where(r => (r.ReportType.Contains(searchTerm) ||
                          r.ReportName.Contains(searchTerm) ||
                          (r.Code != null && r.Code.Contains(searchTerm)) ||
                          (r.Remarks != null && r.Remarks.Contains(searchTerm))))
@@ -69,7 +68,7 @@ namespace ERPCore2.Services
                 if (entity.PrinterConfigurationId.HasValue)
                 {
                     var printerExists = await context.PrinterConfigurations
-                        .AnyAsync(p => p.Id == entity.PrinterConfigurationId.Value && !p.IsDeleted);
+                        .AnyAsync(p => p.Id == entity.PrinterConfigurationId.Value);
                     if (!printerExists)
                         return ServiceResult.Failure("指定的印表機設定不存在");
                 }
@@ -78,7 +77,7 @@ namespace ERPCore2.Services
                 if (entity.PaperSettingId.HasValue)
                 {
                     var paperExists = await context.PaperSettings
-                        .AnyAsync(p => p.Id == entity.PaperSettingId.Value && !p.IsDeleted);
+                        .AnyAsync(p => p.Id == entity.PaperSettingId.Value);
                     if (!paperExists)
                         return ServiceResult.Failure("指定的紙張設定不存在");
                 }
@@ -106,7 +105,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => !r.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(r => r.ReportType)
                     .ToListAsync();
             }
@@ -129,7 +128,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Id == id);
             }
             catch (Exception ex)
             {
@@ -154,7 +153,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .FirstOrDefaultAsync(r => r.ReportType == reportType && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.ReportType == reportType);
             }
             catch (Exception ex)
             {
@@ -177,7 +176,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.ReportPrintConfigurations
-                    .Where(r => r.ReportType == reportType && !r.IsDeleted);
+                    .Where(r => r.ReportType == reportType);
 
                 if (excludeId.HasValue)
                     query = query.Where(r => r.Id != excludeId.Value);
@@ -205,7 +204,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => !r.IsDeleted && r.Status == EntityStatus.Active)
+                    .Where(r => r.Status == EntityStatus.Active)
                     .OrderBy(r => r.ReportType)
                     .ToListAsync();
             }
@@ -226,7 +225,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
-                    .Where(r => !r.IsDeleted)
+                    .AsQueryable()
                     .Select(r => r.ReportType)
                     .Distinct()
                     .OrderBy(rt => rt)
@@ -251,7 +250,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => r.PrinterConfigurationId == printerConfigurationId && !r.IsDeleted)
+                    .Where(r => r.PrinterConfigurationId == printerConfigurationId)
                     .OrderBy(r => r.ReportType)
                     .ToListAsync();
             }
@@ -275,7 +274,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => r.PaperSettingId == paperSettingId && !r.IsDeleted)
+                    .Where(r => r.PaperSettingId == paperSettingId)
                     .OrderBy(r => r.ReportType)
                     .ToListAsync();
             }
@@ -302,7 +301,7 @@ namespace ERPCore2.Services
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .FirstOrDefaultAsync(r => r.ReportType == reportType && !r.IsDeleted && r.Status == EntityStatus.Active);
+                    .FirstOrDefaultAsync(r => r.ReportType == reportType && r.Status == EntityStatus.Active);
             }
             catch (Exception ex)
             {
@@ -382,7 +381,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var sourceConfig = await context.ReportPrintConfigurations
-                    .FirstOrDefaultAsync(r => r.ReportType == sourceReportType && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.ReportType == sourceReportType);
 
                 if (sourceConfig == null)
                     return false;
@@ -418,3 +417,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

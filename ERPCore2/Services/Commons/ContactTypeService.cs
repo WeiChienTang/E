@@ -30,7 +30,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ContactTypes
-                    .Where(x => !x.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -51,7 +51,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ContactTypes
-                    .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
+                    .Where(x => x.Status == EntityStatus.Active)
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -106,8 +106,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ContactTypes
-                    .Where(x => !x.IsDeleted && 
-                               (x.TypeName.Contains(searchTerm) || 
+                    .Where(x => (x.TypeName.Contains(searchTerm) || 
                                 (x.Description != null && x.Description.Contains(searchTerm))))
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
@@ -129,7 +128,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ContactTypes.Where(x => !x.IsDeleted && x.TypeName == name);
+                var query = context.ContactTypes.Where(x => x.TypeName == name);
                 
                 if (excludeId.HasValue)
                     query = query.Where(x => x.Id != excludeId.Value);
@@ -156,7 +155,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 檢查是否有關聯的聯絡資料
                 var hasRelatedContacts = await context.Contacts
-                    .AnyAsync(c => c.ContactTypeId == id && !c.IsDeleted);
+                    .AnyAsync(c => c.ContactTypeId == id);
 
                 if (hasRelatedContacts)
                     return ServiceResult.Failure("無法刪除，此聯絡類型已被聯絡資料使用");
@@ -199,7 +198,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ContactTypes.Where(x => !x.IsDeleted);
+                var query = context.ContactTypes.AsQueryable();
                 
                 var totalCount = await query.CountAsync();
                 
@@ -224,4 +223,5 @@ namespace ERPCore2.Services
         }
     }
 }
+
 

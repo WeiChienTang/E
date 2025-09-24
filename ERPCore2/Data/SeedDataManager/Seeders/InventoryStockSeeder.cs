@@ -23,9 +23,9 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         {
             if (await context.InventoryStocks.AnyAsync()) return;
 
-            var products = await context.Products.Where(p => !p.IsDeleted).Take(10).ToListAsync();
-            var warehouses = await context.Warehouses.Where(w => !w.IsDeleted).Take(2).ToListAsync();
-            var locations = await context.WarehouseLocations.Where(l => !l.IsDeleted).ToListAsync();
+            var products = await context.Products.Take(10).ToListAsync();
+            var warehouses = await context.Warehouses.Take(2).ToListAsync();
+            var locations = await context.WarehouseLocations.ToListAsync();
 
             if (!products.Any() || !warehouses.Any()) return;
 
@@ -73,7 +73,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var stocks = await context.InventoryStocks
                 .Include(s => s.Product)
                 .Include(s => s.Warehouse)
-                .Where(s => !s.IsDeleted)
                 .Take(5)
                 .ToListAsync();
 
@@ -145,7 +144,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.InventoryReservations.AnyAsync()) return;
 
             var stocks = await context.InventoryStocks
-                .Where(s => !s.IsDeleted && s.CurrentStock > s.ReservedStock)
+                .Where(s => s.CurrentStock > s.ReservedStock)
                 .Take(3)
                 .ToListAsync();
 

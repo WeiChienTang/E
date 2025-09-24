@@ -28,7 +28,7 @@ namespace ERPCore2.Services
                 return await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
-                    .Where(uc => !uc.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(uc => uc.FromUnit.Name)
                     .ThenBy(uc => uc.ToUnit.Name)
                     .ToListAsync();
@@ -50,7 +50,7 @@ namespace ERPCore2.Services
                 return await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
-                    .FirstOrDefaultAsync(uc => uc.Id == id && !uc.IsDeleted);
+                    .FirstOrDefaultAsync(uc => uc.Id == id);
             }
             catch (Exception ex)
             {
@@ -70,7 +70,7 @@ namespace ERPCore2.Services
                 var entities = await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
-                    .Where(uc => (uc.FromUnitId == unitId || uc.ToUnitId == unitId) && !uc.IsDeleted)
+                    .Where(uc => (uc.FromUnitId == unitId || uc.ToUnitId == unitId))
                     .OrderBy(uc => uc.FromUnit.Name)
                     .ThenBy(uc => uc.ToUnit.Name)
                     .ToListAsync();
@@ -96,8 +96,7 @@ namespace ERPCore2.Services
                 var directConversion = await context.UnitConversions
                     .FirstOrDefaultAsync(uc => uc.FromUnitId == fromUnitId && 
                                               uc.ToUnitId == toUnitId && 
-                                              uc.IsActive && 
-                                              !uc.IsDeleted);
+                                              uc.IsActive);
 
                 if (directConversion != null)
                 {
@@ -108,8 +107,7 @@ namespace ERPCore2.Services
                 var reverseConversion = await context.UnitConversions
                     .FirstOrDefaultAsync(uc => uc.FromUnitId == toUnitId && 
                                               uc.ToUnitId == fromUnitId && 
-                                              uc.IsActive && 
-                                              !uc.IsDeleted);
+                                              uc.IsActive);
 
                 if (reverseConversion != null)
                 {
@@ -138,8 +136,7 @@ namespace ERPCore2.Services
                 var exists = await context.UnitConversions
                     .AnyAsync(uc => uc.FromUnitId == entity.FromUnitId && 
                                    uc.ToUnitId == entity.ToUnitId && 
-                                   uc.Id != entity.Id && 
-                                   !uc.IsDeleted);
+                                   uc.Id != entity.Id);
 
                 if (exists)
                 {
@@ -171,8 +168,7 @@ namespace ERPCore2.Services
                 return await context.UnitConversions
                     .Include(uc => uc.FromUnit)
                     .Include(uc => uc.ToUnit)
-                    .Where(uc => !uc.IsDeleted && 
-                                ((uc.FromUnit.Name != null && uc.FromUnit.Name.Contains(searchTerm)) || 
+                    .Where(uc => ((uc.FromUnit.Name != null && uc.FromUnit.Name.Contains(searchTerm)) || 
                                  (uc.ToUnit.Name != null && uc.ToUnit.Name.Contains(searchTerm)) ||
                                  (uc.FromUnit.Code != null && uc.FromUnit.Code.Contains(searchTerm)) ||
                                  (uc.ToUnit.Code != null && uc.ToUnit.Code.Contains(searchTerm))))
@@ -191,4 +187,5 @@ namespace ERPCore2.Services
         }
     }
 }
+
 

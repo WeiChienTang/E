@@ -29,7 +29,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Where(m => !m.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(m => m.Name)
                     .ToListAsync();
             }
@@ -52,7 +52,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+                    .FirstOrDefaultAsync(m => m.Id == id);
             }
             catch (Exception ex)
             {
@@ -77,8 +77,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Where(m => !m.IsDeleted &&
-                               ((m.Name != null && m.Name.Contains(searchTerm)) ||
+                    .Where(m => ((m.Name != null && m.Name.Contains(searchTerm)) ||
                                 (m.Code != null && m.Code.Contains(searchTerm)) ||
                                 (m.Description != null && m.Description.Contains(searchTerm))))
                     .OrderBy(m => m.Name)
@@ -140,7 +139,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Materials.Where(m => m.Name == name && !m.IsDeleted);
+                var query = context.Materials.Where(m => m.Name == name);
 
                 if (excludeId.HasValue)
                     query = query.Where(m => m.Id != excludeId.Value);
@@ -167,7 +166,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Materials.Where(m => m.Code == code && !m.IsDeleted);
+                var query = context.Materials.Where(m => m.Code == code);
 
                 if (excludeId.HasValue)
                     query = query.Where(m => m.Id != excludeId.Value);
@@ -195,7 +194,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Materials
-                    .Where(m => m.Code == code && !m.IsDeleted)
+                    .Where(m => m.Code == code)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -210,3 +209,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

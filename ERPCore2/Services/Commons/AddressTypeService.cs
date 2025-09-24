@@ -30,7 +30,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AddressTypes
-                    .Where(x => !x.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
             }
@@ -48,7 +48,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AddressTypes
-                    .Where(x => !x.IsDeleted && x.Status == EntityStatus.Active)
+                    .Where(x => x.Status == EntityStatus.Active)
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
             }
@@ -96,8 +96,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AddressTypes
-                    .Where(at => !at.IsDeleted && 
-                               (at.TypeName.Contains(searchTerm) || 
+                    .Where(at => (at.TypeName.Contains(searchTerm) || 
                                 (at.Description != null && at.Description.Contains(searchTerm))))
                     .OrderBy(at => at.TypeName)
                     .ToListAsync();
@@ -115,7 +114,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.AddressTypes.Where(at => at.TypeName == name && !at.IsDeleted);
+                var query = context.AddressTypes.Where(at => at.TypeName == name);
 
                 if (excludeId.HasValue)
                     query = query.Where(at => at.Id != excludeId.Value);
@@ -149,7 +148,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.AddressTypes.Where(at => !at.IsDeleted);
+                var query = context.AddressTypes.AsQueryable();
 
                 var totalCount = await query.CountAsync();
 
@@ -175,7 +174,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var hasRelatedAddresses = await context.Addresses
-                    .AnyAsync(a => a.AddressTypeId == entity.Id && !a.IsDeleted);
+                    .AnyAsync(a => a.AddressTypeId == entity.Id);
 
                 if (hasRelatedAddresses)
                     return ServiceResult.Failure("無法刪除，此地址類型已被地址使用");
@@ -214,3 +213,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

@@ -33,7 +33,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.ProductId == productId && !r.IsDeleted)
+                    .Where(r => r.ProductId == productId)
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
             }
@@ -53,7 +53,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.WarehouseId == warehouseId && !r.IsDeleted)
+                    .Where(r => r.WarehouseId == warehouseId)
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
             }
@@ -73,7 +73,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.ReferenceNumber == referenceNumber && !r.IsDeleted)
+                    .Where(r => r.ReferenceNumber == referenceNumber)
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
             }
@@ -93,7 +93,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.ReservationType == reservationType && !r.IsDeleted)
+                    .Where(r => r.ReservationType == reservationType)
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
             }
@@ -114,7 +114,6 @@ namespace ERPCore2.Services
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                               !r.IsDeleted &&
                                (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now))
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
@@ -136,7 +135,6 @@ namespace ERPCore2.Services
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                               !r.IsDeleted &&
                                r.ExpiryDate.HasValue && 
                                r.ExpiryDate < DateTime.Now)
                     .OrderBy(r => r.ExpiryDate)
@@ -164,7 +162,6 @@ namespace ERPCore2.Services
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ProductId == productId && 
                                r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                               !r.IsDeleted &&
                                (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now));
 
                 if (warehouseId.HasValue)
@@ -192,7 +189,6 @@ namespace ERPCore2.Services
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.WarehouseId == warehouseId && 
                                r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                               !r.IsDeleted &&
                                (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now))
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
@@ -213,7 +209,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Id == id);
             }
             catch (Exception ex)
             {
@@ -232,7 +228,6 @@ namespace ERPCore2.Services
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                               !r.IsDeleted &&
                                r.ExpiryDate.HasValue && 
                                r.ExpiryDate <= beforeDate)
                     .OrderBy(r => r.ExpiryDate)
@@ -257,7 +252,6 @@ namespace ERPCore2.Services
                 var query = context.InventoryReservations.Where(r => r.ProductId == productId && 
                                              r.WarehouseId == warehouseId && 
                                              r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                                             !r.IsDeleted &&
                                              (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now));
 
                 if (locationId.HasValue)
@@ -280,8 +274,7 @@ namespace ERPCore2.Services
                 // 獲取庫存數量
                 var stockQuery = context.InventoryStocks
                     .Where(s => s.ProductId == productId && 
-                               s.WarehouseId == warehouseId && 
-                               !s.IsDeleted);
+                               s.WarehouseId == warehouseId);
 
                 if (locationId.HasValue)
                     stockQuery = stockQuery.Where(s => s.WarehouseLocationId == locationId.Value);
@@ -305,7 +298,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.InventoryReservations.Where(r => !r.IsDeleted);
+                var query = context.InventoryReservations.AsQueryable();
 
                 if (startDate.HasValue)
                     query = query.Where(r => r.ReservationDate >= startDate.Value);
@@ -357,7 +350,7 @@ namespace ERPCore2.Services
                     ReservationRemarks = remarks,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsDeleted = false
+                    
                 };
 
                 var validationResult = await this.ValidateReservationAsync(reservation);
@@ -616,12 +609,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查產品是否存在
-                var productExists = await context.Products.AnyAsync(p => p.Id == reservation.ProductId && !p.IsDeleted);
+                var productExists = await context.Products.AnyAsync(p => p.Id == reservation.ProductId);
                 if (!productExists)
                     errors.Add("指定的產品不存在");
 
                 // 檢查倉庫是否存在
-                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == reservation.WarehouseId && !w.IsDeleted);
+                var warehouseExists = await context.Warehouses.AnyAsync(w => w.Id == reservation.WarehouseId);
                 if (!warehouseExists)
                     errors.Add("指定的倉庫不存在");
 
@@ -630,8 +623,7 @@ namespace ERPCore2.Services
                 {
                     var locationExists = await context.WarehouseLocations
                         .AnyAsync(l => l.Id == reservation.WarehouseLocationId.Value && 
-                                      l.WarehouseId == reservation.WarehouseId && 
-                                      !l.IsDeleted);
+                                      l.WarehouseId == reservation.WarehouseId);
                     if (!locationExists)
                         errors.Add("指定的倉庫位置不存在或不屬於該倉庫");
                 }
@@ -668,8 +660,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryReservations.Where(r => r.ReferenceNumber == referenceNumber && 
-                                             r.ReservationType == reservationType && 
-                                             !r.IsDeleted);
+                                             r.ReservationType == reservationType);
 
                 if (excludeId.HasValue)
                     query = query.Where(r => r.Id != excludeId.Value);
@@ -734,7 +725,6 @@ namespace ERPCore2.Services
                     .Where(r => r.ProductId == productId && 
                                r.WarehouseId == warehouseId && 
                                r.ReservationStatus == InventoryReservationStatus.Reserved && 
-                               !r.IsDeleted &&
                                (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now))
                     .OrderBy(r => r.ReservationDate)
                     .ToListAsync();
@@ -759,7 +749,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => !r.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
             }
@@ -779,7 +769,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                    .FirstOrDefaultAsync(r => r.Id == id);
             }
             catch (Exception ex)
             {
@@ -797,8 +787,7 @@ namespace ERPCore2.Services
                     .Include(r => r.Product)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => !r.IsDeleted && 
-                               ((r.ReservationNumber != null && r.ReservationNumber.Contains(searchTerm)) ||
+                    .Where(r => ((r.ReservationNumber != null && r.ReservationNumber.Contains(searchTerm)) ||
                                 (r.ReferenceNumber != null && r.ReferenceNumber.Contains(searchTerm)) ||
                                 (r.ReservationRemarks != null && r.ReservationRemarks.Contains(searchTerm))))
                     .OrderByDescending(r => r.ReservationDate)
@@ -814,3 +803,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

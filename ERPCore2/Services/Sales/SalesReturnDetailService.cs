@@ -32,7 +32,7 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .Where(srd => !srd.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(srd => srd.SalesReturnId)
                     .ThenBy(srd => srd.Product.Code)
                     .ToListAsync();
@@ -58,7 +58,7 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .FirstOrDefaultAsync(srd => srd.Id == id && !srd.IsDeleted);
+                    .FirstOrDefaultAsync(srd => srd.Id == id);
             }
             catch (Exception ex)
             {
@@ -86,8 +86,7 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Where(srd => !srd.IsDeleted &&
-                        ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
+                    .Where(srd => ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.SalesReturnNumber != null && srd.SalesReturn.SalesReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Customer != null && srd.SalesReturn.Customer.CompanyName != null && srd.SalesReturn.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
@@ -179,7 +178,7 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .Where(srd => srd.SalesReturnId == salesReturnId && !srd.IsDeleted)
+                    .Where(srd => srd.SalesReturnId == salesReturnId)
                     .OrderBy(srd => srd.Product.Code)
                     .ToListAsync();
             }
@@ -204,7 +203,7 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Where(srd => srd.ProductId == productId && !srd.IsDeleted)
+                    .Where(srd => srd.ProductId == productId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();
             }
@@ -230,7 +229,7 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
-                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId && !srd.IsDeleted)
+                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();
             }
@@ -278,7 +277,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.SalesReturnDetails.FindAsync(detailId);
 
-                if (detail == null || detail.IsDeleted)
+                if (detail == null)
                     return ServiceResult.Failure("找不到指定的明細記錄");
 
                 if (processedQuantity < 0)
@@ -314,7 +313,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.SalesReturnDetails.FindAsync(detailId);
 
-                if (detail == null || detail.IsDeleted)
+                if (detail == null)
                     return ServiceResult.Failure("找不到指定的明細記錄");
 
                 if (restockedQuantity < 0)
@@ -353,7 +352,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.SalesReturnDetails.FindAsync(detailId);
 
-                if (detail == null || detail.IsDeleted)
+                if (detail == null)
                     return ServiceResult.Failure("找不到指定的明細記錄");
 
                 if (scrapQuantity < 0)
@@ -453,7 +452,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var details = await context.SalesReturnDetails
-                    .Where(srd => srd.SalesReturnId == salesReturnId && !srd.IsDeleted)
+                    .Where(srd => srd.SalesReturnId == salesReturnId)
                     .ToListAsync();
 
                 var statistics = new SalesReturnDetailStatistics
@@ -518,7 +517,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnDetails
-                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId && !srd.IsDeleted)
+                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId)
                     .SumAsync(srd => srd.ReturnQuantity);
             }
             catch (Exception ex)
@@ -533,3 +532,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

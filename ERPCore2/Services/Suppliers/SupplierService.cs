@@ -39,7 +39,7 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Where(s => !s.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
             }
@@ -58,7 +58,7 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+                    .FirstOrDefaultAsync(s => s.Id == id);
             }
             catch (Exception ex)
             {
@@ -78,8 +78,7 @@ namespace ERPCore2.Services
 
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Where(s => !s.IsDeleted &&
-                               (s.CompanyName != null && s.CompanyName.Contains(searchTerm)) ||
+                    .Where(s => (s.CompanyName != null && s.CompanyName.Contains(searchTerm)) ||
                                 (s.Code != null && s.Code.Contains(searchTerm)) ||
                                 (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm)) ||
                                 (s.TaxNumber != null && s.TaxNumber.Contains(searchTerm)))
@@ -161,7 +160,7 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .FirstOrDefaultAsync(s => s.Code == supplierCode && !s.IsDeleted);
+                    .FirstOrDefaultAsync(s => s.Code == supplierCode);
             }
             catch (Exception ex)
             {
@@ -177,7 +176,7 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.Suppliers.Where(s => s.Code == supplierCode && !s.IsDeleted);
+                var query = context.Suppliers.Where(s => s.Code == supplierCode);
                 
                 if (excludeId.HasValue)
                     query = query.Where(s => s.Id != excludeId.Value);
@@ -201,7 +200,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(companyName))
                     return false;
 
-                var query = context.Suppliers.Where(s => s.CompanyName == companyName && !s.IsDeleted);
+                var query = context.Suppliers.Where(s => s.CompanyName == companyName);
                 
                 if (excludeId.HasValue)
                     query = query.Where(s => s.Id != excludeId.Value);
@@ -224,7 +223,7 @@ namespace ERPCore2.Services
             {
                 return await context.Suppliers
                     .Include(s => s.SupplierType)
-                    .Where(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted)
+                    .Where(s => s.SupplierTypeId == supplierTypeId)
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
             }
@@ -247,7 +246,7 @@ namespace ERPCore2.Services
             try
             {
                 return await context.SupplierTypes
-                    .Where(st => st.Status == EntityStatus.Active && !st.IsDeleted)
+                    .Where(st => st.Status == EntityStatus.Active)
                     .OrderBy(st => st.TypeName)
                     .ToListAsync();
             }
@@ -379,6 +378,7 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 
 
 

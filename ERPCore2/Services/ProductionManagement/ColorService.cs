@@ -28,7 +28,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Colors
-                    .Where(c => !c.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(c => c.Name)
                     .ToListAsync();
             }
@@ -54,8 +54,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Colors
-                    .Where(c => !c.IsDeleted &&
-                               ((c.Name != null && c.Name.Contains(searchTerm)) ||
+                    .Where(c => ((c.Name != null && c.Name.Contains(searchTerm)) ||
                                 (c.Code != null && c.Code.Contains(searchTerm)) ||
                                 (c.Description != null && c.Description.Contains(searchTerm))))
                     .OrderBy(c => c.Name)
@@ -113,7 +112,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Colors.Where(c => c.Name == name && !c.IsDeleted);
+                var query = context.Colors.Where(c => c.Name == name);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -140,7 +139,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Colors.Where(c => c.Code == code && !c.IsDeleted);
+                var query = context.Colors.Where(c => c.Code == code);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -168,7 +167,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Colors
-                    .Where(c => c.Code == code && !c.IsDeleted)
+                    .Where(c => c.Code == code)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -184,3 +183,4 @@ namespace ERPCore2.Services
 
     }
 }
+

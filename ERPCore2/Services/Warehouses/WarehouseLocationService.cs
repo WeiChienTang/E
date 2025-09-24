@@ -34,7 +34,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
-                    .Where(wl => !wl.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(wl => wl.Warehouse.Name)
                     .ThenBy(wl => wl.Code)
                     .ToListAsync();
@@ -59,7 +59,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
-                    .FirstOrDefaultAsync(wl => wl.Id == id && !wl.IsDeleted);
+                    .FirstOrDefaultAsync(wl => wl.Id == id);
             }
             catch (Exception ex)
             {
@@ -81,7 +81,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var entities = await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
-                    .Where(wl => wl.WarehouseId == warehouseId && !wl.IsDeleted)
+                    .Where(wl => wl.WarehouseId == warehouseId)
                     .OrderBy(wl => wl.Code)
                     .ToListAsync();
 
@@ -109,8 +109,7 @@ namespace ERPCore2.Services
                 var exists = await context.WarehouseLocations
                     .AnyAsync(wl => wl.WarehouseId == entity.WarehouseId && 
                                    wl.Code == entity.Code && 
-                                   wl.Id != entity.Id && 
-                                   !wl.IsDeleted);
+                                   wl.Id != entity.Id);
 
                 if (exists)
                 {
@@ -147,8 +146,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.WarehouseLocations
                     .Include(wl => wl.Warehouse)
-                    .Where(wl => !wl.IsDeleted && 
-                                ((wl.Code != null && wl.Code.Contains(searchTerm)) || 
+                    .Where(wl => ((wl.Code != null && wl.Code.Contains(searchTerm)) || 
                                  (wl.Name != null && wl.Name.Contains(searchTerm)) ||
                                  (wl.Warehouse.Name != null && wl.Warehouse.Name.Contains(searchTerm))))
                     .OrderBy(wl => wl.Warehouse.Name)
@@ -173,7 +171,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.WarehouseLocations.Where(wl => wl.Code == code && !wl.IsDeleted);
+                var query = context.WarehouseLocations.Where(wl => wl.Code == code);
                 
                 if (excludeId.HasValue)
                 {
@@ -196,4 +194,5 @@ namespace ERPCore2.Services
         }
     }
 }
+
 

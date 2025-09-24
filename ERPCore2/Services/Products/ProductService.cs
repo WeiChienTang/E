@@ -40,7 +40,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => !p.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }
@@ -65,7 +65,7 @@ namespace ERPCore2.Services
                         .ThenInclude(ps => ps.Supplier)
                     .Include(p => p.ProductSuppliers)
                         .ThenInclude(ps => ps.Unit)
-                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+                    .FirstOrDefaultAsync(p => p.Id == id);
             }
             catch (Exception ex)
             {
@@ -87,8 +87,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => !p.IsDeleted &&
-                               ((p.Name != null && p.Name.Contains(searchTerm)) ||
+                    .Where(p => ((p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Code != null && p.Code.Contains(searchTerm))))
                     .OrderBy(p => p.Name)
                     .ToListAsync();
@@ -156,7 +155,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .FirstOrDefaultAsync(p => p.Code == productCode && !p.IsDeleted);
+                    .FirstOrDefaultAsync(p => p.Code == productCode);
             }
             catch (Exception ex)
             {
@@ -171,7 +170,7 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.Products.Where(p => p.Code == productCode && !p.IsDeleted);
+                var query = context.Products.Where(p => p.Code == productCode);
                 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -195,7 +194,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => p.ProductCategoryId == productCategoryId && !p.IsDeleted)
+                    .Where(p => p.ProductCategoryId == productCategoryId)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }
@@ -216,8 +215,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId && ps.Status == EntityStatus.Active) 
-                                && !p.IsDeleted)
+                    .Where(p => p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId && ps.Status == EntityStatus.Active))
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }
@@ -238,7 +236,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => p.Status == EntityStatus.Active && !p.IsDeleted)
+                    .Where(p => p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }
@@ -260,7 +258,7 @@ namespace ERPCore2.Services
             try
             {
                 return await context.ProductCategories
-                    .Where(pc => pc.Status == EntityStatus.Active && !pc.IsDeleted)
+                    .Where(pc => pc.Status == EntityStatus.Active)
                     .OrderBy(pc => pc.Name)
                     .ToListAsync();
             }
@@ -278,7 +276,7 @@ namespace ERPCore2.Services
             try
             {
                 return await context.Suppliers
-                    .Where(s => s.Status == EntityStatus.Active && !s.IsDeleted)
+                    .Where(s => s.Status == EntityStatus.Active)
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
             }
@@ -296,7 +294,7 @@ namespace ERPCore2.Services
             try
             {
                 return await context.Units
-                    .Where(u => u.Status == EntityStatus.Active && !u.IsDeleted)
+                    .Where(u => u.Status == EntityStatus.Active)
                     .OrderBy(u => u.Name)
                     .ToListAsync();
             }
@@ -319,7 +317,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
                     .Include(ps => ps.Unit)  // 新增 Unit 導航屬性載入
-                    .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
+                    .Where(ps => ps.ProductId == productId)
                     .OrderBy(ps => ps.Supplier.CompanyName)
                     .ToListAsync();
             }
@@ -337,7 +335,7 @@ namespace ERPCore2.Services
                 // 取得現有供應商關聯
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var existingRelations = await context.ProductSuppliers
-                    .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
+                    .Where(ps => ps.ProductId == productId)
                     .ToListAsync();
 
                 // 刪除不在新列表中的關聯
@@ -347,7 +345,6 @@ namespace ERPCore2.Services
 
                 foreach (var relation in relationsToDelete)
                 {
-                    relation.IsDeleted = true;
                     relation.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -367,7 +364,7 @@ namespace ERPCore2.Services
                             MinOrderQuantity = productSupplier.MinOrderQuantity,
                             UnitId = productSupplier.UnitId,  // 新增單位ID設定
                             Status = EntityStatus.Active,
-                            IsDeleted = false,
+                            
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow,
                             CreatedBy = "System", // TODO: 從認證取得使用者
@@ -470,7 +467,7 @@ namespace ERPCore2.Services
                         .ThenInclude(ps => ps.Supplier)
                     .Include(p => p.ProductSuppliers)
                         .ThenInclude(ps => ps.Unit)
-                    .FirstOrDefaultAsync(x => x.Id == entity.Id && !x.IsDeleted);
+                    .FirstOrDefaultAsync(x => x.Id == entity.Id);
                     
                 if (existingEntity == null)
                 {

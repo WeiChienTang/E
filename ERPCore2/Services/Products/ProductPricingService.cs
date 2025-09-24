@@ -44,7 +44,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => !pp.IsDeleted && (
+                    .Where(pp => (
                         (pp.Product.Name != null && pp.Product.Name.Contains(searchTerm)) ||
                         (pp.Product.Code != null && pp.Product.Code.Contains(searchTerm)) ||
                         (pp.Customer != null && pp.Customer.CompanyName != null && pp.Customer.CompanyName.Contains(searchTerm)) ||
@@ -106,7 +106,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var productExists = await context.Products
-                        .AnyAsync(p => p.Id == entity.ProductId && !p.IsDeleted);
+                        .AnyAsync(p => p.Id == entity.ProductId);
                     if (!productExists)
                         errors.Add("指定的商品不存在");
                 }
@@ -116,7 +116,7 @@ namespace ERPCore2.Services
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var customerExists = await context.Customers
-                        .AnyAsync(c => c.Id == entity.CustomerId && !c.IsDeleted);
+                        .AnyAsync(c => c.Id == entity.CustomerId);
                     if (!customerExists)
                         errors.Add("指定的客戶不存在");
                 }
@@ -128,8 +128,7 @@ namespace ERPCore2.Services
                     var duplicateQuery = context.ProductPricings
                         .Where(pp => pp.ProductId == entity.ProductId &&
                                     pp.PricingType == entity.PricingType &&
-                                    pp.CustomerId == entity.CustomerId &&
-                                    !pp.IsDeleted);
+                                    pp.CustomerId == entity.CustomerId);
                     
                     if (entity.Id > 0)
                         duplicateQuery = duplicateQuery.Where(pp => pp.Id != entity.Id);
@@ -176,7 +175,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => !pp.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(pp => pp.Priority)
                     .ThenByDescending(pp => pp.EffectiveDate)
                     .ToListAsync();
@@ -202,7 +201,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .FirstOrDefaultAsync(pp => pp.Id == id && !pp.IsDeleted);
+                    .FirstOrDefaultAsync(pp => pp.Id == id);
             }
             catch (Exception ex)
             {
@@ -230,7 +229,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => pp.ProductId == productId && !pp.IsDeleted)
+                    .Where(pp => pp.ProductId == productId)
                     .OrderByDescending(pp => pp.Priority)
                     .ThenByDescending(pp => pp.EffectiveDate)
                     .ToListAsync();
@@ -257,7 +256,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => pp.CustomerId == customerId && !pp.IsDeleted)
+                    .Where(pp => pp.CustomerId == customerId)
                     .OrderByDescending(pp => pp.Priority)
                     .ThenByDescending(pp => pp.EffectiveDate)
                     .ToListAsync();
@@ -284,7 +283,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => pp.ProductId == productId && pp.CustomerId == customerId && !pp.IsDeleted)
+                    .Where(pp => pp.ProductId == productId && pp.CustomerId == customerId)
                     .OrderByDescending(pp => pp.Priority)
                     .ThenByDescending(pp => pp.EffectiveDate)
                     .ToListAsync();
@@ -312,7 +311,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => pp.PricingType == pricingType && !pp.IsDeleted)
+                    .Where(pp => pp.PricingType == pricingType)
                     .OrderByDescending(pp => pp.Priority)
                     .ThenByDescending(pp => pp.EffectiveDate)
                     .ToListAsync();
@@ -342,7 +341,6 @@ namespace ERPCore2.Services
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
                     .Where(pp => pp.ProductId == productId && 
-                                !pp.IsDeleted &&
                                 pp.EffectiveDate <= checkDate &&
                                 (pp.ExpiryDate == null || pp.ExpiryDate > checkDate))
                     .OrderByDescending(pp => pp.Priority)
@@ -377,7 +375,6 @@ namespace ERPCore2.Services
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
                     .Where(pp => pp.ProductId == productId && 
-                                !pp.IsDeleted &&
                                 pp.EffectiveDate <= checkDate &&
                                 (pp.ExpiryDate == null || pp.ExpiryDate > checkDate) &&
                                 (pp.MinQuantity == null || pp.MinQuantity <= quantity) &&
@@ -431,7 +428,6 @@ namespace ERPCore2.Services
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
                     .Where(pp => pp.ProductId == productId && 
-                                !pp.IsDeleted &&
                                 pp.EffectiveDate <= checkDate &&
                                 (pp.ExpiryDate == null || pp.ExpiryDate > checkDate) &&
                                 (pp.MinQuantity == null || pp.MinQuantity <= quantity) &&
@@ -469,7 +465,6 @@ namespace ERPCore2.Services
                     .Where(pp => pp.ProductId == productId && 
                                 pp.PricingType == PricingType.Standard &&
                                 pp.CustomerId == null &&
-                                !pp.IsDeleted &&
                                 pp.EffectiveDate <= checkDate &&
                                 (pp.ExpiryDate == null || pp.ExpiryDate > checkDate))
                     .OrderByDescending(pp => pp.EffectiveDate)
@@ -500,8 +495,7 @@ namespace ERPCore2.Services
                 return await context.ProductPricings
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
-                    .Where(pp => !pp.IsDeleted &&
-                                pp.ExpiryDate.HasValue &&
+                    .Where(pp => pp.ExpiryDate.HasValue &&
                                 pp.ExpiryDate <= checkDate &&
                                 pp.ExpiryDate > DateTime.Today)
                     .OrderBy(pp => pp.ExpiryDate)
@@ -532,7 +526,6 @@ namespace ERPCore2.Services
                     .Include(pp => pp.Product)
                     .Include(pp => pp.Customer)
                     .Where(pp => pp.ProductId == productId && 
-                                !pp.IsDeleted &&
                                 pp.EffectiveDate <= checkDate &&
                                 (pp.ExpiryDate == null || pp.ExpiryDate > checkDate));
 
@@ -560,3 +553,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

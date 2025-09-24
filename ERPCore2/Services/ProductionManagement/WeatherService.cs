@@ -27,7 +27,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Weathers
-                    .Where(w => !w.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(w => w.Name)
                     .ToListAsync();
             }
@@ -53,8 +53,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Weathers
-                    .Where(w => !w.IsDeleted &&
-                               ((w.Name != null && w.Name.Contains(searchTerm)) ||
+                    .Where(w => ((w.Name != null && w.Name.Contains(searchTerm)) ||
                                 (w.Code != null && w.Code.Contains(searchTerm)) ||
                                 (w.Description != null && w.Description.Contains(searchTerm))))
                     .OrderBy(w => w.Name)
@@ -114,7 +113,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Weathers.Where(w => w.Name == name && !w.IsDeleted);
+                var query = context.Weathers.Where(w => w.Name == name);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);
@@ -141,7 +140,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Weathers.Where(w => w.Code == code && !w.IsDeleted);
+                var query = context.Weathers.Where(w => w.Code == code);
 
                 if (excludeId.HasValue)
                     query = query.Where(w => w.Id != excludeId.Value);
@@ -169,7 +168,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Weathers
-                    .Where(w => w.Code == code && !w.IsDeleted)
+                    .Where(w => w.Code == code)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -184,3 +183,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

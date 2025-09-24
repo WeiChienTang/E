@@ -28,8 +28,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Companies
-                    .Where(c => !c.IsDeleted &&
-                        (c.Code!.Contains(searchTerm) ||
+                    .Where(c => (c.Code!.Contains(searchTerm) ||
                          c.CompanyName.Contains(searchTerm) ||
                          (c.CompanyNameEn != null && c.CompanyNameEn.Contains(searchTerm)) ||
                          (c.TaxId != null && c.TaxId.Contains(searchTerm)) ||
@@ -57,7 +56,7 @@ namespace ERPCore2.Services
                 
                 // 返回第一個啟用的公司
                 return await context.Companies
-                    .Where(c => !c.IsDeleted && c.Status == EntityStatus.Active)
+                    .Where(c => c.Status == EntityStatus.Active)
                     .OrderBy(c => c.Code)
                     .FirstOrDefaultAsync();
             }
@@ -81,7 +80,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Companies
-                    .Where(c => c.Code == code && !c.IsDeleted)
+                    .Where(c => c.Code == code)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -104,7 +103,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Companies.Where(c => c.Code == code && !c.IsDeleted);
+                var query = context.Companies.Where(c => c.Code == code);
 
                 if (excludeId.HasValue)
                 {
@@ -132,7 +131,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Companies
-                    .Where(c => !c.IsDeleted && c.Status == EntityStatus.Active)
+                    .Where(c => c.Status == EntityStatus.Active)
                     .OrderBy(c => c.Code)
                     .ToListAsync();
             }
@@ -265,3 +264,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

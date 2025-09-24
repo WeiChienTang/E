@@ -37,7 +37,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Permissions
-                    .Where(p => !p.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(p => p.Code)
                     .ToListAsync();
             }
@@ -60,7 +60,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permission = await context.Permissions
-                    .FirstOrDefaultAsync(p => p.Code == permissionCode && !p.IsDeleted);
+                    .FirstOrDefaultAsync(p => p.Code == permissionCode);
 
                 if (permission == null)
                     return ServiceResult<Permission>.Failure("找不到指定的權限");
@@ -87,7 +87,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
-                    .Where(p => p.Code != null && p.Code.StartsWith(modulePrefix + ".") && !p.IsDeleted)
+                    .Where(p => p.Code != null && p.Code.StartsWith(modulePrefix + "."))
                     .OrderBy(p => p.Code)
                     .ToListAsync();
 
@@ -112,7 +112,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("權限代碼不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Permissions.Where(p => p.Code == permissionCode && !p.IsDeleted);
+                var query = context.Permissions.Where(p => p.Code == permissionCode);
 
                 if (excludePermissionId.HasValue)
                     query = query.Where(p => p.Id != excludePermissionId.Value);
@@ -139,7 +139,7 @@ namespace ERPCore2.Services
                     return ServiceResult<bool>.Failure("權限名稱不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Permissions.Where(p => p.Name == permissionName && !p.IsDeleted);
+                var query = context.Permissions.Where(p => p.Name == permissionName);
 
                 if (excludePermissionId.HasValue)
                     query = query.Where(p => p.Id != excludePermissionId.Value);
@@ -166,7 +166,7 @@ namespace ERPCore2.Services
                 
                 // 先取得所有權限代碼，然後在客戶端處理
                 var permissionCodes = await context.Permissions
-                    .Where(p => !p.IsDeleted && !string.IsNullOrEmpty(p.Code))
+                    .Where(p => !string.IsNullOrEmpty(p.Code))
                     .Select(p => p.Code)
                     .ToListAsync();
 
@@ -249,8 +249,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permissions = await context.Permissions
-                    .Where(p => !p.IsDeleted && 
-                               ((p.Code != null && p.Code.Contains(searchTerm)) ||
+                    .Where(p => ((p.Code != null && p.Code.Contains(searchTerm)) ||
                                 (p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Remarks != null && p.Remarks.Contains(searchTerm))))
                     .OrderBy(p => p.Code)
@@ -374,7 +373,7 @@ namespace ERPCore2.Services
                 // 檢查是否有角色使用該權限
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var isUsed = await context.RolePermissions
-                    .AnyAsync(rp => rp.PermissionId == id && !rp.IsDeleted);
+                    .AnyAsync(rp => rp.PermissionId == id);
 
                 if (isUsed)
                     return ServiceResult.Failure("無法刪除此權限，因為仍有角色使用此權限");
@@ -446,4 +445,5 @@ namespace ERPCore2.Services
         }
     }
 }
+
 

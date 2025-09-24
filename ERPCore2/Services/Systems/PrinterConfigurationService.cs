@@ -35,7 +35,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted)
+                    .AsQueryable()
                     .OrderByDescending(p => p.IsDefault)
                     .ThenBy(p => p.Name)
                     .ToListAsync();
@@ -59,8 +59,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted &&
-                               (p.Name.Contains(searchTerm) ||
+                    .Where(p => (p.Name.Contains(searchTerm) ||
                                 (p.IpAddress != null && p.IpAddress.Contains(searchTerm))))
                     .OrderByDescending(p => p.IsDefault)
                     .ThenBy(p => p.Name)
@@ -129,7 +128,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.IsDefault && p.Status == EntityStatus.Active)
+                    .Where(p => p.IsDefault && p.Status == EntityStatus.Active)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -151,7 +150,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.Name == name)
+                    .Where(p => p.Name == name)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -174,7 +173,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.Name == name);
+                    .Where(p => p.Name == name);
 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -202,7 +201,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.IpAddress == ipAddress)
+                    .Where(p => p.IpAddress == ipAddress)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -225,7 +224,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.IpAddress == ipAddress);
+                    .Where(p => p.IpAddress == ipAddress);
 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -252,7 +251,7 @@ namespace ERPCore2.Services
                 
                 // 檢查印表機是否存在且啟用
                 var printer = await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.Id == id)
+                    .Where(p => p.Id == id)
                     .FirstOrDefaultAsync();
 
                 if (printer == null)
@@ -263,7 +262,7 @@ namespace ERPCore2.Services
 
                 // 取消所有其他印表機的預設狀態
                 var otherPrinters = await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.Id != id && p.IsDefault)
+                    .Where(p => p.Id != id && p.IsDefault)
                     .ToListAsync();
 
                 foreach (var otherPrinter in otherPrinters)
@@ -296,7 +295,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PrinterConfigurations
-                    .Where(p => !p.IsDeleted && p.Status == EntityStatus.Active)
+                    .Where(p => p.Status == EntityStatus.Active)
                     .OrderByDescending(p => p.IsDefault)
                     .ThenBy(p => p.Name)
                     .ToListAsync();
@@ -321,7 +320,7 @@ namespace ERPCore2.Services
                 {
                     // 網路印表機：有IP位址
                     return await context.PrinterConfigurations
-                        .Where(p => !p.IsDeleted && !string.IsNullOrEmpty(p.IpAddress))
+                        .Where(p => !string.IsNullOrEmpty(p.IpAddress))
                         .OrderByDescending(p => p.IsDefault)
                         .ThenBy(p => p.Name)
                         .ToListAsync();
@@ -330,7 +329,7 @@ namespace ERPCore2.Services
                 {
                     // 本機印表機：無IP位址
                     return await context.PrinterConfigurations
-                        .Where(p => !p.IsDeleted && string.IsNullOrEmpty(p.IpAddress))
+                        .Where(p => string.IsNullOrEmpty(p.IpAddress))
                         .OrderByDescending(p => p.IsDefault)
                         .ThenBy(p => p.Name)
                         .ToListAsync();
@@ -408,3 +407,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

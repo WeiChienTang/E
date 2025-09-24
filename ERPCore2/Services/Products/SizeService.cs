@@ -33,7 +33,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .Where(s => !s.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(s => s.Name)
                     .ToListAsync();
             }
@@ -51,7 +51,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+                    .FirstOrDefaultAsync(s => s.Id == id);
             }
             catch (Exception ex)
             {
@@ -72,8 +72,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .Where(s => !s.IsDeleted && 
-                        ((s.Code != null && s.Code.ToLower().Contains(lowerSearchTerm)) ||
+                    .Where(s => ((s.Code != null && s.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (s.Name != null && s.Name.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(s => s.Name)
                     .ToListAsync();
@@ -145,7 +144,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .FirstOrDefaultAsync(s => s.Code == sizeCode && !s.IsDeleted);
+                    .FirstOrDefaultAsync(s => s.Code == sizeCode);
             }
             catch (Exception ex)
             {
@@ -162,7 +161,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Sizes.Where(s => s.Code == sizeCode && !s.IsDeleted);
+                var query = context.Sizes.Where(s => s.Code == sizeCode);
                 
                 if (excludeId.HasValue)
                 {
@@ -186,7 +185,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Sizes.Where(s => s.Name == sizeName && !s.IsDeleted);
+                var query = context.Sizes.Where(s => s.Name == sizeName);
                 
                 if (excludeId.HasValue)
                 {
@@ -208,7 +207,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
-                    .Where(s => !s.IsDeleted && s.Status == EntityStatus.Active)
+                    .Where(s => s.Status == EntityStatus.Active)
                     .OrderBy(s => s.Name)
                     .ToListAsync();
             }
@@ -255,7 +254,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
                     .Include(s => s.Products)
-                    .Where(s => !s.IsDeleted && s.Name.Contains(sizeName))
+                    .Where(s => s.Name.Contains(sizeName))
                     .OrderBy(s => s.Name)
                     .ToListAsync();
             }
@@ -269,4 +268,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

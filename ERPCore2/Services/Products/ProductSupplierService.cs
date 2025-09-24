@@ -34,7 +34,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
-                    .Where(ps => !ps.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(ps => ps.Product.Name)
                     .ThenBy(ps => ps.Supplier.CompanyName)
                     .ToListAsync();
@@ -57,8 +57,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
-                    .Where(ps => !ps.IsDeleted &&
-                               ((ps.Product.Name != null && ps.Product.Name.Contains(searchTerm)) ||
+                    .Where(ps => ((ps.Product.Name != null && ps.Product.Name.Contains(searchTerm)) ||
                                 (ps.Product.Code != null && ps.Product.Code.Contains(searchTerm)) ||
                                 (ps.Supplier.CompanyName != null && ps.Supplier.CompanyName.Contains(searchTerm)) ||
                                 (ps.Supplier.Code != null && ps.Supplier.Code.Contains(searchTerm)) ||
@@ -98,8 +97,7 @@ namespace ERPCore2.Services
                     var exists = await context.ProductSuppliers.AnyAsync(ps => 
                         ps.ProductId == entity.ProductId && 
                         ps.SupplierId == entity.SupplierId && 
-                        ps.Id != entity.Id && 
-                        !ps.IsDeleted);
+                        ps.Id != entity.Id);
 
                     if (exists)
                     {
@@ -147,7 +145,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
-                    .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
+                    .Where(ps => ps.ProductId == productId)
                     .OrderBy(ps => ps.Supplier.CompanyName)
                     .ToListAsync();
             }
@@ -165,7 +163,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductSuppliers
                     .Include(ps => ps.Product)
-                    .Where(ps => ps.SupplierId == supplierId && !ps.IsDeleted)
+                    .Where(ps => ps.SupplierId == supplierId)
                     .OrderBy(ps => ps.Product.Name)
                     .ToListAsync();
             }
@@ -185,8 +183,7 @@ namespace ERPCore2.Services
                     .Include(ps => ps.Product)
                     .Include(ps => ps.Supplier)
                     .FirstOrDefaultAsync(ps => ps.ProductId == productId && 
-                                              ps.SupplierId == supplierId && 
-                                              !ps.IsDeleted);
+                                              ps.SupplierId == supplierId);
             }
             catch (Exception ex)
             {
@@ -206,7 +203,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 取得現有關聯
                 var existingRelations = await context.ProductSuppliers
-                    .Where(ps => ps.ProductId == productId && !ps.IsDeleted)
+                    .Where(ps => ps.ProductId == productId)
                     .ToListAsync();
 
                 // 刪除不在新列表中的關聯
@@ -216,7 +213,6 @@ namespace ERPCore2.Services
 
                 foreach (var relation in relationsToDelete)
                 {
-                    relation.IsDeleted = true;
                     relation.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -254,7 +250,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 取得現有關聯
                 var existingRelations = await context.ProductSuppliers
-                    .Where(ps => ps.SupplierId == supplierId && !ps.IsDeleted)
+                    .Where(ps => ps.SupplierId == supplierId)
                     .ToListAsync();
 
                 // 刪除不在新列表中的關聯
@@ -264,7 +260,6 @@ namespace ERPCore2.Services
 
                 foreach (var relation in relationsToDelete)
                 {
-                    relation.IsDeleted = true;
                     relation.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -368,7 +363,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductSuppliers.AnyAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
+                return await context.ProductSuppliers.AnyAsync(ps => ps.ProductId == productId);
             }
             catch (Exception ex)
             {
@@ -382,7 +377,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductSuppliers.AnyAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
+                return await context.ProductSuppliers.AnyAsync(ps => ps.SupplierId == supplierId);
             }
             catch (Exception ex)
             {
@@ -399,8 +394,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Product)
                     .Where(ps => ps.SupplierId == supplierId && 
-                                ps.SupplierPrice.HasValue && 
-                                !ps.IsDeleted)
+                                ps.SupplierPrice.HasValue)
                     .OrderBy(ps => ps.SupplierPrice)
                     .ToListAsync();
             }
@@ -419,8 +413,7 @@ namespace ERPCore2.Services
                 return await context.ProductSuppliers
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.ProductId == productId && 
-                                ps.SupplierPrice.HasValue && 
-                                !ps.IsDeleted)
+                                ps.SupplierPrice.HasValue)
                     .OrderBy(ps => ps.SupplierPrice)
                     .ToListAsync();
             }
@@ -440,7 +433,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductSuppliers.CountAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
+                return await context.ProductSuppliers.CountAsync(ps => ps.ProductId == productId);
             }
             catch (Exception ex)
             {
@@ -454,7 +447,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductSuppliers.CountAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
+                return await context.ProductSuppliers.CountAsync(ps => ps.SupplierId == supplierId);
             }
             catch (Exception ex)
             {
@@ -470,8 +463,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var leadTimes = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productId && 
-                                ps.LeadTime.HasValue && 
-                                !ps.IsDeleted)
+                                ps.LeadTime.HasValue)
                     .Select(ps => ps.LeadTime!.Value)
                     .ToListAsync();
 
@@ -491,8 +483,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var prices = await context.ProductSuppliers
                     .Where(ps => ps.ProductId == productId && 
-                                ps.SupplierPrice.HasValue && 
-                                !ps.IsDeleted)
+                                ps.SupplierPrice.HasValue)
                     .Select(ps => ps.SupplierPrice!.Value)
                     .ToListAsync();
 
@@ -511,4 +502,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

@@ -28,7 +28,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
                     .Include(d => d.Manager)
-                    .Where(d => !d.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(d => d.Name)
                     .ToListAsync();
             }
@@ -49,7 +49,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
                     .Include(d => d.Manager)
-                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == id);
             }
             catch (Exception ex)
             {
@@ -68,8 +68,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Departments
-                    .Where(d => !d.IsDeleted &&
-                        ((d.Name != null && d.Name.Contains(searchTerm)) ||
+                    .Where(d => ((d.Name != null && d.Name.Contains(searchTerm)) ||
                          (d.Code != null && d.Code.Contains(searchTerm))))
                     .OrderBy(d => d.Name)
                     .ToListAsync();
@@ -127,7 +126,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Departments.Where(d => d.Code == Code && !d.IsDeleted);
+                var query = context.Departments.Where(d => d.Code == Code);
                 if (excludeId.HasValue)
                     query = query.Where(d => d.Id != excludeId.Value);
                 
@@ -150,7 +149,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Departments.Where(d => d.Name == Name && !d.IsDeleted);
+                var query = context.Departments.Where(d => d.Name == Name);
                 if (excludeId.HasValue)
                     query = query.Where(d => d.Id != excludeId.Value);
                 
@@ -176,7 +175,7 @@ namespace ERPCore2.Services
                 
                 // 檢查是否有員工
                 var hasEmployees = await context.Employees
-                    .AnyAsync(e => e.DepartmentId == departmentId && !e.IsDeleted);
+                    .AnyAsync(e => e.DepartmentId == departmentId);
                 
                 return !hasEmployees;
             }
@@ -223,7 +222,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Employees
-                    .Where(e => !e.IsDeleted && e.IsSystemUser)
+                    .Where(e => e.IsSystemUser)
                     .OrderBy(e => e.Code)
                     .ToListAsync();
             }
@@ -238,3 +237,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

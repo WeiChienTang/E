@@ -53,7 +53,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查員工
                 var employeeCount = await context.Employees
-                    .CountAsync(e => e.DepartmentId == departmentId && !e.IsDeleted);
+                    .CountAsync(e => e.DepartmentId == departmentId);
                     
                 if (employeeCount > 0)
                 {
@@ -85,7 +85,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查員工
                 var employeeCount = await context.Employees
-                    .CountAsync(e => e.RoleId == roleId && !e.IsDeleted);
+                    .CountAsync(e => e.RoleId == roleId);
                     
                 if (employeeCount > 0)
                 {
@@ -117,7 +117,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查員工
                 var employeeCount = await context.Employees
-                    .CountAsync(e => e.EmployeePositionId == positionId && !e.IsDeleted);
+                    .CountAsync(e => e.EmployeePositionId == positionId);
                     
                 if (employeeCount > 0)
                 {
@@ -149,7 +149,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查採購訂單
                 var purchaseOrderCount = await context.PurchaseOrders
-                    .CountAsync(po => po.SupplierId == supplierId && !po.IsDeleted);
+                    .CountAsync(po => po.SupplierId == supplierId);
                     
                 if (purchaseOrderCount > 0)
                 {
@@ -159,7 +159,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查商品供應商關聯
                 var productSupplierCount = await context.ProductSuppliers
-                    .CountAsync(ps => ps.SupplierId == supplierId && !ps.IsDeleted);
+                    .CountAsync(ps => ps.SupplierId == supplierId);
                     
                 if (productSupplierCount > 0)
                 {
@@ -191,7 +191,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查銷貨訂單
                 var salesOrderCount = await context.SalesOrders
-                    .CountAsync(so => so.CustomerId == customerId && !so.IsDeleted);
+                    .CountAsync(so => so.CustomerId == customerId);
                     
                 if (salesOrderCount > 0)
                 {
@@ -223,7 +223,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查採購訂單明細
                 var purchaseOrderDetailCount = await context.PurchaseOrderDetails
-                    .CountAsync(pod => pod.ProductId == productId && !pod.IsDeleted);
+                    .CountAsync(pod => pod.ProductId == productId);
                     
                 if (purchaseOrderDetailCount > 0)
                 {
@@ -233,7 +233,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查銷貨訂單明細
                 var salesOrderDetailCount = await context.SalesOrderDetails
-                    .CountAsync(sod => sod.ProductId == productId && !sod.IsDeleted);
+                    .CountAsync(sod => sod.ProductId == productId);
                     
                 if (salesOrderDetailCount > 0)
                 {
@@ -243,7 +243,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查庫存
                 var inventoryCount = await context.InventoryStocks
-                    .CountAsync(i => i.ProductId == productId && !i.IsDeleted);
+                    .CountAsync(i => i.ProductId == productId);
                     
                 if (inventoryCount > 0)
                 {
@@ -253,7 +253,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查商品供應商關聯
                 var productSupplierCount = await context.ProductSuppliers
-                    .CountAsync(ps => ps.ProductId == productId && !ps.IsDeleted);
+                    .CountAsync(ps => ps.ProductId == productId);
                     
                 if (productSupplierCount > 0)
                 {
@@ -285,7 +285,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查庫存
                 var inventoryCount = await context.InventoryStocks
-                    .CountAsync(i => i.WarehouseId == warehouseId && !i.IsDeleted);
+                    .CountAsync(i => i.WarehouseId == warehouseId);
                     
                 if (inventoryCount > 0)
                 {
@@ -295,7 +295,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查進貨記錄明細
                 var purchaseReceivingDetailCount = await context.PurchaseReceivingDetails
-                    .CountAsync(prd => prd.WarehouseId == warehouseId && !prd.IsDeleted);
+                    .CountAsync(prd => prd.WarehouseId == warehouseId);
                     
                 if (purchaseReceivingDetailCount > 0)
                 {
@@ -305,7 +305,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查採購訂單
                 var purchaseOrderCount = await context.PurchaseOrders
-                    .CountAsync(po => po.WarehouseId == warehouseId && !po.IsDeleted);
+                    .CountAsync(po => po.WarehouseId == warehouseId);
                     
                 if (purchaseOrderCount > 0)
                 {
@@ -317,7 +317,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查庫存異動記錄
                 var inventoryTransactionCount = await context.InventoryTransactions
-                    .CountAsync(it => it.WarehouseId == warehouseId && !it.IsDeleted);
+                    .CountAsync(it => it.WarehouseId == warehouseId);
                     
                 if (inventoryTransactionCount > 0)
                 {
@@ -327,7 +327,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查盤點記錄
                 var stockTakingCount = await context.StockTakings
-                    .CountAsync(st => st.WarehouseId == warehouseId && !st.IsDeleted);
+                    .CountAsync(st => st.WarehouseId == warehouseId);
                     
                 if (stockTakingCount > 0)
                 {
@@ -337,7 +337,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查倉庫位置
                 var warehouseLocationCount = await context.WarehouseLocations
-                    .CountAsync(wl => wl.WarehouseId == warehouseId && !wl.IsDeleted);
+                    .CountAsync(wl => wl.WarehouseId == warehouseId);
                     
                 if (warehouseLocationCount > 0)
                 {
@@ -347,7 +347,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查庫存預留
                 var inventoryReservationCount = await context.InventoryReservations
-                    .CountAsync(ir => ir.WarehouseId == warehouseId && !ir.IsDeleted);
+                    .CountAsync(ir => ir.WarehouseId == warehouseId);
                     
                 if (inventoryReservationCount > 0)
                 {
@@ -379,7 +379,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查商品
                 var productCount = await context.Products
-                    .CountAsync(p => p.UnitId == unitId && !p.IsDeleted);
+                    .CountAsync(p => p.UnitId == unitId);
                     
                 if (productCount > 0)
                 {
@@ -389,8 +389,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查採購訂單明細
                 var purchaseOrderDetailCount = await context.PurchaseOrderDetails
-                    .Where(pod => !pod.IsDeleted)
-                    .Join(context.Products.Where(p => p.UnitId == unitId && !p.IsDeleted),
+                    .Join(context.Products.Where(p => p.UnitId == unitId),
                           pod => pod.ProductId,
                           p => p.Id,
                           (pod, p) => pod)
@@ -404,7 +403,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查銷貨訂單明細
                 var salesOrderDetailCount = await context.SalesOrderDetails
-                    .CountAsync(sod => sod.UnitId == unitId && !sod.IsDeleted);
+                    .CountAsync(sod => sod.UnitId == unitId);
                     
                 if (salesOrderDetailCount > 0)
                 {
@@ -437,9 +436,9 @@ namespace ERPCore2.Helpers
                 // 檢查是否有進貨明細記錄 (PurchaseReceivingDetails)
                 var receivingDetailCount = await context.PurchaseReceivingDetails
                     .CountAsync(prd => context.PurchaseOrderDetails
-                        .Where(pod => pod.PurchaseOrderId == purchaseOrderId && !pod.IsDeleted)
+                        .Where(pod => pod.PurchaseOrderId == purchaseOrderId)
                         .Select(pod => pod.Id)
-                        .Contains(prd.PurchaseOrderDetailId) && !prd.IsDeleted);
+                        .Contains(prd.PurchaseOrderDetailId));
 
                 if (receivingDetailCount > 0)
                 {
@@ -471,7 +470,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查角色權限關聯
                 var rolePermissionCount = await context.RolePermissions
-                    .CountAsync(rp => rp.PermissionId == permissionId && !rp.IsDeleted);
+                    .CountAsync(rp => rp.PermissionId == permissionId);
 
                 if (rolePermissionCount > 0)
                 {
@@ -503,7 +502,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查供應商
                 var supplierCount = await context.Suppliers
-                    .CountAsync(s => s.SupplierTypeId == supplierTypeId && !s.IsDeleted);
+                    .CountAsync(s => s.SupplierTypeId == supplierTypeId);
 
                 if (supplierCount > 0)
                 {
@@ -535,7 +534,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查客戶
                 var customerCount = await context.Customers
-                    .CountAsync(c => c.CustomerTypeId == customerTypeId && !c.IsDeleted);
+                    .CountAsync(c => c.CustomerTypeId == customerTypeId);
 
                 if (customerCount > 0)
                 {
@@ -567,7 +566,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查商品
                 var productCount = await context.Products
-                    .CountAsync(p => p.SizeId == sizeId && !p.IsDeleted);
+                    .CountAsync(p => p.SizeId == sizeId);
 
                 if (productCount > 0)
                 {
@@ -599,7 +598,7 @@ namespace ERPCore2.Helpers
 
                 // 檢查採購訂單
                 var purchaseOrderCount = await context.PurchaseOrders
-                    .CountAsync(po => po.CompanyId == companyId && !po.IsDeleted);
+                    .CountAsync(po => po.CompanyId == companyId);
 
                 if (purchaseOrderCount > 0)
                 {

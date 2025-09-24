@@ -40,8 +40,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.CustomerTypes
-                    .Where(ct => !ct.IsDeleted &&
-                               ct.TypeName.Contains(searchTerm))
+                    .Where(ct => ct.TypeName.Contains(searchTerm))
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -98,7 +97,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.CustomerTypes.Where(ct => ct.TypeName == name && !ct.IsDeleted);
+                var query = context.CustomerTypes.Where(ct => ct.TypeName == name);
                 
                 if (excludeId.HasValue)
                 {
@@ -127,7 +126,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.CustomerTypes
-                    .Where(ct => !ct.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(ct => ct.TypeName)
                     .ToListAsync();
             }
@@ -152,14 +151,13 @@ namespace ERPCore2.Services
                 
                 // 檢查是否有客戶使用此類型
                 var hasCustomers = await context.Customers
-                    .AnyAsync(c => c.CustomerTypeId == id && !c.IsDeleted);
+                    .AnyAsync(c => c.CustomerTypeId == id);
 
                 if (hasCustomers)
                 {
                     return ServiceResult.Failure("此客戶類型正在被使用，無法刪除");
                 }
 
-                entity.IsDeleted = true;
                 entity.UpdatedAt = DateTime.UtcNow;
 
                 context.CustomerTypes.Update(entity);
@@ -187,7 +185,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.CustomerTypes.Where(ct => ct.TypeName == typeName && !ct.IsDeleted);
+                var query = context.CustomerTypes.Where(ct => ct.TypeName == typeName);
                 
                 if (excludeId.HasValue)
                 {
@@ -217,7 +215,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.CustomerTypes.Where(ct => ct.Code == typeCode && !ct.IsDeleted);
+                var query = context.CustomerTypes.Where(ct => ct.Code == typeCode);
                 
                 if (excludeId.HasValue)
                 {
@@ -244,7 +242,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.CustomerTypes.Where(ct => !ct.IsDeleted);
+                var query = context.CustomerTypes.AsQueryable();
 
                 var totalCount = await query.CountAsync();
                 
@@ -308,7 +306,7 @@ namespace ERPCore2.Services
                 
                 // 檢查是否有客戶使用這些類型
                 var usedTypeIds = await context.Customers
-                    .Where(c => c.CustomerTypeId.HasValue && ids.Contains(c.CustomerTypeId.Value) && !c.IsDeleted)
+                    .Where(c => c.CustomerTypeId.HasValue && ids.Contains(c.CustomerTypeId.Value))
                     .Select(c => c.CustomerTypeId!.Value)
                     .Distinct()
                     .ToListAsync();
@@ -338,4 +336,5 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+
 

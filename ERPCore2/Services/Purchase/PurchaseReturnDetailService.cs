@@ -44,7 +44,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
                     .Include(prd => prd.WarehouseLocation)
-                    .Where(prd => !prd.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(prd => prd.PurchaseReturnId)
                     .ThenBy(prd => prd.Product.Name)
                     .ToListAsync();
@@ -69,7 +69,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
                     .Include(prd => prd.WarehouseLocation)
-                    .FirstOrDefaultAsync(prd => prd.Id == id && !prd.IsDeleted);
+                    .FirstOrDefaultAsync(prd => prd.Id == id);
             }
             catch (Exception ex)
             {
@@ -98,7 +98,7 @@ namespace ERPCore2.Services
                         .ThenInclude(prd => prd!.PurchaseReceiving)
                     .Include(prd => prd.Unit)
                     .Include(prd => prd.WarehouseLocation)
-                    .FirstOrDefaultAsync(prd => prd.Id == id && !prd.IsDeleted);
+                    .FirstOrDefaultAsync(prd => prd.Id == id);
             }
             catch (Exception ex)
             {
@@ -122,7 +122,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.WarehouseLocation)
                     .Include(prd => prd.PurchaseOrderDetail)
                     .Include(prd => prd.PurchaseReceivingDetail)
-                    .Where(prd => prd.PurchaseReturnId == purchaseReturnId && !prd.IsDeleted)
+                    .Where(prd => prd.PurchaseReturnId == purchaseReturnId)
                     .OrderBy(prd => prd.Product.Name)
                     .ToListAsync();
             }
@@ -147,7 +147,7 @@ namespace ERPCore2.Services
                         .ThenInclude(pr => pr.Supplier)
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
-                    .Where(prd => prd.ProductId == productId && !prd.IsDeleted)
+                    .Where(prd => prd.ProductId == productId)
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
             }
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseReturn)
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
-                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId && !prd.IsDeleted)
+                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId)
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
             }
@@ -195,7 +195,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseReturn)
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
-                    .Where(prd => prd.PurchaseReceivingDetailId == purchaseReceivingDetailId && !prd.IsDeleted)
+                    .Where(prd => prd.PurchaseReceivingDetailId == purchaseReceivingDetailId)
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
             }
@@ -224,7 +224,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseReturn)
                     .Include(prd => prd.Product)
                     .Include(prd => prd.Unit)
-                    .Where(prd => !prd.IsDeleted && (
+                    .Where(prd => (
                         (prd.Product.Name != null && prd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.Product.Code != null && prd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.PurchaseReturn.PurchaseReturnNumber != null && prd.PurchaseReturn.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
@@ -311,7 +311,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .FirstOrDefaultAsync(prd => prd.Id == id && !prd.IsDeleted);
+                    .FirstOrDefaultAsync(prd => prd.Id == id);
                 
                 if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
@@ -353,7 +353,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .FirstOrDefaultAsync(prd => prd.Id == id && !prd.IsDeleted);
+                    .FirstOrDefaultAsync(prd => prd.Id == id);
                 
                 if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
@@ -402,7 +402,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.PurchaseReturnDetails.FindAsync(id);
                 
-                if (detail == null || detail.IsDeleted)
+                if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
                 
                 if (processedQuantity < 0)
@@ -437,7 +437,7 @@ namespace ERPCore2.Services
                 var detail = await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseOrderDetail)
                     .Include(prd => prd.PurchaseReceivingDetail)
-                    .FirstOrDefaultAsync(prd => prd.Id == id && !prd.IsDeleted);
+                    .FirstOrDefaultAsync(prd => prd.Id == id);
                 
                 if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
@@ -481,7 +481,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var detail = await context.PurchaseReturnDetails.FindAsync(id);
                 
-                if (detail == null || detail.IsDeleted)
+                if (detail == null)
                     return ServiceResult.Failure("找不到指定的退回明細");
                 
                 // 小計會由計算屬性自動計算，但這裡可以觸發相關業務邏輯
@@ -513,7 +513,7 @@ namespace ERPCore2.Services
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var detail = await context.PurchaseReturnDetails.FindAsync(id);
                     
-                    if (detail == null || detail.IsDeleted)
+                    if (detail == null)
                     {
                         results.Add($"明細 {id}: 找不到記錄");
                         continue;
@@ -569,7 +569,7 @@ namespace ERPCore2.Services
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var detail = await context.PurchaseReturnDetails.FindAsync(id);
                     
-                    if (detail == null || detail.IsDeleted)
+                    if (detail == null)
                     {
                         results.Add($"明細 {id}: 找不到記錄");
                         continue;
@@ -658,7 +658,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Where(prd => prd.ProductId == productId && !prd.IsDeleted);
+                    .Where(prd => prd.ProductId == productId);
                 
                 if (startDate.HasValue)
                     query = query.Where(prd => prd.PurchaseReturn.ReturnDate >= startDate.Value);
@@ -688,7 +688,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Where(prd => !prd.IsDeleted);
+                    .AsQueryable();
                 
                 if (startDate.HasValue)
                     query = query.Where(prd => prd.PurchaseReturn.ReturnDate >= startDate.Value);
@@ -721,8 +721,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseReturn)
                         .ThenInclude(pr => pr.Supplier)
                     .Include(prd => prd.Product)
-                    .Where(prd => !prd.IsDeleted &&
-                                 !prd.IsShipped &&
+                    .Where(prd => !prd.IsShipped &&
                                  prd.ShippedQuantity < prd.ReturnQuantity)
                     .OrderBy(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
@@ -746,7 +745,7 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseReturn)
                         .ThenInclude(pr => pr.Supplier)
                     .Include(prd => prd.Product)
-                    .Where(prd => !prd.IsDeleted && prd.ReturnSubtotal >= minAmount)
+                    .Where(prd => prd.ReturnSubtotal >= minAmount)
                     .OrderByDescending(prd => prd.ReturnSubtotal)
                     .ToListAsync();
             }
@@ -772,7 +771,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturnDetails
-                    .Where(prd => prd.PurchaseReceivingDetailId == purchaseReceivingDetailId && !prd.IsDeleted)
+                    .Where(prd => prd.PurchaseReceivingDetailId == purchaseReceivingDetailId)
                     .SumAsync(prd => prd.ReturnQuantity);
             }
             catch (Exception ex)
@@ -868,3 +867,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

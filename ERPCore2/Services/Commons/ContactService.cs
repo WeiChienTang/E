@@ -27,7 +27,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Contacts
                     .Include(c => c.ContactType)
-                    .Where(c => !c.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(c => c.OwnerType)
                     .ThenBy(c => c.OwnerId)
                     .ThenByDescending(c => c.IsPrimary)
@@ -50,7 +50,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var result = await context.Contacts
                     .Include(c => c.ContactType)
-                    .Where(c => c.OwnerType == ownerType && c.OwnerId == ownerId && !c.IsDeleted)
+                    .Where(c => c.OwnerType == ownerType && c.OwnerId == ownerId)
                     .OrderByDescending(c => c.IsPrimary)
                     .ThenBy(c => c.ContactType!.TypeName)
                     .ToListAsync();
@@ -76,7 +76,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Contacts
                     .Include(c => c.ContactType)
-                    .FirstOrDefaultAsync(c => c.OwnerType == ownerType && c.OwnerId == ownerId && c.IsPrimary && !c.IsDeleted);
+                    .FirstOrDefaultAsync(c => c.OwnerType == ownerType && c.OwnerId == ownerId && c.IsPrimary);
             }
             catch (Exception ex)
             {
@@ -98,7 +98,7 @@ namespace ERPCore2.Services
                 using var transaction = await context.Database.BeginTransactionAsync();
 
                 var contact = await context.Contacts
-                    .FirstOrDefaultAsync(c => c.Id == contactId && !c.IsDeleted);
+                    .FirstOrDefaultAsync(c => c.Id == contactId);
 
                 if (contact == null)
                     return ServiceResult.Failure("找不到指定的聯絡方式");
@@ -108,8 +108,7 @@ namespace ERPCore2.Services
                     .Where(c => c.OwnerType == contact.OwnerType && 
                                c.OwnerId == contact.OwnerId && 
                                c.Id != contactId && 
-                               c.IsPrimary && 
-                               !c.IsDeleted)
+                               c.IsPrimary)
                     .ToListAsync();
 
                 foreach (var otherContact in otherContacts)
@@ -144,12 +143,11 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var contacts = await context.Contacts
-                    .Where(c => c.OwnerType == ownerType && c.OwnerId == ownerId && !c.IsDeleted)
+                    .Where(c => c.OwnerType == ownerType && c.OwnerId == ownerId)
                     .ToListAsync();
 
                 foreach (var contact in contacts)
                 {
-                    contact.IsDeleted = true;
                     contact.UpdatedAt = DateTime.Now;
                 }
 
@@ -180,8 +178,7 @@ namespace ERPCore2.Services
 
                 return await context.Contacts
                     .Include(c => c.ContactType)
-                    .Where(c => !c.IsDeleted && 
-                               (c.ContactValue.ToLower().Contains(term) ||
+                    .Where(c => (c.ContactValue.ToLower().Contains(term) ||
                                 c.OwnerType.ToLower().Contains(term) ||
                                 (c.ContactType != null && c.ContactType.TypeName.ToLower().Contains(term))))
                     .OrderBy(c => c.OwnerType)
@@ -239,3 +236,4 @@ namespace ERPCore2.Services
         }
     }
 }
+

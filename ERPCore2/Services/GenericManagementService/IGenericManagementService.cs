@@ -36,7 +36,8 @@ namespace ERPCore2.Services
         Task<ServiceResult<T>> UpdateAsync(T entity);
         
         /// <summary>
-        /// 刪除資料（軟刪除）
+        /// 刪除資料（硬刪除）
+        /// 不要再調用此方法，已經不再使用軟除 2025/09/24
         /// </summary>
         Task<ServiceResult> DeleteAsync(int id);
         

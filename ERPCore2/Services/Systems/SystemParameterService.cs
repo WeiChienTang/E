@@ -27,8 +27,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SystemParameters
-                    .Where(sp => !sp.IsDeleted &&
-                        (sp.TaxRate.ToString().Contains(searchTerm) ||
+                    .Where(sp => (sp.TaxRate.ToString().Contains(searchTerm) ||
                          (sp.Remarks != null && sp.Remarks.Contains(searchTerm))))
                     .OrderBy(sp => sp.Id)
                     .ToListAsync();
@@ -78,7 +77,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var systemParameter = await context.SystemParameters
-                    .Where(sp => !sp.IsDeleted && sp.Status == EntityStatus.Active)
+                    .Where(sp => sp.Status == EntityStatus.Active)
                     .OrderBy(sp => sp.Id)
                     .FirstOrDefaultAsync();
 
@@ -104,7 +103,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var systemParameter = await context.SystemParameters
-                    .Where(sp => !sp.IsDeleted)
+                    .AsQueryable()
                     .OrderBy(sp => sp.Id)
                     .FirstOrDefaultAsync();
 
@@ -150,7 +149,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SystemParameters
-                    .Where(sp => !sp.IsDeleted && sp.Status == EntityStatus.Active)
+                    .Where(sp => sp.Status == EntityStatus.Active)
                     .OrderBy(sp => sp.Id)
                     .FirstOrDefaultAsync();
             }
