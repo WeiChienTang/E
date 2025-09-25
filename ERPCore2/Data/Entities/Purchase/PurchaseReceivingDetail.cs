@@ -81,6 +81,18 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "是否完成進貨")]
         public bool IsReceivingCompleted { get; set; } = false;
 
+        [Required(ErrorMessage = "是否結清為必填")]
+        [Display(Name = "是否結清")]
+        public bool IsSettled { get; set; } = false;
+
+        [Display(Name = "本次付款金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PaidAmount { get; set; } = 0;
+
+        [Display(Name = "累計付款金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalPaidAmount { get; set; } = 0;
+
         // Navigation Properties
         public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
         public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;

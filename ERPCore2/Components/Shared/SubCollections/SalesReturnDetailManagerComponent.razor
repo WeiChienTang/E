@@ -378,7 +378,7 @@ else
                 OriginalUnitPrice = orderDetail?.UnitPrice ?? detail.OriginalUnitPrice,
                 ReturnUnitPrice = detail.ReturnUnitPrice,
                 QualityCondition = detail.QualityCondition ?? string.Empty,
-                ReturnReason = detail.DetailRemarks ?? string.Empty,
+                ReturnReason = detail.Remarks ?? string.Empty,
                 Remarks = string.Empty,
                 ExistingDetailEntity = detail
             };
@@ -693,7 +693,7 @@ else
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
             item.ExistingDetailEntity.ReturnUnitPrice = item.ReturnUnitPrice;
             item.ExistingDetailEntity.QualityCondition = item.QualityCondition;
-            item.ExistingDetailEntity.DetailRemarks = item.ReturnReason;
+            item.ExistingDetailEntity.Remarks = item.ReturnReason;
             
             return item.ExistingDetailEntity;
         }
@@ -707,7 +707,7 @@ else
             OriginalUnitPrice = item.OriginalUnitPrice,
             ReturnUnitPrice = item.ReturnUnitPrice,
             QualityCondition = item.QualityCondition,
-            DetailRemarks = item.ReturnReason
+            Remarks = item.ReturnReason
         };
     }
 

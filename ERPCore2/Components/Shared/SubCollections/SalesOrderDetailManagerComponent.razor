@@ -255,7 +255,7 @@ else
                     DiscountPercentage = salesDetail.DiscountPercentage,
                     DiscountAmount = salesDetail.DiscountAmount,
                     Subtotal = salesDetail.Subtotal,
-                    DetailRemarks = salesDetail.DetailRemarks ?? "",
+                    DetailRemarks = salesDetail.Remarks ?? "",
                     SelectedWarehouse = salesDetail.Warehouse ?? Warehouses.FirstOrDefault(w => w.Id == salesDetail.WarehouseId),
                     ExistingDetailEntity = detail
                 };
@@ -1008,7 +1008,7 @@ else
                     ProductSearch = detail.Product?.Name ?? "",
                     OrderQuantity = detail.OrderQuantity,
                     UnitPrice = detail.UnitPrice,
-                    DetailRemarks = detail.DetailRemarks ?? "",
+                    DetailRemarks = detail.Remarks ?? "",
                     // 複製倉庫設定作為參考
                     SelectedWarehouse = detail.Warehouse ?? (detail.WarehouseId.HasValue ? 
                         Warehouses.FirstOrDefault(w => w.Id == detail.WarehouseId.Value) : null)

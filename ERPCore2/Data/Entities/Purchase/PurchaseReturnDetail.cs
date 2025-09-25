@@ -61,6 +61,18 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "出庫日期")]
         public DateTime? ShippedDate { get; set; }
 
+        [Required(ErrorMessage = "是否結清為必填")]
+        [Display(Name = "是否結清")]
+        public bool IsSettled { get; set; } = false;
+
+        [Display(Name = "本次收款金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ReceivedAmount { get; set; } = 0;
+
+        [Display(Name = "累計收款金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalReceivedAmount { get; set; } = 0;
+
         // Foreign Keys
         [Required(ErrorMessage = "採購退回為必填")]
         [Display(Name = "採購退回")]
@@ -87,6 +99,7 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
         public int? WarehouseLocationId { get; set; }
+
 
         // Navigation Properties
         public PurchaseReturn PurchaseReturn { get; set; } = null!;

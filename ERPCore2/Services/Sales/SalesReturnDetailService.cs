@@ -90,7 +90,7 @@ namespace ERPCore2.Services
                          (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.SalesReturnNumber != null && srd.SalesReturn.SalesReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Customer != null && srd.SalesReturn.Customer.CompanyName != null && srd.SalesReturn.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
-                         (srd.DetailRemarks != null && srd.DetailRemarks.ToLower().Contains(lowerSearchTerm))))
+                         (srd.Remarks != null && srd.Remarks.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(srd => srd.SalesReturnId)
                     .ThenBy(srd => srd.Product.Code)
                     .ToListAsync();
@@ -363,7 +363,7 @@ namespace ERPCore2.Services
 
                 detail.ScrapQuantity = scrapQuantity;
                 if (!string.IsNullOrWhiteSpace(remarks))
-                    detail.DetailRemarks = remarks;
+                    detail.Remarks = remarks;
                 detail.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();

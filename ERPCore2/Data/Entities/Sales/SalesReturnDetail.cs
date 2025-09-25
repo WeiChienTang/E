@@ -55,9 +55,18 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,3)")]
         public decimal ScrapQuantity { get; set; } = 0;
 
-        [MaxLength(200, ErrorMessage = "明細備註不可超過200個字元")]
-        [Display(Name = "明細備註")]
-        public string? DetailRemarks { get; set; }
+        [Required(ErrorMessage = "是否結清為必填")]
+        [Display(Name = "是否結清")]
+        public bool IsSettled { get; set; } = false;
+
+        [Display(Name = "本次付款金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PaidAmount { get; set; } = 0;
+
+        [Display(Name = "累計付款金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalPaidAmount { get; set; } = 0;
+
 
         [MaxLength(200, ErrorMessage = "品質狀況不可超過200個字元")]
         [Display(Name = "品質狀況")]

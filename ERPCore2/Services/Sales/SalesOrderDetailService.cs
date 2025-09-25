@@ -45,7 +45,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.Unit)
                     .Where(sod => (sod.Product.Name.Contains(searchTerm) ||
                                   sod.SalesOrder.SalesOrderNumber.Contains(searchTerm) ||
-                                  (!string.IsNullOrEmpty(sod.DetailRemarks) && sod.DetailRemarks.Contains(searchTerm))))
+                                  (!string.IsNullOrEmpty(sod.Remarks) && sod.Remarks.Contains(searchTerm))))
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
                     .ThenBy(sod => sod.Id)
                     .ToListAsync();
