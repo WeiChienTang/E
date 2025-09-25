@@ -108,6 +108,7 @@
         <!-- 財務管理下拉選單 -->
         <NavMenuItem Text="財務管理" IconClass="bi bi-journal-text" MenuKey="financial_management">
             <DropdownItems>
+                <NavDropdownItem Text="付款方式" Url="/paymentMethods" RequiredPermission="PaymentMethod.Read" ParentMenuKey="financial_management"/>
                 @* <NavDropdownItem Text="應收帳款" Url="/accountsReceivable" RequiredPermission="AccountsReceivable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="應付帳款" Url="/accountsPayable" RequiredPermission="AccountsPayable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/> *@
                 @* <NavDropdownItem Text="收款單" Url="/receipts" RequiredPermission="Receipt.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>

@@ -75,7 +75,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "Warehouse.Read", Name = "檢視倉庫", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫基本資料與儲位設定" },
                 new Permission { Code = "Inventory.Read", Name = "檢視庫存", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存數量與庫存狀況" },
                 new Permission { Code = "WarehouseLocation.Read", Name = "檢視倉庫位置", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視倉庫內部位置與儲位設定" },
-new Permission { Code = "InventoryTransaction.Read", Name = "檢視庫存異動", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存進出異動記錄" },
+                new Permission { Code = "InventoryTransaction.Read", Name = "檢視庫存異動", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存進出異動記錄" },
                 // 庫存明細權限
                 new Permission { Code = "InventoryStock.Read", Name = "檢視庫存明細", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視詳細庫存明細與批號資訊" },
                 
@@ -84,8 +84,10 @@ new Permission { Code = "InventoryTransaction.Read", Name = "檢視庫存異動"
                 
                 // 庫存盤點權限
                 new Permission { Code = "StockTaking.Read", Name = "檢視盤點", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存盤點作業與結果" },
-                
-                
+
+                // 財務管理權限
+                new Permission { Code = "PaymentMethod.Read", Name = "檢視付款方式", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統付款方式設定" },
+
                 
                 // 庫存異動類型權限
                 new Permission { Code = "InventoryTransactionType.Read", Name = "檢視庫存異動類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存異動類型與分類設定" },

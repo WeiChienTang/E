@@ -1,0 +1,281 @@
+@* 可重用的付款方式編輯組件 - 可在任何頁面中嵌入 *@
+@inject IPaymentMethodService PaymentMethodService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="PaymentMethod" 
+                          TService="IPaymentMethodService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@PaymentMethodId"
+                          Service="@PaymentMethodService"
+                          EntityName="付款方式"
+                          EntityNamePlural="付款方式"
+                          ModalTitle="@(PaymentMethodId.HasValue ? "編輯付款方式" : "新增付款方式")"
+                          Size="GenericEditModalComponent<PaymentMethod, IPaymentMethodService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadPaymentMethodData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(PaymentMethodId.HasValue ? "付款方式更新成功" : "付款方式新增成功")"
+                          SaveFailureMessage="付款方式儲存失敗"
+                          RequiredPermission="PaymentMethod.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? PaymentMethodId { get; set; }
+    [Parameter] public EventCallback<PaymentMethod> OnPaymentMethodSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<PaymentMethod, IPaymentMethodService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 生命週期 =====
+    protected override Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道付款方式已儲存
+            if (OnPaymentMethodSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnPaymentMethodSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), additionalData: "處理儲存成功事件失敗");
+            await NotificationService.ShowErrorAsync("處理儲存成功事件時發生錯誤");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), additionalData: "處理取消事件失敗");
+            await NotificationService.ShowErrorAsync("處理取消事件時發生錯誤");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        try
+        {
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), additionalData: "關閉 Modal 失敗");
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task<PaymentMethod?> LoadPaymentMethodData()
+    {
+        try
+        {
+            if (!PaymentMethodId.HasValue) 
+            {
+                // 新增模式：建立新的付款方式實體
+                var newPaymentMethod = new PaymentMethod
+                {
+                    Code = await GeneratePaymentMethodCodeAsync(),
+                    Name = string.Empty,
+                    IsDefault = false,
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(PaymentMethod).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newPaymentMethod, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newPaymentMethod;
+            }
+
+            var paymentMethod = await PaymentMethodService.GetByIdAsync(PaymentMethodId.Value);            
+            
+            if (paymentMethod == null)
+            {
+                // 如果找不到付款方式，建立新的預設付款方式
+                return new PaymentMethod
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            return paymentMethod;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaymentMethodData), GetType(), additionalData: $"載入付款方式資料失敗 - PaymentMethodId: {PaymentMethodId}");
+            await NotificationService.ShowErrorAsync("載入付款方式資料時發生錯誤");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new PaymentMethod
+            {
+                Name = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(PaymentMethod.Code),
+                    Label = "付款方式代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款方式代碼",
+                    IsRequired = true,
+                    HelpText = "付款方式的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(PaymentMethod.Name),
+                    Label = "付款方式名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款方式名稱",
+                    IsRequired = true,
+                    HelpText = "付款方式的名稱，例如：現金、信用卡、轉帳等",
+                    MaxLength = 50
+                },
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(PaymentMethod.Code), "基本資訊" },
+                { nameof(PaymentMethod.Name), "基本資訊" },
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(), additionalData: "初始化表單欄位失敗");
+                    await NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+                }
+                catch
+                {
+                    // 避免錯誤處理本身產生例外
+                }
+            });
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GeneratePaymentMethodCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            PaymentMethodService,
+            "PAY",
+            (service, code, excludeId) => service.IsPaymentMethodCodeExistsAsync(code, excludeId)
+        );
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增付款方式 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        try
+        {
+            PaymentMethodId = null;
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModal), GetType(), additionalData: "開啟新增 Modal 失敗");
+            await NotificationService.ShowErrorAsync("開啟新增付款方式視窗時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯付款方式 Modal
+    /// </summary>
+    public async Task ShowEditModal(int paymentMethodId)
+    {
+        try
+        {
+            PaymentMethodId = paymentMethodId;
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowEditModal), GetType(), additionalData: $"開啟編輯 Modal 失敗 - PaymentMethodId: {paymentMethodId}");
+            await NotificationService.ShowErrorAsync("開啟編輯付款方式視窗時發生錯誤");
+        }
+    }
+}

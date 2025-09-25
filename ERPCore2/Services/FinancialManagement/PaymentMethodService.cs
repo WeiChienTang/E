@@ -125,6 +125,34 @@ namespace ERPCore2.Services
             }
         }
 
+        // 檢查付款方式代碼是否已存在
+        public async Task<bool> IsPaymentMethodCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.PaymentMethods.Where(pm => pm.Code == code);
+                
+                if (excludeId.HasValue)
+                    query = query.Where(pm => pm.Id != excludeId.Value);
+                
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPaymentMethodCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsPaymentMethodCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    Code = code,
+                    ExcludeId = excludeId 
+                });
+                return false;
+            }
+        }
+
         // 檢查付款方式名稱是否已存在
         public new async Task<bool> IsNameExistsAsync(string name, int? excludeId = null)
         {
