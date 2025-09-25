@@ -40,14 +40,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "交易後庫存")]
         public int StockAfter { get; set; }
         
-        [MaxLength(200, ErrorMessage = "備註不可超過200個字元")]
-        [Display(Name = "備註")]
-        public string? TransactionRemarks { get; set; }
-        
-        [MaxLength(50, ErrorMessage = "參考單號不可超過50個字元")]
-        [Display(Name = "參考單號")]
-        public string? ReferenceNumber { get; set; }
-        
         // === 批號追蹤欄位 ===
         [Display(Name = "交易批號")]
         [MaxLength(50, ErrorMessage = "交易批號不可超過50個字元")]

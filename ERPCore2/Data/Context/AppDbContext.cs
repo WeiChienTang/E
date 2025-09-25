@@ -13,6 +13,7 @@ namespace ERPCore2.Data.Context
       public DbSet<CustomerType> CustomerTypes { get; set; }
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
+      public DbSet<PaymentMethod> PaymentMethods { get; set; }
       
       // 統一聯絡方式管理
       public DbSet<Contact> Contacts { get; set; }
@@ -222,6 +223,13 @@ namespace ERPCore2.Data.Context
                   {
                         // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                  });
+                  
+                  modelBuilder.Entity<PaymentMethod>(entity =>
+                  {
+                        // 欄位對應                        
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
+                        entity.Property(e => e.Name).HasMaxLength(50).IsRequired();
                   });
 
                   // 權限管理

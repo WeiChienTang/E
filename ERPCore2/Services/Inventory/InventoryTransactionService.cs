@@ -277,7 +277,7 @@ namespace ERPCore2.Services
                     Quantity = quantity,
                     UnitCost = unitCost,
                     TransactionDate = DateTime.Now,
-                    TransactionRemarks = remarks,
+                    Remarks = remarks,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     
@@ -318,7 +318,7 @@ namespace ERPCore2.Services
                     TransactionNumber = transactionNumber,
                     Quantity = -quantity, // 出庫為負數
                     TransactionDate = DateTime.Now,
-                    TransactionRemarks = remarks,
+                    Remarks = remarks,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     
@@ -361,7 +361,7 @@ namespace ERPCore2.Services
                     TransactionNumber = transactionNumber,
                     Quantity = adjustmentQuantity,
                     TransactionDate = DateTime.Now,
-                    TransactionRemarks = remarks ?? $"庫存調整：{originalQuantity} → {adjustedQuantity}",
+                    Remarks = remarks ?? $"庫存調整：{originalQuantity} → {adjustedQuantity}",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     
@@ -406,7 +406,7 @@ namespace ERPCore2.Services
                     TransactionNumber = transactionNumber,
                     Quantity = -quantity,
                     TransactionDate = DateTime.Now,
-                    TransactionRemarks = remarks ?? $"調撥至倉庫ID:{toWarehouseId}",
+                    Remarks = remarks ?? $"調撥至倉庫ID:{toWarehouseId}",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     
@@ -422,7 +422,7 @@ namespace ERPCore2.Services
                     TransactionNumber = transactionNumber,
                     Quantity = quantity,
                     TransactionDate = DateTime.Now,
-                    TransactionRemarks = remarks ?? $"從倉庫ID:{fromWarehouseId}調撥",
+                    Remarks = remarks ?? $"從倉庫ID:{fromWarehouseId}調撥",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     
@@ -495,7 +495,7 @@ namespace ERPCore2.Services
                     TransactionNumber = $"REV-{originalTransaction.TransactionNumber}",
                     Quantity = -originalTransaction.Quantity, // 反向數量
                     TransactionDate = DateTime.Now,
-                    TransactionRemarks = $"沖銷異動ID:{transactionId} - {reason}",
+                    Remarks = $"沖銷異動ID:{transactionId} - {reason}",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                     
@@ -650,8 +650,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
                     .Where(t => (t.TransactionNumber.Contains(searchTerm) ||
-                                (t.TransactionRemarks != null && t.TransactionRemarks.Contains(searchTerm)) ||
-                                (t.ReferenceNumber != null && t.ReferenceNumber.Contains(searchTerm))))
+                                (t.Remarks != null && t.Remarks.Contains(searchTerm))))
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }

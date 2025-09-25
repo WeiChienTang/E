@@ -706,7 +706,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => (t.ReferenceNumber != null && t.ReferenceNumber.Contains(detail.PurchaseReceiving.ReceiptNumber)) &&
+                    .Where(t => (t.Remarks != null && t.Remarks.Contains(detail.PurchaseReceiving.ReceiptNumber)) &&
                                t.ProductId == detail.ProductId)
                     .OrderByDescending(t => t.CreatedAt)
                     .ToListAsync();

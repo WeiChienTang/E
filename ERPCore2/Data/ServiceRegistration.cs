@@ -50,6 +50,7 @@ namespace ERPCore2.Data
             // 共用資料服務
             services.AddScoped<IContactTypeService, ContactTypeService>();
             services.AddScoped<IAddressTypeService, AddressTypeService>();
+            services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();

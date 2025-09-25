@@ -78,10 +78,11 @@
                 <NavDropdownItem Text="倉庫維護" Url="/warehouses" RequiredPermission="Warehouse.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="倉庫內位置" Url="/warehouseLocations" RequiredPermission="WarehouseLocation.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="庫存查詢" Url="/inventoryStocks" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="庫存異動記錄" Url="/inventoryTransactions" RequiredPermission="InventoryTransaction.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
                 @* <NavDropdownItem Text="庫存查詢" Url="/inventory/stock" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" />
                 <NavDropdownItem Text="庫存預留" Url="/inventory/reservations" RequiredPermission="InventoryReservation.Read" ParentMenuKey="inventory_management" />                
                 <NavDropdownItem Text="庫存盤點" Url="/inventory/stock-taking" RequiredPermission="StockTaking.Read" ParentMenuKey="inventory_management" />
-                <NavDropdownItem Text="庫存異動記錄" Url="/inventory/transactions" RequiredPermission="InventoryTransaction.Read" ParentMenuKey="inventory_management" />
+                
                 <NavDropdownItem Text="庫存異動類型" Url="/inventory-transaction-types" RequiredPermission="InventoryTransactionType.Read" ParentMenuKey="inventory_management" /> *@
             </DropdownItems>
         </NavMenuItem>    
@@ -104,6 +105,18 @@
             </DropdownItems>
         </NavMenuItem>
 
+        <!-- 財務管理下拉選單 -->
+        <NavMenuItem Text="財務管理" IconClass="bi bi-journal-text" MenuKey="financial_management">
+            <DropdownItems>
+                @* <NavDropdownItem Text="應收帳款" Url="/accountsReceivable" RequiredPermission="AccountsReceivable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="應付帳款" Url="/accountsPayable" RequiredPermission="AccountsPayable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/> *@
+                @* <NavDropdownItem Text="收款單" Url="/receipts" RequiredPermission="Receipt.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="付款單" Url="/payments" RequiredPermission="Payment.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="會計科目" Url="/chartOfAccounts" RequiredPermission="ChartOfAccount.Read" ParentMenuKey="accounting_management"/>
+                <NavDropdownItem Text="稅率設定" Url="/taxRates" RequiredPermission="TaxRate.Read" ParentMenuKey="accounting_management"/> *@
+                
+            </DropdownItems>
+        </NavMenuItem>
 
         <!-- 製程管理下拉選單 -->
         @* <NavMenuItem Text="製程管理" IconClass="bi bi-list-nested" MenuKey="process_management">

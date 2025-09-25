@@ -499,7 +499,7 @@ namespace ERPCore2.Services
                         UnitCost = originalStock.AverageCost,
                         StockBefore = stockBefore,
                         StockAfter = originalStock.CurrentStock,
-                        TransactionRemarks = remarks,
+                        Remarks = remarks,
                         InventoryStockId = originalStock.Id,
                         Status = EntityStatus.Active
                     };
@@ -611,7 +611,7 @@ namespace ERPCore2.Services
                         UnitCost = unitCost,
                         StockBefore = stockBefore,
                         StockAfter = stock.CurrentStock,
-                        TransactionRemarks = remarks,
+                        Remarks = remarks,
                         InventoryStockId = stock.Id,
                         TransactionBatchNumber = batchNumber,  // 保存實際的交易批號
                         TransactionBatchDate = batchDate,
@@ -694,7 +694,7 @@ namespace ERPCore2.Services
                         UnitCost = contextStock.AverageCost,
                         StockBefore = stockBefore,
                         StockAfter = contextStock.CurrentStock,
-                        TransactionRemarks = remarks,
+                        Remarks = remarks,
                         InventoryStockId = contextStock.Id,
                         Status = EntityStatus.Active
                     };
@@ -969,8 +969,7 @@ namespace ERPCore2.Services
                         UnitCost = stock.AverageCost,
                         StockBefore = stockBefore,
                         StockAfter = stock.CurrentStock,
-                        TransactionRemarks = $"{remarks} (批號: {stock.BatchNumber})",
-                        ReferenceNumber = salesOrderDetailId?.ToString(),  // 記錄銷貨明細ID
+                        Remarks = $"{remarks} (批號: {stock.BatchNumber})" + (salesOrderDetailId.HasValue ? $" (銷貨明細ID: {salesOrderDetailId})" : ""),
                         InventoryStockId = stock.Id,
                         Status = EntityStatus.Active
                     };

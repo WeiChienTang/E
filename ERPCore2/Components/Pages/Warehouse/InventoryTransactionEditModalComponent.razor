@@ -1,0 +1,440 @@
+@* 可重用的庫存異動記錄編輯組件 - 可在任何頁面中嵌入 *@
+@inject IInventoryTransactionService InventoryTransactionService
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Modals
+@using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
+
+<GenericEditModalComponent TEntity="InventoryTransaction" 
+                          TService="IInventoryTransactionService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@InventoryTransactionId"
+                          Service="@InventoryTransactionService"
+                          EntityName="庫存異動記錄"
+                          EntityNamePlural="庫存異動記錄"
+                          ModalTitle="@(InventoryTransactionId.HasValue ? "檢視庫存異動記錄" : "新增庫存異動記錄")"
+                          Size="GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadInventoryTransactionData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          SaveButtonText="@(InventoryTransactionId.HasValue ? "更新" : "儲存")"
+                          SaveFailureMessage="庫存異動記錄儲存失敗"
+                          RequiredPermission="InventoryTransaction.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          ShowPrintButton="false"                          
+                          >
+</GenericEditModalComponent>
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? InventoryTransactionId { get; set; }
+    [Parameter] public EventCallback<InventoryTransaction> OnInventoryTransactionSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 選項清單
+    private List<Product> products = new();
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                await OnInventoryTransactionSaved.InvokeAsync(editModalComponent.Entity);
+            }
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), additionalData: "處理儲存成功事件時發生錯誤");
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), additionalData: "處理取消事件時發生錯誤");
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入產品選項
+            await LoadProductsAsync();
+            
+            // 載入倉庫選項
+            await LoadWarehousesAsync();
+            
+            // 載入倉庫位置選項
+            await LoadWarehouseLocationsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), additionalData: "載入額外資料失敗");
+            await NotificationService.ShowErrorAsync("載入額外資料失敗");
+        }
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入產品資料失敗");
+            await NotificationService.ShowErrorAsync("載入產品資料失敗");
+            products = new List<Product>();
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    private async Task LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseLocationsAsync), GetType(), additionalData: "載入倉庫位置資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫位置資料失敗");
+            warehouseLocations = new List<WarehouseLocation>();
+        }
+    }
+
+    private async Task<InventoryTransaction?> LoadInventoryTransactionData()
+    {
+        try
+        {
+            if (!InventoryTransactionId.HasValue)
+            {
+                // 新增模式 - 返回空白實體
+                return new InventoryTransaction
+                {
+                    TransactionDate = DateTime.Now,
+                    TransactionType = InventoryTransactionTypeEnum.Purchase,
+                    Quantity = 0,
+                    StockBefore = 0,
+                    StockAfter = 0,
+                    Status = EntityStatus.Active
+                };
+            }
+
+            // 編輯模式 - 從服務載入現有資料
+            var inventoryTransaction = await InventoryTransactionService.GetByIdAsync(InventoryTransactionId.Value);
+            return inventoryTransaction;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadInventoryTransactionData), GetType(), additionalData: $"載入庫存異動記錄資料失敗，ID: {InventoryTransactionId}");
+            await NotificationService.ShowErrorAsync("載入庫存異動記錄資料失敗");
+            return null;
+        }
+    }
+
+    // ===== 表單設定 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+
+
+            formFields = new List<FormFieldDefinition>
+            {
+                // ===== 基本資訊區段 =====
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionNumber),
+                    Label = "交易單號",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    IsReadOnly = InventoryTransactionId.HasValue // 編輯時只讀
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionType),
+                    Label = "交易類型",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = GetTransactionTypeOptions(),
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionDate),
+                    Label = "交易日期",
+                    FieldType = FormFieldType.DateTime,
+                    IsRequired = true,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.ProductId),
+                    Label = "商品",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = products.Select(p => new SelectOption 
+                    { 
+                        Text = $"{p.Code} - {p.Name}", 
+                        Value = p.Id.ToString() 
+                    }).ToList(),
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+
+                // ===== 庫存資訊區段 =====
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.WarehouseId),
+                    Label = "倉庫",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = warehouses.Select(w => new SelectOption 
+                    { 
+                        Text = w.Name, 
+                        Value = w.Id.ToString() 
+                    }).ToList(),
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.WarehouseLocationId),
+                    Label = "倉庫位置",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = warehouseLocations.Select(wl => new SelectOption 
+                    { 
+                        Text = wl.Name, 
+                        Value = wl.Id.ToString() 
+                    }).ToList(),
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.Quantity),
+                    Label = "交易數量",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.UnitCost),
+                    Label = "單位成本",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.StockBefore),
+                    Label = "交易前庫存",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true // 系統計算，始終只讀
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.StockAfter),
+                    Label = "交易後庫存",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true // 系統計算，始終只讀
+                },
+
+                // ===== 批號管理區段 =====
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionBatchNumber),
+                    Label = "批號",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = false,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionBatchDate),
+                    Label = "批次進貨日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TransactionExpiryDate),
+                    Label = "批次到期日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                },
+
+                // ===== 其他資訊區段 =====
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    IsRequired = false,
+                    IsReadOnly = InventoryTransactionId.HasValue
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(InventoryTransaction.TransactionNumber), "基本資訊" },
+                { nameof(InventoryTransaction.TransactionType), "基本資訊" },
+                { nameof(InventoryTransaction.TransactionDate), "基本資訊" },
+                { nameof(InventoryTransaction.ProductId), "基本資訊" },
+                { nameof(InventoryTransaction.WarehouseId), "庫存資訊" },
+                { nameof(InventoryTransaction.WarehouseLocationId), "庫存資訊" },
+                { nameof(InventoryTransaction.Quantity), "庫存資訊" },
+                { nameof(InventoryTransaction.UnitCost), "庫存資訊" },
+                { nameof(InventoryTransaction.StockBefore), "庫存資訊" },
+                { nameof(InventoryTransaction.StockAfter), "庫存資訊" },
+                { nameof(InventoryTransaction.TransactionBatchNumber), "批號管理" },
+                { nameof(InventoryTransaction.TransactionBatchDate), "批號管理" },
+                { nameof(InventoryTransaction.TransactionExpiryDate), "批號管理" },
+                { nameof(InventoryTransaction.Remarks), "其他資料" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType(), additionalData: "初始化表單欄位失敗");
+                await NotificationService.ShowErrorAsync("初始化表單欄位失敗");
+            });
+            formFields = new List<FormFieldDefinition>();
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    private List<SelectOption> GetTransactionTypeOptions()
+    {
+        try
+        {
+            return Enum.GetValues<InventoryTransactionTypeEnum>()
+                .Select(type => new SelectOption
+                {
+                    Text = GetEnumDescription(type),
+                    Value = ((int)type).ToString()
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _ = Task.Run(async () =>
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTransactionTypeOptions), GetType(), additionalData: "取得交易類型選項失敗");
+            });
+            return new List<SelectOption>();
+        }
+    }
+
+    private string GetEnumDescription(InventoryTransactionTypeEnum value)
+    {
+        try
+        {
+            var field = value.GetType().GetField(value.ToString());
+            var attribute = field?.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+                           .FirstOrDefault() as System.ComponentModel.DescriptionAttribute;
+            return attribute?.Description ?? value.ToString();
+        }
+        catch
+        {
+            return value.ToString();
+        }
+    }
+
+    /// <summary>
+    /// 開啟新增庫存異動記錄 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        InventoryTransactionId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟檢視庫存異動記錄 Modal
+    /// </summary>
+    public async Task ShowEditModal(int inventoryTransactionId)
+    {
+        InventoryTransactionId = inventoryTransactionId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

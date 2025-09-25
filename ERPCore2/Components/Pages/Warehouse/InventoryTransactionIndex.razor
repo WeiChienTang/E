@@ -1,0 +1,202 @@
+@page "/inventoryTransactions"
+@inject IInventoryTransactionService InventoryTransactionService
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<PageTitle>庫存異動記錄</PageTitle>
+
+<GenericIndexPageComponent TEntity="InventoryTransaction" 
+                          TService="IInventoryTransactionService"
+                          Service="@InventoryTransactionService"
+                          EntityBasePath="/inventoryTransactions"
+                          PageTitle="庫存異動記錄"
+                          PageSubtitle="查詢與管理所有庫存異動歷史記錄"
+                          EntityName="庫存異動記錄"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadInventoryTransactionsAsync"
+                          FilterApplier="@ApplyInventoryTransactionFilters"
+                          GetEntityDisplayName="@(transaction => transaction.TransactionNumber)"
+                          RequiredPermission="InventoryTransaction.Read"
+                          ShowAddButton="false"
+                          AutoAddRemarksColumn="false"
+                          ShowActions = "false"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          @ref="indexComponent" />
+
+@* 庫存異動記錄編輯 Modal *@
+<InventoryTransactionEditModalComponent IsVisible="@showEditModal"
+                                       IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                       InventoryTransactionId="@editingInventoryTransactionId"
+                                       OnInventoryTransactionSaved="@modalHandler.OnEntitySavedAsync"
+                                       OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<InventoryTransaction, IInventoryTransactionService> indexComponent = default!;
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingInventoryTransactionId = null;
+    
+    // Modal 處理器
+    private ModalHandler<InventoryTransaction, GenericIndexPageComponent<InventoryTransaction, IInventoryTransactionService>> modalHandler = default!;
+
+    // 基礎資料
+    private List<Product> products = new();
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
+
+    // 配置相關
+    private InventoryTransactionFieldConfiguration fieldConfiguration = default!;
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    /// <summary>
+    /// 頁面初始化
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<InventoryTransaction, GenericIndexPageComponent<InventoryTransaction, IInventoryTransactionService>>(
+                id => editingInventoryTransactionId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入所有必要的基礎資料
+            await LoadProductsAsync();
+            await LoadWarehousesAsync();
+            await LoadWarehouseLocationsAsync();
+
+            // 建立欄位配置
+            fieldConfiguration = new InventoryTransactionFieldConfiguration(products, warehouses, warehouseLocations, NotificationService);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化庫存異動記錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化庫存異動記錄頁面失敗");
+            
+            // 設定安全的預設值
+            filterDefinitions = new List<SearchFilterDefinition>();
+            columnDefinitions = new List<TableColumnDefinition>();
+        }
+    }
+
+    /// <summary>
+    /// 初始化麵包屑導航
+    /// </summary>
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理", "#"),
+                new("庫存異動記錄")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    /// <summary>
+    /// 載入商品資料
+    /// </summary>
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入商品資料失敗");
+            await NotificationService.ShowErrorAsync("載入商品資料失敗");
+            products = new List<Product>();
+        }
+    }
+
+    /// <summary>
+    /// 載入倉庫資料
+    /// </summary>
+    private async Task LoadWarehousesAsync()
+    {
+        try
+        {
+            warehouses = await WarehouseService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
+            warehouses = new List<Warehouse>();
+        }
+    }
+
+    /// <summary>
+    /// 載入倉庫位置資料
+    /// </summary>
+    private async Task LoadWarehouseLocationsAsync()
+    {
+        try
+        {
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseLocationsAsync), GetType(), additionalData: "載入倉庫位置資料失敗");
+            await NotificationService.ShowErrorAsync("載入倉庫位置資料失敗");
+            warehouseLocations = new List<WarehouseLocation>();
+        }
+    }
+
+    /// <summary>
+    /// 載入庫存異動記錄資料
+    /// </summary>
+    private async Task<List<InventoryTransaction>> LoadInventoryTransactionsAsync()
+    {
+        try
+        {
+            return await InventoryTransactionService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadInventoryTransactionsAsync), GetType(), additionalData: "載入庫存異動記錄資料失敗");
+            await NotificationService.ShowErrorAsync("載入庫存異動記錄資料失敗");
+            return new List<InventoryTransaction>();
+        }
+    }
+
+    /// <summary>
+    /// 應用庫存異動記錄篩選器
+    /// </summary>
+    private IQueryable<InventoryTransaction> ApplyInventoryTransactionFilters(SearchFilterModel searchModel, IQueryable<InventoryTransaction> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            return query.OrderByDescending(t => t.TransactionDate).ThenByDescending(t => t.Id);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryTransactionFilters), GetType());
+    }
+}
