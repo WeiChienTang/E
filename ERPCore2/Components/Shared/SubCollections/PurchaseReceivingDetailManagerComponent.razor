@@ -30,8 +30,8 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="@EmptyMessage"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
-                                      OnItemDelete="@HandleItemDelete"
+                                      ShowBuiltInDeleteButton="false"
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
                                       ShowTotalRow="true"
                                       TotalRowTemplate="@GetTotalRowTemplate" />
         </div>
@@ -413,21 +413,36 @@ else
                 var receivingItem = (ReceivingItem)item;
                 var hasReturnRecord = HasReturnRecord(receivingItem);
                 var isFieldReadOnly = IsReadOnly || hasReturnRecord;
-                var cssClass = hasReturnRecord ? "form-control form-control-sm border-warning bg-light" : "form-control form-control-sm";
                 var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改商品選擇" : "";
                 
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">
+                            @(string.IsNullOrEmpty(receivingItem.ProductSearch) ? "無商品選擇" : receivingItem.ProductSearch)
+                        </span>
+                        
+                        @if (hasReturnRecord)
+                        {
+                            <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
+                                <i class="fas fa-lock text-danger" title="此商品已有退貨記錄"></i>
+                            </div>
+                        }
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
                 return @<div class="position-relative">
                     <input type="text" 
-                           class="@cssClass" 
+                           class="form-control form-control-sm" 
                            value="@receivingItem.ProductSearch"
-                           title="@title"
                            placeholder="請選擇採購明細..."
-                           readonly="@isFieldReadOnly"
                            @onfocus="() => OnPurchaseDetailInputFocus(receivingItem)"
                            @onblur="() => OnPurchaseDetailInputBlur(receivingItem)"
                            @oninput="(e) => OnPurchaseDetailSearchInput(receivingItem, e.Value?.ToString())" />
                     
-                    @if (receivingItem.ShowDropdown && receivingItem.FilteredPurchaseDetails.Any() && !isFieldReadOnly)
+                    @if (receivingItem.ShowDropdown && receivingItem.FilteredPurchaseDetails.Any())
                     {
                         <div class="dropdown-menu show position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto;">
                             @for (int i = 0; i < receivingItem.FilteredPurchaseDetails.Count; i++)
@@ -442,7 +457,7 @@ else
                                    @onmouseenter="() => OnPurchaseDetailItemMouseEnter(receivingItem, index)"
                                    @onclick:preventDefault="true">
                                     <div class="d-flex flex-column">
-                                        <div class="fw-bold">[@detail.Product?.Code] @detail.Product?.Name</div>
+                                        <div class="small">[@detail.Product?.Code] @detail.Product?.Name</div>
                                         @if (!string.IsNullOrEmpty(detail.PurchaseOrder?.PurchaseOrderNumber))
                                         {
                                             <small class="text-muted">採購單：@detail.PurchaseOrder.PurchaseOrderNumber</small>
@@ -453,13 +468,6 @@ else
                                     </div>
                                 </a>
                             }
-                        </div>
-                    }
-                    
-                    @if (hasReturnRecord)
-                    {
-                        <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
-                            <i class="fas fa-lock text-danger" title="此商品已有退貨記錄"></i>
                         </div>
                     }
                 </div>;
@@ -478,7 +486,7 @@ else
                 var receivingItem = (ReceivingItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@receivingItem.OrderQuantity.ToString("N0")</span>
+                    <span class="small">@receivingItem.OrderQuantity.ToString("N0")</span>
                 </div>;
             }
         });
@@ -497,9 +505,27 @@ else
                 var returnedQty = GetReturnedQuantity(receivingItem);
                 var minValue = returnedQty > 0 ? returnedQty : 0;
                 var hasReturnRecord = HasReturnRecord(receivingItem);
-                
-                var cssClass = hasReturnRecord ? "form-control form-control-sm border-warning" : "form-control form-control-sm";
                 var title = hasReturnRecord ? $"此商品已退貨 {returnedQty} 個，數量不可低於此值" : "";
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">
+                            @(receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString("N0") : "0")
+                        </span>
+                        
+                        @if (hasReturnRecord && returnedQty > 0)
+                        {
+                            <div class="position-absolute text-warning" style="top: 2px; right: 8px; pointer-events: none; font-size: 0.75rem;">
+                                <i class="fas fa-exclamation-triangle" title="已退貨 @returnedQty 個"></i>
+                            </div>
+                        }
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
+                var cssClass = hasReturnRecord ? "form-control form-control-sm border-warning" : "form-control form-control-sm";
                 
                 return @<div class="position-relative">
                     <input type="number" class="@cssClass" 
@@ -508,8 +534,7 @@ else
                            @oninput="(e) => OnReceivedQuantityInput(receivingItem, e.Value?.ToString())"
                            placeholder="" 
                            min="@minValue" 
-                           step="1" 
-                           readonly="@IsReadOnly" />
+                           step="1" />
                     
                     @if (hasReturnRecord && returnedQty > 0)
                     {
@@ -533,7 +558,7 @@ else
                 var receivingItem = (ReceivingItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@receivingItem.UnitPrice.ToString("F0")</span>
+                    <span class="small">@receivingItem.UnitPrice.ToString("F0")</span>
                 </div>;
             }
         });
@@ -553,28 +578,26 @@ else
                     var selectedWarehouseId = receivingItem.SelectedWarehouse?.Id.ToString() ?? "";
                     var hasReturnRecord = HasReturnRecord(receivingItem);
                     var isFieldDisabled = IsReadOnly || hasReturnRecord;
-                    var cssClass = hasReturnRecord ? "form-select form-select-sm border-warning bg-light" : "form-select form-select-sm";
                     var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改倉庫" : "";
                     
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldDisabled)
+                {
+                    var displayText = receivingItem.SelectedWarehouse?.Name ?? "未選擇倉庫";
+                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                            <span class="text-muted small" title="@title">@displayText</span>
+                        </div>;
+                }                    // 可編輯狀態，顯示下拉選單
                     return @<div class="position-relative">
-                        <select class="@cssClass"
+                        <select class="form-select form-select-sm"
                                value="@selectedWarehouseId"
-                               title="@title"
-                               @onchange="(e) => OnWarehouseSelectionChanged(receivingItem, e.Value?.ToString())"
-                               disabled="@isFieldDisabled">
+                               @onchange="(e) => OnWarehouseSelectionChanged(receivingItem, e.Value?.ToString())">
                             <option value="">請選擇倉庫</option>
                             @foreach (var warehouse in Warehouses)
                             {
                                 <option value="@warehouse.Id">@warehouse.Name</option>
                             }
                         </select>
-                        
-                        @if (hasReturnRecord)
-                        {
-                            <div class="position-absolute" style="top: 2px; right: 25px; pointer-events: none;">
-                                <i class="fas fa-lock text-danger" title="已有退貨記錄，無法修改"></i>
-                            </div>
-                        }
                     </div>;
                 }
             });
@@ -595,7 +618,6 @@ else
                     var selectedWarehouseLocationId = receivingItem.SelectedWarehouseLocation?.Id.ToString() ?? "";
                     var hasReturnRecord = HasReturnRecord(receivingItem);
                     var isFieldDisabled = IsReadOnly || hasReturnRecord;
-                    var cssClass = hasReturnRecord ? "form-select form-select-sm border-warning bg-light" : "form-select form-select-sm";
                     var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改庫位" : "";
                     
                     // 根據選擇的倉庫篩選庫位
@@ -603,25 +625,26 @@ else
                         ? WarehouseLocations.Where(wl => wl.WarehouseId == receivingItem.SelectedWarehouse.Id).ToList()
                         : new List<WarehouseLocation>();
                     
+                    // 如果是唯讀狀態，直接顯示 span
+                    if (isFieldDisabled)
+                    {
+                        var displayText = receivingItem.SelectedWarehouseLocation?.Name ?? "未選擇庫位";
+                        return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                            <span class="text-muted small" title="@title">@displayText</span>
+                        </div>;
+                    }
+                    
+                    // 可編輯狀態，顯示下拉選單
                     return @<div class="position-relative">
-                        <select class="@cssClass"
+                        <select class="form-select form-select-sm"
                                value="@selectedWarehouseLocationId"
-                               title="@title"
-                               @onchange="(e) => OnWarehouseLocationSelectionChanged(receivingItem, e.Value?.ToString())"
-                               disabled="@isFieldDisabled">
+                               @onchange="(e) => OnWarehouseLocationSelectionChanged(receivingItem, e.Value?.ToString())">
                             <option value="">請選擇庫位</option>
                             @foreach (var location in availableLocations)
                             {
                                 <option value="@location.Id">@location.Name</option>
                             }
                         </select>
-                        
-                        @if (hasReturnRecord)
-                        {
-                            <div class="position-absolute" style="top: 2px; right: 25px; pointer-events: none;">
-                                <i class="fas fa-lock text-danger" title="已有退貨記錄，無法修改"></i>
-                            </div>
-                        }
                     </div>;
                 }
             });
@@ -639,11 +662,20 @@ else
             {
                 var receivingItem = (ReceivingItem)item;
                 
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    var displayText = string.IsNullOrEmpty(receivingItem.Remarks) ? "無備註" : receivingItem.Remarks;
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted">@displayText</span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
                 return @<input type="text" class="form-control form-control-sm" 
                                value="@receivingItem.Remarks"
                                @oninput="(e) => OnRemarksInput(receivingItem, e.Value?.ToString())"
-                               placeholder="選填..."
-                               readonly="@IsReadOnly" />;
+                               placeholder="選填..." />;
             }
         });
 
@@ -655,6 +687,22 @@ else
         if (column.Title == PriceLabel)
         {
             <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
+        }
+    };
+
+    private RenderFragment<ReceivingItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        // 只有當項目沒有退貨記錄時才顯示刪除按鈕
+        if (!HasReturnRecord(item))
+        {
+            <GenericButtonComponent Variant="ButtonVariant.Danger"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
         }
     };
 
@@ -1562,11 +1610,11 @@ else
         public int PendingQuantity => OrderQuantity - PreviousReceivedQuantity;
         
         /// <summary>
-        /// 取得顯示用的商品名稱（包含採購單號）
+        /// 取得顯示用的商品名稱
         /// </summary>
         public string DisplayName => 
-            SelectedPurchaseDetail?.Product != null && !string.IsNullOrEmpty(SelectedPurchaseDetail.PurchaseOrder?.PurchaseOrderNumber)
-                ? $"採購單 {SelectedPurchaseDetail.PurchaseOrder.PurchaseOrderNumber} [{SelectedPurchaseDetail.Product.Code}] {SelectedPurchaseDetail.Product.Name}"
+            SelectedPurchaseDetail?.Product != null
+                ? $"[{SelectedPurchaseDetail.Product.Code}] {SelectedPurchaseDetail.Product.Name}"
                 : SelectedProduct != null 
                     ? $"[{SelectedProduct.Code}] {SelectedProduct.Name}" 
                     : ProductSearch;
