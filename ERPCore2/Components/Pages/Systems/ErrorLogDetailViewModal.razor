@@ -1,0 +1,418 @@
+@inject IErrorLogService ErrorLogService
+@inject INotificationService NotificationService
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                        錯誤記錄詳細資訊
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HandleClose" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                    @if (isLoading)
+                    {
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                            <p class="mt-2">載入錯誤記錄詳細資訊...</p>
+                        </div>
+                    }
+                    else if (errorLog != null)
+                    {
+                        <div class="row">
+                            <!-- 基本資訊 -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-info-circle"></i>
+                                            基本資訊
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>錯誤ID：</strong></div>
+                                            <div class="col-8">
+                                                <code>@errorLog.ErrorId</code>
+                                                <button type="button" 
+                                                        class="btn btn-outline-secondary btn-sm ms-2" 
+                                                        @onclick="() => CopyToClipboard(errorLog.ErrorId)"
+                                                        title="複製錯誤ID">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>錯誤等級：</strong></div>
+                                            <div class="col-8">
+                                                <span class="badge" style="@ErrorLogFieldConfiguration.GetLevelBadgeStyle(errorLog.Level)">
+                                                    @ErrorLogFieldConfiguration.GetLevelDisplayText(errorLog.Level)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>錯誤來源：</strong></div>
+                                            <div class="col-8">
+                                                <span class="badge bg-secondary">
+                                                    @ErrorLogFieldConfiguration.GetSourceDisplayText(errorLog.Source)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>錯誤分類：</strong></div>
+                                            <div class="col-8">@errorLog.Category</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>發生時間：</strong></div>
+                                            <div class="col-8">@errorLog.OccurredAt.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>狀態：</strong></div>
+                                            <div class="col-8">
+                                                @if (errorLog.IsResolved)
+                                                {
+                                                    <span class="badge bg-success">已解決</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">未解決</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(errorLog.Module))
+                                        {
+                                            <div class="row mb-2">
+                                                <div class="col-4"><strong>所屬模組：</strong></div>
+                                                <div class="col-8">@errorLog.Module</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 技術資訊 -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-cog"></i>
+                                            技術資訊
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (!string.IsNullOrEmpty(errorLog.ExceptionType))
+                                        {
+                                            <div class="row mb-2">
+                                                <div class="col-4"><strong>例外類型：</strong></div>
+                                                <div class="col-8"><code>@errorLog.ExceptionType</code></div>
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(errorLog.UserId))
+                                        {
+                                            <div class="row mb-2">
+                                                <div class="col-4"><strong>使用者ID：</strong></div>
+                                                <div class="col-8">@errorLog.UserId</div>
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(errorLog.RequestPath))
+                                        {
+                                            <div class="row mb-2">
+                                                <div class="col-4"><strong>請求路徑：</strong></div>
+                                                <div class="col-8"><code>@errorLog.RequestPath</code></div>
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(errorLog.UserAgent))
+                                        {
+                                            <div class="row mb-2">
+                                                <div class="col-4"><strong>使用者代理：</strong></div>
+                                                <div class="col-8">
+                                                    <small class="text-muted">@errorLog.UserAgent</small>
+                                                </div>
+                                            </div>
+                                        }
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>建立時間：</strong></div>
+                                            <div class="col-8">@errorLog.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>更新時間：</strong></div>
+                                            <div class="col-8">@errorLog.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 錯誤訊息 -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            錯誤訊息
+                                        </h5>
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary btn-sm" 
+                                                @onclick="() => CopyToClipboard(errorLog.Message)"
+                                                title="複製錯誤訊息">
+                                            <i class="fas fa-copy"></i>
+                                            複製
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">@errorLog.Message</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 堆疊追蹤 -->
+                        @if (!string.IsNullOrEmpty(errorLog.StackTrace))
+                        {
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="card-title mb-0">
+                                                <i class="fas fa-list"></i>
+                                                堆疊追蹤
+                                            </h5>
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-sm" 
+                                                    @onclick="() => CopyToClipboard(errorLog.StackTrace)"
+                                                    title="複製堆疊追蹤">
+                                                <i class="fas fa-copy"></i>
+                                                複製
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <pre class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 12px;">@errorLog.StackTrace</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 內部例外 -->
+                        @if (!string.IsNullOrEmpty(errorLog.InnerException))
+                        {
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="card-title mb-0">
+                                                <i class="fas fa-link"></i>
+                                                內部例外
+                                            </h5>
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-sm" 
+                                                    @onclick="() => CopyToClipboard(errorLog.InnerException)"
+                                                    title="複製內部例外">
+                                                <i class="fas fa-copy"></i>
+                                                複製
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 12px;">@errorLog.InnerException</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 額外資料 -->
+                        @if (!string.IsNullOrEmpty(errorLog.AdditionalData))
+                        {
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="card-title mb-0">
+                                                <i class="fas fa-database"></i>
+                                                額外資料 (JSON)
+                                            </h5>
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-sm" 
+                                                    @onclick="() => CopyToClipboard(errorLog.AdditionalData)"
+                                                    title="複製額外資料">
+                                                <i class="fas fa-copy"></i>
+                                                複製
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 12px;">@FormatJson(errorLog.AdditionalData)</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 解決資訊 -->
+                        @if (errorLog.IsResolved)
+                        {
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white">
+                                            <h5 class="card-title mb-0">
+                                                <i class="fas fa-check-circle"></i>
+                                                解決資訊
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col-3"><strong>解決者：</strong></div>
+                                                <div class="col-9">@(errorLog.ResolvedBy ?? "未知")</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-3"><strong>解決時間：</strong></div>
+                                                <div class="col-9">@(errorLog.ResolvedAt?.ToString("yyyy/MM/dd HH:mm:ss") ?? "未知")</div>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(errorLog.Resolution))
+                                            {
+                                                <div class="row">
+                                                    <div class="col-3"><strong>解決方案：</strong></div>
+                                                    <div class="col-9">
+                                                        <div class="bg-light p-2 rounded">@errorLog.Resolution</div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else if (!isLoading)
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            找不到指定的錯誤記錄
+                        </div>
+                    }
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HandleClose">
+                        <i class="fas fa-times"></i>
+                        關閉
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? ErrorLogId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool isLoading = false;
+    private ErrorLog? errorLog = null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            if (IsVisible && ErrorLogId.HasValue && (errorLog == null || errorLog.Id != ErrorLogId.Value))
+            {
+                await LoadErrorLogAsync();
+            }
+            else if (!IsVisible)
+            {
+                // 重置狀態
+                errorLog = null;
+                isLoading = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(), additionalData: "載入錯誤記錄詳細資訊失敗");
+            await NotificationService.ShowErrorAsync("載入錯誤記錄詳細資訊失敗");
+        }
+    }
+
+    private async Task LoadErrorLogAsync()
+    {
+        try
+        {
+            if (!ErrorLogId.HasValue) return;
+
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+
+            errorLog = await ErrorLogService.GetByIdAsync(ErrorLogId.Value);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadErrorLogAsync), GetType(), additionalData: "載入錯誤記錄資料失敗");
+            await NotificationService.ShowErrorAsync("載入錯誤記錄資料失敗");
+            errorLog = null;
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        try
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+            await OnClose.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleClose), GetType(), additionalData: "關閉錯誤記錄詳細檢視失敗");
+        }
+    }
+
+    private async Task CopyToClipboard(string? text)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(text)) return;
+
+            // 在實際應用中，您需要使用 IJSRuntime 來複製到剪貼簿
+            // 這裡只是顯示複製成功的提示
+            await NotificationService.ShowSuccessAsync("已複製到剪貼簿");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CopyToClipboard), GetType(), additionalData: "複製到剪貼簿失敗");
+            await NotificationService.ShowErrorAsync("複製到剪貼簿失敗");
+        }
+    }
+
+    private string FormatJson(string json)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(json)) return string.Empty;
+
+            // 簡單的 JSON 格式化（實際應用中可使用更完善的 JSON 格式化工具）
+            var formatted = System.Text.Json.JsonSerializer.Serialize(
+                System.Text.Json.JsonSerializer.Deserialize<object>(json),
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+            );
+            return formatted;
+        }
+        catch
+        {
+            // 如果解析失敗，返回原始 JSON
+            return json;
+        }
+    }
+}

@@ -40,6 +40,7 @@
             <IndexActionButtonsComponent 
                 AddButtonText="@GetAddButtonText()"
                 AddButtonTitle="@GetAddButtonTitle()"
+                ShowAddButton="@ShowAddButton"
                 OnAddClick="@HandleAddClick"
                 OnRefreshClick="@RefreshData"
                 ShowExportExcelButton="@ShowExportExcelButton"
@@ -153,6 +154,7 @@
     
     // 動作按鈕顯示控制
     [Parameter] public bool ShowDefaultActions { get; set; } = true;
+    [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public RenderFragment? CustomActionButtons { get; set; }
     
     // 匯出功能控制

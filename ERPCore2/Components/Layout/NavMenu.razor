@@ -34,7 +34,7 @@
         <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />    
 
         <!-- 員工管理下拉選單 -->
-        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management">
+        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management" >
             <DropdownItems>
                 <NavDropdownItem Text="員工維護" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="部門" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>

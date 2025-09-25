@@ -3,9 +3,9 @@
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
+@inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject INotificationService NotificationService
-@using ERPCore2.Helpers
-@using ERPCore2.Data.Entities
+
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
@@ -158,6 +158,9 @@ else
     private int? _previousSelectedPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
+    
+    // ===== 退貨數量管理 =====
+    private Dictionary<int, int> _returnedQuantities = new(); // Key: PurchaseReceivingDetailId, Value: 已退貨數量
 
     // ===== 計算屬性 =====
     private bool CanLoadAllUnreceived => 
@@ -168,8 +171,66 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
-        LoadExistingDetailsAsync();
+        await LoadExistingDetailsAsync();
         EnsureOneEmptyRow();
+    }
+
+    // ===== 退貨數量管理方法 =====
+    
+    /// <summary>
+    /// 載入所有進貨明細的退貨數量
+    /// </summary>
+    private async Task LoadReturnedQuantitiesAsync()
+    {
+        _returnedQuantities.Clear();
+        
+        // 先複製要處理的項目到列表中，避免在迭代時修改集合
+        var itemsToProcess = ReceivingItems
+            .Where(x => x.ExistingDetailEntity != null)
+            .ToList();
+        
+        foreach (var item in itemsToProcess)
+        {
+            if (item.ExistingDetailEntity is PurchaseReceivingDetail detail && detail.Id > 0)
+            {
+                try
+                {
+                    var returnedQty = await PurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync(detail.Id);
+                    if (returnedQty > 0)
+                    {
+                        _returnedQuantities[detail.Id] = returnedQty;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReturnedQuantitiesAsync), GetType());
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 檢查指定的進貨明細項目是否有退貨記錄
+    /// </summary>
+    private bool HasReturnRecord(ReceivingItem item)
+    {
+        if (item.ExistingDetailEntity is PurchaseReceivingDetail detail && detail.Id > 0)
+        {
+            return _returnedQuantities.ContainsKey(detail.Id);
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// 取得指定進貨明細項目的已退貨數量
+    /// </summary>
+    private int GetReturnedQuantity(ReceivingItem item)
+    {
+        if (item.ExistingDetailEntity is PurchaseReceivingDetail detail && detail.Id > 0)
+        {
+            return _returnedQuantities.GetValueOrDefault(detail.Id, 0);
+        }
+        return 0;
     }
 
     private void FillAllQuantities()
@@ -293,7 +354,7 @@ else
             
             // 廠商變更時清空現有選項並重新載入
             ReceivingItems.Clear();
-            LoadExistingDetailsAsync();
+            await LoadExistingDetailsAsync();
             return;
         }
         
@@ -337,20 +398,73 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 採購明細選擇欄位 - 使用新的 ProductSelectHelper
-        columns.Add(ProductSelectHelper.CreatePurchaseDetailSelect<ReceivingItem>(
-            title: "商品",
-            availablePurchaseDetailsProvider: () => GetAvailablePurchaseDetails(),
-            onSearchInputChanged: EventCallback.Factory.Create<(ReceivingItem item, string? searchValue)>(this, async args => await OnPurchaseDetailSearchInput(args.item, args.searchValue)),
-            onPurchaseDetailSelected: EventCallback.Factory.Create<(ReceivingItem item, PurchaseOrderDetail? selectedDetail)>(this, async args => {
-                if (args.selectedDetail != null)
-                    await OnPurchaseDetailSelected(args.item, args.selectedDetail);
-            }),
-            onInputFocus: EventCallback.Factory.Create<ReceivingItem>(this, item => OnPurchaseDetailInputFocus(item)),
-            onInputBlur: EventCallback.Factory.Create<ReceivingItem>(this, async item => await OnPurchaseDetailInputBlur(item)),
-            onItemMouseEnter: EventCallback.Factory.Create<(ReceivingItem item, int index)>(this, args => OnPurchaseDetailItemMouseEnter(args.item, args.index)),
-            isReadOnly: IsReadOnly
-        ));        
+        // 採購明細選擇欄位 - 動態判斷是否唯讀
+        var dynamicColumns = new List<InteractiveColumnDefinition>();
+        
+        // 為每個項目創建動態欄位定義（因為 ProductSelectHelper 目前不支援動態 isReadOnly）
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "商品", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "25%",
+            CustomTemplate = item => 
+            {
+                var receivingItem = (ReceivingItem)item;
+                var hasReturnRecord = HasReturnRecord(receivingItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord;
+                var cssClass = hasReturnRecord ? "form-control form-control-sm border-warning bg-light" : "form-control form-control-sm";
+                var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改商品選擇" : "";
+                
+                return @<div class="position-relative">
+                    <input type="text" 
+                           class="@cssClass" 
+                           value="@receivingItem.ProductSearch"
+                           title="@title"
+                           placeholder="請選擇採購明細..."
+                           readonly="@isFieldReadOnly"
+                           @onfocus="() => OnPurchaseDetailInputFocus(receivingItem)"
+                           @onblur="() => OnPurchaseDetailInputBlur(receivingItem)"
+                           @oninput="(e) => OnPurchaseDetailSearchInput(receivingItem, e.Value?.ToString())" />
+                    
+                    @if (receivingItem.ShowDropdown && receivingItem.FilteredPurchaseDetails.Any() && !isFieldReadOnly)
+                    {
+                        <div class="dropdown-menu show position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto;">
+                            @for (int i = 0; i < receivingItem.FilteredPurchaseDetails.Count; i++)
+                            {
+                                var index = i;
+                                var detail = receivingItem.FilteredPurchaseDetails[i];
+                                var isSelected = index == receivingItem.SelectedIndex;
+                                var itemClass = isSelected ? "dropdown-item active" : "dropdown-item";
+                                
+                                <a href="#" class="@itemClass" 
+                                   @onclick="() => OnPurchaseDetailSelected(receivingItem, detail)"
+                                   @onmouseenter="() => OnPurchaseDetailItemMouseEnter(receivingItem, index)"
+                                   @onclick:preventDefault="true">
+                                    <div class="d-flex flex-column">
+                                        <div class="fw-bold">[@detail.Product?.Code] @detail.Product?.Name</div>
+                                        @if (!string.IsNullOrEmpty(detail.PurchaseOrder?.PurchaseOrderNumber))
+                                        {
+                                            <small class="text-muted">採購單：@detail.PurchaseOrder.PurchaseOrderNumber</small>
+                                        }
+                                        <small class="text-info">
+                                            訂購：@detail.OrderQuantity | 已進：@detail.ReceivedQuantity | 待進：@(detail.OrderQuantity - detail.ReceivedQuantity)
+                                        </small>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                    
+                    @if (hasReturnRecord)
+                    {
+                        <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
+                            <i class="fas fa-lock text-danger" title="此商品已有退貨記錄"></i>
+                        </div>
+                    }
+                </div>;
+            }
+        });        
 
         // 採購數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
@@ -380,14 +494,30 @@ else
             {
                 var receivingItem = (ReceivingItem)item;
                 var value = receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString() : "";
+                var returnedQty = GetReturnedQuantity(receivingItem);
+                var minValue = returnedQty > 0 ? returnedQty : 0;
+                var hasReturnRecord = HasReturnRecord(receivingItem);
                 
-                return @<input type="number" class="form-control form-control-sm" 
-                               value="@value"
-                               @oninput="(e) => OnReceivedQuantityInput(receivingItem, e.Value?.ToString())"
-                               placeholder="" 
-                               min="0" 
-                               step="1" 
-                               readonly="@IsReadOnly" />;
+                var cssClass = hasReturnRecord ? "form-control form-control-sm border-warning" : "form-control form-control-sm";
+                var title = hasReturnRecord ? $"此商品已退貨 {returnedQty} 個，數量不可低於此值" : "";
+                
+                return @<div class="position-relative">
+                    <input type="number" class="@cssClass" 
+                           value="@value"
+                           title="@title"
+                           @oninput="(e) => OnReceivedQuantityInput(receivingItem, e.Value?.ToString())"
+                           placeholder="" 
+                           min="@minValue" 
+                           step="1" 
+                           readonly="@IsReadOnly" />
+                    
+                    @if (hasReturnRecord && returnedQty > 0)
+                    {
+                        <div class="position-absolute text-warning" style="top: 2px; right: 8px; pointer-events: none; font-size: 0.75rem;">
+                            <i class="fas fa-exclamation-triangle" title="已退貨 @returnedQty 個"></i>
+                        </div>
+                    }
+                </div>;
             }
         });
 
@@ -421,17 +551,31 @@ else
                 {
                     var receivingItem = (ReceivingItem)item;
                     var selectedWarehouseId = receivingItem.SelectedWarehouse?.Id.ToString() ?? "";
+                    var hasReturnRecord = HasReturnRecord(receivingItem);
+                    var isFieldDisabled = IsReadOnly || hasReturnRecord;
+                    var cssClass = hasReturnRecord ? "form-select form-select-sm border-warning bg-light" : "form-select form-select-sm";
+                    var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改倉庫" : "";
                     
-                    return @<select class="form-select form-select-sm"
-                                   value="@selectedWarehouseId"
-                                   @onchange="(e) => OnWarehouseSelectionChanged(receivingItem, e.Value?.ToString())"
-                                   disabled="@IsReadOnly">
-                        <option value="">請選擇倉庫</option>
-                        @foreach (var warehouse in Warehouses)
+                    return @<div class="position-relative">
+                        <select class="@cssClass"
+                               value="@selectedWarehouseId"
+                               title="@title"
+                               @onchange="(e) => OnWarehouseSelectionChanged(receivingItem, e.Value?.ToString())"
+                               disabled="@isFieldDisabled">
+                            <option value="">請選擇倉庫</option>
+                            @foreach (var warehouse in Warehouses)
+                            {
+                                <option value="@warehouse.Id">@warehouse.Name</option>
+                            }
+                        </select>
+                        
+                        @if (hasReturnRecord)
                         {
-                            <option value="@warehouse.Id">@warehouse.Name</option>
+                            <div class="position-absolute" style="top: 2px; right: 25px; pointer-events: none;">
+                                <i class="fas fa-lock text-danger" title="已有退貨記錄，無法修改"></i>
+                            </div>
                         }
-                    </select>;
+                    </div>;
                 }
             });
         }
@@ -449,22 +593,36 @@ else
                 {
                     var receivingItem = (ReceivingItem)item;
                     var selectedWarehouseLocationId = receivingItem.SelectedWarehouseLocation?.Id.ToString() ?? "";
+                    var hasReturnRecord = HasReturnRecord(receivingItem);
+                    var isFieldDisabled = IsReadOnly || hasReturnRecord;
+                    var cssClass = hasReturnRecord ? "form-select form-select-sm border-warning bg-light" : "form-select form-select-sm";
+                    var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改庫位" : "";
                     
                     // 根據選擇的倉庫篩選庫位
                     var availableLocations = receivingItem.SelectedWarehouse != null 
                         ? WarehouseLocations.Where(wl => wl.WarehouseId == receivingItem.SelectedWarehouse.Id).ToList()
                         : new List<WarehouseLocation>();
                     
-                    return @<select class="form-select form-select-sm"
-                                   value="@selectedWarehouseLocationId"
-                                   @onchange="(e) => OnWarehouseLocationSelectionChanged(receivingItem, e.Value?.ToString())"
-                                   disabled="@IsReadOnly">
-                        <option value="">請選擇庫位</option>
-                        @foreach (var location in availableLocations)
+                    return @<div class="position-relative">
+                        <select class="@cssClass"
+                               value="@selectedWarehouseLocationId"
+                               title="@title"
+                               @onchange="(e) => OnWarehouseLocationSelectionChanged(receivingItem, e.Value?.ToString())"
+                               disabled="@isFieldDisabled">
+                            <option value="">請選擇庫位</option>
+                            @foreach (var location in availableLocations)
+                            {
+                                <option value="@location.Id">@location.Name</option>
+                            }
+                        </select>
+                        
+                        @if (hasReturnRecord)
                         {
-                            <option value="@location.Id">@location.Name</option>
+                            <div class="position-absolute" style="top: 2px; right: 25px; pointer-events: none;">
+                                <i class="fas fa-lock text-danger" title="已有退貨記錄，無法修改"></i>
+                            </div>
                         }
-                    </select>;
+                    </div>;
                 }
             });
         }        
@@ -502,6 +660,16 @@ else
 
     private async Task HandleItemDelete(ReceivingItem item)
     {
+        // 檢查是否有退貨記錄，如果有則阻止刪除
+        if (HasReturnRecord(item))
+        {
+            await NotificationService.ShowWarningAsync(
+                "此商品已有退貨記錄，無法刪除", 
+                "操作限制"
+            );
+            return;
+        }
+        
         var index = ReceivingItems.IndexOf(item);
         await RemoveItemAsync(index);
     }
@@ -537,7 +705,7 @@ else
         }
     }
 
-    private void LoadExistingDetailsAsync()
+    private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
@@ -643,6 +811,9 @@ else
         }
         
         EnsureOneEmptyRow();
+        
+        // 載入退貨數量資訊
+        await LoadReturnedQuantitiesAsync();
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()
@@ -930,7 +1101,21 @@ else
         }
         else if (int.TryParse(value, out var quantity))
         {
-            item.ReceivedQuantity = quantity;
+            var returnedQty = GetReturnedQuantity(item);
+            
+            // 檢查是否低於已退貨數量
+            if (returnedQty > 0 && quantity < returnedQty)
+            {
+                await NotificationService.ShowWarningAsync(
+                    $"進貨數量不可低於已退貨數量 {returnedQty}",
+                    "數量限制"
+                );
+                item.ReceivedQuantity = returnedQty; // 自動調整為最小允許值
+            }
+            else
+            {
+                item.ReceivedQuantity = quantity;
+            }
         }
         
         AutoEmptyRowHelper.ForAny<ReceivingItem>.HandleInputChange(
@@ -942,6 +1127,18 @@ else
 
     private async Task OnWarehouseSelectionChanged(ReceivingItem item, string? warehouseIdStr)
     {
+        if (IsReadOnly) return;
+        
+        // 新增：檢查退貨記錄限制
+        if (HasReturnRecord(item))
+        {
+            await NotificationService.ShowWarningAsync(
+                "此商品已有退貨記錄，無法修改倉庫設定", 
+                "操作限制"
+            );
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(warehouseIdStr) || !int.TryParse(warehouseIdStr, out var warehouseId))
@@ -964,6 +1161,18 @@ else
 
     private async Task OnWarehouseLocationSelectionChanged(ReceivingItem item, string? warehouseLocationIdStr)
     {
+        if (IsReadOnly) return;
+        
+        // 新增：檢查退貨記錄限制
+        if (HasReturnRecord(item))
+        {
+            await NotificationService.ShowWarningAsync(
+                "此商品已有退貨記錄，無法修改庫位設定", 
+                "操作限制"
+            );
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(warehouseLocationIdStr) || !int.TryParse(warehouseLocationIdStr, out var warehouseLocationId))
@@ -1302,8 +1511,18 @@ else
                         errors.Add("所有商品都必須選擇倉庫");
                     }
                 }
-            }           
-
+            }
+            
+            // 新增：檢查退貨數量限制
+            foreach (var item in nonEmptyItems)
+            {
+                var returnedQty = GetReturnedQuantity(item);
+                if (returnedQty > 0 && item.ReceivedQuantity < returnedQty)
+                {
+                    var productName = item.SelectedProduct?.Name ?? item.DisplayName;
+                    errors.Add($"商品「{productName}」的進貨數量 {item.ReceivedQuantity} 不可低於已退貨數量 {returnedQty}");
+                }
+            }
         }
           
         if (errors.Any())
