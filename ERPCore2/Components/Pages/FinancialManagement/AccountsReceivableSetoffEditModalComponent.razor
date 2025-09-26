@@ -1,0 +1,449 @@
+@* 應收帳款沖款單編輯組件 *@
+@inject IAccountsReceivableSetoffService AccountsReceivableSetoffService
+@inject IAccountsReceivableSetoffDetailService AccountsReceivableSetoffDetailService
+@inject ICustomerService CustomerService
+@inject IPaymentMethodService PaymentMethodService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="AccountsReceivableSetoff" 
+                          TService="IAccountsReceivableSetoffService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@SetoffId"
+                          Service="@AccountsReceivableSetoffService"
+                          EntityName="應收帳款沖款"
+                          EntityNamePlural="沖款單"
+                          ModalTitle="@(SetoffId.HasValue ? "編輯沖款單" : "新增沖款單")"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          DataLoader="@LoadSetoffData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          CustomValidator="@ValidateSetoffDetailsAsync"
+                          AfterSave="@SaveSetoffDetailsAsync"
+                          SaveSuccessMessage="@(SetoffId.HasValue ? "沖款單更新成功" : "沖款單新增成功")"
+                          SaveFailureMessage="沖款單儲存失敗"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SetoffId { get; set; }
+    [Parameter] public EventCallback<AccountsReceivableSetoff> OnSetoffSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    
+    // 相關資料
+    private List<Customer> customers = new();
+    private List<PaymentMethod> paymentMethods = new();
+    
+    // ===== 沖款明細 =====
+    private List<AccountsReceivableSetoffDetail> setoffDetails = new();
+    private List<ReceivableDetailViewModel> receivableDetails = new();
+    private AccountsReceivableSetoffDetailManagerComponent<AccountsReceivableSetoff, AccountsReceivableSetoffDetail>? setoffDetailManager;
+    
+    // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+        catch (Exception)
+        {
+            // 已在相關方法中處理錯誤
+        }
+    }
+
+    /// <summary>
+    /// 載入沖款單資料
+    /// </summary>
+    private async Task<AccountsReceivableSetoff?> LoadSetoffData()
+    {
+        try
+        {
+            if (SetoffId.HasValue && SetoffId.Value > 0)
+            {
+                var setoff = await AccountsReceivableSetoffService.GetByIdWithDetailsAsync(SetoffId.Value);
+                if (setoff != null)
+                {
+                    // 載入沖款明細
+                    await LoadSetoffDetails(SetoffId.Value);
+                    return setoff;
+                }
+            }
+            else
+            {
+                // 新增模式：生成沖款單號
+                var newSetoff = new AccountsReceivableSetoff
+                {
+                    SetoffNumber = await AccountsReceivableSetoffService.GenerateSetoffNumberAsync(),
+                    SetoffDate = DateTime.Today
+                };
+                return newSetoff;
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSetoffData), GetType());
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 載入額外資料
+    /// </summary>
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            await LoadCustomersAsync();
+            await LoadPaymentMethodsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType());
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType());
+            customers = new List<Customer>();
+        }
+    }
+
+    private async Task LoadPaymentMethodsAsync()
+    {
+        try
+        {
+            paymentMethods = await PaymentMethodService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaymentMethodsAsync), GetType());
+            paymentMethods = new List<PaymentMethod>();
+        }
+    }
+
+    /// <summary>
+    /// 初始化表單欄位
+    /// </summary>
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.SetoffNumber),
+                    Label = "沖款單號",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    IsReadOnly = true,
+                    HelpText = "系統自動產生的沖款單號"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.SetoffDate),
+                    Label = "沖款日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "沖款的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    IsRequired = true,
+                    HelpText = "選擇要進行沖款的客戶"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.TotalSetoffAmount),
+                    Label = "總沖款金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = true,
+                    IsReadOnly = true,
+                    HelpText = "由沖款明細自動計算總金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.PaymentMethodId),
+                    Label = "收款方式",
+                    FieldType = FormFieldType.AutoComplete,
+                    HelpText = "選擇收款方式"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.PaymentAccount),
+                    Label = "收款帳戶",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入收款帳戶或現金",
+                    HelpText = "收款的銀行帳戶或現金"
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.IsCompleted),
+                    Label = "是否已完成",
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = "勾選表示此沖款已完成"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFields), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 取得表單欄位清單
+    /// </summary>
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(AccountsReceivableSetoff.CustomerId), customers },
+            { nameof(AccountsReceivableSetoff.PaymentMethodId), paymentMethods }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(AccountsReceivableSetoff.CustomerId), "CompanyName" },
+            { nameof(AccountsReceivableSetoff.PaymentMethodId), "Name" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(AccountsReceivableSetoff.CustomerId), "Id" },
+            { nameof(AccountsReceivableSetoff.PaymentMethodId), "Id" }
+        };
+    }
+
+    /// <summary>
+    /// 載入沖款明細
+    /// </summary>
+    private async Task LoadSetoffDetails(int setoffId)
+    {
+        try
+        {
+            setoffDetails = await AccountsReceivableSetoffDetailService.GetBySetoffIdAsync(setoffId);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSetoffDetails), GetType());
+            setoffDetails = new List<AccountsReceivableSetoffDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 處理沖款明細變更
+    /// </summary>
+    private async Task HandleSetoffDetailsChanged(List<AccountsReceivableSetoffDetail> details)
+    {
+        try
+        {
+            setoffDetails = details;
+            
+            // 計算總沖款金額
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.TotalSetoffAmount = details.Sum(d => d.SetoffAmount);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSetoffDetailsChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            if (fieldChange.PropertyName == nameof(AccountsReceivableSetoff.CustomerId))
+            {
+                if (int.TryParse(fieldChange.Value?.ToString(), out var customerId))
+                {
+                    // 載入該客戶的可沖款明細
+                    receivableDetails = await AccountsReceivableSetoffService.GetReceivableDetailsAsync(customerId);
+                    
+                    // 更新明細管理器
+                    if (setoffDetailManager != null)
+                    {
+                        await setoffDetailManager.RefreshAvailableDetails(receivableDetails);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnFieldValueChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 驗證沖款明細 - 在儲存主檔之前執行
+    /// </summary>
+    private async Task<bool> ValidateSetoffDetailsAsync(AccountsReceivableSetoff setoff)
+    {
+        try
+        {
+            if (!setoffDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("至少需要新增一筆沖款明細");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateSetoffDetailsAsync), GetType());
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 儲存沖款明細 - 在主檔儲存後執行
+    /// </summary>
+    private async Task SaveSetoffDetailsAsync(AccountsReceivableSetoff setoff)
+    {
+        try
+        {
+            if (!setoffDetails.Any())
+                return;
+
+            // 設定沖款單ID
+            foreach (var detail in setoffDetails)
+            {
+                detail.SetoffId = setoff.Id;
+            }
+
+            // 儲存明細
+            var result = await AccountsReceivableSetoffDetailService.CreateBatchAsync(setoffDetails);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"儲存沖款明細失敗: {result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSetoffDetailsAsync), GetType());
+            throw; // 重新拋出例外，讓主要儲存程序知道失敗
+        }
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            return new List<GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule>
+            {
+                new GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule
+                {
+                    Title = "沖款明細",
+                    Content = CreateSetoffDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
+    /// 創建沖款明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSetoffDetailManagerContent() => __builder =>
+    {
+
+    };
+
+    /// <summary>
+    /// 處理儲存成功事件
+    /// </summary>
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnSetoffSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnSetoffSaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理取消事件
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType());
+        }
+    }
+}

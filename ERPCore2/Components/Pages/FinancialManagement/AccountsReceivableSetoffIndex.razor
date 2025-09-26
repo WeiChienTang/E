@@ -1,0 +1,391 @@
+@page "/receivables"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.FieldConfiguration
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Helpers
+@inject IAccountsReceivableSetoffService AccountsReceivableSetoffService
+@inject ICustomerService CustomerService
+@inject IPaymentMethodService PaymentMethodService
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="AccountsReceivableSetoff" 
+                          TService="IAccountsReceivableSetoffService"
+                          Service="@AccountsReceivableSetoffService"
+                          EntityBasePath="/receivables"                          
+                          PageTitle="應收帳款沖款管理"
+                          PageSubtitle="管理所有應收帳款沖款作業"
+                          EntityName="應收帳款沖款"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          DataLoader="@LoadSetofficationsAsync"
+                          FilterApplier="@ApplySetoffFilters"
+                          GetEntityDisplayName="@(setoff => $"{setoff.SetoffNumber} - {setoff.Customer?.CompanyName}")"
+                          RequiredPermission="AccountsReceivable.Read"
+                          OnRowClick="@HandleRowClick"
+                          ShowAddButton="true"
+                          CustomActionButtons="@GetCustomActionButtons()"
+                          @ref="indexComponent" />
+
+@* 應收帳款沖款編輯 Modal *@
+<AccountsReceivableSetoffEditModalComponent IsVisible="@showEditModal"
+                             IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                             SetoffId="@editingSetoffId"
+                             OnSetoffSaved="@modalHandler.OnEntitySavedAsync"
+                             OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* 統計資訊 Modal *@
+<div class="modal fade @(showStatistics ? "show d-block" : "")" tabindex="-1" style="@(showStatistics ? "background: rgba(0,0,0,0.5);" : "display: none;")">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    應收款項統計資訊
+                </h5>
+                <button type="button" class="btn-close" @onclick="@(() => showStatistics = false)"></button>
+            </div>
+            <div class="modal-body">
+                @if (statistics != null)
+                {
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-file-invoice-dollar fa-2x text-primary mb-2"></i>
+                                    <h5 class="card-title">@statistics.TotalSetoffCount</h5>
+                                    <p class="card-text">總沖款單數</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                    <h5 class="card-title">@statistics.IncompleteSetoffCount</h5>
+                                    <p class="card-text">未完成數量</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-hourglass-half fa-2x text-info mb-2"></i>
+                                    <h5 class="card-title">@statistics.PendingApprovalCount</h5>
+                                    <p class="card-text">待審核數量</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                                    <h5 class="card-title">@(statistics.TotalSetoffCount > 0 ? ((statistics.TotalSetoffCount - statistics.IncompleteSetoffCount) * 100.0 / statistics.TotalSetoffCount).ToString("F1") : "0.0")%</h5>
+                                    <p class="card-text">完成率</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">本月沖款金額</h6>
+                                    <h4 class="text-primary">$@statistics.MonthlySetoffAmount.ToString("N2")</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">今日沖款金額</h6>
+                                    <h4 class="text-success">$@statistics.TodaySetoffAmount.ToString("N2")</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">平均沖款金額</h6>
+                                    <h4 class="text-info">$@statistics.AverageSetoffAmount.ToString("N2")</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <div class="mt-3">載入統計資訊中...</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private bool showStatistics = false;
+    private int? editingSetoffId = null;
+    
+    // Modal 處理器
+    private ModalHandler<AccountsReceivableSetoff, GenericIndexPageComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>> modalHandler = default!;
+    
+    // 欄位配置
+    private AccountsReceivableSetoffFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    // 相關資料
+    private List<Customer> customers = new();
+    private List<PaymentMethod> paymentMethods = new();
+    
+    // 統計資訊
+    private SetoffStatistics? statistics;
+    
+    // 當前篩選模式
+    private string currentFilter = "All";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<AccountsReceivableSetoff, GenericIndexPageComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>>(
+                id => editingSetoffId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadCustomersAsync();
+            await LoadPaymentMethodsAsync();
+            
+            // 建立欄位配置
+            fieldConfiguration = new AccountsReceivableSetoffFieldConfiguration(customers, paymentMethods, NotificationService);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化應收帳款沖款頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化應收帳款沖款頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("財務管理", "#"),
+                new("應收帳款沖款管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入客戶資料
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            customers = new List<Customer>();
+        }
+    }
+
+    // 載入收款方式資料
+    private async Task LoadPaymentMethodsAsync()
+    {
+        try
+        {
+            paymentMethods = await PaymentMethodService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaymentMethodsAsync), GetType(), additionalData: "載入收款方式資料失敗");
+            await NotificationService.ShowErrorAsync("載入收款方式資料失敗");
+            paymentMethods = new List<PaymentMethod>();
+        }
+    }
+
+    // 載入沖款單資料
+    private async Task<List<AccountsReceivableSetoff>> LoadSetofficationsAsync()
+    {
+        try
+        {
+            var result = currentFilter switch
+            {
+                "Incomplete" => await AccountsReceivableSetoffService.GetIncompleteAsync(),
+                "PendingApproval" => await AccountsReceivableSetoffService.GetPendingApprovalAsync(),
+                _ => await AccountsReceivableSetoffService.GetAllAsync()
+            };
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSetofficationsAsync), GetType(), additionalData: $"載入沖款單資料失敗，篩選模式: {currentFilter}");
+            await NotificationService.ShowErrorAsync("載入沖款單資料失敗");
+            // 設定安全的預設值
+            return new List<AccountsReceivableSetoff>();
+        }
+    }
+
+    private IQueryable<AccountsReceivableSetoff> ApplySetoffFilters(SearchFilterModel searchModel, IQueryable<AccountsReceivableSetoff> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(s => s.SetoffDate).ThenBy(s => s.SetoffNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySetoffFilters), GetType());
+    }
+
+    // 載入篩選資料
+    private async Task LoadFilteredData(string filterType)
+    {
+        try
+        {
+            currentFilter = filterType;
+            
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFilteredData), GetType(), additionalData: $"載入篩選資料失敗，篩選類型: {filterType}");
+            await NotificationService.ShowErrorAsync("載入篩選資料失敗");
+        }
+    }
+
+    // 顯示統計資訊
+    private async Task ShowStatistics()
+    {
+        try
+        {
+            showStatistics = true;
+            statistics = null; // 重置統計資料
+            StateHasChanged();
+
+            statistics = await AccountsReceivableSetoffService.GetStatisticsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowStatistics), GetType(), additionalData: "載入統計資訊失敗");
+            await NotificationService.ShowErrorAsync("載入統計資訊失敗");
+        }
+    }
+
+    // 處理行點擊事件
+    private async Task HandleRowClick(AccountsReceivableSetoff setoff)
+    {
+        try
+        {
+            editingSetoffId = setoff.Id;
+            showEditModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRowClick), GetType(), additionalData: $"處理行點擊事件失敗，ID: {setoff?.Id}");
+            await NotificationService.ShowErrorAsync("開啟編輯視窗失敗");
+        }
+    }
+
+    // 取得自定義操作按鈕
+    private RenderFragment GetCustomActionButtons()
+    {
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "btn-group me-2");
+            builder.AddAttribute(2, "role", "group");
+
+            // 未完成按鈕
+            builder.OpenElement(3, "button");
+            builder.AddAttribute(4, "type", "button");
+            builder.AddAttribute(5, "class", "btn btn-outline-warning");
+            builder.AddAttribute(6, "onclick", EventCallback.Factory.Create(this, () => LoadFilteredData("Incomplete")));
+            builder.OpenElement(7, "i");
+            builder.AddAttribute(8, "class", "fas fa-clock me-1");
+            builder.CloseElement();
+            builder.AddContent(9, "未完成");
+            builder.CloseElement();
+
+            // 待審核按鈕
+            builder.OpenElement(10, "button");
+            builder.AddAttribute(11, "type", "button");
+            builder.AddAttribute(12, "class", "btn btn-outline-info");
+            builder.AddAttribute(13, "onclick", EventCallback.Factory.Create(this, () => LoadFilteredData("PendingApproval")));
+            builder.OpenElement(14, "i");
+            builder.AddAttribute(15, "class", "fas fa-hourglass-half me-1");
+            builder.CloseElement();
+            builder.AddContent(16, "待審核");
+            builder.CloseElement();
+
+            // 全部按鈕
+            builder.OpenElement(17, "button");
+            builder.AddAttribute(18, "type", "button");
+            builder.AddAttribute(19, "class", "btn btn-outline-success");
+            builder.AddAttribute(20, "onclick", EventCallback.Factory.Create(this, () => LoadFilteredData("All")));
+            builder.OpenElement(21, "i");
+            builder.AddAttribute(22, "class", "fas fa-list me-1");
+            builder.CloseElement();
+            builder.AddContent(23, "全部");
+            builder.CloseElement();
+
+            builder.CloseElement(); // 結束 btn-group
+
+            // 統計資訊按鈕
+            builder.OpenElement(24, "button");
+            builder.AddAttribute(25, "type", "button");
+            builder.AddAttribute(26, "class", "btn btn-primary ms-2");
+            builder.AddAttribute(27, "onclick", EventCallback.Factory.Create(this, ShowStatistics));
+            builder.OpenElement(28, "i");
+            builder.AddAttribute(29, "class", "fas fa-chart-bar me-1");
+            builder.CloseElement();
+            builder.AddContent(30, "統計資訊");
+            builder.CloseElement();
+        };
+    }
+}

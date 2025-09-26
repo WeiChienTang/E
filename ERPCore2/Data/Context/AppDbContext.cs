@@ -66,6 +66,10 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesReturnDetail> SalesReturnDetails { get; set; }
       public DbSet<ERPCore2.Data.Entities.SalesReturnReason> SalesReturnReasons { get; set; }
       
+      // Financial Management
+      public DbSet<AccountsReceivableSetoff> AccountsReceivableSetoffs { get; set; }
+      public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
+      
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
       public DbSet<Weather> Weathers { get; set; }
@@ -532,8 +536,68 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(srd => srd.SalesOrderDetailId)
                         .OnDelete(DeleteBehavior.SetNull);
+                  });
 
+                  // Financial Management Relationships
+                  modelBuilder.Entity<AccountsReceivableSetoff>(entity =>
+                  {
+                        entity.HasKey(ars => ars.Id);
 
+                        entity.HasOne(ars => ars.Customer)
+                        .WithMany()
+                        .HasForeignKey(ars => ars.CustomerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(ars => ars.PaymentMethod)
+                        .WithMany()
+                        .HasForeignKey(ars => ars.PaymentMethodId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.TotalSetoffAmount)
+                              .HasPrecision(18, 2);
+
+                        // 設定唯一索引
+                        entity.HasIndex(e => e.SetoffNumber)
+                              .IsUnique();
+
+                        // 設定日期索引
+                        entity.HasIndex(e => e.SetoffDate);
+                        entity.HasIndex(e => e.CustomerId);
+                        entity.HasIndex(e => e.ApprovalStatus);
+                  });
+
+                  modelBuilder.Entity<AccountsReceivableSetoffDetail>(entity =>
+                  {
+                        entity.HasKey(arsd => arsd.Id);
+
+                        entity.HasOne(arsd => arsd.Setoff)
+                        .WithMany(ars => ars.SetoffDetails)
+                        .HasForeignKey(arsd => arsd.SetoffId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(arsd => arsd.SalesOrderDetail)
+                        .WithMany()
+                        .HasForeignKey(arsd => arsd.SalesOrderDetailId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(arsd => arsd.SalesReturnDetail)
+                        .WithMany()
+                        .HasForeignKey(arsd => arsd.SalesReturnDetailId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.SetoffAmount)
+                              .HasPrecision(18, 2);
+
+                        // 設定索引
+                        entity.HasIndex(e => e.SetoffId);
+                        entity.HasIndex(e => e.SalesOrderDetailId);
+                        entity.HasIndex(e => e.SalesReturnDetailId);
+
+                        // 設定 Table 檢查約束
+                        entity.ToTable(t => t.HasCheckConstraint("CK_AccountsReceivableSetoffDetail_RelatedDetail", 
+                              "SalesOrderDetailId IS NOT NULL OR SalesReturnDetailId IS NOT NULL"));
                   });
 
                   // 紙張設定相關
