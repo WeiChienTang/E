@@ -62,7 +62,6 @@ public async Task<List<[實體]>> GetAllAsync()
     {
         using var context = await _contextFactory.CreateDbContextAsync();
         return await context.[實體複數名稱]
-            .Where(e => !e.IsDeleted)
             .OrderBy(e => e.Name)
             .ToListAsync();
     }
@@ -83,7 +82,6 @@ public List<[實體]> GetAllSync()
     {
         using var context = _contextFactory.CreateDbContext();
         return context.[實體複數名稱]
-            .Where(e => !e.IsDeleted)
             .OrderBy(e => e.Name)
             .ToList();
     }
@@ -156,7 +154,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Where(c => !c.IsDeleted)
                     .OrderBy(c => c.CustomerCode)
                     .ToListAsync();
             }
@@ -175,7 +172,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Customers.Where(c => c.CustomerCode == customerCode && !c.IsDeleted);
+                var query = context.Customers.Where(c => c.CustomerCode == customerCode);
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
                 

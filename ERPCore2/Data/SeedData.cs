@@ -89,6 +89,7 @@ namespace ERPCore2.Data
                 new InventorySeeder(),
                 new WeatherSeeder(),
                 new SalesReturnReasonSeeder(),  // 銷貨退貨原因
+                new CurrencySeeder(),           // 貨幣資料
             };
         }
     }

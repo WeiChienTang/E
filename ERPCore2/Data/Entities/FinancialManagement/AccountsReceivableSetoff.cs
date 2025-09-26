@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -68,12 +67,6 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "完成日期")]
         public DateTime? CompletedDate { get; set; }
-
-        /// <summary>
-        /// 審核狀態
-        /// </summary>
-        [Display(Name = "審核狀態")]
-        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
 
         /// <summary>
         /// 審核者ID

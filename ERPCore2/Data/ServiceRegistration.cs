@@ -55,6 +55,7 @@ namespace ERPCore2.Data
             // 財務管理服務
             services.AddScoped<IAccountsReceivableSetoffService, AccountsReceivableSetoffService>();
             services.AddScoped<IAccountsReceivableSetoffDetailService, AccountsReceivableSetoffDetailService>();
+            services.AddScoped<ICurrencyService, CurrencyService>();
 
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();

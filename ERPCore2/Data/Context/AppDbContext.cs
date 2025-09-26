@@ -69,6 +69,8 @@ namespace ERPCore2.Data.Context
       // Financial Management
       public DbSet<AccountsReceivableSetoff> AccountsReceivableSetoffs { get; set; }
       public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
+      // Currency
+      public DbSet<Currency> Currencies { get; set; }
       
       // BOM Foundations
       public DbSet<Material> Materials { get; set; }
@@ -564,7 +566,6 @@ namespace ERPCore2.Data.Context
                         // 設定日期索引
                         entity.HasIndex(e => e.SetoffDate);
                         entity.HasIndex(e => e.CustomerId);
-                        entity.HasIndex(e => e.ApprovalStatus);
                   });
 
                   modelBuilder.Entity<AccountsReceivableSetoffDetail>(entity =>
@@ -657,6 +658,18 @@ namespace ERPCore2.Data.Context
                         // 為 decimal 屬性設定精確度和小數位數
                         entity.Property(e => e.TaxRate)
                               .HasPrecision(5, 2); // 總共5位數，小數點後2位（可表示 0.00 到 999.99）
+                  });
+
+                  // Currency
+                  modelBuilder.Entity<Currency>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.Property(e => e.Code).HasMaxLength(10).IsRequired();
+                        entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                        entity.Property(e => e.Symbol).HasMaxLength(10);
+                        entity.Property(e => e.ExchangeRate).HasPrecision(18, 6);
+
+                        entity.HasIndex(e => e.Code).IsUnique();
                   });
             }
     }
