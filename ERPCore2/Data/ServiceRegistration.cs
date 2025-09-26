@@ -52,6 +52,9 @@ namespace ERPCore2.Data
             services.AddScoped<IAddressTypeService, AddressTypeService>();
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
+            // 財務管理服務
+            services.AddScoped<IReceivableService, ReceivableService>();
+
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
             services.AddScoped<ISupplierTypeService, SupplierTypeService>();

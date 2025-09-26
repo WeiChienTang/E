@@ -1,0 +1,363 @@
+@page "/receivables"
+@inject IReceivableService ReceivableService
+
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="ReceivableViewModel" 
+                      TService="IReceivableService"
+                      Service="@ReceivableService"
+                      EntityBasePath="/receivables"
+                      PageTitle="應收沖款管理"
+                      PageSubtitle="管理銷貨訂單和採購退回的應收款項"
+                      EntityName="應收款項"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadReceivablesAsync"
+                      FilterApplier="@ApplyReceivableFilters"
+                      GetEntityDisplayName="@(receivable => $"{receivable.DocumentType} - {receivable.DocumentNumber}")"
+                      RequiredPermission="Receivable.Read"
+                      ShowAddButton="false"
+                      ShowDeleteButton="false"
+                      OnRowClick="@OnReceivableRowClickAsync"
+                      @ref="indexComponent" />
+
+<!-- 收款模態框 - 簡化版本 -->
+@if (selectedReceivable != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">收款作業</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">單據類型</label>
+                            <input type="text" class="form-control" value="@selectedReceivable.DocumentType" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">單據編號</label>
+                            <input type="text" class="form-control" value="@selectedReceivable.DocumentNumber" disabled>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">往來對象</label>
+                            <input type="text" class="form-control" value="@selectedReceivable.CustomerOrSupplier" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">應收總額</label>
+                            <input type="text" class="form-control" value="@selectedReceivable.TotalAmount.ToString("C")" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">累計收款</label>
+                            <input type="text" class="form-control" value="@selectedReceivable.TotalReceivedAmount.ToString("C")" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">餘額</label>
+                            <input type="text" class="form-control text-danger fw-bold" value="@selectedReceivable.BalanceAmount.ToString("C")" disabled>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">本次收款金額 <span class="text-danger">*</span></label>
+                            <input type="number" 
+                                   class="form-control @(receivedAmountError ? "is-invalid" : "")" 
+                                   @bind="receivedAmountInput" 
+                                   @bind:event="oninput"
+                                   @onchange="ValidateReceivedAmount"
+                                   placeholder="請輸入收款金額"
+                                   step="0.01"
+                                   min="0"
+                                   max="@selectedReceivable.BalanceAmount">
+                            @if (receivedAmountError)
+                            {
+                                <div class="invalid-feedback">@receivedAmountErrorMessage</div>
+                            }
+                        </div>
+                        <div class="col-md-12">
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar @GetProgressBarClass(selectedReceivable.ProgressPercentage)" 
+                                     role="progressbar" 
+                                     style="width: @(selectedReceivable.ProgressPercentage)%"
+                                     aria-valuenow="@selectedReceivable.ProgressPercentage" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    @selectedReceivable.ProgressPercentage.ToString("N1")%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">取消</button>
+                    <button type="button" 
+                            class="btn btn-success" 
+                            @onclick="ProcessReceivePaymentAsync"
+                            disabled="@(receivedAmountError || receivedAmountInput <= 0)">
+                        <i class="fas fa-money-bill"></i> 確認收款
+                    </button>
+                    @if (selectedReceivable.BalanceAmount > 0)
+                    {
+                        <button type="button" 
+                                class="btn btn-warning" 
+                                @onclick="SettleReceivableAsync">
+                            <i class="fas fa-check-circle"></i> 直接結清
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<ReceivableViewModel, IReceivableService> indexComponent = default!;
+    
+    // 欄位配置
+    private ReceivableFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // 收款相關狀態
+    private ReceivableViewModel? selectedReceivable = null;
+    private decimal receivedAmountInput = 0;
+    private bool receivedAmountError = false;
+    private string receivedAmountErrorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置
+            fieldConfiguration = new ReceivableFieldConfiguration();
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化應收沖款頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化應收沖款頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("財務管理", "/financial"),
+                new("應收沖款管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入應收款項資料
+    private async Task<List<ReceivableViewModel>> LoadReceivablesAsync()
+    {
+        try
+        {
+            var result = await ReceivableService.GetAllReceivablesAsync();
+            if (result.IsSuccess)
+            {
+                return result.Data ?? new List<ReceivableViewModel>();
+            }
+
+            await NotificationService.ShowErrorAsync($"載入應收款項失敗: {result.ErrorMessage}");
+            return new List<ReceivableViewModel>();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReceivablesAsync), GetType(), additionalData: "載入應收款項資料失敗");
+            await NotificationService.ShowErrorAsync("載入應收款項資料失敗");
+            return new List<ReceivableViewModel>();
+        }
+    }
+
+    private IQueryable<ReceivableViewModel> ApplyReceivableFilters(SearchFilterModel searchModel, IQueryable<ReceivableViewModel> query)
+    {
+        // 確保 fieldConfiguration 已初始化
+        if (fieldConfiguration == null)
+        {
+            return query.OrderByDescending(r => r.DocumentDate).ThenBy(r => r.DocumentNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyReceivableFilters), GetType());
+    }
+
+    // 行點擊事件 - 開啟收款模態框
+    private async Task OnReceivableRowClickAsync(ReceivableViewModel receivable)
+    {
+        try
+        {
+            if (receivable.IsSettled)
+            {
+                await NotificationService.ShowWarningAsync("此款項已結清，無需再收款");
+                return;
+            }
+
+            selectedReceivable = receivable;
+            receivedAmountInput = 0;
+            receivedAmountError = false;
+            receivedAmountErrorMessage = string.Empty;
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnReceivableRowClickAsync), GetType(), additionalData: "開啟收款模態框失敗");
+            await NotificationService.ShowErrorAsync("開啟收款模態框失敗");
+        }
+    }
+
+    // 關閉模態框
+    private void CloseModal()
+    {
+        selectedReceivable = null;
+        receivedAmountInput = 0;
+        receivedAmountError = false;
+        receivedAmountErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    // 驗證收款金額
+    private async Task ValidateReceivedAmount()
+    {
+        try
+        {
+            if (selectedReceivable == null)
+            {
+                receivedAmountError = true;
+                receivedAmountErrorMessage = "未選擇應收款項";
+                return;
+            }
+
+            if (receivedAmountInput <= 0)
+            {
+                receivedAmountError = true;
+                receivedAmountErrorMessage = "收款金額必須大於0";
+                return;
+            }
+
+            if (receivedAmountInput > selectedReceivable.BalanceAmount)
+            {
+                receivedAmountError = true;
+                receivedAmountErrorMessage = $"收款金額不能超過餘額 {selectedReceivable.BalanceAmount:C}";
+                return;
+            }
+
+            var validationResult = await ReceivableService.ValidateReceivedAmountAsync(
+                selectedReceivable.Id, selectedReceivable.DocumentType, receivedAmountInput);
+
+            if (!validationResult.IsSuccess)
+            {
+                receivedAmountError = true;
+                receivedAmountErrorMessage = validationResult.ErrorMessage ?? "金額驗證失敗";
+                return;
+            }
+
+            receivedAmountError = false;
+            receivedAmountErrorMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateReceivedAmount), GetType(), additionalData: "驗證收款金額失敗");
+            receivedAmountError = true;
+            receivedAmountErrorMessage = "驗證收款金額時發生錯誤";
+        }
+    }
+
+    // 處理收款
+    private async Task ProcessReceivePaymentAsync()
+    {
+        try
+        {
+            if (selectedReceivable == null || receivedAmountInput <= 0 || receivedAmountError)
+            {
+                await NotificationService.ShowWarningAsync("請檢查收款金額");
+                return;
+            }
+
+            var result = await ReceivableService.UpdateReceivedAmountAsync(
+                selectedReceivable.Id, selectedReceivable.DocumentType, receivedAmountInput);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"收款 {receivedAmountInput:C} 處理成功");
+                
+                // 關閉模態框並重新載入資料
+                CloseModal();
+                // 假設有重新載入方法
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"收款處理失敗: {result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ProcessReceivePaymentAsync), GetType(), additionalData: "處理收款失敗");
+            await NotificationService.ShowErrorAsync("處理收款時發生錯誤");
+        }
+    }
+
+    // 結清應收款項
+    private async Task SettleReceivableAsync()
+    {
+        try
+        {
+            if (selectedReceivable == null)
+            {
+                await NotificationService.ShowWarningAsync("未選擇應收款項");
+                return;
+            }
+
+            var result = await ReceivableService.SettleReceivableAsync(
+                selectedReceivable.Id, selectedReceivable.DocumentType);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("款項結清成功");
+                
+                // 關閉模態框並重新載入資料
+                CloseModal();
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"結清失敗: {result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SettleReceivableAsync), GetType(), additionalData: "結清應收款項失敗");
+            await NotificationService.ShowErrorAsync("結清款項時發生錯誤");
+        }
+    }
+
+    // 取得進度條顏色樣式
+    private string GetProgressBarClass(decimal percentage)
+    {
+        if (percentage >= 100) return "bg-success";
+        if (percentage >= 80) return "bg-info";
+        if (percentage >= 50) return "bg-warning";
+        return "bg-danger";
+    }
+}
