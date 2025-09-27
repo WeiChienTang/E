@@ -32,8 +32,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Include(s => s.Approver)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.CreatedAt)
                     .ToListAsync();
@@ -55,8 +55,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Include(s => s.Approver)
                     .FirstOrDefaultAsync(s => s.Id == id);
             }
             catch (Exception ex)
@@ -82,8 +82,8 @@ namespace ERPCore2.Services
 
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Include(s => s.Approver)
                     .Where(s => (
                         s.SetoffNumber.ToLower().Contains(searchTermLower) ||
                         s.Customer.CompanyName.ToLower().Contains(searchTermLower) ||
@@ -150,15 +150,6 @@ namespace ERPCore2.Services
                         errors.Add("選擇的收款方式不存在或已停用");
                 }
                 
-                // 檢查審核者是否存在（如果有選擇的話）
-                if (entity.ApproverId.HasValue)
-                {
-                    var approverExists = await context.Employees
-                        .AnyAsync(e => e.Id == entity.ApproverId.Value && e.Status == EntityStatus.Active);
-                    if (!approverExists)
-                        errors.Add("選擇的審核者不存在或已停用");
-                }
-                
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
                     
@@ -212,8 +203,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Include(s => s.Approver)
                     .Where(s => s.CustomerId == customerId)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.CreatedAt)
@@ -237,8 +228,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Include(s => s.Approver)
                     .Where(s => s.SetoffDate >= startDate && s.SetoffDate <= endDate)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.CreatedAt)
@@ -263,8 +254,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Include(s => s.Approver)
                     .Include(s => s.SetoffDetails)
                         .ThenInclude(d => d.SalesOrderDetail)
                             .ThenInclude(sod => sod!.Product)
@@ -284,7 +275,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> CompleteSetoffAsync(int id, int approverId, string? approvalRemarks = null)
+        public async Task<ServiceResult> CompleteSetoffAsync(int id)
         {
             try
             {
@@ -299,12 +290,6 @@ namespace ERPCore2.Services
                 if (setoff.IsCompleted)
                     return ServiceResult.Failure("沖款單已經完成");
                 
-                // 檢查審核者是否存在
-                var approverExists = await context.Employees
-                    .AnyAsync(e => e.Id == approverId && e.Status == EntityStatus.Active);
-                if (!approverExists)
-                    return ServiceResult.Failure("審核者不存在或已停用");
-                
                 // 檢查是否有明細
                 var hasDetails = await context.AccountsReceivableSetoffDetails
                     .AnyAsync(d => d.SetoffId == id);
@@ -313,9 +298,6 @@ namespace ERPCore2.Services
                 
                 setoff.IsCompleted = true;
                 setoff.CompletedDate = DateTime.Now;
-                setoff.ApproverId = approverId;
-                setoff.ApprovedDate = DateTime.Now;
-                setoff.ApprovalRemarks = approvalRemarks;
                 setoff.UpdatedAt = DateTime.Now;
                 
                 await context.SaveChangesAsync();
@@ -326,8 +308,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CompleteSetoffAsync), GetType(), _logger, new { 
                     Method = nameof(CompleteSetoffAsync),
                     ServiceType = GetType().Name,
-                    Id = id,
-                    ApproverId = approverId 
+                    Id = id 
                 });
                 return ServiceResult.Failure("完成沖款單時發生錯誤");
             }
@@ -350,9 +331,6 @@ namespace ERPCore2.Services
                 
                 setoff.IsCompleted = false;
                 setoff.CompletedDate = null;
-                setoff.ApproverId = null;
-                setoff.ApprovedDate = null;
-                setoff.ApprovalRemarks = null;
                 setoff.UpdatedAt = DateTime.Now;
                 
                 await context.SaveChangesAsync();
@@ -396,6 +374,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.AccountsReceivableSetoffs
                     .Include(s => s.Customer)
+                    .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .Where(s => !s.IsCompleted)
                     .OrderByDescending(s => s.SetoffDate)

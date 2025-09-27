@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -394,6 +395,9 @@ namespace ERPCore2.Services
                     await context.AccountsReceivableSetoffDetails.AddRangeAsync(details);
                     await context.SaveChangesAsync();
                     
+                    // 更新原始明細表的收款/付款資料
+                    await UpdateOriginalDetailsAsync(context, details);
+                    
                     // 更新沖款單的總金額
                     var totalAmount = details.Sum(d => d.SetoffAmount);
                     var setoff = await context.AccountsReceivableSetoffs.FindAsync(setoffId);
@@ -577,6 +581,215 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得客戶的未結清明細項目（轉換為統一的 DTO 格式）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <returns>未結清明細 DTO 列表</returns>
+        public async Task<List<SetoffDetailDto>> GetCustomerPendingDetailsAsync(int customerId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var result = new List<SetoffDetailDto>();
+
+                // 取得未結清的銷貨訂單明細
+                var salesOrderDetails = await context.SalesOrderDetails
+                    .Include(sod => sod.SalesOrder)
+                        .ThenInclude(so => so.Customer)
+                    .Include(sod => sod.Product)
+                    .Where(sod => sod.SalesOrder.CustomerId == customerId && !sod.IsSettled)
+                    .ToListAsync();
+
+                foreach (var detail in salesOrderDetails)
+                {
+                    var pendingAmount = detail.Subtotal - detail.TotalReceivedAmount;
+                    if (pendingAmount > 0)
+                    {
+                        result.Add(new SetoffDetailDto
+                        {
+                            Id = result.Count + 1,
+                            OriginalEntityId = detail.Id,
+                            Type = "SalesOrder",
+                            DocumentNumber = detail.SalesOrder.SalesOrderNumber,
+                            DocumentDate = detail.SalesOrder.OrderDate,
+                            ProductId = detail.ProductId,
+                            ProductName = detail.Product?.Name ?? "未知商品",
+                            ProductCode = detail.Product?.Code ?? "",
+                            Quantity = detail.OrderQuantity,
+                            UnitPrice = detail.UnitPrice,
+                            TotalAmount = detail.Subtotal,
+                            SettledAmount = detail.TotalReceivedAmount,
+                            IsSettled = detail.IsSettled,
+                            CustomerId = customerId,
+                            CustomerName = detail.SalesOrder.Customer?.CompanyName ?? "",
+                            Currency = "TWD"
+                        });
+                    }
+                }
+
+                // 取得未結清的銷貨退回明細
+                var salesReturnDetails = await context.SalesReturnDetails
+                    .Include(srd => srd.SalesReturn)
+                        .ThenInclude(sr => sr.Customer)
+                    .Include(srd => srd.Product)
+                    .Where(srd => srd.SalesReturn.CustomerId == customerId && !srd.IsSettled)
+                    .ToListAsync();
+
+                foreach (var detail in salesReturnDetails)
+                {
+                    var pendingAmount = detail.ReturnSubtotal - detail.TotalPaidAmount;
+                    if (pendingAmount > 0)
+                    {
+                        result.Add(new SetoffDetailDto
+                        {
+                            Id = result.Count + 1,
+                            OriginalEntityId = detail.Id,
+                            Type = "SalesReturn",
+                            DocumentNumber = detail.SalesReturn.SalesReturnNumber,
+                            DocumentDate = detail.SalesReturn.ReturnDate,
+                            ProductId = detail.ProductId,
+                            ProductName = detail.Product?.Name ?? "未知商品",
+                            ProductCode = detail.Product?.Code ?? "",
+                            Quantity = detail.ReturnQuantity,
+                            UnitPrice = detail.ReturnUnitPrice,
+                            TotalAmount = detail.ReturnSubtotal,
+                            SettledAmount = detail.TotalPaidAmount,
+                            IsSettled = detail.IsSettled,
+                            CustomerId = customerId,
+                            CustomerName = detail.SalesReturn.Customer?.CompanyName ?? "",
+                            Currency = "TWD"
+                        });
+                    }
+                }
+
+                return result.OrderBy(r => r.DocumentDate).ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomerPendingDetailsAsync), GetType(), _logger, new { 
+                    Method = nameof(GetCustomerPendingDetailsAsync),
+                    ServiceType = GetType().Name,
+                    CustomerId = customerId 
+                });
+                return new List<SetoffDetailDto>();
+            }
+        }
+
+        /// <summary>
+        /// 取得客戶的所有明細項目（編輯模式用，包含已完成的）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="setoffId">當前沖款單ID（用於載入現有沖款記錄）</param>
+        /// <returns>所有明細 DTO 列表</returns>
+        public async Task<List<SetoffDetailDto>> GetCustomerAllDetailsForEditAsync(int customerId, int setoffId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var result = new List<SetoffDetailDto>();
+
+                // 取得所有的銷貨訂單明細（不論是否結清）
+                var salesOrderDetails = await context.SalesOrderDetails
+                    .Include(sod => sod.SalesOrder)
+                        .ThenInclude(so => so.Customer)
+                    .Include(sod => sod.Product)
+                    .Where(sod => sod.SalesOrder.CustomerId == customerId)
+                    .ToListAsync();
+
+                // 取得現有的沖款記錄
+                var existingSetoffDetails = await context.AccountsReceivableSetoffDetails
+                    .Where(arsd => arsd.SetoffId == setoffId)
+                    .ToListAsync();
+
+                foreach (var detail in salesOrderDetails)
+                {
+                    var totalAmount = detail.Subtotal;
+                    var settledAmount = detail.TotalReceivedAmount;
+                    
+                    // 檢查是否在當前沖款單中有記錄
+                    var currentSetoffDetail = existingSetoffDetails
+                        .FirstOrDefault(esd => esd.SalesOrderDetailId == detail.Id);
+                    
+                    var thisTimeAmount = currentSetoffDetail?.SetoffAmount ?? 0;
+                    
+                    result.Add(new SetoffDetailDto
+                    {
+                        Id = result.Count + 1,
+                        OriginalEntityId = detail.Id,
+                        Type = "SalesOrder",
+                        DocumentNumber = detail.SalesOrder.SalesOrderNumber,
+                        DocumentDate = detail.SalesOrder.OrderDate,
+                        ProductId = detail.ProductId,
+                        ProductName = detail.Product?.Name ?? "未知商品",
+                        ProductCode = detail.Product?.Code ?? "",
+                        Quantity = detail.OrderQuantity,
+                        UnitPrice = detail.UnitPrice,
+                        TotalAmount = totalAmount,
+                        SettledAmount = settledAmount,
+                        ThisTimeAmount = thisTimeAmount,
+                        IsSettled = detail.IsSettled,
+                        CustomerId = customerId,
+                        CustomerName = detail.SalesOrder.Customer?.CompanyName ?? "",
+                        Currency = "TWD"
+                    });
+                }
+
+                // 取得所有的銷貨退回明細（不論是否結清）
+                var salesReturnDetails = await context.SalesReturnDetails
+                    .Include(srd => srd.SalesReturn)
+                        .ThenInclude(sr => sr.Customer)
+                    .Include(srd => srd.Product)
+                    .Where(srd => srd.SalesReturn.CustomerId == customerId)
+                    .ToListAsync();
+
+                foreach (var detail in salesReturnDetails)
+                {
+                    var totalAmount = detail.ReturnSubtotal;
+                    var settledAmount = detail.TotalPaidAmount;
+                    
+                    // 檢查是否在當前沖款單中有記錄
+                    var currentSetoffDetail = existingSetoffDetails
+                        .FirstOrDefault(esd => esd.SalesReturnDetailId == detail.Id);
+                    
+                    var thisTimeAmount = currentSetoffDetail?.SetoffAmount ?? 0;
+                    
+                    result.Add(new SetoffDetailDto
+                    {
+                        Id = result.Count + 1,
+                        OriginalEntityId = detail.Id,
+                        Type = "SalesReturn",
+                        DocumentNumber = detail.SalesReturn.SalesReturnNumber,
+                        DocumentDate = detail.SalesReturn.ReturnDate,
+                        ProductId = detail.ProductId,
+                        ProductName = detail.Product?.Name ?? "未知商品",
+                        ProductCode = detail.Product?.Code ?? "",
+                        Quantity = detail.ReturnQuantity,
+                        UnitPrice = detail.ReturnUnitPrice,
+                        TotalAmount = totalAmount,
+                        SettledAmount = settledAmount,
+                        ThisTimeAmount = thisTimeAmount,
+                        IsSettled = detail.IsSettled,
+                        CustomerId = customerId,
+                        CustomerName = detail.SalesReturn.Customer?.CompanyName ?? "",
+                        Currency = "TWD"
+                    });
+                }
+
+                return result.OrderBy(r => r.DocumentDate).ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomerAllDetailsForEditAsync), GetType(), _logger, new { 
+                    Method = nameof(GetCustomerAllDetailsForEditAsync),
+                    ServiceType = GetType().Name,
+                    CustomerId = customerId,
+                    SetoffId = setoffId
+                });
+                return new List<SetoffDetailDto>();
+            }
+        }
+
         public async Task<ServiceResult> UpdateReceivableAmountsAsync(int detailId)
         {
             try
@@ -612,6 +825,76 @@ namespace ERPCore2.Services
         #endregion
 
         #region 私有輔助方法
+
+        /// <summary>
+        /// 更新原始明細表的收款/付款資料
+        /// </summary>
+        /// <param name="context">資料庫上下文</param>
+        /// <param name="setoffDetails">沖款明細列表</param>
+        private async Task UpdateOriginalDetailsAsync(AppDbContext context, List<AccountsReceivableSetoffDetail> setoffDetails)
+        {
+            // 處理銷貨訂單明細
+            var salesOrderDetailIds = setoffDetails
+                .Where(d => d.SalesOrderDetailId.HasValue)
+                .Select(d => d.SalesOrderDetailId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (salesOrderDetailIds.Any())
+            {
+                var salesOrderDetails = await context.SalesOrderDetails
+                    .Where(sod => salesOrderDetailIds.Contains(sod.Id))
+                    .ToListAsync();
+
+                foreach (var salesOrderDetail in salesOrderDetails)
+                {
+                    var setoffDetail = setoffDetails.First(d => d.SalesOrderDetailId == salesOrderDetail.Id);
+                    
+                    // 更新本次收款和累計收款金額
+                    salesOrderDetail.ReceivedAmount = setoffDetail.SetoffAmount;
+                    salesOrderDetail.TotalReceivedAmount += setoffDetail.SetoffAmount;
+                    
+                    // 檢查是否已結清
+                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.Subtotal;
+                    
+                    salesOrderDetail.UpdatedAt = DateTime.UtcNow;
+                }
+
+                context.SalesOrderDetails.UpdateRange(salesOrderDetails);
+            }
+
+            // 處理銷貨退回明細
+            var salesReturnDetailIds = setoffDetails
+                .Where(d => d.SalesReturnDetailId.HasValue)
+                .Select(d => d.SalesReturnDetailId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (salesReturnDetailIds.Any())
+            {
+                var salesReturnDetails = await context.SalesReturnDetails
+                    .Where(srd => salesReturnDetailIds.Contains(srd.Id))
+                    .ToListAsync();
+
+                foreach (var salesReturnDetail in salesReturnDetails)
+                {
+                    var setoffDetail = setoffDetails.First(d => d.SalesReturnDetailId == salesReturnDetail.Id);
+                    
+                    // 更新本次付款和累計付款金額
+                    salesReturnDetail.PaidAmount = setoffDetail.SetoffAmount;
+                    salesReturnDetail.TotalPaidAmount += setoffDetail.SetoffAmount;
+                    
+                    // 檢查是否已結清 (退回金額通常是負數，所以用絕對值比較)
+                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotal);
+                    
+                    salesReturnDetail.UpdatedAt = DateTime.UtcNow;
+                }
+
+                context.SalesReturnDetails.UpdateRange(salesReturnDetails);
+            }
+
+            await context.SaveChangesAsync();
+        }
 
         private async Task<decimal> CalculateTotalAmountBySetoffIdAsync(int setoffId)
         {

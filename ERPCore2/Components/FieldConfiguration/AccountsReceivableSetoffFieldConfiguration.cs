@@ -105,129 +105,13 @@ namespace ERPCore2.FieldConfiguration
                                 var setoff = (AccountsReceivableSetoff)item;
                                 builder.OpenElement(0, "span");
                                 builder.AddAttribute(1, "class", "text-end fw-bold text-primary");
-                                builder.AddContent(2, setoff.TotalSetoffAmount.ToString("N2"));
+                                builder.AddContent(2, setoff.TotalSetoffAmount.ToString("N0"));
                                 builder.CloseElement();
                             },
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(AccountsReceivableSetoff.TotalSetoffAmount), s => s.TotalSetoffAmount.ToString())
                         }
                     },
-                    {
-                        "PaymentMethod",
-                        new FieldDefinition<AccountsReceivableSetoff>
-                        {
-                            PropertyName = "PaymentMethod.Name",
-                            FilterPropertyName = nameof(AccountsReceivableSetoff.PaymentMethodId),
-                            DisplayName = "收款方式",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 5,
-                            FilterOrder = 5,
-                            HeaderStyle = "width: 120px;",
-                            NullDisplayText = "未設定",
-                            Options = _paymentMethods.Select(pm => new SelectOption 
-                            { 
-                                Text = pm.Name, 
-                                Value = pm.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(AccountsReceivableSetoff.PaymentMethodId), s => s.PaymentMethodId)
-                        }
-                    },
-                    {
-                        nameof(AccountsReceivableSetoff.PaymentAccount),
-                        new FieldDefinition<AccountsReceivableSetoff>
-                        {
-                            PropertyName = nameof(AccountsReceivableSetoff.PaymentAccount),
-                            DisplayName = "收款帳戶",
-                            FilterPlaceholder = "輸入收款帳戶搜尋",
-                            TableOrder = 6,
-                            FilterOrder = 6,
-                            HeaderStyle = "width: 150px;",
-                            NullDisplayText = "未設定",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(AccountsReceivableSetoff.PaymentAccount), s => s.PaymentAccount, allowNull: true)
-                        }
-                    },
-                    {
-                        nameof(AccountsReceivableSetoff.IsCompleted),
-                        new FieldDefinition<AccountsReceivableSetoff>
-                        {
-                            PropertyName = nameof(AccountsReceivableSetoff.IsCompleted),
-                            DisplayName = "完成狀態",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 7,
-                            FilterOrder = 7,
-                            HeaderStyle = "width: 100px;",
-                            Options = new List<SelectOption>
-                            {
-                                new() { Text = "未完成", Value = "false" },
-                                new() { Text = "已完成", Value = "true" }
-                            },
-                            CustomTemplate = item => builder =>
-                            {
-                                var setoff = (AccountsReceivableSetoff)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", setoff.IsCompleted ? "badge bg-success" : "badge bg-warning");
-                                builder.AddContent(2, setoff.IsCompleted ? "已完成" : "未完成");
-                                builder.CloseElement();
-                            },
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(AccountsReceivableSetoff.IsCompleted), s => s.IsCompleted ? "true" : "false")
-                        }
-                    },
-                    {
-                        nameof(AccountsReceivableSetoff.CompletedDate),
-                        new FieldDefinition<AccountsReceivableSetoff>
-                        {
-                            PropertyName = nameof(AccountsReceivableSetoff.CompletedDate),
-                            DisplayName = "完成日期",
-                            FilterType = SearchFilterType.DateRange,
-                            TableOrder = 8,
-                            FilterOrder = 8,
-                            HeaderStyle = "width: 120px;",
-                            NullDisplayText = "未完成",
-                            ShowInFilter = false, // 不顯示在篩選器中，避免過於複雜
-                            CustomTemplate = item => builder =>
-                            {
-                                var setoff = (AccountsReceivableSetoff)item;
-                                builder.OpenElement(0, "span");
-                                if (setoff.CompletedDate.HasValue)
-                                {
-                                    builder.AddContent(1, setoff.CompletedDate.Value.ToString("yyyy/MM/dd"));
-                                }
-                                else
-                                {
-                                    builder.AddAttribute(1, "class", "text-muted");
-                                    builder.AddContent(2, "未完成");
-                                }
-                                builder.CloseElement();
-                            },
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
-                                model, query, nameof(AccountsReceivableSetoff.CompletedDate), s => s.CompletedDate)
-                        }
-                    },
-                    {
-                        "Approver",
-                        new FieldDefinition<AccountsReceivableSetoff>
-                        {
-                            PropertyName = "Approver.Name",
-                            FilterPropertyName = nameof(AccountsReceivableSetoff.ApproverId),
-                            DisplayName = "審核者",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 9,
-                            FilterOrder = 9,
-                            HeaderStyle = "width: 120px;",
-                            NullDisplayText = "未審核",
-                            ShowInFilter = false, // 不顯示在篩選器中
-                            Options = _employees.Select(e => new SelectOption 
-                            { 
-                                Text = e.Name ?? e.Code ?? $"員工{e.Id}", 
-                                Value = e.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(AccountsReceivableSetoff.ApproverId), s => s.ApproverId)
-                        }
-                    }
                 };
             }
             catch (Exception ex)

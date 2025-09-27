@@ -9,6 +9,7 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(SetoffNumber))]
     [Index(nameof(CustomerId))]
+    [Index(nameof(CompanyId))]
     [Index(nameof(SetoffDate))]
     public class AccountsReceivableSetoff : BaseEntity
     {
@@ -34,6 +35,14 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
         public int CustomerId { get; set; }
+
+        /// <summary>
+        /// 公司ID
+        /// </summary>
+        [Required(ErrorMessage = "公司為必填")]
+        [Display(Name = "公司")]
+        [ForeignKey(nameof(Company))]
+        public int CompanyId { get; set; }
 
         /// <summary>
         /// 總沖款金額
@@ -68,26 +77,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "完成日期")]
         public DateTime? CompletedDate { get; set; }
 
-        /// <summary>
-        /// 審核者ID
-        /// </summary>
-        [Display(Name = "審核者")]
-        [ForeignKey(nameof(Approver))]
-        public int? ApproverId { get; set; }
-
-        /// <summary>
-        /// 審核日期
-        /// </summary>
-        [Display(Name = "審核日期")]
-        public DateTime? ApprovedDate { get; set; }
-
-        /// <summary>
-        /// 審核備註
-        /// </summary>
-        [MaxLength(500, ErrorMessage = "審核備註不可超過500個字元")]
-        [Display(Name = "審核備註")]
-        public string? ApprovalRemarks { get; set; }
-
         // Navigation Properties
         /// <summary>
         /// 客戶導航屬性
@@ -95,14 +84,14 @@ namespace ERPCore2.Data.Entities
         public Customer Customer { get; set; } = null!;
 
         /// <summary>
+        /// 公司導航屬性
+        /// </summary>
+        public Company Company { get; set; } = null!;
+
+        /// <summary>
         /// 收款方式導航屬性
         /// </summary>
         public PaymentMethod? PaymentMethod { get; set; }
-
-        /// <summary>
-        /// 審核者導航屬性
-        /// </summary>
-        public Employee? Approver { get; set; }
 
         /// <summary>
         /// 沖款明細導航屬性

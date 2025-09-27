@@ -42,10 +42,8 @@ namespace ERPCore2.Services
         /// 完成沖款單（設定完成狀態）
         /// </summary>
         /// <param name="id">沖款單ID</param>
-        /// <param name="approverId">審核者ID</param>
-        /// <param name="approvalRemarks">審核備註</param>
         /// <returns>操作結果</returns>
-        Task<ServiceResult> CompleteSetoffAsync(int id, int approverId, string? approvalRemarks = null);
+        Task<ServiceResult> CompleteSetoffAsync(int id);
 
         /// <summary>
         /// 取消完成沖款單

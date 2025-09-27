@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -85,6 +86,21 @@ namespace ERPCore2.Services
         /// <param name="customerId">客戶ID</param>
         /// <returns>未完全收款項目列表</returns>
         Task<List<dynamic>> GetAvailableItemsForSetoffAsync(int customerId);
+
+        /// <summary>
+        /// 取得客戶的未結清明細項目（轉換為統一的 DTO 格式）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <returns>未結清明細 DTO 列表</returns>
+        Task<List<SetoffDetailDto>> GetCustomerPendingDetailsAsync(int customerId);
+
+        /// <summary>
+        /// 取得客戶的所有明細項目（編輯模式用，包含已完成的）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="setoffId">當前沖款單ID（用於載入現有沖款記錄）</param>
+        /// <returns>所有明細 DTO 列表</returns>
+        Task<List<SetoffDetailDto>> GetCustomerAllDetailsForEditAsync(int customerId, int setoffId);
 
         /// <summary>
         /// 更新明細的累計收款金額和剩餘金額
