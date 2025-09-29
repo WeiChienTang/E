@@ -27,6 +27,12 @@ namespace ERPCore2.Data.Enums
         [Description("應收調整")]
         AccountsReceivableAdjustment = 3,
         
+        /// <summary>
+        /// 應收折讓 - 不收取客戶款項但透過折讓抵銷應收帳款
+        /// </summary>
+        [Description("應收折讓")]
+        AccountsReceivableDiscount = 4,
+        
         // === 應付帳款相關 ===
         
         /// <summary>

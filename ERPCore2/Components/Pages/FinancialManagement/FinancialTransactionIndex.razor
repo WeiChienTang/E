@@ -1,0 +1,189 @@
+@page "/financialTransactions"
+@using ERPCore2.Components.Shared.PageModels
+@using ERPCore2.Components.Pages.FinancialManagement
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Headers
+@using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.Tables
+@using ERPCore2.FieldConfiguration
+@using ERPCore2.Helpers
+@inject IFinancialTransactionService FinancialTransactionService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="FinancialTransaction" 
+                      TService="IFinancialTransactionService"
+                      Service="@FinancialTransactionService"
+                      EntityBasePath="/financialTransactions"
+                      PageTitle="財務交易維護"
+                      PageSubtitle="管理所有財務交易記錄與沖款資訊"
+                      EntityName="財務交易"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadFinancialTransactionsAsync"
+                      FilterApplier="@ApplyFinancialTransactionFilters"
+                      GetEntityDisplayName="@(transaction => transaction.TransactionNumber)"
+                      
+                      RequiredPermission="FinancialTransaction.Read"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+<FinancialTransactionEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           FinancialTransactionId="@editingTransactionId"
+                           OnTransactionSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<FinancialTransaction, IFinancialTransactionService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingTransactionId = null;
+    
+    // Modal 處理器
+    private ModalHandler<FinancialTransaction, GenericIndexPageComponent<FinancialTransaction, IFinancialTransactionService>> modalHandler = default!;
+    
+    // 選項清單
+    private List<Customer> customers = new();
+    private List<Company> companies = new();
+    private List<PaymentMethod> paymentMethods = new();
+    
+    // 欄位配置
+    private FinancialTransactionFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<FinancialTransaction, GenericIndexPageComponent<FinancialTransaction, IFinancialTransactionService>>(
+                id => editingTransactionId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadCustomersAsync();
+            await LoadCompaniesAsync();
+            await LoadPaymentMethodsAsync();
+            
+            // 建立欄位配置（在載入資料後，並傳遞 NotificationService）
+            fieldConfiguration = new FinancialTransactionFieldConfiguration(customers, companies, paymentMethods, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化財務交易頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化財務交易頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("財務管理", "/financial-transactions"),
+                new("財務交易維護")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    private async Task<List<FinancialTransaction>> LoadFinancialTransactionsAsync()
+    {
+        try
+        {
+            return await FinancialTransactionService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFinancialTransactionsAsync), GetType(), additionalData: "載入財務交易資料失敗");
+            await NotificationService.ShowErrorAsync("載入財務交易資料失敗");
+            // 設定安全的預設值
+            return new List<FinancialTransaction>();
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await FinancialTransactionService.GetCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            // 設定安全的預設值
+            customers = new List<Customer>();
+        }
+    }
+
+    private async Task LoadCompaniesAsync()
+    {
+        try
+        {
+            companies = await FinancialTransactionService.GetCompaniesAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
+            await NotificationService.ShowErrorAsync("載入公司資料失敗");
+            // 設定安全的預設值
+            companies = new List<Company>();
+        }
+    }
+
+    private async Task LoadPaymentMethodsAsync()
+    {
+        try
+        {
+            paymentMethods = await FinancialTransactionService.GetPaymentMethodsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaymentMethodsAsync), GetType(), additionalData: "載入收付款方式資料失敗");
+            await NotificationService.ShowErrorAsync("載入收付款方式資料失敗");
+            // 設定安全的預設值
+            paymentMethods = new List<PaymentMethod>();
+        }
+    }
+
+    private IQueryable<FinancialTransaction> ApplyFinancialTransactionFilters(SearchFilterModel searchModel, IQueryable<FinancialTransaction> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(ft => ft.TransactionDate).ThenByDescending(ft => ft.TransactionNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyFinancialTransactionFilters), GetType());
+    }
+}

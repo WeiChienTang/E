@@ -122,22 +122,14 @@
     {
         try
         {
-            Console.WriteLine($"[SalesOrderEditModalComponent] HandleSaveSuccess 被調用");
             if (OnSalesOrderSaved.HasDelegate && editModalComponent?.Entity != null)
             {
-                Console.WriteLine($"[SalesOrderEditModalComponent] 準備調用 OnSalesOrderSaved 事件");
                 await OnSalesOrderSaved.InvokeAsync(editModalComponent.Entity);
-                Console.WriteLine($"[SalesOrderEditModalComponent] OnSalesOrderSaved 事件調用完成");
-            }
-            else
-            {
-                Console.WriteLine($"[SalesOrderEditModalComponent] OnSalesOrderSaved 事件沒有委派或實體為空");
             }
             await CloseModal();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[SalesOrderEditModalComponent] HandleSaveSuccess 發生錯誤: {ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
                 additionalData: "銷貨訂單編輯Modal儲存成功處理失敗");
         }
@@ -816,7 +808,6 @@
             if (isEditMode)
             {
                 originalDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(SalesOrderId!.Value);
-                Console.WriteLine($"[SaveSalesOrderWithDetails] 編輯模式：取得 {originalDetails.Count} 筆原始明細");
             }
 
             // 儲存主檔
@@ -839,7 +830,6 @@
             // 儲存明細 - 根據模式選擇不同的方法
             if (isEditMode)
             {
-                Console.WriteLine($"[SaveSalesOrderWithDetails] 使用新的明細更新方法（含庫存回滾）");
                 // 編輯模式：使用帶有庫存回滾功能的更新方法
                 var updateResult = await SalesOrderDetailService.UpdateDetailsWithInventoryAsync(
                     result.Data.Id, 
@@ -851,11 +841,18 @@
                     await NotificationService.ShowErrorAsync($"更新銷貨明細失敗：{updateResult.ErrorMessage}");
                     return false;
                 }
-                Console.WriteLine($"[SaveSalesOrderWithDetails] 明細更新（含庫存處理）完成");
+
+                var calculateResult = await SalesOrderService.CalculateOrderTotalAsync(result.Data.Id);
+                if (!calculateResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"明細更新成功，但計算總金額失敗：{calculateResult.ErrorMessage}");
+                    // 不返回 false，因為明細已經成功更新，只是總金額計算有問題
+                }
+
             }
             else
             {
-                Console.WriteLine($"[SaveSalesOrderWithDetails] 新增模式：使用傳統儲存方法");
+
                 // 新增模式：使用原有的儲存邏輯
                 await SaveSalesOrderDetails(result.Data.Id);
                 await ReduceInventoryWithFIFOAsync(result.Data.Id);
@@ -882,8 +879,7 @@
             // 只處理有效的明細（已選擇產品的）
             var validDetails = salesOrderDetails.Where(d => d.ProductId > 0).ToList();
             
-            Console.WriteLine($"SaveSalesOrderDetails: 準備儲存 {validDetails.Count} 筆有效明細");
-            
+
             // 設定主檔ID和時間戳記
             foreach (var detail in validDetails)
             {
@@ -897,8 +893,7 @@
                 {
                     detail.UpdatedAt = DateTime.Now;
                 }
-                
-                Console.WriteLine($"儲存前明細 - Id: {detail.Id}, ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}, Subtotal: {detail.Subtotal}");
+
             }
 
             // 先獲取現有的明細
@@ -929,7 +924,7 @@
             var currentDetailIds = validDetails.Where(d => d.Id > 0).Select(d => d.Id).ToList();
             var detailsToDelete = existingDetails.Where(e => !currentDetailIds.Contains(e.Id)).ToList();
             
-            Console.WriteLine($"準備刪除 {detailsToDelete.Count} 筆明細");
+
             foreach (var detailToDelete in detailsToDelete)
             {
                 await SalesOrderDetailService.PermanentDeleteAsync(detailToDelete.Id);
@@ -955,13 +950,9 @@
                 .Where(d => d.ProductId > 0 && d.OrderQuantity > 0 && d.WarehouseId.HasValue)
                 .ToList();
 
-            Console.WriteLine($"ReduceInventoryWithFIFO: 準備扣減 {validDetails.Count} 筆明細的庫存");
-
             foreach (var detail in validDetails)
             {
                 if (!detail.WarehouseId.HasValue) continue;
-
-                Console.WriteLine($"FIFO扣減庫存 - 產品ID: {detail.ProductId}, 倉庫ID: {detail.WarehouseId.Value}, 數量: {detail.OrderQuantity}");
 
                 var result = await InventoryStockService.ReduceStockWithFIFOAsync(
                     detail.ProductId,
@@ -977,12 +968,7 @@
                 if (!result.IsSuccess)
                 {
                     await NotificationService.ShowWarningAsync($"商品 {detail.Product?.Name} 庫存扣減失敗：{result.ErrorMessage}");
-                    Console.WriteLine($"FIFO庫存扣減失敗: {result.ErrorMessage}");
                     // 不中斷流程，只記錄警告
-                }
-                else
-                {
-                    Console.WriteLine($"FIFO庫存扣減成功 - 產品ID: {detail.ProductId}");
                 }
             }
         }

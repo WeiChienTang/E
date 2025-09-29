@@ -98,6 +98,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "來源單據號碼")]
         public string? SourceDocumentNumber { get; set; }
         
+        /// <summary>
+        /// 來源明細ID - 產生此交易的具體明細項目ID（可選，用於明細級別的追蹤）
+        /// 例如：SalesOrderDetail.Id, AccountsReceivableSetoffDetail.Id
+        /// </summary>
+        [Display(Name = "來源明細ID")]
+        public int? SourceDetailId { get; set; }
+        
         // === 收付款資訊 ===
         
         /// <summary>
@@ -224,6 +231,7 @@ namespace ERPCore2.Data.Entities
         public bool IsIncomeTransaction => TransactionType switch
         {
             FinancialTransactionTypeEnum.AccountsReceivableSetoff => true,
+            FinancialTransactionTypeEnum.AccountsReceivableDiscount => true,
             FinancialTransactionTypeEnum.CashReceipt => true,
             FinancialTransactionTypeEnum.BankReceipt => true,
             FinancialTransactionTypeEnum.CheckReceipt => true,

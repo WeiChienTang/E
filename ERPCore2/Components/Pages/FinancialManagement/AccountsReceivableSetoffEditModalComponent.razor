@@ -6,6 +6,7 @@
 @inject IPaymentMethodService PaymentMethodService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject IFinancialTransactionService FinancialTransactionService
 @inject ActionButtonHelper ActionButtonHelper
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -223,17 +224,7 @@
                     IsReadOnly = true,
                     HelpText = "系統自動產生的沖款單號"
                 },
-                new()
-                {
-                    PropertyName = nameof(AccountsReceivableSetoff.CompanyId),
-                    Label = "公司",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇公司",
-                    IsRequired = true,
-                    MinSearchLength = 0,
-                    HelpText = "選擇適用的公司",
-                    ActionButtons = await GetCompanyActionButtonsAsync()
-                },
+
                 new()
                 {
                     PropertyName = nameof(AccountsReceivableSetoff.CustomerId),
@@ -244,6 +235,17 @@
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(AccountsReceivableSetoff.CompanyId),
+                    Label = "公司",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇公司",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "選擇適用的公司",
+                    ActionButtons = await GetCompanyActionButtonsAsync()
                 },
                 new()
                 {
@@ -273,15 +275,15 @@
                     MaxLength = 500,
                     Rows = 2,
                     ContainerCssClass = "col-12"
-                }
+                } 
             };
 
             // 初始化表單區段
             formSections = new Dictionary<string, string>
             {
-                { nameof(AccountsReceivableSetoff.SetoffNumber), "基本資訊" },
-                { nameof(AccountsReceivableSetoff.CompanyId), "基本資訊" },
+                { nameof(AccountsReceivableSetoff.SetoffNumber), "基本資訊" },                
                 { nameof(AccountsReceivableSetoff.CustomerId), "基本資訊" },
+                { nameof(AccountsReceivableSetoff.CompanyId), "基本資訊" },
                 { nameof(AccountsReceivableSetoff.SetoffDate), "基本資訊" },
                 { nameof(AccountsReceivableSetoff.TotalSetoffAmount), "金額資訊" },
                 { nameof(AccountsReceivableSetoff.Remarks), "其他資訊" }
@@ -423,6 +425,103 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 創建財務交易記錄
+    /// </summary>
+    private async Task CreateFinancialTransactionRecordsAsync(AccountsReceivableSetoff setoff, List<SetoffDetailDto> selectedDetails)
+    {
+        try
+        {
+            foreach (var detail in selectedDetails)
+            {
+                // 創建沖款交易記錄
+                if (detail.ThisTimeAmount > 0)
+                {
+                    var setoffTransaction = new FinancialTransaction
+                    {
+                        TransactionNumber = $"FT{DateTime.Now:yyyyMMddHHmmss}{detail.OriginalEntityId}",
+                        TransactionType = FinancialTransactionTypeEnum.AccountsReceivableSetoff,
+                        TransactionDate = setoff.SetoffDate,
+                        Amount = detail.ThisTimeAmount,
+                        Description = $"應收沖款 - {detail.DocumentNumber}",
+                        CustomerId = setoff.CustomerId,
+                        CompanyId = setoff.CompanyId,
+                        SourceDocumentType = "AccountsReceivableSetoff",
+                        SourceDocumentId = setoff.Id,
+                        SourceDocumentNumber = setoff.SetoffNumber,
+                        SourceDetailId = detail.OriginalEntityId, // 關鍵：明細級別追蹤
+                        PaymentMethodId = setoff.PaymentMethodId,
+                        PaymentAccount = setoff.PaymentAccount,
+                        CreatedAt = DateTime.Now,
+                        Status = EntityStatus.Active
+                    };
+
+                    // 使用服務創建記錄
+                    var result = await CreateFinancialTransactionAsync(setoffTransaction);
+                    if (!result.IsSuccess)
+                    {
+                        await NotificationService.ShowErrorAsync("財務記錄創建失敗", $"沖款記錄創建失敗: {result.ErrorMessage}");
+                    }
+                }
+
+                // 創建折讓交易記錄
+                if (detail.ThisTimeDiscountAmount > 0)
+                {
+                    var discountTransaction = new FinancialTransaction
+                    {
+                        TransactionNumber = $"FT{DateTime.Now:yyyyMMddHHmmss}{detail.OriginalEntityId}D",
+                        TransactionType = FinancialTransactionTypeEnum.AccountsReceivableDiscount,
+                        TransactionDate = setoff.SetoffDate,
+                        Amount = detail.ThisTimeDiscountAmount,
+                        Description = $"應收折讓 - {detail.DocumentNumber}",
+                        CustomerId = setoff.CustomerId,
+                        CompanyId = setoff.CompanyId,
+                        SourceDocumentType = "AccountsReceivableSetoff",
+                        SourceDocumentId = setoff.Id,
+                        SourceDocumentNumber = setoff.SetoffNumber,
+                        SourceDetailId = detail.OriginalEntityId, // 關鍵：明細級別追蹤
+                        PaymentMethodId = setoff.PaymentMethodId,
+                        PaymentAccount = setoff.PaymentAccount,
+                        CreatedAt = DateTime.Now,
+                        Status = EntityStatus.Active
+                    };
+
+                    // 使用服務創建記錄
+                    var result = await CreateFinancialTransactionAsync(discountTransaction);
+                    if (!result.IsSuccess)
+                    {
+                        await NotificationService.ShowErrorAsync("財務記錄創建失敗", $"折讓記錄創建失敗: {result.ErrorMessage}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CreateFinancialTransactionRecordsAsync), GetType(), 
+                additionalData: $"創建財務交易記錄失敗 - SetoffId: {setoff.Id}");
+        }
+    }
+
+    /// <summary>
+    /// 創建單筆財務交易記錄的輔助方法
+    /// </summary>
+    private async Task<ServiceResult> CreateFinancialTransactionAsync(FinancialTransaction transaction)
+    {
+        try
+        {
+            // 使用注入的 FinancialTransactionService 創建記錄
+            var result = await FinancialTransactionService.CreateAsync(transaction);
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CreateFinancialTransactionAsync), GetType(), 
+                additionalData: $"創建財務交易記錄失敗 - TransactionNumber: {transaction.TransactionNumber}");
+            return ServiceResult.Failure("創建財務交易記錄時發生錯誤");
         }
     }
 
@@ -631,14 +730,17 @@
                 SalesReturnDetailId = dto.Type == "SalesReturn" ? dto.OriginalEntityId : null,
                 ReceivableAmount = dto.TotalAmount,
                 SetoffAmount = dto.ThisTimeAmount,
+                // 暫時將折讓金額存在備註中，直到實體結構更新
                 PreviousReceivedAmount = dto.SettledAmount,
-                AfterReceivedAmount = dto.SettledAmount + dto.ThisTimeAmount,
-                RemainingAmount = dto.TotalAmount - (dto.SettledAmount + dto.ThisTimeAmount),
-                IsFullyReceived = (dto.TotalAmount - (dto.SettledAmount + dto.ThisTimeAmount)) <= 0,
+                AfterReceivedAmount = dto.SettledAmount + dto.ThisTimeAmount + dto.ThisTimeDiscountAmount,
+                RemainingAmount = dto.TotalAmount - (dto.SettledAmount + dto.ThisTimeAmount + dto.ThisTimeDiscountAmount),
+                IsFullyReceived = (dto.TotalAmount - (dto.SettledAmount + dto.ThisTimeAmount + dto.ThisTimeDiscountAmount)) <= 0,
                 DocumentNumber = dto.DocumentNumber,
                 ProductName = dto.ProductName,
                 Quantity = dto.Quantity,
-                DocumentType = dto.Type
+                DocumentType = dto.Type,
+                // 暫時將折讓金額記錄在備註中
+                Remarks = dto.ThisTimeDiscountAmount > 0 ? $"本次折讓：{dto.ThisTimeDiscountAmount:N2}" : null
             }).ToList();
 
             // 使用服務批量建立明細
@@ -649,11 +751,14 @@
                 return;
             }
 
-            // 重新計算並更新主檔總金額
-            setoff.TotalSetoffAmount = await AccountsReceivableSetoffService.CalculateTotalAmountAsync(setoff.Id);
+            // 創建財務交易記錄
+            await CreateFinancialTransactionRecordsAsync(setoff, selectedDetails);
+            
+            // 重新計算並更新主檔總金額（包含沖款和折讓）
+            setoff.TotalSetoffAmount = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
             await AccountsReceivableSetoffService.UpdateAsync(setoff);
             
-            await NotificationService.ShowSuccessAsync($"已儲存 {detailEntities.Count} 筆沖款明細");
+            await NotificationService.ShowSuccessAsync($"已儲存 {detailEntities.Count} 筆沖款明細，包含 {selectedDetails.Count(d => d.ThisTimeDiscountAmount > 0)} 筆折讓記錄");
         }
         catch (Exception ex)
         {

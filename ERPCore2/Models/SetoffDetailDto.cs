@@ -77,16 +77,28 @@ namespace ERPCore2.Models
         public decimal SettledAmount { get; set; }
 
         /// <summary>
+        /// 已折讓金額 - 從 FinancialTransaction 計算得出
+        /// </summary>
+        [Display(Name = "已折讓金額")]
+        public decimal DiscountedAmount { get; set; }
+
+        /// <summary>
         /// 待沖款金額（剩餘金額）
         /// </summary>
         [Display(Name = "待沖款金額")]
-        public decimal PendingAmount => TotalAmount - SettledAmount;
+        public decimal PendingAmount => TotalAmount - SettledAmount - DiscountedAmount;
 
         /// <summary>
         /// 本次沖款金額
         /// </summary>
         [Display(Name = "本次沖款金額")]
         public decimal ThisTimeAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 本次折讓金額
+        /// </summary>
+        [Display(Name = "本次折讓金額")]
+        public decimal ThisTimeDiscountAmount { get; set; } = 0;
 
         /// <summary>
         /// 是否選中進行沖款
@@ -139,6 +151,46 @@ namespace ERPCore2.Models
             if (ThisTimeAmount > PendingAmount)
             {
                 return (false, $"沖款金額不能超過待沖款金額 {PendingAmount:N2}");
+            }
+
+            return (true, null);
+        }
+
+        /// <summary>
+        /// 驗證本次折讓金額
+        /// </summary>
+        /// <returns>驗證結果</returns>
+        public (bool IsValid, string? ErrorMessage) ValidateThisTimeDiscountAmount()
+        {
+            if (ThisTimeDiscountAmount < 0)
+            {
+                return (false, "折讓金額不能為負數");
+            }
+
+            if (ThisTimeDiscountAmount > PendingAmount)
+            {
+                return (false, $"折讓金額不能超過待沖款金額 {PendingAmount:N2}");
+            }
+
+            return (true, null);
+        }
+
+        /// <summary>
+        /// 驗證本次沖款和折讓總金額
+        /// </summary>
+        /// <returns>驗證結果</returns>
+        public (bool IsValid, string? ErrorMessage) ValidateTotalThisTimeAmount()
+        {
+            var totalThisTime = ThisTimeAmount + ThisTimeDiscountAmount;
+            
+            if (totalThisTime < 0)
+            {
+                return (false, "沖款和折讓總金額不能為負數");
+            }
+
+            if (totalThisTime > PendingAmount)
+            {
+                return (false, $"沖款和折讓總金額 ({totalThisTime:N2}) 不能超過待沖款金額 {PendingAmount:N2}");
             }
 
             return (true, null);

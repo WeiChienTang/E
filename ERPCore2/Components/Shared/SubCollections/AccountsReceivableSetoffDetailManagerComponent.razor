@@ -11,71 +11,22 @@
             </div>
         </div>
     }
-    else if (Details.Any())
-    {
-        <div class="mb-3">
-            <div class="small">
-                @if (IsEditMode)
-                {
-                    <strong>@($"客戶所有明細 ({Details.Count} 筆)")</strong>
-                    <span class="text-muted ms-2">
-                        編輯模式 - 已結清: @Details.Count(d => IsItemSettled(d)) 筆，
-                        未結清: @Details.Count(d => !IsItemSettled(d)) 筆
-                    </span>
-                }
-                else
-                {
-                    <strong>@($"客戶未結清明細 ({Details.Count} 筆)")</strong>
-                }
-            </div>
-            @if (SelectedDetails.Any())
-            {
-                <div class="alert alert-info">
-                    已選擇 @SelectedDetails.Count 筆，總沖款金額：@SelectedDetails.Sum(d => d.ThisTimeAmount).ToString("N2")
-                </div>
-            }
-        </div>
 
-        <InteractiveTableComponent TItem="SetoffDetailDto"
-                                  Items="@Details"
-                                  ColumnDefinitions="@GetColumnDefinitions()"
-                                  ShowHeader="true"
-                                  ShowRowNumbers="false"
-                                  ShowActions="false"
-                                  ShowBuiltInActions="false"
-                                  IsStriped="true"
-                                  IsHoverable="true"
-                                  IsBordered="true"
-                                  IsReadOnly="false"
-                                  EmptyMessage="此客戶沒有未結清的明細項目"
-                                  CssClass="setoff-detail-table"
-                                  ValidationErrors="@ValidationErrors"
-                                  OnValidationFailed="@HandleValidationFailed" />
-
-        @if (SelectedDetails.Any())
-        {
-            <div class="mt-3">
-                <div class="small text-muted">
-                    <strong>選中項目摘要：</strong>
-                    銷貨訂單：@SelectedDetails.Count(d => d.Type == "SalesOrder") 筆，
-                    銷貨退回：@SelectedDetails.Count(d => d.Type == "SalesReturn") 筆，
-                    總沖款金額：<span class="text-primary fw-bold">@SelectedDetails.Sum(d => d.ThisTimeAmount).ToString("N2")</span>
-                </div>
-            </div>
-        }
-    }
-    else if (CustomerId.HasValue && CustomerId > 0)
-    {
-        <div class="alert alert-info">
-            此客戶沒有未結清的明細項目
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-warning">
-            請先選擇客戶以顯示相關明細
-        </div>
-    }
+    <InteractiveTableComponent TItem="SetoffDetailDto"
+                                Items="@Details"
+                                ColumnDefinitions="@GetColumnDefinitions()"
+                                ShowHeader="true"
+                                ShowRowNumbers="false"
+                                ShowActions="false"
+                                ShowBuiltInActions="false"
+                                IsStriped="true"
+                                IsHoverable="true"
+                                IsBordered="true"
+                                IsReadOnly="false"
+                                EmptyMessage="此客戶沒有未結清的明細項目"
+                                CssClass="setoff-detail-table"
+                                ValidationErrors="@ValidationErrors"
+                                OnValidationFailed="@HandleValidationFailed" />
 </div>
 
 @code {
@@ -94,24 +45,16 @@
     private Dictionary<string, string> ValidationErrors { get; set; } = new();
     
     private List<SetoffDetailDto> SelectedDetails => 
-        Details.Where(d => d.ThisTimeAmount > 0).ToList();
+        Details.Where(d => d.ThisTimeAmount > 0 || d.ThisTimeDiscountAmount > 0).ToList();
     #endregion
 
     #region 私有方法 - 狀態檢查
-    /// <summary>
-    /// 檢查項目是否已結清（不可編輯）
-    /// </summary>
-    private bool IsItemSettled(SetoffDetailDto detail)
-    {
-        return detail.IsSettled || detail.PendingAmount <= 0;
-    }
-    
     /// <summary>
     /// 檢查項目是否為當前沖款單的記錄
     /// </summary>
     private bool IsCurrentSetoffRecord(SetoffDetailDto detail)
     {
-        return detail.ThisTimeAmount > 0;
+        return detail.ThisTimeAmount > 0 || detail.ThisTimeDiscountAmount > 0;
     }
     #endregion
 
@@ -270,6 +213,19 @@
             },
             new InteractiveColumnDefinition
             {
+                Title = "已折讓",
+                PropertyName = nameof(SetoffDetailDto.DiscountedAmount),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CellCssClass = "text-end text-info",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffDetailDto)item;
+                    return @<span>@detail.DiscountedAmount.ToString("N0")</span>;
+                }
+            },
+            new InteractiveColumnDefinition
+            {
                 Title = "待沖款",
                 PropertyName = nameof(SetoffDetailDto.PendingAmount),
                 ColumnType = InteractiveColumnType.Custom,
@@ -291,59 +247,34 @@
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
-                    var isItemSettled = IsItemSettled(detail);
-                    var isCurrentRecord = IsCurrentSetoffRecord(detail);
-                    var isFieldReadOnly = IsReadOnly || (IsEditMode && isItemSettled && !isCurrentRecord);
                     
-                    var title = isItemSettled && !isCurrentRecord ? "此項目已結清，無法修改" :
-                               isCurrentRecord ? "此項目為當前沖款單記錄" : "";
+                    return @<input type="text"
+                                  class="form-control form-control-sm text-end"
+                                  value="@(detail.ThisTimeAmount > 0 ? detail.ThisTimeAmount.ToString("N0") : "")"
+                                  pattern="[0-9]*"
+                                  inputmode="numeric"
+                                  @oninput="@(async (e) => await HandleAmountChanged((detail, e.Value?.ToString())))"
+                                  readonly="@IsReadOnly" />;
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "本次折讓",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffDetailDto)item;
                     
-                    // 如果是唯讀狀態，顯示 span
-                    if (isFieldReadOnly)
-                    {
-                        var displayValue = detail.ThisTimeAmount > 0 ? detail.ThisTimeAmount.ToString("N0") : "0";
-                        var textClass = isItemSettled ? "text-muted" : "text-dark";
-                        var iconHtml = "";
-                        
-                        if (isItemSettled && !isCurrentRecord)
-                        {
-                            iconHtml = "<i class=\"fas fa-lock text-muted ms-1\" title=\"已結清\"></i>";
-                        }
-                        else if (isCurrentRecord)
-                        {
-                            iconHtml = "<i class=\"fas fa-edit text-primary ms-1\" title=\"當前沖款記錄\"></i>";
-                        }
-                        
-                        return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                            <span class="@textClass" title="@title">@displayValue</span>
-                            @if (!string.IsNullOrEmpty(iconHtml))
-                            {
-                                @((MarkupString)iconHtml)
-                            }
-                        </div>;
-                    }
-                    
-                    // 可編輯狀態，顯示輸入框
-                    var cssClass = isCurrentRecord ? "form-control form-control-sm text-end border-primary" : "form-control form-control-sm text-end";
-                    
-                    return @<div class="position-relative">
-                        <input type="number"
-                               class="@cssClass"
-                               value="@detail.ThisTimeAmount"
-                               title="@title"
-                               min="0"
-                               max="@detail.PendingAmount"
-                               step="1"
-                               placeholder=""
-                               @oninput="@(async (e) => await HandleAmountChanged((detail, e.Value?.ToString())))" />
-                        
-                        @if (isCurrentRecord)
-                        {
-                            <div class="position-absolute text-primary" style="top: 2px; right: 8px; pointer-events: none; font-size: 0.75rem;">
-                                <i class="fas fa-edit" title="當前沖款記錄"></i>
-                            </div>
-                        }
-                    </div>;
+                    return @<input type="text"
+                                  class="form-control form-control-sm text-end"
+                                  value="@(detail.ThisTimeDiscountAmount > 0 ? detail.ThisTimeDiscountAmount.ToString("N0") : "")"
+                                  pattern="[0-9]*"
+                                  inputmode="numeric"
+                                  @oninput="@(async (e) => await HandleDiscountAmountChanged((detail, e.Value?.ToString())))"
+                                  readonly="@IsReadOnly" />;
                 }
             }
         };
@@ -358,17 +289,28 @@
     {
         try
         {
-            if (decimal.TryParse(args.value, out var amount))
+            if (string.IsNullOrWhiteSpace(args.value))
             {
-                args.detail.ThisTimeAmount = Math.Min(amount, args.detail.PendingAmount);
+                // 當輸入為空時，設置為 0，但保持可編輯狀態
+                args.detail.ThisTimeAmount = 0;
+            }
+            else if (decimal.TryParse(args.value, out var amount))
+            {
+                // 確保金額不超過可用金額，且不為負數
+                var availableAmount = args.detail.PendingAmount - args.detail.ThisTimeDiscountAmount;
+                args.detail.ThisTimeAmount = Math.Max(0, Math.Min(amount, availableAmount));
             }
             else
             {
-                args.detail.ThisTimeAmount = 0;
+                // 輸入無效時，保持原值不變，不要設置為 0
+                // 這樣可以避免在用戶輸入過程中破壞編輯狀態
+                return;
             }
             
             // 驗證所有金額
             ValidateAmounts();
+            
+            // 通知選擇變更 (這裡面會調用 StateHasChanged)
             await NotifySelectionChanged();
         }
         catch (Exception ex)
@@ -378,19 +320,73 @@
     }
 
     /// <summary>
+    /// 處理折讓金額變更事件
+    /// </summary>
+    private async Task HandleDiscountAmountChanged((SetoffDetailDto detail, string? value) args)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(args.value))
+            {
+                // 當輸入為空時，設置為 0，但保持可編輯狀態
+                args.detail.ThisTimeDiscountAmount = 0;
+            }
+            else if (decimal.TryParse(args.value, out var amount))
+            {
+                // 確保金額不超過可用金額，且不為負數
+                var availableAmount = args.detail.PendingAmount - args.detail.ThisTimeAmount;
+                args.detail.ThisTimeDiscountAmount = Math.Max(0, Math.Min(amount, availableAmount));
+            }
+            else
+            {
+                // 輸入無效時，保持原值不變
+                return;
+            }
+            
+            // 驗證所有金額
+            ValidateAmounts();
+            
+            // 通知選擇變更
+            await NotifySelectionChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDiscountAmountChanged), GetType());
+        }
+    }
+
+
+    /// <summary>
     /// 驗證金額
     /// </summary>
     private void ValidateAmounts()
     {
         ValidationErrors.Clear();
         
-        foreach (var detail in Details.Where(d => d.ThisTimeAmount > 0))
+        foreach (var detail in Details.Where(d => d.ThisTimeAmount > 0 || d.ThisTimeDiscountAmount > 0))
         {
-            var validation = detail.ValidateThisTimeAmount();
-            if (!validation.IsValid)
+            // 驗證本次沖款金額
+            var amountValidation = detail.ValidateThisTimeAmount();
+            if (!amountValidation.IsValid)
             {
                 var key = $"{detail.GetHashCode()}_{nameof(SetoffDetailDto.ThisTimeAmount)}";
-                ValidationErrors[key] = validation.ErrorMessage!;
+                ValidationErrors[key] = amountValidation.ErrorMessage!;
+            }
+            
+            // 驗證本次折讓金額
+            var discountValidation = detail.ValidateThisTimeDiscountAmount();
+            if (!discountValidation.IsValid)
+            {
+                var key = $"{detail.GetHashCode()}_{nameof(SetoffDetailDto.ThisTimeDiscountAmount)}";
+                ValidationErrors[key] = discountValidation.ErrorMessage!;
+            }
+            
+            // 驗證總金額
+            var totalValidation = detail.ValidateTotalThisTimeAmount();
+            if (!totalValidation.IsValid)
+            {
+                var key = $"{detail.GetHashCode()}_Total";
+                ValidationErrors[key] = totalValidation.ErrorMessage!;
             }
         }
     }
@@ -432,6 +428,9 @@
             {
                 await OnTotalAmountChanged.InvokeAsync(totalAmount);
             }
+            
+            // 確保 UI 狀態更新
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -457,6 +456,7 @@
         foreach (var detail in Details)
         {
             detail.ThisTimeAmount = 0;
+            detail.ThisTimeDiscountAmount = 0;
         }
         ValidationErrors.Clear();
         StateHasChanged();
@@ -472,12 +472,30 @@
     }
 
     /// <summary>
-    /// 取得總沖款金額
+    /// 取得總沖款金額（包含沖款和折讓）
     /// </summary>
     /// <returns>總沖款金額</returns>
     public decimal GetTotalAmount()
     {
+        return SelectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+    }
+    
+    /// <summary>
+    /// 取得總沖款金額（僅現金沖款）
+    /// </summary>
+    /// <returns>總沖款金額</returns>
+    public decimal GetTotalCashAmount()
+    {
         return SelectedDetails.Sum(d => d.ThisTimeAmount);
+    }
+    
+    /// <summary>
+    /// 取得總折讓金額
+    /// </summary>
+    /// <returns>總折讓金額</returns>
+    public decimal GetTotalDiscountAmount()
+    {
+        return SelectedDetails.Sum(d => d.ThisTimeDiscountAmount);
     }
 
     /// <summary>
@@ -495,10 +513,31 @@
 
         foreach (var detail in SelectedDetails)
         {
-            var validation = detail.ValidateThisTimeAmount();
-            if (!validation.IsValid)
+            // 驗證沖款金額
+            if (detail.ThisTimeAmount > 0)
             {
-                errors.Add($"{detail.DocumentNumber} - {validation.ErrorMessage}");
+                var amountValidation = detail.ValidateThisTimeAmount();
+                if (!amountValidation.IsValid)
+                {
+                    errors.Add($"{detail.DocumentNumber} - 沖款金額: {amountValidation.ErrorMessage}");
+                }
+            }
+            
+            // 驗證折讓金額
+            if (detail.ThisTimeDiscountAmount > 0)
+            {
+                var discountValidation = detail.ValidateThisTimeDiscountAmount();
+                if (!discountValidation.IsValid)
+                {
+                    errors.Add($"{detail.DocumentNumber} - 折讓金額: {discountValidation.ErrorMessage}");
+                }
+            }
+            
+            // 驗證總金額
+            var totalValidation = detail.ValidateTotalThisTimeAmount();
+            if (!totalValidation.IsValid)
+            {
+                errors.Add($"{detail.DocumentNumber} - {totalValidation.ErrorMessage}");
             }
         }
 

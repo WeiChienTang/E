@@ -42,7 +42,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "沖抵單號",
                             FilterPlaceholder = "輸入沖抵單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(AccountsReceivableSetoff.SetoffNumber), s => s.SetoffNumber)
@@ -56,7 +55,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "沖抵日期",
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
-                            FilterOrder = 2,
                             HeaderStyle = "width: 120px;",
                             CustomTemplate = item => builder =>
                             {
@@ -78,7 +76,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "客戶",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            FilterOrder = 3,
                             HeaderStyle = "width: 200px;",
                             NullDisplayText = "未設定",
                             Options = _customers.Select(c => new SelectOption 
@@ -98,7 +95,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "總沖抵金額",
                             FilterType = SearchFilterType.NumberRange,
                             TableOrder = 4,
-                            FilterOrder = 4,
+                            ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
                             CustomTemplate = item => builder =>
                             {

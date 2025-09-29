@@ -30,10 +30,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 取得商品類別
             var electronicsCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC001");
-            var officeCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC002");
-            var industrialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC003");
-            var softwareCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC004");
-            var materialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC005");
+            var officeCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC001");
+            var industrialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC001");
+            var softwareCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC001");
+            var materialCategory = await context.ProductCategories.FirstOrDefaultAsync(pc => pc.Code == "PC001");
 
             // 取得供應商
             var supplier1 = await context.Suppliers.FirstOrDefaultAsync(s => s.Code == "S001");
@@ -61,7 +61,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitId = unitTop?.Id,
                     ProductCategoryId = industrialCategory?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-23),
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 // 原物料
@@ -72,7 +72,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitId = unitSht?.Id,
                     ProductCategoryId = materialCategory?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-21),
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 // 新增的測試用商品
@@ -83,7 +83,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitId = unitPcs?.Id,
                     ProductCategoryId = electronicsCategory?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-20),
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new Product
@@ -93,7 +93,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitId = unitPen?.Id,
                     ProductCategoryId = officeCategory?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-19),
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 },
                 new Product
@@ -103,7 +103,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     UnitId = unitLic?.Id,
                     ProductCategoryId = softwareCategory?.Id,
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now.AddDays(-18),
+                    CreatedAt = DateTime.Now,
                     CreatedBy = "System"
                 }
             };
