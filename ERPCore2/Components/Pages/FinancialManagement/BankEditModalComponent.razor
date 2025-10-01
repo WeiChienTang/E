@@ -1,0 +1,308 @@
+@* 可重用的銀行編輯組件 - 可在任何頁面中嵌入 *@
+@inject IBankService BankService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="Bank" 
+                          TService="IBankService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@BankId"
+                          Service="@BankService"
+                          EntityName="銀行"
+                          EntityNamePlural="銀行"
+                          ModalTitle="@(BankId.HasValue ? "編輯銀行" : "新增銀行")"
+                          Size="GenericEditModalComponent<Bank, IBankService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadBankData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(BankId.HasValue ? "銀行更新成功" : "銀行新增成功")"
+                          SaveFailureMessage="銀行儲存失敗"
+                          RequiredPermission="Bank.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? BankId { get; set; }
+    [Parameter] public EventCallback<Bank> OnBankSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Bank, IBankService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 生命週期 =====
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道銀行已儲存
+            if (OnBankSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnBankSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task<Bank?> LoadBankData()
+    {
+        try
+        {
+            if (!BankId.HasValue) 
+            {
+                // 新增模式：建立新的銀行實體並生成代碼
+                var newBank = new Bank
+                {
+                    BankName = string.Empty,
+                    Code = await GenerateBankCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(Bank).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newBank, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newBank;
+            }
+
+            var bank = await BankService.GetByIdAsync(BankId.Value);            
+            
+            if (bank == null)
+            {
+                // 如果找不到銀行，建立新的預設銀行
+                return new Bank
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            return bank;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入銀行資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new Bank
+            {
+                BankName = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new ()
+                {
+                    PropertyName = nameof(Bank.Code),
+                    Label = "銀行代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入銀行代碼",
+                    IsRequired = true,
+                    HelpText = "銀行的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(Bank.BankName),
+                    Label = "銀行名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入銀行名稱",
+                    IsRequired = true,
+                    HelpText = "銀行的正式中文名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Bank.BankNameEn),
+                    Label = "英文名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入英文名稱",
+                    IsRequired = false,
+                    HelpText = "銀行的英文名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Bank.SwiftCode),
+                    Label = "SWIFT代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入SWIFT代碼",
+                    IsRequired = false,
+                    HelpText = "國際銀行匯款使用的SWIFT代碼"
+                },
+                
+                // 聯絡資訊區段
+                new()
+                {
+                    PropertyName = nameof(Bank.Phone),
+                    Label = "電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入電話號碼",
+                    IsRequired = false,
+                    HelpText = "銀行的聯絡電話"
+                },
+                new()
+                {
+                    PropertyName = nameof(Bank.Fax),
+                    Label = "傳真",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入傳真號碼",
+                    IsRequired = false,
+                    HelpText = "銀行的傳真號碼"
+                },
+                new()
+                {
+                    PropertyName = nameof(Bank.Address),
+                    Label = "地址",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入地址",
+                    IsRequired = false,
+                    Rows = 2,
+                    HelpText = "銀行的地址",
+                    ContainerCssClass = "col-12"
+                },
+                
+                // 備註區段
+                new()
+                {
+                    PropertyName = nameof(Bank.Remarks),
+                    Label = "備註",
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = "請輸入備註",
+                    IsRequired = false,
+                    Rows = 2,
+                    HelpText = "關於此銀行的補充說明",
+                    ContainerCssClass = "col-12"
+                }
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Bank.Code), "基本資訊" },
+                { nameof(Bank.BankName), "基本資訊" },
+                { nameof(Bank.BankNameEn), "基本資訊" },
+                { nameof(Bank.SwiftCode), "基本資訊" },
+                { nameof(Bank.Phone), "聯絡資訊" },
+                { nameof(Bank.Fax), "聯絡資訊" },
+                { nameof(Bank.Address), "聯絡資訊" },
+                { nameof(Bank.Remarks), "額外資料" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateBankCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            BankService,
+            "BANK",
+            (service, code, excludeId) => service.IsBankCodeExistsAsync(code, excludeId)
+        );
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增銀行 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        BankId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯銀行 Modal
+    /// </summary>
+    public async Task ShowEditModal(int bankId)
+    {
+        BankId = bankId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

@@ -14,6 +14,7 @@ namespace ERPCore2.Data.Context
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
+      public DbSet<Bank> Banks { get; set; }
       
       // 統一聯絡方式管理
       public DbSet<Contact> Contacts { get; set; }
@@ -69,6 +70,7 @@ namespace ERPCore2.Data.Context
       // Financial Management
       public DbSet<AccountsReceivableSetoff> AccountsReceivableSetoffs { get; set; }
       public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
+      public DbSet<Prepayment> Prepayments { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
@@ -647,6 +649,34 @@ namespace ERPCore2.Data.Context
                         // 設定 Table 檢查約束
                         entity.ToTable(t => t.HasCheckConstraint("CK_AccountsReceivableSetoffDetail_RelatedDetail", 
                               "SalesOrderDetailId IS NOT NULL OR SalesReturnDetailId IS NOT NULL"));
+                  });
+
+                  modelBuilder.Entity<Prepayment>(entity =>
+                  {
+                        entity.HasKey(p => p.Id);
+
+                        entity.HasOne(p => p.AccountsReceivableSetoff)
+                        .WithMany()
+                        .HasForeignKey(p => p.SetoffId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(p => p.Company)
+                        .WithMany()
+                        .HasForeignKey(p => p.CompanyId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.PrepaymentAmount)
+                              .HasPrecision(18, 2);
+
+                        // 設定唯一索引
+                        entity.HasIndex(e => e.Code)
+                              .IsUnique();
+
+                        // 設定其他索引
+                        entity.HasIndex(e => e.SetoffId);
+                        entity.HasIndex(e => e.CompanyId);
+                        entity.HasIndex(e => e.PrepaymentDate);
                   });
 
                   // 紙張設定相關

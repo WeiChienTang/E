@@ -392,5 +392,287 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 覆寫刪除方法 - 含回滾機制
+
+        /// <summary>
+        /// 覆寫刪除方法 - 刪除主檔時同步回滾明細的影響
+        /// 功能：刪除應收帳款沖款單時，自動回退已沖銷的金額
+        /// 處理流程：
+        /// 1. 驗證沖款單存在性
+        /// 2. 載入相關的沖款明細記錄
+        /// 3. 回滾 SalesOrderDetail 和 SalesReturnDetail 的收款/付款金額
+        /// 4. 執行原本的軟刪除（主檔）
+        /// 5. 使用資料庫交易確保資料一致性
+        /// 6. 任何步驟失敗時回滾所有變更
+        /// </summary>
+        /// <param name="id">要刪除的應收帳款沖款單ID</param>
+        /// <returns>刪除結果，包含成功狀態及錯誤訊息</returns>
+        public override async Task<ServiceResult> DeleteAsync(int id)
+        {
+            Console.WriteLine($"=== AccountsReceivableSetoffService.DeleteAsync 開始執行 ===");
+            Console.WriteLine($"要刪除的 AccountsReceivableSetoff ID: {id}");
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 1. 查找主檔及其明細
+                    var setoff = await context.AccountsReceivableSetoffs
+                        .Include(s => s.SetoffDetails)
+                        .FirstOrDefaultAsync(s => s.Id == id);
+
+                    if (setoff == null)
+                    {
+                        Console.WriteLine($"沖款單不存在: ID={id}");
+                        return ServiceResult.Failure("沖款單不存在");
+                    }
+
+                    Console.WriteLine($"找到沖款單: {setoff.SetoffNumber}, 明細數量: {setoff.SetoffDetails?.Count ?? 0}");
+
+                    // 2. 回滾明細的影響
+                    if (setoff.SetoffDetails != null && setoff.SetoffDetails.Any())
+                    {
+                        Console.WriteLine("開始回滾明細的影響...");
+                        await RevertSetoffDetailsAsync(context, setoff.SetoffDetails.ToList());
+                        Console.WriteLine("明細回滾完成");
+                    }
+
+                    // 3. 執行軟刪除主檔
+                    setoff.Status = EntityStatus.Deleted;
+                    setoff.UpdatedAt = DateTime.UtcNow;
+
+                    Console.WriteLine("標記主檔為已刪除");
+                    await context.SaveChangesAsync();
+
+                    // 4. 提交交易
+                    await transaction.CommitAsync();
+                    Console.WriteLine("交易已提交，刪除成功");
+
+                    return ServiceResult.Success();
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    Console.WriteLine($"交易回滾: {ex.Message}");
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new
+                {
+                    Method = nameof(DeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                return ServiceResult.Failure($"刪除沖款單時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 永久刪除應收帳款沖款單（含回滾）
+        /// 這是UI實際調用的刪除方法
+        /// 處理流程：
+        /// 1. 驗證沖款單存在性和刪除權限
+        /// 2. 回滾所有明細的影響
+        /// 3. 沖銷相關的財務交易記錄
+        /// 4. 永久刪除明細和主檔
+        /// 5. 使用資料庫交易確保資料一致性
+        /// </summary>
+        /// <param name="id">要刪除的應收帳款沖款單ID</param>
+        /// <returns>刪除結果，包含成功狀態及錯誤訊息</returns>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            Console.WriteLine($"=== AccountsReceivableSetoffService.PermanentDeleteAsync 開始執行 ===");
+            Console.WriteLine($"要永久刪除的 AccountsReceivableSetoff ID: {id}");
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 1. 查找主檔及其明細
+                    var setoff = await context.AccountsReceivableSetoffs
+                        .Include(s => s.SetoffDetails)
+                        .Include(s => s.Customer)
+                        .FirstOrDefaultAsync(s => s.Id == id);
+
+                    if (setoff == null)
+                    {
+                        Console.WriteLine($"沖款單不存在: ID={id}");
+                        return ServiceResult.Failure("沖款單不存在");
+                    }
+
+                    Console.WriteLine($"找到沖款單: {setoff.SetoffNumber}, 明細數量: {setoff.SetoffDetails?.Count ?? 0}");
+
+                    // 2. 回滾明細的影響
+                    if (setoff.SetoffDetails != null && setoff.SetoffDetails.Any())
+                    {
+                        Console.WriteLine("開始回滾明細的影響...");
+                        await RevertSetoffDetailsAsync(context, setoff.SetoffDetails.ToList());
+                        Console.WriteLine("明細回滾完成");
+                    }
+
+                    // 3. 處理財務交易記錄（沖銷）
+                    Console.WriteLine("開始處理財務交易記錄...");
+                    await ReverseFinancialTransactionsAsync(context, setoff);
+                    Console.WriteLine("財務交易記錄處理完成");
+
+                    // 4. 永久刪除明細
+                    if (setoff.SetoffDetails != null && setoff.SetoffDetails.Any())
+                    {
+                        Console.WriteLine($"永久刪除 {setoff.SetoffDetails.Count} 筆明細");
+                        context.AccountsReceivableSetoffDetails.RemoveRange(setoff.SetoffDetails);
+                        await context.SaveChangesAsync();
+                    }
+
+                    // 5. 永久刪除主檔
+                    Console.WriteLine("永久刪除主檔");
+                    context.AccountsReceivableSetoffs.Remove(setoff);
+                    await context.SaveChangesAsync();
+
+                    // 6. 提交交易
+                    await transaction.CommitAsync();
+                    Console.WriteLine("交易已提交，永久刪除成功");
+
+                    return ServiceResult.Success();
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    Console.WriteLine($"交易回滾: {ex.Message}");
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new
+                {
+                    Method = nameof(PermanentDeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                return ServiceResult.Failure($"永久刪除沖款單時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 回滾沖款明細對原始單據的影響
+        /// 包括：SalesOrderDetail 的收款金額、SalesReturnDetail 的付款金額
+        /// </summary>
+        /// <param name="context">資料庫上下文</param>
+        /// <param name="setoffDetails">要回滾的沖款明細列表</param>
+        private async Task RevertSetoffDetailsAsync(AppDbContext context, List<AccountsReceivableSetoffDetail> setoffDetails)
+        {
+            // 處理銷貨訂單明細的回滾
+            var salesOrderDetailIds = setoffDetails
+                .Where(d => d.SalesOrderDetailId.HasValue)
+                .Select(d => d.SalesOrderDetailId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (salesOrderDetailIds.Any())
+            {
+                Console.WriteLine($"回滾 {salesOrderDetailIds.Count} 筆銷貨訂單明細");
+                var salesOrderDetails = await context.SalesOrderDetails
+                    .Where(sod => salesOrderDetailIds.Contains(sod.Id))
+                    .ToListAsync();
+
+                foreach (var salesOrderDetail in salesOrderDetails)
+                {
+                    var setoffDetail = setoffDetails.First(d => d.SalesOrderDetailId == salesOrderDetail.Id);
+                    
+                    Console.WriteLine($"  - SalesOrderDetail ID={salesOrderDetail.Id}: 回滾金額 {setoffDetail.SetoffAmount}");
+                    
+                    // 回滾累計收款金額：減去之前的沖款金額
+                    salesOrderDetail.TotalReceivedAmount = Math.Max(0, salesOrderDetail.TotalReceivedAmount - setoffDetail.SetoffAmount);
+                    salesOrderDetail.ReceivedAmount = 0; // 清除本次收款記錄
+                    
+                    // 重新檢查結清狀態
+                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.Subtotal;
+                    
+                    salesOrderDetail.UpdatedAt = DateTime.UtcNow;
+                }
+
+                context.SalesOrderDetails.UpdateRange(salesOrderDetails);
+                await context.SaveChangesAsync();
+            }
+
+            // 處理銷貨退回明細的回滾
+            var salesReturnDetailIds = setoffDetails
+                .Where(d => d.SalesReturnDetailId.HasValue)
+                .Select(d => d.SalesReturnDetailId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (salesReturnDetailIds.Any())
+            {
+                Console.WriteLine($"回滾 {salesReturnDetailIds.Count} 筆銷貨退回明細");
+                var salesReturnDetails = await context.SalesReturnDetails
+                    .Where(srd => salesReturnDetailIds.Contains(srd.Id))
+                    .ToListAsync();
+
+                foreach (var salesReturnDetail in salesReturnDetails)
+                {
+                    var setoffDetail = setoffDetails.First(d => d.SalesReturnDetailId == salesReturnDetail.Id);
+                    
+                    Console.WriteLine($"  - SalesReturnDetail ID={salesReturnDetail.Id}: 回滾金額 {setoffDetail.SetoffAmount}");
+                    
+                    // 回滾累計付款金額：減去之前的沖款金額
+                    salesReturnDetail.TotalPaidAmount = Math.Max(0, salesReturnDetail.TotalPaidAmount - setoffDetail.SetoffAmount);
+                    salesReturnDetail.PaidAmount = 0; // 清除本次付款記錄
+                    
+                    // 重新檢查結清狀態
+                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotal);
+                    
+                    salesReturnDetail.UpdatedAt = DateTime.UtcNow;
+                }
+
+                context.SalesReturnDetails.UpdateRange(salesReturnDetails);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// 沖銷相關的財務交易記錄
+        /// </summary>
+        /// <param name="context">資料庫上下文</param>
+        /// <param name="setoff">要處理的沖款單</param>
+        private async Task ReverseFinancialTransactionsAsync(AppDbContext context, AccountsReceivableSetoff setoff)
+        {
+            // 查找相關的財務交易記錄
+            var transactions = await context.FinancialTransactions
+                .Where(ft => ft.SourceDocumentType == "AccountsReceivableSetoff" &&
+                            ft.SourceDocumentId == setoff.Id &&
+                            !ft.IsReversed)
+                .ToListAsync();
+
+            Console.WriteLine($"找到 {transactions.Count} 筆財務交易記錄需要沖銷");
+
+            foreach (var transaction in transactions)
+            {
+                Console.WriteLine($"  - 沖銷財務交易: {transaction.TransactionNumber}");
+                
+                // 標記為已沖銷
+                transaction.IsReversed = true;
+                transaction.ReversedDate = DateTime.UtcNow;
+                transaction.Remarks = $"沖銷原因：刪除沖款單 {setoff.SetoffNumber}";
+                transaction.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (transactions.Any())
+            {
+                context.FinancialTransactions.UpdateRange(transactions);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        #endregion
     }
 }

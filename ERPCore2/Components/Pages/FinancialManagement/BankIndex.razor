@@ -1,0 +1,129 @@
+@page "/banks"
+@inject IBankService BankService
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="Bank" 
+                        TService="IBankService"
+                        Service="@BankService"
+                        EntityBasePath="/banks"                          
+                        PageTitle="銀行設定"
+                        PageSubtitle="管理銀行基本資料與聯絡資訊"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyBankFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="銀行"
+                        GetEntityDisplayName="@(bank => bank.BankName)"
+                        RequiredPermission="Bank.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent"/>
+
+@* 銀行編輯 Modal *@
+<BankEditModalComponent IsVisible="@showEditModal"
+                       IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                       BankId="@editingBankId"
+                       OnBankSaved="@modalHandler.OnEntitySavedAsync"
+                       OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<Bank, IBankService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingBankId = null;
+    
+    // Modal 處理器
+    private ModalHandler<Bank, GenericIndexPageComponent<Bank, IBankService>> modalHandler = default!;
+    
+    // 欄位配置
+    private BankFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Bank, GenericIndexPageComponent<Bank, IBankService>>(
+                id => editingBankId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new BankFieldConfiguration(NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化銀行頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化銀行頁面失敗");
+        }
+    }
+
+    // ===== 初始化方法 =====
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("財務管理", "#"),
+                new("銀行設定")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入銀行資料
+    private async Task<List<Bank>> LoadDataAsync()
+    {
+        try
+        {
+            return await BankService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入銀行資料失敗");
+            await NotificationService.ShowErrorAsync("載入銀行資料失敗");
+            // 設定安全的預設值
+            return new List<Bank>();
+        }
+    }
+
+    private IQueryable<Bank> ApplyBankFilters(SearchFilterModel searchModel, IQueryable<Bank> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderBy(b => b.BankName);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyBankFilters), GetType());
+    }
+}

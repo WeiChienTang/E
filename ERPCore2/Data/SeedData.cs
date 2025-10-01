@@ -69,6 +69,7 @@ namespace ERPCore2.Data
                 new ContactTypeSeeder(),        // 聯絡類型
                 new AddressTypeSeeder(),        // 地址類型  
                 new PaymentMethodSeeder(),      // 付款方式
+                new BankSeeder(),               // 銀行別
                 new CustomerTypeSeeder(),       // 客戶類型
                 new SupplierTypeSeeder(),       // 廠商類型
                 new PaperSettingSeeder(),       // 紙張設定

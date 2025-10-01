@@ -233,17 +233,17 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(FinancialTransaction.Description),
+                        nameof(FinancialTransaction.Remarks),
                         new FieldDefinition<FinancialTransaction>
                         {
-                            PropertyName = nameof(FinancialTransaction.Description),
+                            PropertyName = nameof(FinancialTransaction.Remarks),
                             DisplayName = "交易描述",
                             FilterPlaceholder = "輸入交易描述搜尋",
                             TableOrder = 12,
                             FilterOrder = 12,
                             HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(FinancialTransaction.Description), ft => ft.Description, allowNull: true)
+                                model, query, nameof(FinancialTransaction.Remarks), ft => ft.Remarks, allowNull: true)
                         }
                     }
                 };

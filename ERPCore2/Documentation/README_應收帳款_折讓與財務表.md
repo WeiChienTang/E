@@ -26,7 +26,7 @@
 
 #### FinancialTransaction 實體優化 ✅ 已完成
 ```csharp
-// 已新增明細級別追蹤和折讓金額欄位
+// 已新增明細級別追蹤，折讓金額使用 Amount 欄位 + TransactionType 來區分
 public class FinancialTransaction : BaseEntity
 {
     // 原有屬性...
@@ -36,7 +36,10 @@ public class FinancialTransaction : BaseEntity
     
     // 已新增欄位
     public int? SourceDetailId { get; set; }         // 明細ID (已實作)
-    public decimal? DiscountAmount { get; set; }     // 折讓金額 (已實作)
+    
+    // 關鍵：折讓金額儲存在 Amount 欄位，透過 TransactionType 區分
+    public decimal Amount { get; set; }              // 交易金額（含折讓）
+    public FinancialTransactionTypeEnum TransactionType { get; set; } // 交易類型
     
     // 沖銷相關欄位
     public bool IsReversed { get; set; }             // 是否已沖銷
@@ -163,7 +166,7 @@ FinancialTransaction 記錄結構：
 var setoffTransaction = new FinancialTransaction
 {
     TransactionType = FinancialTransactionTypeEnum.AccountsReceivableSetoff,
-    Amount = 8000m,  // 實際收款
+    Amount = 8000m,  // 實際收款金額
     SourceDocumentType = "AccountsReceivableSetoff",
     SourceDocumentId = 123,
     SourceDetailId = 456  // 指向具體銷貨明細
@@ -173,7 +176,7 @@ var setoffTransaction = new FinancialTransaction
 var discountTransaction = new FinancialTransaction
 {
     TransactionType = FinancialTransactionTypeEnum.AccountsReceivableDiscount,
-    Amount = 2000m,  // 折讓金額
+    Amount = 2000m,  // 折讓金額儲存在 Amount 欄位
     SourceDocumentType = "AccountsReceivableSetoff",
     SourceDocumentId = 123,
     SourceDetailId = 456  // 同一筆銷貨明細
@@ -299,12 +302,20 @@ await AccountsReceivableSetoffService.UpdateAsync(setoff);
 
 #### 新增 DiscountAmount 欄位顯示
 ```csharp
+// 注意：FinancialTransaction 實體中沒有獨立的 DiscountAmount 欄位
+// 折讓金額儲存在 Amount 欄位，透過 TransactionType = AccountsReceivableDiscount 區分
+// UI 顯示時從 Amount 欄位讀取折讓金額
 new FormFieldDefinition()
 {
-    PropertyName = nameof(FinancialTransaction.DiscountAmount),
+    PropertyName = nameof(FinancialTransaction.Amount),
     FieldType = FormFieldType.Number,
     IsReadOnly = true,
-    Label = "折讓",
+    Label = "交易金額",
+    DisplayCondition = (item) => 
+    {
+        var transaction = item as FinancialTransaction;
+        return transaction?.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableDiscount;
+    }
 }
 ```
 
@@ -314,7 +325,7 @@ new FormFieldDefinition()
 - 沖銷確認機制
 - 沖銷後狀態顯示
 
-### 1. AccountsReceivableSetoffDetailService 擴展
+### 1. AccountsReceivableSetoffDetailService 擴展 ✅ 已完成
 ```csharp
 public async Task<List<SetoffDetailDto>> GetCustomerPendingDetailsAsync(int customerId)
 {
@@ -325,7 +336,7 @@ public async Task<List<SetoffDetailDto>> GetCustomerPendingDetailsAsync(int cust
         // 從 FinancialTransaction 計算已沖款金額
         detail.SettledAmount = await GetSettledAmountFromFinancialTransactions(detail.Id);
         
-        // 從 FinancialTransaction 計算已折讓金額 (新增)
+        // 從 FinancialTransaction 計算已折讓金額 (已實作)
         detail.DiscountedAmount = await GetDiscountedAmountFromFinancialTransactions(detail.Id);
         
         // 重新計算待沖款金額
@@ -341,11 +352,11 @@ private async Task<decimal> GetDiscountedAmountFromFinancialTransactions(int det
         .Where(ft => ft.SourceDetailId == detailId 
                     && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableDiscount
                     && !ft.IsReversed)
-        .SumAsync(ft => ft.Amount);
+        .SumAsync(ft => ft.Amount);  // 折讓金額從 Amount 欄位取得
 }
 ```
 
-### 2. 創建沖款時的財務記錄
+### 2. 創建沖款時的財務記錄 ✅ 已完成
 ```csharp
 public async Task<ServiceResult> CreateSetoffAsync(SetoffDto setoff)
 {
@@ -359,7 +370,7 @@ public async Task<ServiceResult> CreateSetoffAsync(SetoffDto setoff)
             await CreateFinancialTransaction(new FinancialTransaction
             {
                 TransactionType = FinancialTransactionTypeEnum.AccountsReceivableSetoff,
-                Amount = detail.ThisTimeAmount,
+                Amount = detail.ThisTimeAmount,  // 沖款金額
                 SourceDocumentType = "AccountsReceivableSetoff",
                 SourceDocumentId = setoffId,
                 SourceDetailId = detail.OriginalEntityId,  // 關鍵：明細級別追蹤
@@ -367,13 +378,13 @@ public async Task<ServiceResult> CreateSetoffAsync(SetoffDto setoff)
             });
         }
         
-        // 創建折讓交易記錄 (新增)
+        // 創建折讓交易記錄 (已實作)
         if (detail.ThisTimeDiscountAmount > 0)
         {
             await CreateFinancialTransaction(new FinancialTransaction
             {
                 TransactionType = FinancialTransactionTypeEnum.AccountsReceivableDiscount,
-                Amount = detail.ThisTimeDiscountAmount,
+                Amount = detail.ThisTimeDiscountAmount,  // 折讓金額儲存在 Amount 欄位
                 SourceDocumentType = "AccountsReceivableSetoff",
                 SourceDocumentId = setoffId,
                 SourceDetailId = detail.OriginalEntityId,  // 關鍵：明細級別追蹤
@@ -388,9 +399,9 @@ public async Task<ServiceResult> CreateSetoffAsync(SetoffDto setoff)
 
 ### 資料庫結構
 - [x] **FinancialTransaction 實體新增明細關聯欄位** (`SourceDetailId`)
-- [x] **FinancialTransaction 新增折讓金額欄位** (`DiscountAmount`)
-- [x] **新增 AccountsReceivableDiscount 交易類型**
+- [x] **新增 AccountsReceivableDiscount 交易類型** (使用 Amount 欄位儲存折讓金額)
 - [x] **沖銷機制相關欄位** (`IsReversed`, `ReversedDate`, `ReversalReason`)
+- ⚠️ **注意**：不需要獨立的 `DiscountAmount` 欄位，折讓金額透過 `Amount` + `TransactionType` 區分
 
 ### 資料傳輸物件
 - [x] **SetoffDetailDto 新增折讓相關屬性**
@@ -400,18 +411,22 @@ public async Task<ServiceResult> CreateSetoffAsync(SetoffDto setoff)
 ### 使用者界面組件
 - [x] **AccountsReceivableSetoffEditModalComponent 財務交易記錄功能**
 - [x] **使用 IFinancialTransactionService 代替 DbContextFactory**
-- [x] **CreateFinancialTransactionRecordsAsync 方法實作**
+- [x] **CreateFinancialTransactionRecordsAsync 方法實作** (v2.2 重構完成)
 - [x] **SaveSetoffDetailsAsync 方法優化**
 - [x] **折讓金額處理和總金額計算**
+- [x] **編輯模式財務記錄邏輯修正** (v2.2 新增)
+- [x] **CreateOrUpdateFinancialTransactionAsync 方法** (v2.2 新增)
+- [x] **CleanupObsoleteFinancialTransactionsAsync 方法** (v2.2 新增)
 
 ### 財務交易組件
-- [x] **FinancialTransactionEditModalComponent 新增 DiscountAmount 欄位顯示**
+- [x] **FinancialTransactionEditModalComponent 正確顯示交易金額** (根據 TransactionType 判斷是否為折讓)
 - [x] **沖銷功能完整實作** (含 Modal 和沖銷理由)
 
 ### 服務層架構
-- [x] **明細級別財務追蹤機制**
-- [x] **同時創建沖款和折讓交易記錄**
+- [x] **明細級別財務追蹤機制** (透過 `SourceDetailId` 實現)
+- [x] **同時創建沖款和折讓交易記錄** (使用不同的 `TransactionType`)
 - [x] **使用服務層一致性架構**
+- [x] **已修正 GetCustomerPendingDetailsAsync 和 GetCustomerAllDetailsForEditAsync** (計算已折讓金額)
 
 ## 🎆 實作成果與效益
 
@@ -441,19 +456,90 @@ public async Task<ServiceResult> CreateSetoffAsync(SetoffDto setoff)
 3. **報表功能**：新增折讓明細報表和統計功能
 
 ### 注意事項
-1. **資料庫遷移**：已新增 DiscountAmount 和 SourceDetailId 欄位
-2. **測試建議**：重點測試金額驗證邏輯和財務記錄的正確性
+1. **資料庫架構**：折讓金額儲存在 FinancialTransaction.Amount 欄位，無需額外的 DiscountAmount 欄位
+2. **測試建議**：
+   - 重點測試金額驗證邏輯和財務記錄的正確性
+   - **新增模式**：確認正常創建財務記錄
+   - **編輯模式**：確認不會重複創建記錄，能正確更新現有記錄
+   - **明細變更**：測試新增/移除/修改明細的財務記錄處理
+   - **折讓金額**：驗證折讓金額的計算和追蹤邏輯
 3. **權限控制**：考慮是否需要對折讓功能設置特殊權限
 4. **效能最佳化**：大量財務交易記錄時的查詢效能優化
+5. **審計軌跡**：確保編輯時的記錄清理透過沖銷機制保持完整軌跡
 
 ### 已解決的技術問題
 - ✅ DbContextFactory vs Service Layer 架構一致性
-- ✅ 折讓金額的儲存和追蹤
+- ✅ 折讓金額的儲存和追蹤 (透過 Amount + TransactionType 實現)
 - ✅ 財務交易記錄的創建和管理
-- ✅ 明細級別的財務流向追蹤
+- ✅ 明細級別的財務流向追蹤 (透過 SourceDetailId 實現)
+- ✅ 已折讓金額的正確計算和顯示
+- ✅ **編輯模式重複創建財務記錄問題** (v2.2 修正)
+- ✅ **財務記錄的更新邏輯優化** (v2.2 修正)
+- ✅ **不再需要記錄的自動清理機制** (v2.2 修正)
+
+### 最新修正 (2025年9月29日)
+
+#### v2.1 - 修正已折讓金額計算問題
+- ✅ **修正 GetCustomerPendingDetailsAsync 方法**：加入從 FinancialTransaction 計算已折讓金額的邏輯
+- ✅ **修正 GetCustomerAllDetailsForEditAsync 方法**：編輯模式下也能正確計算已折讓金額
+- ✅ **確認資料架構**：折讓金額使用 Amount 欄位 + TransactionType = AccountsReceivableDiscount
+- ✅ **驗證創建邏輯**：確認折讓記錄創建程式碼正確實作
+
+#### v2.2 - 修正編輯模式重複創建財務記錄問題
+- ✅ **問題識別**：編輯模式下每次儲存都會重複創建 FinancialTransaction 記錄
+- ✅ **核心修正**：重構 `CreateFinancialTransactionRecordsAsync` 方法，區分新增/編輯模式
+- ✅ **新增方法**：`CreateOrUpdateFinancialTransactionAsync` - 統一處理財務交易記錄的創建和更新
+- ✅ **清理機制**：`CleanupObsoleteFinancialTransactionsAsync` - 自動清理編輯時不再需要的財務記錄
+- ✅ **效能優化**：使用 `GetTransactionsByCustomerIdAsync` 取代 `GetAllAsync` 提升查詢效率
+- ✅ **資料一致性**：透過沖銷機制處理記錄清理，保持完整的審計軌跡
+
+#### 編輯模式邏輯優化
+```csharp
+// 修正後的財務記錄處理邏輯
+private async Task CreateFinancialTransactionRecordsAsync(AccountsReceivableSetoff setoff, List<SetoffDetailDto> selectedDetails)
+{
+    bool isEditMode = SetoffId.HasValue && SetoffId.Value > 0;
+    
+    if (isEditMode)
+    {
+        // 編輯模式：先清理不再需要的記錄
+        await CleanupObsoleteFinancialTransactionsAsync(setoff, selectedDetails);
+    }
+    
+    // 處理當前選擇的明細項目
+    foreach (var detail in selectedDetails)
+    {
+        // 沖款記錄：檢查是否需要更新或創建
+        if (detail.ThisTimeAmount > 0)
+            await CreateOrUpdateFinancialTransactionAsync(/* 參數 */);
+            
+        // 折讓記錄：檢查是否需要更新或創建  
+        if (detail.ThisTimeDiscountAmount > 0)
+            await CreateOrUpdateFinancialTransactionAsync(/* 參數 */);
+    }
+}
+```
+
+#### 關鍵改進項目
+1. **智能記錄管理**：
+   - 新增模式：直接創建新記錄
+   - 編輯模式：檢查現有記錄並決定更新或創建
+   - 自動清理：移除不再需要的財務記錄
+
+2. **明細級別追蹤**：
+   - 使用 `SourceDetailId` 精確關聯到具體明細
+   - 支援同一沖款單內不同明細的獨立財務記錄更新
+
+3. **沖銷機制應用**：
+   - 不直接刪除財務記錄，而是透過沖銷保持審計軌跡
+   - 清理編輯時移除的明細對應的財務記錄
+
+4. **效能最佳化**：
+   - 改用客戶ID篩選減少查詢範圍
+   - 避免全表掃描提升處理效率
 
 ---
 
 *最後更新：2025年9月29日*  
-*版本：v2.0 - 實作完成版*  
-*狀態：✅ 已完成主要功能實作*
+*版本：v2.2 - 修正編輯模式重複創建財務記錄問題*  
+*狀態：✅ 已完成主要功能實作並修正編輯邏輯問題*

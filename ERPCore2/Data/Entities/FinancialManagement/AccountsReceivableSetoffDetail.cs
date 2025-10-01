@@ -51,67 +51,11 @@ namespace ERPCore2.Data.Entities
         public decimal SetoffAmount { get; set; } = 0;
 
         /// <summary>
-        /// 沖款前累計收款金額
-        /// </summary>
-        [Display(Name = "沖款前累計收款")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal PreviousReceivedAmount { get; set; } = 0;
-
-        /// <summary>
         /// 沖款後累計收款金額
         /// </summary>
         [Display(Name = "沖款後累計收款")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal AfterReceivedAmount { get; set; } = 0;
-
-        /// <summary>
-        /// 剩餘應收金額
-        /// </summary>
-        [Display(Name = "剩餘應收金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal RemainingAmount { get; set; } = 0;
-
-        /// <summary>
-        /// 是否完全收款
-        /// </summary>
-        [Display(Name = "是否完全收款")]
-        public bool IsFullyReceived { get; set; } = false;
-
-        /// <summary>
-        /// 單據類型 (SalesOrder/SalesReturn)
-        /// </summary>
-        [Required(ErrorMessage = "單據類型為必填")]
-        [MaxLength(20, ErrorMessage = "單據類型不可超過20個字元")]
-        [Display(Name = "單據類型")]
-        public string DocumentType { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 單據編號 (冗余欄位，便於查詢顯示)
-        /// </summary>
-        [MaxLength(50, ErrorMessage = "單據編號不可超過50個字元")]
-        [Display(Name = "單據編號")]
-        public string? DocumentNumber { get; set; }
-
-        /// <summary>
-        /// 商品名稱 (冗余欄位，便於顯示)
-        /// </summary>
-        [MaxLength(200, ErrorMessage = "商品名稱不可超過200個字元")]
-        [Display(Name = "商品名稱")]
-        public string? ProductName { get; set; }
-
-        /// <summary>
-        /// 數量 (冗余欄位，便於顯示)
-        /// </summary>
-        [Display(Name = "數量")]
-        [Column(TypeName = "decimal(18,3)")]
-        public decimal Quantity { get; set; } = 0;
-
-        /// <summary>
-        /// 單位名稱 (冗余欄位，便於顯示)
-        /// </summary>
-        [MaxLength(20, ErrorMessage = "單位名稱不可超過20個字元")]
-        [Display(Name = "單位")]
-        public string? UnitName { get; set; }
 
         // Navigation Properties
         /// <summary>
@@ -129,11 +73,81 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         public SalesReturnDetail? SalesReturnDetail { get; set; }
 
+        #region 計算屬性
+
         /// <summary>
-        /// 取得關聯的實體 ID (SalesOrderDetailId 或 SalesReturnDetailId)
+        /// 沖款前累計收款金額 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "沖款前累計收款")]
+        public decimal PreviousReceivedAmount => AfterReceivedAmount - SetoffAmount;
+
+        /// <summary>
+        /// 剩餘應收金額 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "剩餘應收金額")]
+        public decimal RemainingAmount => ReceivableAmount - AfterReceivedAmount;
+
+        /// <summary>
+        /// 是否完全收款 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "是否完全收款")]
+        public bool IsFullyReceived => RemainingAmount <= 0;
+
+        /// <summary>
+        /// 取得關聯的實體 ID (計算屬性)
         /// </summary>
         [NotMapped]
         public int RelatedDetailId => SalesOrderDetailId ?? SalesReturnDetailId ?? 0;
+
+        /// <summary>
+        /// 取得單據類型 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "單據類型")]
+        public string DocumentType => SalesOrderDetailId.HasValue ? "SalesOrder" : 
+                                     SalesReturnDetailId.HasValue ? "SalesReturn" : 
+                                     string.Empty;
+
+        /// <summary>
+        /// 取得單據編號 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "單據編號")]
+        public string DocumentNumber => SalesOrderDetail?.SalesOrder?.SalesOrderNumber ?? 
+                                       SalesReturnDetail?.SalesReturn?.SalesReturnNumber ?? 
+                                       string.Empty;
+
+        /// <summary>
+        /// 商品名稱 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "商品名稱")]
+        public string ProductName => SalesOrderDetail?.Product?.Name ?? 
+                                    SalesReturnDetail?.Product?.Name ?? 
+                                    string.Empty;
+
+        /// <summary>
+        /// 數量 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "數量")]
+        public decimal Quantity => SalesOrderDetailId.HasValue ? 
+                                  (SalesOrderDetail?.OrderQuantity ?? 0) : 
+                                  (SalesReturnDetail?.ReturnQuantity ?? 0);
+
+        /// <summary>
+        /// 單位名稱 (計算屬性)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "單位")]
+        public string UnitName => SalesOrderDetail?.Product?.Unit?.Name ?? 
+                                 SalesReturnDetail?.Product?.Unit?.Name ?? 
+                                 string.Empty;
+
+        #endregion
 
         /// <summary>
         /// 驗證明細資料的完整性

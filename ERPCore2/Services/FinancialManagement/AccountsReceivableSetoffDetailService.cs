@@ -90,15 +90,23 @@ namespace ERPCore2.Services
                     .Include(d => d.Setoff)
                         .ThenInclude(s => s.Customer)
                     .Include(d => d.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(d => d.SalesOrderDetail)
                         .ThenInclude(sod => sod!.Product)
+                    .Include(d => d.SalesReturnDetail)
+                        .ThenInclude(srd => srd!.SalesReturn)
                     .Include(d => d.SalesReturnDetail)
                         .ThenInclude(srd => srd!.Product)
                     .Where(d => (
                         d.Setoff.SetoffNumber.ToLower().Contains(searchTermLower) ||
                         d.Setoff.Customer.CompanyName.ToLower().Contains(searchTermLower) ||
-                        (!string.IsNullOrEmpty(d.DocumentNumber) && d.DocumentNumber.ToLower().Contains(searchTermLower)) ||
-                        (!string.IsNullOrEmpty(d.ProductName) && d.ProductName.ToLower().Contains(searchTermLower)) ||
-                        d.DocumentType.ToLower().Contains(searchTermLower)
+                        (d.SalesOrderDetail != null && 
+                         d.SalesOrderDetail.SalesOrder != null &&
+                         d.SalesOrderDetail.SalesOrder.SalesOrderNumber.ToLower().Contains(searchTermLower)) ||
+                        (d.SalesReturnDetail != null && 
+                         d.SalesReturnDetail.SalesReturn != null &&
+                         d.SalesReturnDetail.SalesReturn.SalesReturnNumber.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(d.ProductName) && d.ProductName.ToLower().Contains(searchTermLower))
                     ))
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
@@ -124,9 +132,6 @@ namespace ERPCore2.Services
                 if (entity.SetoffId <= 0)
                     errors.Add("必須指定沖款單");
                 
-                if (string.IsNullOrWhiteSpace(entity.DocumentType))
-                    errors.Add("單據類型不能為空");
-                
                 // 檢查必須選擇銷貨訂單明細或銷貨退回明細其中之一
                 if (!entity.SalesOrderDetailId.HasValue && !entity.SalesReturnDetailId.HasValue)
                     errors.Add("必須指定銷貨訂單明細或銷貨退回明細其中之一");
@@ -137,12 +142,7 @@ namespace ERPCore2.Services
                 
                 // 檢查沖款金額
                 if (entity.SetoffAmount <= 0)
-                    errors.Add("沖款金額必須大於0");
-                
-                // 檢查沖款金額不能超過剩餘應收金額
-                var remainingAmount = entity.ReceivableAmount - entity.PreviousReceivedAmount;
-                if (entity.SetoffAmount > remainingAmount)
-                    errors.Add($"沖款金額不能超過剩餘應收金額 {remainingAmount:N2}");
+                    errors.Add("沖款金額必須大於0");            
                 
                 // 檢查沖款單是否存在
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -168,11 +168,14 @@ namespace ERPCore2.Services
                         errors.Add("指定的銷貨退回明細不存在");
                 }
                 
-                // 驗證單據類型與明細類型的一致性
-                if (entity.DocumentType == "SalesOrder" && !entity.SalesOrderDetailId.HasValue)
+                // 驗證單據類型與明細類型的一致性（使用計算屬性）
+                var documentType = entity.SalesOrderDetailId.HasValue ? "SalesOrder" : 
+                                 entity.SalesReturnDetailId.HasValue ? "SalesReturn" : "";
+                
+                if (documentType == "SalesOrder" && !entity.SalesOrderDetailId.HasValue)
                     errors.Add("單據類型為銷貨訂單時必須指定銷貨訂單明細");
                 
-                if (entity.DocumentType == "SalesReturn" && !entity.SalesReturnDetailId.HasValue)
+                if (documentType == "SalesReturn" && !entity.SalesReturnDetailId.HasValue)
                     errors.Add("單據類型為銷貨退回時必須指定銷貨退回明細");
                 
                 if (errors.Any())
@@ -376,6 +379,21 @@ namespace ERPCore2.Services
                     if (!setoffExists)
                         return ServiceResult.Failure("沖款單不存在");
                     
+                    // 編輯模式：先回滾既有記錄的影響
+                    var existingDetails = await context.AccountsReceivableSetoffDetails
+                        .Where(d => d.SetoffId == setoffId)
+                        .ToListAsync();
+                    
+                    if (existingDetails.Any())
+                    {
+                        // 先回滾原始明細表的收款/付款資料
+                        await RevertOriginalDetailsAsync(context, existingDetails);
+                        
+                        // 刪除既有記錄
+                        context.AccountsReceivableSetoffDetails.RemoveRange(existingDetails);
+                        await context.SaveChangesAsync();
+                    }
+                    
                     // 設定所有明細的沖款單ID
                     foreach (var detail in details)
                     {
@@ -387,9 +405,22 @@ namespace ERPCore2.Services
                             return validationResult;
                         
                         // 計算累計收款金額
-                        detail.AfterReceivedAmount = detail.PreviousReceivedAmount + detail.SetoffAmount;
-                        detail.RemainingAmount = detail.ReceivableAmount - detail.AfterReceivedAmount;
-                        detail.IsFullyReceived = detail.RemainingAmount <= 0;
+                        // AfterReceivedAmount 應該是從相關明細表取得當前累計金額再加上本次沖款
+                        decimal currentReceived = 0;
+                        if (detail.SalesOrderDetailId.HasValue)
+                        {
+                            var salesOrderDetail = await context.SalesOrderDetails
+                                .FirstOrDefaultAsync(sod => sod.Id == detail.SalesOrderDetailId.Value);
+                            currentReceived = salesOrderDetail?.TotalReceivedAmount ?? 0;
+                        }
+                        else if (detail.SalesReturnDetailId.HasValue)
+                        {
+                            var salesReturnDetail = await context.SalesReturnDetails
+                                .FirstOrDefaultAsync(srd => srd.Id == detail.SalesReturnDetailId.Value);
+                            currentReceived = salesReturnDetail?.TotalPaidAmount ?? 0;
+                        }
+                        
+                        detail.AfterReceivedAmount = currentReceived + detail.SetoffAmount;
                     }
                     
                     await context.AccountsReceivableSetoffDetails.AddRangeAsync(details);
@@ -441,7 +472,13 @@ namespace ERPCore2.Services
                         .Where(d => d.SetoffId == setoffId)
                         .ToListAsync();
                     
-                    // 硬刪除
+                    // 先回滾原始明細表的收款/付款資料
+                    if (details.Any())
+                    {
+                        await RevertOriginalDetailsAsync(context, details);
+                    }
+                    
+                    // 硬刪除沖款明細
                     context.AccountsReceivableSetoffDetails.RemoveRange(details);
                     await context.SaveChangesAsync();
                     
@@ -482,7 +519,7 @@ namespace ERPCore2.Services
                 if (detail.SetoffAmount <= 0)
                     errors.Add("沖款金額必須大於0");
                 
-                var availableAmount = detail.ReceivableAmount - detail.PreviousReceivedAmount;
+                var availableAmount = detail.ReceivableAmount - (detail.AfterReceivedAmount - detail.SetoffAmount);
                 if (detail.SetoffAmount > availableAmount)
                     errors.Add($"沖款金額不能超過可用金額 {availableAmount:N2}");
                 
@@ -603,7 +640,15 @@ namespace ERPCore2.Services
 
                 foreach (var detail in salesOrderDetails)
                 {
-                    var pendingAmount = detail.Subtotal - detail.TotalReceivedAmount;
+                    // 從 FinancialTransaction 計算已折讓金額
+                    // 現在沖款和折讓在同一筆記錄中，TransactionType 為 AccountsReceivableSetoff
+                    var discountedAmount = await context.FinancialTransactions
+                        .Where(ft => ft.SourceDetailId == detail.Id 
+                                    && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableSetoff
+                                    && !ft.IsReversed)
+                        .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
+                    
+                    var pendingAmount = detail.Subtotal - detail.TotalReceivedAmount - discountedAmount;
                     if (pendingAmount > 0)
                     {
                         result.Add(new SetoffDetailDto
@@ -620,6 +665,12 @@ namespace ERPCore2.Services
                             UnitPrice = detail.UnitPrice,
                             TotalAmount = detail.Subtotal,
                             SettledAmount = detail.TotalReceivedAmount,
+                            DiscountedAmount = discountedAmount,  // 設定已折讓金額
+                            ThisTimeAmount = 0, // 新增模式預設為0
+                            ThisTimeDiscountAmount = 0, // 新增模式預設為0
+                            OriginalThisTimeAmount = 0, // 新增模式原始值為0
+                            OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
+                            IsEditMode = false, // 標記為新增模式
                             IsSettled = detail.IsSettled,
                             CustomerId = customerId,
                             CustomerName = detail.SalesOrder.Customer?.CompanyName ?? "",
@@ -638,7 +689,15 @@ namespace ERPCore2.Services
 
                 foreach (var detail in salesReturnDetails)
                 {
-                    var pendingAmount = detail.ReturnSubtotal - detail.TotalPaidAmount;
+                    // 從 FinancialTransaction 計算已折讓金額
+                    // 現在沖款和折讓在同一筆記錄中，TransactionType 為 AccountsReceivableSetoff
+                    var discountedAmount = await context.FinancialTransactions
+                        .Where(ft => ft.SourceDetailId == detail.Id 
+                                    && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableSetoff
+                                    && !ft.IsReversed)
+                        .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
+                    
+                    var pendingAmount = detail.ReturnSubtotal - detail.TotalPaidAmount - discountedAmount;
                     if (pendingAmount > 0)
                     {
                         result.Add(new SetoffDetailDto
@@ -655,6 +714,12 @@ namespace ERPCore2.Services
                             UnitPrice = detail.ReturnUnitPrice,
                             TotalAmount = detail.ReturnSubtotal,
                             SettledAmount = detail.TotalPaidAmount,
+                            DiscountedAmount = discountedAmount,  // 設定已折讓金額
+                            ThisTimeAmount = 0, // 新增模式預設為0
+                            ThisTimeDiscountAmount = 0, // 新增模式預設為0
+                            OriginalThisTimeAmount = 0, // 新增模式原始值為0
+                            OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
+                            IsEditMode = false, // 標記為新增模式
                             IsSettled = detail.IsSettled,
                             CustomerId = customerId,
                             CustomerName = detail.SalesReturn.Customer?.CompanyName ?? "",
@@ -689,12 +754,32 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var result = new List<SetoffDetailDto>();
 
-                // 取得所有的銷貨訂單明細（不論是否結清）
+                // 取得當前沖款單已關聯的明細 ID 清單
+                var currentSetoffDetailIds = await context.AccountsReceivableSetoffDetails
+                    .Where(arsd => arsd.SetoffId == setoffId)
+                    .Select(arsd => new 
+                    { 
+                        arsd.SalesOrderDetailId, 
+                        arsd.SalesReturnDetailId 
+                    })
+                    .ToListAsync();
+
+                var currentSalesOrderDetailIds = currentSetoffDetailIds
+                    .Where(x => x.SalesOrderDetailId.HasValue)
+                    .Select(x => x.SalesOrderDetailId!.Value)
+                    .ToHashSet();
+
+                var currentSalesReturnDetailIds = currentSetoffDetailIds
+                    .Where(x => x.SalesReturnDetailId.HasValue)
+                    .Select(x => x.SalesReturnDetailId!.Value)
+                    .ToHashSet();
+
+                // 編輯模式：只取得與當前沖款單關聯的銷貨訂單明細
                 var salesOrderDetails = await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                         .ThenInclude(so => so.Customer)
                     .Include(sod => sod.Product)
-                    .Where(sod => sod.SalesOrder.CustomerId == customerId)
+                    .Where(sod => currentSalesOrderDetailIds.Contains(sod.Id))
                     .ToListAsync();
 
                 // 取得現有的沖款記錄
@@ -705,13 +790,32 @@ namespace ERPCore2.Services
                 foreach (var detail in salesOrderDetails)
                 {
                     var totalAmount = detail.Subtotal;
-                    var settledAmount = detail.TotalReceivedAmount;
                     
                     // 檢查是否在當前沖款單中有記錄
                     var currentSetoffDetail = existingSetoffDetails
                         .FirstOrDefault(esd => esd.SalesOrderDetailId == detail.Id);
                     
                     var thisTimeAmount = currentSetoffDetail?.SetoffAmount ?? 0;
+                    
+                    // 顯示真實的累計收款金額（包含所有已完成的沖款）
+                    var settledAmount = detail.TotalReceivedAmount;
+                    
+                    // 從 FinancialTransaction 計算已折讓金額（排除當前沖款單的折讓）
+                    // 現在沖款和折讓在同一筆記錄中，TransactionType 為 AccountsReceivableSetoff
+                    var discountedAmount = await context.FinancialTransactions
+                        .Where(ft => ft.SourceDetailId == detail.Id 
+                                    && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableSetoff
+                                    && !ft.IsReversed
+                                    && ft.SourceDocumentId != setoffId) // 排除當前沖款單
+                        .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
+                    
+                    // 取得當前沖款單的折讓金額
+                    var currentDiscountAmount = await context.FinancialTransactions
+                        .Where(ft => ft.SourceDetailId == detail.Id 
+                                    && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableSetoff
+                                    && !ft.IsReversed
+                                    && ft.SourceDocumentId == setoffId)
+                        .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
                     
                     result.Add(new SetoffDetailDto
                     {
@@ -727,7 +831,12 @@ namespace ERPCore2.Services
                         UnitPrice = detail.UnitPrice,
                         TotalAmount = totalAmount,
                         SettledAmount = settledAmount,
+                        DiscountedAmount = discountedAmount,  // 設定已折讓金額（排除當前沖款單）
                         ThisTimeAmount = thisTimeAmount,
+                        ThisTimeDiscountAmount = currentDiscountAmount, // 設定當前沖款單的折讓金額
+                        OriginalThisTimeAmount = thisTimeAmount, // 記錄載入時的原始沖款金額
+                        OriginalThisTimeDiscountAmount = currentDiscountAmount, // 記錄載入時的原始折讓金額
+                        IsEditMode = true, // 標記為編輯模式
                         IsSettled = detail.IsSettled,
                         CustomerId = customerId,
                         CustomerName = detail.SalesOrder.Customer?.CompanyName ?? "",
@@ -735,24 +844,43 @@ namespace ERPCore2.Services
                     });
                 }
 
-                // 取得所有的銷貨退回明細（不論是否結清）
+                // 編輯模式：只取得與當前沖款單關聯的銷貨退回明細
                 var salesReturnDetails = await context.SalesReturnDetails
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Where(srd => srd.SalesReturn.CustomerId == customerId)
+                    .Where(srd => currentSalesReturnDetailIds.Contains(srd.Id))
                     .ToListAsync();
 
                 foreach (var detail in salesReturnDetails)
                 {
                     var totalAmount = detail.ReturnSubtotal;
-                    var settledAmount = detail.TotalPaidAmount;
                     
                     // 檢查是否在當前沖款單中有記錄
                     var currentSetoffDetail = existingSetoffDetails
                         .FirstOrDefault(esd => esd.SalesReturnDetailId == detail.Id);
                     
                     var thisTimeAmount = currentSetoffDetail?.SetoffAmount ?? 0;
+                    
+                    // 顯示真實的累計付款金額（包含所有已完成的沖款）
+                    var settledAmount = detail.TotalPaidAmount;
+                    
+                    // 從 FinancialTransaction 計算已折讓金額（排除當前沖款單的折讓）
+                    // 現在沖款和折讓在同一筆記錄中，TransactionType 為 AccountsReceivableSetoff
+                    var discountedAmount = await context.FinancialTransactions
+                        .Where(ft => ft.SourceDetailId == detail.Id 
+                                    && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableSetoff
+                                    && !ft.IsReversed
+                                    && ft.SourceDocumentId != setoffId) // 排除當前沖款單
+                        .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
+                    
+                    // 取得當前沖款單的折讓金額
+                    var currentDiscountAmount = await context.FinancialTransactions
+                        .Where(ft => ft.SourceDetailId == detail.Id 
+                                    && ft.TransactionType == FinancialTransactionTypeEnum.AccountsReceivableSetoff
+                                    && !ft.IsReversed
+                                    && ft.SourceDocumentId == setoffId)
+                        .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
                     
                     result.Add(new SetoffDetailDto
                     {
@@ -768,7 +896,12 @@ namespace ERPCore2.Services
                         UnitPrice = detail.ReturnUnitPrice,
                         TotalAmount = totalAmount,
                         SettledAmount = settledAmount,
+                        DiscountedAmount = discountedAmount,  // 設定已折讓金額（排除當前沖款單）
                         ThisTimeAmount = thisTimeAmount,
+                        ThisTimeDiscountAmount = currentDiscountAmount, // 設定當前沖款單的折讓金額
+                        OriginalThisTimeAmount = thisTimeAmount, // 記錄載入時的原始沖款金額
+                        OriginalThisTimeDiscountAmount = currentDiscountAmount, // 記錄載入時的原始折讓金額
+                        IsEditMode = true, // 標記為編輯模式
                         IsSettled = detail.IsSettled,
                         CustomerId = customerId,
                         CustomerName = detail.SalesReturn.Customer?.CompanyName ?? "",
@@ -801,14 +934,29 @@ namespace ERPCore2.Services
                 
                 if (detail == null)
                     return ServiceResult.Failure("明細不存在");
-                
+
                 // 重新計算累計收款金額
-                detail.AfterReceivedAmount = detail.PreviousReceivedAmount + detail.SetoffAmount;
-                detail.RemainingAmount = detail.ReceivableAmount - detail.AfterReceivedAmount;
-                detail.IsFullyReceived = detail.RemainingAmount <= 0;
-                detail.UpdatedAt = DateTime.Now;
+                // 需要從相關的明細表取得當前累計金額
+                decimal currentReceived = 0;
+                if (detail.SalesOrderDetailId.HasValue)
+                {
+                    var salesOrderDetail = await context.SalesOrderDetails
+                        .FirstOrDefaultAsync(sod => sod.Id == detail.SalesOrderDetailId.Value);
+                    currentReceived = salesOrderDetail?.TotalReceivedAmount ?? 0;
+                    // 減掉本次沖款金額，因為我們要重新計算
+                    currentReceived -= detail.SetoffAmount;
+                }
+                else if (detail.SalesReturnDetailId.HasValue)
+                {
+                    var salesReturnDetail = await context.SalesReturnDetails
+                        .FirstOrDefaultAsync(srd => srd.Id == detail.SalesReturnDetailId.Value);
+                    currentReceived = salesReturnDetail?.TotalPaidAmount ?? 0;
+                    // 減掉本次沖款金額，因為我們要重新計算
+                    currentReceived -= detail.SetoffAmount;
+                }
                 
-                await context.SaveChangesAsync();
+                detail.AfterReceivedAmount = currentReceived + detail.SetoffAmount;
+                detail.UpdatedAt = DateTime.Now;                await context.SaveChangesAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -850,9 +998,11 @@ namespace ERPCore2.Services
                 {
                     var setoffDetail = setoffDetails.First(d => d.SalesOrderDetailId == salesOrderDetail.Id);
                     
-                    // 更新本次收款和累計收款金額
+                    // 更新本次收款金額
                     salesOrderDetail.ReceivedAmount = setoffDetail.SetoffAmount;
-                    salesOrderDetail.TotalReceivedAmount += setoffDetail.SetoffAmount;
+                    
+                    // 更新累計收款金額
+                    salesOrderDetail.TotalReceivedAmount = setoffDetail.AfterReceivedAmount;
                     
                     // 檢查是否已結清
                     salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.Subtotal;
@@ -880,11 +1030,83 @@ namespace ERPCore2.Services
                 {
                     var setoffDetail = setoffDetails.First(d => d.SalesReturnDetailId == salesReturnDetail.Id);
                     
-                    // 更新本次付款和累計付款金額
+                    // 更新本次付款金額
                     salesReturnDetail.PaidAmount = setoffDetail.SetoffAmount;
-                    salesReturnDetail.TotalPaidAmount += setoffDetail.SetoffAmount;
+                    
+                    // 更新累計付款金額
+                    salesReturnDetail.TotalPaidAmount = setoffDetail.AfterReceivedAmount;
                     
                     // 檢查是否已結清 (退回金額通常是負數，所以用絕對值比較)
+                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotal);
+                    
+                    salesReturnDetail.UpdatedAt = DateTime.UtcNow;
+                }
+
+                context.SalesReturnDetails.UpdateRange(salesReturnDetails);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 回滾原始明細表的收款/付款資料（編輯模式用）
+        /// </summary>
+        /// <param name="context">資料庫上下文</param>
+        /// <param name="setoffDetails">要回滾的沖款明細列表</param>
+        private async Task RevertOriginalDetailsAsync(AppDbContext context, List<AccountsReceivableSetoffDetail> setoffDetails)
+        {
+            // 處理銷貨訂單明細的回滾
+            var salesOrderDetailIds = setoffDetails
+                .Where(d => d.SalesOrderDetailId.HasValue)
+                .Select(d => d.SalesOrderDetailId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (salesOrderDetailIds.Any())
+            {
+                var salesOrderDetails = await context.SalesOrderDetails
+                    .Where(sod => salesOrderDetailIds.Contains(sod.Id))
+                    .ToListAsync();
+
+                foreach (var salesOrderDetail in salesOrderDetails)
+                {
+                    var setoffDetail = setoffDetails.First(d => d.SalesOrderDetailId == salesOrderDetail.Id);
+                    
+                    // 回滾累計收款金額：減去之前的沖款金額
+                    salesOrderDetail.TotalReceivedAmount = Math.Max(0, salesOrderDetail.TotalReceivedAmount - setoffDetail.SetoffAmount);
+                    salesOrderDetail.ReceivedAmount = 0; // 清除本次收款記錄
+                    
+                    // 重新檢查結清狀態
+                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.Subtotal;
+                    
+                    salesOrderDetail.UpdatedAt = DateTime.UtcNow;
+                }
+
+                context.SalesOrderDetails.UpdateRange(salesOrderDetails);
+            }
+
+            // 處理銷貨退回明細的回滾
+            var salesReturnDetailIds = setoffDetails
+                .Where(d => d.SalesReturnDetailId.HasValue)
+                .Select(d => d.SalesReturnDetailId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (salesReturnDetailIds.Any())
+            {
+                var salesReturnDetails = await context.SalesReturnDetails
+                    .Where(srd => salesReturnDetailIds.Contains(srd.Id))
+                    .ToListAsync();
+
+                foreach (var salesReturnDetail in salesReturnDetails)
+                {
+                    var setoffDetail = setoffDetails.First(d => d.SalesReturnDetailId == salesReturnDetail.Id);
+                    
+                    // 回滾累計付款金額：減去之前的沖款金額
+                    salesReturnDetail.TotalPaidAmount = Math.Max(0, salesReturnDetail.TotalPaidAmount - setoffDetail.SetoffAmount);
+                    salesReturnDetail.PaidAmount = 0; // 清除本次付款記錄
+                    
+                    // 重新檢查結清狀態
                     salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotal);
                     
                     salesReturnDetail.UpdatedAt = DateTime.UtcNow;

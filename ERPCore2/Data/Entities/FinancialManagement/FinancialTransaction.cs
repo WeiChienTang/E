@@ -44,14 +44,7 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "交易金額為必填")]
         [Display(Name = "交易金額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Amount { get; set; }
-        
-        /// <summary>
-        /// 交易描述 - 交易的詳細說明
-        /// </summary>
-        [MaxLength(500, ErrorMessage = "交易描述不可超過500個字元")]
-        [Display(Name = "交易描述")]
-        public string? Description { get; set; }
+        public decimal Amount { get; set; }    
         
         // === 關聯方資訊 ===
         
@@ -144,6 +137,22 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal BalanceAfter { get; set; }
         
+        // === 折讓相關 ===
+        
+        /// <summary>
+        /// 本次折讓金額 - 此次交易的折讓金額
+        /// </summary>
+        [Display(Name = "本次折讓金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CurrentDiscountAmount { get; set; } = 0;
+        
+        /// <summary>
+        /// 累計折讓 - 截至目前為止的累計折讓金額
+        /// </summary>
+        [Display(Name = "累計折讓")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AccumulatedDiscountAmount { get; set; } = 0;
+        
         // === 沖銷相關 ===
         
         /// <summary>
@@ -156,14 +165,7 @@ namespace ERPCore2.Data.Entities
         /// 沖銷日期 - 交易被沖銷的日期
         /// </summary>
         [Display(Name = "沖銷日期")]
-        public DateTime? ReversedDate { get; set; }
-        
-        /// <summary>
-        /// 沖銷原因 - 交易被沖銷的原因說明
-        /// </summary>
-        [MaxLength(500, ErrorMessage = "沖銷原因不可超過500個字元")]
-        [Display(Name = "沖銷原因")]
-        public string? ReversalReason { get; set; }
+        public DateTime? ReversedDate { get; set; }    
         
         /// <summary>
         /// 沖銷交易ID - 指向沖銷此交易的另一筆交易

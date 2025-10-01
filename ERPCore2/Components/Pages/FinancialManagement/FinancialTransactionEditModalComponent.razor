@@ -263,7 +263,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(FinancialTransaction.Description),
+                    PropertyName = nameof(FinancialTransaction.Remarks),
                     Label = "交易描述",
                     FieldType = FormFieldType.TextArea,
                     IsReadOnly = true,
@@ -287,7 +287,7 @@
                 { nameof(FinancialTransaction.SourceDocumentNumber), "來源資訊" },
                 { nameof(FinancialTransaction.ReferenceNumber), "其他資訊" },
                 { nameof(FinancialTransaction.BalanceAfter), "其他資訊" },
-                { nameof(FinancialTransaction.Description), "其他資訊" }
+                { nameof(FinancialTransaction.Remarks), "其他資訊" }
             };
         }
         catch (Exception)
@@ -310,7 +310,7 @@
                 <div class="alert alert-warning mt-3">
                     <h6><i class="fas fa-exclamation-triangle"></i> 沖銷資訊</h6>
                     <p><strong>沖銷日期：</strong> @editModalComponent.Entity.ReversedDate?.ToString("yyyy/MM/dd HH:mm")</p>
-                    <p><strong>沖銷原因：</strong> @editModalComponent.Entity.ReversalReason</p>
+                    <p><strong>沖銷原因：</strong> @editModalComponent.Entity.Remarks</p>
                     @if (editModalComponent.Entity.ReversalTransactionId.HasValue)
                     {
                         <p><strong>沖銷交易ID：</strong> @editModalComponent.Entity.ReversalTransactionId</p>

@@ -101,6 +101,62 @@ namespace ERPCore2.Models
         public decimal ThisTimeDiscountAmount { get; set; } = 0;
 
         /// <summary>
+        /// 載入時的原始本次沖款金額（用於動態計算）
+        /// </summary>
+        public decimal OriginalThisTimeAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 載入時的原始本次折讓金額（用於動態計算）
+        /// </summary>
+        public decimal OriginalThisTimeDiscountAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 是否為編輯模式
+        /// </summary>
+        public bool IsEditMode { get; set; } = false;
+
+        /// <summary>
+        /// 用於驗證的待沖款金額（在編輯模式下排除當前沖款單的影響）
+        /// </summary>
+        public decimal PendingAmountForValidation 
+        { 
+            get 
+            {
+                if (IsEditMode)
+                {
+                    // 編輯模式：排除當前沖款單的金額進行驗證
+                    return TotalAmount - (SettledAmount - ThisTimeAmount) - (DiscountedAmount - ThisTimeDiscountAmount);
+                }
+                else
+                {
+                    // 新增模式：使用原始計算
+                    return PendingAmount;
+                }
+            } 
+        }
+
+        /// <summary>
+        /// 動態計算的已沖款金額（用於UI顯示）
+        /// 編輯模式: 移除原始沖款後加上當前沖款 = SettledAmount - OriginalThisTimeAmount + ThisTimeAmount
+        /// 新增模式: 現有沖款加上本次沖款 = SettledAmount + ThisTimeAmount
+        /// </summary>
+        public decimal DynamicSettledAmount => IsEditMode ? 
+            SettledAmount - OriginalThisTimeAmount + ThisTimeAmount : 
+            SettledAmount + ThisTimeAmount;
+
+        /// <summary>
+        /// 動態計算的已折讓金額（用於UI顯示）
+        /// 編輯模式: DiscountedAmount(已排除當前沖款單) + ThisTimeDiscountAmount(當前編輯的折讓)
+        /// 新增模式: 現有折讓加上本次折讓 = DiscountedAmount + ThisTimeDiscountAmount
+        /// </summary>
+        public decimal DynamicDiscountedAmount => DiscountedAmount + ThisTimeDiscountAmount;
+
+        /// <summary>
+        /// 動態計算的待沖款金額（用於UI顯示）
+        /// </summary>
+        public decimal DynamicPendingAmount => TotalAmount - DynamicSettledAmount - DynamicDiscountedAmount;
+
+        /// <summary>
         /// 是否選中進行沖款
         /// </summary>
         [Display(Name = "選擇")]
@@ -148,9 +204,10 @@ namespace ERPCore2.Models
                 return (false, "沖款金額不能為負數");
             }
 
-            if (ThisTimeAmount > PendingAmount)
+            var pendingForValidation = PendingAmountForValidation;
+            if (ThisTimeAmount > pendingForValidation)
             {
-                return (false, $"沖款金額不能超過待沖款金額 {PendingAmount:N2}");
+                return (false, $"沖款金額不能超過待沖款金額 {pendingForValidation:N2}");
             }
 
             return (true, null);
@@ -167,9 +224,10 @@ namespace ERPCore2.Models
                 return (false, "折讓金額不能為負數");
             }
 
-            if (ThisTimeDiscountAmount > PendingAmount)
+            var pendingForValidation = PendingAmountForValidation;
+            if (ThisTimeDiscountAmount > pendingForValidation)
             {
-                return (false, $"折讓金額不能超過待沖款金額 {PendingAmount:N2}");
+                return (false, $"折讓金額不能超過待沖款金額 {pendingForValidation:N2}");
             }
 
             return (true, null);
@@ -188,9 +246,10 @@ namespace ERPCore2.Models
                 return (false, "沖款和折讓總金額不能為負數");
             }
 
-            if (totalThisTime > PendingAmount)
+            var pendingForValidation = PendingAmountForValidation;
+            if (totalThisTime > pendingForValidation)
             {
-                return (false, $"沖款和折讓總金額 ({totalThisTime:N2}) 不能超過待沖款金額 {PendingAmount:N2}");
+                return (false, $"沖款和折讓總金額 ({totalThisTime:N2}) 不能超過待沖款金額 {pendingForValidation:N2}");
             }
 
             return (true, null);

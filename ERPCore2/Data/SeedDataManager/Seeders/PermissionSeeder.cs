@@ -89,7 +89,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "AccountsReceivableSetoff.Read", Name = "檢視應收帳款", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視客戶應收帳款與交易紀錄" },
                 new Permission { Code = "PaymentMethod.Read", Name = "檢視付款方式", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統付款方式設定" },
                 new Permission { Code = "FinancialTransaction.Read", Name = "檢視財務交易", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視財務交易紀錄與明細" },
-                
+                new Permission { Code ="Bank.Read", Name = "檢視銀行", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銀行基本資料與相關資訊"},
+
                 // 庫存異動類型權限
                 new Permission { Code = "InventoryTransactionType.Read", Name = "檢視庫存異動類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存異動類型與分類設定" },
                 

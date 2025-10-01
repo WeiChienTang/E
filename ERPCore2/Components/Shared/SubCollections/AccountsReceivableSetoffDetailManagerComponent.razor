@@ -5,7 +5,7 @@
 <div class="setoff-detail-manager">
     @if (IsLoading)
     {
-        <div class="d-flex justify-content-center p-3">
+        <div class="d-flex>justify-content-center align-items-center my-3">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">載入中...</span>
             </div>
@@ -13,16 +13,18 @@
     }
 
     <InteractiveTableComponent TItem="SetoffDetailDto"
-                                Items="@Details"
+                                Items="@GetDisplayDetails()"
                                 ColumnDefinitions="@GetColumnDefinitions()"
                                 ShowHeader="true"
                                 ShowRowNumbers="false"
                                 ShowActions="false"
-                                ShowBuiltInActions="false"
+                                ShowBuiltInActions="true"
+                                ShowBuiltInDeleteButton="true"
+                                OnItemDelete="RemoveItemFromSelection"
                                 IsStriped="true"
                                 IsHoverable="true"
                                 IsBordered="true"
-                                IsReadOnly="false"
+                                IsReadOnly="@IsReadOnly"
                                 EmptyMessage="此客戶沒有未結清的明細項目"
                                 CssClass="setoff-detail-table"
                                 ValidationErrors="@ValidationErrors"
@@ -46,15 +48,24 @@
     
     private List<SetoffDetailDto> SelectedDetails => 
         Details.Where(d => d.ThisTimeAmount > 0 || d.ThisTimeDiscountAmount > 0).ToList();
-    #endregion
-
-    #region 私有方法 - 狀態檢查
+    
     /// <summary>
-    /// 檢查項目是否為當前沖款單的記錄
+    /// 取得要顯示的明細列表（根據編輯模式過濾）
     /// </summary>
-    private bool IsCurrentSetoffRecord(SetoffDetailDto detail)
+    private List<SetoffDetailDto> GetDisplayDetails()
     {
-        return detail.ThisTimeAmount > 0 || detail.ThisTimeDiscountAmount > 0;
+        if (IsEditMode)
+        {
+            // 編輯模式：顯示原本載入時有沖款或折讓記錄的項目
+            // 使用 OriginalThisTimeAmount 和 OriginalThisTimeDiscountAmount 來判斷
+            // 這樣即使使用者清空數字，該列仍會保留在畫面上
+            return Details.Where(d => d.OriginalThisTimeAmount > 0 || d.OriginalThisTimeDiscountAmount > 0).ToList();
+        }
+        else
+        {
+            // 新增模式：顯示所有未結清的項目
+            return Details;
+        }
     }
     #endregion
 
@@ -198,6 +209,7 @@
                     return @<span>@detail.TotalAmount.ToString("N0")</span>;
                 }
             },
+            
             new InteractiveColumnDefinition
             {
                 Title = "已沖款",
@@ -208,7 +220,8 @@
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
-                    return @<span>@detail.SettledAmount.ToString("N0")</span>;
+                    // 使用 DynamicSettledAmount 來顯示包含當前編輯的沖款金額
+                    return @<span>@detail.DynamicSettledAmount.ToString("N0")</span>;
                 }
             },
             new InteractiveColumnDefinition
@@ -221,22 +234,26 @@
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
-                    return @<span>@detail.DiscountedAmount.ToString("N0")</span>;
+                    // 使用 DynamicDiscountedAmount 來顯示包含當前編輯的折讓金額
+                    return @<span>@detail.DynamicDiscountedAmount.ToString("N0")</span>;
                 }
             },
+
             new InteractiveColumnDefinition
             {
                 Title = "待沖款",
                 PropertyName = nameof(SetoffDetailDto.PendingAmount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
-                CellCssClass = "text-end text-warning",
+                CellCssClass = "text-end text-danger",
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
-                    return @<span class="fw-bold">@detail.PendingAmount.ToString("N0")</span>;
+                    // 使用 DynamicPendingAmount 來顯示包含當前編輯的沖款和折讓金額
+                    return @<span>@detail.DynamicPendingAmount.ToString("N0")</span>;
                 }
             },
+
             new InteractiveColumnDefinition
             {
                 Title = "本次沖款",
@@ -296,9 +313,27 @@
             }
             else if (decimal.TryParse(args.value, out var amount))
             {
+                // 計算可用於沖款的最大金額
+                decimal maxAmount;
+                
+                if (args.detail.IsEditMode)
+                {
+                    // 編輯模式：使用原始待沖款金額（排除當前沖款單的影響）
+                    // 原始待沖款 = 總金額 - (已沖款 - 原始本次沖款) - (已折讓 - 原始本次折讓)
+                    var basePending = args.detail.TotalAmount 
+                        - (args.detail.SettledAmount - args.detail.OriginalThisTimeAmount) 
+                        - (args.detail.DiscountedAmount - args.detail.OriginalThisTimeDiscountAmount);
+                    // 可用沖款額度 = 原始待沖款 - 本次折讓
+                    maxAmount = basePending - args.detail.ThisTimeDiscountAmount;
+                }
+                else
+                {
+                    // 新增模式：待沖款金額 - 本次折讓金額
+                    maxAmount = args.detail.PendingAmount - args.detail.ThisTimeDiscountAmount;
+                }
+                
                 // 確保金額不超過可用金額，且不為負數
-                var availableAmount = args.detail.PendingAmount - args.detail.ThisTimeDiscountAmount;
-                args.detail.ThisTimeAmount = Math.Max(0, Math.Min(amount, availableAmount));
+                args.detail.ThisTimeAmount = Math.Max(0, Math.Min(amount, maxAmount));
             }
             else
             {
@@ -333,9 +368,28 @@
             }
             else if (decimal.TryParse(args.value, out var amount))
             {
+                // 計算可用於折讓的最大金額
+                // 使用 PendingAmountForValidation 來獲取正確的待沖款金額（編輯模式下會排除當前沖款單的影響）
+                decimal maxDiscountAmount;
+                
+                if (args.detail.IsEditMode)
+                {
+                    // 編輯模式：使用原始待沖款金額（排除當前沖款單的影響）
+                    // 待沖款 = 總金額 - (已沖款 - 原始本次沖款) - (已折讓 - 原始本次折讓) - 本次沖款
+                    var basePending = args.detail.TotalAmount 
+                        - (args.detail.SettledAmount - args.detail.OriginalThisTimeAmount) 
+                        - (args.detail.DiscountedAmount - args.detail.OriginalThisTimeDiscountAmount);
+                    maxDiscountAmount = basePending - args.detail.ThisTimeAmount;
+                }
+                else
+                {
+                    // 新增模式：待沖款金額 - 本次沖款金額
+                    maxDiscountAmount = args.detail.PendingAmount - args.detail.ThisTimeAmount;
+                }
+                
                 // 確保金額不超過可用金額，且不為負數
-                var availableAmount = args.detail.PendingAmount - args.detail.ThisTimeAmount;
-                args.detail.ThisTimeDiscountAmount = Math.Max(0, Math.Min(amount, availableAmount));
+                var finalAmount = Math.Max(0, Math.Min(amount, maxDiscountAmount));
+                args.detail.ThisTimeDiscountAmount = finalAmount;
             }
             else
             {
@@ -408,6 +462,32 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleValidationFailed), GetType());
         }
     }
+    
+    /// <summary>
+    /// 從選擇中移除指定項目（清除沖款金額）
+    /// </summary>
+    private async Task RemoveItemFromSelection(SetoffDetailDto item)
+    {
+        try
+        {
+            item.ThisTimeAmount = 0;
+            item.ThisTimeDiscountAmount = 0;
+            
+            // 驗證所有金額
+            ValidateAmounts();
+            
+            // 通知選擇變更
+            await NotifySelectionChanged();
+            
+            // 在編輯模式下，清空金額後會自動從顯示列表中移除（因為 GetDisplayDetails 會過濾）
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(RemoveItemFromSelection), GetType());
+        }
+    }
+
 
     /// <summary>
     /// 通知選擇變更

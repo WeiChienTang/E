@@ -86,7 +86,7 @@ namespace ERPCore2.Services
                     .Include(ft => ft.Company)
                     .Include(ft => ft.PaymentMethod)
                     .Where(ft => ft.TransactionNumber.Contains(searchTerm) ||
-                                ft.Description!.Contains(searchTerm) ||
+                                ft.Remarks!.Contains(searchTerm) ||
                                 ft.SourceDocumentNumber!.Contains(searchTerm) ||
                                 ft.Customer!.CompanyName.Contains(searchTerm) ||
                                 ft.Company.CompanyName.Contains(searchTerm))
@@ -150,7 +150,7 @@ namespace ERPCore2.Services
                 // 沖銷交易驗證
                 if (entity.IsReversed)
                 {
-                    if (string.IsNullOrWhiteSpace(entity.ReversalReason))
+                    if (string.IsNullOrWhiteSpace(entity.Remarks))
                         errors.Add("已沖銷交易必須填寫沖銷原因");
                     
                     if (!entity.ReversedDate.HasValue)
@@ -413,7 +413,7 @@ namespace ERPCore2.Services
                     TransactionType = transaction.TransactionType,
                     TransactionDate = DateTime.Now,
                     Amount = -transaction.Amount, // 負值表示沖銷
-                    Description = $"沖銷交易：{transaction.TransactionNumber}",
+                    Remarks = $"沖銷交易：{transaction.TransactionNumber}",
                     CustomerId = transaction.CustomerId,
                     VendorId = transaction.VendorId,
                     CompanyId = transaction.CompanyId,
@@ -438,7 +438,7 @@ namespace ERPCore2.Services
                 // 更新原交易狀態
                 transaction.IsReversed = true;
                 transaction.ReversedDate = DateTime.Now;
-                transaction.ReversalReason = reversalReason;
+                transaction.Remarks = reversalReason;
                 transaction.ReversalTransactionId = reversalTransaction.Id;
                 transaction.UpdatedAt = DateTime.Now;
                 
