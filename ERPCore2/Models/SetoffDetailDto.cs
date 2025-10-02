@@ -246,15 +246,32 @@ namespace ERPCore2.Models
         /// <returns>驗證結果</returns>
         public (bool IsValid, string? ErrorMessage) ValidateThisTimeAmount()
         {
-            if (ThisTimeAmount < 0)
-            {
-                return (false, "沖款金額不能為負數");
-            }
-
             var pendingForValidation = PendingAmountForValidation;
-            if (ThisTimeAmount > pendingForValidation)
+            
+            // 根據待沖款的正負號進行驗證
+            if (pendingForValidation >= 0)
             {
-                return (false, $"沖款金額不能超過待沖款金額 {pendingForValidation:N2}");
+                // 正常應收（例如銷貨訂單）：沖款金額必須為正數且不超過待沖款
+                if (ThisTimeAmount < 0)
+                {
+                    return (false, "沖款金額不能為負數");
+                }
+                if (ThisTimeAmount > pendingForValidation)
+                {
+                    return (false, $"沖款金額不能超過待沖款金額 {pendingForValidation:N2}");
+                }
+            }
+            else
+            {
+                // 銷貨退回（應付給客戶）：沖款金額必須為負數且不小於待沖款
+                if (ThisTimeAmount > 0)
+                {
+                    return (false, "退款金額必須為負數（使用括號輸入，例如 (1000)）");
+                }
+                if (ThisTimeAmount < pendingForValidation)
+                {
+                    return (false, $"退款金額不能超過待退款金額 ({Math.Abs(pendingForValidation):N2})");
+                }
             }
 
             return (true, null);
@@ -266,15 +283,33 @@ namespace ERPCore2.Models
         /// <returns>驗證結果</returns>
         public (bool IsValid, string? ErrorMessage) ValidateThisTimeDiscountAmount()
         {
-            if (ThisTimeDiscountAmount < 0)
-            {
-                return (false, "折讓金額不能為負數");
-            }
-
             var pendingForValidation = PendingAmountForValidation;
-            if (ThisTimeDiscountAmount > pendingForValidation)
+            
+            // 根據待沖款的正負號進行驗證
+            if (pendingForValidation >= 0)
             {
-                return (false, $"折讓金額不能超過待沖款金額 {pendingForValidation:N2}");
+                // 正常應收（例如銷貨訂單）：折讓金額必須為正數且不超過待沖款
+                if (ThisTimeDiscountAmount < 0)
+                {
+                    return (false, "折讓金額不能為負數");
+                }
+                if (ThisTimeDiscountAmount > pendingForValidation)
+                {
+                    return (false, $"折讓金額不能超過待沖款金額 {pendingForValidation:N2}");
+                }
+            }
+            else
+            {
+                // 銷貨退回（應付給客戶）：折讓金額必須為負數且不小於剩餘待沖款
+                if (ThisTimeDiscountAmount > 0)
+                {
+                    return (false, "退款折讓金額必須為負數（使用括號輸入，例如 (1000)）");
+                }
+                var remainingPending = pendingForValidation - ThisTimeAmount;
+                if (ThisTimeDiscountAmount < remainingPending)
+                {
+                    return (false, $"折讓金額不能超過剩餘待退款金額 ({Math.Abs(remainingPending):N2})");
+                }
             }
 
             return (true, null);
@@ -287,16 +322,32 @@ namespace ERPCore2.Models
         public (bool IsValid, string? ErrorMessage) ValidateTotalThisTimeAmount()
         {
             var totalThisTime = ThisTimeAmount + ThisTimeDiscountAmount;
-            
-            if (totalThisTime < 0)
-            {
-                return (false, "沖款和折讓總金額不能為負數");
-            }
-
             var pendingForValidation = PendingAmountForValidation;
-            if (totalThisTime > pendingForValidation)
+            
+            // 根據待沖款的正負號進行驗證
+            if (pendingForValidation >= 0)
             {
-                return (false, $"沖款和折讓總金額 ({totalThisTime:N2}) 不能超過待沖款金額 {pendingForValidation:N2}");
+                // 正常應收（例如銷貨訂單）：總金額必須為正數且不超過待沖款
+                if (totalThisTime < 0)
+                {
+                    return (false, "沖款和折讓總金額不能為負數");
+                }
+                if (totalThisTime > pendingForValidation)
+                {
+                    return (false, $"沖款和折讓總金額 ({totalThisTime:N2}) 不能超過待沖款金額 {pendingForValidation:N2}");
+                }
+            }
+            else
+            {
+                // 銷貨退回（應付給客戶）：總金額必須為負數且絕對值不超過待退款絕對值
+                if (totalThisTime > 0)
+                {
+                    return (false, "退款和折讓總金額必須為負數");
+                }
+                if (totalThisTime < pendingForValidation)
+                {
+                    return (false, $"退款和折讓總金額 ({Math.Abs(totalThisTime):N2}) 不能超過待退款金額 ({Math.Abs(pendingForValidation):N2})");
+                }
             }
 
             return (true, null);

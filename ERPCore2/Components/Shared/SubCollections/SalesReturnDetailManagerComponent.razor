@@ -91,13 +91,6 @@ else
     // ===== 編輯模式參數 =====
     [Parameter] public bool IsEditMode { get; set; } = false;
     
-    // ===== 顯示標籤參數 =====
-    [Parameter] public string OriginalQuantityLabel { get; set; } = "原始數量";
-    [Parameter] public string ReturnQuantityLabel { get; set; } = "退回數量";
-    [Parameter] public string ReturnPriceLabel { get; set; } = "退回單價";
-    [Parameter] public string RemarksLabel { get; set; } = "備註";
-    [Parameter] public string QualityConditionLabel { get; set; } = "品質狀況";
-    
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "退貨明細";
     [Parameter] public string Subtitle { get; set; } = "";
@@ -217,7 +210,7 @@ else
         // 原始銷售數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = OriginalQuantityLabel, 
+            Title = "原始數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -234,7 +227,7 @@ else
         // 退貨數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = ReturnQuantityLabel, 
+            Title = "退貨數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -263,7 +256,7 @@ else
         // 單價欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = ReturnPriceLabel, 
+            Title = "退貨單價", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -281,7 +274,7 @@ else
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = RemarksLabel, 
+            Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -302,7 +295,7 @@ else
 
     private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
     {
-        if (column.Title == ReturnPriceLabel)
+        if (column.Title == "退貨單價")
         {
             <strong class="text-danger">總計: @GetTotalAmount().ToString("C")</strong>
         }
@@ -378,8 +371,8 @@ else
                 OriginalUnitPrice = orderDetail?.UnitPrice ?? detail.OriginalUnitPrice,
                 ReturnUnitPrice = detail.ReturnUnitPrice,
                 QualityCondition = detail.QualityCondition ?? string.Empty,
-                ReturnReason = detail.Remarks ?? string.Empty,
-                Remarks = string.Empty,
+                ReturnReason = string.Empty,
+                Remarks = detail.Remarks ?? string.Empty,
                 ExistingDetailEntity = detail
             };
             
@@ -693,7 +686,7 @@ else
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
             item.ExistingDetailEntity.ReturnUnitPrice = item.ReturnUnitPrice;
             item.ExistingDetailEntity.QualityCondition = item.QualityCondition;
-            item.ExistingDetailEntity.Remarks = item.ReturnReason;
+            item.ExistingDetailEntity.Remarks = item.Remarks;
             
             return item.ExistingDetailEntity;
         }
@@ -707,7 +700,7 @@ else
             OriginalUnitPrice = item.OriginalUnitPrice,
             ReturnUnitPrice = item.ReturnUnitPrice,
             QualityCondition = item.QualityCondition,
-            Remarks = item.ReturnReason
+            Remarks = item.Remarks
         };
     }
 

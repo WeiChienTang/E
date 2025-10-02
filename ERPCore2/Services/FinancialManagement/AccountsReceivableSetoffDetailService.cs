@@ -655,35 +655,34 @@ namespace ERPCore2.Services
                                     && !ft.IsReversed)
                         .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
                     
-                    var pendingAmount = detail.SubtotalAmount - detail.TotalReceivedAmount - discountedAmount;
-                    if (pendingAmount > 0)
+                    // 只要 IsSettled = false 就顯示，不管金額是多少
+                    // 因為已經在 WHERE 條件中過濾了 !sod.IsSettled，所以這裡直接加入
+                    // var pendingAmount = detail.SubtotalAmount - detail.TotalReceivedAmount - discountedAmount;
+                    result.Add(new SetoffDetailDto
                     {
-                        result.Add(new SetoffDetailDto
-                        {
-                            Id = result.Count + 1,
-                            OriginalEntityId = detail.Id,
-                            Type = "SalesOrder",
-                            DocumentNumber = detail.SalesOrder.SalesOrderNumber,
-                            DocumentDate = detail.SalesOrder.OrderDate,
-                            ProductId = detail.ProductId,
-                            ProductName = detail.Product?.Name ?? "未知商品",
-                            ProductCode = detail.Product?.Code ?? "",
-                            Quantity = detail.OrderQuantity,
-                            UnitPrice = detail.UnitPrice,
-                            TotalAmount = detail.SubtotalAmount,
-                            SettledAmount = detail.TotalReceivedAmount,
-                            DiscountedAmount = discountedAmount,  // 設定已折讓金額
-                            ThisTimeAmount = 0, // 新增模式預設為0
-                            ThisTimeDiscountAmount = 0, // 新增模式預設為0
-                            OriginalThisTimeAmount = 0, // 新增模式原始值為0
-                            OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
-                            IsEditMode = false, // 標記為新增模式
-                            IsSettled = detail.IsSettled,
-                            PartnerId = customerId,
-                            PartnerName = detail.SalesOrder.Customer?.CompanyName ?? "",
-                            Currency = "TWD"
-                        });
-                    }
+                        Id = result.Count + 1,
+                        OriginalEntityId = detail.Id,
+                        Type = "SalesOrder",
+                        DocumentNumber = detail.SalesOrder.SalesOrderNumber,
+                        DocumentDate = detail.SalesOrder.OrderDate,
+                        ProductId = detail.ProductId,
+                        ProductName = detail.Product?.Name ?? "未知商品",
+                        ProductCode = detail.Product?.Code ?? "",
+                        Quantity = detail.OrderQuantity,
+                        UnitPrice = detail.UnitPrice,
+                        TotalAmount = detail.SubtotalAmount,
+                        SettledAmount = detail.TotalReceivedAmount,
+                        DiscountedAmount = discountedAmount,  // 設定已折讓金額
+                        ThisTimeAmount = 0, // 新增模式預設為0
+                        ThisTimeDiscountAmount = 0, // 新增模式預設為0
+                        OriginalThisTimeAmount = 0, // 新增模式原始值為0
+                        OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
+                        IsEditMode = false, // 標記為新增模式
+                        IsSettled = detail.IsSettled,
+                        PartnerId = customerId,
+                        PartnerName = detail.SalesOrder.Customer?.CompanyName ?? "",
+                        Currency = "TWD"
+                    });
                 }
 
                 // 取得未結清的銷貨退回明細
@@ -704,35 +703,37 @@ namespace ERPCore2.Services
                                     && !ft.IsReversed)
                         .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
                     
-                    var pendingAmount = detail.ReturnSubtotalAmount - detail.TotalPaidAmount - discountedAmount;
-                    if (pendingAmount > 0)
+                    // 銷貨退回的 ReturnSubtotalAmount 為負數（表示應付給客戶）
+                    // 待沖款 = 退款總額（負數） - 已付款（負數） - 已折讓（負數）
+                    // var pendingAmount = detail.ReturnSubtotalAmount - detail.TotalPaidAmount - discountedAmount;
+                    
+                    // 只要 IsSettled = false 就顯示，不管金額是多少
+                    // 因為已經在 WHERE 條件中過濾了 !srd.IsSettled，所以這裡直接加入
+                    result.Add(new SetoffDetailDto
                     {
-                        result.Add(new SetoffDetailDto
-                        {
-                            Id = result.Count + 1,
-                            OriginalEntityId = detail.Id,
-                            Type = "SalesReturn",
-                            DocumentNumber = detail.SalesReturn.SalesReturnNumber,
-                            DocumentDate = detail.SalesReturn.ReturnDate,
-                            ProductId = detail.ProductId,
-                            ProductName = detail.Product?.Name ?? "未知商品",
-                            ProductCode = detail.Product?.Code ?? "",
-                            Quantity = detail.ReturnQuantity,
-                            UnitPrice = detail.ReturnUnitPrice,
-                            TotalAmount = detail.ReturnSubtotalAmount,
-                            SettledAmount = detail.TotalPaidAmount,
-                            DiscountedAmount = discountedAmount,  // 設定已折讓金額
-                            ThisTimeAmount = 0, // 新增模式預設為0
-                            ThisTimeDiscountAmount = 0, // 新增模式預設為0
-                            OriginalThisTimeAmount = 0, // 新增模式原始值為0
-                            OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
-                            IsEditMode = false, // 標記為新增模式
-                            IsSettled = detail.IsSettled,
-                            PartnerId = customerId,
-                            PartnerName = detail.SalesReturn.Customer?.CompanyName ?? "",
-                            Currency = "TWD"
-                        });
-                    }
+                        Id = result.Count + 1,
+                        OriginalEntityId = detail.Id,
+                        Type = "SalesReturn",
+                        DocumentNumber = detail.SalesReturn.SalesReturnNumber,
+                        DocumentDate = detail.SalesReturn.ReturnDate,
+                        ProductId = detail.ProductId,
+                        ProductName = detail.Product?.Name ?? "未知商品",
+                        ProductCode = detail.Product?.Code ?? "",
+                        Quantity = detail.ReturnQuantity,
+                        UnitPrice = detail.ReturnUnitPrice,
+                        TotalAmount = detail.ReturnSubtotalAmount,
+                        SettledAmount = detail.TotalPaidAmount,
+                        DiscountedAmount = discountedAmount,  // 設定已折讓金額
+                        ThisTimeAmount = 0, // 新增模式預設為0
+                        ThisTimeDiscountAmount = 0, // 新增模式預設為0
+                        OriginalThisTimeAmount = 0, // 新增模式原始值為0
+                        OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
+                        IsEditMode = false, // 標記為新增模式
+                        IsSettled = detail.IsSettled,
+                        PartnerId = customerId,
+                        PartnerName = detail.SalesReturn.Customer?.CompanyName ?? "",
+                        Currency = "TWD"
+                    });
                 }
 
                 return result.OrderBy(r => r.DocumentDate).ToList();
@@ -861,6 +862,7 @@ namespace ERPCore2.Services
 
                 foreach (var detail in salesReturnDetails)
                 {
+                    // 銷貨退回金額為負數（表示應付給客戶）
                     var totalAmount = detail.ReturnSubtotalAmount;
                     
                     // 檢查是否在當前沖款單中有記錄

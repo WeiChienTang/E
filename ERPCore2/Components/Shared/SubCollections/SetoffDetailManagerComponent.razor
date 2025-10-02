@@ -89,7 +89,7 @@
     private int _previousDetailsCount = 0; // 追蹤資料數量
     
     private List<SetoffDetailDto> SelectedDetails => 
-        Details.Where(d => d.ThisTimeAmount > 0 || d.ThisTimeDiscountAmount > 0).ToList();
+        Details.Where(d => d.ThisTimeAmount != 0 || d.ThisTimeDiscountAmount != 0).ToList();
     
     /// <summary>
     /// 取得要顯示的明細列表（根據編輯模式過濾）
@@ -101,12 +101,12 @@
             // 編輯模式：顯示原本載入時有沖款或折讓記錄的項目
             // 使用 OriginalThisTimeAmount 和 OriginalThisTimeDiscountAmount 來判斷
             // 這樣即使使用者清空數字，該列仍會保留在畫面上
-            return Details.Where(d => d.OriginalThisTimeAmount > 0 || d.OriginalThisTimeDiscountAmount > 0).ToList();
+            return Details.Where(d => d.OriginalThisTimeAmount != 0 || d.OriginalThisTimeDiscountAmount != 0).ToList();
         }
         else
         {
-            // 新增模式：顯示所有未結清的項目
-            return Details;
+            // 新增模式：只顯示未結清的項目 (IsSettled = false)
+            return Details.Where(d => !d.IsSettled).ToList();
         }
     }
     #endregion
@@ -328,7 +328,11 @@
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
-                    return @<span>@detail.TotalAmount.ToString("N0")</span>;
+                    var cssClass = detail.TotalAmount < 0 ? "text-danger" : "";
+                    var displayValue = detail.TotalAmount < 0 
+                        ? $"({Math.Abs(detail.TotalAmount):N0})" 
+                        : detail.TotalAmount.ToString("N0");
+                    return @<span class="@cssClass">@displayValue</span>;
                 }
             },
             
@@ -343,7 +347,12 @@
                 {
                     var detail = (SetoffDetailDto)item;
                     // 使用 DynamicSettledAmount 來顯示包含當前編輯的沖款金額
-                    return @<span>@detail.DynamicSettledAmount.ToString("N0")</span>;
+                    var amount = detail.DynamicSettledAmount;
+                    var cssClass = amount < 0 ? "text-danger" : "";
+                    var displayValue = amount < 0 
+                        ? $"({Math.Abs(amount):N0})" 
+                        : amount.ToString("N0");
+                    return @<span class="@cssClass">@displayValue</span>;
                 }
             },
             new InteractiveColumnDefinition
@@ -357,7 +366,11 @@
                 {
                     var detail = (SetoffDetailDto)item;
                     // 使用 DynamicDiscountedAmount 來顯示包含當前編輯的折讓金額
-                    return @<span>@detail.DynamicDiscountedAmount.ToString("N0")</span>;
+                    var amount = detail.DynamicDiscountedAmount;
+                    var displayValue = amount < 0 
+                        ? $"({Math.Abs(amount):N0})" 
+                        : amount.ToString("N0");
+                    return @<span>@displayValue</span>;
                 }
             },
 
@@ -367,12 +380,17 @@
                 PropertyName = nameof(SetoffDetailDto.PendingAmount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
-                CellCssClass = "text-end text-danger",
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
                     // 使用 DynamicPendingAmount 來顯示包含當前編輯的沖款和折讓金額
-                    return @<span>@detail.DynamicPendingAmount.ToString("N0")</span>;
+                    var amount = detail.DynamicPendingAmount;
+                    // 負數表示公司應付給客戶（銷貨退回），正數表示客戶應付給公司（銷貨訂單）
+                    var cssClass = amount < 0 ? "text-end text-primary fw-bold" : "text-end text-danger";
+                    var displayValue = amount < 0 
+                        ? $"({Math.Abs(amount):N0})" 
+                        : amount.ToString("N0");
+                    return @<span class="@cssClass">@displayValue</span>;
                 }
             },
 
@@ -386,14 +404,22 @@
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
+                    // 顯示：正數直接顯示，負數用括號顯示，0 為空
+                    var displayValue = detail.ThisTimeAmount != 0 
+                        ? (detail.ThisTimeAmount < 0 
+                            ? $"({Math.Abs(detail.ThisTimeAmount):N0})" 
+                            : detail.ThisTimeAmount.ToString("N0"))
+                        : "";
+                    var inputClass = detail.ThisTimeAmount < 0 
+                        ? "form-control form-control-sm text-end text-primary" 
+                        : "form-control form-control-sm text-end";
                     
                     return @<input type="text"
-                                  class="form-control form-control-sm text-end"
-                                  value="@(detail.ThisTimeAmount > 0 ? detail.ThisTimeAmount.ToString("N0") : "")"
-                                  pattern="[0-9]*"
-                                  inputmode="numeric"
+                                  class="@inputClass"
+                                  value="@displayValue"
                                   @oninput="@(async (e) => await HandleAmountChanged((detail, e.Value?.ToString())))"
-                                  readonly="@IsReadOnly" />;
+                                  readonly="@IsReadOnly"
+                                  placeholder="@(detail.TotalAmount < 0 ? "退款金額" : "")" />;
                 }
             },
             new InteractiveColumnDefinition
@@ -406,14 +432,22 @@
                 CustomTemplate = item =>
                 {
                     var detail = (SetoffDetailDto)item;
+                    // 顯示：正數直接顯示，負數用括號顯示，0 為空
+                    var displayValue = detail.ThisTimeDiscountAmount != 0 
+                        ? (detail.ThisTimeDiscountAmount < 0 
+                            ? $"({Math.Abs(detail.ThisTimeDiscountAmount):N0})" 
+                            : detail.ThisTimeDiscountAmount.ToString("N0"))
+                        : "";
+                    var inputClass = detail.ThisTimeDiscountAmount < 0 
+                        ? "form-control form-control-sm text-end text-primary" 
+                        : "form-control form-control-sm text-end";
                     
                     return @<input type="text"
-                                  class="form-control form-control-sm text-end"
-                                  value="@(detail.ThisTimeDiscountAmount > 0 ? detail.ThisTimeDiscountAmount.ToString("N0") : "")"
-                                  pattern="[0-9]*"
-                                  inputmode="numeric"
+                                  class="@inputClass"
+                                  value="@displayValue"
                                   @oninput="@(async (e) => await HandleDiscountAmountChanged((detail, e.Value?.ToString())))"
-                                  readonly="@IsReadOnly" />;
+                                  readonly="@IsReadOnly"
+                                  placeholder="@(detail.TotalAmount < 0 ? "折讓金額" : "")" />;
                 }
             },
             new ()
@@ -439,35 +473,64 @@
                 // 當輸入為空時，設置為 0，但保持可編輯狀態
                 args.detail.ThisTimeAmount = 0;
             }
-            else if (decimal.TryParse(args.value, out var amount))
+            else
             {
-                // 計算可用於沖款的最大金額
-                decimal maxAmount;
+                // 處理括號格式的負數輸入，例如 "(1000)" -> -1000
+                var cleanValue = args.value.Trim();
+                bool isNegative = false;
                 
-                if (args.detail.IsEditMode)
+                if (cleanValue.StartsWith("(") && cleanValue.EndsWith(")"))
                 {
-                    // 編輯模式：使用原始待沖款金額（排除當前沖款單的影響）
-                    // 原始待沖款 = 總金額 - (已沖款 - 原始本次沖款) - (已折讓 - 原始本次折讓)
-                    var basePending = args.detail.TotalAmount 
-                        - (args.detail.SettledAmount - args.detail.OriginalThisTimeAmount) 
-                        - (args.detail.DiscountedAmount - args.detail.OriginalThisTimeDiscountAmount);
-                    // 可用沖款額度 = 原始待沖款 - 本次折讓
-                    maxAmount = basePending - args.detail.ThisTimeDiscountAmount;
+                    isNegative = true;
+                    cleanValue = cleanValue.Substring(1, cleanValue.Length - 2);
+                }
+                else if (cleanValue.StartsWith("-"))
+                {
+                    isNegative = true;
+                    cleanValue = cleanValue.Substring(1);
+                }
+                
+                // 移除千分位符號
+                cleanValue = cleanValue.Replace(",", "");
+                
+                if (decimal.TryParse(cleanValue, out var amount))
+                {
+                    if (isNegative) amount = -amount;
+                    
+                    // 計算可用於沖款的最大金額（考慮正負號）
+                    decimal maxAmount;
+                    
+                    if (args.detail.IsEditMode)
+                    {
+                        // 編輯模式：使用原始待沖款金額（排除當前沖款單的影響）
+                        var basePending = args.detail.TotalAmount 
+                            - (args.detail.SettledAmount - args.detail.OriginalThisTimeAmount) 
+                            - (args.detail.DiscountedAmount - args.detail.OriginalThisTimeDiscountAmount);
+                        maxAmount = basePending - args.detail.ThisTimeDiscountAmount;
+                    }
+                    else
+                    {
+                        // 新增模式：待沖款金額 - 本次折讓金額
+                        maxAmount = args.detail.PendingAmount - args.detail.ThisTimeDiscountAmount;
+                    }
+                    
+                    // 根據待沖款的正負號來限制輸入
+                    if (maxAmount >= 0)
+                    {
+                        // 正常應收：限制在 0 到 maxAmount 之間
+                        args.detail.ThisTimeAmount = Math.Max(0, Math.Min(amount, maxAmount));
+                    }
+                    else
+                    {
+                        // 銷貨退回（應付給客戶）：限制在 maxAmount 到 0 之間
+                        args.detail.ThisTimeAmount = Math.Min(0, Math.Max(amount, maxAmount));
+                    }
                 }
                 else
                 {
-                    // 新增模式：待沖款金額 - 本次折讓金額
-                    maxAmount = args.detail.PendingAmount - args.detail.ThisTimeDiscountAmount;
+                    // 輸入無效時，保持原值不變
+                    return;
                 }
-                
-                // 確保金額不超過可用金額，且不為負數
-                args.detail.ThisTimeAmount = Math.Max(0, Math.Min(amount, maxAmount));
-            }
-            else
-            {
-                // 輸入無效時，保持原值不變，不要設置為 0
-                // 這樣可以避免在用戶輸入過程中破壞編輯狀態
-                return;
             }
             
             // 驗證所有金額
@@ -494,35 +557,64 @@
                 // 當輸入為空時，設置為 0，但保持可編輯狀態
                 args.detail.ThisTimeDiscountAmount = 0;
             }
-            else if (decimal.TryParse(args.value, out var amount))
+            else
             {
-                // 計算可用於折讓的最大金額
-                // 使用 PendingAmountForValidation 來獲取正確的待沖款金額（編輯模式下會排除當前沖款單的影響）
-                decimal maxDiscountAmount;
+                // 處理括號格式的負數輸入，例如 "(1000)" -> -1000
+                var cleanValue = args.value.Trim();
+                bool isNegative = false;
                 
-                if (args.detail.IsEditMode)
+                if (cleanValue.StartsWith("(") && cleanValue.EndsWith(")"))
                 {
-                    // 編輯模式：使用原始待沖款金額（排除當前沖款單的影響）
-                    // 待沖款 = 總金額 - (已沖款 - 原始本次沖款) - (已折讓 - 原始本次折讓) - 本次沖款
-                    var basePending = args.detail.TotalAmount 
-                        - (args.detail.SettledAmount - args.detail.OriginalThisTimeAmount) 
-                        - (args.detail.DiscountedAmount - args.detail.OriginalThisTimeDiscountAmount);
-                    maxDiscountAmount = basePending - args.detail.ThisTimeAmount;
+                    isNegative = true;
+                    cleanValue = cleanValue.Substring(1, cleanValue.Length - 2);
+                }
+                else if (cleanValue.StartsWith("-"))
+                {
+                    isNegative = true;
+                    cleanValue = cleanValue.Substring(1);
+                }
+                
+                // 移除千分位符號
+                cleanValue = cleanValue.Replace(",", "");
+                
+                if (decimal.TryParse(cleanValue, out var amount))
+                {
+                    if (isNegative) amount = -amount;
+                    
+                    // 計算可用於折讓的最大金額（考慮正負號）
+                    decimal maxDiscountAmount;
+                    
+                    if (args.detail.IsEditMode)
+                    {
+                        // 編輯模式：使用原始待沖款金額（排除當前沖款單的影響）
+                        var basePending = args.detail.TotalAmount 
+                            - (args.detail.SettledAmount - args.detail.OriginalThisTimeAmount) 
+                            - (args.detail.DiscountedAmount - args.detail.OriginalThisTimeDiscountAmount);
+                        maxDiscountAmount = basePending - args.detail.ThisTimeAmount;
+                    }
+                    else
+                    {
+                        // 新增模式：待沖款金額 - 本次沖款金額
+                        maxDiscountAmount = args.detail.PendingAmount - args.detail.ThisTimeAmount;
+                    }
+                    
+                    // 根據待沖款的正負號來限制輸入
+                    if (maxDiscountAmount >= 0)
+                    {
+                        // 正常應收：限制在 0 到 maxDiscountAmount 之間
+                        args.detail.ThisTimeDiscountAmount = Math.Max(0, Math.Min(amount, maxDiscountAmount));
+                    }
+                    else
+                    {
+                        // 銷貨退回（應付給客戶）：限制在 maxDiscountAmount 到 0 之間
+                        args.detail.ThisTimeDiscountAmount = Math.Min(0, Math.Max(amount, maxDiscountAmount));
+                    }
                 }
                 else
                 {
-                    // 新增模式：待沖款金額 - 本次沖款金額
-                    maxDiscountAmount = args.detail.PendingAmount - args.detail.ThisTimeAmount;
+                    // 輸入無效時，保持原值不變
+                    return;
                 }
-                
-                // 確保金額不超過可用金額，且不為負數
-                var finalAmount = Math.Max(0, Math.Min(amount, maxDiscountAmount));
-                args.detail.ThisTimeDiscountAmount = finalAmount;
-            }
-            else
-            {
-                // 輸入無效時，保持原值不變
-                return;
             }
             
             // 驗證所有金額

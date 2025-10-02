@@ -180,32 +180,30 @@ namespace ERPCore2.Services
                                 && !ft.IsReversed)
                     .SumAsync(ft => ft.CurrentDiscountAmount);
 
-                var pendingAmount = totalAmount - settledAmount - discountedAmount;
-
-                if (pendingAmount > 0)
+                // 只要 IsSettled = false 就顯示，不管金額是多少
+                // 因為已經在 WHERE 條件中過濾了 !prd.IsSettled，所以這裡直接加入
+                // var pendingAmount = totalAmount - settledAmount - discountedAmount;
+                result.Add(new SetoffDetailDto
                 {
-                    result.Add(new SetoffDetailDto
-                    {
-                        Id = result.Count + 1,
-                        OriginalEntityId = detail.Id,
-                        Mode = SetoffMode.Payable,
-                        Type = "PurchaseReceiving",
-                        DocumentNumber = detail.PurchaseReceiving.ReceiptNumber,
-                        DocumentDate = detail.PurchaseReceiving.ReceiptDate,
-                        ProductId = detail.ProductId,
-                        ProductName = detail.Product?.Name ?? "未知商品",
-                        ProductCode = detail.Product?.Code ?? "",
-                        Quantity = detail.ReceivedQuantity,
-                        UnitPrice = detail.UnitPrice,
-                        TotalAmount = totalAmount,
-                        SettledAmount = settledAmount,
-                        DiscountedAmount = discountedAmount,
-                        IsSettled = detail.IsSettled,
-                        PartnerId = supplierId,
-                        PartnerName = detail.PurchaseReceiving.Supplier?.CompanyName ?? "",
-                        Currency = "TWD"
-                    });
-                }
+                    Id = result.Count + 1,
+                    OriginalEntityId = detail.Id,
+                    Mode = SetoffMode.Payable,
+                    Type = "PurchaseReceiving",
+                    DocumentNumber = detail.PurchaseReceiving.ReceiptNumber,
+                    DocumentDate = detail.PurchaseReceiving.ReceiptDate,
+                    ProductId = detail.ProductId,
+                    ProductName = detail.Product?.Name ?? "未知商品",
+                    ProductCode = detail.Product?.Code ?? "",
+                    Quantity = detail.ReceivedQuantity,
+                    UnitPrice = detail.UnitPrice,
+                    TotalAmount = totalAmount,
+                    SettledAmount = settledAmount,
+                    DiscountedAmount = discountedAmount,
+                    IsSettled = detail.IsSettled,
+                    PartnerId = supplierId,
+                    PartnerName = detail.PurchaseReceiving.Supplier?.CompanyName ?? "",
+                    Currency = "TWD"
+                });
             }
 
             // 2. 取得未結清的採購退回明細
@@ -228,32 +226,30 @@ namespace ERPCore2.Services
                                 && !ft.IsReversed)
                     .SumAsync(ft => ft.CurrentDiscountAmount);
 
-                var pendingAmount = totalAmount - settledAmount - discountedAmount;
-
-                if (pendingAmount > 0)
+                // 只要 IsSettled = false 就顯示，不管金額是多少
+                // 因為已經在 WHERE 條件中過濾了 !prd.IsSettled，所以這裡直接加入
+                // var pendingAmount = totalAmount - settledAmount - discountedAmount;
+                result.Add(new SetoffDetailDto
                 {
-                    result.Add(new SetoffDetailDto
-                    {
-                        Id = result.Count + 1,
-                        OriginalEntityId = detail.Id,
-                        Mode = SetoffMode.Payable,
-                        Type = "PurchaseReturn",
-                        DocumentNumber = detail.PurchaseReturn.PurchaseReturnNumber,
-                        DocumentDate = detail.PurchaseReturn.ReturnDate,
-                        ProductId = detail.ProductId,
-                        ProductName = detail.Product?.Name ?? "未知商品",
-                        ProductCode = detail.Product?.Code ?? "",
-                        Quantity = detail.ReturnQuantity,
-                        UnitPrice = detail.ReturnUnitPrice,
-                        TotalAmount = totalAmount,
-                        SettledAmount = settledAmount,
-                        DiscountedAmount = discountedAmount,
-                        IsSettled = detail.IsSettled,
-                        PartnerId = supplierId,
-                        PartnerName = detail.PurchaseReturn.Supplier?.CompanyName ?? "",
-                        Currency = "TWD"
-                    });
-                }
+                    Id = result.Count + 1,
+                    OriginalEntityId = detail.Id,
+                    Mode = SetoffMode.Payable,
+                    Type = "PurchaseReturn",
+                    DocumentNumber = detail.PurchaseReturn.PurchaseReturnNumber,
+                    DocumentDate = detail.PurchaseReturn.ReturnDate,
+                    ProductId = detail.ProductId,
+                    ProductName = detail.Product?.Name ?? "未知商品",
+                    ProductCode = detail.Product?.Code ?? "",
+                    Quantity = detail.ReturnQuantity,
+                    UnitPrice = detail.ReturnUnitPrice,
+                    TotalAmount = totalAmount,
+                    SettledAmount = settledAmount,
+                    DiscountedAmount = discountedAmount,
+                    IsSettled = detail.IsSettled,
+                    PartnerId = supplierId,
+                    PartnerName = detail.PurchaseReturn.Supplier?.CompanyName ?? "",
+                    Currency = "TWD"
+                });
             }
 
             return result.OrderBy(r => r.DocumentDate).ToList();
