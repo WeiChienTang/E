@@ -56,16 +56,15 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
 
-        [Required(ErrorMessage = "退回原因為必填")]
         [Display(Name = "退回原因")]
         [ForeignKey(nameof(ReturnReason))]
-        public int ReturnReasonId { get; set; }
+        public int? ReturnReasonId { get; set; }
 
         // Navigation Properties
         public Customer Customer { get; set; } = null!;
         public SalesOrder? SalesOrder { get; set; }
         public Employee? Employee { get; set; }
-        public EntitySalesReturnReason ReturnReason { get; set; } = null!;
+        public EntitySalesReturnReason? ReturnReason { get; set; }
         public ICollection<SalesReturnDetail> SalesReturnDetails { get; set; } = new List<SalesReturnDetail>();
     }
 }

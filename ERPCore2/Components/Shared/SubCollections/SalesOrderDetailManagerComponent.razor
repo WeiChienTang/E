@@ -254,7 +254,7 @@ else
                     UnitPrice = salesDetail.UnitPrice,
                     DiscountPercentage = salesDetail.DiscountPercentage,
                     DiscountAmount = salesDetail.DiscountAmount,
-                    Subtotal = salesDetail.Subtotal,
+                    Subtotal = salesDetail.SubtotalAmount,
                     DetailRemarks = salesDetail.Remarks ?? "",
                     SelectedWarehouse = salesDetail.Warehouse ?? Warehouses.FirstOrDefault(w => w.Id == salesDetail.WarehouseId),
                     ExistingDetailEntity = detail

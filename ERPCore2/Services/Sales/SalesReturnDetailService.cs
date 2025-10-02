@@ -393,7 +393,7 @@ namespace ERPCore2.Services
                 foreach (var detail in details)
                 {
                     // 計算小計
-                    detail.ReturnSubtotal = CalculateSubtotal(detail);
+                    detail.ReturnSubtotalAmount = CalculateSubtotal(detail);
                     detail.PendingQuantity = detail.ReturnQuantity - detail.ProcessedQuantity;
                     detail.UpdatedAt = DateTime.UtcNow;
 
@@ -463,7 +463,7 @@ namespace ERPCore2.Services
                     TotalPendingQuantity = details.Sum(d => d.PendingQuantity),
                     TotalRestockedQuantity = details.Sum(d => d.RestockedQuantity),
                     TotalScrapQuantity = details.Sum(d => d.ScrapQuantity),
-                    TotalReturnAmount = details.Sum(d => d.ReturnSubtotal),
+                    TotalReturnAmount = details.Sum(d => d.ReturnSubtotalAmount),
                     ProductCount = details.Select(d => d.ProductId).Distinct().Count(),
                     ProductReturnQuantities = details
                         .GroupBy(d => d.ProductId)

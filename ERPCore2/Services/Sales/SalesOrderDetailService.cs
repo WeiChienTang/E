@@ -264,7 +264,7 @@ namespace ERPCore2.Services
 
                 // 計算小計：數量 × 單價 - 折扣金額
                 var subtotal = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
-                detail.Subtotal = subtotal;
+                detail.SubtotalAmount = subtotal;
                 detail.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
@@ -296,7 +296,7 @@ namespace ERPCore2.Services
                     if (detail.ProductId > 0)
                     {
                         // 重新計算小計
-                        detail.Subtotal = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
+                        detail.SubtotalAmount = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
                         detail.UpdatedAt = DateTime.UtcNow;
                         
                         context.SalesOrderDetails.Update(detail);

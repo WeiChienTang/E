@@ -9,29 +9,29 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 應收帳款沖款單服務實作
+    /// 應付帳款沖款單服務實作
     /// </summary>
-    public class AccountsReceivableSetoffService : GenericManagementService<AccountsReceivableSetoff>, IAccountsReceivableSetoffService
+    public class AccountsPayableSetoffService : GenericManagementService<AccountsPayableSetoff>, IAccountsPayableSetoffService
     {
-        public AccountsReceivableSetoffService(
+        public AccountsPayableSetoffService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<AccountsReceivableSetoff>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<AccountsPayableSetoff>> logger) : base(contextFactory, logger)
         {
         }
 
-        public AccountsReceivableSetoffService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public AccountsPayableSetoffService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         #region 覆寫基底方法
 
-        public override async Task<List<AccountsReceivableSetoff>> GetAllAsync()
+        public override async Task<List<AccountsPayableSetoff>> GetAllAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .OrderByDescending(s => s.SetoffDate)
@@ -44,17 +44,17 @@ namespace ERPCore2.Services
                     Method = nameof(GetAllAsync),
                     ServiceType = GetType().Name 
                 });
-                return new List<AccountsReceivableSetoff>();
+                return new List<AccountsPayableSetoff>();
             }
         }
 
-        public override async Task<AccountsReceivableSetoff?> GetByIdAsync(int id)
+        public override async Task<AccountsPayableSetoff?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .FirstOrDefaultAsync(s => s.Id == id);
@@ -70,7 +70,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<AccountsReceivableSetoff>> SearchAsync(string searchTerm)
+        public override async Task<List<AccountsPayableSetoff>> SearchAsync(string searchTerm)
         {
             try
             {
@@ -80,13 +80,13 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var searchTermLower = searchTerm.ToLower();
 
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .Where(s => (
                         s.SetoffNumber.ToLower().Contains(searchTermLower) ||
-                        s.Customer.CompanyName.ToLower().Contains(searchTermLower) ||
+                        s.Supplier.CompanyName.ToLower().Contains(searchTermLower) ||
                         (!string.IsNullOrEmpty(s.PaymentAccount) && s.PaymentAccount.ToLower().Contains(searchTermLower)) ||
                         (!string.IsNullOrEmpty(s.Remarks) && s.Remarks.ToLower().Contains(searchTermLower))
                     ))
@@ -101,11 +101,11 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm 
                 });
-                return new List<AccountsReceivableSetoff>();
+                return new List<AccountsPayableSetoff>();
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(AccountsReceivableSetoff entity)
+        public override async Task<ServiceResult> ValidateAsync(AccountsPayableSetoff entity)
         {
             try
             {
@@ -115,8 +115,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.SetoffNumber))
                     errors.Add("沖款單號不能為空");
                 
-                if (entity.CustomerId <= 0)
-                    errors.Add("必須選擇客戶");
+                if (entity.SupplierId <= 0)
+                    errors.Add("必須選擇供應商");
                 
                 if (entity.SetoffDate == default)
                     errors.Add("沖款日期不能為空");
@@ -134,20 +134,20 @@ namespace ERPCore2.Services
                 if (entity.TotalSetoffAmount < 0)
                     errors.Add("總沖款金額不能為負數");
                 
-                // 檢查客戶是否存在
+                // 檢查供應商是否存在
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var customerExists = await context.Customers
-                    .AnyAsync(c => c.Id == entity.CustomerId);
-                if (!customerExists)
-                    errors.Add("選擇的客戶不存在或已被刪除");
+                var supplierExists = await context.Suppliers
+                    .AnyAsync(c => c.Id == entity.SupplierId);
+                if (!supplierExists)
+                    errors.Add("選擇的供應商不存在或已被刪除");
                 
-                // 檢查收款方式是否存在（如果有選擇的話）
+                // 檢查付款方式是否存在（如果有選擇的話）
                 if (entity.PaymentMethodId.HasValue)
                 {
                     var paymentMethodExists = await context.PaymentMethods
                         .AnyAsync(pm => pm.Id == entity.PaymentMethodId.Value && pm.Status == EntityStatus.Active);
                     if (!paymentMethodExists)
-                        errors.Add("選擇的收款方式不存在或已停用");
+                        errors.Add("選擇的付款方式不存在或已停用");
                 }
                 
                 if (errors.Any())
@@ -176,7 +176,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.AccountsReceivableSetoffs
+                var query = context.AccountsPayableSetoffs
                     .Where(s => s.SetoffNumber == setoffNumber);
                 
                 if (excludeId.HasValue)
@@ -196,38 +196,38 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<AccountsReceivableSetoff>> GetByCustomerIdAsync(int customerId)
+        public async Task<List<AccountsPayableSetoff>> GetBySupplierIdAsync(int supplierId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
-                    .Where(s => s.CustomerId == customerId)
+                    .Where(s => s.SupplierId == supplierId)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByCustomerIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByCustomerIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetBySupplierIdAsync),
                     ServiceType = GetType().Name,
-                    CustomerId = customerId 
+                    SupplierId = supplierId 
                 });
-                return new List<AccountsReceivableSetoff>();
+                return new List<AccountsPayableSetoff>();
             }
         }
 
-        public async Task<List<AccountsReceivableSetoff>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<List<AccountsPayableSetoff>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .Where(s => s.SetoffDate >= startDate && s.SetoffDate <= endDate)
@@ -243,25 +243,25 @@ namespace ERPCore2.Services
                     StartDate = startDate,
                     EndDate = endDate 
                 });
-                return new List<AccountsReceivableSetoff>();
+                return new List<AccountsPayableSetoff>();
             }
         }
 
-        public async Task<AccountsReceivableSetoff?> GetWithDetailsAsync(int id)
+        public async Task<AccountsPayableSetoff?> GetWithDetailsAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .Include(s => s.SetoffDetails)
-                        .ThenInclude(d => d.SalesOrderDetail)
-                            .ThenInclude(sod => sod!.Product)
+                        .ThenInclude(d => d.PurchaseReceivingDetail)
+                            .ThenInclude(prd => prd!.Product)
                     .Include(s => s.SetoffDetails)
-                        .ThenInclude(d => d.SalesReturnDetail)
-                            .ThenInclude(srd => srd!.Product)
+                        .ThenInclude(d => d.PurchaseReturnDetail)
+                            .ThenInclude(prd => prd!.Product)
                     .FirstOrDefaultAsync(s => s.Id == id);
             }
             catch (Exception ex)
@@ -281,7 +281,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var setoff = await context.AccountsReceivableSetoffs
+                var setoff = await context.AccountsPayableSetoffs
                     .FirstOrDefaultAsync(s => s.Id == id);
                 
                 if (setoff == null)
@@ -291,7 +291,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("沖款單已經完成");
                 
                 // 檢查是否有明細
-                var hasDetails = await context.AccountsReceivableSetoffDetails
+                var hasDetails = await context.AccountsPayableSetoffDetails
                     .AnyAsync(d => d.SetoffId == id);
                 if (!hasDetails)
                     return ServiceResult.Failure("沖款單必須有明細才能完成");
@@ -320,7 +320,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var setoff = await context.AccountsReceivableSetoffs
+                var setoff = await context.AccountsPayableSetoffs
                     .FirstOrDefaultAsync(s => s.Id == id);
                 
                 if (setoff == null)
@@ -352,7 +352,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffDetails
+                return await context.AccountsPayableSetoffDetails
                     .Where(d => d.SetoffId == id)
                     .SumAsync(d => d.SetoffAmount);
             }
@@ -367,13 +367,13 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<AccountsReceivableSetoff>> GetIncompleteSetoffsAsync()
+        public async Task<List<AccountsPayableSetoff>> GetIncompleteSetoffsAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AccountsReceivableSetoffs
-                    .Include(s => s.Customer)
+                return await context.AccountsPayableSetoffs
+                    .Include(s => s.Supplier)
                     .Include(s => s.Company)
                     .Include(s => s.PaymentMethod)
                     .Where(s => !s.IsCompleted)
@@ -387,7 +387,7 @@ namespace ERPCore2.Services
                     Method = nameof(GetIncompleteSetoffsAsync),
                     ServiceType = GetType().Name 
                 });
-                return new List<AccountsReceivableSetoff>();
+                return new List<AccountsPayableSetoff>();
             }
         }
 
@@ -397,21 +397,21 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 覆寫刪除方法 - 刪除主檔時同步回滾明細的影響
-        /// 功能：刪除應收帳款沖款單時，自動回退已沖銷的金額
+        /// 功能：刪除應付帳款沖款單時，自動回退已沖銷的金額
         /// 處理流程：
         /// 1. 驗證沖款單存在性
         /// 2. 載入相關的沖款明細記錄
-        /// 3. 回滾 SalesOrderDetail 和 SalesReturnDetail 的收款/付款金額
+        /// 3. 回滾 PurchaseReceivingDetail 和 PurchaseReturnDetail 的付款/收款金額
         /// 4. 執行原本的軟刪除（主檔）
         /// 5. 使用資料庫交易確保資料一致性
         /// 6. 任何步驟失敗時回滾所有變更
         /// </summary>
-        /// <param name="id">要刪除的應收帳款沖款單ID</param>
+        /// <param name="id">要刪除的應付帳款沖款單ID</param>
         /// <returns>刪除結果，包含成功狀態及錯誤訊息</returns>
         public override async Task<ServiceResult> DeleteAsync(int id)
         {
-            Console.WriteLine($"=== AccountsReceivableSetoffService.DeleteAsync 開始執行 ===");
-            Console.WriteLine($"要刪除的 AccountsReceivableSetoff ID: {id}");
+            Console.WriteLine($"=== AccountsPayableSetoffService.DeleteAsync 開始執行 ===");
+            Console.WriteLine($"要刪除的 AccountsPayableSetoff ID: {id}");
 
             try
             {
@@ -421,7 +421,7 @@ namespace ERPCore2.Services
                 try
                 {
                     // 1. 查找主檔及其明細
-                    var setoff = await context.AccountsReceivableSetoffs
+                    var setoff = await context.AccountsPayableSetoffs
                         .Include(s => s.SetoffDetails)
                         .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -474,7 +474,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 永久刪除應收帳款沖款單（含回滾）
+        /// 永久刪除應付帳款沖款單（含回滾）
         /// 這是UI實際調用的刪除方法
         /// 處理流程：
         /// 1. 驗證沖款單存在性和刪除權限
@@ -483,12 +483,12 @@ namespace ERPCore2.Services
         /// 4. 永久刪除明細和主檔
         /// 5. 使用資料庫交易確保資料一致性
         /// </summary>
-        /// <param name="id">要刪除的應收帳款沖款單ID</param>
+        /// <param name="id">要刪除的應付帳款沖款單ID</param>
         /// <returns>刪除結果，包含成功狀態及錯誤訊息</returns>
         public override async Task<ServiceResult> PermanentDeleteAsync(int id)
         {
-            Console.WriteLine($"=== AccountsReceivableSetoffService.PermanentDeleteAsync 開始執行 ===");
-            Console.WriteLine($"要永久刪除的 AccountsReceivableSetoff ID: {id}");
+            Console.WriteLine($"=== AccountsPayableSetoffService.PermanentDeleteAsync 開始執行 ===");
+            Console.WriteLine($"要永久刪除的 AccountsPayableSetoff ID: {id}");
 
             try
             {
@@ -498,9 +498,9 @@ namespace ERPCore2.Services
                 try
                 {
                     // 1. 查找主檔及其明細
-                    var setoff = await context.AccountsReceivableSetoffs
+                    var setoff = await context.AccountsPayableSetoffs
                         .Include(s => s.SetoffDetails)
-                        .Include(s => s.Customer)
+                        .Include(s => s.Supplier)
                         .FirstOrDefaultAsync(s => s.Id == id);
 
                     if (setoff == null)
@@ -528,13 +528,13 @@ namespace ERPCore2.Services
                     if (setoff.SetoffDetails != null && setoff.SetoffDetails.Any())
                     {
                         Console.WriteLine($"永久刪除 {setoff.SetoffDetails.Count} 筆明細");
-                        context.AccountsReceivableSetoffDetails.RemoveRange(setoff.SetoffDetails);
+                        context.AccountsPayableSetoffDetails.RemoveRange(setoff.SetoffDetails);
                         await context.SaveChangesAsync();
                     }
 
                     // 5. 永久刪除主檔
                     Console.WriteLine("永久刪除主檔");
-                    context.AccountsReceivableSetoffs.Remove(setoff);
+                    context.AccountsPayableSetoffs.Remove(setoff);
                     await context.SaveChangesAsync();
 
                     // 6. 提交交易
@@ -564,77 +564,77 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 回滾沖款明細對原始單據的影響
-        /// 包括：SalesOrderDetail 的收款金額、SalesReturnDetail 的付款金額
+        /// 包括：PurchaseReceivingDetail 的付款金額、PurchaseReturnDetail 的收款金額
         /// </summary>
         /// <param name="context">資料庫上下文</param>
         /// <param name="setoffDetails">要回滾的沖款明細列表</param>
-        private async Task RevertSetoffDetailsAsync(AppDbContext context, List<AccountsReceivableSetoffDetail> setoffDetails)
+        private async Task RevertSetoffDetailsAsync(AppDbContext context, List<AccountsPayableSetoffDetail> setoffDetails)
         {
-            // 處理銷貨訂單明細的回滾
-            var salesOrderDetailIds = setoffDetails
-                .Where(d => d.SalesOrderDetailId.HasValue)
-                .Select(d => d.SalesOrderDetailId!.Value)
+            // 處理採購進貨明細的回滾
+            var purchaseReceivingDetailIds = setoffDetails
+                .Where(d => d.PurchaseReceivingDetailId.HasValue)
+                .Select(d => d.PurchaseReceivingDetailId!.Value)
                 .Distinct()
                 .ToList();
 
-            if (salesOrderDetailIds.Any())
+            if (purchaseReceivingDetailIds.Any())
             {
-                Console.WriteLine($"回滾 {salesOrderDetailIds.Count} 筆銷貨訂單明細");
-                var salesOrderDetails = await context.SalesOrderDetails
-                    .Where(sod => salesOrderDetailIds.Contains(sod.Id))
+                Console.WriteLine($"回滾 {purchaseReceivingDetailIds.Count} 筆採購進貨明細");
+                var purchaseReceivingDetails = await context.PurchaseReceivingDetails
+                    .Where(prd => purchaseReceivingDetailIds.Contains(prd.Id))
                     .ToListAsync();
 
-                foreach (var salesOrderDetail in salesOrderDetails)
+                foreach (var purchaseReceivingDetail in purchaseReceivingDetails)
                 {
-                    var setoffDetail = setoffDetails.First(d => d.SalesOrderDetailId == salesOrderDetail.Id);
+                    var setoffDetail = setoffDetails.First(d => d.PurchaseReceivingDetailId == purchaseReceivingDetail.Id);
                     
-                    Console.WriteLine($"  - SalesOrderDetail ID={salesOrderDetail.Id}: 回滾金額 {setoffDetail.SetoffAmount}");
+                    Console.WriteLine($"  - PurchaseReceivingDetail ID={purchaseReceivingDetail.Id}: 回滾金額 {setoffDetail.SetoffAmount}");
                     
-                    // 回滾累計收款金額：減去之前的沖款金額
-                    salesOrderDetail.TotalReceivedAmount = Math.Max(0, salesOrderDetail.TotalReceivedAmount - setoffDetail.SetoffAmount);
-                    salesOrderDetail.ReceivedAmount = 0; // 清除本次收款記錄
+                    // 回滾累計付款金額：減去之前的沖款金額
+                    purchaseReceivingDetail.TotalPaidAmount = Math.Max(0, purchaseReceivingDetail.TotalPaidAmount - setoffDetail.SetoffAmount);
+                    purchaseReceivingDetail.PaidAmount = 0; // 清除本次付款記錄
                     
                     // 重新檢查結清狀態
-                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.SubtotalAmount;
+                    purchaseReceivingDetail.IsSettled = purchaseReceivingDetail.TotalPaidAmount >= purchaseReceivingDetail.SubtotalAmount;
                     
-                    salesOrderDetail.UpdatedAt = DateTime.UtcNow;
+                    purchaseReceivingDetail.UpdatedAt = DateTime.UtcNow;
                 }
 
-                context.SalesOrderDetails.UpdateRange(salesOrderDetails);
+                context.PurchaseReceivingDetails.UpdateRange(purchaseReceivingDetails);
                 await context.SaveChangesAsync();
             }
 
-            // 處理銷貨退回明細的回滾
-            var salesReturnDetailIds = setoffDetails
-                .Where(d => d.SalesReturnDetailId.HasValue)
-                .Select(d => d.SalesReturnDetailId!.Value)
+            // 處理採購退回明細的回滾
+            var purchaseReturnDetailIds = setoffDetails
+                .Where(d => d.PurchaseReturnDetailId.HasValue)
+                .Select(d => d.PurchaseReturnDetailId!.Value)
                 .Distinct()
                 .ToList();
 
-            if (salesReturnDetailIds.Any())
+            if (purchaseReturnDetailIds.Any())
             {
-                Console.WriteLine($"回滾 {salesReturnDetailIds.Count} 筆銷貨退回明細");
-                var salesReturnDetails = await context.SalesReturnDetails
-                    .Where(srd => salesReturnDetailIds.Contains(srd.Id))
+                Console.WriteLine($"回滾 {purchaseReturnDetailIds.Count} 筆採購退回明細");
+                var purchaseReturnDetails = await context.PurchaseReturnDetails
+                    .Where(prd => purchaseReturnDetailIds.Contains(prd.Id))
                     .ToListAsync();
 
-                foreach (var salesReturnDetail in salesReturnDetails)
+                foreach (var purchaseReturnDetail in purchaseReturnDetails)
                 {
-                    var setoffDetail = setoffDetails.First(d => d.SalesReturnDetailId == salesReturnDetail.Id);
+                    var setoffDetail = setoffDetails.First(d => d.PurchaseReturnDetailId == purchaseReturnDetail.Id);
                     
-                    Console.WriteLine($"  - SalesReturnDetail ID={salesReturnDetail.Id}: 回滾金額 {setoffDetail.SetoffAmount}");
+                    Console.WriteLine($"  - PurchaseReturnDetail ID={purchaseReturnDetail.Id}: 回滾金額 {setoffDetail.SetoffAmount}");
                     
-                    // 回滾累計付款金額：減去之前的沖款金額
-                    salesReturnDetail.TotalPaidAmount = Math.Max(0, salesReturnDetail.TotalPaidAmount - setoffDetail.SetoffAmount);
-                    salesReturnDetail.PaidAmount = 0; // 清除本次付款記錄
+                    // 回滾累計收款金額：減去之前的沖款金額
+                    purchaseReturnDetail.TotalReceivedAmount = Math.Max(0, purchaseReturnDetail.TotalReceivedAmount - setoffDetail.SetoffAmount);
+                    purchaseReturnDetail.ReceivedAmount = 0; // 清除本次收款記錄
                     
                     // 重新檢查結清狀態
-                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotalAmount);
+                    purchaseReturnDetail.IsSettled = purchaseReturnDetail.TotalReceivedAmount >= Math.Abs(purchaseReturnDetail.ReturnSubtotalAmount);
                     
-                    salesReturnDetail.UpdatedAt = DateTime.UtcNow;
+                    purchaseReturnDetail.UpdatedAt = DateTime.UtcNow;
                 }
 
-                context.SalesReturnDetails.UpdateRange(salesReturnDetails);
+                context.PurchaseReturnDetails.UpdateRange(purchaseReturnDetails);
                 await context.SaveChangesAsync();
             }
         }
@@ -644,11 +644,11 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="context">資料庫上下文</param>
         /// <param name="setoff">要處理的沖款單</param>
-        private async Task ReverseFinancialTransactionsAsync(AppDbContext context, AccountsReceivableSetoff setoff)
+        private async Task ReverseFinancialTransactionsAsync(AppDbContext context, AccountsPayableSetoff setoff)
         {
             // 查找相關的財務交易記錄
             var transactions = await context.FinancialTransactions
-                .Where(ft => ft.SourceDocumentType == "AccountsReceivableSetoff" &&
+                .Where(ft => ft.SourceDocumentType == "AccountsPayableSetoff" &&
                             ft.SourceDocumentId == setoff.Id &&
                             !ft.IsReversed)
                 .ToListAsync();

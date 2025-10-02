@@ -666,7 +666,7 @@ namespace ERPCore2.Services
                 if (endDate.HasValue)
                     query = query.Where(prd => prd.PurchaseReturn.ReturnDate <= endDate.Value);
                 
-                return await query.SumAsync(prd => prd.ReturnSubtotal);
+                return await query.SumAsync(prd => prd.ReturnSubtotalAmount);
             }
             catch (Exception ex)
             {
@@ -745,8 +745,8 @@ namespace ERPCore2.Services
                     .Include(prd => prd.PurchaseReturn)
                         .ThenInclude(pr => pr.Supplier)
                     .Include(prd => prd.Product)
-                    .Where(prd => prd.ReturnSubtotal >= minAmount)
-                    .OrderByDescending(prd => prd.ReturnSubtotal)
+                    .Where(prd => prd.ReturnSubtotalAmount >= minAmount)
+                    .OrderByDescending(prd => prd.ReturnSubtotalAmount)
                     .ToListAsync();
             }
             catch (Exception ex)

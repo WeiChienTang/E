@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251002061334_UpdatePendingModelChanges")]
+    partial class UpdatePendingModelChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3405,7 +3408,7 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("ReturnDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("ReturnReasonId")
+                    b.Property<int>("ReturnReasonId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("ReturnTaxAmount")
@@ -5053,7 +5056,8 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.SalesReturnReason", "ReturnReason")
                         .WithMany("SalesReturns")
                         .HasForeignKey("ReturnReasonId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
                         .WithMany()

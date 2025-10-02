@@ -71,6 +71,9 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountsReceivableSetoff> AccountsReceivableSetoffs { get; set; }
       public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
       public DbSet<AccountsReceivableSetoffPaymentDetail> AccountsReceivableSetoffPaymentDetails { get; set; }
+      public DbSet<AccountsPayableSetoff> AccountsPayableSetoffs { get; set; }
+      public DbSet<AccountsPayableSetoffDetail> AccountsPayableSetoffDetails { get; set; }
+      public DbSet<AccountsPayableSetoffPaymentDetail> AccountsPayableSetoffPaymentDetails { get; set; }
       public DbSet<Prepayment> Prepayments { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency

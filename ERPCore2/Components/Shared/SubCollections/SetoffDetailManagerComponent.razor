@@ -1,43 +1,10 @@
-@* 
-====================================================================================================
-⚠️ 警告：此組件已過時 (Obsolete)
-====================================================================================================
-
-此組件已被統一的 SetoffDetailManagerComponent 取代。
-
-【遷移指南】
-請改用 SetoffDetailManagerComponent 並設定 Mode 參數：
-
-舊寫法：
-<AccountsReceivableSetoffDetailManagerComponent 
-    CustomerId="@customerId"
-    OnSelectedDetailsChanged="@OnDetailsChanged"
-    ... />
-
-新寫法：
-<SetoffDetailManagerComponent 
-    Mode="SetoffMode.Receivable"
-    CustomerId="@customerId"
-    OnSelectedDetailsChanged="@OnDetailsChanged"
-    ... />
-
-【優勢】
-- 統一的應收/應付帳款介面
-- 更好的程式碼維護性
-- 完整的向後相容性
-
-【相關檔案】
-- 新組件：Components/Shared/SubCollections/SetoffDetailManagerComponent.razor
-- 文檔：Documentation/README_統一沖款明細組件重構.md
-
-====================================================================================================
-*@
-
-@* 應收帳款沖款明細管理組件 - 使用 InteractiveTableComponent 來管理沖款明細 *@
+@* 沖款明細管理組件 (通用) - 支援應收/應付帳款 - 使用 InteractiveTableComponent 來管理沖款明細 *@
+@using ERPCore2.Data.Enums
 @inject IAccountsReceivableSetoffDetailService AccountsReceivableSetoffDetailService
+@inject IAccountsPayableSetoffDetailService AccountsPayableSetoffDetailService
 @inject INotificationService NotificationService
 
-<div class="setoff-detail-manager">
+<div class="setoff-detail-manager @GetModeClass()">
     @if (IsLoading)
     {
         <div class="d-flex>justify-content-center align-items-center my-3">
@@ -60,7 +27,7 @@
                                 IsHoverable="true"
                                 IsBordered="true"
                                 IsReadOnly="@IsReadOnly"
-                                EmptyMessage="此客戶沒有未結清的明細項目"
+                                EmptyMessage="@GetEmptyMessage()"
                                 CssClass="setoff-detail-table"
                                 ValidationErrors="@ValidationErrors"
                                 OnValidationFailed="@HandleValidationFailed" />
@@ -68,12 +35,43 @@
 
 @code {
     #region 參數定義
+    /// <summary>
+    /// 沖款模式：應收或應付
+    /// </summary>
+    [Parameter] public SetoffMode Mode { get; set; } = SetoffMode.Receivable;
+    
+    /// <summary>
+    /// 合作對象 ID (客戶 ID 或供應商 ID) - 建議使用此參數
+    /// </summary>
+    [Parameter] public int? PartnerId { get; set; }
+    
+    /// <summary>
+    /// 客戶 ID (向後相容，內部會轉換為 PartnerId)
+    /// </summary>
     [Parameter] public int? CustomerId { get; set; }
+    
+    /// <summary>
+    /// 供應商 ID (內部會轉換為 PartnerId)
+    /// </summary>
+    [Parameter] public int? SupplierId { get; set; }
+    
     [Parameter] public EventCallback<List<SetoffDetailDto>> OnSelectedDetailsChanged { get; set; }
     [Parameter] public EventCallback<decimal> OnTotalAmountChanged { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public bool IsEditMode { get; set; } = false;
     [Parameter] public int? SetoffId { get; set; }
+    
+    /// <summary>
+    /// 取得實際使用的合作對象 ID
+    /// </summary>
+    private int? GetActualPartnerId()
+    {
+        // 優先使用 PartnerId，如果沒有則根據模式使用 CustomerId 或 SupplierId
+        if (PartnerId.HasValue) return PartnerId;
+        if (Mode == SetoffMode.Receivable && CustomerId.HasValue) return CustomerId;
+        if (Mode == SetoffMode.Payable && SupplierId.HasValue) return SupplierId;
+        return null;
+    }
     #endregion
 
     #region 私有狀態
@@ -82,7 +80,8 @@
     private Dictionary<string, string> ValidationErrors { get; set; } = new();
     
     // 用於追蹤參數變更，避免不必要的重新渲染
-    private int? _previousCustomerId = null;
+    private int? _previousPartnerId = null;
+    private SetoffMode _previousMode = SetoffMode.Receivable;
     private bool _previousIsEditMode = false;
     private int? _previousSetoffId = null;
     private bool _previousIsReadOnly = false;
@@ -119,8 +118,11 @@
     /// </summary>
     protected override bool ShouldRender()
     {
+        var actualPartnerId = GetActualPartnerId();
+        
         // 檢查關鍵參數或狀態是否有變更
-        bool hasChanges = _previousCustomerId != CustomerId ||
+        bool hasChanges = _previousPartnerId != actualPartnerId ||
+                          _previousMode != Mode ||
                           _previousIsEditMode != IsEditMode ||
                           _previousSetoffId != SetoffId ||
                           _previousIsReadOnly != IsReadOnly ||
@@ -138,8 +140,11 @@
     {
         try
         {
+            var actualPartnerId = GetActualPartnerId();
+            
             // 檢查關鍵參數是否真的有變更
-            bool keyParametersChanged = _previousCustomerId != CustomerId ||
+            bool keyParametersChanged = _previousPartnerId != actualPartnerId ||
+                                       _previousMode != Mode ||
                                        _previousIsEditMode != IsEditMode ||
                                        _previousSetoffId != SetoffId ||
                                        _previousIsReadOnly != IsReadOnly;
@@ -147,12 +152,13 @@
             if (keyParametersChanged)
             {
                 // 更新追蹤的參數值
-                _previousCustomerId = CustomerId;
+                _previousPartnerId = actualPartnerId;
+                _previousMode = Mode;
                 _previousIsEditMode = IsEditMode;
                 _previousSetoffId = SetoffId;
                 _previousIsReadOnly = IsReadOnly;
                 
-                if (CustomerId.HasValue && CustomerId > 0)
+                if (actualPartnerId.HasValue && actualPartnerId > 0)
                 {
                     await LoadDetailsAsync();
                 }
@@ -166,15 +172,16 @@
         }
         catch (Exception ex)
         {
+            var partnerId = GetActualPartnerId();
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(), 
-                additionalData: $"載入沖款明細失敗 - CustomerId: {CustomerId}");
+                additionalData: $"載入沖款明細失敗 - PartnerId: {partnerId}, Mode: {Mode}");
         }
     }
     #endregion
 
     #region 私有方法
     /// <summary>
-    /// 載入客戶的未結清明細
+    /// 載入合作對象的未結清明細
     /// </summary>
     private async Task LoadDetailsAsync()
     {
@@ -183,7 +190,8 @@
             IsLoading = true;
             StateHasChanged();
 
-            if (!CustomerId.HasValue || CustomerId.Value <= 0)
+            var partnerId = GetActualPartnerId();
+            if (!partnerId.HasValue || partnerId.Value <= 0)
             {
                 Details.Clear();
                 return;
@@ -192,20 +200,41 @@
             if (IsEditMode && SetoffId.HasValue)
             {
                 // 編輯模式：載入所有相關明細（包括已完成的）
-                Details = await AccountsReceivableSetoffDetailService.GetCustomerAllDetailsForEditAsync(CustomerId.Value, SetoffId.Value);
+                if (Mode == SetoffMode.Receivable)
+                {
+                    Details = await AccountsReceivableSetoffDetailService.GetCustomerAllDetailsForEditAsync(partnerId.Value, SetoffId.Value);
+                }
+                else // SetoffMode.Payable
+                {
+                    Details = await AccountsPayableSetoffDetailService.GetSupplierAllDetailsForEditAsync(partnerId.Value, SetoffId.Value);
+                }
             }
             else
             {
                 // 新增模式：只載入未結清明細
-                Details = await AccountsReceivableSetoffDetailService.GetCustomerPendingDetailsAsync(CustomerId.Value);
+                if (Mode == SetoffMode.Receivable)
+                {
+                    Details = await AccountsReceivableSetoffDetailService.GetCustomerPendingDetailsAsync(partnerId.Value);
+                }
+                else // SetoffMode.Payable
+                {
+                    Details = await AccountsPayableSetoffDetailService.GetSupplierPendingDetailsAsync(partnerId.Value);
+                }
+            }
+            
+            // 設定 Mode 給每個 DTO
+            foreach (var detail in Details)
+            {
+                detail.Mode = Mode;
             }
             
             ValidationErrors.Clear();
         }
         catch (Exception ex)
         {
+            var partnerId = GetActualPartnerId();
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDetailsAsync), GetType(), 
-                additionalData: $"載入明細資料失敗 - CustomerId: {CustomerId}, IsEditMode: {IsEditMode}, SetoffId: {SetoffId}");
+                additionalData: $"載入明細資料失敗 - PartnerId: {partnerId}, Mode: {Mode}, IsEditMode: {IsEditMode}, SetoffId: {SetoffId}");
             Details = new List<SetoffDetailDto>();
         }
         finally
@@ -214,6 +243,20 @@
             StateHasChanged();
         }
     }
+    
+    #region UI 輔助方法
+    /// <summary>
+    /// 取得模式對應的 CSS 類別
+    /// </summary>
+    private string GetModeClass() => Mode == SetoffMode.Receivable ? "receivable" : "payable";
+    
+    /// <summary>
+    /// 取得空白訊息
+    /// </summary>
+    private string GetEmptyMessage() => Mode == SetoffMode.Receivable 
+        ? "此客戶沒有未結清的明細項目" 
+        : "此廠商沒有未結清的明細項目";
+    #endregion
 
     /// <summary>
     /// 取得欄位定義

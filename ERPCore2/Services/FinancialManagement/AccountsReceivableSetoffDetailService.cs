@@ -322,7 +322,7 @@ namespace ERPCore2.Services
                     return false;
                 
                 var totalReceived = await CalculateTotalReceivedAmountBySalesOrderDetailAsync(salesOrderDetailId);
-                var totalAmount = salesOrderDetail.Subtotal; // 使用 Subtotal 屬性
+                var totalAmount = salesOrderDetail.SubtotalAmount; // 使用 SubtotalAmount 屬性
                 
                 return totalReceived >= totalAmount;
             }
@@ -349,7 +349,7 @@ namespace ERPCore2.Services
                     return false;
                 
                 var totalReceived = await CalculateTotalReceivedAmountBySalesReturnDetailAsync(salesReturnDetailId);
-                var totalAmount = Math.Abs(salesReturnDetail.ReturnSubtotal); // 使用 ReturnSubtotal 屬性
+                var totalAmount = Math.Abs(salesReturnDetail.ReturnSubtotalAmount); // 使用 ReturnSubtotalAmount 屬性
                 
                 return totalReceived >= totalAmount;
             }
@@ -564,7 +564,7 @@ namespace ERPCore2.Services
                 foreach (var sod in salesOrderDetails)
                 {
                     var totalReceived = await CalculateTotalReceivedAmountBySalesOrderDetailAsync(sod.Id);
-                    var remaining = sod.Subtotal - totalReceived;
+                    var remaining = sod.SubtotalAmount - totalReceived;
                     
                     if (remaining > 0)
                     {
@@ -576,7 +576,7 @@ namespace ERPCore2.Services
                             ProductName = sod.Product?.Name ?? "",
                             Quantity = sod.OrderQuantity,
                             UnitName = sod.Product?.Unit?.Name ?? "",
-                            TotalAmount = sod.Subtotal,
+                            TotalAmount = sod.SubtotalAmount,
                             ReceivedAmount = totalReceived,
                             RemainingAmount = remaining
                         });
@@ -593,7 +593,7 @@ namespace ERPCore2.Services
                 foreach (var srd in salesReturnDetails)
                 {
                     var totalReceived = await CalculateTotalReceivedAmountBySalesReturnDetailAsync(srd.Id);
-                    var remaining = Math.Abs(srd.ReturnSubtotal) - totalReceived;
+                    var remaining = Math.Abs(srd.ReturnSubtotalAmount) - totalReceived;
                     
                     if (remaining > 0)
                     {
@@ -605,7 +605,7 @@ namespace ERPCore2.Services
                             ProductName = srd.Product?.Name ?? "",
                             Quantity = Math.Abs(srd.ReturnQuantity),
                             UnitName = srd.Product?.Unit?.Name ?? "",
-                            TotalAmount = Math.Abs(srd.ReturnSubtotal),
+                            TotalAmount = Math.Abs(srd.ReturnSubtotalAmount),
                             ReceivedAmount = totalReceived,
                             RemainingAmount = remaining
                         });
@@ -655,7 +655,7 @@ namespace ERPCore2.Services
                                     && !ft.IsReversed)
                         .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
                     
-                    var pendingAmount = detail.Subtotal - detail.TotalReceivedAmount - discountedAmount;
+                    var pendingAmount = detail.SubtotalAmount - detail.TotalReceivedAmount - discountedAmount;
                     if (pendingAmount > 0)
                     {
                         result.Add(new SetoffDetailDto
@@ -670,7 +670,7 @@ namespace ERPCore2.Services
                             ProductCode = detail.Product?.Code ?? "",
                             Quantity = detail.OrderQuantity,
                             UnitPrice = detail.UnitPrice,
-                            TotalAmount = detail.Subtotal,
+                            TotalAmount = detail.SubtotalAmount,
                             SettledAmount = detail.TotalReceivedAmount,
                             DiscountedAmount = discountedAmount,  // 設定已折讓金額
                             ThisTimeAmount = 0, // 新增模式預設為0
@@ -679,8 +679,8 @@ namespace ERPCore2.Services
                             OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
                             IsEditMode = false, // 標記為新增模式
                             IsSettled = detail.IsSettled,
-                            CustomerId = customerId,
-                            CustomerName = detail.SalesOrder.Customer?.CompanyName ?? "",
+                            PartnerId = customerId,
+                            PartnerName = detail.SalesOrder.Customer?.CompanyName ?? "",
                             Currency = "TWD"
                         });
                     }
@@ -704,7 +704,7 @@ namespace ERPCore2.Services
                                     && !ft.IsReversed)
                         .SumAsync(ft => ft.CurrentDiscountAmount); // 使用 CurrentDiscountAmount 欄位
                     
-                    var pendingAmount = detail.ReturnSubtotal - detail.TotalPaidAmount - discountedAmount;
+                    var pendingAmount = detail.ReturnSubtotalAmount - detail.TotalPaidAmount - discountedAmount;
                     if (pendingAmount > 0)
                     {
                         result.Add(new SetoffDetailDto
@@ -719,7 +719,7 @@ namespace ERPCore2.Services
                             ProductCode = detail.Product?.Code ?? "",
                             Quantity = detail.ReturnQuantity,
                             UnitPrice = detail.ReturnUnitPrice,
-                            TotalAmount = detail.ReturnSubtotal,
+                            TotalAmount = detail.ReturnSubtotalAmount,
                             SettledAmount = detail.TotalPaidAmount,
                             DiscountedAmount = discountedAmount,  // 設定已折讓金額
                             ThisTimeAmount = 0, // 新增模式預設為0
@@ -728,8 +728,8 @@ namespace ERPCore2.Services
                             OriginalThisTimeDiscountAmount = 0, // 新增模式原始值為0
                             IsEditMode = false, // 標記為新增模式
                             IsSettled = detail.IsSettled,
-                            CustomerId = customerId,
-                            CustomerName = detail.SalesReturn.Customer?.CompanyName ?? "",
+                            PartnerId = customerId,
+                            PartnerName = detail.SalesReturn.Customer?.CompanyName ?? "",
                             Currency = "TWD"
                         });
                     }
@@ -796,7 +796,7 @@ namespace ERPCore2.Services
 
                 foreach (var detail in salesOrderDetails)
                 {
-                    var totalAmount = detail.Subtotal;
+                    var totalAmount = detail.SubtotalAmount;
                     
                     // 檢查是否在當前沖款單中有記錄
                     var currentSetoffDetail = existingSetoffDetails
@@ -845,8 +845,8 @@ namespace ERPCore2.Services
                         OriginalThisTimeDiscountAmount = currentDiscountAmount, // 記錄載入時的原始折讓金額
                         IsEditMode = true, // 標記為編輯模式
                         IsSettled = detail.IsSettled,
-                        CustomerId = customerId,
-                        CustomerName = detail.SalesOrder.Customer?.CompanyName ?? "",
+                        PartnerId = customerId,
+                        PartnerName = detail.SalesOrder.Customer?.CompanyName ?? "",
                         Currency = "TWD"
                     });
                 }
@@ -861,7 +861,7 @@ namespace ERPCore2.Services
 
                 foreach (var detail in salesReturnDetails)
                 {
-                    var totalAmount = detail.ReturnSubtotal;
+                    var totalAmount = detail.ReturnSubtotalAmount;
                     
                     // 檢查是否在當前沖款單中有記錄
                     var currentSetoffDetail = existingSetoffDetails
@@ -910,8 +910,8 @@ namespace ERPCore2.Services
                         OriginalThisTimeDiscountAmount = currentDiscountAmount, // 記錄載入時的原始折讓金額
                         IsEditMode = true, // 標記為編輯模式
                         IsSettled = detail.IsSettled,
-                        CustomerId = customerId,
-                        CustomerName = detail.SalesReturn.Customer?.CompanyName ?? "",
+                        PartnerId = customerId,
+                        PartnerName = detail.SalesReturn.Customer?.CompanyName ?? "",
                         Currency = "TWD"
                     });
                 }
@@ -1012,7 +1012,7 @@ namespace ERPCore2.Services
                     salesOrderDetail.TotalReceivedAmount = setoffDetail.AfterReceivedAmount;
                     
                     // 檢查是否已結清
-                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.Subtotal;
+                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.SubtotalAmount;
                     
                     salesOrderDetail.UpdatedAt = DateTime.UtcNow;
                 }
@@ -1044,7 +1044,7 @@ namespace ERPCore2.Services
                     salesReturnDetail.TotalPaidAmount = setoffDetail.AfterReceivedAmount;
                     
                     // 檢查是否已結清 (退回金額通常是負數，所以用絕對值比較)
-                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotal);
+                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotalAmount);
                     
                     salesReturnDetail.UpdatedAt = DateTime.UtcNow;
                 }
@@ -1084,7 +1084,7 @@ namespace ERPCore2.Services
                     salesOrderDetail.ReceivedAmount = 0; // 清除本次收款記錄
                     
                     // 重新檢查結清狀態
-                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.Subtotal;
+                    salesOrderDetail.IsSettled = salesOrderDetail.TotalReceivedAmount >= salesOrderDetail.SubtotalAmount;
                     
                     salesOrderDetail.UpdatedAt = DateTime.UtcNow;
                 }
@@ -1114,7 +1114,7 @@ namespace ERPCore2.Services
                     salesReturnDetail.PaidAmount = 0; // 清除本次付款記錄
                     
                     // 重新檢查結清狀態
-                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotal);
+                    salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= Math.Abs(salesReturnDetail.ReturnSubtotalAmount);
                     
                     salesReturnDetail.UpdatedAt = DateTime.UtcNow;
                 }

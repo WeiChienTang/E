@@ -245,7 +245,7 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到指定的銷貨訂單");
 
-                var totalAmount = order.SalesOrderDetails.Sum(d => d.Subtotal);
+                var totalAmount = order.SalesOrderDetails.Sum(d => d.SubtotalAmount);
                 var taxAmount = totalAmount * 0.05m; // 假設稅率 5%
                 var totalAmountWithTax = totalAmount + taxAmount;
 

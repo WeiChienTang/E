@@ -67,7 +67,7 @@
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>? editModalComponent;
-    private AccountsReceivableSetoffDetailManagerComponent? detailManagerComponent;
+    private SetoffDetailManagerComponent? detailManagerComponent;
     private SetoffPaymentDetailManagerComponent? paymentDetailManagerComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
@@ -1004,12 +1004,13 @@
                 {
                     try
                     {
-                        <AccountsReceivableSetoffDetailManagerComponent @ref="detailManagerComponent"
-                                                                       CustomerId="@editModalComponent.Entity.CustomerId"
-                                                                       IsEditMode="@(SetoffId.HasValue && SetoffId.Value > 0)"
-                                                                       SetoffId="@SetoffId"
-                                                                       OnTotalAmountChanged="@HandleTotalSetoffAmountChanged"
-                                                                       IsReadOnly="false" />
+                        <SetoffDetailManagerComponent @ref="detailManagerComponent"
+                                                     Mode="SetoffMode.Receivable"
+                                                     CustomerId="@editModalComponent.Entity.CustomerId"
+                                                     IsEditMode="@(SetoffId.HasValue && SetoffId.Value > 0)"
+                                                     SetoffId="@SetoffId"
+                                                     OnTotalAmountChanged="@HandleTotalSetoffAmountChanged"
+                                                     IsReadOnly="false" />
                         
                         <SetoffPaymentDetailManagerComponent @ref="paymentDetailManagerComponent"
                                                              SetoffId="@SetoffId"
@@ -1085,7 +1086,7 @@
     }
 
     /// <summary>
-    /// 處理總沖款金額變更（從 AccountsReceivableSetoffDetailManagerComponent 事件觸發）
+    /// 處理總沖款金額變更（從 SetoffDetailManagerComponent 事件觸發）
     /// </summary>
     private async Task HandleTotalSetoffAmountChanged(decimal amount)
     {
@@ -1101,7 +1102,7 @@
             }
             
             // 需要 StateHasChanged() 來更新 SetoffPaymentDetailManagerComponent 的 TotalSetoffAmount 參數
-            // AccountsReceivableSetoffDetailManagerComponent 已實現 ShouldRender() 優化，不會不必要地重新渲染
+            // SetoffDetailManagerComponent 已實現 ShouldRender() 優化，不會不必要地重新渲染
             StateHasChanged();
         }
         catch (Exception ex)

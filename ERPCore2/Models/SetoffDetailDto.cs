@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Models
 {
     /// <summary>
-    /// 沖款明細 DTO - 統一處理銷貨訂單和銷貨退回明細的沖款資料
+    /// 沖款明細 DTO - 統一處理應收/應付帳款的沖款資料
+    /// 支援類型：SalesOrder(銷貨訂單), SalesReturn(銷貨退回), PurchaseReceiving(採購進貨), PurchaseReturn(採購退回)
     /// </summary>
     public class SetoffDetailDto
     {
@@ -13,7 +15,12 @@ namespace ERPCore2.Models
         public int Id { get; set; }
 
         /// <summary>
-        /// 明細類型：SalesOrder 或 SalesReturn
+        /// 沖款模式：應收或應付
+        /// </summary>
+        public SetoffMode Mode { get; set; } = SetoffMode.Receivable;
+
+        /// <summary>
+        /// 明細類型：SalesOrder, SalesReturn, PurchaseReceiving, PurchaseReturn
         /// </summary>
         public string Type { get; set; } = string.Empty;
 
@@ -24,6 +31,8 @@ namespace ERPCore2.Models
         {
             "SalesOrder" => "銷貨訂單",
             "SalesReturn" => "銷貨退回",
+            "PurchaseReceiving" => "採購進貨",
+            "PurchaseReturn" => "採購退回",
             _ => "未知"
         };
 
@@ -169,14 +178,52 @@ namespace ERPCore2.Models
         public bool IsSettled { get; set; }
 
         /// <summary>
-        /// 客戶 ID
+        /// 合作對象 ID (客戶 ID 或供應商 ID)
         /// </summary>
-        public int CustomerId { get; set; }
+        public int PartnerId { get; set; }
 
         /// <summary>
-        /// 客戶名稱
+        /// 合作對象名稱 (客戶名稱或供應商名稱)
         /// </summary>
-        public string CustomerName { get; set; } = string.Empty;
+        public string PartnerName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 客戶 ID (僅應收帳款使用，向後相容)
+        /// </summary>
+        [Obsolete("請使用 PartnerId 代替")]
+        public int CustomerId 
+        { 
+            get => Mode == SetoffMode.Receivable ? PartnerId : 0;
+            set => PartnerId = value;
+        }
+
+        /// <summary>
+        /// 客戶名稱 (僅應收帳款使用，向後相容)
+        /// </summary>
+        [Obsolete("請使用 PartnerName 代替")]
+        public string CustomerName 
+        { 
+            get => Mode == SetoffMode.Receivable ? PartnerName : string.Empty;
+            set => PartnerName = value;
+        }
+
+        /// <summary>
+        /// 供應商 ID (僅應付帳款使用)
+        /// </summary>
+        public int SupplierId 
+        { 
+            get => Mode == SetoffMode.Payable ? PartnerId : 0;
+            set => PartnerId = value;
+        }
+
+        /// <summary>
+        /// 供應商名稱 (僅應付帳款使用)
+        /// </summary>
+        public string SupplierName 
+        { 
+            get => Mode == SetoffMode.Payable ? PartnerName : string.Empty;
+            set => PartnerName = value;
+        }
 
         /// <summary>
         /// 幣別

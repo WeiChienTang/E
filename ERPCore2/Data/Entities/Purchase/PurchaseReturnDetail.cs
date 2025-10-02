@@ -26,7 +26,7 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "退回小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal ReturnSubtotal => ReturnQuantity * ReturnUnitPrice;
+        public decimal ReturnSubtotalAmount => ReturnQuantity * ReturnUnitPrice;
 
         [Display(Name = "已處理數量")]
         public int ProcessedQuantity { get; set; } = 0;

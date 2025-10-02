@@ -30,7 +30,7 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Subtotal { get; set; } = 0;
+        public decimal SubtotalAmount { get; set; } = 0;
 
         [Display(Name = "已出貨數量")]
         [Column(TypeName = "decimal(18,3)")]

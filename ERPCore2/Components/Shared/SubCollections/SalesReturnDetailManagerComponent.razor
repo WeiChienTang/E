@@ -648,7 +648,7 @@ else
     private decimal GetTotalAmount()
     {
         return ReturnItems.Where(item => !IsEmptyRow(item))
-                          .Sum(item => item.ReturnSubtotal);
+                          .Sum(item => item.ReturnSubtotalAmount);
     }
 
     private async Task NotifyDetailsChanged()
@@ -854,7 +854,7 @@ else
         public int SelectedIndex { get; set; } = -1;
         
         // 計算屬性
-        public decimal ReturnSubtotal => ReturnQuantity * ReturnUnitPrice;
+        public decimal ReturnSubtotalAmount => ReturnQuantity * ReturnUnitPrice;
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>

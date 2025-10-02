@@ -34,7 +34,7 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "退回小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal ReturnSubtotal { get; set; } = 0;
+        public decimal ReturnSubtotalAmount { get; set; } = 0;
 
         [Display(Name = "已處理數量")]
         [Column(TypeName = "decimal(18,3)")]

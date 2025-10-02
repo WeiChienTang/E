@@ -95,8 +95,8 @@ namespace ERPCore2.FieldConfiguration
                                 Text = r.Name,
                                 Value = r.Id.ToString()
                             }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "ReturnReason.Name", sr => sr.ReturnReason != null ? sr.ReturnReason.Name : "")
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, "ReturnReason", sr => sr.ReturnReasonId)
                         }
                     },
                     {

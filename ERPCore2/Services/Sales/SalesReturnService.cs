@@ -42,6 +42,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.Product)
                     .AsQueryable()
@@ -69,6 +70,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.Product)
                     .Include(sr => sr.SalesReturnDetails)
@@ -101,6 +103,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
                     .Where(sr => (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
                          sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
                     .OrderByDescending(sr => sr.ReturnDate)
@@ -201,6 +204,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.CustomerId == customerId)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
@@ -227,6 +231,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.SalesOrderId == salesOrderId)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
@@ -255,6 +260,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
@@ -280,7 +286,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnDetails
                     .Where(srd => srd.SalesReturnId == salesReturnId)
-                    .SumAsync(srd => srd.ReturnSubtotal);
+                    .SumAsync(srd => srd.ReturnSubtotalAmount);
             }
             catch (Exception ex)
             {
@@ -350,7 +356,9 @@ namespace ERPCore2.Services
                 {
                     TotalReturns = returns.Count,
                     TotalReturnAmount = returns.Sum(sr => sr.TotalReturnAmount),
-                    ReturnReasonCounts = returns.GroupBy(sr => sr.ReturnReason)
+                    ReturnReasonCounts = returns
+                        .Where(sr => sr.ReturnReason != null)
+                        .GroupBy(sr => sr.ReturnReason!)
                         .ToDictionary(g => g.Key, g => g.Count())
                 };
 

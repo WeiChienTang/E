@@ -182,7 +182,8 @@
                 {
                     SalesReturnNumber = await GenerateReturnNumberAsync(),
                     ReturnDate = DateTime.Today,
-                    TotalReturnAmount = 0
+                    TotalReturnAmount = 0,
+                    ReturnReasonId = null // 預設為 null，選擇性填寫
                 };
                 
                 // 初始化空的明細列表
@@ -443,16 +444,20 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesReturn.ReturnReason),
+                    PropertyName = nameof(SalesReturn.ReturnReasonId),
                     Label = "退貨原因",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Options = returnReasons.Select(r => new SelectOption
+                    Options = new List<SelectOption> 
+                    { 
+                        new SelectOption { Text = "請選擇...", Value = "" } 
+                    }
+                    .Concat(returnReasons.Select(r => new SelectOption
                     {
                         Text = r.Name,
                         Value = r.Id.ToString()
-                    }).ToList(),
-                    HelpText = "請選擇退貨原因"
+                    })).ToList(),
+                    HelpText = "選擇性填寫退貨原因"
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<SalesReturn>()
             };
@@ -464,7 +469,7 @@
                 { "FilterProductId", "基本資訊" },
                 { nameof(SalesReturn.SalesOrderId), "基本資訊" },
                 { nameof(SalesReturn.ReturnDate), "基本資訊" },
-                { nameof(SalesReturn.ReturnReason), "基本資訊" },
+                { nameof(SalesReturn.ReturnReasonId), "基本資訊" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }
             };
         }
@@ -717,6 +722,13 @@
     {
         try
         {
+            // 驗證必填欄位
+            if (salesReturn.CustomerId <= 0)
+            {
+                await NotificationService.ShowErrorAsync("請選擇客戶");
+                return false;
+            }
+            
             // 首先呼叫明細管理器的驗證方法
             if (salesReturnDetailManager != null)
             {

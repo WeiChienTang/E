@@ -716,12 +716,12 @@
                         detail.DiscountAmount = 0;
                     }
                     
-                    detail.Subtotal = subtotal;
+                    detail.SubtotalAmount = subtotal;
                     detail.PendingQuantity = detail.OrderQuantity - detail.DeliveredQuantity;
                 }
                 else
                 {
-                    detail.Subtotal = 0;
+                    detail.SubtotalAmount = 0;
                     detail.DiscountAmount = 0;
                     detail.PendingQuantity = 0;
                 }
@@ -730,7 +730,7 @@
             // 更新主檔的總金額
             if (editModalComponent?.Entity != null)
             {
-                editModalComponent.Entity.TotalAmount = salesOrderDetails.Sum(d => d.Subtotal);
+                editModalComponent.Entity.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
                 StateHasChanged();
             }
         }
@@ -787,7 +787,7 @@
             }
 
             // 更新總金額
-            salesOrder.TotalAmount = salesOrderDetails.Sum(d => d.Subtotal);
+            salesOrder.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
 
             var isEditMode = SalesOrderId.HasValue;
             

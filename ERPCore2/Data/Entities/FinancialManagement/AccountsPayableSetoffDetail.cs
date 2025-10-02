@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 應付帳款沖款明細實體 - 記錄每筆沖款對應的採購或退回明細
+    /// 應付帳款沖款明細實體 - 記錄每筆沖款對應的採購進貨或退回明細
     /// </summary>
     [Index(nameof(SetoffId))]
-    [Index(nameof(PurchaseOrderDetailId))]
+    [Index(nameof(PurchaseReceivingDetailId))]
     [Index(nameof(PurchaseReturnDetailId))]
     public class AccountsPayableSetoffDetail : BaseEntity
     {
@@ -21,11 +21,11 @@ namespace ERPCore2.Data.Entities
         public int SetoffId { get; set; }
 
         /// <summary>
-        /// 採購訂單明細ID (二選一)
+        /// 採購進貨明細ID (二選一)
         /// </summary>
-        [Display(Name = "採購訂單明細")]
-        [ForeignKey(nameof(PurchaseOrderDetail))]
-        public int? PurchaseOrderDetailId { get; set; }
+        [Display(Name = "採購進貨明細")]
+        [ForeignKey(nameof(PurchaseReceivingDetail))]
+        public int? PurchaseReceivingDetailId { get; set; }
 
         /// <summary>
         /// 採購退回明細ID (二選一)
@@ -64,9 +64,9 @@ namespace ERPCore2.Data.Entities
         public AccountsPayableSetoff Setoff { get; set; } = null!;
 
         /// <summary>
-        /// 採購訂單明細導航屬性
+        /// 採購進貨明細導航屬性
         /// </summary>
-        public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }
+        public PurchaseReceivingDetail? PurchaseReceivingDetail { get; set; }
 
         /// <summary>
         /// 採購退回明細導航屬性
@@ -100,14 +100,14 @@ namespace ERPCore2.Data.Entities
         /// 取得關聯的實體 ID (計算屬性)
         /// </summary>
         [NotMapped]
-        public int RelatedDetailId => PurchaseOrderDetailId ?? PurchaseReturnDetailId ?? 0;
+        public int RelatedDetailId => PurchaseReceivingDetailId ?? PurchaseReturnDetailId ?? 0;
 
         /// <summary>
         /// 取得單據類型 (計算屬性)
         /// </summary>
         [NotMapped]
         [Display(Name = "單據類型")]
-        public string DocumentType => PurchaseOrderDetailId.HasValue ? "PurchaseOrder" : 
+        public string DocumentType => PurchaseReceivingDetailId.HasValue ? "PurchaseReceiving" : 
                                      PurchaseReturnDetailId.HasValue ? "PurchaseReturn" : 
                                      string.Empty;
 
@@ -116,7 +116,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [NotMapped]
         [Display(Name = "單據編號")]
-        public string DocumentNumber => PurchaseOrderDetail?.PurchaseOrder?.PurchaseOrderNumber ?? 
+        public string DocumentNumber => PurchaseReceivingDetail?.PurchaseReceiving?.ReceiptNumber ?? 
                                        PurchaseReturnDetail?.PurchaseReturn?.PurchaseReturnNumber ?? 
                                        string.Empty;
 
@@ -125,7 +125,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [NotMapped]
         [Display(Name = "商品名稱")]
-        public string ProductName => PurchaseOrderDetail?.Product?.Name ?? 
+        public string ProductName => PurchaseReceivingDetail?.Product?.Name ?? 
                                     PurchaseReturnDetail?.Product?.Name ?? 
                                     string.Empty;
 
@@ -134,8 +134,8 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [NotMapped]
         [Display(Name = "數量")]
-        public decimal Quantity => PurchaseOrderDetailId.HasValue ? 
-                                  (PurchaseOrderDetail?.OrderQuantity ?? 0) : 
+        public decimal Quantity => PurchaseReceivingDetailId.HasValue ? 
+                                  (PurchaseReceivingDetail?.ReceivedQuantity ?? 0) : 
                                   (PurchaseReturnDetail?.ReturnQuantity ?? 0);
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [NotMapped]
         [Display(Name = "單位")]
-        public string UnitName => PurchaseOrderDetail?.Product?.Unit?.Name ?? 
+        public string UnitName => PurchaseReceivingDetail?.Product?.Unit?.Name ?? 
                                  PurchaseReturnDetail?.Product?.Unit?.Name ?? 
                                  string.Empty;
 
@@ -154,12 +154,12 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         public bool IsValid()
         {
-            // 必須指定採購訂單明細或採購退回明細其中之一
-            if (!PurchaseOrderDetailId.HasValue && !PurchaseReturnDetailId.HasValue)
+            // 必須指定採購進貨明細或採購退回明細其中之一
+            if (!PurchaseReceivingDetailId.HasValue && !PurchaseReturnDetailId.HasValue)
                 return false;
 
             // 不能同時指定兩者
-            if (PurchaseOrderDetailId.HasValue && PurchaseReturnDetailId.HasValue)
+            if (PurchaseReceivingDetailId.HasValue && PurchaseReturnDetailId.HasValue)
                 return false;
 
             // 沖款金額必須大於 0 且小於等於剩餘應付金額
