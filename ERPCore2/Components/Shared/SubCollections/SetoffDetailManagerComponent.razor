@@ -7,7 +7,7 @@
 <div class="setoff-detail-manager @GetModeClass()">
     @if (IsLoading)
     {
-        <div class="d-flex>justify-content-center align-items-center my-3">
+        <div class="d-flex justify-content-center align-items-center my-3">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">載入中...</span>
             </div>
@@ -450,11 +450,22 @@
                                   placeholder="@(detail.TotalAmount < 0 ? "折讓金額" : "")" />;
                 }
             },
-            new ()
+            new InteractiveColumnDefinition
             {
-                Title ="備註",
+                Title = "備註",
                 PropertyName = nameof(SetoffDetailDto.Remark),
-                
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "200px",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffDetailDto)item;
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@detail.Remark"
+                                   @oninput="@(async (e) => await HandleRemarksChanged(detail, e.Value?.ToString()))"
+                                   placeholder="選填"
+                                   readonly="@IsReadOnly" />;
+                }
             }
         };
 
@@ -626,6 +637,22 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDiscountAmountChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理備註變更事件
+    /// </summary>
+    private async Task HandleRemarksChanged(SetoffDetailDto detail, string? value)
+    {
+        try
+        {
+            detail.Remark = value;
+            await NotifySelectionChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRemarksChanged), GetType());
         }
     }
 
