@@ -72,7 +72,6 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
       public DbSet<AccountsReceivableSetoffPaymentDetail> AccountsReceivableSetoffPaymentDetails { get; set; }
       public DbSet<Prepayment> Prepayments { get; set; }
-      public DbSet<Prepaid> Prepaids { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
@@ -657,13 +656,26 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasKey(p => p.Id);
 
+                        // 客戶關聯（預收款時使用）
+                        entity.HasOne(p => p.Customer)
+                        .WithMany()
+                        .HasForeignKey(p => p.CustomerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 供應商關聯（預付款時使用）
+                        entity.HasOne(p => p.Supplier)
+                        .WithMany()
+                        .HasForeignKey(p => p.SupplierId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 應收沖款單關聯（預收款時使用）
                         entity.HasOne(p => p.AccountsReceivableSetoff)
                         .WithMany()
                         .HasForeignKey(p => p.SetoffId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         // 為 decimal 屬性設定精確度和小數位數
-                        entity.Property(e => e.PrepaymentAmount)
+                        entity.Property(e => e.Amount)
                               .HasPrecision(18, 2);
 
                         // 設定唯一索引
@@ -671,8 +683,11 @@ namespace ERPCore2.Data.Context
                               .IsUnique();
 
                         // 設定其他索引
+                        entity.HasIndex(e => e.PrepaymentType);
+                        entity.HasIndex(e => e.PaymentDate);
+                        entity.HasIndex(e => e.CustomerId);
+                        entity.HasIndex(e => e.SupplierId);
                         entity.HasIndex(e => e.SetoffId);
-                        entity.HasIndex(e => e.PrepaymentDate);
                   });
 
                   // 紙張設定相關
