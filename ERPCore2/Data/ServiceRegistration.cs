@@ -56,6 +56,7 @@ namespace ERPCore2.Data
             services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
             services.AddScoped<IAccountsReceivableSetoffService, AccountsReceivableSetoffService>();
             services.AddScoped<IAccountsReceivableSetoffDetailService, AccountsReceivableSetoffDetailService>();
+            services.AddScoped<ISetoffPaymentDetailService, SetoffPaymentDetailService>();
             services.AddScoped<ICurrencyService, CurrencyService>();
             services.AddScoped<IBankService, BankService>();
 

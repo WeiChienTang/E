@@ -1,0 +1,834 @@
+@* 沖款付款明細管理組件 - 使用 InteractiveTableComponent 來管理付款明細 *@
+@inject ISetoffPaymentDetailService SetoffPaymentDetailService
+@inject IPaymentMethodService PaymentMethodService
+@inject IBankService BankService
+@inject INotificationService NotificationService
+@using ERPCore2.Helpers
+
+<div class="setoff-payment-detail-manager">
+    @if (IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center my-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <InteractiveTableComponent TItem="SetoffPaymentDetailDto"
+                                       Items="@PaymentDetails"
+                                       ColumnDefinitions="@GetColumnDefinitions()"
+                                       ShowHeader="true"
+                                       ShowRowNumbers="false"
+                                       ShowActions="false"
+                                       ShowBuiltInActions="true"
+                                       ShowBuiltInDeleteButton="true"
+                                       OnItemDelete="HandleItemDelete"
+                                       IsStriped="true"
+                                       IsHoverable="true"
+                                       IsBordered="true"
+                                       IsReadOnly="@IsReadOnly"
+                                       EmptyMessage="尚未新增付款明細"
+                                       CssClass="payment-detail-table"
+                                       ValidationErrors="@ValidationErrors" />
+        </div>
+    </div>
+</div>
+
+@code {
+    #region 參數定義
+    [Parameter] public int? SetoffId { get; set; }
+    [Parameter] public decimal TotalSetoffAmount { get; set; }
+    [Parameter] public EventCallback<List<SetoffPaymentDetailDto>> OnPaymentDetailsChanged { get; set; }
+    [Parameter] public EventCallback<decimal> OnTotalPaymentAmountChanged { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    #endregion
+
+    #region 私有狀態
+    private bool IsLoading { get; set; } = false;
+    private List<SetoffPaymentDetailDto> PaymentDetails { get; set; } = new();
+    private List<PaymentMethod> PaymentMethods { get; set; } = new();
+    private List<Bank> Banks { get; set; } = new();
+    private Dictionary<string, string> ValidationErrors { get; set; } = new();
+    private HashSet<int> DeletedDetailIds { get; set; } = new();
+    private string? ValidationMessage { get; set; }
+    private int? _previousSetoffId = null; // 追蹤上一次的 SetoffId
+    private bool _isInitialized = false; // 追蹤是否已初始化
+    private decimal _previousTotalSetoffAmount = 0m; // 追蹤上一次的 TotalSetoffAmount
+    private bool _previousIsReadOnly = false; // 追蹤上一次的 IsReadOnly
+    private bool _previousIsEditMode = false; // 追蹤上一次的 IsEditMode
+    private bool _previousIsLoading = false; // 追蹤載入狀態
+    private int _previousPaymentDetailsCount = 0; // 追蹤資料數量
+    #endregion
+
+    #region 生命週期方法
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadOptionsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 控制組件是否需要重新渲染
+    /// </summary>
+    protected override bool ShouldRender()
+    {
+        // 檢查關鍵參數或狀態是否有變更
+        bool hasChanges = _previousSetoffId != SetoffId ||
+                          _previousTotalSetoffAmount != TotalSetoffAmount ||
+                          _previousIsReadOnly != IsReadOnly ||
+                          _previousIsEditMode != IsEditMode ||
+                          _previousIsLoading != IsLoading || // 載入狀態變更
+                          _previousPaymentDetailsCount != PaymentDetails.Count; // 資料數量變更
+        
+        // 更新狀態追蹤
+        _previousIsLoading = IsLoading;
+        _previousPaymentDetailsCount = PaymentDetails.Count;
+        
+        return hasChanges;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            // 檢查 SetoffId 是否真的變更了
+            bool setoffIdChanged = _previousSetoffId != SetoffId;
+            bool totalSetoffAmountChanged = _previousTotalSetoffAmount != TotalSetoffAmount;
+            bool isReadOnlyChanged = _previousIsReadOnly != IsReadOnly;
+            bool isEditModeChanged = _previousIsEditMode != IsEditMode;
+            
+            // 更新追蹤的參數值
+            _previousSetoffId = SetoffId;
+            _previousTotalSetoffAmount = TotalSetoffAmount;
+            _previousIsReadOnly = IsReadOnly;
+            _previousIsEditMode = IsEditMode;
+            
+            if (IsEditMode && SetoffId.HasValue && SetoffId.Value > 0)
+            {
+                // 只在 SetoffId 變更時或首次初始化時才重新載入資料
+                if (setoffIdChanged || !_isInitialized)
+                {
+                    await LoadPaymentDetailsAsync();
+                    _isInitialized = true;
+                }
+                else if (totalSetoffAmountChanged)
+                {
+                    // TotalSetoffAmount 變更時，重新驗證
+                    ValidateAmounts();
+                }
+            }
+            else
+            {
+                // 新增模式: 確保有一個空行（只在首次初始化或 SetoffId 變更時）
+                if (setoffIdChanged || !_isInitialized)
+                {
+                    EnsureOneEmptyRow();
+                    _isInitialized = true;
+                }
+                else if (totalSetoffAmountChanged)
+                {
+                    // TotalSetoffAmount 變更時，重新驗證
+                    ValidateAmounts();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType());
+        }
+    }
+    #endregion
+
+    #region 資料載入方法
+    /// <summary>
+    /// 載入下拉選項資料
+    /// </summary>
+    private async Task LoadOptionsAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            // 載入付款方式
+            PaymentMethods = await PaymentMethodService.GetAllAsync();
+
+            // 載入銀行
+            Banks = await BankService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadOptionsAsync), GetType());
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 載入付款明細
+    /// </summary>
+    private async Task LoadPaymentDetailsAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            if (!SetoffId.HasValue || SetoffId.Value <= 0)
+            {
+                PaymentDetails.Clear();
+                EnsureOneEmptyRow();
+                return;
+            }
+
+            PaymentDetails = await SetoffPaymentDetailService.GetBySetoffIdAsync(SetoffId.Value);
+
+            // 確保有一個空行可以新增
+            EnsureOneEmptyRow();
+
+            ValidationErrors.Clear();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaymentDetailsAsync), GetType(),
+                additionalData: $"SetoffId: {SetoffId}");
+            PaymentDetails = new List<SetoffPaymentDetailDto>();
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    #endregion
+
+    #region 欄位定義
+    /// <summary>
+    /// 取得欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            // 1. 付款方式 (下拉選單)
+            new InteractiveColumnDefinition
+            {
+                Title = "付款方式",
+                PropertyName = nameof(SetoffPaymentDetailDto.PaymentMethodId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "180px",
+                IsRequired = true,
+                Options = PaymentMethods.Select(pm => new InteractiveSelectOption
+                {
+                    Value = pm.Id,
+                    Text = pm.Name
+                }).ToList(),
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(
+                    this, async args => await HandlePaymentMethodChanged((SetoffPaymentDetailDto)args.Item1, args.Item2))
+            },
+
+            // 2. 付款金額 (數字輸入)
+            new InteractiveColumnDefinition
+            {
+                Title = "付款金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffPaymentDetailDto)item;
+                    
+                    return @<input type="text"
+                                  class="form-control form-control-sm text-end"
+                                  value="@(detail.Amount > 0 ? detail.Amount.ToString("N0") : "")"
+                                  pattern="[0-9]*"
+                                  inputmode="numeric"
+                                  @oninput="@(async (e) => await HandleAmountChanged(detail, e.Value?.ToString()))"
+                                  readonly="@IsReadOnly" />;
+                }
+            },
+            // 3. 銀行 (條件顯示的下拉選單)
+            new InteractiveColumnDefinition
+            {
+                Title = "銀行",
+                PropertyName = nameof(SetoffPaymentDetailDto.BankId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "200px",
+                Options = Banks.Select(b => new InteractiveSelectOption
+                {
+                    Value = b.Id,
+                    Text = b.BankName
+                }).ToList(),
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(
+                    this, async args => await HandleBankChanged((SetoffPaymentDetailDto)args.Item1, args.Item2))
+            },
+
+            // 4. 帳號/票號
+            new InteractiveColumnDefinition
+            {
+                Title = "帳號/票號",
+                PropertyName = nameof(SetoffPaymentDetailDto.AccountNumber),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "180px",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffPaymentDetailDto)item;
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@detail.AccountNumber"
+                                   @oninput="@(async (e) => await HandleAccountNumberChanged(detail, e.Value?.ToString()))"
+                                   placeholder="請輸入帳號或支票號碼"
+                                   readonly="@IsReadOnly" />;
+                }
+            },
+
+            // 5. 交易參考號
+            new InteractiveColumnDefinition
+            {
+                Title = "交易參考號",
+                PropertyName = nameof(SetoffPaymentDetailDto.TransactionReference),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "180px",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffPaymentDetailDto)item;
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@detail.TransactionReference"
+                                   @oninput="@(async (e) => await HandleTransactionReferenceChanged(detail, e.Value?.ToString()))"
+                                   placeholder="匯款單號/交易號"
+                                   readonly="@IsReadOnly" />;
+                }
+            },
+
+            // 6. 付款日期
+            new InteractiveColumnDefinition
+            {
+                Title = "付款日期",
+                PropertyName = nameof(SetoffPaymentDetailDto.PaymentDate),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffPaymentDetailDto)item;
+                    return@<input type="date" 
+                                   class="form-control form-control-sm" 
+                                   value="@(detail.PaymentDate?.ToString("yyyy-MM-dd"))"
+                                   @onchange="async e => await HandlePaymentDateChanged(detail, e.Value?.ToString())"
+                                   disabled="@IsReadOnly" />;
+                }
+            },
+
+            // 7. 備註
+            new InteractiveColumnDefinition
+            {
+                Title = "備註",
+                PropertyName = nameof(SetoffPaymentDetailDto.Remarks),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "200px",
+                CustomTemplate = item =>
+                {
+                    var detail = (SetoffPaymentDetailDto)item;
+                    return @<input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@detail.Remarks"
+                                   @oninput="@(async (e) => await HandleRemarksChanged(detail, e.Value?.ToString()))"
+                                   placeholder="選填"
+                                   readonly="@IsReadOnly" />;
+                }
+            }
+        };
+
+        return columns;
+    }
+    #endregion
+
+    #region 事件處理方法
+    /// <summary>
+    /// 處理付款方式變更
+    /// </summary>
+    private async Task HandlePaymentMethodChanged(SetoffPaymentDetailDto detail, object? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            
+            if (value is int paymentMethodId)
+            {
+                var paymentMethod = PaymentMethods.FirstOrDefault(pm => pm.Id == paymentMethodId);
+                if (paymentMethod != null)
+                {
+                    detail.PaymentMethodId = paymentMethodId;
+                    detail.PaymentMethodName = paymentMethod.Name;
+
+                    // 判斷是否需要銀行資訊
+                    detail.RequiresBank = RequiresBankInfo(paymentMethod.Name);
+
+                    // 如果不需要銀行,清空銀行選擇
+                    if (!detail.RequiresBank)
+                    {
+                        detail.BankId = null;
+                        detail.BankName = null;
+                    }
+                }
+            }
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaymentMethodChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理銀行變更
+    /// </summary>
+    private async Task HandleBankChanged(SetoffPaymentDetailDto detail, object? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            
+            if (value is int bankId)
+            {
+                var bank = Banks.FirstOrDefault(b => b.Id == bankId);
+                if (bank != null)
+                {
+                    detail.BankId = bankId;
+                    detail.BankName = bank.BankName;
+                }
+            }
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBankChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理金額變更
+    /// </summary>
+    private async Task HandleAmountChanged(SetoffPaymentDetailDto detail, string? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            
+            if (string.IsNullOrEmpty(value))
+            {
+                detail.Amount = 0;
+            }
+            else if (decimal.TryParse(value, out var amount))
+            {
+                detail.Amount = amount;
+            }
+            
+            // 驗證金額
+            ValidateAmounts();
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAmountChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理付款日期變更
+    /// </summary>
+    private async Task HandlePaymentDateChanged(SetoffPaymentDetailDto detail, string? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            
+            if (DateTime.TryParse(value, out var date))
+            {
+                detail.PaymentDate = date;
+            }
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaymentDateChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理帳號/票號變更
+    /// </summary>
+    private async Task HandleAccountNumberChanged(SetoffPaymentDetailDto detail, string? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            detail.AccountNumber = value;
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAccountNumberChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理交易參考號變更
+    /// </summary>
+    private async Task HandleTransactionReferenceChanged(SetoffPaymentDetailDto detail, string? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            detail.TransactionReference = value;
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTransactionReferenceChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理備註變更
+    /// </summary>
+    private async Task HandleRemarksChanged(SetoffPaymentDetailDto detail, string? value)
+    {
+        try
+        {
+            var wasEmpty = IsEmptyRow(detail);
+            detail.Remarks = value;
+            
+            // 處理自動空行邏輯
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRemarksChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理刪除項目
+    /// </summary>
+    private async Task HandleItemDelete(SetoffPaymentDetailDto item)
+    {
+        try
+        {
+            if (item.Id > 0)
+            {
+                DeletedDetailIds.Add(item.Id);
+            }
+
+            // 使用 AutoEmptyRowHelper 處理項目移除
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleItemRemove(
+                PaymentDetails,
+                item,
+                IsEmptyRow,
+                CreateEmptyItem
+            );
+
+            // 驗證金額
+            ValidateAmounts();
+
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleItemDelete), GetType());
+        }
+    }
+    #endregion
+
+    #region 驗證方法
+    /// <summary>
+    /// 驗證所有金額
+    /// </summary>
+    private void ValidateAmounts()
+    {
+        ValidationErrors.Clear();
+        ValidationMessage = null;
+
+        var validDetails = GetValidPaymentDetails();
+
+        if (!validDetails.Any())
+        {
+            return;
+        }
+
+        // 驗證每筆明細
+        foreach (var detail in validDetails)
+        {
+            var validation = detail.ValidateAll(TotalSetoffAmount);
+            if (!validation.IsValid)
+            {
+                foreach (var error in validation.Errors)
+                {
+                    ValidationErrors[$"{detail.GetHashCode()}_{nameof(detail.Amount)}"] = error;
+                }
+            }
+        }
+
+        // 驗證總金額
+        var totalPayment = validDetails.Sum(d => d.Amount);
+    }
+    #endregion
+
+    #region 輔助方法
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了付款方式，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(SetoffPaymentDetailDto detail)
+    {
+        // 只檢查付款方式，這是核心欄位
+        return !detail.PaymentMethodId.HasValue;
+    }
+
+    /// <summary>
+    /// 創建空的付款明細項目
+    /// </summary>
+    private SetoffPaymentDetailDto CreateEmptyItem()
+    {
+        return new SetoffPaymentDetailDto
+        {
+            SetoffId = SetoffId ?? 0,
+            PaymentDate = DateTime.Today
+        };
+    }
+
+    /// <summary>
+    /// 確保有一個空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        if (IsReadOnly) return;
+
+        var emptyRows = PaymentDetails.Where(IsEmptyRow).ToList();
+
+        if (emptyRows.Count == 0)
+        {
+            // 沒有空行,新增一個
+            PaymentDetails.Add(new SetoffPaymentDetailDto
+            {
+                SetoffId = SetoffId ?? 0,
+                PaymentDate = DateTime.Today
+            });
+        }
+        else if (emptyRows.Count > 1)
+        {
+            // 超過一個空行,只保留最後一個
+            for (int i = 0; i < emptyRows.Count - 1; i++)
+            {
+                PaymentDetails.Remove(emptyRows[i]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 判斷付款方式是否需要銀行資訊
+    /// </summary>
+    private bool RequiresBankInfo(string paymentMethodName)
+    {
+        if (string.IsNullOrWhiteSpace(paymentMethodName))
+            return false;
+
+        var bankRelatedKeywords = new[] { "匯款", "轉帳", "支票", "ATM", "銀行" };
+        return bankRelatedKeywords.Any(k =>
+            paymentMethodName.Contains(k, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// 取得有效的付款明細
+    /// </summary>
+    private List<SetoffPaymentDetailDto> GetValidPaymentDetails()
+    {
+        return PaymentDetails.Where(d => !IsEmptyRow(d)).ToList();
+    }
+
+    /// <summary>
+    /// 通知變更
+    /// </summary>
+    private async Task NotifyChanges()
+    {
+        try
+        {
+            var validDetails = GetValidPaymentDetails();
+            var totalAmount = validDetails.Sum(d => d.Amount);
+
+            if (OnPaymentDetailsChanged.HasDelegate)
+            {
+                await OnPaymentDetailsChanged.InvokeAsync(validDetails);
+            }
+
+            if (OnTotalPaymentAmountChanged.HasDelegate)
+            {
+                await OnTotalPaymentAmountChanged.InvokeAsync(totalAmount);
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(NotifyChanges), GetType());
+        }
+    }
+    #endregion
+
+    #region 公開方法
+    /// <summary>
+    /// 重新整理資料
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        await LoadPaymentDetailsAsync();
+        _isInitialized = true;
+    }
+
+    /// <summary>
+    /// 清除所有明細
+    /// </summary>
+    public void ClearAll()
+    {
+        PaymentDetails.Clear();
+        DeletedDetailIds.Clear();
+        ValidationErrors.Clear();
+        ValidationMessage = null;
+        _previousSetoffId = null;
+        _isInitialized = false;
+        EnsureOneEmptyRow();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得付款明細列表
+    /// </summary>
+    public List<SetoffPaymentDetailDto> GetPaymentDetails()
+    {
+        return GetValidPaymentDetails();
+    }
+
+    /// <summary>
+    /// 取得已刪除的明細ID列表
+    /// </summary>
+    public List<int> GetDeletedDetailIds()
+    {
+        return DeletedDetailIds.ToList();
+    }
+
+    /// <summary>
+    /// 驗證付款明細
+    /// </summary>
+    public (bool IsValid, List<string> Errors) ValidatePaymentDetails()
+    {
+        var errors = new List<string>();
+        var validDetails = GetValidPaymentDetails();
+
+        if (!validDetails.Any())
+        {
+            errors.Add("請至少新增一筆付款明細");
+        }
+
+        // 驗證總金額
+        var totalPayment = validDetails.Sum(d => d.Amount);
+        if (totalPayment != TotalSetoffAmount)
+        {
+            errors.Add($"付款總額 {totalPayment:N2} 與沖款總額 {TotalSetoffAmount:N2} 不符");
+        }
+
+        // 驗證每筆明細
+        foreach (var detail in validDetails)
+        {
+            var validation = detail.ValidateAll(TotalSetoffAmount);
+            if (!validation.IsValid)
+            {
+                errors.AddRange(validation.Errors);
+            }
+        }
+
+        return (errors.Count == 0, errors);
+    }
+
+    /// <summary>
+    /// 儲存付款明細
+    /// </summary>
+    public async Task<(bool Success, string Message)> SaveAsync()
+    {
+        try
+        {
+            if (!SetoffId.HasValue || SetoffId.Value <= 0)
+            {
+                return (false, "沖款單ID無效");
+            }
+
+            // 驗證
+            var validation = ValidatePaymentDetails();
+            if (!validation.IsValid)
+            {
+                return (false, string.Join("; ", validation.Errors));
+            }
+
+            // 儲存
+            var validDetails = GetValidPaymentDetails();
+            var deletedIds = GetDeletedDetailIds();
+
+            return await SetoffPaymentDetailService.SavePaymentDetailsAsync(
+                SetoffId.Value,
+                validDetails,
+                deletedIds);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveAsync), GetType());
+            return (false, $"儲存失敗: {ex.Message}");
+        }
+    }
+    #endregion
+}

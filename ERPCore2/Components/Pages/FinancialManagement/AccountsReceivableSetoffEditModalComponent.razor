@@ -1,6 +1,7 @@
 @* 應收帳款沖款編輯組件 *@
 @inject IAccountsReceivableSetoffService AccountsReceivableSetoffService
 @inject IAccountsReceivableSetoffDetailService AccountsReceivableSetoffDetailService
+@inject ISetoffPaymentDetailService SetoffPaymentDetailService
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IPaymentMethodService PaymentMethodService
@@ -67,6 +68,7 @@
     // ===== 內部狀態 =====
     private GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>? editModalComponent;
     private AccountsReceivableSetoffDetailManagerComponent? detailManagerComponent;
+    private SetoffPaymentDetailManagerComponent? paymentDetailManagerComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
@@ -79,6 +81,8 @@
     // 沖款明細相關狀態
     private int? selectedCustomerId = null;
     private List<AccountsReceivableSetoffDetail> setoffDetails = new();
+    private decimal totalSetoffAmount = 0m;
+    private decimal totalPaymentAmount = 0m;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -114,6 +118,14 @@
             if (SetoffId.HasValue && SetoffId.Value > 0)
             {
                 var setoff = await AccountsReceivableSetoffService.GetByIdAsync(SetoffId.Value);
+                
+                // 編輯模式：初始化本地的 totalSetoffAmount 變數
+                // 這確保在明細組件載入之前，totalSetoffAmount 就有正確的初始值
+                if (setoff != null)
+                {
+                    totalSetoffAmount = setoff.TotalSetoffAmount;
+                }
+                
                 return setoff;
             }
             else
@@ -124,8 +136,13 @@
                 {
                     SetoffNumber = await GenerateSetoffNumberAsync(),
                     SetoffDate = DateTime.Today,
-                    CompanyId = primaryCompany?.Id ?? 0
+                    CompanyId = primaryCompany?.Id ?? 0,
+                    TotalSetoffAmount = 0 // 新增模式初始為 0
                 };
+                
+                // 新增模式：初始化 totalSetoffAmount
+                totalSetoffAmount = 0;
+                
                 return newSetoff;
             }
         }
@@ -804,6 +821,7 @@
     {
         try
         {
+            // 驗證沖款明細
             if (detailManagerComponent != null)
             {
                 var validation = detailManagerComponent.ValidateSelection();
@@ -813,6 +831,18 @@
                     return false;
                 }
             }
+            
+            // 驗證付款明細
+            if (paymentDetailManagerComponent != null)
+            {
+                var paymentValidation = paymentDetailManagerComponent.ValidatePaymentDetails();
+                if (!paymentValidation.IsValid)
+                {
+                    await NotificationService.ShowErrorAsync("付款明細驗證失敗", string.Join("\n", paymentValidation.Errors));
+                    return false;
+                }
+            }
+            
             return true;
         }
         catch (Exception ex)
@@ -837,16 +867,40 @@
             if (!selectedDetails.Any())
                 return;
 
-            var detailEntities = selectedDetails.Select(dto => new AccountsReceivableSetoffDetail
+            var detailEntities = selectedDetails.Select(dto => 
             {
-                SetoffId = setoff.Id,
-                SalesOrderDetailId = dto.Type == "SalesOrder" ? dto.OriginalEntityId : null,
-                SalesReturnDetailId = dto.Type == "SalesReturn" ? dto.OriginalEntityId : null,
-                ReceivableAmount = dto.TotalAmount,
-                SetoffAmount = dto.ThisTimeAmount, // 只記錄現金沖款金額
-                AfterReceivedAmount = dto.SettledAmount + dto.ThisTimeAmount + dto.ThisTimeDiscountAmount, // 累計收款包含沖款和折讓
-                // 將折讓金額記錄在備註中
-                Remarks = dto.ThisTimeDiscountAmount > 0 ? $"本次沖款：{dto.ThisTimeAmount:N2}，本次折讓：{dto.ThisTimeDiscountAmount:N2}" : null
+                // 計算正確的累計收款金額
+                // 編輯模式：需要先減去原始的沖款和折讓金額，再加上新的金額
+                // 新增模式：直接加上本次的沖款和折讓金額
+                decimal afterReceivedAmount;
+                if (dto.IsEditMode)
+                {
+                    // 編輯模式：移除原始金額後加上新金額
+                    afterReceivedAmount = dto.SettledAmount - dto.OriginalThisTimeAmount - dto.OriginalThisTimeDiscountAmount 
+                                        + dto.ThisTimeAmount + dto.ThisTimeDiscountAmount;
+                }
+                else
+                {
+                    // 新增模式：現有累計 + 本次金額
+                    afterReceivedAmount = dto.SettledAmount + dto.ThisTimeAmount + dto.ThisTimeDiscountAmount;
+                }
+                
+                var entity = new AccountsReceivableSetoffDetail
+                {
+                    SetoffId = setoff.Id,
+                    SalesOrderDetailId = dto.Type == "SalesOrder" ? dto.OriginalEntityId : null,
+                    SalesReturnDetailId = dto.Type == "SalesReturn" ? dto.OriginalEntityId : null,
+                    ReceivableAmount = dto.TotalAmount,
+                    SetoffAmount = dto.ThisTimeAmount, // 只記錄現金沖款金額
+                    AfterReceivedAmount = afterReceivedAmount, // 使用正確計算的累計收款金額
+                    // 將折讓金額記錄在備註中
+                    Remarks = dto.ThisTimeDiscountAmount > 0 ? $"本次沖款：{dto.ThisTimeAmount:N2}，本次折讓：{dto.ThisTimeDiscountAmount:N2}" : null
+                };
+                
+                // 偵錯日誌：確認 SetoffAmount 有正確設置
+                Console.WriteLine($"[偵測用訊息] 明細 {dto.DocumentNumber}: ThisTimeAmount={dto.ThisTimeAmount}, SetoffAmount={entity.SetoffAmount}, AfterReceivedAmount={entity.AfterReceivedAmount}");
+                
+                return entity;
             }).ToList();
 
             // 使用服務批量建立明細
@@ -857,12 +911,46 @@
                 return;
             }
 
-            // 創建財務交易記錄
+            // 步驟 1：先確保主檔總金額正確並更新到資料庫
+            // 這是關鍵步驟，必須在儲存付款明細之前完成
+            var calculatedTotal = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+            if (Math.Abs(setoff.TotalSetoffAmount - calculatedTotal) > 0.01m)
+            {
+                Console.WriteLine($"[修正] 更新主檔總金額：{setoff.TotalSetoffAmount} -> {calculatedTotal}");
+                setoff.TotalSetoffAmount = calculatedTotal;
+            }
+            
+            // 強制更新主檔以確保 TotalSetoffAmount 正確儲存
+            var updateResult = await AccountsReceivableSetoffService.UpdateAsync(setoff);
+            if (!updateResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync("更新沖款總額失敗", updateResult.ErrorMessage ?? "未知錯誤");
+                return;
+            }
+            
+            // 步驟 2：創建財務交易記錄
             await CreateFinancialTransactionRecordsAsync(setoff, selectedDetails);
             
-            // 重新計算並更新主檔總金額（包含沖款和折讓）
-            setoff.TotalSetoffAmount = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
-            await AccountsReceivableSetoffService.UpdateAsync(setoff);
+            // 步驟 3：儲存付款明細（使用正確的 setoff.Id）
+            if (paymentDetailManagerComponent != null)
+            {
+                // 關鍵修正：確保付款明細使用正確的 SetoffId
+                var paymentDetails = paymentDetailManagerComponent.GetPaymentDetails();
+                var deletedIds = paymentDetailManagerComponent.GetDeletedDetailIds();
+                
+                // 直接調用服務層方法，傳入正確的 setoff.Id
+                var paymentResult = await SetoffPaymentDetailService.SavePaymentDetailsAsync(
+                    setoff.Id,  // 使用 setoff.Id 而不是組件的 SetoffId 參數
+                    paymentDetails,
+                    deletedIds
+                );
+                
+                if (!paymentResult.Success)
+                {
+                    await NotificationService.ShowErrorAsync("儲存付款明細失敗", paymentResult.Message);
+                    return;
+                }
+            }
             
             await NotificationService.ShowSuccessAsync($"已儲存 {detailEntities.Count} 筆沖款明細，包含 {selectedDetails.Count(d => d.ThisTimeDiscountAmount > 0)} 筆折讓記錄");
         }
@@ -920,7 +1008,17 @@
                                                                        CustomerId="@editModalComponent.Entity.CustomerId"
                                                                        IsEditMode="@(SetoffId.HasValue && SetoffId.Value > 0)"
                                                                        SetoffId="@SetoffId"
+                                                                       OnTotalAmountChanged="@HandleTotalSetoffAmountChanged"
                                                                        IsReadOnly="false" />
+                        
+                        <SetoffPaymentDetailManagerComponent @ref="paymentDetailManagerComponent"
+                                                             SetoffId="@SetoffId"
+                                                             TotalSetoffAmount="@totalSetoffAmount"
+                                                             OnPaymentDetailsChanged="@HandlePaymentDetailsChanged"
+                                                             OnTotalPaymentAmountChanged="@HandleTotalPaymentAmountChanged"
+                                                             IsReadOnly="false"
+                                                             IsEditMode="true" />
+
                     }
                     catch
                     {
@@ -951,4 +1049,77 @@
             </div>
         }
     };
+
+
+
+    /// <summary>
+    /// 處理付款明細變更
+    /// </summary>
+    private async Task HandlePaymentDetailsChanged(List<SetoffPaymentDetailDto> paymentDetails)
+    {
+        try
+        {
+            // 可以在這裡處理付款明細變更的邏輯
+            // 不需要調用 StateHasChanged()，避免不必要的重新渲染
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaymentDetailsChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理付款總額變更
+    /// </summary>
+    private async Task HandleTotalPaymentAmountChanged(decimal amount)
+    {
+        try
+        {
+            totalPaymentAmount = amount;
+            // 不需要調用 StateHasChanged()，避免觸發整個父組件和所有子組件的重新渲染
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalPaymentAmountChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理總沖款金額變更（從 AccountsReceivableSetoffDetailManagerComponent 事件觸發）
+    /// </summary>
+    private async Task HandleTotalSetoffAmountChanged(decimal amount)
+    {
+        try
+        {
+            totalSetoffAmount = amount;
+            
+            // 關鍵修正：同時更新表單實體的 TotalSetoffAmount
+            // 這樣在主檔儲存時才會包含正確的金額
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.TotalSetoffAmount = amount;
+            }
+            
+            // 需要 StateHasChanged() 來更新 SetoffPaymentDetailManagerComponent 的 TotalSetoffAmount 參數
+            // AccountsReceivableSetoffDetailManagerComponent 已實現 ShouldRender() 優化，不會不必要地重新渲染
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalSetoffAmountChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理沖款明細金額變更 - 更新總沖款金額
+    /// </summary>
+    private void UpdateTotalSetoffAmount()
+    {
+        if (detailManagerComponent != null)
+        {
+            var selectedDetails = detailManagerComponent.GetSelectedDetails();
+            totalSetoffAmount = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+            StateHasChanged();
+        }
+    }
 }

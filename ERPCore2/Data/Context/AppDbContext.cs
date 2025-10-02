@@ -70,6 +70,7 @@ namespace ERPCore2.Data.Context
       // Financial Management
       public DbSet<AccountsReceivableSetoff> AccountsReceivableSetoffs { get; set; }
       public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
+      public DbSet<AccountsReceivableSetoffPaymentDetail> AccountsReceivableSetoffPaymentDetails { get; set; }
       public DbSet<Prepayment> Prepayments { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency

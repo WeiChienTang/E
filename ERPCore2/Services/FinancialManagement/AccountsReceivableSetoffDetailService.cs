@@ -394,37 +394,44 @@ namespace ERPCore2.Services
                         await context.SaveChangesAsync();
                     }
                     
-                    // 設定所有明細的沖款單ID
+                    // 設定所有明細的沖款單ID並驗證
                     foreach (var detail in details)
                     {
                         detail.SetoffId = setoffId;
+                        
+                        // 偵錯日誌：確認傳入的 SetoffAmount
+                        _logger?.LogInformation($"[偵測用訊息] Service 接收明細: SetoffId={detail.SetoffId}, SalesOrderDetailId={detail.SalesOrderDetailId}, SetoffAmount={detail.SetoffAmount}, AfterReceivedAmount={detail.AfterReceivedAmount}");
                         
                         // 驗證明細
                         var validationResult = await ValidateAsync(detail);
                         if (!validationResult.IsSuccess)
                             return validationResult;
                         
-                        // 計算累計收款金額
-                        // AfterReceivedAmount 應該是從相關明細表取得當前累計金額再加上本次沖款
-                        decimal currentReceived = 0;
-                        if (detail.SalesOrderDetailId.HasValue)
-                        {
-                            var salesOrderDetail = await context.SalesOrderDetails
-                                .FirstOrDefaultAsync(sod => sod.Id == detail.SalesOrderDetailId.Value);
-                            currentReceived = salesOrderDetail?.TotalReceivedAmount ?? 0;
-                        }
-                        else if (detail.SalesReturnDetailId.HasValue)
-                        {
-                            var salesReturnDetail = await context.SalesReturnDetails
-                                .FirstOrDefaultAsync(srd => srd.Id == detail.SalesReturnDetailId.Value);
-                            currentReceived = salesReturnDetail?.TotalPaidAmount ?? 0;
-                        }
-                        
-                        detail.AfterReceivedAmount = currentReceived + detail.SetoffAmount;
+                        // AfterReceivedAmount 已經由調用方（Component）正確計算，這裡不再重新計算
+                        // 這樣可以確保編輯模式和新增模式的計算邏輯一致
+                    }
+                    
+                    // 偵錯日誌：確認儲存前的 SetoffAmount
+                    foreach (var detail in details)
+                    {
+                        _logger?.LogInformation($"[偵測用訊息] Service 儲存前: SetoffId={detail.SetoffId}, SalesOrderDetailId={detail.SalesOrderDetailId}, SetoffAmount={detail.SetoffAmount}");
                     }
                     
                     await context.AccountsReceivableSetoffDetails.AddRangeAsync(details);
+                    _logger?.LogInformation($"[偵測用訊息] AddRangeAsync 完成，準備 SaveChanges");
+                    
                     await context.SaveChangesAsync();
+                    _logger?.LogInformation($"[偵測用訊息] SaveChangesAsync 完成");
+                    
+                    // 偵錯日誌：確認儲存後的 SetoffAmount
+                    var savedDetails = await context.AccountsReceivableSetoffDetails
+                        .Where(d => d.SetoffId == setoffId)
+                        .ToListAsync();
+                    _logger?.LogInformation($"[偵測用訊息] 從資料庫查詢到 {savedDetails.Count} 筆明細");
+                    foreach (var detail in savedDetails)
+                    {
+                        _logger?.LogInformation($"[偵測用訊息] Service 儲存後(從DB查詢): Id={detail.Id}, SetoffId={detail.SetoffId}, SalesOrderDetailId={detail.SalesOrderDetailId}, SetoffAmount={detail.SetoffAmount}");
+                    }
                     
                     // 更新原始明細表的收款/付款資料
                     await UpdateOriginalDetailsAsync(context, details);

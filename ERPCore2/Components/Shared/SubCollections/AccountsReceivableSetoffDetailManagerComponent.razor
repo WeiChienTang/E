@@ -46,6 +46,14 @@
     private List<SetoffDetailDto> Details { get; set; } = new();
     private Dictionary<string, string> ValidationErrors { get; set; } = new();
     
+    // 用於追蹤參數變更，避免不必要的重新渲染
+    private int? _previousCustomerId = null;
+    private bool _previousIsEditMode = false;
+    private int? _previousSetoffId = null;
+    private bool _previousIsReadOnly = false;
+    private bool _previousIsLoading = false; // 追蹤載入狀態
+    private int _previousDetailsCount = 0; // 追蹤資料數量
+    
     private List<SetoffDetailDto> SelectedDetails => 
         Details.Where(d => d.ThisTimeAmount > 0 || d.ThisTimeDiscountAmount > 0).ToList();
     
@@ -70,19 +78,55 @@
     #endregion
 
     #region 生命周期方法
+    /// <summary>
+    /// 控制組件是否需要重新渲染
+    /// 只有當真正影響此組件的參數或狀態變更時才重新渲染
+    /// </summary>
+    protected override bool ShouldRender()
+    {
+        // 檢查關鍵參數或狀態是否有變更
+        bool hasChanges = _previousCustomerId != CustomerId ||
+                          _previousIsEditMode != IsEditMode ||
+                          _previousSetoffId != SetoffId ||
+                          _previousIsReadOnly != IsReadOnly ||
+                          _previousIsLoading != IsLoading || // 載入狀態變更
+                          _previousDetailsCount != Details.Count; // 資料數量變更
+        
+        // 更新狀態追蹤
+        _previousIsLoading = IsLoading;
+        _previousDetailsCount = Details.Count;
+        
+        return hasChanges;
+    }
+    
     protected override async Task OnParametersSetAsync()
     {
         try
         {
-            if (CustomerId.HasValue && CustomerId > 0)
+            // 檢查關鍵參數是否真的有變更
+            bool keyParametersChanged = _previousCustomerId != CustomerId ||
+                                       _previousIsEditMode != IsEditMode ||
+                                       _previousSetoffId != SetoffId ||
+                                       _previousIsReadOnly != IsReadOnly;
+            
+            if (keyParametersChanged)
             {
-                await LoadDetailsAsync();
-            }
-            else
-            {
-                Details.Clear();
-                ValidationErrors.Clear();
-                StateHasChanged();
+                // 更新追蹤的參數值
+                _previousCustomerId = CustomerId;
+                _previousIsEditMode = IsEditMode;
+                _previousSetoffId = SetoffId;
+                _previousIsReadOnly = IsReadOnly;
+                
+                if (CustomerId.HasValue && CustomerId > 0)
+                {
+                    await LoadDetailsAsync();
+                }
+                else
+                {
+                    Details.Clear();
+                    ValidationErrors.Clear();
+                    StateHasChanged();
+                }
             }
         }
         catch (Exception ex)
@@ -293,6 +337,12 @@
                                   @oninput="@(async (e) => await HandleDiscountAmountChanged((detail, e.Value?.ToString())))"
                                   readonly="@IsReadOnly" />;
                 }
+            },
+            new ()
+            {
+                Title ="備註",
+                PropertyName = nameof(SetoffDetailDto.Remark),
+                
             }
         };
 
@@ -497,7 +547,8 @@
         try
         {
             var selectedDetails = SelectedDetails;
-            var totalAmount = selectedDetails.Sum(d => d.ThisTimeAmount);
+            // 總金額 = 本次沖款 + 本次折讓
+            var totalAmount = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
 
             if (OnSelectedDetailsChanged.HasDelegate)
             {
