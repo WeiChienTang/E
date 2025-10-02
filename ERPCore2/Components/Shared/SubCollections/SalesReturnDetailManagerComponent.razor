@@ -677,6 +677,9 @@ else
             return null;
         }
         
+        // 計算小計金額
+        var subtotalAmount = item.ReturnQuantity * item.ReturnUnitPrice;
+        
         // 如果已有實體，更新它
         if (item.ExistingDetailEntity != null)
         {
@@ -685,6 +688,7 @@ else
             item.ExistingDetailEntity.ReturnQuantity = item.ReturnQuantity;
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
             item.ExistingDetailEntity.ReturnUnitPrice = item.ReturnUnitPrice;
+            item.ExistingDetailEntity.ReturnSubtotalAmount = subtotalAmount;
             item.ExistingDetailEntity.QualityCondition = item.QualityCondition;
             item.ExistingDetailEntity.Remarks = item.Remarks;
             
@@ -699,6 +703,7 @@ else
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
             ReturnUnitPrice = item.ReturnUnitPrice,
+            ReturnSubtotalAmount = subtotalAmount,
             QualityCondition = item.QualityCondition,
             Remarks = item.Remarks
         };

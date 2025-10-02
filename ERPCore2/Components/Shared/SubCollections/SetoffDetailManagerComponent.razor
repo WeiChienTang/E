@@ -385,6 +385,13 @@
                     var detail = (SetoffDetailDto)item;
                     // 使用 DynamicPendingAmount 來顯示包含當前編輯的沖款和折讓金額
                     var amount = detail.DynamicPendingAmount;
+                    
+                    // 如果來源是銷貨退回，顯示為負數
+                    if (detail.Type == "SalesReturn" && amount > 0)
+                    {
+                        amount = -amount;
+                    }
+                    
                     // 負數表示公司應付給客戶（銷貨退回），正數表示客戶應付給公司（銷貨訂單）
                     var cssClass = amount < 0 ? "text-end text-primary fw-bold" : "text-end text-danger";
                     var displayValue = amount < 0 
@@ -744,8 +751,18 @@
         try
         {
             var selectedDetails = SelectedDetails;
-            // 總金額 = 本次沖款 + 本次折讓
-            var totalAmount = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+            // 修正計算邏輯：銷貨累加 - 退貨累加
+            // 銷貨類型：SalesOrder, PurchaseReceiving（正常累加）
+            // 退貨類型：SalesReturn, PurchaseReturn（取絕對值後相減）
+            var salesAmount = selectedDetails
+                .Where(d => d.Type == "SalesOrder" || d.Type == "PurchaseReceiving")
+                .Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+            
+            var returnAmount = selectedDetails
+                .Where(d => d.Type == "SalesReturn" || d.Type == "PurchaseReturn")
+                .Sum(d => Math.Abs(d.ThisTimeAmount + d.ThisTimeDiscountAmount));
+            
+            var totalAmount = salesAmount - returnAmount;
 
             if (OnSelectedDetailsChanged.HasDelegate)
             {
@@ -805,7 +822,16 @@
     /// <returns>總沖款金額</returns>
     public decimal GetTotalAmount()
     {
-        return SelectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+        // 修正計算邏輯：銷貨累加 - 退貨累加
+        var salesAmount = SelectedDetails
+            .Where(d => d.Type == "SalesOrder" || d.Type == "PurchaseReceiving")
+            .Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+        
+        var returnAmount = SelectedDetails
+            .Where(d => d.Type == "SalesReturn" || d.Type == "PurchaseReturn")
+            .Sum(d => Math.Abs(d.ThisTimeAmount + d.ThisTimeDiscountAmount));
+        
+        return salesAmount - returnAmount;
     }
     
     /// <summary>
@@ -814,7 +840,16 @@
     /// <returns>總沖款金額</returns>
     public decimal GetTotalCashAmount()
     {
-        return SelectedDetails.Sum(d => d.ThisTimeAmount);
+        // 修正計算邏輯：銷貨累加 - 退貨累加
+        var salesCash = SelectedDetails
+            .Where(d => d.Type == "SalesOrder" || d.Type == "PurchaseReceiving")
+            .Sum(d => d.ThisTimeAmount);
+        
+        var returnCash = SelectedDetails
+            .Where(d => d.Type == "SalesReturn" || d.Type == "PurchaseReturn")
+            .Sum(d => Math.Abs(d.ThisTimeAmount));
+        
+        return salesCash - returnCash;
     }
     
     /// <summary>
@@ -823,7 +858,16 @@
     /// <returns>總折讓金額</returns>
     public decimal GetTotalDiscountAmount()
     {
-        return SelectedDetails.Sum(d => d.ThisTimeDiscountAmount);
+        // 修正計算邏輯：銷貨累加 - 退貨累加
+        var salesDiscount = SelectedDetails
+            .Where(d => d.Type == "SalesOrder" || d.Type == "PurchaseReceiving")
+            .Sum(d => d.ThisTimeDiscountAmount);
+        
+        var returnDiscount = SelectedDetails
+            .Where(d => d.Type == "SalesReturn" || d.Type == "PurchaseReturn")
+            .Sum(d => Math.Abs(d.ThisTimeDiscountAmount));
+        
+        return salesDiscount - returnDiscount;
     }
 
     /// <summary>

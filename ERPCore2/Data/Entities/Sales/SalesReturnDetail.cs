@@ -67,7 +67,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPaidAmount { get; set; } = 0;
 
-
         [MaxLength(200, ErrorMessage = "品質狀況不可超過200個字元")]
         [Display(Name = "品質狀況")]
         public string? QualityCondition { get; set; }

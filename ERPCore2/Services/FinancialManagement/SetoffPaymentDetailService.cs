@@ -148,7 +148,6 @@ namespace ERPCore2.Services
                     SetoffId = d.SetoffId,
                     PaymentMethodId = d.PaymentMethodId,
                     PaymentMethodName = d.PaymentMethod?.Name ?? string.Empty,
-                    RequiresBank = RequiresBankInfo(d.PaymentMethod?.Name ?? string.Empty),
                     BankId = d.BankId,
                     BankName = d.Bank?.BankName,
                     Amount = d.Amount,
@@ -366,16 +365,6 @@ namespace ERPCore2.Services
         /// <summary>
         /// 判斷付款方式是否需要銀行資訊
         /// </summary>
-        private bool RequiresBankInfo(string paymentMethodName)
-        {
-            if (string.IsNullOrWhiteSpace(paymentMethodName))
-                return false;
-
-            var bankRelatedKeywords = new[] { "匯款", "轉帳", "支票", "ATM", "銀行" };
-            return bankRelatedKeywords.Any(k =>
-                paymentMethodName.Contains(k, StringComparison.OrdinalIgnoreCase));
-        }
-
         #endregion
     }
 }

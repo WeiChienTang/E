@@ -3,7 +3,6 @@
 @inject IPaymentMethodService PaymentMethodService
 @inject IBankService BankService
 @inject INotificationService NotificationService
-@using ERPCore2.Helpers
 
 <div class="setoff-payment-detail-manager">
     @if (IsLoading)
@@ -270,7 +269,7 @@
                                   readonly="@IsReadOnly" />;
                 }
             },
-            // 3. 銀行 (條件顯示的下拉選單)
+            // 3. 銀行 (始終可選的下拉選單)
             new InteractiveColumnDefinition
             {
                 Title = "銀行",
@@ -281,12 +280,6 @@
                 {
                     var detail = (SetoffPaymentDetailDto)item;
                     var availableBanks = Banks; // 確保捕獲當前的 Banks 集合
-                    
-                    // 只在需要銀行資訊時顯示下拉選單
-                    if (!detail.RequiresBank)
-                    {
-                        return @<span class="text-muted small">-</span>;
-                    }
                     
                     return @<select class="form-control form-control-sm"
                                    value="@(detail.BankId?.ToString() ?? "")"
@@ -401,16 +394,6 @@
                 {
                     detail.PaymentMethodId = paymentMethodId;
                     detail.PaymentMethodName = paymentMethod.Name;
-
-                    // 判斷是否需要銀行資訊
-                    detail.RequiresBank = RequiresBankInfo(paymentMethod.Name);
-
-                    // 如果不需要銀行,清空銀行選擇
-                    if (!detail.RequiresBank)
-                    {
-                        detail.BankId = null;
-                        detail.BankName = null;
-                    }
                 }
             }
             
@@ -714,19 +697,6 @@
                 PaymentDetails.Remove(emptyRows[i]);
             }
         }
-    }
-
-    /// <summary>
-    /// 判斷付款方式是否需要銀行資訊
-    /// </summary>
-    private bool RequiresBankInfo(string paymentMethodName)
-    {
-        if (string.IsNullOrWhiteSpace(paymentMethodName))
-            return false;
-
-        var bankRelatedKeywords = new[] { "匯款", "轉帳", "支票", "ATM", "銀行" };
-        return bankRelatedKeywords.Any(k =>
-            paymentMethodName.Contains(k, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>

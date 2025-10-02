@@ -911,9 +911,24 @@
                 return;
             }
 
-            // 步驟 1：先確保主檔總金額正確並更新到資料庫
-            // 這是關鍵步驟，必須在儲存付款明細之前完成
-            var calculatedTotal = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+            // 步驟 1：根據付款明細計算總金額並更新主檔
+            // 關鍵修改：使用付款明細的總額作為沖款總額
+            decimal calculatedTotal = 0m;
+            
+            if (paymentDetailManagerComponent != null)
+            {
+                var paymentDetails = paymentDetailManagerComponent.GetPaymentDetails();
+                calculatedTotal = paymentDetails.Sum(p => p.Amount);
+                Console.WriteLine($"[計算] 根據付款明細計算總金額：{calculatedTotal}");
+            }
+            else
+            {
+                // 如果沒有付款明細組件，回退到使用沖款明細總額
+                calculatedTotal = selectedDetails.Sum(d => d.ThisTimeAmount + d.ThisTimeDiscountAmount);
+                Console.WriteLine($"[計算] 使用沖款明細計算總金額：{calculatedTotal}");
+            }
+            
+            // 更新主檔總金額
             if (Math.Abs(setoff.TotalSetoffAmount - calculatedTotal) > 0.01m)
             {
                 Console.WriteLine($"[修正] 更新主檔總金額：{setoff.TotalSetoffAmount} -> {calculatedTotal}");
@@ -1087,19 +1102,15 @@
 
     /// <summary>
     /// 處理總沖款金額變更（從 SetoffDetailManagerComponent 事件觸發）
+    /// 注意：不再即時更新主表實體，僅更新本地變數供付款明細組件使用
+    /// 實際的 TotalSetoffAmount 將在儲存時根據付款明細總額計算
     /// </summary>
     private async Task HandleTotalSetoffAmountChanged(decimal amount)
     {
         try
         {
+            // 只更新本地變數，用於傳遞給 SetoffPaymentDetailManagerComponent
             totalSetoffAmount = amount;
-            
-            // 關鍵修正：同時更新表單實體的 TotalSetoffAmount
-            // 這樣在主檔儲存時才會包含正確的金額
-            if (editModalComponent?.Entity != null)
-            {
-                editModalComponent.Entity.TotalSetoffAmount = amount;
-            }
             
             // 需要 StateHasChanged() 來更新 SetoffPaymentDetailManagerComponent 的 TotalSetoffAmount 參數
             // SetoffDetailManagerComponent 已實現 ShouldRender() 優化，不會不必要地重新渲染

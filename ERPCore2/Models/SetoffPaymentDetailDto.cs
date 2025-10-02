@@ -29,11 +29,6 @@ namespace ERPCore2.Models
         public string PaymentMethodName { get; set; } = string.Empty;
 
         /// <summary>
-        /// 是否需要銀行資訊 (根據付款方式判斷)
-        /// </summary>
-        public bool RequiresBank { get; set; } = false;
-
-        /// <summary>
         /// 銀行ID
         /// </summary>
         [Display(Name = "銀行")]
@@ -100,20 +95,6 @@ namespace ERPCore2.Models
         }
 
         /// <summary>
-        /// 驗證銀行選擇
-        /// </summary>
-        /// <returns>驗證結果</returns>
-        public (bool IsValid, string? ErrorMessage) ValidateBank()
-        {
-            if (RequiresBank && !BankId.HasValue)
-            {
-                return (false, "此付款方式需要選擇銀行");
-            }
-
-            return (true, null);
-        }
-
-        /// <summary>
         /// 驗證付款方式
         /// </summary>
         /// <returns>驗證結果</returns>
@@ -148,13 +129,6 @@ namespace ERPCore2.Models
             if (!amountValidation.IsValid)
             {
                 errors.Add(amountValidation.ErrorMessage!);
-            }
-
-            // 驗證銀行
-            var bankValidation = ValidateBank();
-            if (!bankValidation.IsValid)
-            {
-                errors.Add(bankValidation.ErrorMessage!);
             }
 
             return (errors.Count == 0, errors);
