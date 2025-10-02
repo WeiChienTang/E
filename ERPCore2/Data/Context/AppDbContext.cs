@@ -72,6 +72,7 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountsReceivableSetoffDetail> AccountsReceivableSetoffDetails { get; set; }
       public DbSet<AccountsReceivableSetoffPaymentDetail> AccountsReceivableSetoffPaymentDetails { get; set; }
       public DbSet<Prepayment> Prepayments { get; set; }
+      public DbSet<Prepaid> Prepaids { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
@@ -661,11 +662,6 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(p => p.SetoffId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-                        entity.HasOne(p => p.Company)
-                        .WithMany()
-                        .HasForeignKey(p => p.CompanyId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                         // 為 decimal 屬性設定精確度和小數位數
                         entity.Property(e => e.PrepaymentAmount)
                               .HasPrecision(18, 2);
@@ -676,7 +672,6 @@ namespace ERPCore2.Data.Context
 
                         // 設定其他索引
                         entity.HasIndex(e => e.SetoffId);
-                        entity.HasIndex(e => e.CompanyId);
                         entity.HasIndex(e => e.PrepaymentDate);
                   });
 

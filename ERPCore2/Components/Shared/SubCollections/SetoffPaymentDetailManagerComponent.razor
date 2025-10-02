@@ -15,26 +15,29 @@
         </div>
     }
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <InteractiveTableComponent TItem="SetoffPaymentDetailDto"
-                                       Items="@PaymentDetails"
-                                       ColumnDefinitions="@GetColumnDefinitions()"
-                                       ShowHeader="true"
-                                       ShowRowNumbers="false"
-                                       ShowActions="false"
-                                       ShowBuiltInActions="true"
-                                       ShowBuiltInDeleteButton="true"
-                                       OnItemDelete="HandleItemDelete"
-                                       IsStriped="true"
-                                       IsHoverable="true"
-                                       IsBordered="true"
-                                       IsReadOnly="@IsReadOnly"
-                                       EmptyMessage="尚未新增付款明細"
-                                       CssClass="payment-detail-table"
-                                       ValidationErrors="@ValidationErrors" />
+    @if (!IsLoading || PaymentMethods.Any() || Banks.Any())
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <InteractiveTableComponent TItem="SetoffPaymentDetailDto"
+                                           Items="@PaymentDetails"
+                                           ColumnDefinitions="@GetColumnDefinitions()"
+                                           ShowHeader="true"
+                                           ShowRowNumbers="false"
+                                           ShowActions="false"
+                                           ShowBuiltInActions="true"
+                                           ShowBuiltInDeleteButton="true"
+                                           OnItemDelete="HandleItemDelete"
+                                           IsStriped="true"
+                                           IsHoverable="true"
+                                           IsBordered="true"
+                                           IsReadOnly="@IsReadOnly"
+                                           EmptyMessage="尚未新增付款明細"
+                                           CssClass="payment-detail-table"
+                                           ValidationErrors="@ValidationErrors" />
+            </div>
         </div>
-    </div>
+    }
 </div>
 
 @code {
@@ -62,6 +65,8 @@
     private bool _previousIsEditMode = false; // 追蹤上一次的 IsEditMode
     private bool _previousIsLoading = false; // 追蹤載入狀態
     private int _previousPaymentDetailsCount = 0; // 追蹤資料數量
+    private int _previousBanksCount = 0; // 追蹤銀行資料數量
+    private int _previousPaymentMethodsCount = 0; // 追蹤付款方式資料數量
     #endregion
 
     #region 生命週期方法
@@ -88,11 +93,15 @@
                           _previousIsReadOnly != IsReadOnly ||
                           _previousIsEditMode != IsEditMode ||
                           _previousIsLoading != IsLoading || // 載入狀態變更
-                          _previousPaymentDetailsCount != PaymentDetails.Count; // 資料數量變更
+                          _previousPaymentDetailsCount != PaymentDetails.Count || // 資料數量變更
+                          _previousBanksCount != Banks.Count || // 銀行資料變更
+                          _previousPaymentMethodsCount != PaymentMethods.Count; // 付款方式資料變更
         
         // 更新狀態追蹤
         _previousIsLoading = IsLoading;
         _previousPaymentDetailsCount = PaymentDetails.Count;
+        _previousBanksCount = Banks.Count;
+        _previousPaymentMethodsCount = PaymentMethods.Count;
         
         return hasChanges;
     }
@@ -266,15 +275,33 @@
             {
                 Title = "銀行",
                 PropertyName = nameof(SetoffPaymentDetailDto.BankId),
-                ColumnType = InteractiveColumnType.Select,
+                ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
-                Options = Banks.Select(b => new InteractiveSelectOption
+                CustomTemplate = item =>
                 {
-                    Value = b.Id,
-                    Text = b.BankName
-                }).ToList(),
-                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(
-                    this, async args => await HandleBankChanged((SetoffPaymentDetailDto)args.Item1, args.Item2))
+                    var detail = (SetoffPaymentDetailDto)item;
+                    var availableBanks = Banks; // 確保捕獲當前的 Banks 集合
+                    
+                    // 只在需要銀行資訊時顯示下拉選單
+                    if (!detail.RequiresBank)
+                    {
+                        return @<span class="text-muted small">-</span>;
+                    }
+                    
+                    return @<select class="form-control form-control-sm"
+                                   value="@(detail.BankId?.ToString() ?? "")"
+                                   @onchange="@(async (e) => await HandleBankChanged(detail, e.Value))"
+                                   disabled="@IsReadOnly">
+                                <option value="">請選擇銀行</option>
+                                @if (availableBanks != null && availableBanks.Any())
+                                {
+                                    @foreach (var bank in availableBanks)
+                                    {
+                                        <option value="@bank.Id">@bank.BankName</option>
+                                    }
+                                }
+                            </select>;
+                }
             },
 
             // 4. 帳號/票號
@@ -408,14 +435,31 @@
         {
             var wasEmpty = IsEmptyRow(detail);
             
-            if (value is int bankId)
+            // 處理整數或字串型別的銀行ID
+            int? bankId = null;
+            if (value is int intValue)
             {
-                var bank = Banks.FirstOrDefault(b => b.Id == bankId);
+                bankId = intValue;
+            }
+            else if (value is string strValue && !string.IsNullOrEmpty(strValue) && int.TryParse(strValue, out var parsedId))
+            {
+                bankId = parsedId;
+            }
+            
+            if (bankId.HasValue && bankId.Value > 0)
+            {
+                var bank = Banks.FirstOrDefault(b => b.Id == bankId.Value);
                 if (bank != null)
                 {
-                    detail.BankId = bankId;
+                    detail.BankId = bankId.Value;
                     detail.BankName = bank.BankName;
                 }
+            }
+            else
+            {
+                // 清空銀行選擇
+                detail.BankId = null;
+                detail.BankName = null;
             }
             
             // 處理自動空行邏輯
@@ -771,25 +815,44 @@
         var errors = new List<string>();
         var validDetails = GetValidPaymentDetails();
 
+        // 如果沒有有效的付款明細
         if (!validDetails.Any())
         {
-            errors.Add("請至少新增一筆付款明細");
-        }
-
-        // 驗證總金額
-        var totalPayment = validDetails.Sum(d => d.Amount);
-        if (totalPayment != TotalSetoffAmount)
-        {
-            errors.Add($"付款總額 {totalPayment:N2} 與沖款總額 {TotalSetoffAmount:N2} 不符");
-        }
-
-        // 驗證每筆明細
-        foreach (var detail in validDetails)
-        {
-            var validation = detail.ValidateAll(TotalSetoffAmount);
-            if (!validation.IsValid)
+            // 編輯模式：檢查是否有任何資料被輸入過（包括已刪除的）
+            // 如果都沒有，表示原本就沒有付款明細，這是允許的
+            bool hasAnyData = DeletedDetailIds.Any() || 
+                             PaymentDetails.Any(d => !IsEmptyRow(d));
+            
+            // 只在有輸入過資料但最後都被刪除的情況下才報錯
+            // 或在新增模式下（非編輯模式）才要求必須有明細
+            if (hasAnyData || !IsEditMode)
             {
-                errors.AddRange(validation.Errors);
+                // 如果是編輯模式且所有明細都被刪除了，這也是合法的操作
+                if (!(IsEditMode && DeletedDetailIds.Any()))
+                {
+                    errors.Add("請至少新增一筆付款明細");
+                }
+            }
+        }
+
+        // 只有在有有效明細時才驗證金額
+        if (validDetails.Any())
+        {
+            // 驗證總金額
+            var totalPayment = validDetails.Sum(d => d.Amount);
+            if (totalPayment != TotalSetoffAmount)
+            {
+                errors.Add($"付款總額 {totalPayment:N2} 與沖款總額 {TotalSetoffAmount:N2} 不符");
+            }
+
+            // 驗證每筆明細
+            foreach (var detail in validDetails)
+            {
+                var validation = detail.ValidateAll(TotalSetoffAmount);
+                if (!validation.IsValid)
+                {
+                    errors.AddRange(validation.Errors);
+                }
             }
         }
 

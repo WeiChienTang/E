@@ -9,7 +9,6 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(Code))]
     [Index(nameof(SetoffId))]
-    [Index(nameof(CompanyId))]
     [Index(nameof(PrepaymentDate))]
     public class Prepayment : BaseEntity
     {
@@ -36,23 +35,10 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(AccountsReceivableSetoff))]
         public int SetoffId { get; set; }
 
-        /// <summary>
-        /// 公司ID
-        /// </summary>
-        [Required(ErrorMessage = "公司為必填")]
-        [Display(Name = "公司")]
-        [ForeignKey(nameof(Company))]
-        public int CompanyId { get; set; }
-
         // Navigation Properties
         /// <summary>
         /// 應收沖款單導航屬性
         /// </summary>
         public AccountsReceivableSetoff AccountsReceivableSetoff { get; set; } = null!;
-
-        /// <summary>
-        /// 公司導航屬性
-        /// </summary>
-        public Company Company { get; set; } = null!;
     }
 }

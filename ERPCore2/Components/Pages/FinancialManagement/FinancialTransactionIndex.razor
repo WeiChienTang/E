@@ -16,9 +16,9 @@
                       TService="IFinancialTransactionService"
                       Service="@FinancialTransactionService"
                       EntityBasePath="/financialTransactions"
-                      PageTitle="財務交易維護"
-                      PageSubtitle="管理所有財務交易記錄與沖款資訊"
-                      EntityName="財務交易"
+                      PageTitle="財務交易紀錄維護"
+                      PageSubtitle="管理所有財務交易紀錄記錄與沖款資訊"
+                      EntityName="財務交易紀錄"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
@@ -89,8 +89,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化財務交易頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化財務交易頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化財務交易紀錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化財務交易紀錄頁面失敗");
         }
     }
 
@@ -102,7 +102,7 @@
             {
                 new("首頁", "/"),
                 new("財務管理", "/financial-transactions"),
-                new("財務交易維護")
+                new("財務交易紀錄維護")
             };
         }
         catch (Exception ex)
@@ -123,8 +123,8 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFinancialTransactionsAsync), GetType(), additionalData: "載入財務交易資料失敗");
-            await NotificationService.ShowErrorAsync("載入財務交易資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFinancialTransactionsAsync), GetType(), additionalData: "載入財務交易紀錄資料失敗");
+            await NotificationService.ShowErrorAsync("載入財務交易紀錄資料失敗");
             // 設定安全的預設值
             return new List<FinancialTransaction>();
         }

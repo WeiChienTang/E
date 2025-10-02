@@ -1,4 +1,4 @@
-@* 財務交易編輯組件 - 可在任何頁面中嵌入 *@
+@* 財務交易紀錄編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Components.Shared.PageModels
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Data.Entities
@@ -14,9 +14,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           Id="@FinancialTransactionId"
                           Service="@FinancialTransactionService"
-                          EntityName="財務交易"
-                          EntityNamePlural="財務交易"
-                          ModalTitle="@(FinancialTransactionId.HasValue ? "檢視財務交易" : "檢視財務交易")"
+                          EntityName="財務交易紀錄"
+                          EntityNamePlural="財務交易紀錄"
+                          ModalTitle="@(FinancialTransactionId.HasValue ? "檢視財務交易紀錄" : "檢視財務交易紀錄")"
                           Size="GenericEditModalComponent<FinancialTransaction, IFinancialTransactionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
@@ -24,8 +24,8 @@
                           DataLoader="@LoadFinancialTransactionDataAsync"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="false"
-                          SaveSuccessMessage="@(FinancialTransactionId.HasValue ? "財務交易更新成功" : "財務交易新增成功")"
-                          SaveFailureMessage="財務交易儲存失敗"
+                          SaveSuccessMessage="@(FinancialTransactionId.HasValue ? "財務交易紀錄更新成功" : "財務交易紀錄新增成功")"
+                          SaveFailureMessage="財務交易紀錄儲存失敗"
                           RequiredPermission="FinancialTransaction.Read"
                           OnCancel="@HandleCancel"
                           AdditionalSections="@AdditionalContentSection" />
@@ -37,11 +37,11 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">沖銷財務交易</h5>
+                    <h5 class="modal-title">沖銷財務交易紀錄</h5>
                     <button type="button" class="btn-close" aria-label="Close" @onclick="HideReverseModal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>確定要沖銷此財務交易嗎？此操作不可逆轉。</p>
+                    <p>確定要沖銷此財務交易紀錄嗎？此操作不可逆轉。</p>
                     <div class="form-group">
                         <label for="reversalReason">沖銷原因 <span class="text-danger">*</span></label>
                         <textarea id="reversalReason" class="form-control" @bind="reversalReason" rows="3" placeholder="請輸入沖銷原因"></textarea>
@@ -99,8 +99,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化財務交易編輯組件失敗");
-            await NotificationService.ShowErrorAsync("初始化財務交易編輯組件失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化財務交易紀錄編輯組件失敗");
+            await NotificationService.ShowErrorAsync("初始化財務交易紀錄編輯組件失敗");
         }
     }
 
@@ -182,7 +182,7 @@
                     IsRequired = true,
                     IsReadOnly = true,
                     Options = transactionTypeOptions,
-                    HelpText = "財務交易的類型"
+                    HelpText = "財務交易紀錄的類型"
                 },
                 new()
                 {
@@ -360,7 +360,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFinancialTransactionDataAsync), GetType(), additionalData: $"載入財務交易資料失敗，ID: {FinancialTransactionId}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadFinancialTransactionDataAsync), GetType(), additionalData: $"載入財務交易紀錄資料失敗，ID: {FinancialTransactionId}");
             throw;
         }
     }
@@ -458,7 +458,7 @@
             
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync("財務交易沖銷成功");
+                await NotificationService.ShowSuccessAsync("財務交易紀錄沖銷成功");
                 HideReverseModal();
                 
                 // 重新載入資料
@@ -482,8 +482,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmReverse), GetType(), additionalData: $"沖銷財務交易失敗，ID: {FinancialTransactionId}");
-            await NotificationService.ShowErrorAsync("沖銷財務交易時發生錯誤");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmReverse), GetType(), additionalData: $"沖銷財務交易紀錄失敗，ID: {FinancialTransactionId}");
+            await NotificationService.ShowErrorAsync("沖銷財務交易紀錄時發生錯誤");
         }
         finally
         {
