@@ -75,6 +75,7 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountsPayableSetoffDetail> AccountsPayableSetoffDetails { get; set; }
       public DbSet<AccountsPayableSetoffPaymentDetail> AccountsPayableSetoffPaymentDetails { get; set; }
       public DbSet<Prepayment> Prepayments { get; set; }
+      public DbSet<PrepaymentDetail> SetoffPrepaymentDetails { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
@@ -671,12 +672,6 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(p => p.SupplierId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-                        // 應收沖款單關聯（預收款時使用）
-                        entity.HasOne(p => p.AccountsReceivableSetoff)
-                        .WithMany()
-                        .HasForeignKey(p => p.SetoffId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                         // 為 decimal 屬性設定精確度和小數位數
                         entity.Property(e => e.Amount)
                               .HasPrecision(18, 2);
@@ -690,7 +685,39 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.PaymentDate);
                         entity.HasIndex(e => e.CustomerId);
                         entity.HasIndex(e => e.SupplierId);
-                        entity.HasIndex(e => e.SetoffId);
+                  });
+
+                  // 沖款預收/預付款明細配置
+                  modelBuilder.Entity<PrepaymentDetail>(entity =>
+                  {
+                        entity.HasKey(d => d.Id);
+
+                        // 應收沖款單關聯
+                        entity.HasOne(d => d.AccountsReceivableSetoff)
+                        .WithMany(s => s.PrepaymentDetails)
+                        .HasForeignKey(d => d.AccountsReceivableSetoffId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        // 應付沖款單關聯（改為 Restrict 避免多重級聯路徑）
+                        entity.HasOne(d => d.AccountsPayableSetoff)
+                        .WithMany()
+                        .HasForeignKey(d => d.AccountsPayableSetoffId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 預收/預付款關聯
+                        entity.HasOne(d => d.Prepayment)
+                        .WithMany(p => p.SetoffPrepaymentDetails)
+                        .HasForeignKey(d => d.PrepaymentId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.UseAmount)
+                              .HasPrecision(18, 2);
+
+                        // 設定索引
+                        entity.HasIndex(e => e.AccountsReceivableSetoffId);
+                        entity.HasIndex(e => e.AccountsPayableSetoffId);
+                        entity.HasIndex(e => e.PrepaymentId);
                   });
 
                   // 紙張設定相關

@@ -102,5 +102,10 @@ namespace ERPCore2.Data.Entities
         /// 付款明細導航屬性
         /// </summary>
         public ICollection<AccountsReceivableSetoffPaymentDetail> PaymentDetails { get; set; } = new List<AccountsReceivableSetoffPaymentDetail>();
+
+        /// <summary>
+        /// 預收款明細導航屬性
+        /// </summary>
+        public ICollection<PrepaymentDetail> PrepaymentDetails { get; set; } = new List<PrepaymentDetail>();
     }
 }

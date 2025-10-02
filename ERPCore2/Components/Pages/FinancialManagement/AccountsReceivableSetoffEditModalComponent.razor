@@ -2,6 +2,7 @@
 @inject IAccountsReceivableSetoffService AccountsReceivableSetoffService
 @inject IAccountsReceivableSetoffDetailService AccountsReceivableSetoffDetailService
 @inject ISetoffPaymentDetailService SetoffPaymentDetailService
+@inject ISetoffPrepaymentDetailService SetoffPrepaymentDetailService
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IPaymentMethodService PaymentMethodService
@@ -69,6 +70,7 @@
     private GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>? editModalComponent;
     private SetoffDetailManagerComponent? detailManagerComponent;
     private SetoffPaymentDetailManagerComponent? paymentDetailManagerComponent;
+    private SetoffPrepaymentManagerComponent? prepaymentManagerComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
@@ -83,6 +85,7 @@
     private List<AccountsReceivableSetoffDetail> setoffDetails = new();
     private decimal totalSetoffAmount = 0m;
     private decimal totalPaymentAmount = 0m;
+    private decimal totalPrepaymentAmount = 0m;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -967,6 +970,18 @@
                 }
             }
             
+            // 步驟 4：儲存預收款明細
+            if (prepaymentManagerComponent != null)
+            {
+                var prepaymentSaveResult = await prepaymentManagerComponent.SaveAsync();
+                
+                if (!prepaymentSaveResult.Success)
+                {
+                    await NotificationService.ShowErrorAsync("儲存預收款明細失敗", prepaymentSaveResult.Message);
+                    return;
+                }
+            }
+            
             await NotificationService.ShowSuccessAsync($"已儲存 {detailEntities.Count} 筆沖款明細，包含 {selectedDetails.Count(d => d.ThisTimeDiscountAmount > 0)} 筆折讓記錄");
         }
         catch (Exception ex)
@@ -996,7 +1011,7 @@
                     CssClass = "mt-4",
                     IsVisible = true,
                     Content = CreateSetoffDetailManagerContent()
-                }
+                },
             };
         }
         catch
@@ -1035,6 +1050,14 @@
                                                              IsReadOnly="false"
                                                              IsEditMode="true" />
 
+                        <SetoffPrepaymentManagerComponent @ref="prepaymentManagerComponent"
+                                                         Mode="SetoffMode.Receivable"
+                                                         CustomerId="@editModalComponent.Entity.CustomerId"
+                                                         IsEditMode="@(SetoffId.HasValue && SetoffId.Value > 0)"
+                                                         SetoffId="@SetoffId"
+                                                         OnTotalUseAmountChanged="@HandleTotalPrepaymentAmountChanged"
+                                                         IsReadOnly="false" />
+
                     }
                     catch
                     {
@@ -1066,8 +1089,6 @@
         }
     };
 
-
-
     /// <summary>
     /// 處理付款明細變更
     /// </summary>
@@ -1097,6 +1118,22 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalPaymentAmountChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理預收款總額變更
+    /// </summary>
+    private async Task HandleTotalPrepaymentAmountChanged(decimal amount)
+    {
+        try
+        {
+            totalPrepaymentAmount = amount;
+            // 不需要調用 StateHasChanged()，避免觸發整個父組件和所有子組件的重新渲染
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalPrepaymentAmountChanged), GetType());
         }
     }
 

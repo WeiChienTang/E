@@ -29,11 +29,6 @@ namespace ERPCore2.Services
         Task<List<Prepayment>> GetByPrepaymentTypeAsync(PrepaymentType prepaymentType);
 
         /// <summary>
-        /// 依據沖款單取得預收款
-        /// </summary>
-        Task<Prepayment?> GetBySetoffIdAsync(int setoffId);
-
-        /// <summary>
         /// 取得指定日期範圍的款項
         /// </summary>
         Task<List<Prepayment>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);

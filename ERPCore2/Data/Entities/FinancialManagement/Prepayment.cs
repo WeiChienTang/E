@@ -13,7 +13,6 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(PaymentDate))]
     [Index(nameof(CustomerId))]
     [Index(nameof(SupplierId))]
-    [Index(nameof(SetoffId))]
     public class Prepayment : BaseEntity
     {
         /// <summary>
@@ -52,14 +51,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Supplier))]
         public int? SupplierId { get; set; }
         
-        /// <summary>
-        /// 應收沖款單ID（預收款時使用）
-        /// </summary>
-        [Display(Name = "來源沖款單")]
-        [ForeignKey(nameof(AccountsReceivableSetoff))]
-        public int? SetoffId { get; set; }
-        
         // Navigation Properties
+        
         /// <summary>
         /// 客戶導航屬性
         /// </summary>
@@ -71,8 +64,22 @@ namespace ERPCore2.Data.Entities
         public Supplier? Supplier { get; set; }
         
         /// <summary>
-        /// 應收沖款單導航屬性
+        /// 沖款預收/預付款明細導航屬性（多對多關係）
         /// </summary>
-        public AccountsReceivableSetoff? AccountsReceivableSetoff { get; set; }
+        public ICollection<PrepaymentDetail> SetoffPrepaymentDetails { get; set; } = new List<PrepaymentDetail>();
+        
+        // Computed Properties (NotMapped)
+        
+        /// <summary>
+        /// 已使用金額（動態計算，不儲存於資料庫）
+        /// </summary>
+        [NotMapped]
+        public decimal UsedAmount { get; set; } = 0;
+        
+        /// <summary>
+        /// 可用餘額（動態計算）
+        /// </summary>
+        [NotMapped]
+        public decimal AvailableBalance => Amount - UsedAmount;
     }
 }

@@ -60,6 +60,7 @@ namespace ERPCore2.Data
             services.AddScoped<IAccountsPayableSetoffDetailService, AccountsPayableSetoffDetailService>();
             services.AddScoped<ISetoffPaymentDetailService, SetoffPaymentDetailService>();
             services.AddScoped<IAccountsPayableSetoffPaymentDetailService, AccountsPayableSetoffPaymentDetailService>();
+            services.AddScoped<ISetoffPrepaymentDetailService, SetoffPrepaymentDetailService>();
             services.AddScoped<ICurrencyService, CurrencyService>();
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<IPrepaymentService, PrepaymentService>();

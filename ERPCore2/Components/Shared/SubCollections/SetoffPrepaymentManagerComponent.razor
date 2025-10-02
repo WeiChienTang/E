@@ -1,0 +1,632 @@
+@* 沖款預收/預付款管理組件 - 使用 InteractiveTableComponent 來管理預收/預付款明細 *@
+@using ERPCore2.Data.Enums
+@using ERPCore2.Models
+@inject ISetoffPrepaymentDetailService SetoffPrepaymentDetailService
+@inject INotificationService NotificationService
+
+<div class="setoff-prepayment-manager @GetModeClass()">
+    @if (IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center my-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+        </div>
+    }
+
+    <InteractiveTableComponent TItem="SetoffPrepaymentDto"
+                                Items="@GetDisplayPrepayments()"
+                                ColumnDefinitions="@GetColumnDefinitions()"
+                                ShowHeader="true"
+                                ShowRowNumbers="false"
+                                ShowActions="false"
+                                ShowBuiltInActions="true"
+                                ShowBuiltInDeleteButton="true"
+                                OnItemDelete="RemoveItemFromSelection"
+                                IsStriped="true"
+                                IsHoverable="true"
+                                IsBordered="true"
+                                IsReadOnly="@IsReadOnly"
+                                EmptyMessage="@GetEmptyMessage()"
+                                CssClass="setoff-prepayment-table"
+                                ValidationErrors="@ValidationErrors"
+                                OnValidationFailed="@HandleValidationFailed" />
+    
+    @if (!IsReadOnly && GetDisplayPrepayments().Any())
+    {
+        <div class="mt-3 p-3 bg-light border rounded">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-2">預收/預付款統計</h6>
+                    <p class="mb-1">本次使用總額：<strong class="text-success">@TotalUseAmount.ToString("N2")</strong></p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    #region 參數定義
+    
+    /// <summary>
+    /// 沖款模式：應收或應付
+    /// </summary>
+    [Parameter] public SetoffMode Mode { get; set; } = SetoffMode.Receivable;
+    
+    /// <summary>
+    /// 客戶 ID（應收模式使用）
+    /// </summary>
+    [Parameter] public int? CustomerId { get; set; }
+    
+    /// <summary>
+    /// 供應商 ID（應付模式使用）
+    /// </summary>
+    [Parameter] public int? SupplierId { get; set; }
+    
+    /// <summary>
+    /// 沖款單 ID
+    /// </summary>
+    [Parameter] public int? SetoffId { get; set; }
+    
+    /// <summary>
+    /// 是否為唯讀模式
+    /// </summary>
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    /// <summary>
+    /// 是否為編輯模式
+    /// </summary>
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    
+    /// <summary>
+    /// 預收/預付款變更事件
+    /// </summary>
+    [Parameter] public EventCallback<List<SetoffPrepaymentDto>> OnPrepaymentsChanged { get; set; }
+    
+    /// <summary>
+    /// 總使用金額變更事件
+    /// </summary>
+    [Parameter] public EventCallback<decimal> OnTotalUseAmountChanged { get; set; }
+    
+    #endregion
+
+    #region 私有狀態
+    
+    private bool IsLoading { get; set; } = false;
+    private List<SetoffPrepaymentDto> Prepayments { get; set; } = new();
+    private Dictionary<string, string> ValidationErrors { get; set; } = new();
+    private decimal TotalUseAmount => GetValidPrepayments().Sum(p => p.ThisTimeUseAmount);
+    
+    // 用於追蹤參數變更，避免不必要的重新渲染
+    private int? _previousCustomerId = null;
+    private int? _previousSupplierId = null;
+    private SetoffMode _previousMode = SetoffMode.Receivable;
+    private bool _previousIsEditMode = false;
+    private int? _previousSetoffId = null;
+    private bool _previousIsReadOnly = false;
+    private bool _previousIsLoading = false;
+    private int _previousPrepaymentsCount = 0;
+    
+    #endregion
+
+    #region 生命週期方法
+    
+    /// <summary>
+    /// 控制組件是否需要重新渲染
+    /// </summary>
+    protected override bool ShouldRender()
+    {
+        // 檢查關鍵參數或狀態是否有變更
+        bool hasChanges = _previousCustomerId != CustomerId ||
+                          _previousSupplierId != SupplierId ||
+                          _previousMode != Mode ||
+                          _previousIsEditMode != IsEditMode ||
+                          _previousSetoffId != SetoffId ||
+                          _previousIsReadOnly != IsReadOnly ||
+                          _previousIsLoading != IsLoading ||
+                          _previousPrepaymentsCount != Prepayments.Count;
+        
+        // 更新狀態追蹤
+        _previousIsLoading = IsLoading;
+        _previousPrepaymentsCount = Prepayments.Count;
+        
+        return hasChanges;
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            // 檢查關鍵參數是否真的有變更
+            bool keyParametersChanged = _previousCustomerId != CustomerId ||
+                                       _previousSupplierId != SupplierId ||
+                                       _previousMode != Mode ||
+                                       _previousIsEditMode != IsEditMode ||
+                                       _previousSetoffId != SetoffId ||
+                                       _previousIsReadOnly != IsReadOnly;
+            
+            if (keyParametersChanged)
+            {
+                // 更新追蹤的參數值
+                _previousCustomerId = CustomerId;
+                _previousSupplierId = SupplierId;
+                _previousMode = Mode;
+                _previousIsEditMode = IsEditMode;
+                _previousSetoffId = SetoffId;
+                _previousIsReadOnly = IsReadOnly;
+                
+                // 重新載入資料
+                await LoadPrepaymentsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType());
+        }
+    }
+    
+    #endregion
+
+    #region 資料載入方法
+    
+    /// <summary>
+    /// 載入預收/預付款資料
+    /// </summary>
+    private async Task LoadPrepaymentsAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+            
+            Prepayments.Clear();
+            
+            if (Mode == SetoffMode.Receivable && CustomerId.HasValue)
+            {
+                // 應收模式：載入客戶的預收款
+                if (IsEditMode && SetoffId.HasValue)
+                {
+                    // 編輯模式：載入所有相關預收款
+                    Prepayments = await SetoffPrepaymentDetailService.GetAllPrepaymentsForEditAsync(CustomerId.Value, SetoffId.Value);
+                }
+                else
+                {
+                    // 新增模式：只載入可用的預收款
+                    Prepayments = await SetoffPrepaymentDetailService.GetAvailablePrepaymentsByCustomerAsync(CustomerId.Value);
+                }
+            }
+            else if (Mode == SetoffMode.Payable && SupplierId.HasValue)
+            {
+                // 應付模式：載入供應商的預付款
+                if (IsEditMode && SetoffId.HasValue)
+                {
+                    // 編輯模式：載入所有相關預付款
+                    Prepayments = await SetoffPrepaymentDetailService.GetAllPrepaidsForEditAsync(SupplierId.Value, SetoffId.Value);
+                }
+                else
+                {
+                    // 新增模式：只載入可用的預付款
+                    Prepayments = await SetoffPrepaymentDetailService.GetAvailablePrepaidsBySupplierAsync(SupplierId.Value);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPrepaymentsAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入預收/預付款資料時發生錯誤");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    #endregion
+
+    #region 欄位定義
+    
+    /// <summary>
+    /// 取得欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            // 1. 類別 (唯讀文字)
+            new InteractiveColumnDefinition
+            {
+                Title = "類別",
+                PropertyName = nameof(SetoffPrepaymentDto.TypeDisplayName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                IsReadOnly = true
+            },
+            
+            // 2. 來源單號 (唯讀文字)
+            new InteractiveColumnDefinition
+            {
+                Title = "來源單號",
+                PropertyName = nameof(SetoffPrepaymentDto.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "130px",
+                IsReadOnly = true
+            },
+            
+            // 3. 款項日期 (唯讀文字)
+            new InteractiveColumnDefinition
+            {
+                Title = "款項日期",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item =>
+                {
+                    var prepayment = (SetoffPrepaymentDto)item;
+                    return @<span>@prepayment.PaymentDate.ToString("yyyy-MM-dd")</span>;
+                }
+            },
+            
+            // 4. 原始金額 (唯讀數字)
+            new InteractiveColumnDefinition
+            {
+                Title = "原始金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var prepayment = (SetoffPrepaymentDto)item;
+                    return @<span class="text-muted">@prepayment.Amount.ToString("N2")</span>;
+                }
+            },
+            
+            // 5. 已用金額 (唯讀數字)
+            new InteractiveColumnDefinition
+            {
+                Title = "已用金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var prepayment = (SetoffPrepaymentDto)item;
+                    return @<span class="text-muted">@prepayment.UsedAmount.ToString("N2")</span>;
+                }
+            },
+            
+            // 6. 可用金額 (唯讀數字，突出顯示)
+            new InteractiveColumnDefinition
+            {
+                Title = "可用金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var prepayment = (SetoffPrepaymentDto)item;
+                    return @<span class="text-primary fw-bold">@prepayment.AvailableAmount.ToString("N2")</span>;
+                }
+            },
+            
+            // 7. 本次使用金額 (可編輯數字輸入)
+            new InteractiveColumnDefinition
+            {
+                Title = "本次使用金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var prepayment = (SetoffPrepaymentDto)item;
+                    
+                    return @<input type="text"
+                                  class="form-control form-control-sm text-end"
+                                  value="@(prepayment.ThisTimeUseAmount > 0 ? prepayment.ThisTimeUseAmount.ToString("N0") : "")"
+                                  pattern="[0-9]*"
+                                  inputmode="numeric"
+                                  @oninput="@(async (e) => await HandleUseAmountChanged(prepayment, e.Value?.ToString()))"
+                                  placeholder="0"
+                                  readonly="@IsReadOnly" />;
+                }
+            },
+            
+            // 8. 備註 (唯讀文字)
+            new InteractiveColumnDefinition
+            {
+                Title = "備註",
+                PropertyName = nameof(SetoffPrepaymentDto.Remarks),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px",
+                IsReadOnly = true
+            }
+        };
+
+        return columns;
+    }
+    
+    #endregion
+
+    #region 事件處理方法
+    
+    /// <summary>
+    /// 處理使用金額變更事件
+    /// </summary>
+    private async Task HandleUseAmountChanged(SetoffPrepaymentDto prepayment, string? value)
+    {
+        try
+        {
+            // 解析金額
+            if (decimal.TryParse(value, out decimal amount))
+            {
+                prepayment.ThisTimeUseAmount = amount;
+            }
+            else
+            {
+                prepayment.ThisTimeUseAmount = 0;
+            }
+            
+            // 驗證金額
+            ValidateAmounts();
+            
+            // 通知變更
+            await NotifyChanges();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleUseAmountChanged), GetType());
+        }
+    }
+    
+    /// <summary>
+    /// 從選擇中移除指定項目（清除使用金額）
+    /// </summary>
+    private async Task RemoveItemFromSelection(SetoffPrepaymentDto item)
+    {
+        try
+        {
+            item.ThisTimeUseAmount = 0;
+            ValidationErrors.Clear();
+            await NotifyChanges();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(RemoveItemFromSelection), GetType());
+        }
+    }
+    
+    /// <summary>
+    /// 處理驗證失敗事件
+    /// </summary>
+    private async Task HandleValidationFailed((SetoffPrepaymentDto item, string propertyName, string? errorMessage) args)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(args.errorMessage))
+            {
+                await NotificationService.ShowErrorAsync(args.errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleValidationFailed), GetType());
+        }
+    }
+    
+    #endregion
+
+    #region 驗證方法
+    
+    /// <summary>
+    /// 驗證所有金額
+    /// </summary>
+    private void ValidateAmounts()
+    {
+        ValidationErrors.Clear();
+        
+        foreach (var prepayment in Prepayments.Where(p => p.ThisTimeUseAmount > 0))
+        {
+            // 驗證使用金額不能大於可用金額
+            if (prepayment.ThisTimeUseAmount > prepayment.AvailableAmount)
+            {
+                ValidationErrors[$"{prepayment.GetHashCode()}_ThisTimeUseAmount"] = 
+                    $"使用金額不能大於可用金額 {prepayment.AvailableAmount:N2}";
+            }
+            
+            // 驗證使用金額必須大於0
+            if (prepayment.ThisTimeUseAmount <= 0)
+            {
+                ValidationErrors[$"{prepayment.GetHashCode()}_ThisTimeUseAmount"] = "使用金額必須大於0";
+            }
+        }
+    }
+    
+    #endregion
+
+    #region UI 輔助方法
+    
+    /// <summary>
+    /// 取得要顯示的預收/預付款列表
+    /// </summary>
+    private List<SetoffPrepaymentDto> GetDisplayPrepayments()
+    {
+        if (IsEditMode)
+        {
+            // 編輯模式：顯示原本有使用記錄的項目
+            return Prepayments.Where(p => p.OriginalThisTimeUseAmount > 0 || p.AvailableAmount > 0).ToList();
+        }
+        else
+        {
+            // 新增模式：顯示所有可用的項目
+            return Prepayments.Where(p => p.AvailableAmount > 0).ToList();
+        }
+    }
+    
+    /// <summary>
+    /// 取得模式對應的 CSS 類別
+    /// </summary>
+    private string GetModeClass() => Mode == SetoffMode.Receivable ? "receivable" : "payable";
+    
+    /// <summary>
+    /// 取得空白訊息
+    /// </summary>
+    private string GetEmptyMessage() => Mode == SetoffMode.Receivable 
+        ? "此客戶沒有可用的預收款" 
+        : "此供應商沒有可用的預付款";
+    
+    #endregion
+
+    #region 輔助方法
+    
+    /// <summary>
+    /// 取得有效的預收/預付款（本次使用金額 > 0）
+    /// </summary>
+    private List<SetoffPrepaymentDto> GetValidPrepayments()
+    {
+        return Prepayments.Where(p => p.ThisTimeUseAmount > 0).ToList();
+    }
+    
+    /// <summary>
+    /// 通知變更
+    /// </summary>
+    private async Task NotifyChanges()
+    {
+        try
+        {
+            var validPrepayments = GetValidPrepayments();
+            
+            // 通知預收/預付款變更
+            if (OnPrepaymentsChanged.HasDelegate)
+            {
+                await OnPrepaymentsChanged.InvokeAsync(validPrepayments);
+            }
+            
+            // 通知總金額變更
+            if (OnTotalUseAmountChanged.HasDelegate)
+            {
+                await OnTotalUseAmountChanged.InvokeAsync(TotalUseAmount);
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(NotifyChanges), GetType());
+        }
+    }
+    
+    #endregion
+
+    #region 公開方法
+    
+    /// <summary>
+    /// 重新整理資料
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        await LoadPrepaymentsAsync();
+    }
+    
+    /// <summary>
+    /// 清除選擇
+    /// </summary>
+    public void ClearSelection()
+    {
+        foreach (var prepayment in Prepayments)
+        {
+            prepayment.ThisTimeUseAmount = 0;
+        }
+        ValidationErrors.Clear();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得選中的預收/預付款列表
+    /// </summary>
+    public List<SetoffPrepaymentDto> GetSelectedPrepayments()
+    {
+        return GetValidPrepayments();
+    }
+    
+    /// <summary>
+    /// 取得總使用金額
+    /// </summary>
+    public decimal GetTotalUseAmount()
+    {
+        return TotalUseAmount;
+    }
+    
+    /// <summary>
+    /// 驗證預收/預付款選擇
+    /// </summary>
+    public (bool IsValid, List<string> Errors) ValidateSelection()
+    {
+        var errors = new List<string>();
+        var validPrepayments = GetValidPrepayments();
+        
+        // 不強制要求必須選擇預收/預付款
+        // 只驗證如果有選擇，金額是否正確
+        
+        foreach (var prepayment in validPrepayments)
+        {
+            var validation = prepayment.ValidateUseAmount();
+            if (!validation.IsValid && validation.ErrorMessage != null)
+            {
+                errors.Add($"{prepayment.Code}: {validation.ErrorMessage}");
+            }
+        }
+
+        return (errors.Count == 0, errors);
+    }
+    
+    /// <summary>
+    /// 儲存預收/預付款明細
+    /// </summary>
+    public async Task<(bool Success, string Message)> SaveAsync()
+    {
+        try
+        {
+            if (!SetoffId.HasValue)
+            {
+                return (false, "沖款單ID不存在");
+            }
+            
+            var validPrepayments = GetValidPrepayments();
+            var deletedDetailIds = Prepayments
+                .Where(p => p.Id > 0 && p.ThisTimeUseAmount == 0 && p.OriginalThisTimeUseAmount > 0)
+                .Select(p => p.Id)
+                .ToList();
+            
+            ServiceResult result;
+            if (Mode == SetoffMode.Receivable)
+            {
+                result = await SetoffPrepaymentDetailService.SaveReceivableSetoffPrepaymentsAsync(
+                    SetoffId.Value, validPrepayments, deletedDetailIds);
+            }
+            else
+            {
+                result = await SetoffPrepaymentDetailService.SavePayableSetoffPrepaymentsAsync(
+                    SetoffId.Value, validPrepayments, deletedDetailIds);
+            }
+            
+            if (result.IsSuccess)
+            {
+                await RefreshAsync();
+            }
+            
+            return (result.IsSuccess, result.ErrorMessage);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveAsync), GetType());
+            return (false, "儲存預收/預付款明細時發生錯誤");
+        }
+    }
+    
+    #endregion
+}

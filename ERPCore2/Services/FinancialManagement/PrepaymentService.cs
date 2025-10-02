@@ -41,7 +41,6 @@ namespace ERPCore2.Services
                 return await context.Prepayments
                     .Include(p => p.Customer)
                     .Include(p => p.Supplier)
-                    .Include(p => p.AccountsReceivableSetoff)
                     .OrderByDescending(p => p.PaymentDate)
                     .ThenBy(p => p.Code)
                     .ToListAsync();
@@ -68,7 +67,6 @@ namespace ERPCore2.Services
                 return await context.Prepayments
                     .Include(p => p.Customer)
                     .Include(p => p.Supplier)
-                    .Include(p => p.AccountsReceivableSetoff)
                     .FirstOrDefaultAsync(p => p.Id == id);
             }
             catch (Exception ex)
@@ -97,7 +95,6 @@ namespace ERPCore2.Services
                 return await context.Prepayments
                     .Include(p => p.Customer)
                     .Include(p => p.Supplier)
-                    .Include(p => p.AccountsReceivableSetoff)
                     .Where(p => (p.Code != null && p.Code.Contains(searchTerm)) ||
                                (p.Remarks != null && p.Remarks.Contains(searchTerm)) ||
                                (p.Customer != null && p.Customer.CompanyName.Contains(searchTerm)) ||
@@ -165,10 +162,6 @@ namespace ERPCore2.Services
                 if (entity.CustomerId.HasValue && entity.SupplierId.HasValue)
                     errors.Add("不能同時指定客戶和供應商");
 
-                // 沖款單驗證
-                if (entity.SetoffId.HasValue && !entity.CustomerId.HasValue)
-                    errors.Add("關聯沖款單時必須指定客戶");
-
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 
@@ -229,7 +222,6 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Prepayments
                     .Include(p => p.Customer)
-                    .Include(p => p.AccountsReceivableSetoff)
                     .Where(p => p.CustomerId == customerId)
                     .OrderByDescending(p => p.PaymentDate)
                     .ToListAsync();
@@ -296,31 +288,6 @@ namespace ERPCore2.Services
                     PrepaymentType = prepaymentType
                 });
                 return new List<Prepayment>();
-            }
-        }
-
-        /// <summary>
-        /// 依據沖款單取得預收款
-        /// </summary>
-        public async Task<Prepayment?> GetBySetoffIdAsync(int setoffId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.Prepayments
-                    .Include(p => p.Customer)
-                    .Include(p => p.AccountsReceivableSetoff)
-                    .FirstOrDefaultAsync(p => p.SetoffId == setoffId);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySetoffIdAsync), GetType(), _logger, new
-                {
-                    Method = nameof(GetBySetoffIdAsync),
-                    ServiceType = GetType().Name,
-                    SetoffId = setoffId
-                });
-                return null;
             }
         }
 
