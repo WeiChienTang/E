@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ERPCore2.Migrations
 {
     /// <inheritdoc />
-    public partial class initialCreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,7 +21,6 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -34,6 +33,31 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Banks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BankName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    BankNameEn = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Fax = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    SwiftCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Banks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Colors",
                 columns: table => new
                 {
@@ -43,7 +67,6 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -74,7 +97,6 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -96,7 +118,6 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -109,6 +130,29 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Currencies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Symbol = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    IsBaseCurrency = table.Column<bool>(type: "bit", nullable: false),
+                    ExchangeRate = table.Column<decimal>(type: "decimal(18,6)", precision: 18, scale: 6, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Currencies", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CustomerTypes",
                 columns: table => new
                 {
@@ -117,7 +161,6 @@ namespace ERPCore2.Migrations
                     TypeName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -143,7 +186,6 @@ namespace ERPCore2.Migrations
                     DeleteReason = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -164,7 +206,6 @@ namespace ERPCore2.Migrations
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -202,7 +243,6 @@ namespace ERPCore2.Migrations
                     Resolution = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -229,7 +269,6 @@ namespace ERPCore2.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -251,7 +290,6 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -280,7 +318,6 @@ namespace ERPCore2.Migrations
                     Orientation = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -293,6 +330,27 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PaymentMethods",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentMethods", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Permissions",
                 columns: table => new
                 {
@@ -301,7 +359,6 @@ namespace ERPCore2.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -326,7 +383,6 @@ namespace ERPCore2.Migrations
                     IsDefault = table.Column<bool>(type: "bit", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -347,7 +403,6 @@ namespace ERPCore2.Migrations
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -368,7 +423,6 @@ namespace ERPCore2.Migrations
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -381,6 +435,26 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SalesReturnReasons",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesReturnReasons", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sizes",
                 columns: table => new
                 {
@@ -389,7 +463,6 @@ namespace ERPCore2.Migrations
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -410,7 +483,6 @@ namespace ERPCore2.Migrations
                     TypeName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -431,7 +503,6 @@ namespace ERPCore2.Migrations
                     TaxRate = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -452,7 +523,6 @@ namespace ERPCore2.Migrations
                     Name = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -476,7 +546,6 @@ namespace ERPCore2.Migrations
                     Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -498,7 +567,6 @@ namespace ERPCore2.Migrations
                     Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -522,7 +590,6 @@ namespace ERPCore2.Migrations
                     AddressLine = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -553,7 +620,6 @@ namespace ERPCore2.Migrations
                     IsPrimary = table.Column<bool>(type: "bit", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -582,7 +648,6 @@ namespace ERPCore2.Migrations
                     CustomerTypeId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -612,7 +677,6 @@ namespace ERPCore2.Migrations
                     PaperSettingId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -646,7 +710,6 @@ namespace ERPCore2.Migrations
                     PermissionId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -682,7 +745,6 @@ namespace ERPCore2.Migrations
                     SupplierTypeId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -712,7 +774,6 @@ namespace ERPCore2.Migrations
                     ToUnitId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -751,7 +812,6 @@ namespace ERPCore2.Migrations
                     WarehouseId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -770,6 +830,200 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AccountsReceivableSetoffs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SetoffNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SetoffDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: false),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
+                    TotalSetoffAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PaymentMethodId = table.Column<int>(type: "int", nullable: true),
+                    PaymentAccount = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    CompletedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountsReceivableSetoffs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffs_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffs_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffs_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FinancialTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransactionNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    TransactionType = table.Column<int>(type: "int", nullable: false),
+                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: true),
+                    VendorId = table.Column<int>(type: "int", nullable: true),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
+                    SourceDocumentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    SourceDocumentId = table.Column<int>(type: "int", nullable: true),
+                    SourceDocumentNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    SourceDetailId = table.Column<int>(type: "int", nullable: true),
+                    PaymentMethodId = table.Column<int>(type: "int", nullable: true),
+                    PaymentAccount = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    BalanceBefore = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    BalanceAfter = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CurrentDiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AccumulatedDiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsReversed = table.Column<bool>(type: "bit", nullable: false),
+                    ReversedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReversalTransactionId = table.Column<int>(type: "int", nullable: true),
+                    OriginalAmount = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    CurrencyCode = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: true),
+                    ExchangeRate = table.Column<decimal>(type: "decimal(18,6)", precision: 18, scale: 6, nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FinancialTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FinancialTransactions_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FinancialTransactions_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_FinancialTransactions_FinancialTransactions_ReversalTransactionId",
+                        column: x => x.ReversalTransactionId,
+                        principalTable: "FinancialTransactions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FinancialTransactions_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccountsPayableSetoffs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SetoffNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SetoffDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SupplierId = table.Column<int>(type: "int", nullable: false),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
+                    TotalSetoffAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaymentMethodId = table.Column<int>(type: "int", nullable: true),
+                    PaymentAccount = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    CompletedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountsPayableSetoffs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffs_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffs_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffs_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Prepayments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PrepaymentType = table.Column<int>(type: "int", nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: true),
+                    SupplierId = table.Column<int>(type: "int", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Prepayments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Prepayments_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Prepayments_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Products",
                 columns: table => new
                 {
@@ -782,7 +1036,6 @@ namespace ERPCore2.Migrations
                     SupplierId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -817,6 +1070,133 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AccountsReceivableSetoffPaymentDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SetoffId = table.Column<int>(type: "int", nullable: false),
+                    PaymentMethodId = table.Column<int>(type: "int", nullable: false),
+                    BankId = table.Column<int>(type: "int", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AccountNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    TransactionReference = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountsReceivableSetoffPaymentDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffPaymentDetails_AccountsReceivableSetoffs_SetoffId",
+                        column: x => x.SetoffId,
+                        principalTable: "AccountsReceivableSetoffs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffPaymentDetails_Banks_BankId",
+                        column: x => x.BankId,
+                        principalTable: "Banks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffPaymentDetails_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccountsPayableSetoffPaymentDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SetoffId = table.Column<int>(type: "int", nullable: false),
+                    PaymentMethodId = table.Column<int>(type: "int", nullable: false),
+                    BankId = table.Column<int>(type: "int", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AccountNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    TransactionReference = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountsPayableSetoffPaymentDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffPaymentDetails_AccountsPayableSetoffs_SetoffId",
+                        column: x => x.SetoffId,
+                        principalTable: "AccountsPayableSetoffs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffPaymentDetails_Banks_BankId",
+                        column: x => x.BankId,
+                        principalTable: "Banks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffPaymentDetails_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SetoffPrepaymentDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AccountsReceivableSetoffId = table.Column<int>(type: "int", nullable: true),
+                    AccountsPayableSetoffId = table.Column<int>(type: "int", nullable: true),
+                    PrepaymentId = table.Column<int>(type: "int", nullable: false),
+                    UseAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SetoffPrepaymentDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SetoffPrepaymentDetails_AccountsPayableSetoffs_AccountsPayableSetoffId",
+                        column: x => x.AccountsPayableSetoffId,
+                        principalTable: "AccountsPayableSetoffs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SetoffPrepaymentDetails_AccountsReceivableSetoffs_AccountsReceivableSetoffId",
+                        column: x => x.AccountsReceivableSetoffId,
+                        principalTable: "AccountsReceivableSetoffs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SetoffPrepaymentDetails_Prepayments_PrepaymentId",
+                        column: x => x.PrepaymentId,
+                        principalTable: "Prepayments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InventoryStocks",
                 columns: table => new
                 {
@@ -837,7 +1217,6 @@ namespace ERPCore2.Migrations
                     WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -884,7 +1263,6 @@ namespace ERPCore2.Migrations
                     ChangeDetails = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -931,7 +1309,6 @@ namespace ERPCore2.Migrations
                     PricingDescription = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -969,7 +1346,6 @@ namespace ERPCore2.Migrations
                     UnitId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1017,7 +1393,6 @@ namespace ERPCore2.Migrations
                     PurchaseRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1062,7 +1437,6 @@ namespace ERPCore2.Migrations
                     InventoryStockId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1109,8 +1483,6 @@ namespace ERPCore2.Migrations
                     UnitCost = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
                     StockBefore = table.Column<int>(type: "int", nullable: false),
                     StockAfter = table.Column<int>(type: "int", nullable: false),
-                    TransactionRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ReferenceNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     TransactionBatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     TransactionBatchDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TransactionExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1120,7 +1492,6 @@ namespace ERPCore2.Migrations
                     InventoryStockId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1155,6 +1526,69 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AccountsPayableSetoffDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SetoffId = table.Column<int>(type: "int", nullable: false),
+                    PurchaseReceivingDetailId = table.Column<int>(type: "int", nullable: true),
+                    PurchaseReturnDetailId = table.Column<int>(type: "int", nullable: true),
+                    PayableAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SetoffAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AfterPaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountsPayableSetoffDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountsPayableSetoffDetails_AccountsPayableSetoffs_SetoffId",
+                        column: x => x.SetoffId,
+                        principalTable: "AccountsPayableSetoffs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccountsReceivableSetoffDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SetoffId = table.Column<int>(type: "int", nullable: false),
+                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: true),
+                    SalesReturnDetailId = table.Column<int>(type: "int", nullable: true),
+                    ReceivableAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SetoffAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    AfterReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountsReceivableSetoffDetails", x => x.Id);
+                    table.CheckConstraint("CK_AccountsReceivableSetoffDetail_RelatedDetail", "SalesOrderDetailId IS NOT NULL OR SalesReturnDetailId IS NOT NULL");
+                    table.ForeignKey(
+                        name: "FK_AccountsReceivableSetoffDetails_AccountsReceivableSetoffs_SetoffId",
+                        column: x => x.SetoffId,
+                        principalTable: "AccountsReceivableSetoffs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Departments",
                 columns: table => new
                 {
@@ -1164,7 +1598,6 @@ namespace ERPCore2.Migrations
                     ManagerId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1194,7 +1627,6 @@ namespace ERPCore2.Migrations
                     LockedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1246,7 +1678,6 @@ namespace ERPCore2.Migrations
                     WarehouseId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1301,7 +1732,6 @@ namespace ERPCore2.Migrations
                     EmployeeId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1350,7 +1780,6 @@ namespace ERPCore2.Migrations
                     DifferenceItems = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1390,13 +1819,13 @@ namespace ERPCore2.Migrations
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     OrderQuantity = table.Column<int>(type: "int", nullable: false),
                     ReceivedQuantity = table.Column<int>(type: "int", nullable: false),
+                    ReturnedQuantity = table.Column<int>(type: "int", nullable: false),
                     IsReceivingCompleted = table.Column<bool>(type: "bit", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1435,7 +1864,6 @@ namespace ERPCore2.Migrations
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1469,17 +1897,18 @@ namespace ERPCore2.Migrations
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SubtotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DeliveredQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     PendingQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    DetailRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    IsSettled = table.Column<bool>(type: "bit", nullable: false),
+                    ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SalesOrderId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     UnitId = table.Column<int>(type: "int", nullable: true),
                     WarehouseId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1522,7 +1951,6 @@ namespace ERPCore2.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     SalesReturnNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     ReturnDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReturnReason = table.Column<int>(type: "int", nullable: false),
                     TotalReturnAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ReturnTaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalReturnAmountWithTax = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -1531,9 +1959,9 @@ namespace ERPCore2.Migrations
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     SalesOrderId = table.Column<int>(type: "int", nullable: true),
                     EmployeeId = table.Column<int>(type: "int", nullable: true),
+                    ReturnReasonId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1561,6 +1989,12 @@ namespace ERPCore2.Migrations
                         principalTable: "SalesOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SalesReturns_SalesReturnReasons_ReturnReasonId",
+                        column: x => x.ReturnReasonId,
+                        principalTable: "SalesReturnReasons",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1583,7 +2017,6 @@ namespace ERPCore2.Migrations
                     AdjustmentNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1631,9 +2064,11 @@ namespace ERPCore2.Migrations
                     BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsReceivingCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    IsSettled = table.Column<bool>(type: "bit", nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalPaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1692,7 +2127,6 @@ namespace ERPCore2.Migrations
                     PurchaseReceivingId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1727,20 +2161,21 @@ namespace ERPCore2.Migrations
                     ReturnUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ReturnSubtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ReturnSubtotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ProcessedQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     PendingQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     IsRestocked = table.Column<bool>(type: "bit", nullable: false),
                     RestockedQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     ScrapQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    DetailRemarks = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    IsSettled = table.Column<bool>(type: "bit", nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalPaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     QualityCondition = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     SalesReturnId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     SalesOrderDetailId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1788,6 +2223,9 @@ namespace ERPCore2.Migrations
                     BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ShippedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsSettled = table.Column<bool>(type: "bit", nullable: false),
+                    ReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     PurchaseReturnId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     PurchaseOrderDetailId = table.Column<int>(type: "int", nullable: true),
@@ -1796,7 +2234,6 @@ namespace ERPCore2.Migrations
                     WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -1845,6 +2282,117 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffDetails_PurchaseReceivingDetailId",
+                table: "AccountsPayableSetoffDetails",
+                column: "PurchaseReceivingDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffDetails_PurchaseReturnDetailId",
+                table: "AccountsPayableSetoffDetails",
+                column: "PurchaseReturnDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffDetails_SetoffId",
+                table: "AccountsPayableSetoffDetails",
+                column: "SetoffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffPaymentDetails_BankId",
+                table: "AccountsPayableSetoffPaymentDetails",
+                column: "BankId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffPaymentDetails_PaymentMethodId",
+                table: "AccountsPayableSetoffPaymentDetails",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffPaymentDetails_SetoffId",
+                table: "AccountsPayableSetoffPaymentDetails",
+                column: "SetoffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffs_CompanyId",
+                table: "AccountsPayableSetoffs",
+                column: "CompanyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffs_PaymentMethodId",
+                table: "AccountsPayableSetoffs",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffs_SetoffDate",
+                table: "AccountsPayableSetoffs",
+                column: "SetoffDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffs_SetoffNumber",
+                table: "AccountsPayableSetoffs",
+                column: "SetoffNumber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsPayableSetoffs_SupplierId",
+                table: "AccountsPayableSetoffs",
+                column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffDetails_SalesOrderDetailId",
+                table: "AccountsReceivableSetoffDetails",
+                column: "SalesOrderDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffDetails_SalesReturnDetailId",
+                table: "AccountsReceivableSetoffDetails",
+                column: "SalesReturnDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffDetails_SetoffId",
+                table: "AccountsReceivableSetoffDetails",
+                column: "SetoffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffPaymentDetails_BankId",
+                table: "AccountsReceivableSetoffPaymentDetails",
+                column: "BankId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffPaymentDetails_PaymentMethodId",
+                table: "AccountsReceivableSetoffPaymentDetails",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffPaymentDetails_SetoffId",
+                table: "AccountsReceivableSetoffPaymentDetails",
+                column: "SetoffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffs_CompanyId",
+                table: "AccountsReceivableSetoffs",
+                column: "CompanyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffs_CustomerId",
+                table: "AccountsReceivableSetoffs",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffs_PaymentMethodId",
+                table: "AccountsReceivableSetoffs",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffs_SetoffDate",
+                table: "AccountsReceivableSetoffs",
+                column: "SetoffDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountsReceivableSetoffs_SetoffNumber",
+                table: "AccountsReceivableSetoffs",
+                column: "SetoffNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Address_OwnerType_OwnerId",
                 table: "Addresses",
                 columns: new[] { "OwnerType", "OwnerId" });
@@ -1865,6 +2413,12 @@ namespace ERPCore2.Migrations
                 name: "IX_Contacts_ContactTypeId",
                 table: "Contacts",
                 column: "ContactTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Currencies_Code",
+                table: "Currencies",
+                column: "Code",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_Code",
@@ -1921,6 +2475,52 @@ namespace ERPCore2.Migrations
                 name: "IX_Employees_RoleId",
                 table: "Employees",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_CompanyId_TransactionDate",
+                table: "FinancialTransactions",
+                columns: new[] { "CompanyId", "TransactionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_CustomerId_TransactionDate",
+                table: "FinancialTransactions",
+                columns: new[] { "CustomerId", "TransactionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_PaymentMethodId",
+                table: "FinancialTransactions",
+                column: "PaymentMethodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_ReversalTransactionId",
+                table: "FinancialTransactions",
+                column: "ReversalTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_SourceDocumentType_SourceDocumentId",
+                table: "FinancialTransactions",
+                columns: new[] { "SourceDocumentType", "SourceDocumentId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_TransactionNumber",
+                table: "FinancialTransactions",
+                column: "TransactionNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_TransactionType_TransactionDate",
+                table: "FinancialTransactions",
+                columns: new[] { "TransactionType", "TransactionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_VendorId",
+                table: "FinancialTransactions",
+                column: "VendorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialTransactions_VendorId_TransactionDate",
+                table: "FinancialTransactions",
+                columns: new[] { "VendorId", "TransactionDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryReservations_InventoryStockId",
@@ -2013,6 +2613,33 @@ namespace ERPCore2.Migrations
                 column: "Code",
                 unique: true,
                 filter: "[Code] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prepayments_Code",
+                table: "Prepayments",
+                column: "Code",
+                unique: true,
+                filter: "[Code] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prepayments_CustomerId",
+                table: "Prepayments",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prepayments_PaymentDate",
+                table: "Prepayments",
+                column: "PaymentDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prepayments_PrepaymentType",
+                table: "Prepayments",
+                column: "PrepaymentType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prepayments_SupplierId",
+                table: "Prepayments",
+                column: "SupplierId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PriceHistories_ChangeDate",
@@ -2299,6 +2926,12 @@ namespace ERPCore2.Migrations
                 columns: new[] { "SalesReturnId", "ProductId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_SalesReturnReasons_Name",
+                table: "SalesReturnReasons",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SalesReturns_CustomerId_ReturnDate",
                 table: "SalesReturns",
                 columns: new[] { "CustomerId", "ReturnDate" });
@@ -2307,6 +2940,11 @@ namespace ERPCore2.Migrations
                 name: "IX_SalesReturns_EmployeeId",
                 table: "SalesReturns",
                 column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesReturns_ReturnReasonId",
+                table: "SalesReturns",
+                column: "ReturnReasonId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesReturns_SalesOrderId_ReturnDate",
@@ -2318,6 +2956,21 @@ namespace ERPCore2.Migrations
                 table: "SalesReturns",
                 column: "SalesReturnNumber",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SetoffPrepaymentDetails_AccountsPayableSetoffId",
+                table: "SetoffPrepaymentDetails",
+                column: "AccountsPayableSetoffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SetoffPrepaymentDetails_AccountsReceivableSetoffId",
+                table: "SetoffPrepaymentDetails",
+                column: "AccountsReceivableSetoffId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SetoffPrepaymentDetails_PrepaymentId",
+                table: "SetoffPrepaymentDetails",
+                column: "PrepaymentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sizes_Code",
@@ -2424,6 +3077,36 @@ namespace ERPCore2.Migrations
                 filter: "[Code] IS NOT NULL");
 
             migrationBuilder.AddForeignKey(
+                name: "FK_AccountsPayableSetoffDetails_PurchaseReceivingDetails_PurchaseReceivingDetailId",
+                table: "AccountsPayableSetoffDetails",
+                column: "PurchaseReceivingDetailId",
+                principalTable: "PurchaseReceivingDetails",
+                principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AccountsPayableSetoffDetails_PurchaseReturnDetails_PurchaseReturnDetailId",
+                table: "AccountsPayableSetoffDetails",
+                column: "PurchaseReturnDetailId",
+                principalTable: "PurchaseReturnDetails",
+                principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AccountsReceivableSetoffDetails_SalesOrderDetails_SalesOrderDetailId",
+                table: "AccountsReceivableSetoffDetails",
+                column: "SalesOrderDetailId",
+                principalTable: "SalesOrderDetails",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AccountsReceivableSetoffDetails_SalesReturnDetails_SalesReturnDetailId",
+                table: "AccountsReceivableSetoffDetails",
+                column: "SalesReturnDetailId",
+                principalTable: "SalesReturnDetails",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_Departments_Employees_ManagerId",
                 table: "Departments",
                 column: "ManagerId",
@@ -2439,6 +3122,18 @@ namespace ERPCore2.Migrations
                 table: "Departments");
 
             migrationBuilder.DropTable(
+                name: "AccountsPayableSetoffDetails");
+
+            migrationBuilder.DropTable(
+                name: "AccountsPayableSetoffPaymentDetails");
+
+            migrationBuilder.DropTable(
+                name: "AccountsReceivableSetoffDetails");
+
+            migrationBuilder.DropTable(
+                name: "AccountsReceivableSetoffPaymentDetails");
+
+            migrationBuilder.DropTable(
                 name: "Addresses");
 
             migrationBuilder.DropTable(
@@ -2448,10 +3143,16 @@ namespace ERPCore2.Migrations
                 name: "Contacts");
 
             migrationBuilder.DropTable(
+                name: "Currencies");
+
+            migrationBuilder.DropTable(
                 name: "DeletedRecords");
 
             migrationBuilder.DropTable(
                 name: "ErrorLogs");
+
+            migrationBuilder.DropTable(
+                name: "FinancialTransactions");
 
             migrationBuilder.DropTable(
                 name: "InventoryReservations");
@@ -2475,16 +3176,13 @@ namespace ERPCore2.Migrations
                 name: "ProductSuppliers");
 
             migrationBuilder.DropTable(
-                name: "PurchaseReturnDetails");
-
-            migrationBuilder.DropTable(
                 name: "ReportPrintConfigurations");
 
             migrationBuilder.DropTable(
                 name: "RolePermissions");
 
             migrationBuilder.DropTable(
-                name: "SalesReturnDetails");
+                name: "SetoffPrepaymentDetails");
 
             migrationBuilder.DropTable(
                 name: "StockTakingDetails");
@@ -2502,6 +3200,15 @@ namespace ERPCore2.Migrations
                 name: "Weathers");
 
             migrationBuilder.DropTable(
+                name: "PurchaseReturnDetails");
+
+            migrationBuilder.DropTable(
+                name: "SalesReturnDetails");
+
+            migrationBuilder.DropTable(
+                name: "Banks");
+
+            migrationBuilder.DropTable(
                 name: "AddressTypes");
 
             migrationBuilder.DropTable(
@@ -2509,12 +3216,6 @@ namespace ERPCore2.Migrations
 
             migrationBuilder.DropTable(
                 name: "InventoryStocks");
-
-            migrationBuilder.DropTable(
-                name: "PurchaseReceivingDetails");
-
-            migrationBuilder.DropTable(
-                name: "PurchaseReturns");
 
             migrationBuilder.DropTable(
                 name: "PaperSettings");
@@ -2526,16 +3227,37 @@ namespace ERPCore2.Migrations
                 name: "Permissions");
 
             migrationBuilder.DropTable(
+                name: "AccountsPayableSetoffs");
+
+            migrationBuilder.DropTable(
+                name: "AccountsReceivableSetoffs");
+
+            migrationBuilder.DropTable(
+                name: "Prepayments");
+
+            migrationBuilder.DropTable(
+                name: "StockTakings");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseReceivingDetails");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseReturns");
+
+            migrationBuilder.DropTable(
                 name: "SalesOrderDetails");
 
             migrationBuilder.DropTable(
                 name: "SalesReturns");
 
             migrationBuilder.DropTable(
-                name: "StockTakings");
+                name: "PaymentMethods");
 
             migrationBuilder.DropTable(
                 name: "PurchaseOrderDetails");
+
+            migrationBuilder.DropTable(
+                name: "WarehouseLocations");
 
             migrationBuilder.DropTable(
                 name: "PurchaseReceivings");
@@ -2544,7 +3266,7 @@ namespace ERPCore2.Migrations
                 name: "SalesOrders");
 
             migrationBuilder.DropTable(
-                name: "WarehouseLocations");
+                name: "SalesReturnReasons");
 
             migrationBuilder.DropTable(
                 name: "Products");

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250929220720_修改備註")]
-    partial class 修改備註
+    [Migration("20251003115826_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,213 @@ namespace ERPCore2.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoff", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PaymentAccount")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("PaymentMethodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("SetoffDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SetoffNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalSetoffAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("SetoffDate");
+
+                    b.HasIndex("SetoffNumber");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("AccountsPayableSetoffs");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoffDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AfterPaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("PayableAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("PurchaseReceivingDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PurchaseReturnDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("SetoffAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SetoffId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseReceivingDetailId");
+
+                    b.HasIndex("PurchaseReturnDetailId");
+
+                    b.HasIndex("SetoffId");
+
+                    b.ToTable("AccountsPayableSetoffDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoffPaymentDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BankId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PaymentMethodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SetoffId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankId");
+
+                    b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("SetoffId");
+
+                    b.ToTable("AccountsPayableSetoffPaymentDetails");
+                });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.AccountsReceivableSetoff", b =>
                 {
@@ -127,32 +334,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("DocumentNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<bool>("IsFullyReceived")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("PreviousReceivedAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ProductName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,3)");
-
                     b.Property<decimal>("ReceivableAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("RemainingAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Remarks")
@@ -175,10 +357,6 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("UnitName")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -198,6 +376,73 @@ namespace ERPCore2.Migrations
                         {
                             t.HasCheckConstraint("CK_AccountsReceivableSetoffDetail_RelatedDetail", "SalesOrderDetailId IS NOT NULL OR SalesReturnDetailId IS NOT NULL");
                         });
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsReceivableSetoffPaymentDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BankId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PaymentMethodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SetoffId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankId");
+
+                    b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("SetoffId");
+
+                    b.ToTable("AccountsReceivableSetoffPaymentDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Address", b =>
@@ -303,6 +548,69 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AddressTypes");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Bank", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BankNameEn")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Fax")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SwiftCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Banks");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Color", b =>
@@ -1060,6 +1368,9 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("AccumulatedDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1089,6 +1400,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CurrencyCode")
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
+
+                    b.Property<decimal>("CurrentDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
@@ -1743,6 +2057,129 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.ToTable("Permissions");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Prepayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PrepaymentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("PaymentDate");
+
+                    b.HasIndex("PrepaymentType");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("Prepayments");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.PrepaymentDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AccountsPayableSetoffId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AccountsReceivableSetoffId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("PrepaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("UseAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountsPayableSetoffId");
+
+                    b.HasIndex("AccountsReceivableSetoffId");
+
+                    b.HasIndex("PrepaymentId");
+
+                    b.ToTable("SetoffPrepaymentDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
@@ -2950,7 +3387,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Subtotal")
+                    b.Property<decimal>("SubtotalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalReceivedAmount")
@@ -3023,7 +3460,7 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("ReturnDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ReturnReasonId")
+                    b.Property<int?>("ReturnReasonId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("ReturnTaxAmount")
@@ -3129,7 +3566,7 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("ReturnQuantity")
                         .HasColumnType("decimal(18,3)");
 
-                    b.Property<decimal>("ReturnSubtotal")
+                    b.Property<decimal>("ReturnSubtotalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("ReturnUnitPrice")
@@ -3947,6 +4384,79 @@ namespace ERPCore2.Migrations
                     b.ToTable("Weathers");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoff", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.PaymentMethod", "PaymentMethod")
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId");
+
+                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("PaymentMethod");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoffDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.PurchaseReceivingDetail", "PurchaseReceivingDetail")
+                        .WithMany()
+                        .HasForeignKey("PurchaseReceivingDetailId");
+
+                    b.HasOne("ERPCore2.Data.Entities.PurchaseReturnDetail", "PurchaseReturnDetail")
+                        .WithMany()
+                        .HasForeignKey("PurchaseReturnDetailId");
+
+                    b.HasOne("ERPCore2.Data.Entities.AccountsPayableSetoff", "Setoff")
+                        .WithMany("SetoffDetails")
+                        .HasForeignKey("SetoffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PurchaseReceivingDetail");
+
+                    b.Navigation("PurchaseReturnDetail");
+
+                    b.Navigation("Setoff");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoffPaymentDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Bank", "Bank")
+                        .WithMany()
+                        .HasForeignKey("BankId");
+
+                    b.HasOne("ERPCore2.Data.Entities.PaymentMethod", "PaymentMethod")
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.AccountsPayableSetoff", "Setoff")
+                        .WithMany("PaymentDetails")
+                        .HasForeignKey("SetoffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
+
+                    b.Navigation("PaymentMethod");
+
+                    b.Navigation("Setoff");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.AccountsReceivableSetoff", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Company", "Company")
@@ -3994,6 +4504,31 @@ namespace ERPCore2.Migrations
                     b.Navigation("SalesOrderDetail");
 
                     b.Navigation("SalesReturnDetail");
+
+                    b.Navigation("Setoff");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsReceivableSetoffPaymentDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Bank", "Bank")
+                        .WithMany()
+                        .HasForeignKey("BankId");
+
+                    b.HasOne("ERPCore2.Data.Entities.PaymentMethod", "PaymentMethod")
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.AccountsReceivableSetoff", "Setoff")
+                        .WithMany("PaymentDetails")
+                        .HasForeignKey("SetoffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
+
+                    b.Navigation("PaymentMethod");
 
                     b.Navigation("Setoff");
                 });
@@ -4175,6 +4710,48 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
 
                     b.Navigation("WarehouseLocation");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Prepayment", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.PrepaymentDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.AccountsPayableSetoff", "AccountsPayableSetoff")
+                        .WithMany()
+                        .HasForeignKey("AccountsPayableSetoffId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ERPCore2.Data.Entities.AccountsReceivableSetoff", "AccountsReceivableSetoff")
+                        .WithMany("PrepaymentDetails")
+                        .HasForeignKey("AccountsReceivableSetoffId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ERPCore2.Data.Entities.Prepayment", "Prepayment")
+                        .WithMany("PrepaymentDetails")
+                        .HasForeignKey("PrepaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AccountsPayableSetoff");
+
+                    b.Navigation("AccountsReceivableSetoff");
+
+                    b.Navigation("Prepayment");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
@@ -4549,8 +5126,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.SalesReturnReason", "ReturnReason")
                         .WithMany("SalesReturns")
                         .HasForeignKey("ReturnReasonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
                         .WithMany()
@@ -4702,8 +5278,19 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountsPayableSetoff", b =>
+                {
+                    b.Navigation("PaymentDetails");
+
+                    b.Navigation("SetoffDetails");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.AccountsReceivableSetoff", b =>
                 {
+                    b.Navigation("PaymentDetails");
+
+                    b.Navigation("PrepaymentDetails");
+
                     b.Navigation("SetoffDetails");
                 });
 
@@ -4747,6 +5334,11 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.Prepayment", b =>
+                {
+                    b.Navigation("PrepaymentDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Product", b =>

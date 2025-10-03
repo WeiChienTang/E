@@ -1,5 +1,5 @@
 @* 沖款付款明細管理組件 - 使用 InteractiveTableComponent 來管理付款明細 *@
-@inject ISetoffPaymentDetailService SetoffPaymentDetailService
+@inject ISettoffPaymentDetailService SetoffPaymentDetailService
 @inject IPaymentMethodService PaymentMethodService
 @inject IBankService BankService
 @inject INotificationService NotificationService
@@ -44,6 +44,7 @@
     #region 參數定義
     [Parameter] public int? SetoffId { get; set; }
     [Parameter] public decimal TotalSetoffAmount { get; set; }
+    [Parameter] public decimal TotalPrepaymentAmount { get; set; }
     [Parameter] public EventCallback<List<SetoffPaymentDetailDto>> OnPaymentDetailsChanged { get; set; }
     [Parameter] public EventCallback<decimal> OnTotalPaymentAmountChanged { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
@@ -61,6 +62,7 @@
     private int? _previousSetoffId = null; // 追蹤上一次的 SetoffId
     private bool _isInitialized = false; // 追蹤是否已初始化
     private decimal _previousTotalSetoffAmount = 0m; // 追蹤上一次的 TotalSetoffAmount
+    private decimal _previousTotalPrepaymentAmount = 0m; // 追蹤上一次的 TotalPrepaymentAmount
     private bool _previousIsReadOnly = false; // 追蹤上一次的 IsReadOnly
     private bool _previousIsEditMode = false; // 追蹤上一次的 IsEditMode
     #endregion
@@ -89,12 +91,14 @@
             // 檢查 SetoffId 是否真的變更了
             bool setoffIdChanged = _previousSetoffId != SetoffId;
             bool totalSetoffAmountChanged = _previousTotalSetoffAmount != TotalSetoffAmount;
+            bool totalPrepaymentAmountChanged = _previousTotalPrepaymentAmount != TotalPrepaymentAmount;
             bool isReadOnlyChanged = _previousIsReadOnly != IsReadOnly;
             bool isEditModeChanged = _previousIsEditMode != IsEditMode;
             
             // 更新追蹤的參數值
             _previousSetoffId = SetoffId;
             _previousTotalSetoffAmount = TotalSetoffAmount;
+            _previousTotalPrepaymentAmount = TotalPrepaymentAmount;
             _previousIsReadOnly = IsReadOnly;
             _previousIsEditMode = IsEditMode;
             
@@ -106,9 +110,9 @@
                     await LoadPaymentDetailsAsync();
                     _isInitialized = true;
                 }
-                else if (totalSetoffAmountChanged)
+                else if (totalSetoffAmountChanged || totalPrepaymentAmountChanged)
                 {
-                    // TotalSetoffAmount 變更時，重新驗證
+                    // TotalSetoffAmount 或 TotalPrepaymentAmount 變更時，重新驗證
                     ValidateAmounts();
                 }
             }
@@ -120,9 +124,9 @@
                     EnsureOneEmptyRow();
                     _isInitialized = true;
                 }
-                else if (totalSetoffAmountChanged)
+                else if (totalSetoffAmountChanged || totalPrepaymentAmountChanged)
                 {
-                    // TotalSetoffAmount 變更時，重新驗證
+                    // TotalSetoffAmount 或 TotalPrepaymentAmount 變更時，重新驗證
                     ValidateAmounts();
                 }
             }
@@ -789,17 +793,19 @@
         // 只有在有有效明細時才驗證金額
         if (validDetails.Any())
         {
-            // 驗證總金額
+            // 驗證總金額：付款總額應等於 沖款總額 + 預收款總額
             var totalPayment = validDetails.Sum(d => d.Amount);
-            if (totalPayment != TotalSetoffAmount)
+            var expectedTotal = TotalSetoffAmount + TotalPrepaymentAmount;
+            
+            if (Math.Abs(totalPayment - expectedTotal) > 0.01m) // 允許 0.01 的誤差
             {
-                errors.Add($"付款總額 {totalPayment:N2} 與沖款總額 {TotalSetoffAmount:N2} 不符");
+                errors.Add($"付款總額 {totalPayment:N2} 應等於 沖款總額({TotalSetoffAmount:N2}) + 預收款總額({TotalPrepaymentAmount:N2}) = {expectedTotal:N2}");
             }
 
             // 驗證每筆明細
             foreach (var detail in validDetails)
             {
-                var validation = detail.ValidateAll(TotalSetoffAmount);
+                var validation = detail.ValidateAll(expectedTotal);
                 if (!validation.IsValid)
                 {
                     errors.AddRange(validation.Errors);

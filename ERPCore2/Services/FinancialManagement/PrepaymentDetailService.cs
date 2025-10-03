@@ -11,12 +11,12 @@ namespace ERPCore2.Services
     /// <summary>
     /// 沖款預收/預付款明細服務實作
     /// </summary>
-    public class SetoffPrepaymentDetailService : GenericManagementService<PrepaymentDetail>, ISetoffPrepaymentDetailService
+    public class PrepaymentDetailService : GenericManagementService<PrepaymentDetail>, IPrepaymentDetailService
     {
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
-        public SetoffPrepaymentDetailService(
+        public PrepaymentDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PrepaymentDetail>> logger) : base(contextFactory, logger)
         {
@@ -25,7 +25,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public SetoffPrepaymentDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public PrepaymentDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
@@ -34,12 +34,12 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得應收沖款單的預收款明細
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetByReceivableSetoffIdAsync(int setoffId)
+        public async Task<List<PrepaymentDto>> GetByReceivableSetoffIdAsync(int setoffId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var details = await context.SetoffPrepaymentDetails
+                var details = await context.PrepaymentDetails
                     .Include(d => d.Prepayment)
                         .ThenInclude(p => p!.Customer)
                     .Where(d => d.AccountsReceivableSetoffId == setoffId)
@@ -53,19 +53,19 @@ namespace ERPCore2.Services
                 {
                     SetoffId = setoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
         /// <summary>
         /// 取得應付沖款單的預付款明細
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetByPayableSetoffIdAsync(int setoffId)
+        public async Task<List<PrepaymentDto>> GetByPayableSetoffIdAsync(int setoffId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var details = await context.SetoffPrepaymentDetails
+                var details = await context.PrepaymentDetails
                     .Include(d => d.Prepayment)
                         .ThenInclude(p => p!.Supplier)
                     .Where(d => d.AccountsPayableSetoffId == setoffId)
@@ -79,14 +79,14 @@ namespace ERPCore2.Services
                 {
                     SetoffId = setoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
         /// <summary>
         /// 取得客戶可用的預收款列表
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetAvailablePrepaymentsByCustomerAsync(int customerId, int? excludeSetoffId = null)
+        public async Task<List<PrepaymentDto>> GetAvailablePrepaymentsByCustomerAsync(int customerId, int? excludeSetoffId = null)
         {
             try
             {
@@ -98,7 +98,7 @@ namespace ERPCore2.Services
                     .Where(p => p.CustomerId == customerId && p.PrepaymentType == PrepaymentType.Prepayment)
                     .ToListAsync();
 
-                var result = new List<SetoffPrepaymentDto>();
+                var result = new List<PrepaymentDto>();
 
                 foreach (var prepayment in prepayments)
                 {
@@ -109,7 +109,7 @@ namespace ERPCore2.Services
                     // 只加入有可用餘額的預收款
                     if (availableAmount > 0)
                     {
-                        result.Add(new SetoffPrepaymentDto
+                        result.Add(new PrepaymentDto
                         {
                             PrepaymentId = prepayment.Id,
                             Code = prepayment.Code ?? string.Empty,
@@ -132,14 +132,14 @@ namespace ERPCore2.Services
                     CustomerId = customerId,
                     ExcludeSetoffId = excludeSetoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
         /// <summary>
         /// 取得供應商可用的預付款列表
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetAvailablePrepaidsBySupplierAsync(int supplierId, int? excludeSetoffId = null)
+        public async Task<List<PrepaymentDto>> GetAvailablePrepaidsBySupplierAsync(int supplierId, int? excludeSetoffId = null)
         {
             try
             {
@@ -151,7 +151,7 @@ namespace ERPCore2.Services
                     .Where(p => p.SupplierId == supplierId && p.PrepaymentType == PrepaymentType.Prepaid)
                     .ToListAsync();
 
-                var result = new List<SetoffPrepaymentDto>();
+                var result = new List<PrepaymentDto>();
 
                 foreach (var prepayment in prepayments)
                 {
@@ -162,7 +162,7 @@ namespace ERPCore2.Services
                     // 只加入有可用餘額的預付款
                     if (availableAmount > 0)
                     {
-                        result.Add(new SetoffPrepaymentDto
+                        result.Add(new PrepaymentDto
                         {
                             PrepaymentId = prepayment.Id,
                             Code = prepayment.Code ?? string.Empty,
@@ -185,14 +185,14 @@ namespace ERPCore2.Services
                     SupplierId = supplierId,
                     ExcludeSetoffId = excludeSetoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
         /// <summary>
         /// 取得客戶所有預收款（含已使用和可用的，用於編輯模式）
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetAllPrepaymentsForEditAsync(int customerId, int setoffId)
+        public async Task<List<PrepaymentDto>> GetAllPrepaymentsForEditAsync(int customerId, int setoffId)
         {
             try
             {
@@ -220,14 +220,14 @@ namespace ERPCore2.Services
                     CustomerId = customerId,
                     SetoffId = setoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
         /// <summary>
         /// 取得供應商所有預付款（含已使用和可用的，用於編輯模式）
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetAllPrepaidsForEditAsync(int supplierId, int setoffId)
+        public async Task<List<PrepaymentDto>> GetAllPrepaidsForEditAsync(int supplierId, int setoffId)
         {
             try
             {
@@ -255,7 +255,7 @@ namespace ERPCore2.Services
                     SupplierId = supplierId,
                     SetoffId = setoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
@@ -268,7 +268,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var query = context.SetoffPrepaymentDetails.Where(d => d.PrepaymentId == prepaymentId);
+                var query = context.PrepaymentDetails.Where(d => d.PrepaymentId == prepaymentId);
                 
                 // 排除指定的沖款單（編輯模式用）
                 if (excludeSetoffId.HasValue)
@@ -294,7 +294,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得客戶有剩餘預收款的應收沖款單列表
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetReceivableSetoffsWithAvailablePrepaymentAsync(int customerId, int? excludeSetoffId = null)
+        public async Task<List<PrepaymentDto>> GetReceivableSetoffsWithAvailablePrepaymentAsync(int customerId, int? excludeSetoffId = null)
         {
             try
             {
@@ -313,7 +313,7 @@ namespace ERPCore2.Services
                     setoffs = setoffs.Where(s => s.Id != excludeSetoffId.Value).ToList();
                 }
                 
-                var result = new List<SetoffPrepaymentDto>();
+                var result = new List<PrepaymentDto>();
                 
                 foreach (var setoff in setoffs)
                 {
@@ -331,7 +331,7 @@ namespace ERPCore2.Services
                     {
                         if (pd.Prepayment != null)
                         {
-                            var otherUsage = await context.SetoffPrepaymentDetails
+                            var otherUsage = await context.PrepaymentDetails
                                 .Where(d => d.PrepaymentId == pd.PrepaymentId && 
                                            d.AccountsReceivableSetoffId != setoff.Id)
                                 .SumAsync(d => d.UseAmount);
@@ -344,7 +344,7 @@ namespace ERPCore2.Services
                     // 只加入有可用金額的沖款單
                     if (availableAmount > 0)
                     {
-                        result.Add(new SetoffPrepaymentDto
+                        result.Add(new PrepaymentDto
                         {
                             SourceSetoffId = setoff.Id,
                             SourceSetoffNumber = setoff.SetoffNumber,
@@ -367,14 +367,14 @@ namespace ERPCore2.Services
                     CustomerId = customerId,
                     ExcludeSetoffId = excludeSetoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
         
         /// <summary>
         /// 取得供應商有剩餘預付款的應付沖款單列表
         /// </summary>
-        public async Task<List<SetoffPrepaymentDto>> GetPayableSetoffsWithAvailablePrepaidAsync(int supplierId, int? excludeSetoffId = null)
+        public async Task<List<PrepaymentDto>> GetPayableSetoffsWithAvailablePrepaidAsync(int supplierId, int? excludeSetoffId = null)
         {
             try
             {
@@ -392,12 +392,12 @@ namespace ERPCore2.Services
                     setoffs = setoffs.Where(s => s.Id != excludeSetoffId.Value).ToList();
                 }
                 
-                var result = new List<SetoffPrepaymentDto>();
+                var result = new List<PrepaymentDto>();
                 
                 foreach (var setoff in setoffs)
                 {
                     // 查詢此沖款單的預付款明細
-                    var prepaymentDetails = await context.SetoffPrepaymentDetails
+                    var prepaymentDetails = await context.PrepaymentDetails
                         .Include(pd => pd.Prepayment)
                         .Where(pd => pd.AccountsPayableSetoffId == setoff.Id && pd.Prepayment != null)
                         .ToListAsync();
@@ -413,7 +413,7 @@ namespace ERPCore2.Services
                     {
                         if (pd.Prepayment != null)
                         {
-                            var otherUsage = await context.SetoffPrepaymentDetails
+                            var otherUsage = await context.PrepaymentDetails
                                 .Where(d => d.PrepaymentId == pd.PrepaymentId && 
                                            d.AccountsPayableSetoffId != setoff.Id)
                                 .SumAsync(d => d.UseAmount);
@@ -426,7 +426,7 @@ namespace ERPCore2.Services
                     // 只加入有可用金額的沖款單
                     if (availableAmount > 0)
                     {
-                        result.Add(new SetoffPrepaymentDto
+                        result.Add(new PrepaymentDto
                         {
                             SourceSetoffId = setoff.Id,
                             SourceSetoffNumber = setoff.SetoffNumber,
@@ -449,7 +449,7 @@ namespace ERPCore2.Services
                     SupplierId = supplierId,
                     ExcludeSetoffId = excludeSetoffId
                 });
-                return new List<SetoffPrepaymentDto>();
+                return new List<PrepaymentDto>();
             }
         }
 
@@ -460,7 +460,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 儲存應收沖款單的預收款明細
         /// </summary>
-        public async Task<ServiceResult> SaveReceivableSetoffPrepaymentsAsync(int setoffId, List<SetoffPrepaymentDto> prepayments, List<int> deletedDetailIds)
+        public async Task<ServiceResult> SaveReceivableSetoffPrepaymentsAsync(int setoffId, List<PrepaymentDto> prepayments, List<int> deletedDetailIds)
         {
             try
             {
@@ -469,11 +469,11 @@ namespace ERPCore2.Services
                 // 刪除標記為刪除的明細
                 if (deletedDetailIds.Any())
                 {
-                    var detailsToDelete = await context.SetoffPrepaymentDetails
+                    var detailsToDelete = await context.PrepaymentDetails
                         .Where(d => deletedDetailIds.Contains(d.Id))
                         .ToListAsync();
                     
-                    context.SetoffPrepaymentDetails.RemoveRange(detailsToDelete);
+                    context.PrepaymentDetails.RemoveRange(detailsToDelete);
                 }
                 
                 // 處理每個預收款明細
@@ -517,7 +517,7 @@ namespace ERPCore2.Services
                     if (dto.Id > 0)
                     {
                         // 更新現有明細
-                        var existingDetail = await context.SetoffPrepaymentDetails.FindAsync(dto.Id);
+                        var existingDetail = await context.PrepaymentDetails.FindAsync(dto.Id);
                         if (existingDetail != null)
                         {
                             existingDetail.UseAmount = dto.ThisTimeUseAmount;
@@ -538,7 +538,7 @@ namespace ERPCore2.Services
                             CreatedBy = "System"
                         };
                         
-                        await context.SetoffPrepaymentDetails.AddAsync(newDetail);
+                        await context.PrepaymentDetails.AddAsync(newDetail);
                     }
                 }
                 
@@ -560,7 +560,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 儲存應付沖款單的預付款明細
         /// </summary>
-        public async Task<ServiceResult> SavePayableSetoffPrepaymentsAsync(int setoffId, List<SetoffPrepaymentDto> prepayments, List<int> deletedDetailIds)
+        public async Task<ServiceResult> SavePayableSetoffPrepaymentsAsync(int setoffId, List<PrepaymentDto> prepayments, List<int> deletedDetailIds)
         {
             try
             {
@@ -569,11 +569,11 @@ namespace ERPCore2.Services
                 // 刪除標記為刪除的明細
                 if (deletedDetailIds.Any())
                 {
-                    var detailsToDelete = await context.SetoffPrepaymentDetails
+                    var detailsToDelete = await context.PrepaymentDetails
                         .Where(d => deletedDetailIds.Contains(d.Id))
                         .ToListAsync();
                     
-                    context.SetoffPrepaymentDetails.RemoveRange(detailsToDelete);
+                    context.PrepaymentDetails.RemoveRange(detailsToDelete);
                 }
                 
                 // 處理每個預付款明細
@@ -617,7 +617,7 @@ namespace ERPCore2.Services
                     if (dto.Id > 0)
                     {
                         // 更新現有明細
-                        var existingDetail = await context.SetoffPrepaymentDetails.FindAsync(dto.Id);
+                        var existingDetail = await context.PrepaymentDetails.FindAsync(dto.Id);
                         if (existingDetail != null)
                         {
                             existingDetail.UseAmount = dto.ThisTimeUseAmount;
@@ -638,7 +638,7 @@ namespace ERPCore2.Services
                             CreatedBy = "System"
                         };
                         
-                        await context.SetoffPrepaymentDetails.AddAsync(newDetail);
+                        await context.PrepaymentDetails.AddAsync(newDetail);
                     }
                 }
                 
@@ -665,13 +665,13 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var details = await context.SetoffPrepaymentDetails
+                var details = await context.PrepaymentDetails
                     .Where(d => d.AccountsReceivableSetoffId == setoffId)
                     .ToListAsync();
                 
                 if (details.Any())
                 {
-                    context.SetoffPrepaymentDetails.RemoveRange(details);
+                    context.PrepaymentDetails.RemoveRange(details);
                     await context.SaveChangesAsync();
                 }
                 
@@ -695,13 +695,13 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var details = await context.SetoffPrepaymentDetails
+                var details = await context.PrepaymentDetails
                     .Where(d => d.AccountsPayableSetoffId == setoffId)
                     .ToListAsync();
                 
                 if (details.Any())
                 {
-                    context.SetoffPrepaymentDetails.RemoveRange(details);
+                    context.PrepaymentDetails.RemoveRange(details);
                     await context.SaveChangesAsync();
                 }
                 
@@ -724,13 +724,13 @@ namespace ERPCore2.Services
         /// <summary>
         /// 將實體映射為 DTO
         /// </summary>
-        private SetoffPrepaymentDto MapToDto(PrepaymentDetail detail)
+        private PrepaymentDto MapToDto(PrepaymentDetail detail)
         {
             var prepayment = detail.Prepayment!;
             var usedAmount = GetUsedAmountAsync(prepayment.Id, 
                 detail.AccountsReceivableSetoffId ?? detail.AccountsPayableSetoffId).Result;
 
-            return new SetoffPrepaymentDto
+            return new PrepaymentDto
             {
                 Id = detail.Id,
                 PrepaymentId = detail.PrepaymentId,
@@ -804,3 +804,4 @@ namespace ERPCore2.Services
         #endregion
     }
 }
+

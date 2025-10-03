@@ -1,7 +1,7 @@
 @* 沖款預收/預付款管理組件 - 使用 InteractiveTableComponent 來管理預收/預付款明細 *@
 @using ERPCore2.Data.Enums
 @using ERPCore2.Models
-@inject ISetoffPrepaymentDetailService SetoffPrepaymentDetailService
+@inject IPrepaymentDetailService SetoffPrepaymentDetailService
 @inject INotificationService NotificationService
 
 <div class="setoff-prepayment-manager @GetModeClass()">
@@ -14,7 +14,7 @@
         </div>
     }
 
-    <InteractiveTableComponent TItem="SetoffPrepaymentDto"
+    <InteractiveTableComponent TItem="PrepaymentDto"
                                 Items="@GetDisplayPrepayments()"
                                 ColumnDefinitions="@GetColumnDefinitions()"
                                 ShowHeader="true"
@@ -75,7 +75,7 @@
     /// <summary>
     /// 預收/預付款變更事件
     /// </summary>
-    [Parameter] public EventCallback<List<SetoffPrepaymentDto>> OnPrepaymentsChanged { get; set; }
+    [Parameter] public EventCallback<List<PrepaymentDto>> OnPrepaymentsChanged { get; set; }
     
     /// <summary>
     /// 總使用金額變更事件
@@ -87,8 +87,8 @@
     #region 私有狀態
     
     private bool IsLoading { get; set; } = false;
-    private List<SetoffPrepaymentDto> Prepayments { get; set; } = new();
-    private List<SetoffPrepaymentDto> AvailableSetoffs { get; set; } = new(); // 有剩餘預收/預付的沖款單列表
+    private List<PrepaymentDto> Prepayments { get; set; } = new();
+    private List<PrepaymentDto> AvailableSetoffs { get; set; } = new(); // 有剩餘預收/預付的沖款單列表
     private Dictionary<string, string> ValidationErrors { get; set; } = new();
     private decimal TotalUseAmount => GetValidPrepayments().Sum(p => p.ThisTimeAddAmount);
     
@@ -267,15 +267,14 @@
                 Width = "120px",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     bool isEmptyRow = IsEmptyRow(prepayment);
                     var options = GetPrepaymentTypeOptions();
                     
                     return @<select class="form-select form-select-sm"
                                    value="@((int)prepayment.PrepaymentType)"
                                    @onchange="@(async (e) => await HandlePrepaymentTypeChanged(prepayment, e.Value?.ToString()))"
-                                   disabled="@(!isEmptyRow || IsReadOnly)">
-                        <option value="0">請選擇</option>
+                                   disabled="@(!isEmptyRow || IsReadOnly)">                        
                         @foreach (var opt in options)
                         {
                             <option value="@opt.Value">@opt.Text</option>
@@ -293,7 +292,7 @@
                 Width = "200px",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     bool isEmptyRow = IsEmptyRow(prepayment);
                     bool isFromSetoff = prepayment.PrepaymentType == PrepaymentType.PrepaymentToSetoff || 
                                        prepayment.PrepaymentType == PrepaymentType.PrepaidToSetoff;
@@ -328,7 +327,7 @@
                 Width = "120px",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     return @<span>@prepayment.PaymentDate.ToString("yyyy-MM-dd")</span>;
                 }
             },
@@ -337,13 +336,13 @@
             new InteractiveColumnDefinition
             {
                 Title = "原始金額",
-                PropertyName = nameof(SetoffPrepaymentDto.Amount),
+                PropertyName = nameof(PrepaymentDto.Amount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     var displayValue = prepayment.Amount.ToString("N2");
                     return @<span class="text-muted">@displayValue</span>;
                 }
@@ -353,13 +352,13 @@
             new InteractiveColumnDefinition
             {
                 Title = "已用金額",
-                PropertyName = nameof(SetoffPrepaymentDto.UsedAmount),
+                PropertyName = nameof(PrepaymentDto.UsedAmount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     var displayValue = prepayment.UsedAmount.ToString("N2");
                     return @<span class="text-muted">@displayValue</span>;
                 }
@@ -369,13 +368,13 @@
             new InteractiveColumnDefinition
             {
                 Title = "可用金額",
-                PropertyName = nameof(SetoffPrepaymentDto.AvailableAmount),
+                PropertyName = nameof(PrepaymentDto.AvailableAmount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     var displayValue = prepayment.AvailableAmount.ToString("N2");
                     return @<span class="text-primary fw-bold">@displayValue</span>;
                 }
@@ -391,7 +390,7 @@
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     // 只有沒有來源的項目才能輸入新增金額（新增的預收/預付款）
                     bool canAddNew = prepayment.PrepaymentId == 0;
                     
@@ -410,12 +409,12 @@
             new InteractiveColumnDefinition
             {
                 Title = "備註",
-                PropertyName = nameof(SetoffPrepaymentDto.Remarks),
+                PropertyName = nameof(PrepaymentDto.Remarks),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
                 CustomTemplate = item =>
                 {
-                    var prepayment = (SetoffPrepaymentDto)item;
+                    var prepayment = (PrepaymentDto)item;
                     return @<input type="text" 
                                    class="form-control form-control-sm" 
                                    value="@prepayment.Remarks"
@@ -436,7 +435,7 @@
     /// <summary>
     /// 處理類別變更事件
     /// </summary>
-    private async Task HandlePrepaymentTypeChanged(SetoffPrepaymentDto prepayment, string? value)
+    private async Task HandlePrepaymentTypeChanged(PrepaymentDto prepayment, string? value)
     {
         try
         {
@@ -463,7 +462,7 @@
     /// <summary>
     /// 處理來源沖款單變更事件
     /// </summary>
-    private async Task HandleSourceSetoffChanged(SetoffPrepaymentDto prepayment, string? value)
+    private async Task HandleSourceSetoffChanged(PrepaymentDto prepayment, string? value)
     {
         try
         {
@@ -485,7 +484,7 @@
                     
                     // 處理自動空行邏輯
                     var wasEmpty = IsEmptyRow(prepayment);
-                    AutoEmptyRowHelper.ForAny<SetoffPrepaymentDto>.HandleInputChange(
+                    AutoEmptyRowHelper.ForAny<PrepaymentDto>.HandleInputChange(
                         Prepayments, prepayment, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(prepayment));
                     
                     await NotifyChanges();
@@ -512,7 +511,7 @@
     /// <summary>
     /// 處理備註變更事件
     /// </summary>
-    private async Task HandleRemarksChanged(SetoffPrepaymentDto prepayment, string? value)
+    private async Task HandleRemarksChanged(PrepaymentDto prepayment, string? value)
     {
         try
         {
@@ -528,7 +527,7 @@
     /// <summary>
     /// 處理新增金額變更事件
     /// </summary>
-    private async Task HandleAddAmountChanged(SetoffPrepaymentDto prepayment, string? value)
+    private async Task HandleAddAmountChanged(PrepaymentDto prepayment, string? value)
     {
         try
         {
@@ -591,7 +590,7 @@
             }
             
             // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPrepaymentDto>.HandleInputChange(
+            AutoEmptyRowHelper.ForAny<PrepaymentDto>.HandleInputChange(
                 Prepayments, prepayment, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(prepayment));
             
             // 設置強制渲染標記（因為預收預付數據變更了）
@@ -609,12 +608,12 @@
     /// <summary>
     /// 從選擇中移除指定項目（清除使用金額）
     /// </summary>
-    private async Task RemoveItemFromSelection(SetoffPrepaymentDto item)
+    private async Task RemoveItemFromSelection(PrepaymentDto item)
     {
         try
         {
             // 使用 AutoEmptyRowHelper 處理項目移除
-            AutoEmptyRowHelper.ForAny<SetoffPrepaymentDto>.HandleItemRemove(
+            AutoEmptyRowHelper.ForAny<PrepaymentDto>.HandleItemRemove(
                 Prepayments,
                 item,
                 IsEmptyRow,
@@ -634,7 +633,7 @@
     /// <summary>
     /// 處理驗證失敗事件
     /// </summary>
-    private async Task HandleValidationFailed((SetoffPrepaymentDto item, string propertyName, string? errorMessage) args)
+    private async Task HandleValidationFailed((PrepaymentDto item, string propertyName, string? errorMessage) args)
     {
         try
         {
@@ -677,7 +676,7 @@
     /// <summary>
     /// 取得要顯示的預收/預付款列表
     /// </summary>
-    private List<SetoffPrepaymentDto> GetDisplayPrepayments()
+    private List<PrepaymentDto> GetDisplayPrepayments()
     {
         if (IsEditMode)
         {
@@ -711,7 +710,7 @@
     /// 檢查是否為空行
     /// 業務邏輯：如果本次新增金額為 0、沒有原始金額且原始金額為0，就算是空行
     /// </summary>
-    private bool IsEmptyRow(SetoffPrepaymentDto prepayment)
+    private bool IsEmptyRow(PrepaymentDto prepayment)
     {
         return prepayment.ThisTimeAddAmount == 0 
             && prepayment.OriginalThisTimeUseAmount == 0 
@@ -722,9 +721,9 @@
     /// <summary>
     /// 創建空的預收/預付款項目
     /// </summary>
-    private SetoffPrepaymentDto CreateEmptyItem()
+    private PrepaymentDto CreateEmptyItem()
     {
-        return new SetoffPrepaymentDto
+        return new PrepaymentDto
         {
             SetoffId = SetoffId ?? 0,
             PaymentDate = DateTime.Today,
@@ -763,7 +762,7 @@
     /// <summary>
     /// 取得有效的預收/預付款（本次新增金額 > 0）
     /// </summary>
-    private List<SetoffPrepaymentDto> GetValidPrepayments()
+    private List<PrepaymentDto> GetValidPrepayments()
     {
         return Prepayments.Where(p => p.ThisTimeAddAmount > 0).ToList();
     }
@@ -867,7 +866,7 @@
     /// <summary>
     /// 取得選中的預收/預付款列表
     /// </summary>
-    public List<SetoffPrepaymentDto> GetSelectedPrepayments()
+    public List<PrepaymentDto> GetSelectedPrepayments()
     {
         return GetValidPrepayments();
     }

@@ -892,11 +892,6 @@
     public (bool IsValid, List<string> Errors) ValidateSelection()
     {
         var errors = new List<string>();
-        
-        if (!SelectedDetails.Any())
-        {
-            errors.Add("請至少選擇一筆明細項目");
-        }
 
         foreach (var detail in SelectedDetails)
         {

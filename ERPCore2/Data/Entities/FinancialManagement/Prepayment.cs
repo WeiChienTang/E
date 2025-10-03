@@ -58,19 +58,17 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         public Customer? Customer { get; set; }
         
-        /// <summary>
-        /// 供應商導航屬性
-        /// </summary>
-        public Supplier? Supplier { get; set; }
-        
-        /// <summary>
-        /// 沖款預收/預付款明細導航屬性（多對多關係）
-        /// </summary>
-        public ICollection<PrepaymentDetail> SetoffPrepaymentDetails { get; set; } = new List<PrepaymentDetail>();
-        
-        // Computed Properties (NotMapped)
-        
-        /// <summary>
+    /// <summary>
+    /// 供應商導航屬性
+    /// </summary>
+    public Supplier? Supplier { get; set; }
+    
+    /// <summary>
+    /// 沖款預收/預付款明細導航屬性（多對多關係）
+    /// </summary>
+    public ICollection<PrepaymentDetail> PrepaymentDetails { get; set; } = new List<PrepaymentDetail>();
+    
+    // Computed Properties (NotMapped)        /// <summary>
         /// 已使用金額（動態計算，不儲存於資料庫）
         /// </summary>
         [NotMapped]

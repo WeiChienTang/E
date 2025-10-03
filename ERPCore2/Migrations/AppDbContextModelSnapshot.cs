@@ -2176,7 +2176,7 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("PrepaymentId");
 
-                    b.ToTable("SetoffPrepaymentDetails");
+                    b.ToTable("PrepaymentDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
@@ -4739,7 +4739,7 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ERPCore2.Data.Entities.Prepayment", "Prepayment")
-                        .WithMany("SetoffPrepaymentDetails")
+                        .WithMany("PrepaymentDetails")
                         .HasForeignKey("PrepaymentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -5335,7 +5335,7 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Prepayment", b =>
                 {
-                    b.Navigation("SetoffPrepaymentDetails");
+                    b.Navigation("PrepaymentDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Product", b =>

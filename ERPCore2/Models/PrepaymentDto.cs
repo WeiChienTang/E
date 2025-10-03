@@ -6,7 +6,7 @@ namespace ERPCore2.Models
     /// <summary>
     /// 沖款預收/預付款 DTO - 用於管理沖款單使用預收/預付款的明細
     /// </summary>
-    public class SetoffPrepaymentDto
+    public class PrepaymentDto
     {
         /// <summary>
         /// 明細ID（SetoffPrepaymentDetail.Id）

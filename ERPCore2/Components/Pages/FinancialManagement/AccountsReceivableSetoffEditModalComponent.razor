@@ -1,8 +1,8 @@
 @* 應收帳款沖款編輯組件 *@
 @inject IAccountsReceivableSetoffService AccountsReceivableSetoffService
 @inject IAccountsReceivableSetoffDetailService AccountsReceivableSetoffDetailService
-@inject ISetoffPaymentDetailService SetoffPaymentDetailService
-@inject ISetoffPrepaymentDetailService SetoffPrepaymentDetailService
+@inject ISettoffPaymentDetailService SetoffPaymentDetailService
+@inject IPrepaymentDetailService SetoffPrepaymentDetailService
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IPaymentMethodService PaymentMethodService
@@ -1107,6 +1107,7 @@
                         <SetoffPaymentDetailManagerComponent @ref="paymentDetailManagerComponent"
                                                              SetoffId="@SetoffId"
                                                              TotalSetoffAmount="@totalSetoffAmount"
+                                                             TotalPrepaymentAmount="@totalPrepaymentAmount"
                                                              OnPaymentDetailsChanged="@HandlePaymentDetailsChanged"
                                                              OnTotalPaymentAmountChanged="@HandleTotalPaymentAmountChanged"
                                                              IsReadOnly="false"

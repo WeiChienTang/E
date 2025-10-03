@@ -114,16 +114,16 @@
 </div>
 
 @code {
-    private List<SetoffPrepaymentDto> TestItems { get; set; } = new();
+    private List<PrepaymentDto> TestItems { get; set; } = new();
     private Dictionary<int, int> RenderCount { get; set; } = new();
     private int globalRenderCount = 0;
 
     protected override void OnInitialized()
     {
         // 初始化測試數據
-        TestItems = new List<SetoffPrepaymentDto>
+        TestItems = new List<PrepaymentDto>
         {
-            new SetoffPrepaymentDto
+            new PrepaymentDto
             {
                 Id = 1,
                 PrepaymentType = PrepaymentType.Prepayment,
@@ -134,7 +134,7 @@
                 ThisTimeAddAmount = 0,
                 Remarks = ""
             },
-            new SetoffPrepaymentDto
+            new PrepaymentDto
             {
                 Id = 2,
                 PrepaymentType = PrepaymentType.Prepaid,
@@ -167,7 +167,7 @@
         }
     }
 
-    private void HandleAmountInput(SetoffPrepaymentDto item, int index, string? value)
+    private void HandleAmountInput(PrepaymentDto item, int index, string? value)
     {
         Console.WriteLine($"[HandleAmountInput] Index: {index}, Input: {value}");
         
@@ -196,13 +196,13 @@
         Console.WriteLine($"[HandleAmountInput] StateHasChanged called. Current Amount: {item.Amount}");
     }
 
-    private void HandleRemarkInput(SetoffPrepaymentDto item, string? value)
+    private void HandleRemarkInput(PrepaymentDto item, string? value)
     {
         item.Remarks = value ?? "";
         StateHasChanged();
     }
 
-    private void HandleTypeChange(SetoffPrepaymentDto item, string? value)
+    private void HandleTypeChange(PrepaymentDto item, string? value)
     {
         if (int.TryParse(value, out int typeValue))
         {

@@ -193,7 +193,7 @@ else
             Title = QuantityLabel, 
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -216,7 +216,7 @@ else
             Title = ReceivedQuantityLabel, 
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -233,7 +233,7 @@ else
             Title = PriceLabel, 
             PropertyName = "Price",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -258,7 +258,7 @@ else
                 Title = IsReceivingCompletedLabel, 
                 PropertyName = "IsReceivingCompleted",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "8%",
+                Width = "100px",
                 CustomTemplate = item => 
                 {
                     var productItem = (ProductItem)item;
@@ -289,7 +289,7 @@ else
             Title = RemarksLabel, 
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
-            Width = ShowIsReceivingCompleted ? "10%" : "15%",
+            Width = ShowIsReceivingCompleted ? "150px" : "200px",
             HideOnMobile = true,
             CustomTemplate = item => 
             {

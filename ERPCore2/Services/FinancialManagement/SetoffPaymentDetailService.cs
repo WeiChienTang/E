@@ -10,15 +10,15 @@ namespace ERPCore2.Services
     /// <summary>
     /// 應收帳款沖款付款明細服務實作
     /// </summary>
-    public class SetoffPaymentDetailService : GenericManagementService<AccountsReceivableSetoffPaymentDetail>, ISetoffPaymentDetailService
+    public class SettoffPaymentDetailService : GenericManagementService<AccountsReceivableSetoffPaymentDetail>, ISettoffPaymentDetailService
     {
-        public SetoffPaymentDetailService(
+        public SettoffPaymentDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<AccountsReceivableSetoffPaymentDetail>> logger) : base(contextFactory, logger)
         {
         }
 
-        public SetoffPaymentDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public SettoffPaymentDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 

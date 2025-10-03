@@ -75,7 +75,7 @@ namespace ERPCore2.Data.Context
       public DbSet<AccountsPayableSetoffDetail> AccountsPayableSetoffDetails { get; set; }
       public DbSet<AccountsPayableSetoffPaymentDetail> AccountsPayableSetoffPaymentDetails { get; set; }
       public DbSet<Prepayment> Prepayments { get; set; }
-      public DbSet<PrepaymentDetail> SetoffPrepaymentDetails { get; set; }
+      public DbSet<PrepaymentDetail> PrepaymentDetails { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
@@ -706,7 +706,7 @@ namespace ERPCore2.Data.Context
 
                         // 預收/預付款關聯
                         entity.HasOne(d => d.Prepayment)
-                        .WithMany(p => p.SetoffPrepaymentDetails)
+                        .WithMany(p => p.PrepaymentDetails)
                         .HasForeignKey(d => d.PrepaymentId)
                         .OnDelete(DeleteBehavior.Restrict);
 

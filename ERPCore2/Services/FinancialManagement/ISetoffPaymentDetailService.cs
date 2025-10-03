@@ -6,7 +6,7 @@ namespace ERPCore2.Services
     /// <summary>
     /// 應收帳款沖款付款明細服務介面
     /// </summary>
-    public interface ISetoffPaymentDetailService : IGenericManagementService<AccountsReceivableSetoffPaymentDetail>
+    public interface ISettoffPaymentDetailService : IGenericManagementService<AccountsReceivableSetoffPaymentDetail>
     {
         /// <summary>
         /// 依據沖款單ID取得付款明細列表
