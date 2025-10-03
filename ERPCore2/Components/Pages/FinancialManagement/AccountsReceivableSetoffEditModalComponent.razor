@@ -1004,6 +1004,7 @@
 
             return new List<GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule>
             {
+                // 沖款明細管理器
                 new GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule
                 {
                     Title = "",
@@ -1011,6 +1012,24 @@
                     CssClass = "mt-4",
                     IsVisible = true,
                     Content = CreateSetoffDetailManagerContent()
+                },
+                // 付款明細管理器
+                new GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule
+                {
+                    Title = "",
+                    Order = 2,
+                    CssClass = "mt-3",
+                    IsVisible = true,
+                    Content = CreatePaymentDetailManagerContent()
+                },
+                // 預收款管理器
+                new GenericEditModalComponent<AccountsReceivableSetoff, IAccountsReceivableSetoffService>.CustomModule
+                {
+                    Title = "",
+                    Order = 3,
+                    CssClass = "mt-3",
+                    IsVisible = true,
+                    Content = CreatePrepaymentManagerContent()
                 },
             };
         }
@@ -1041,28 +1060,11 @@
                                                      SetoffId="@SetoffId"
                                                      OnTotalAmountChanged="@HandleTotalSetoffAmountChanged"
                                                      IsReadOnly="false" />
-                        
-                        <SetoffPaymentDetailManagerComponent @ref="paymentDetailManagerComponent"
-                                                             SetoffId="@SetoffId"
-                                                             TotalSetoffAmount="@totalSetoffAmount"
-                                                             OnPaymentDetailsChanged="@HandlePaymentDetailsChanged"
-                                                             OnTotalPaymentAmountChanged="@HandleTotalPaymentAmountChanged"
-                                                             IsReadOnly="false"
-                                                             IsEditMode="true" />
-
-                        <SetoffPrepaymentManagerComponent @ref="prepaymentManagerComponent"
-                                                         Mode="SetoffMode.Receivable"
-                                                         CustomerId="@editModalComponent.Entity.CustomerId"
-                                                         IsEditMode="@(SetoffId.HasValue && SetoffId.Value > 0)"
-                                                         SetoffId="@SetoffId"
-                                                         OnTotalUseAmountChanged="@HandleTotalPrepaymentAmountChanged"
-                                                         IsReadOnly="false" />
-
                     }
                     catch
                     {
                         <div class="alert alert-warning" role="alert">
-                            載入明細管理器時發生錯誤，請重新整理頁面。
+                            載入沖款明細管理器時發生錯誤，請重新整理頁面。
                         </div>
                     }
                 }
@@ -1084,7 +1086,84 @@
         catch
         {
             <div class="alert alert-warning" role="alert">
-                載入明細管理器時發生錯誤，請重新整理頁面。
+                載入沖款明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
+
+    /// <summary>
+    /// 創建付款明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreatePaymentDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null)
+            {
+                @if (editModalComponent.Entity.CustomerId > 0)
+                {
+                    try
+                    {
+                        <SetoffPaymentDetailManagerComponent @ref="paymentDetailManagerComponent"
+                                                             SetoffId="@SetoffId"
+                                                             TotalSetoffAmount="@totalSetoffAmount"
+                                                             OnPaymentDetailsChanged="@HandlePaymentDetailsChanged"
+                                                             OnTotalPaymentAmountChanged="@HandleTotalPaymentAmountChanged"
+                                                             IsReadOnly="false"
+                                                             IsEditMode="true" />
+                    }
+                    catch
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            載入付款明細管理器時發生錯誤，請重新整理頁面。
+                        </div>
+                    }
+                }
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入付款明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
+
+    /// <summary>
+    /// 創建預收款管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreatePrepaymentManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null)
+            {
+                @if (editModalComponent.Entity.CustomerId > 0)
+                {
+                    try
+                    {
+                        <SetoffPrepaymentManagerComponent @ref="prepaymentManagerComponent"
+                                                         Mode="SetoffMode.Receivable"
+                                                         CustomerId="@editModalComponent.Entity.CustomerId"
+                                                         IsEditMode="@(SetoffId.HasValue && SetoffId.Value > 0)"
+                                                         SetoffId="@SetoffId"
+                                                         SetoffNumber="@editModalComponent.Entity.SetoffNumber"
+                                                         OnTotalUseAmountChanged="@HandleTotalPrepaymentAmountChanged"
+                                                         IsReadOnly="false" />
+                    }
+                    catch
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            載入預收款管理器時發生錯誤，請重新整理頁面。
+                        </div>
+                    }
+                }
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入預收款管理器時發生錯誤，請重新整理頁面。
             </div>
         }
     };

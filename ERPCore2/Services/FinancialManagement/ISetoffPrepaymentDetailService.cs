@@ -94,5 +94,21 @@ namespace ERPCore2.Services
         /// <param name="excludeSetoffId">要排除的沖款單ID（編輯模式用）</param>
         /// <returns>已用金額</returns>
         Task<decimal> GetUsedAmountAsync(int prepaymentId, int? excludeSetoffId = null);
+        
+        /// <summary>
+        /// 取得客戶有剩餘預收款的應收沖款單列表
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="excludeSetoffId">要排除的沖款單ID（當前編輯的沖款單）</param>
+        /// <returns>有剩餘預收款的沖款單列表</returns>
+        Task<List<SetoffPrepaymentDto>> GetReceivableSetoffsWithAvailablePrepaymentAsync(int customerId, int? excludeSetoffId = null);
+        
+        /// <summary>
+        /// 取得供應商有剩餘預付款的應付沖款單列表
+        /// </summary>
+        /// <param name="supplierId">供應商ID</param>
+        /// <param name="excludeSetoffId">要排除的沖款單ID（當前編輯的沖款單）</param>
+        /// <returns>有剩餘預付款的沖款單列表</returns>
+        Task<List<SetoffPrepaymentDto>> GetPayableSetoffsWithAvailablePrepaidAsync(int supplierId, int? excludeSetoffId = null);
     }
 }

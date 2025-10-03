@@ -62,10 +62,6 @@
     private decimal _previousTotalSetoffAmount = 0m; // 追蹤上一次的 TotalSetoffAmount
     private bool _previousIsReadOnly = false; // 追蹤上一次的 IsReadOnly
     private bool _previousIsEditMode = false; // 追蹤上一次的 IsEditMode
-    private bool _previousIsLoading = false; // 追蹤載入狀態
-    private int _previousPaymentDetailsCount = 0; // 追蹤資料數量
-    private int _previousBanksCount = 0; // 追蹤銀行資料數量
-    private int _previousPaymentMethodsCount = 0; // 追蹤付款方式資料數量
     #endregion
 
     #region 生命週期方法
@@ -81,29 +77,9 @@
         }
     }
 
-    /// <summary>
-    /// 控制組件是否需要重新渲染
-    /// </summary>
-    protected override bool ShouldRender()
-    {
-        // 檢查關鍵參數或狀態是否有變更
-        bool hasChanges = _previousSetoffId != SetoffId ||
-                          _previousTotalSetoffAmount != TotalSetoffAmount ||
-                          _previousIsReadOnly != IsReadOnly ||
-                          _previousIsEditMode != IsEditMode ||
-                          _previousIsLoading != IsLoading || // 載入狀態變更
-                          _previousPaymentDetailsCount != PaymentDetails.Count || // 資料數量變更
-                          _previousBanksCount != Banks.Count || // 銀行資料變更
-                          _previousPaymentMethodsCount != PaymentMethods.Count; // 付款方式資料變更
-        
-        // 更新狀態追蹤
-        _previousIsLoading = IsLoading;
-        _previousPaymentDetailsCount = PaymentDetails.Count;
-        _previousBanksCount = Banks.Count;
-        _previousPaymentMethodsCount = PaymentMethods.Count;
-        
-        return hasChanges;
-    }
+    // 移除 ShouldRender() 以允許正常的渲染流程
+    // 自動空行功能需要在資料變更後立即渲染，過度的渲染控制會阻止這個功能
+    // 已在適當的地方使用 StateHasChanged() 來觸發必要的渲染
 
     protected override async Task OnParametersSetAsync()
     {
@@ -380,26 +356,30 @@
     #region 事件處理方法
     /// <summary>
     /// 處理付款方式變更
+    /// 注意：InteractiveTableComponent 會在呼叫此方法前先設定 PaymentMethodId，
+    /// 所以我們無法準確判斷 wasEmpty，改用簡單的 EnsureOneEmptyRow
     /// </summary>
     private async Task HandlePaymentMethodChanged(SetoffPaymentDetailDto detail, object? value)
     {
         try
         {
-            var wasEmpty = IsEmptyRow(detail);
-            
-            if (value is int paymentMethodId)
+            // 設定付款方式名稱（PaymentMethodId 已被 InteractiveTableComponent 設定）
+            if (detail.PaymentMethodId.HasValue && detail.PaymentMethodId.Value > 0)
             {
-                var paymentMethod = PaymentMethods.FirstOrDefault(pm => pm.Id == paymentMethodId);
+                var paymentMethod = PaymentMethods.FirstOrDefault(pm => pm.Id == detail.PaymentMethodId.Value);
                 if (paymentMethod != null)
                 {
-                    detail.PaymentMethodId = paymentMethodId;
                     detail.PaymentMethodName = paymentMethod.Name;
                 }
             }
+            else
+            {
+                detail.PaymentMethodName = string.Empty;
+            }
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 確保有一個空行
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.EnsureOneEmptyRow(
+                PaymentDetails, IsEmptyRow, CreateEmptyItem);
             
             await NotifyChanges();
         }
@@ -445,9 +425,9 @@
                 detail.BankName = null;
             }
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 處理自動空行邏輯 - 使用 Advanced 版本，在設定值後自動檢查整行狀態
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChangeAdvanced(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty);
             
             await NotifyChanges();
         }
@@ -478,9 +458,9 @@
             // 驗證金額
             ValidateAmounts();
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 處理自動空行邏輯 - 使用 Advanced 版本，在設定值後自動檢查整行狀態
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChangeAdvanced(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty);
             
             await NotifyChanges();
         }
@@ -504,9 +484,9 @@
                 detail.PaymentDate = date;
             }
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 處理自動空行邏輯 - 使用 Advanced 版本，在設定值後自動檢查整行狀態
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChangeAdvanced(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty);
             
             await NotifyChanges();
         }
@@ -526,9 +506,9 @@
             var wasEmpty = IsEmptyRow(detail);
             detail.AccountNumber = value;
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 處理自動空行邏輯 - 使用 Advanced 版本，在設定值後自動檢查整行狀態
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChangeAdvanced(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty);
             
             await NotifyChanges();
         }
@@ -548,9 +528,9 @@
             var wasEmpty = IsEmptyRow(detail);
             detail.TransactionReference = value;
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 處理自動空行邏輯 - 使用 Advanced 版本，在設定值後自動檢查整行狀態
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChangeAdvanced(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty);
             
             await NotifyChanges();
         }
@@ -570,9 +550,9 @@
             var wasEmpty = IsEmptyRow(detail);
             detail.Remarks = value;
             
-            // 處理自動空行邏輯
-            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChange(
-                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(detail));
+            // 處理自動空行邏輯 - 使用 Advanced 版本，在設定值後自動檢查整行狀態
+            AutoEmptyRowHelper.ForAny<SetoffPaymentDetailDto>.HandleInputChangeAdvanced(
+                PaymentDetails, detail, IsEmptyRow, CreateEmptyItem, wasEmpty);
             
             await NotifyChanges();
         }

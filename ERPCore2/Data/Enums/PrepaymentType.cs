@@ -23,6 +23,18 @@ namespace ERPCore2.Data.Enums
         /// 其他 - 其他類型的預先款項
         /// </summary>
         [Display(Name = "其他")]
-        Other = 3
+        Other = 3,
+        
+        /// <summary>
+        /// 預收轉沖款 - 預收款轉為沖款使用
+        /// </summary>
+        [Display(Name = "預收轉沖款")]
+        PrepaymentToSetoff = 4,
+        
+        /// <summary>
+        /// 預付轉沖款 - 預付款轉為沖款使用
+        /// </summary>
+        [Display(Name = "預付轉沖款")]
+        PrepaidToSetoff = 5
     }
 }

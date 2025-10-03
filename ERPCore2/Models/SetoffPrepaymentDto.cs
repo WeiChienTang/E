@@ -36,6 +36,8 @@ namespace ERPCore2.Models
         {
             PrepaymentType.Prepayment => "預收款",
             PrepaymentType.Prepaid => "預付款",
+            PrepaymentType.PrepaymentToSetoff => "預收轉沖款",
+            PrepaymentType.PrepaidToSetoff => "預付轉沖款",
             PrepaymentType.Other => "其他",
             _ => "未知"
         };
@@ -45,6 +47,18 @@ namespace ERPCore2.Models
         /// </summary>
         [Display(Name = "來源單號")]
         public string Code { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// 來源沖款單ID（用於"預收/預付轉沖款"類型）
+        /// </summary>
+        [Display(Name = "來源沖款單ID")]
+        public int? SourceSetoffId { get; set; }
+        
+        /// <summary>
+        /// 來源沖款單號（用於"預收/預付轉沖款"類型）
+        /// </summary>
+        [Display(Name = "來源沖款單號")]
+        public string? SourceSetoffNumber { get; set; }
         
         /// <summary>
         /// 款項日期
@@ -83,6 +97,12 @@ namespace ERPCore2.Models
         public decimal OriginalThisTimeUseAmount { get; set; } = 0;
         
         /// <summary>
+        /// 本次新增金額（用於在沖款時新增預收/預付款）
+        /// </summary>
+        [Display(Name = "本次新增金額")]
+        public decimal ThisTimeAddAmount { get; set; } = 0;
+        
+        /// <summary>
         /// 備註
         /// </summary>
         [MaxLength(500, ErrorMessage = "備註不可超過500個字元")]
@@ -110,6 +130,21 @@ namespace ERPCore2.Models
             if (ThisTimeUseAmount > AvailableAmount)
             {
                 return (false, $"使用金額不能大於可用金額 {AvailableAmount:N2}");
+            }
+            
+            return (true, null);
+        }
+        
+        /// <summary>
+        /// 驗證新增金額是否有效
+        /// </summary>
+        /// <returns>驗證結果</returns>
+        public (bool IsValid, string? ErrorMessage) ValidateAddAmount()
+        {
+            // 驗證新增金額必須大於0
+            if (ThisTimeAddAmount <= 0)
+            {
+                return (false, "新增金額必須大於0");
             }
             
             return (true, null);

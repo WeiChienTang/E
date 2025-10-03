@@ -242,6 +242,42 @@ namespace ERPCore2.Helpers
             }
 
             /// <summary>
+            /// 檢查整行是否真的從空變成有值（更精確的判斷）
+            /// 這個方法在設定值後才檢查整行狀態，避免單一欄位判斷的問題
+            /// </summary>
+            /// <param name="items">項目清單</param>
+            /// <param name="currentItem">當前編輯的項目</param>
+            /// <param name="isEmptyChecker">空行檢查邏輯</param>
+            /// <param name="createEmptyItem">建立空項目的邏輯</param>
+            /// <param name="wasEmpty">輸入前是否為空行</param>
+            /// <returns>是否有新增空行</returns>
+            public static bool HandleInputChangeAdvanced(
+                List<TItem> items,
+                TItem currentItem,
+                Func<TItem, bool> isEmptyChecker,
+                Func<TItem> createEmptyItem,
+                bool wasEmpty)
+            {
+                var isEmptyNow = isEmptyChecker(currentItem);
+
+                // 只有在原本是空行，現在變成非空行，且沒有其他空行時才新增
+                if (wasEmpty && !isEmptyNow)
+                {
+                    // 檢查除了當前項目外，是否還有其他空行
+                    var otherEmptyItems = items.Where(item => !ReferenceEquals(item, currentItem) && isEmptyChecker(item)).ToList();
+                    
+                    // 如果沒有其他空行，才新增新的空行
+                    if (!otherEmptyItems.Any())
+                    {
+                        var newItem = createEmptyItem();
+                        items.Add(newItem);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /// <summary>
             /// 處理項目移除，確保還有空行
             /// </summary>
             public static bool HandleItemRemove(

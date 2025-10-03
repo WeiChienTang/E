@@ -290,6 +290,168 @@ namespace ERPCore2.Services
                 return 0;
             }
         }
+        
+        /// <summary>
+        /// 取得客戶有剩餘預收款的應收沖款單列表
+        /// </summary>
+        public async Task<List<SetoffPrepaymentDto>> GetReceivableSetoffsWithAvailablePrepaymentAsync(int customerId, int? excludeSetoffId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢客戶的所有應收沖款單
+                var setoffs = await context.AccountsReceivableSetoffs
+                    .Include(s => s.PrepaymentDetails)
+                        .ThenInclude(pd => pd.Prepayment)
+                    .Where(s => s.CustomerId == customerId && s.Status == EntityStatus.Active)
+                    .ToListAsync();
+                
+                // 排除當前編輯的沖款單
+                if (excludeSetoffId.HasValue)
+                {
+                    setoffs = setoffs.Where(s => s.Id != excludeSetoffId.Value).ToList();
+                }
+                
+                var result = new List<SetoffPrepaymentDto>();
+                
+                foreach (var setoff in setoffs)
+                {
+                    // 計算此沖款單的總預收款金額和已使用金額
+                    var prepaymentDetails = setoff.PrepaymentDetails.Where(pd => pd.Prepayment != null).ToList();
+                    
+                    if (!prepaymentDetails.Any()) continue;
+                    
+                    // 計算總金額（此沖款單所有預收款的本次使用金額）
+                    decimal totalAmount = prepaymentDetails.Sum(pd => pd.UseAmount);
+                    
+                    // 計算已被其他沖款單使用的金額
+                    decimal usedByOthers = 0;
+                    foreach (var pd in prepaymentDetails)
+                    {
+                        if (pd.Prepayment != null)
+                        {
+                            var otherUsage = await context.SetoffPrepaymentDetails
+                                .Where(d => d.PrepaymentId == pd.PrepaymentId && 
+                                           d.AccountsReceivableSetoffId != setoff.Id)
+                                .SumAsync(d => d.UseAmount);
+                            usedByOthers += otherUsage;
+                        }
+                    }
+                    
+                    decimal availableAmount = totalAmount - usedByOthers;
+                    
+                    // 只加入有可用金額的沖款單
+                    if (availableAmount > 0)
+                    {
+                        result.Add(new SetoffPrepaymentDto
+                        {
+                            SourceSetoffId = setoff.Id,
+                            SourceSetoffNumber = setoff.SetoffNumber,
+                            Code = setoff.SetoffNumber,
+                            PaymentDate = setoff.SetoffDate,
+                            Amount = totalAmount,
+                            UsedAmount = usedByOthers,
+                            PrepaymentType = PrepaymentType.PrepaymentToSetoff,
+                            Remarks = $"來源：{setoff.SetoffNumber}"
+                        });
+                    }
+                }
+                
+                return result.OrderBy(p => p.PaymentDate).ThenBy(p => p.Code).ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReceivableSetoffsWithAvailablePrepaymentAsync), GetType(), _logger, new
+                {
+                    CustomerId = customerId,
+                    ExcludeSetoffId = excludeSetoffId
+                });
+                return new List<SetoffPrepaymentDto>();
+            }
+        }
+        
+        /// <summary>
+        /// 取得供應商有剩餘預付款的應付沖款單列表
+        /// </summary>
+        public async Task<List<SetoffPrepaymentDto>> GetPayableSetoffsWithAvailablePrepaidAsync(int supplierId, int? excludeSetoffId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢供應商的所有應付沖款單
+                var setoffs = await context.AccountsPayableSetoffs
+                    .Include(s => s.PaymentDetails) // 注意：這裡可能需要確認是否有 PrepaymentDetails 導航屬性
+                    .Where(s => s.SupplierId == supplierId && s.Status == EntityStatus.Active)
+                    .ToListAsync();
+                
+                // 排除當前編輯的沖款單
+                if (excludeSetoffId.HasValue)
+                {
+                    setoffs = setoffs.Where(s => s.Id != excludeSetoffId.Value).ToList();
+                }
+                
+                var result = new List<SetoffPrepaymentDto>();
+                
+                foreach (var setoff in setoffs)
+                {
+                    // 查詢此沖款單的預付款明細
+                    var prepaymentDetails = await context.SetoffPrepaymentDetails
+                        .Include(pd => pd.Prepayment)
+                        .Where(pd => pd.AccountsPayableSetoffId == setoff.Id && pd.Prepayment != null)
+                        .ToListAsync();
+                    
+                    if (!prepaymentDetails.Any()) continue;
+                    
+                    // 計算總金額（此沖款單所有預付款的本次使用金額）
+                    decimal totalAmount = prepaymentDetails.Sum(pd => pd.UseAmount);
+                    
+                    // 計算已被其他沖款單使用的金額
+                    decimal usedByOthers = 0;
+                    foreach (var pd in prepaymentDetails)
+                    {
+                        if (pd.Prepayment != null)
+                        {
+                            var otherUsage = await context.SetoffPrepaymentDetails
+                                .Where(d => d.PrepaymentId == pd.PrepaymentId && 
+                                           d.AccountsPayableSetoffId != setoff.Id)
+                                .SumAsync(d => d.UseAmount);
+                            usedByOthers += otherUsage;
+                        }
+                    }
+                    
+                    decimal availableAmount = totalAmount - usedByOthers;
+                    
+                    // 只加入有可用金額的沖款單
+                    if (availableAmount > 0)
+                    {
+                        result.Add(new SetoffPrepaymentDto
+                        {
+                            SourceSetoffId = setoff.Id,
+                            SourceSetoffNumber = setoff.SetoffNumber,
+                            Code = setoff.SetoffNumber,
+                            PaymentDate = setoff.SetoffDate,
+                            Amount = totalAmount,
+                            UsedAmount = usedByOthers,
+                            PrepaymentType = PrepaymentType.PrepaidToSetoff,
+                            Remarks = $"來源：{setoff.SetoffNumber}"
+                        });
+                    }
+                }
+                
+                return result.OrderBy(p => p.PaymentDate).ThenBy(p => p.Code).ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPayableSetoffsWithAvailablePrepaidAsync), GetType(), _logger, new
+                {
+                    SupplierId = supplierId,
+                    ExcludeSetoffId = excludeSetoffId
+                });
+                return new List<SetoffPrepaymentDto>();
+            }
+        }
 
         #endregion
 
@@ -317,6 +479,41 @@ namespace ERPCore2.Services
                 // 處理每個預收款明細
                 foreach (var dto in prepayments.Where(p => p.ThisTimeUseAmount > 0))
                 {
+                    int prepaymentId = dto.PrepaymentId;
+                    
+                    // 如果有新增金額且 PrepaymentId 為 0，表示需要建立新的預收款
+                    if (dto.ThisTimeAddAmount > 0 && dto.PrepaymentId == 0)
+                    {
+                        // 取得沖款單資訊以獲取客戶ID
+                        var setoff = await context.AccountsReceivableSetoffs
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(s => s.Id == setoffId);
+                        
+                        if (setoff == null)
+                        {
+                            return ServiceResult.Failure("找不到對應的沖款單");
+                        }
+                        
+                        // 建立新的預收款記錄
+                        var newPrepayment = new Prepayment
+                        {
+                            Code = dto.Code,
+                            PrepaymentType = PrepaymentType.Prepayment,
+                            PaymentDate = dto.PaymentDate,
+                            Amount = dto.ThisTimeAddAmount,
+                            CustomerId = setoff.CustomerId,
+                            Remarks = dto.Remarks,
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = "System" // 從沖款單建立
+                        };
+                        
+                        await context.Prepayments.AddAsync(newPrepayment);
+                        await context.SaveChangesAsync(); // 儲存以取得 ID
+                        
+                        prepaymentId = newPrepayment.Id;
+                    }
+                    
                     if (dto.Id > 0)
                     {
                         // 更新現有明細
@@ -325,6 +522,7 @@ namespace ERPCore2.Services
                         {
                             existingDetail.UseAmount = dto.ThisTimeUseAmount;
                             existingDetail.UpdatedAt = DateTime.Now;
+                            existingDetail.UpdatedBy = "System";
                         }
                     }
                     else
@@ -333,9 +531,11 @@ namespace ERPCore2.Services
                         var newDetail = new PrepaymentDetail
                         {
                             AccountsReceivableSetoffId = setoffId,
-                            PrepaymentId = dto.PrepaymentId,
+                            PrepaymentId = prepaymentId,
                             UseAmount = dto.ThisTimeUseAmount,
-                            CreatedAt = DateTime.Now
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = "System"
                         };
                         
                         await context.SetoffPrepaymentDetails.AddAsync(newDetail);
@@ -379,6 +579,41 @@ namespace ERPCore2.Services
                 // 處理每個預付款明細
                 foreach (var dto in prepayments.Where(p => p.ThisTimeUseAmount > 0))
                 {
+                    int prepaymentId = dto.PrepaymentId;
+                    
+                    // 如果有新增金額且 PrepaymentId 為 0，表示需要建立新的預付款
+                    if (dto.ThisTimeAddAmount > 0 && dto.PrepaymentId == 0)
+                    {
+                        // 取得沖款單資訊以獲取供應商ID
+                        var setoff = await context.AccountsPayableSetoffs
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(s => s.Id == setoffId);
+                        
+                        if (setoff == null)
+                        {
+                            return ServiceResult.Failure("找不到對應的沖款單");
+                        }
+                        
+                        // 建立新的預付款記錄
+                        var newPrepayment = new Prepayment
+                        {
+                            Code = dto.Code,
+                            PrepaymentType = PrepaymentType.Prepaid,
+                            PaymentDate = dto.PaymentDate,
+                            Amount = dto.ThisTimeAddAmount,
+                            SupplierId = setoff.SupplierId,
+                            Remarks = dto.Remarks,
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = "System" // 從沖款單建立
+                        };
+                        
+                        await context.Prepayments.AddAsync(newPrepayment);
+                        await context.SaveChangesAsync(); // 儲存以取得 ID
+                        
+                        prepaymentId = newPrepayment.Id;
+                    }
+                    
                     if (dto.Id > 0)
                     {
                         // 更新現有明細
@@ -387,6 +622,7 @@ namespace ERPCore2.Services
                         {
                             existingDetail.UseAmount = dto.ThisTimeUseAmount;
                             existingDetail.UpdatedAt = DateTime.Now;
+                            existingDetail.UpdatedBy = "System";
                         }
                     }
                     else
@@ -395,9 +631,11 @@ namespace ERPCore2.Services
                         var newDetail = new PrepaymentDetail
                         {
                             AccountsPayableSetoffId = setoffId,
-                            PrepaymentId = dto.PrepaymentId,
+                            PrepaymentId = prepaymentId,
                             UseAmount = dto.ThisTimeUseAmount,
-                            CreatedAt = DateTime.Now
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = "System"
                         };
                         
                         await context.SetoffPrepaymentDetails.AddAsync(newDetail);
