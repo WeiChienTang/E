@@ -5,23 +5,22 @@
     min-height: 44px; /* 確保行有足夠高度 */
 }
 
-.interactiv    /* 操作欄位智慧調整樣式 - 手機版也使用自動調整 */
+    /* 操作欄位智慧調整樣式 - 手機版也使用自動調整 */
     .table-responsive .table .table-actions-column {
-        min-width: 100px !important; /* 增加最小寬度以確保有足夠空間容納按鈕 */
-        max-width: none !important; /* 移除最大寬度限制，允許根據內容擴展 */
+        min-width: 100px; /* 增加最小寬度以確保有足夠空間容納按鈕 */
+        max-width: none; /* 移除最大寬度限制，允許根據內容擴展 */
         white-space: nowrap; /* 防止內容換行 */
         padding: 0.25rem 0.5rem !important; /* 確保有適當的內邊距 */
         vertical-align: middle !important; /* 垂直置中 */
         text-align: center !important; /* 水平置中 */
-        width: auto !important; /* 允許寬度自動調整 */
         /* 移除固定寬度限制，讓組件的 GetActionsColumnStyle() 方法來控制寬度 */
     }
     
     /* 當操作欄位有明確寬度設定時，在行動裝置上也要尊重該設定 */
     .table-responsive .table .table-actions-column[style*="width"] {
-        min-width: unset !important; /* 移除最小寬度限制，完全依賴智慧調整 */
+        min-width: unset !important; /* 移除最小寬度限制，完全依賴 inline style 設定 */
         max-width: unset !important; /* 移除最大寬度限制 */
-        width: auto !important; /* 讓 inline style 的寬度設定生效 */
+        /* inline style 的寬度會自動生效，不需要額外設定 */
     } td {
     vertical-align: middle; /* 所有儲存格內容垂直置中 */
     min-height: 44px; /* 確保儲存格有足夠高度 */
@@ -64,7 +63,6 @@
     vertical-align: middle !important; /* 垂直置中 */
     text-align: center !important; /* 水平置中 */
     padding: 0.5rem 0.25rem !important; /* 適當的內邊距 */
-    width: auto; /* 允許寬度自動調整 */
 }
 
 /* 當操作欄位有明確寬度設定時，尊重該設定 */

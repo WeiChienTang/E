@@ -20,6 +20,7 @@
                                 ShowHeader="true"
                                 ShowRowNumbers="false"
                                 ShowActions="true"
+                                ActionsColumnWidth = "60px"
                                 ShowBuiltInActions="true"
                                 ShowBuiltInDeleteButton="true"
                                 OnItemDelete="RemoveItemFromSelection"
@@ -102,6 +103,7 @@
     private bool _previousIsLoading = false;
     private int _previousPrepaymentsCount = 0;
     private bool _isInitialized = false; // 追蹤是否已初始化
+    private bool _shouldRenderOverride = false; // 強制渲染標記（用於數據變更時）
     
     #endregion
 
@@ -112,6 +114,13 @@
     /// </summary>
     protected override bool ShouldRender()
     {
+        // 如果有強制渲染標記，立即渲染並清除標記
+        if (_shouldRenderOverride)
+        {
+            _shouldRenderOverride = false;
+            return true;
+        }
+        
         // 檢查關鍵參數或狀態是否有變更
         bool hasChanges = _previousCustomerId != CustomerId ||
                           _previousSupplierId != SupplierId ||
@@ -328,14 +337,15 @@
             new InteractiveColumnDefinition
             {
                 Title = "原始金額",
-                PropertyName = "",
+                PropertyName = nameof(SetoffPrepaymentDto.Amount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
                     var prepayment = (SetoffPrepaymentDto)item;
-                    return @<span class="text-muted">@prepayment.Amount.ToString("N2")</span>;
+                    var displayValue = prepayment.Amount.ToString("N2");
+                    return @<span class="text-muted">@displayValue</span>;
                 }
             },
             
@@ -343,14 +353,15 @@
             new InteractiveColumnDefinition
             {
                 Title = "已用金額",
-                PropertyName = "",
+                PropertyName = nameof(SetoffPrepaymentDto.UsedAmount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
                     var prepayment = (SetoffPrepaymentDto)item;
-                    return @<span class="text-muted">@prepayment.UsedAmount.ToString("N2")</span>;
+                    var displayValue = prepayment.UsedAmount.ToString("N2");
+                    return @<span class="text-muted">@displayValue</span>;
                 }
             },
             
@@ -358,14 +369,15 @@
             new InteractiveColumnDefinition
             {
                 Title = "可用金額",
-                PropertyName = "",
+                PropertyName = nameof(SetoffPrepaymentDto.AvailableAmount),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
                 CellCssClass = "text-end",
                 CustomTemplate = item =>
                 {
                     var prepayment = (SetoffPrepaymentDto)item;
-                    return @<span class="text-primary fw-bold">@prepayment.AvailableAmount.ToString("N2")</span>;
+                    var displayValue = prepayment.AvailableAmount.ToString("N2");
+                    return @<span class="text-primary fw-bold">@displayValue</span>;
                 }
             },
             
@@ -582,7 +594,10 @@
             AutoEmptyRowHelper.ForAny<SetoffPrepaymentDto>.HandleInputChange(
                 Prepayments, prepayment, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(prepayment));
             
-            // 通知變更
+            // 設置強制渲染標記（因為預收預付數據變更了）
+            _shouldRenderOverride = true;
+            
+            // 通知變更（NotifyChanges 內部會調用 StateHasChanged）
             await NotifyChanges();
         }
         catch (Exception ex)

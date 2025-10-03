@@ -1,0 +1,229 @@
+@page "/test/setoff-prepayment-render"
+@using ERPCore2.Data.Enums
+@using ERPCore2.Models
+@using System.Text.Json
+
+<div class="container-fluid mt-4">
+    <h3>測試預收預付款欄位即時渲染</h3>
+    <p class="text-muted">測試目標：當輸入「本次金額」時，「原始金額」應該立即更新，不需要點擊其他欄位</p>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">測試說明</h5>
+        </div>
+        <div class="card-body">
+            <ol>
+                <li>在「本次金額」欄位輸入數字（例如：600）</li>
+                <li>觀察「原始金額」欄位是否<strong>立即</strong>顯示相同的數字（600）</li>
+                <li>如果需要點擊其他欄位才能看到正確數字，表示渲染有問題</li>
+                <li>測試負數輸入（例如：-500 或 (500)）</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">測試表格</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>類別</th>
+                        <th>來源單號</th>
+                        <th>款項日期</th>
+                        <th class="text-end">原始金額</th>
+                        <th class="text-end">已用金額</th>
+                        <th class="text-end">可用金額</th>
+                        <th class="text-end">本次金額</th>
+                        <th>備註</th>
+                        <th>渲染次數</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (item, index) in TestItems.Select((item, index) => (item, index)))
+                    {
+                        <tr>
+                            <td>
+                                <select class="form-select form-select-sm" 
+                                        value="@((int)item.PrepaymentType)"
+                                        @onchange="@(e => HandleTypeChange(item, e.Value?.ToString()))">
+                                    <option value="1">預收</option>
+                                    <option value="2">預付</option>
+                                </select>
+                            </td>
+                            <td>
+                                <span>@item.Code</span>
+                            </td>
+                            <td>
+                                <span>@item.PaymentDate.ToString("yyyy-MM-dd")</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-muted fw-bold" style="font-size: 1.1em; color: @(item.Amount > 0 ? "green" : "red") !important;">
+                                    @item.Amount.ToString("N2")
+                                    <small class="text-primary">(R:@RenderCount[index])</small>
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-muted">@item.UsedAmount.ToString("N2")</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-primary fw-bold">@item.AvailableAmount.ToString("N2")</span>
+                            </td>
+                            <td class="text-end">
+                                <input type="text"
+                                       class="form-control form-control-sm text-end"
+                                       value="@(item.ThisTimeAddAmount > 0 ? item.ThisTimeAddAmount.ToString("N0") : "")"
+                                       @oninput="@(e => HandleAmountInput(item, index, e.Value?.ToString()))"
+                                       placeholder="輸入金額" />
+                            </td>
+                            <td>
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       value="@item.Remarks"
+                                       @oninput="@(e => HandleRemarkInput(item, e.Value?.ToString()))"
+                                       placeholder="備註" />
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info">@RenderCount[index]</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            
+            <div class="alert alert-info mt-3">
+                <h6>測試結果說明：</h6>
+                <ul class="mb-0">
+                    <li><strong>渲染次數：</strong>每次該行重新渲染時會增加計數</li>
+                    <li><strong>原始金額顏色：</strong>綠色表示有值，紅色表示負值</li>
+                    <li><strong>R:X：</strong>顯示該欄位的渲染次數，用於驗證是否實時更新</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">測試數據狀態</h5>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3">@GetTestDataJson()</pre>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<SetoffPrepaymentDto> TestItems { get; set; } = new();
+    private Dictionary<int, int> RenderCount { get; set; } = new();
+    private int globalRenderCount = 0;
+
+    protected override void OnInitialized()
+    {
+        // 初始化測試數據
+        TestItems = new List<SetoffPrepaymentDto>
+        {
+            new SetoffPrepaymentDto
+            {
+                Id = 1,
+                PrepaymentType = PrepaymentType.Prepayment,
+                Code = "TEST-001",
+                PaymentDate = DateTime.Today,
+                Amount = 0,
+                UsedAmount = 0,
+                ThisTimeAddAmount = 0,
+                Remarks = ""
+            },
+            new SetoffPrepaymentDto
+            {
+                Id = 2,
+                PrepaymentType = PrepaymentType.Prepaid,
+                Code = "TEST-002",
+                PaymentDate = DateTime.Today.AddDays(-1),
+                Amount = 0,
+                UsedAmount = 0,
+                ThisTimeAddAmount = 0,
+                Remarks = ""
+            }
+        };
+
+        // 初始化渲染計數
+        for (int i = 0; i < TestItems.Count; i++)
+        {
+            RenderCount[i] = 0;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            // 每次渲染後增加計數
+            for (int i = 0; i < TestItems.Count; i++)
+            {
+                RenderCount[i]++;
+            }
+            globalRenderCount++;
+        }
+    }
+
+    private void HandleAmountInput(SetoffPrepaymentDto item, int index, string? value)
+    {
+        Console.WriteLine($"[HandleAmountInput] Index: {index}, Input: {value}");
+        
+        if (decimal.TryParse(value, out decimal amount))
+        {
+            item.ThisTimeAddAmount = amount;
+            
+            // 🔥 關鍵：更新原始金額
+            item.Amount = amount;
+            
+            Console.WriteLine($"[HandleAmountInput] Updated - ThisTimeAddAmount: {item.ThisTimeAddAmount}, Amount: {item.Amount}");
+        }
+        else
+        {
+            item.ThisTimeAddAmount = 0;
+            item.Amount = 0;
+        }
+
+        // 🔥 測試1：不調用 StateHasChanged()
+        // 預期：原始金額不會更新
+        
+        // 🔥 測試2：調用 StateHasChanged()
+        // 預期：原始金額會立即更新
+        StateHasChanged();
+        
+        Console.WriteLine($"[HandleAmountInput] StateHasChanged called. Current Amount: {item.Amount}");
+    }
+
+    private void HandleRemarkInput(SetoffPrepaymentDto item, string? value)
+    {
+        item.Remarks = value ?? "";
+        StateHasChanged();
+    }
+
+    private void HandleTypeChange(SetoffPrepaymentDto item, string? value)
+    {
+        if (int.TryParse(value, out int typeValue))
+        {
+            item.PrepaymentType = (PrepaymentType)typeValue;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTestDataJson()
+    {
+        return JsonSerializer.Serialize(
+            TestItems.Select(item => new
+            {
+                item.Code,
+                item.Amount,
+                item.UsedAmount,
+                item.AvailableAmount,
+                item.ThisTimeAddAmount,
+                item.Remarks
+            }),
+            new JsonSerializerOptions { WriteIndented = true }
+        );
+    }
+}

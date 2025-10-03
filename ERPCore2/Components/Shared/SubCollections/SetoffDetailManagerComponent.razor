@@ -20,6 +20,7 @@
                                 ShowHeader="true"
                                 ShowRowNumbers="false"
                                 ShowActions="false"
+                                ActionsColumnWidth = "60px"
                                 ShowBuiltInActions="true"
                                 ShowBuiltInDeleteButton="true"
                                 OnItemDelete="RemoveItemFromSelection"
@@ -87,6 +88,7 @@
     private bool _previousIsReadOnly = false;
     private bool _previousIsLoading = false; // 追蹤載入狀態
     private int _previousDetailsCount = 0; // 追蹤資料數量
+    private bool _shouldRenderOverride = false; // 強制渲染標記（用於數據變更時）
     
     private List<SetoffDetailDto> SelectedDetails => 
         Details.Where(d => d.ThisTimeAmount != 0 || d.ThisTimeDiscountAmount != 0).ToList();
@@ -118,6 +120,13 @@
     /// </summary>
     protected override bool ShouldRender()
     {
+        // 如果有強制渲染標記，立即渲染並清除標記
+        if (_shouldRenderOverride)
+        {
+            _shouldRenderOverride = false;
+            return true;
+        }
+        
         var actualPartnerId = GetActualPartnerId();
         
         // 檢查關鍵參數或狀態是否有變更
@@ -554,7 +563,10 @@
             // 驗證所有金額
             ValidateAmounts();
             
-            // 通知選擇變更 (這裡面會調用 StateHasChanged)
+            // 設置強制渲染標記（因為明細數據變更了）
+            _shouldRenderOverride = true;
+            
+            // 通知選擇變更（NotifySelectionChanged 內部會調用 StateHasChanged）
             await NotifySelectionChanged();
         }
         catch (Exception ex)
@@ -638,7 +650,10 @@
             // 驗證所有金額
             ValidateAmounts();
             
-            // 通知選擇變更
+            // 設置強制渲染標記（因為明細數據變更了）
+            _shouldRenderOverride = true;
+            
+            // 通知選擇變更（NotifySelectionChanged 內部會調用 StateHasChanged）
             await NotifySelectionChanged();
         }
         catch (Exception ex)
