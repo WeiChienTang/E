@@ -108,18 +108,30 @@ namespace ERPCore2.Data.Entities
         public int? PaymentMethodId { get; set; }
         
         /// <summary>
-        /// 收付款帳戶 - 收付款的帳戶資訊
+        /// 銀行ID - 此交易使用的銀行 (用於沖款單付款記錄)
+        /// </summary>
+        [Display(Name = "銀行")]
+        public int? BankId { get; set; }
+        
+        /// <summary>
+        /// 收付款帳戶 - 收付款的帳戶資訊/帳號/票號
         /// </summary>
         [MaxLength(100, ErrorMessage = "收付款帳戶不可超過100個字元")]
         [Display(Name = "收付款帳戶")]
         public string? PaymentAccount { get; set; }
         
         /// <summary>
-        /// 參考號碼 - 支票號碼、匯款單號等參考資訊
+        /// 參考號碼 - 支票號碼、匯款單號、交易參考號等參考資訊
         /// </summary>
         [MaxLength(100, ErrorMessage = "參考號碼不可超過100個字元")]
         [Display(Name = "參考號碼")]
         public string? ReferenceNumber { get; set; }
+        
+        /// <summary>
+        /// 付款日期 - 實際付款的日期 (可能與交易日期不同)
+        /// </summary>
+        [Display(Name = "付款日期")]
+        public DateTime? PaymentDate { get; set; }
         
         // === 餘額追蹤 ===
         
@@ -171,7 +183,6 @@ namespace ERPCore2.Data.Entities
         /// 沖銷交易ID - 指向沖銷此交易的另一筆交易
         /// </summary>
         [Display(Name = "沖銷交易ID")]
-        [ForeignKey(nameof(ReversalTransaction))]
         public int? ReversalTransactionId { get; set; }
         
         // === 外幣相關 ===
@@ -215,6 +226,11 @@ namespace ERPCore2.Data.Entities
         public PaymentMethod? PaymentMethod { get; set; }
         
         /// <summary>
+        /// 銀行導航屬性
+        /// </summary>
+        public Bank? Bank { get; set; }
+        
+        /// <summary>
         /// 沖銷交易導航屬性
         /// </summary>
         public FinancialTransaction? ReversalTransaction { get; set; }
@@ -223,6 +239,11 @@ namespace ERPCore2.Data.Entities
         /// 被此交易沖銷的交易集合
         /// </summary>
         public ICollection<FinancialTransaction> ReversedTransactions { get; set; } = new List<FinancialTransaction>();
+        
+        /// <summary>
+        /// 預收預付款項集合 - 此財務交易包含的預收預付款項記錄
+        /// </summary>
+        public ICollection<Prepayment> Prepayments { get; set; } = new List<Prepayment>();
         
         // === 計算屬性 ===
         
@@ -238,6 +259,8 @@ namespace ERPCore2.Data.Entities
             FinancialTransactionTypeEnum.BankReceipt => true,
             FinancialTransactionTypeEnum.CheckReceipt => true,
             FinancialTransactionTypeEnum.FinancialIncome => true,
+            FinancialTransactionTypeEnum.Prepayment => true,
+            FinancialTransactionTypeEnum.PrepaymentUsage => true,
             _ => false
         };
         
@@ -253,7 +276,29 @@ namespace ERPCore2.Data.Entities
             FinancialTransactionTypeEnum.BankPayment => true,
             FinancialTransactionTypeEnum.CheckPayment => true,
             FinancialTransactionTypeEnum.FinancialExpense => true,
+            FinancialTransactionTypeEnum.Prepaid => true,
+            FinancialTransactionTypeEnum.PrepaidUsage => true,
+            FinancialTransactionTypeEnum.SetoffPayment => true,
             _ => false
         };
+        
+        /// <summary>
+        /// 是否為預收預付款相關交易
+        /// </summary>
+        [NotMapped]
+        public bool IsPrepaymentTransaction => TransactionType switch
+        {
+            FinancialTransactionTypeEnum.Prepayment => true,
+            FinancialTransactionTypeEnum.Prepaid => true,
+            FinancialTransactionTypeEnum.PrepaymentUsage => true,
+            FinancialTransactionTypeEnum.PrepaidUsage => true,
+            _ => false
+        };
+        
+        /// <summary>
+        /// 是否為沖款單付款記錄
+        /// </summary>
+        [NotMapped]
+        public bool IsSetoffPayment => TransactionType == FinancialTransactionTypeEnum.SetoffPayment;
     }
 }

@@ -51,6 +51,13 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Supplier))]
         public int? SupplierId { get; set; }
         
+        /// <summary>
+        /// 財務交易ID - 此預收預付款項所屬的財務交易
+        /// </summary>
+        [Display(Name = "財務交易")]
+        [ForeignKey(nameof(FinancialTransaction))]
+        public int? FinancialTransactionId { get; set; }
+        
         // Navigation Properties
         
         /// <summary>
@@ -58,17 +65,19 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         public Customer? Customer { get; set; }
         
-    /// <summary>
-    /// 供應商導航屬性
-    /// </summary>
-    public Supplier? Supplier { get; set; }
-    
-    /// <summary>
-    /// 沖款預收/預付款明細導航屬性（多對多關係）
-    /// </summary>
-    public ICollection<PrepaymentDetail> PrepaymentDetails { get; set; } = new List<PrepaymentDetail>();
-    
-    // Computed Properties (NotMapped)        /// <summary>
+        /// <summary>
+        /// 供應商導航屬性
+        /// </summary>
+        public Supplier? Supplier { get; set; }
+        
+        /// <summary>
+        /// 財務交易導航屬性
+        /// </summary>
+        public FinancialTransaction? FinancialTransaction { get; set; }
+        
+        // Computed Properties (NotMapped)
+        
+        /// <summary>
         /// 已使用金額（動態計算，不儲存於資料庫）
         /// </summary>
         [NotMapped]

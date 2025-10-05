@@ -1,7 +1,8 @@
 @* 沖款預收/預付款管理組件 - 使用 InteractiveTableComponent 來管理預收/預付款明細 *@
 @using ERPCore2.Data.Enums
 @using ERPCore2.Models
-@inject IPrepaymentDetailService SetoffPrepaymentDetailService
+@* TODO: 重構中 - PrepaymentDetailService 已移除，需改用 FinancialTransaction *@
+@* @inject IPrepaymentDetailService SetoffPrepaymentDetailService *@
 @inject INotificationService NotificationService
 
 <div class="setoff-prepayment-manager @GetModeClass()">

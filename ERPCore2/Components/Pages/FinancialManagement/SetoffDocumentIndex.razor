@@ -1,0 +1,148 @@
+@page "/setoffDocuments"
+@inject ISetoffDocumentService SetoffDocumentService
+@inject ICompanyService CompanyService
+@rendermode InteractiveServer
+@inject INotificationService NotificationService
+
+<GenericIndexPageComponent TEntity="SetoffDocument" 
+                      TService="ISetoffDocumentService"
+                      Service="@SetoffDocumentService"
+                      EntityBasePath="/setoffDocuments"
+                      PageTitle="沖款單維護"
+                      PageSubtitle="管理應收與應付帳款沖款作業"
+                      EntityName="沖款單"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadSetoffDocumentsAsync"
+                      FilterApplier="@ApplySetoffDocumentFilters"
+                      GetEntityDisplayName="@(setoffDoc => setoffDoc.SetoffNumber)"
+                      RequiredPermission="SetoffDocument.Read"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+<SetoffDocumentEditModalComponent IsVisible="@showEditModal"
+                                 IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                 SetoffDocumentId="@editingSetoffDocumentId"
+                                 OnSetoffDocumentSaved="@modalHandler.OnEntitySavedAsync"
+                                 OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<SetoffDocument, ISetoffDocumentService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingSetoffDocumentId = null;
+    
+    // Modal 處理器
+    private ModalHandler<SetoffDocument, GenericIndexPageComponent<SetoffDocument, ISetoffDocumentService>> modalHandler = default!;
+    
+    // 選項清單
+    private List<Company> companies = new();
+    
+    // 欄位配置
+    private SetoffDocumentFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<SetoffDocument, GenericIndexPageComponent<SetoffDocument, ISetoffDocumentService>>(
+                id => editingSetoffDocumentId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入公司資料
+            await LoadCompaniesAsync();
+            
+            // 建立欄位配置（在載入公司資料後，並傳遞 NotificationService）
+            fieldConfiguration = new SetoffDocumentFieldConfiguration(companies, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化沖款單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化沖款單頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("財務管理", "/financial"),
+                new("沖款單維護")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入沖款單資料
+    private async Task<List<SetoffDocument>> LoadSetoffDocumentsAsync()
+    {
+        try
+        {
+            return await SetoffDocumentService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSetoffDocumentsAsync), GetType(), additionalData: "載入沖款單資料失敗");
+            await NotificationService.ShowErrorAsync("載入沖款單資料失敗");
+            // 設定安全的預設值
+            return new List<SetoffDocument>();
+        }
+    }
+
+    // 載入公司資料
+    private async Task LoadCompaniesAsync()
+    {
+        try
+        {
+            companies = await CompanyService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
+            await NotificationService.ShowErrorAsync("載入公司資料失敗");
+            // 設定安全的預設值
+            companies = new List<Company>();
+        }
+    }
+
+    private IQueryable<SetoffDocument> ApplySetoffDocumentFilters(SearchFilterModel searchModel, IQueryable<SetoffDocument> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(s => s.SetoffDate).ThenByDescending(s => s.SetoffNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySetoffDocumentFilters), GetType());
+    }
+}

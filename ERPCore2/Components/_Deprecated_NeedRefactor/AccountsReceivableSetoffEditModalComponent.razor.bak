@@ -2,7 +2,8 @@
 @inject IAccountsReceivableSetoffService AccountsReceivableSetoffService
 @inject IAccountsReceivableSetoffDetailService AccountsReceivableSetoffDetailService
 @inject ISettoffPaymentDetailService SetoffPaymentDetailService
-@inject IPrepaymentDetailService SetoffPrepaymentDetailService
+@* TODO: 重構中 - PrepaymentDetailService 已移除，需改用 FinancialTransaction *@
+@* @inject IPrepaymentDetailService SetoffPrepaymentDetailService *@
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IPaymentMethodService PaymentMethodService
@@ -1131,7 +1132,7 @@
     };
 
     /// <summary>
-    /// 創建預收款管理器內容的 RenderFragment
+    /// 創建預收款管理器內容的 RenderFragment\
     /// </summary>
     private RenderFragment CreatePrepaymentManagerContent() => __builder =>
     {

@@ -121,6 +121,40 @@ namespace ERPCore2.Data.Enums
         /// 財務收入 - 利息收入、匯兌收益等
         /// </summary>
         [Description("財務收入")]
-        FinancialIncome = 35
+        FinancialIncome = 35,
+        
+        // === 預收預付款相關 (新增) ===
+        
+        /// <summary>
+        /// 預收款 - 客戶預先支付款項
+        /// </summary>
+        [Description("預收款")]
+        Prepayment = 41,
+        
+        /// <summary>
+        /// 預付款 - 預先支付供應商款項
+        /// </summary>
+        [Description("預付款")]
+        Prepaid = 42,
+        
+        /// <summary>
+        /// 預收款使用 - 使用預收款沖抵應收帳款
+        /// </summary>
+        [Description("預收款使用")]
+        PrepaymentUsage = 43,
+        
+        /// <summary>
+        /// 預付款使用 - 使用預付款沖抵應付帳款
+        /// </summary>
+        [Description("預付款使用")]
+        PrepaidUsage = 44,
+        
+        // === 沖款單付款記錄 (新增) ===
+        
+        /// <summary>
+        /// 沖款單付款 - 沖款單的實際付款記錄
+        /// </summary>
+        [Description("沖款單付款")]
+        SetoffPayment = 51
     }
 }
