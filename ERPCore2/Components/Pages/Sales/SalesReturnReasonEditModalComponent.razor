@@ -17,6 +17,7 @@
                           Size="GenericEditModalComponent<SalesReturnReason, ISalesReturnReasonService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
+                          FormSections="@formSections"
                           DataLoader="@LoadSalesReturnReasonData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
@@ -38,6 +39,7 @@
     // ===== 內部狀態 =====
     private GenericEditModalComponent<SalesReturnReason, ISalesReturnReasonService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -139,24 +141,20 @@
                 MaxLength = 50,
                 HelpText = "退貨原因的顯示名稱"
             },
-            new()
-            {
-                PropertyName = nameof(SalesReturnReason.Remarks),
-                Label = "備註說明",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註說明",
-                IsRequired = false,
-                MaxLength = 500,
-                Rows = 2,
-                HelpText = "退貨原因的詳細說明或補充資訊",
-                ContainerCssClass = "col-12"
-            }
+            FormFieldConfigurationHelper.CreateRemarksField<SalesReturnReason>(),
         };
     }
 
     private void InitializeFormFields()
     {
         formFields = GetFormFields();
+        
+        formSections = new Dictionary<string, string>
+        {
+            { nameof(SalesReturnReason.Code), "基本資訊" },
+            { nameof(SalesReturnReason.Name), "基本資訊" },
+            { nameof(SalesReturnReason.Remarks), "額外資料" }
+        };
     }
 
     private async Task<string> GenerateReasonCodeAsync()

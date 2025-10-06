@@ -409,17 +409,8 @@
                     HelpText = "與客戶約定的交貨方式和條件",
                     ContainerCssClass = "col-3" 
                 },
-                new()
-                {
-                    PropertyName = nameof(SalesOrder.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    HelpText = "銷貨訂單的額外說明或注意事項",
-                    ContainerCssClass = "col-6"
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<SalesOrder>(containerCssClass: "col-6"),
             };
 
             formSections = new Dictionary<string, string>

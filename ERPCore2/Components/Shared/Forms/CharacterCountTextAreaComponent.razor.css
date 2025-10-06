@@ -1,15 +1,21 @@
     .character-count-textarea-container {
-        position: relative;
-    }
-    
-    .character-count-info {
-        font-size: 0.875rem;
-    }
-    
-    .character-count-textarea-container textarea:focus + .character-count-info {
-        opacity: 1;
-    }
-    
-    .character-count-textarea-container textarea[readonly] {
-        background-color: #f8f9fa;
-    }
+    position: relative;
+}
+
+.character-count-info {
+    font-size: 0.875rem;
+}
+
+.character-count-textarea-container textarea:focus + .character-count-info {
+    opacity: 1;
+}
+
+.character-count-textarea-container textarea[readonly] {
+    background-color: #f8f9fa;
+}
+
+/* 覆蓋 Bootstrap 的 min-height，讓 rows=1 真正生效為單行 */
+.character-count-textarea-container textarea[rows="1"] {
+    min-height: auto !important;
+    overflow-y: hidden;
+}

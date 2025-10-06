@@ -383,18 +383,7 @@
                     Order = 9,
                     HelpText = "系統自動計算的退回含稅總金額"
                 },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    Order = 12,
-                    HelpText = "可輸入相關備註資訊",
-                    ContainerCssClass = "col-12"
-                } 
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseReturn>(),
             };
 
             formSections = new Dictionary<string, string>
@@ -407,6 +396,7 @@
                 { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseReturn.Remarks), "額外資訊" }
             };
             
         }

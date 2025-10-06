@@ -473,19 +473,8 @@
                     HelpText = "採購單的含稅總金額，根據明細自動計算",
                     IsReadOnly = true // 含稅總金額欄位始終為唯讀
                 },
-                new FormFieldDefinition()
-                {
-                    PropertyName = nameof(PurchaseOrder.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    Rows = 2,
-                    HelpText = "採購單的額外說明或注意事項",
-                    ContainerCssClass = "col-12",
-                    IsReadOnly = isApproved
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseOrder>(),
             };
 
             formSections = new Dictionary<string, string>
