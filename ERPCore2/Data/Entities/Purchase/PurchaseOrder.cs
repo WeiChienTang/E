@@ -31,13 +31,13 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;
 
-        [Display(Name = "稅額")]
+        [Display(Name = "採購稅額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TaxAmount { get; set; } = 0;
+        public decimal PurchaseTaxAmount { get; set; } = 0;
 
-        [Display(Name = "已進貨金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal ReceivedAmount { get; set; } = 0;
+        [Display(Name = "採購含稅總金額")]
+        [NotMapped]
+        public decimal PurchaseTotalAmountIncludingTax => PurchaseTaxAmount + TotalAmount;
 
         [Display(Name = "核准人員")]
         [ForeignKey(nameof(ApprovedByUser))]

@@ -125,27 +125,6 @@ namespace ERPCore2.Services
                 if (entity.OriginalUnitPrice < 0)
                     errors.Add("原始單價不能為負數");
 
-                if (entity.ReturnUnitPrice < 0)
-                    errors.Add("退回單價不能為負數");
-
-                if (entity.DiscountPercentage < 0 || entity.DiscountPercentage > 100)
-                    errors.Add("折扣百分比必須在0-100之間");
-
-                if (entity.ProcessedQuantity < 0)
-                    errors.Add("已處理數量不能為負數");
-
-                if (entity.ProcessedQuantity > entity.ReturnQuantity)
-                    errors.Add("已處理數量不能超過退回數量");
-
-                if (entity.RestockedQuantity < 0)
-                    errors.Add("入庫數量不能為負數");
-
-                if (entity.ScrapQuantity < 0)
-                    errors.Add("報廢數量不能為負數");
-
-                if (entity.RestockedQuantity + entity.ScrapQuantity > entity.ProcessedQuantity)
-                    errors.Add("入庫數量加報廢數量不能超過已處理數量");
-
                 // 驗證退回數量是否合理
                 var quantityValidation = await ValidateReturnQuantityAsync(entity);
                 if (!quantityValidation.IsSuccess)
@@ -247,141 +226,13 @@ namespace ERPCore2.Services
 
 
 
-        public decimal CalculateSubtotal(SalesReturnDetail detail)
-        {
-            try
-            {
-                var subtotal = detail.ReturnQuantity * detail.ReturnUnitPrice;
-                subtotal -= detail.DiscountAmount;
-                return Math.Max(0, subtotal);
-            }
-            catch (Exception ex)
-            {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(CalculateSubtotal), GetType(), _logger, new
-                {
-                    Method = nameof(CalculateSubtotal),
-                    ServiceType = GetType().Name,
-                    DetailId = detail.Id,
-                    ReturnQuantity = detail.ReturnQuantity,
-                    ReturnUnitPrice = detail.ReturnUnitPrice,
-                    DiscountAmount = detail.DiscountAmount
-                });
-                return 0;
-            }
-        }
 
-        public async Task<ServiceResult> UpdateProcessedQuantityAsync(int detailId, decimal processedQuantity)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.SalesReturnDetails.FindAsync(detailId);
 
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的明細記錄");
 
-                if (processedQuantity < 0)
-                    return ServiceResult.Failure("已處理數量不能為負數");
 
-                if (processedQuantity > detail.ReturnQuantity)
-                    return ServiceResult.Failure("已處理數量不能超過退回數量");
 
-                detail.ProcessedQuantity = processedQuantity;
-                detail.PendingQuantity = detail.ReturnQuantity - processedQuantity;
-                detail.UpdatedAt = DateTime.UtcNow;
 
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateProcessedQuantityAsync), GetType(), _logger, new
-                {
-                    Method = nameof(UpdateProcessedQuantityAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detailId,
-                    ProcessedQuantity = processedQuantity
-                });
-                return ServiceResult.Failure("更新已處理數量時發生錯誤");
-            }
-        }
 
-        public async Task<ServiceResult> SetRestockInfoAsync(int detailId, decimal restockedQuantity, string? qualityCondition = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.SalesReturnDetails.FindAsync(detailId);
-
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的明細記錄");
-
-                if (restockedQuantity < 0)
-                    return ServiceResult.Failure("入庫數量不能為負數");
-
-                if (restockedQuantity + detail.ScrapQuantity > detail.ProcessedQuantity)
-                    return ServiceResult.Failure("入庫數量加報廢數量不能超過已處理數量");
-
-                detail.IsRestocked = restockedQuantity > 0;
-                detail.RestockedQuantity = restockedQuantity;
-                if (!string.IsNullOrWhiteSpace(qualityCondition))
-                    detail.QualityCondition = qualityCondition;
-                detail.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetRestockInfoAsync), GetType(), _logger, new
-                {
-                    Method = nameof(SetRestockInfoAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detailId,
-                    RestockedQuantity = restockedQuantity,
-                    QualityCondition = qualityCondition
-                });
-                return ServiceResult.Failure("設定入庫資訊時發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> SetScrapQuantityAsync(int detailId, decimal scrapQuantity, string? remarks = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.SalesReturnDetails.FindAsync(detailId);
-
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的明細記錄");
-
-                if (scrapQuantity < 0)
-                    return ServiceResult.Failure("報廢數量不能為負數");
-
-                if (detail.RestockedQuantity + scrapQuantity > detail.ProcessedQuantity)
-                    return ServiceResult.Failure("入庫數量加報廢數量不能超過已處理數量");
-
-                detail.ScrapQuantity = scrapQuantity;
-                if (!string.IsNullOrWhiteSpace(remarks))
-                    detail.Remarks = remarks;
-                detail.UpdatedAt = DateTime.UtcNow;
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SetScrapQuantityAsync), GetType(), _logger, new
-                {
-                    Method = nameof(SetScrapQuantityAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detailId,
-                    ScrapQuantity = scrapQuantity,
-                    Remarks = remarks
-                });
-                return ServiceResult.Failure("設定報廢數量時發生錯誤");
-            }
-        }
 
         public async Task<ServiceResult> UpdateDetailsAsync(List<SalesReturnDetail> details)
         {
@@ -392,9 +243,7 @@ namespace ERPCore2.Services
 
                 foreach (var detail in details)
                 {
-                    // 計算小計
-                    detail.ReturnSubtotalAmount = CalculateSubtotal(detail);
-                    detail.PendingQuantity = detail.ReturnQuantity - detail.ProcessedQuantity;
+                    // ReturnSubtotalAmount 現在是計算屬性，由 ReturnQuantity * OriginalUnitPrice 自動計算
                     detail.UpdatedAt = DateTime.UtcNow;
 
                     if (detail.Id == 0)
@@ -431,8 +280,8 @@ namespace ERPCore2.Services
                 if (detail == null)
                     return false;
 
-                // 如果已經有處理數量，則不允許刪除
-                return detail.ProcessedQuantity == 0;
+                // 允許刪除
+                return true;
             }
             catch (Exception ex)
             {
@@ -459,10 +308,6 @@ namespace ERPCore2.Services
                 {
                     TotalDetails = details.Count,
                     TotalReturnQuantity = details.Sum(d => d.ReturnQuantity),
-                    TotalProcessedQuantity = details.Sum(d => d.ProcessedQuantity),
-                    TotalPendingQuantity = details.Sum(d => d.PendingQuantity),
-                    TotalRestockedQuantity = details.Sum(d => d.RestockedQuantity),
-                    TotalScrapQuantity = details.Sum(d => d.ScrapQuantity),
                     TotalReturnAmount = details.Sum(d => d.ReturnSubtotalAmount),
                     ProductCount = details.Select(d => d.ProductId).Distinct().Count(),
                     ProductReturnQuantities = details

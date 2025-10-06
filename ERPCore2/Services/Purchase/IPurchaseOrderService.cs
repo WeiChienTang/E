@@ -21,7 +21,7 @@ namespace ERPCore2.Services
         Task<ServiceResult> CloseOrderAsync(int orderId);
         
         // 進貨相關
-        Task<ServiceResult> UpdateReceivedAmountAsync(int orderId);
+        // 注釋：UpdateReceivedAmountAsync 已移除，因為 ReceivedAmount 欄位已不存在
         Task<bool> CanDeleteAsync(int orderId);
         
         // 統計查詢
@@ -41,5 +41,20 @@ namespace ERPCore2.Services
         // 進貨相關查詢
         Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted);
         Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId);
+        
+        // 稅額計算
+        /// <summary>
+        /// 計算並更新採購單的稅額
+        /// </summary>
+        /// <param name="purchaseOrderId">採購單ID</param>
+        /// <returns>服務結果</returns>
+        Task<ServiceResult> CalculateAndUpdateTaxAmountAsync(int purchaseOrderId);
+        
+        /// <summary>
+        /// 計算稅額(不儲存到資料庫)
+        /// </summary>
+        /// <param name="totalAmount">總金額</param>
+        /// <returns>計算出的稅額</returns>
+        Task<decimal> CalculateTaxAmountAsync(decimal totalAmount);
     }
 }

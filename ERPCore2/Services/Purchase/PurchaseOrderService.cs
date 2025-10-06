@@ -13,20 +13,25 @@ namespace ERPCore2.Services
     public class PurchaseOrderService : GenericManagementService<PurchaseOrder>, IPurchaseOrderService
     {
         private readonly IPurchaseOrderDetailService _purchaseOrderDetailService;
+        private readonly ISystemParameterService _systemParameterService;
 
         public PurchaseOrderService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            IPurchaseOrderDetailService purchaseOrderDetailService) : base(contextFactory)
+            IPurchaseOrderDetailService purchaseOrderDetailService,
+            ISystemParameterService systemParameterService) : base(contextFactory)
         {
             _purchaseOrderDetailService = purchaseOrderDetailService;
+            _systemParameterService = systemParameterService;
         }
 
         public PurchaseOrderService(
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<PurchaseOrder>> logger,
-            IPurchaseOrderDetailService purchaseOrderDetailService) : base(contextFactory, logger)
+            IPurchaseOrderDetailService purchaseOrderDetailService,
+            ISystemParameterService systemParameterService) : base(contextFactory, logger)
         {
             _purchaseOrderDetailService = purchaseOrderDetailService;
+            _systemParameterService = systemParameterService;
         }
 
         // 採購服務專注於採購流程管理，不處理庫存邏輯
@@ -344,8 +349,7 @@ namespace ERPCore2.Services
                     if (order == null)
                         return ServiceResult.Failure("找不到採購訂單");
                     
-                    if (order.ReceivedAmount > 0)
-                        return ServiceResult.Failure("已有進貨記錄的訂單無法駁回");
+                    // 注釋：已移除 ReceivedAmount 欄位，如需檢查進貨狀況，請透過 GetStatisticsAsync 方法
 
                     // 重置審核狀態
                     order.IsApproved = false;
@@ -395,8 +399,7 @@ namespace ERPCore2.Services
                 if (order == null)
                     return ServiceResult.Failure("找不到採購訂單");
                 
-                if (order.ReceivedAmount > 0)
-                    return ServiceResult.Failure("已有進貨記錄的訂單無法取消");
+                // 注釋：已移除 ReceivedAmount 欄位，如需檢查進貨狀況，請透過 GetStatisticsAsync 方法
                 
                 order.Remarks = string.IsNullOrWhiteSpace(order.Remarks) 
                     ? $"取消原因：{reason}" 
@@ -451,48 +454,8 @@ namespace ERPCore2.Services
 
         #region 進貨相關
 
-        public async Task<ServiceResult> UpdateReceivedAmountAsync(int orderId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    var order = await context.PurchaseOrders
-                        .FirstOrDefaultAsync(po => po.Id == orderId);
-                    
-                    if (order == null)
-                        return ServiceResult.Failure("找不到採購訂單");
-                    
-                    // 使用 DetailService 取得統計資料
-                    var statistics = await _purchaseOrderDetailService.GetStatisticsAsync(orderId);
-                    order.ReceivedAmount = statistics.ReceivedAmount;
-                    
-                    // 移除狀態更新邏輯，只更新金額
-                    order.UpdatedAt = DateTime.Now;
-                    await context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                    
-                    return ServiceResult.Success();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateReceivedAmountAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateReceivedAmountAsync),
-                    ServiceType = GetType().Name,
-                    OrderId = orderId 
-                });
-                return ServiceResult.Failure("更新進貨金額時發生錯誤");
-            }
-        }
+        // 注釋：UpdateReceivedAmountAsync 方法已被移除，因為 ReceivedAmount 欄位已不存在
+        // 如需查詢進貨狀況，請使用 PurchaseOrderDetailService.GetStatisticsAsync 方法
 
         /// <summary>
         /// 檢查採購單是否可以刪除（介面方法）
@@ -563,8 +526,8 @@ namespace ERPCore2.Services
                 return await context.PurchaseOrders
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Where(po => po.IsApproved && // 只包含已核准的訂單
-                               po.ReceivedAmount < po.TotalAmount) // 改為用進貨金額判斷
+                    .Where(po => po.IsApproved) // 只包含已核准的訂單
+                    // 注釋：已移除 ReceivedAmount 欄位，如需過濾進貨狀況，請在應用層使用 GetStatisticsAsync
                     .OrderBy(po => po.ExpectedDeliveryDate ?? po.OrderDate.AddDays(7))
                     .ToListAsync();
             }
@@ -588,7 +551,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Where(po => po.IsApproved && // 只包含已核准的訂單
-                               po.ReceivedAmount < po.TotalAmount && // 改為用進貨金額判斷
+                               // 注釋：已移除 ReceivedAmount 欄位，如需過濾進貨狀況，請在應用層使用 GetStatisticsAsync
                                po.ExpectedDeliveryDate.HasValue && 
                                po.ExpectedDeliveryDate.Value < today)
                     .OrderBy(po => po.ExpectedDeliveryDate)
@@ -749,6 +712,73 @@ namespace ERPCore2.Services
                     DetailId = detailId 
                 });
                 return ServiceResult.Failure("刪除採購單明細時發生錯誤");
+            }
+        }
+
+        #endregion
+
+        #region 稅額計算
+
+        /// <summary>
+        /// 計算並更新採購單的稅額
+        /// </summary>
+        /// <param name="purchaseOrderId">採購單ID</param>
+        /// <returns>服務結果</returns>
+        public async Task<ServiceResult> CalculateAndUpdateTaxAmountAsync(int purchaseOrderId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var purchaseOrder = await context.PurchaseOrders
+                    .FirstOrDefaultAsync(po => po.Id == purchaseOrderId);
+                
+                if (purchaseOrder == null)
+                    return ServiceResult.Failure("找不到採購訂單");
+                
+                // 取得系統稅率
+                var taxRate = await _systemParameterService.GetTaxRateAsync();
+                
+                // 計算稅額: TaxRate(%) * TotalAmount
+                purchaseOrder.PurchaseTaxAmount = Math.Round(purchaseOrder.TotalAmount * (taxRate / 100m), 2);
+                purchaseOrder.UpdatedAt = DateTime.Now;
+                
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateAndUpdateTaxAmountAsync), GetType(), _logger, new { 
+                    Method = nameof(CalculateAndUpdateTaxAmountAsync),
+                    ServiceType = GetType().Name,
+                    PurchaseOrderId = purchaseOrderId 
+                });
+                return ServiceResult.Failure("計算稅額時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 計算稅額(不儲存到資料庫)
+        /// </summary>
+        /// <param name="totalAmount">總金額</param>
+        /// <returns>計算出的稅額</returns>
+        public async Task<decimal> CalculateTaxAmountAsync(decimal totalAmount)
+        {
+            try
+            {
+                // 取得系統稅率
+                var taxRate = await _systemParameterService.GetTaxRateAsync();
+                
+                // 計算稅額: TaxRate(%) * TotalAmount
+                return Math.Round(totalAmount * (taxRate / 100m), 2);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTaxAmountAsync), GetType(), _logger, new { 
+                    Method = nameof(CalculateTaxAmountAsync),
+                    ServiceType = GetType().Name,
+                    TotalAmount = totalAmount 
+                });
+                return 0m; // 發生錯誤時返回0
             }
         }
 

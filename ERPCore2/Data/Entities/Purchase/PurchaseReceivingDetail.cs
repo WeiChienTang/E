@@ -50,13 +50,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal OrderAmount => OrderQuantity * UnitPrice;
 
-        [Display(Name = "未進貨數量")]
-        public int PendingQuantity => OrderQuantity - ReceivedQuantity;
-
-        [Display(Name = "進貨完成率")]
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal CompletionRate => OrderQuantity > 0 ? (decimal)ReceivedQuantity / OrderQuantity * 100 : 0;
-
         [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
         [ForeignKey(nameof(Warehouse))]
@@ -66,16 +59,9 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(WarehouseLocation))]
         public int? WarehouseLocationId { get; set; }
 
-        [MaxLength(200, ErrorMessage = "驗收備註不可超過200個字元")]
-        [Display(Name = "驗收備註")]
-        public string? InspectionRemarks { get; set; }
-
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
         public string? BatchNumber { get; set; }
-
-        [Display(Name = "到期日期")]
-        public DateTime? ExpiryDate { get; set; }
 
         [Required(ErrorMessage = "是否完成進貨為必填")]
         [Display(Name = "是否完成進貨")]
@@ -84,10 +70,6 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]
         public bool IsSettled { get; set; } = false;
-
-        [Display(Name = "本次付款金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal PaidAmount { get; set; } = 0;
 
         [Display(Name = "累計付款金額")]
         [Column(TypeName = "decimal(18,2)")]

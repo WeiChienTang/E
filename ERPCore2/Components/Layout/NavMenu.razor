@@ -108,11 +108,12 @@
         <!-- 財務管理下拉選單 -->
         <NavMenuItem Text="財務管理" IconClass="bi bi-journal-text" MenuKey="financial_management">
             <DropdownItems>
-                <NavDropdownItem Text="應收帳款" Url="/setoffDocuments" RequiredPermission="SetoffDocument.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="應收帳款" Url="/accountsReceivableSetoff" RequiredPermission="SetoffDocument.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="付款方式" Url="/paymentMethods" RequiredPermission="PaymentMethod.Read" ParentMenuKey="financial_management"/>
                 <NavDropdownItem Text="銀行" Url="/banks" RequiredPermission="Bank.Read" ParentMenuKey="financial_management"/>
                 <NavDropdownItem Text="貨幣" Url="/currencies" RequiredPermission="Currency.Read" ParentMenuKey="financial_management"/>
                 <NavDropdownItem Text="財務交易紀錄" Url="/financialTransactions" RequiredPermission="FinancialTransaction.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
+                <NavDropdownItem Text="應付帳款" Url="/accountsPayableSetoff" RequiredPermission="SetoffDocument.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
                 @* <NavDropdownItem Text="應收帳款" Url="/accountsReceivable" RequiredPermission="AccountsReceivable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
                 <NavDropdownItem Text="應付帳款" Url="/accountsPayable" RequiredPermission="AccountsPayable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/> *@
                 @* <NavDropdownItem Text="收款單" Url="/receipts" RequiredPermission="Receipt.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>

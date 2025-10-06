@@ -20,55 +20,18 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,4)")]
         public decimal OriginalUnitPrice { get; set; } = 0;
 
-        [Display(Name = "退回單價")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal ReturnUnitPrice { get; set; } = 0;
-
         [Display(Name = "退回小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal ReturnSubtotalAmount => ReturnQuantity * ReturnUnitPrice;
-
-        [Display(Name = "已處理數量")]
-        public int ProcessedQuantity { get; set; } = 0;
-
-        [Display(Name = "待處理數量")]
-        public int PendingQuantity => ReturnQuantity - ProcessedQuantity;
-
-        [Display(Name = "是否已出庫")]
-        public bool IsShipped { get; set; } = false;
-
-        [Display(Name = "已出庫數量")]
-        public int ShippedQuantity { get; set; } = 0;
-
-        [Display(Name = "報廢數量")]
-        public int ScrapQuantity { get; set; } = 0;
-
-        [MaxLength(200, ErrorMessage = "明細備註不可超過200個字元")]
-        [Display(Name = "明細備註")]
-        public string? DetailRemarks { get; set; }
-
-        [MaxLength(200, ErrorMessage = "品質狀況不可超過200個字元")]
-        [Display(Name = "品質狀況")]
-        public string? QualityCondition { get; set; }
+        public decimal ReturnSubtotalAmount => ReturnQuantity * OriginalUnitPrice;
 
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
         public string? BatchNumber { get; set; }
 
-        [Display(Name = "到期日期")]
-        public DateTime? ExpiryDate { get; set; }
-
-        [Display(Name = "出庫日期")]
-        public DateTime? ShippedDate { get; set; }
-
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]
         public bool IsSettled { get; set; } = false;
-
-        [Display(Name = "本次收款金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal ReceivedAmount { get; set; } = 0;
-
+        
         [Display(Name = "累計收款金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalReceivedAmount { get; set; } = 0;

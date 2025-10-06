@@ -5,6 +5,7 @@
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject ISystemParameterService SystemParameterService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
@@ -95,6 +96,9 @@
     private List<SelectOption> supplierOptions = new();
     private List<SelectOption> companyOptions = new();
     private List<SelectOption> statusOptions = new();
+    
+    // 系統參數 - 稅率快取（避免重複查詢資料庫）
+    private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -349,6 +353,17 @@
 
             // 載入商品資料
             availableProducts = await ProductService.GetAllAsync();
+            
+            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            try
+            {
+                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
+            }
+            catch (Exception)
+            {
+                // 如果載入失敗，使用預設值 5%
+                currentTaxRate = 5.0m;
+            }
 
             // 初始化狀態選項
             statusOptions = new List<SelectOption>
@@ -393,7 +408,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.SupplierId),
-                    Label = "廠商",
+                    Label = "篩選廠商",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
@@ -402,7 +417,7 @@
                     ActionButtons = await GetSupplierActionButtonsAsync(),
                     IsReadOnly = isApproved
                 },
-                                new()
+                new()
                 {
                     PropertyName = nameof(PurchaseOrder.CompanyId),
                     Label = "採購公司",
@@ -431,7 +446,34 @@
                     HelpText = "預計廠商交貨的日期",
                     IsReadOnly = isApproved
                 },
-                new()
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.TotalAmount),
+                    Label = "採購總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "採購單的總金額，根據明細自動計算",
+                    IsReadOnly = true // 總金額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchaseTaxAmount),
+                    Label = $"採購稅額({currentTaxRate:F2}%)",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = $"採購單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）",
+                    IsReadOnly = true // 稅額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax),
+                    Label = "含稅總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "採購單的含稅總金額，根據明細自動計算",
+                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.Remarks),
                     Label = "備註",
@@ -453,6 +495,9 @@
                 { nameof(PurchaseOrder.CompanyId), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
                 { nameof(PurchaseOrder.ExpectedDeliveryDate), "基本資訊" },
+                { nameof(PurchaseOrder.TotalAmount), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseOrder.PurchaseTaxAmount), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseOrder.Remarks), "額外資訊" }
             };
         }
@@ -770,19 +815,23 @@
     {
         try
         {
-            purchaseOrderDetails = details ?? new List<PurchaseOrderDetail>();
+            purchaseOrderDetails = details ?? new List<PurchaseOrderDetail>();            
             
-            // 除錯：檢查明細資料
-            Console.WriteLine($"HandleDetailsChanged: 收到 {purchaseOrderDetails.Count} 筆明細");
-            foreach (var detail in purchaseOrderDetails)
-            {
-                Console.WriteLine($"明細 - ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}, SubtotalAmount: {detail.SubtotalAmount}");
-            }
-            
-            // 更新主檔的總金額
+            // 更新主檔的總金額、稅額、含稅總額
             if (editModalComponent?.Entity != null)
             {
+                // 1. 計算總金額（未稅）
                 editModalComponent.Entity.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
+                
+                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
+                editModalComponent.Entity.PurchaseTaxAmount = Math.Round(
+                    editModalComponent.Entity.TotalAmount * (currentTaxRate / 100), 
+                    2  // 四捨五入到小數點後2位
+                );
+                
+                // 3. 含稅總額會自動計算（PurchaseTotalAmountIncludingTax 是計算屬性）
+                //    = TotalAmount + PurchaseTaxAmount
+                
                 StateHasChanged();
             }
         }
@@ -858,8 +907,12 @@
                 return false;
             }
 
-            // 更新總金額
+            // 更新總金額和稅額
             purchaseOrder.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
+            purchaseOrder.PurchaseTaxAmount = Math.Round(
+                purchaseOrder.TotalAmount * (currentTaxRate / 100), 
+                2
+            );
 
             // 儲存主檔
             ServiceResult<PurchaseOrder> result;

@@ -371,24 +371,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReturn.IsRefunded),
-                    Label = "是否已退款",
-                    FieldType = FormFieldType.Checkbox,
-                    Order = 10,
-                    HelpText = "標記此退回單是否已經退款"
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReturn.RefundDate),
-                    Label = "退款日期",
-                    FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    Order = 11,
-                    HelpText = "請選擇退款日期",
-                    IsDisabled = !(editModalComponent?.Entity?.IsRefunded ?? false)
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseReturn.Remarks),
                     Label = "備註",
                     FieldType = FormFieldType.TextArea,
@@ -411,8 +393,6 @@
                 { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊(系統自動計算)" },
-                { nameof(PurchaseReturn.IsRefunded), "退款資訊" },
-                { nameof(PurchaseReturn.RefundDate), "退款資訊" }
             };
             
         }
@@ -738,34 +718,6 @@
                 }
                 StateHasChanged();
             }
-            
-            // 當「是否已退款」變更時，處理退款日期的邏輯
-            if (fieldChange.PropertyName == nameof(PurchaseReturn.IsRefunded) && 
-                fieldChange.Value is bool isRefunded)
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    if (isRefunded)
-                    {
-                        // 設為 true 時，自動設定退款日期為當日
-                        editModalComponent.Entity.RefundDate = DateTime.Today;
-                    }
-                    else
-                    {
-                        // 設為 false 時，清空退款日期
-                        editModalComponent.Entity.RefundDate = null;
-                    }
-                    
-                    // 更新退款日期欄位的禁用狀態
-                    var refundDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.RefundDate));
-                    if (refundDateField != null)
-                    {
-                        refundDateField.IsDisabled = !isRefunded;
-                    }
-                    
-                    StateHasChanged();
-                }
-            }
         }
         catch (Exception ex)
         {
@@ -803,7 +755,7 @@
             {
                 new GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.CustomModule
                 {
-                    Title = "退貨明細",
+                    Title = "",
                     Order = 1,
                     CssClass = "mt-4",
                     IsVisible = true,

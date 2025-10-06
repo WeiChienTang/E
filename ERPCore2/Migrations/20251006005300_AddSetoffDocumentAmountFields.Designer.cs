@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251006005300_AddSetoffDocumentAmountFields")]
+    partial class AddSetoffDocumentAmountFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2166,7 +2169,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal>("PurchaseTaxAmount")
+                    b.Property<decimal>("ReceivedAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("RejectReason")
@@ -2182,6 +2185,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -2373,6 +2379,13 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InspectionRemarks")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<bool>("IsReceivingCompleted")
                         .HasColumnType("bit");
 
@@ -2381,6 +2394,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("OrderQuantity")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -2454,6 +2470,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsRefunded")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("PurchaseReceivingId")
                         .HasColumnType("int");
 
@@ -2461,6 +2480,9 @@ namespace ERPCore2.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("RefundDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -2479,6 +2501,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalReturnAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalReturnAmountWithTax")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -2523,11 +2548,24 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("DetailRemarks")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsSettled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsShipped")
                         .HasColumnType("bit");
 
                     b.Property<decimal>("OriginalUnitPrice")
                         .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("ProcessedQuantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -2541,11 +2579,30 @@ namespace ERPCore2.Migrations
                     b.Property<int>("PurchaseReturnId")
                         .HasColumnType("int");
 
+                    b.Property<string>("QualityCondition")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("ReceivedAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("ReturnQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ReturnUnitPrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("ScrapQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ShippedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ShippedQuantity")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -2837,6 +2894,12 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal>("DeliveredQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("DiscountPercentage")
                         .HasColumnType("decimal(5,2)");
 
@@ -2846,8 +2909,14 @@ namespace ERPCore2.Migrations
                     b.Property<decimal>("OrderQuantity")
                         .HasColumnType("decimal(18,3)");
 
+                    b.Property<decimal>("PendingQuantity")
+                        .HasColumnType("decimal(18,3)");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("ReceivedAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -2858,6 +2927,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("SubtotalAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalReceivedAmount")
                         .HasColumnType("decimal(18,2)");
@@ -2994,27 +3066,61 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsRestocked")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSettled")
                         .HasColumnType("bit");
 
                     b.Property<decimal>("OriginalUnitPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PendingQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("ProcessedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
+
+                    b.Property<string>("QualityCondition")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<decimal>("RestockedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
                     b.Property<decimal>("ReturnQuantity")
                         .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("ReturnSubtotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ReturnUnitPrice")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("SalesOrderDetailId")
                         .HasColumnType("int");
 
                     b.Property<int>("SalesReturnId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("ScrapQuantity")
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

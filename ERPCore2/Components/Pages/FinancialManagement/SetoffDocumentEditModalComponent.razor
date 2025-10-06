@@ -1,5 +1,6 @@
 @* 沖款單編輯組件 *@
 @inject ISetoffDocumentService SetoffDocumentService
+@inject ISetoffProductDetailService SetoffProductDetailService
 @inject ICompanyService CompanyService
 @inject ICustomerService CustomerService
 @inject ISupplierService SupplierService
@@ -33,7 +34,8 @@
                           RequiredPermission="SetoffDocument.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnFieldChanged="@OnFieldValueChanged">
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()">
 </GenericEditModalComponent>
 
 <CompanyEditModalComponent @ref="companyEditModal"
@@ -62,6 +64,7 @@
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? SetoffDocumentId { get; set; }
+    [Parameter] public SetoffType? DefaultSetoffType { get; set; } // 新增：預設的沖款類型
     [Parameter] public EventCallback<SetoffDocument> OnSetoffDocumentSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
@@ -86,6 +89,15 @@
     private List<Company> companies = new();
     private List<Customer> customers = new();
     private List<Supplier> suppliers = new();
+    
+    // 商品明細相關
+    private List<SetoffProductDetail> setoffProductDetails = new();
+    private bool IsReadOnly => false; // 可根據權限或狀態控制
+    private SetoffProductDetailManagerComponent? setoffProductDetailManager;
+    
+    // 日期篩選
+    private DateTime? filterStartDate;
+    private DateTime? filterEndDate;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -212,11 +224,85 @@
 
     private async Task HandleSaveSuccess()
     {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowErrorAsync("沒有可儲存的資料");
+                return;
+            }
+
+            var entity = editModalComponent.Entity;
+
+            // 儲存商品明細（過濾掉本次沖款和折讓都為 0 的項目）
+            var validDetails = setoffProductDetails
+                .Where(d => d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0)
+                .ToList();
+                
+            if (validDetails.Any() && entity.Id > 0)
+            {
+                // 設定 SetoffDocumentId
+                foreach (var detail in validDetails)
+                {
+                    detail.SetoffDocumentId = entity.Id;
+                }
+
+                var detailResult = await SetoffProductDetailService.CreateBatchWithValidationAsync(validDetails);
+                if (!detailResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync($"商品明細儲存失敗：{detailResult.ErrorMessage}");
+                    return;
+                }
+            }
+
+            await OnSetoffDocumentSaved.InvokeAsync(entity);
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存商品明細時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理商品明細變更事件，更新沖款單的各項金額欄位
+    /// </summary>
+    /// <remarks>
+    /// 欄位說明：
+    /// - 本期應收 (TotalSetoffAmount): 被選入的來源明細的原始應收/付總金額（不會因為輸入本次沖款而改變）
+    /// - 本期沖銷 (CurrentSetoffAmount): 本次沖款 + 本次折讓的總和
+    /// - 本期已收 (TotalCollectionAmount): 實際收到的款項（目前等於本次沖款，未來會考慮手續費等因素）
+    /// - 本期折讓 (TotalAllowanceAmount): 本次折讓的總額
+    /// </remarks>
+    private Task HandleProductDetailsChanged(List<SetoffProductDetail> details)
+    {
+        setoffProductDetails = details;
+        
+        // 更新總金額
         if (editModalComponent?.Entity != null)
         {
-            await OnSetoffDocumentSaved.InvokeAsync(editModalComponent.Entity);
+            // 【本期應收】= 被選入的來源明細的原始應收/付總金額
+            // 這個值應該從 SetoffProductDetailManagerComponent 取得來源明細的總金額
+            // 只在明細被選入時計算，不會因為輸入本次沖款金額而改變
+            if (setoffProductDetailManager != null)
+            {
+                editModalComponent.Entity.TotalSetoffAmount = setoffProductDetailManager.GetSourceTotalAmount();
+            }
+            
+            // 【本期沖銷】= 本次沖款 + 本次折讓的總和
+            editModalComponent.Entity.CurrentSetoffAmount = details.Sum(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
+            
+            // 【本期已收】= 實際收到的款項總額
+            // 目前等於本次沖款，未來會加入手續費等其他因素的計算
+            // TODO: 未來需考慮手續費、匯差等因素
+            editModalComponent.Entity.TotalCollectionAmount = details.Sum(d => d.CurrentSetoffAmount);
+            
+            // 【本期折讓】= 本次折讓的總額
+            editModalComponent.Entity.TotalAllowanceAmount = details.Sum(d => d.CurrentAllowanceAmount);
         }
-        await CloseModal();
+        
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private async Task HandleCancel()
@@ -234,22 +320,41 @@
     {
         try
         {
+            SetoffDocument? setoffDocument;
+            
             if (!SetoffDocumentId.HasValue)
             {
-                // 新增模式
-                var newSetoffDocument = new SetoffDocument
+                // 新增模式 - 使用 DefaultSetoffType 或預設為應收帳款
+                setoffDocument = new SetoffDocument
                 {
                     SetoffNumber = await GenerateSetoffNumberAsync(),
                     SetoffDate = DateTime.Today,
-                    SetoffType = SetoffType.AccountsReceivable,
+                    SetoffType = DefaultSetoffType ?? SetoffType.AccountsReceivable,
                     TotalSetoffAmount = 0
                 };
-
-                return newSetoffDocument;
+                
+                // 新增模式：清空商品明細
+                setoffProductDetails = new List<SetoffProductDetail>();
             }
-
-            // 編輯模式
-            var setoffDocument = await SetoffDocumentService.GetByIdAsync(SetoffDocumentId.Value);
+            else
+            {
+                // 編輯模式
+                setoffDocument = await SetoffDocumentService.GetByIdAsync(SetoffDocumentId.Value);
+                
+                // 載入商品明細
+                setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
+            }
+            
+            // 資料載入後，重新初始化表單欄位以正確顯示客戶或廠商欄位
+            // 使用 Task.Run 確保在下一個渲染週期執行
+            _ = Task.Run(async () =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await InitializeFormFieldsAsync();
+                    StateHasChanged();
+                });
+            });
             
             return setoffDocument;
         }
@@ -286,6 +391,9 @@
     {
         try
         {
+            // 動態加入客戶或廠商欄位 - 先判斷類型
+            var currentSetoffType = editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
+            
             formFields = new List<FormFieldDefinition>
             {
                 new()
@@ -297,28 +405,44 @@
                     IsRequired = true,
                     MaxLength = 50,
                     HelpText = "沖款單的唯一識別號碼，新增時系統會自動產生，也可手動修改"
-                },
-                new()
+                }
+            };
+
+            // 根據沖款類型動態加入客戶或廠商欄位（緊接在沖款單號之後）
+            if (currentSetoffType == SetoffType.AccountsReceivable)
+            {
+                // 應收帳款：顯示客戶欄位
+                formFields.Add(new()
                 {
-                    PropertyName = nameof(SetoffDocument.SetoffType),
-                    Label = "沖款類型",
-                    FieldType = FormFieldType.Select,
+                    PropertyName = "CustomerId",
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    MinSearchLength = 0,
                     IsRequired = true,
-                    Options = new List<SelectOption>
-                    {
-                        new SelectOption { Text = "應收帳款", Value = ((int)SetoffType.AccountsReceivable).ToString() },
-                        new SelectOption { Text = "應付帳款", Value = ((int)SetoffType.AccountsPayable).ToString() }
-                    },
-                    HelpText = "選擇沖款類型：應收帳款（客戶）或應付帳款（廠商）"
-                },
-                new()
+                    HelpText = "選擇應收帳款的客戶",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                });
+            }
+            else if (currentSetoffType == SetoffType.AccountsPayable)
+            {
+                // 應付帳款：顯示廠商欄位
+                formFields.Add(new()
                 {
-                    PropertyName = nameof(SetoffDocument.SetoffDate),
-                    Label = "沖款日期",
-                    FieldType = FormFieldType.Date,
+                    PropertyName = "SupplierId",
+                    Label = "廠商",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇廠商",
+                    MinSearchLength = 0,
                     IsRequired = true,
-                    HelpText = "沖款單的建立日期"
-                },
+                    HelpText = "選擇應付帳款的廠商",
+                    ActionButtons = await GetSupplierActionButtonsAsync()
+                });
+            }
+
+            // 繼續加入其他共用欄位
+            formFields.AddRange(new List<FormFieldDefinition>
+            {
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.CompanyId),
@@ -332,62 +456,94 @@
                 },
                 new()
                 {
-                    PropertyName = "CustomerId", // 使用虛擬屬性名稱
-                    Label = "客戶",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇客戶",
-                    MinSearchLength = 0,
-                    IsRequired = false,
-                    HelpText = "選擇應收帳款的客戶",
-                    ActionButtons = await GetCustomerActionButtonsAsync(),
-                    // 只有當 SetoffType 是應收帳款時才顯示
-                    IsDisabled = editModalComponent?.Entity?.SetoffType != SetoffType.AccountsReceivable
-                },
-                new()
-                {
-                    PropertyName = "SupplierId", // 使用虛擬屬性名稱
-                    Label = "廠商",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇廠商",
-                    MinSearchLength = 0,
-                    IsRequired = false,
-                    HelpText = "選擇應付帳款的廠商",
-                    ActionButtons = await GetSupplierActionButtonsAsync(),
-                    // 只有當 SetoffType 是應付帳款時才顯示
-                    IsDisabled = editModalComponent?.Entity?.SetoffType != SetoffType.AccountsPayable
-                },
+                    PropertyName = nameof(SetoffDocument.SetoffDate),
+                    Label = "沖款日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "沖款單的建立日期"
+                }
+            });
+
+            // 繼續加入金額相關欄位
+            formFields.AddRange(new List<FormFieldDefinition>
+            {
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.TotalSetoffAmount),
-                    Label = "總沖款金額",
+                    Label = "本期應收",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入總沖款金額",
+                    Placeholder = "系統自動計算",
                     IsRequired = false,
+                    IsReadOnly = true,
                     HelpText = "沖款單的總金額",
-                    ContainerCssClass = "col-md-6"
                 },
                 new()
                 {
-                    PropertyName = nameof(SetoffDocument.CompletedDate),
-                    Label = "完成日期",
-                    FieldType = FormFieldType.Date,
+                    PropertyName = nameof(SetoffDocument.TotalCollectionAmount),
+                    Label = "本期已收",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "系統自動計算",
                     IsRequired = false,
-                    HelpText = "沖款完成的日期",
-                    ContainerCssClass = "col-md-6"
+                    IsReadOnly = true,
+                    HelpText = "實際收到的款項總額",
+                },
+                new()
+                {
+                    PropertyName = nameof(SetoffDocument.CurrentSetoffAmount),
+                    Label = "本期沖銷",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "系統自動計算",
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "本次沖款單所沖銷的金額",
+                },
+
+                new()
+                {
+                    PropertyName = nameof(SetoffDocument.TotalAllowanceAmount),
+                    Label = "本期折讓",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "系統自動計算",
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "折讓抵銷的總額",
                 }
+            });
+            
+            // 動態設定表單區段 - 使用有序列表以控制欄位順序
+            var sectionList = new List<KeyValuePair<string, string>>
+            {
+                new(nameof(SetoffDocument.SetoffNumber), "基本資訊")
             };
 
-            formSections = new Dictionary<string, string>
+            // 根據沖款類型加入對應的關聯方區段(插入在沖款單號之後)
+            if (currentSetoffType == SetoffType.AccountsReceivable)
             {
-                { nameof(SetoffDocument.SetoffNumber), "基本資訊" },
-                { nameof(SetoffDocument.SetoffType), "基本資訊" },
-                { nameof(SetoffDocument.SetoffDate), "基本資訊" },
-                { nameof(SetoffDocument.CompanyId), "基本資訊" },
-                { "CustomerId", "關聯方資訊" },
-                { "SupplierId", "關聯方資訊" },
-                { nameof(SetoffDocument.TotalSetoffAmount), "金額資訊" },
-                { nameof(SetoffDocument.CompletedDate), "金額資訊" }
-            };
+                sectionList.Add(new("CustomerId", "基本資訊"));
+            }
+            else if (currentSetoffType == SetoffType.AccountsPayable)
+            {
+                sectionList.Add(new("SupplierId", "基本資訊"));
+            }
+
+            // 繼續加入其他基本資訊欄位
+            sectionList.AddRange(new[]
+            {
+                new KeyValuePair<string, string>(nameof(SetoffDocument.CompanyId), "基本資訊"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.SetoffDate), "基本資訊")
+            });
+
+            // 加入金額相關區段
+            sectionList.AddRange(new[]
+            {
+                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalSetoffAmount), "金額資訊"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalCollectionAmount), "金額資訊"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentSetoffAmount), "金額資訊"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalAllowanceAmount), "金額資訊")
+            });
+
+            // 轉換為 Dictionary
+            formSections = sectionList.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
         catch (Exception)
         {
@@ -439,17 +595,19 @@
     {
         try
         {
-            // 當沖款類型變更時，清除關聯方資訊並重新初始化表單欄位
+            // 註解：因為沖款類型現在由 DefaultSetoffType 控制，不再需要手動變更處理
+            // 如果未來需要支援手動變更沖款類型，可以取消註解以下程式碼
+            /*
             if (fieldChange.PropertyName == nameof(SetoffDocument.SetoffType) && editModalComponent?.Entity != null)
             {
                 editModalComponent.Entity.RelatedPartyId = 0;
                 editModalComponent.Entity.RelatedPartyName = string.Empty;
                 editModalComponent.Entity.RelatedPartyType = string.Empty;
                 
-                // 重新初始化表單欄位以更新客戶/廠商欄位的 IsDisabled 狀態
                 await InitializeFormFieldsAsync();
                 StateHasChanged();
             }
+            */
             
             // 使用統一 Helper 處理公司欄位變更
             if (fieldChange.PropertyName == nameof(SetoffDocument.CompanyId))
@@ -630,4 +788,99 @@
     {
         await supplierModalManager.HandleEntitySavedAsync(supplier, shouldAutoSelect: true);
     }
+    
+    /// <summary>
+    /// 日期篩選變更事件
+    /// </summary>
+    private void OnDateFilterChanged()
+    {
+        // 觸發重新渲染，讓 SetoffProductDetailManagerComponent 接收新的日期參數
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            if (editModalComponent == null)
+            {
+                return new List<GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule>();
+            }
+
+            return new List<GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule>
+            {
+                new GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateSetoffProductDetailManagerContent(),
+                    Order = 1
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
+    /// 創建沖銷商品明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSetoffProductDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
+            {
+                <div class="mb-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">來源單據起始日期</label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   @bind="filterStartDate"
+                                   @bind:after="OnDateFilterChanged" />
+                            <small class="text-muted">篩選該日期之後的銷貨、銷貨退回、入庫、入庫退出單據</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">來源單據結束日期</label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   @bind="filterEndDate"
+                                   @bind:after="OnDateFilterChanged" />
+                            <small class="text-muted">篩選該日期之前的銷貨、銷貨退回、入庫、入庫退出單據</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <SetoffProductDetailManagerComponent 
+                    @ref="setoffProductDetailManager"
+                    SetoffDocumentId="@SetoffDocumentId"
+                    SetoffType="@editModalComponent.Entity.SetoffType"
+                    RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
+                    RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
+                    StartDate="@filterStartDate"
+                    EndDate="@filterEndDate"
+                    ExistingDetails="@setoffProductDetails"
+                    OnDetailsChanged="@HandleProductDetailsChanged"
+                    IsReadOnly="@IsReadOnly" />
+            }
+            else
+            {
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    請先選擇@(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")以載入商品明細
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細管理器時發生錯誤,請重新整理頁面。
+            </div>
+        }
+    };
 }

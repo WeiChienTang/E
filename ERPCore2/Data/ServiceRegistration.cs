@@ -56,6 +56,7 @@ namespace ERPCore2.Data
             services.AddScoped<ICurrencyService, CurrencyService>();
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
+            services.AddScoped<ISetoffProductDetailService, SetoffProductDetailService>();
 
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();

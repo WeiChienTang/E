@@ -60,17 +60,32 @@ namespace ERPCore2.Data.Entities
         public int CompanyId { get; set; }
 
         /// <summary>
-        /// 總沖款金額
+        /// 本期應收
         /// </summary>
-        [Display(Name = "總沖款金額")]
+        [Display(Name = "本期總應收")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalSetoffAmount { get; set; } = 0;
 
         /// <summary>
-        /// 完成日期
+        /// 本期沖銷（本次沖款單所沖銷的金額）
         /// </summary>
-        [Display(Name = "完成日期")]
-        public DateTime? CompletedDate { get; set; }
+        [Display(Name = "本期沖銷")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CurrentSetoffAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 本期總收款（實際收到的款項總額）
+        /// </summary>
+        [Display(Name = "本期總收款")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalCollectionAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 本期總折讓（折讓抵銷的總額）
+        /// </summary>
+        [Display(Name = "本期總折讓")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalAllowanceAmount { get; set; } = 0;
 
         // Navigation Properties
         /// <summary>

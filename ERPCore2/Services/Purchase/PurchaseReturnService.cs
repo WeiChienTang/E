@@ -324,13 +324,12 @@ namespace ERPCore2.Services
                 // 計算總金額
                 purchaseReturn.TotalReturnAmount = purchaseReturn.PurchaseReturnDetails
                     .AsQueryable()
-                    .Sum(prd => prd.ReturnQuantity * prd.ReturnUnitPrice);
+                    .Sum(prd => prd.ReturnQuantity * prd.OriginalUnitPrice);
 
                 // 計算稅額 (假設稅率為 5%)
                 purchaseReturn.ReturnTaxAmount = purchaseReturn.TotalReturnAmount * 0.05m;
 
-                // 計算含稅總金額
-                purchaseReturn.TotalReturnAmountWithTax = purchaseReturn.TotalReturnAmount + purchaseReturn.ReturnTaxAmount;
+                // TotalReturnAmountWithTax 是計算屬性，會自動計算，無需手動賦值
 
                 // 保存總金額的變更 (在同一個交易中)
                 await context.SaveChangesAsync();
@@ -351,44 +350,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> RefundProcessAsync(int id, decimal refundAmount)
-        {
-            var result = new ServiceResult();
 
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var purchaseReturn = await context.PurchaseReturns
-                    .FirstOrDefaultAsync(pr => pr.Id == id);
-
-                if (purchaseReturn == null)
-                {
-                    result.IsSuccess = false;
-                    result.ErrorMessage = "找不到指定的採購退回記錄";
-                    return result;
-                }
-
-                purchaseReturn.IsRefunded = true;
-                purchaseReturn.RefundDate = DateTime.Now;
-
-                await context.SaveChangesAsync();
-
-                result.IsSuccess = true;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RefundProcessAsync), GetType(), _logger, new { 
-                    Method = nameof(RefundProcessAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    RefundAmount = refundAmount
-                });
-                result.IsSuccess = false;
-                result.ErrorMessage = "退款處理時發生錯誤";
-                return result;
-            }
-        }
 
         public async Task<ServiceResult> CreateFromPurchaseReceivingAsync(int purchaseReceivingId, List<PurchaseReturnDetail> details)
         {

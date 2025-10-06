@@ -118,8 +118,7 @@ namespace ERPCore2.Services
                         d.Product.Name.Contains(searchTerm) ||
                         (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
                         d.Warehouse.Name.Contains(searchTerm) ||
-                        (d.BatchNumber != null && d.BatchNumber.Contains(searchTerm)) ||
-                        (d.InspectionRemarks != null && d.InspectionRemarks.Contains(searchTerm))
+                        (d.BatchNumber != null && d.BatchNumber.Contains(searchTerm))
                     ))
                     .OrderByDescending(d => d.CreatedAt)
                     .ThenBy(d => d.Id)
@@ -410,9 +409,7 @@ namespace ERPCore2.Services
                                     existingDetail.UnitPrice = detail.UnitPrice;
                                     existingDetail.WarehouseId = detail.WarehouseId;
                                     existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
-                                    existingDetail.InspectionRemarks = detail.InspectionRemarks;
                                     existingDetail.BatchNumber = detail.BatchNumber;
-                                    existingDetail.ExpiryDate = detail.ExpiryDate;
                                     existingDetail.IsReceivingCompleted = detail.IsReceivingCompleted;
                                     existingDetail.UpdatedAt = DateTime.UtcNow;
                                 }
@@ -619,22 +616,6 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 計算未進貨數量
-        /// </summary>
-        public int CalculatePendingQuantity(int orderQuantity, int receivedQuantity)
-        {
-            return Math.Max(0, orderQuantity - receivedQuantity);
-        }
-
-        /// <summary>
-        /// 計算進貨完成率（百分比）
-        /// </summary>
-        public decimal CalculateCompletionRate(int orderQuantity, int receivedQuantity)
-        {
-            return orderQuantity > 0 ? Math.Round((decimal)receivedQuantity / orderQuantity * 100, 2) : 0;
-        }
-
-        /// <summary>
         /// 計算指定採購入庫單的總訂購金額
         /// </summary>
         public async Task<decimal> CalculateTotalOrderAmountAsync(int purchaseReceivingId)
@@ -650,29 +631,6 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalOrderAmountAsync), GetType(), _logger, new { 
                     Method = nameof(CalculateTotalOrderAmountAsync),
-                    ServiceType = GetType().Name,
-                    PurchaseReceivingId = purchaseReceivingId 
-                });
-                return 0;
-            }
-        }
-
-        /// <summary>
-        /// 計算指定採購入庫單的總未進貨數量
-        /// </summary>
-        public async Task<int> CalculateTotalPendingQuantityAsync(int purchaseReceivingId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReceivingDetails
-                    .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
-                    .SumAsync(d => d.OrderQuantity - d.ReceivedQuantity);
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalPendingQuantityAsync), GetType(), _logger, new { 
-                    Method = nameof(CalculateTotalPendingQuantityAsync),
                     ServiceType = GetType().Name,
                     PurchaseReceivingId = purchaseReceivingId 
                 });

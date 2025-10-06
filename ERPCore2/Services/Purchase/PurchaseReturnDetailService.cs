@@ -229,7 +229,7 @@ namespace ERPCore2.Services
                         (prd.Product.Code != null && prd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.PurchaseReturn.PurchaseReturnNumber != null && prd.PurchaseReturn.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.BatchNumber != null && prd.BatchNumber.ToLower().Contains(lowerSearchTerm)) ||
-                        (prd.DetailRemarks != null && prd.DetailRemarks.ToLower().Contains(lowerSearchTerm))
+                        (prd.Remarks != null && prd.Remarks.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
@@ -263,30 +263,6 @@ namespace ERPCore2.Services
                 if (entity.OriginalUnitPrice < 0)
                     errors.Add("原始單價不能為負數");
                 
-                if (entity.ReturnUnitPrice < 0)
-                    errors.Add("退回單價不能為負數");
-                
-                if (entity.ProcessedQuantity < 0)
-                    errors.Add("已處理數量不能為負數");
-                
-                if (entity.ProcessedQuantity > entity.ReturnQuantity)
-                    errors.Add("已處理數量不能超過退回數量");
-                
-                if (entity.ShippedQuantity < 0)
-                    errors.Add("已出庫數量不能為負數");
-                
-                if (entity.ShippedQuantity > entity.ReturnQuantity)
-                    errors.Add("已出庫數量不能超過退回數量");
-                
-                if (entity.ScrapQuantity < 0)
-                    errors.Add("報廢數量不能為負數");
-                
-                if (entity.ScrapQuantity > entity.ReturnQuantity)
-                    errors.Add("報廢數量不能超過退回數量");
-                
-                if ((entity.ShippedQuantity + entity.ScrapQuantity) > entity.ReturnQuantity)
-                    errors.Add("出庫數量與報廢數量總和不能超過退回數量");
-                
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
                     
@@ -304,130 +280,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> ProcessShipmentAsync(int id, int shippedQuantity, DateTime? shippedDate = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.PurchaseReturnDetails
-                    .Include(prd => prd.PurchaseReturn)
-                    .FirstOrDefaultAsync(prd => prd.Id == id);
-                
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的退回明細");
-                
-                // 移除狀態檢查，因為已刪除 ReturnStatus 屬性
-                
-                if (shippedQuantity <= 0)
-                    return ServiceResult.Failure("出庫數量必須大於0");
-                
-                if (detail.ShippedQuantity + shippedQuantity > detail.ReturnQuantity)
-                    return ServiceResult.Failure("出庫數量超過可退回數量");
-                
-                detail.ShippedQuantity += shippedQuantity;
-                detail.IsShipped = detail.ShippedQuantity >= detail.ReturnQuantity;
-                detail.ShippedDate = shippedDate ?? DateTime.UtcNow;
-                detail.ProcessedQuantity = Math.Max(detail.ProcessedQuantity, detail.ShippedQuantity + detail.ScrapQuantity);
-                detail.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ProcessShipmentAsync), GetType(), _logger, new { 
-                    Method = nameof(ProcessShipmentAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    ShippedQuantity = shippedQuantity,
-                    ShippedDate = shippedDate 
-                });
-                return ServiceResult.Failure("出庫處理過程發生錯誤");
-            }
-        }
 
-        public async Task<ServiceResult> ProcessScrapAsync(int id, int scrapQuantity, string? reason = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.PurchaseReturnDetails
-                    .Include(prd => prd.PurchaseReturn)
-                    .FirstOrDefaultAsync(prd => prd.Id == id);
-                
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的退回明細");
-                
-                // 移除狀態檢查，因為已刪除 ReturnStatus 屬性
-                
-                if (scrapQuantity <= 0)
-                    return ServiceResult.Failure("報廢數量必須大於0");
-                
-                if (detail.ScrapQuantity + scrapQuantity > detail.ReturnQuantity)
-                    return ServiceResult.Failure("報廢數量超過可退回數量");
-                
-                if (detail.ShippedQuantity + detail.ScrapQuantity + scrapQuantity > detail.ReturnQuantity)
-                    return ServiceResult.Failure("出庫與報廢數量總和超過退回數量");
-                
-                detail.ScrapQuantity += scrapQuantity;
-                detail.ProcessedQuantity = Math.Max(detail.ProcessedQuantity, detail.ShippedQuantity + detail.ScrapQuantity);
-                if (!string.IsNullOrWhiteSpace(reason))
-                {
-                    detail.DetailRemarks = string.IsNullOrWhiteSpace(detail.DetailRemarks) 
-                        ? $"報廢原因: {reason}" 
-                        : $"{detail.DetailRemarks}; 報廢原因: {reason}";
-                }
-                detail.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ProcessScrapAsync), GetType(), _logger, new { 
-                    Method = nameof(ProcessScrapAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    ScrapQuantity = scrapQuantity,
-                    Reason = reason 
-                });
-                return ServiceResult.Failure("報廢處理過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> UpdateProcessedQuantityAsync(int id, int processedQuantity)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.PurchaseReturnDetails.FindAsync(id);
-                
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的退回明細");
-                
-                if (processedQuantity < 0)
-                    return ServiceResult.Failure("已處理數量不能為負數");
-                
-                if (processedQuantity > detail.ReturnQuantity)
-                    return ServiceResult.Failure("已處理數量不能超過退回數量");
-                
-                detail.ProcessedQuantity = processedQuantity;
-                detail.UpdatedAt = DateTime.UtcNow;
-                
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateProcessedQuantityAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateProcessedQuantityAsync),
-                    ServiceType = GetType().Name,
-                    Id = id,
-                    ProcessedQuantity = processedQuantity 
-                });
-                return ServiceResult.Failure("更新已處理數量過程發生錯誤");
-            }
-        }
 
         public async Task<ServiceResult> ValidateReturnQuantityAsync(int id, int returnQuantity)
         {
@@ -501,155 +354,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> ProcessBatchShipmentAsync(List<int> detailIds, DateTime? shippedDate = null)
-        {
-            try
-            {
-                var results = new List<string>();
-                var successCount = 0;
-                
-                foreach (var id in detailIds)
-                {
-                    using var context = await _contextFactory.CreateDbContextAsync();
-                    var detail = await context.PurchaseReturnDetails.FindAsync(id);
-                    
-                    if (detail == null)
-                    {
-                        results.Add($"明細 {id}: 找不到記錄");
-                        continue;
-                    }
-                    
-                    var pendingQuantity = detail.ReturnQuantity - detail.ShippedQuantity - detail.ScrapQuantity;
-                    if (pendingQuantity > 0)
-                    {
-                        var result = await ProcessShipmentAsync(id, pendingQuantity, shippedDate);
-                        if (result.IsSuccess)
-                        {
-                            successCount++;
-                            results.Add($"明細 {id}: 出庫成功");
-                        }
-                        else
-                        {
-                            results.Add($"明細 {id}: {result.ErrorMessage}");
-                        }
-                    }
-                    else
-                    {
-                        results.Add($"明細 {id}: 無待處理數量");
-                    }
-                }
-                
-                var message = $"批次出庫完成，成功 {successCount}/{detailIds.Count} 筆";
-                if (results.Any())
-                    message += $"\n詳細結果: {string.Join("; ", results)}";
-                
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ProcessBatchShipmentAsync), GetType(), _logger, new { 
-                    Method = nameof(ProcessBatchShipmentAsync),
-                    ServiceType = GetType().Name,
-                    DetailIds = detailIds,
-                    ShippedDate = shippedDate 
-                });
-                return ServiceResult.Failure("批次出庫處理過程發生錯誤");
-            }
-        }
 
-        public async Task<ServiceResult> ProcessBatchScrapAsync(List<int> detailIds, string? reason = null)
-        {
-            try
-            {
-                var results = new List<string>();
-                var successCount = 0;
-                
-                foreach (var id in detailIds)
-                {
-                    using var context = await _contextFactory.CreateDbContextAsync();
-                    var detail = await context.PurchaseReturnDetails.FindAsync(id);
-                    
-                    if (detail == null)
-                    {
-                        results.Add($"明細 {id}: 找不到記錄");
-                        continue;
-                    }
-                    
-                    var pendingQuantity = detail.ReturnQuantity - detail.ShippedQuantity - detail.ScrapQuantity;
-                    if (pendingQuantity > 0)
-                    {
-                        var result = await ProcessScrapAsync(id, pendingQuantity, reason);
-                        if (result.IsSuccess)
-                        {
-                            successCount++;
-                            results.Add($"明細 {id}: 報廢成功");
-                        }
-                        else
-                        {
-                            results.Add($"明細 {id}: {result.ErrorMessage}");
-                        }
-                    }
-                    else
-                    {
-                        results.Add($"明細 {id}: 無待處理數量");
-                    }
-                }
-                
-                var message = $"批次報廢完成，成功 {successCount}/{detailIds.Count} 筆";
-                if (results.Any())
-                    message += $"\n詳細結果: {string.Join("; ", results)}";
-                
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ProcessBatchScrapAsync), GetType(), _logger, new { 
-                    Method = nameof(ProcessBatchScrapAsync),
-                    ServiceType = GetType().Name,
-                    DetailIds = detailIds,
-                    Reason = reason 
-                });
-                return ServiceResult.Failure("批次報廢處理過程發生錯誤");
-            }
-        }
-
-        public async Task<ServiceResult> UpdateBatchProcessedQuantityAsync(Dictionary<int, int> detailQuantities)
-        {
-            try
-            {
-                var results = new List<string>();
-                var successCount = 0;
-                
-                foreach (var kvp in detailQuantities)
-                {
-                    var result = await UpdateProcessedQuantityAsync(kvp.Key, kvp.Value);
-                    if (result.IsSuccess)
-                    {
-                        successCount++;
-                        results.Add($"明細 {kvp.Key}: 更新成功");
-                    }
-                    else
-                    {
-                        results.Add($"明細 {kvp.Key}: {result.ErrorMessage}");
-                    }
-                }
-                
-                var message = $"批次更新完成，成功 {successCount}/{detailQuantities.Count} 筆";
-                if (results.Any())
-                    message += $"\n詳細結果: {string.Join("; ", results)}";
-                
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateBatchProcessedQuantityAsync), GetType(), _logger, new { 
-                    Method = nameof(UpdateBatchProcessedQuantityAsync),
-                    ServiceType = GetType().Name,
-                    DetailQuantities = detailQuantities 
-                });
-                return ServiceResult.Failure("批次更新處理數量過程發生錯誤");
-            }
-        }
 
         public async Task<decimal> GetTotalReturnAmountByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
         {
@@ -709,30 +414,6 @@ namespace ERPCore2.Services
                     EndDate = endDate 
                 });
                 return new Dictionary<int, int>();
-            }
-        }
-
-        public async Task<List<PurchaseReturnDetail>> GetPendingShipmentDetailsAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.PurchaseReturnDetails
-                    .Include(prd => prd.PurchaseReturn)
-                        .ThenInclude(pr => pr.Supplier)
-                    .Include(prd => prd.Product)
-                    .Where(prd => !prd.IsShipped &&
-                                 prd.ShippedQuantity < prd.ReturnQuantity)
-                    .OrderBy(prd => prd.PurchaseReturn.ReturnDate)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPendingShipmentDetailsAsync), GetType(), _logger, new { 
-                    Method = nameof(GetPendingShipmentDetailsAsync),
-                    ServiceType = GetType().Name 
-                });
-                return new List<PurchaseReturnDetail>();
             }
         }
 

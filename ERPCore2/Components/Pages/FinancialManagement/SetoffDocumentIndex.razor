@@ -1,15 +1,18 @@
-@page "/setoffDocuments"
+@page "/accountsReceivableSetoff"
+@page "/accountsPayableSetoff"  
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ICompanyService CompanyService
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
+@implements IDisposable
 
 <GenericIndexPageComponent TEntity="SetoffDocument" 
                       TService="ISetoffDocumentService"
                       Service="@SetoffDocumentService"
                       EntityBasePath="/setoffDocuments"
-                      PageTitle="沖款單維護"
-                      PageSubtitle="管理應收與應付帳款沖款作業"
+                      PageTitle="@GetPageTitle()"
+                      PageSubtitle="@GetPageSubtitle()"
                       EntityName="沖款單"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
@@ -25,6 +28,7 @@
 <SetoffDocumentEditModalComponent IsVisible="@showEditModal"
                                  IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                  SetoffDocumentId="@editingSetoffDocumentId"
+                                 DefaultSetoffType="@GetDefaultSetoffType()"
                                  OnSetoffDocumentSaved="@modalHandler.OnEntitySavedAsync"
                                  OnCancel="@modalHandler.OnModalCancelAsync" />
 
@@ -62,6 +66,9 @@
                 StateHasChanged,
                 GetType());
             
+            // 監聽 URL 變更事件，確保標題和副標題能即時更新
+            NavigationManager.LocationChanged += OnLocationChanged;
+            
             await InitializeBreadcrumbsAsync();
             
             // 載入公司資料
@@ -79,6 +86,26 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化沖款單頁面失敗");
             await NotificationService.ShowErrorAsync("初始化沖款單頁面失敗");
         }
+    }
+
+    /// <summary>
+    /// 處理 URL 變更事件
+    /// </summary>
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        // 當 URL 變更時，重新載入資料以顯示對應類型的沖款單
+        InvokeAsync(async () =>
+        {
+            await indexComponent.Refresh();
+        });
+    }
+
+    /// <summary>
+    /// 組件銷毀時移除事件監聽
+    /// </summary>
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 
     private async Task InitializeBreadcrumbsAsync()
@@ -106,7 +133,17 @@
     {
         try
         {
-            return await SetoffDocumentService.GetAllAsync();
+            var allSetoffDocuments = await SetoffDocumentService.GetAllAsync();
+            
+            // 根據當前 URL 過濾對應類型的沖款單
+            var defaultSetoffType = GetDefaultSetoffType();
+            if (defaultSetoffType.HasValue)
+            {
+                return allSetoffDocuments.Where(s => s.SetoffType == defaultSetoffType.Value).ToList();
+            }
+            
+            // 如果沒有指定類型，返回所有資料
+            return allSetoffDocuments;
         }
         catch (Exception ex)
         {
@@ -136,6 +173,13 @@
 
     private IQueryable<SetoffDocument> ApplySetoffDocumentFilters(SearchFilterModel searchModel, IQueryable<SetoffDocument> query)
     {
+        // 根據當前 URL 過濾對應類型的沖款單
+        var defaultSetoffType = GetDefaultSetoffType();
+        if (defaultSetoffType.HasValue)
+        {
+            query = query.Where(s => s.SetoffType == defaultSetoffType.Value);
+        }
+        
         // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
         if (fieldConfiguration == null)
         {
@@ -144,5 +188,54 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySetoffDocumentFilters), GetType());
+    }
+
+    /// <summary>
+    /// 根據當前 URL 取得預設的沖款類型
+    /// </summary>
+    private SetoffType? GetDefaultSetoffType()
+    {
+        var currentUri = NavigationManager.Uri;
+        
+        if (currentUri.Contains("/accountsReceivableSetoff", StringComparison.OrdinalIgnoreCase))
+        {
+            return SetoffType.AccountsReceivable;
+        }
+        else if (currentUri.Contains("/accountsPayableSetoff", StringComparison.OrdinalIgnoreCase))
+        {
+            return SetoffType.AccountsPayable;
+        }
+        
+        return null; // 如果是其他 URL，不設定預設值
+    }
+
+    /// <summary>
+    /// 根據當前 URL 取得頁面標題
+    /// </summary>
+    private string GetPageTitle()
+    {
+        var defaultSetoffType = GetDefaultSetoffType();
+        
+        return defaultSetoffType switch
+        {
+            SetoffType.AccountsReceivable => "應收帳款沖款單",
+            SetoffType.AccountsPayable => "應付帳款沖款單",
+            _ => "沖款單維護"
+        };
+    }
+
+    /// <summary>
+    /// 根據當前 URL 取得頁面副標題
+    /// </summary>
+    private string GetPageSubtitle()
+    {
+        var defaultSetoffType = GetDefaultSetoffType();
+        
+        return defaultSetoffType switch
+        {
+            SetoffType.AccountsReceivable => "管理客戶應收帳款沖款作業",
+            SetoffType.AccountsPayable => "管理廠商應付帳款沖款作業",
+            _ => "管理應收與應付帳款沖款作業"
+        };
     }
 }

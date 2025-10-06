@@ -808,8 +808,7 @@ namespace ERPCore2.Services
                                 detail.WarehouseLocationId,
                                 $"採購進貨確認 - {purchaseReceiving.ReceiptNumber}",
                                 detail.BatchNumber,           // 傳遞批號
-                                purchaseReceiving.ReceiptDate, // 批次日期
-                                detail.ExpiryDate             // 到期日期
+                                purchaseReceiving.ReceiptDate  // 批次日期
                             );
                             
                             if (!addStockResult.IsSuccess)

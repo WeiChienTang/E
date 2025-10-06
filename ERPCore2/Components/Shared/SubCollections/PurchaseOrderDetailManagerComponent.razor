@@ -3,7 +3,7 @@
 @inject IProductService ProductService
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject INotificationService NotificationService
-@using ERPCore2.Helpers
+
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
@@ -31,8 +31,7 @@ else
                                       ShowBuiltInDeleteButton="true"
                                       ActionsColumnWidth = "60px"
                                       OnItemDelete="@HandleItemDelete"
-                                      ShowTotalRow="true"
-                                      TotalRowTemplate="@GetTotalRowTemplate" />
+                                      ShowTotalRow="true"/>
         </div>
 
         
@@ -43,12 +42,13 @@ else
                                           Variant="ButtonVariant.Primary"
                                           Icon="fas fa-magic"
                                           OnClick="SmartPurchaseOrder"
-                                          IsDisabled="@(!CanUseSmartPurchase)" />
+                                          IsDisabled="@(!CanUseSmartPurchase || IsMainEntityApproved)" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="明細全移除"
                                           Variant="ButtonVariant.Info"
-                                          OnClick="ClearAllDetails" />
+                                          OnClick="ClearAllDetails"
+                                          IsDisabled="@IsMainEntityApproved" />
                 </div>
             </div>
         </div>
@@ -81,12 +81,6 @@ else
     // ===== 顯示控制參數 =====
     [Parameter] public bool ShowIsReceivingCompleted { get; set; } = false;
     
-    // ===== 顯示標籤參數 =====
-    [Parameter] public string QuantityLabel { get; set; } = "數量";
-    [Parameter] public string ReceivedQuantityLabel { get; set; } = "入庫量";
-    [Parameter] public string PriceLabel { get; set; } = "單價";
-    [Parameter] public string RemarksLabel { get; set; } = "備註";
-    [Parameter] public string IsReceivingCompletedLabel { get; set; } = "完成進貨";
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "商品資訊";
@@ -190,7 +184,7 @@ else
         // 數量欄位
         columns.Add(new() 
         { 
-            Title = QuantityLabel, 
+            Title = "數量", 
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -213,7 +207,7 @@ else
         // 入庫量欄位 (只讀)
         columns.Add(new() 
         { 
-            Title = ReceivedQuantityLabel, 
+            Title = "入庫量", 
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -230,7 +224,7 @@ else
         // 單價欄位
         columns.Add(new() 
         { 
-            Title = PriceLabel, 
+            Title = "單價", 
             PropertyName = "Price",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
@@ -255,7 +249,7 @@ else
         {
             columns.Add(new() 
             { 
-                Title = IsReceivingCompletedLabel, 
+                Title = "完成進貨", 
                 PropertyName = "IsReceivingCompleted",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
@@ -286,7 +280,7 @@ else
         // 備註欄位
         columns.Add(new() 
         { 
-            Title = RemarksLabel, 
+            Title = "備註", 
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
             Width = ShowIsReceivingCompleted ? "150px" : "200px",
@@ -306,14 +300,6 @@ else
 
         return columns;
     }
-
-    private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
-    {
-        if (column.Title == PriceLabel)
-        {
-            <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
-        }
-    };
 
     private async Task HandleItemDelete(ProductItem item)
     {
@@ -705,6 +691,21 @@ else
     private bool CanUseSmartPurchase => 
         SelectedSupplierId.HasValue && 
         SelectedSupplierId.Value > 0;
+    
+    /// <summary>
+    /// 計算屬性：檢查主實體是否已核准（針對採購訂單）
+    /// </summary>
+    private bool IsMainEntityApproved
+    {
+        get
+        {
+            if (MainEntity is PurchaseOrder purchaseOrder)
+            {
+                return purchaseOrder.IsApproved;
+            }
+            return false;
+        }
+    }
 
     /// <summary>
     /// 智能下單主要方法

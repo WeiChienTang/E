@@ -644,7 +644,7 @@
             
             // 重新計算總金額
             var totalAmount = details.Where(d => d.ProductId > 0)
-                                    .Sum(d => d.ReturnQuantity * d.ReturnUnitPrice);
+                                    .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice);
             
             // 更新主檔總金額
             if (editModalComponent?.Entity != null)

@@ -30,11 +30,16 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffDocuments
+                var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.SetoffNumber)
                     .ToListAsync();
+
+                // 載入關聯方名稱
+                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+
+                return setoffDocuments;
             }
             catch (Exception ex)
             {
@@ -55,10 +60,17 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffDocuments
+                var setoffDocument = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .Include(s => s.FinancialTransactions)
                     .FirstOrDefaultAsync(s => s.Id == id);
+
+                if (setoffDocument != null)
+                {
+                    await LoadRelatedPartyNamesAsync(context, new List<SetoffDocument> { setoffDocument });
+                }
+
+                return setoffDocument;
             }
             catch (Exception ex)
             {
@@ -85,15 +97,27 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var searchTermLower = searchTerm.ToLower();
 
-                return await context.SetoffDocuments
+                var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .Where(s =>
                         s.SetoffNumber.ToLower().Contains(searchTermLower) ||
-                        s.Company.CompanyName.ToLower().Contains(searchTermLower) ||
-                        s.RelatedPartyName.ToLower().Contains(searchTermLower))
+                        s.Company.CompanyName.ToLower().Contains(searchTermLower))
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.SetoffNumber)
                     .ToListAsync();
+
+                // 載入關聯方名稱
+                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+
+                // 在記憶體中進一步篩選關聯方名稱
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    setoffDocuments = setoffDocuments
+                        .Where(s => s.RelatedPartyName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
+                return setoffDocuments;
             }
             catch (Exception ex)
             {
@@ -188,12 +212,16 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffDocuments
+                var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .Where(s => s.SetoffType == setoffType)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.SetoffNumber)
                     .ToListAsync();
+
+                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+
+                return setoffDocuments;
             }
             catch (Exception ex)
             {
@@ -222,10 +250,14 @@ namespace ERPCore2.Services
                 if (setoffType.HasValue)
                     query = query.Where(s => s.SetoffType == setoffType.Value);
 
-                return await query
+                var setoffDocuments = await query
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.SetoffNumber)
                     .ToListAsync();
+
+                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+
+                return setoffDocuments;
             }
             catch (Exception ex)
             {
@@ -248,12 +280,16 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffDocuments
+                var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .Where(s => s.CompanyId == companyId)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.SetoffNumber)
                     .ToListAsync();
+
+                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+
+                return setoffDocuments;
             }
             catch (Exception ex)
             {
@@ -275,12 +311,16 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffDocuments
+                var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .Where(s => s.SetoffDate >= startDate && s.SetoffDate <= endDate)
                     .OrderByDescending(s => s.SetoffDate)
                     .ThenByDescending(s => s.SetoffNumber)
                     .ToListAsync();
+
+                await LoadRelatedPartyNamesAsync(context, setoffDocuments);
+
+                return setoffDocuments;
             }
             catch (Exception ex)
             {
@@ -292,6 +332,54 @@ namespace ERPCore2.Services
                     EndDate = endDate
                 });
                 return new List<SetoffDocument>();
+            }
+        }
+
+        /// <summary>
+        /// 載入沖款單的關聯方名稱
+        /// </summary>
+        private async Task LoadRelatedPartyNamesAsync(AppDbContext context, List<SetoffDocument> setoffDocuments)
+        {
+            if (setoffDocuments == null || !setoffDocuments.Any())
+                return;
+
+            // 分組取得客戶和供應商的 ID
+            var customerIds = setoffDocuments
+                .Where(s => s.RelatedPartyType == "Customer")
+                .Select(s => s.RelatedPartyId)
+                .Distinct()
+                .ToList();
+
+            var supplierIds = setoffDocuments
+                .Where(s => s.RelatedPartyType == "Supplier")
+                .Select(s => s.RelatedPartyId)
+                .Distinct()
+                .ToList();
+
+            // 批次載入客戶和供應商資料
+            var customers = customerIds.Any()
+                ? await context.Customers
+                    .Where(c => customerIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id, c => c.CompanyName)
+                : new Dictionary<int, string>();
+
+            var suppliers = supplierIds.Any()
+                ? await context.Suppliers
+                    .Where(s => supplierIds.Contains(s.Id))
+                    .ToDictionaryAsync(s => s.Id, s => s.CompanyName)
+                : new Dictionary<int, string>();
+
+            // 填充 RelatedPartyName
+            foreach (var setoffDoc in setoffDocuments)
+            {
+                if (setoffDoc.RelatedPartyType == "Customer" && customers.TryGetValue(setoffDoc.RelatedPartyId, out var customerName))
+                {
+                    setoffDoc.RelatedPartyName = customerName;
+                }
+                else if (setoffDoc.RelatedPartyType == "Supplier" && suppliers.TryGetValue(setoffDoc.RelatedPartyId, out var supplierName))
+                {
+                    setoffDoc.RelatedPartyName = supplierName;
+                }
             }
         }
     }

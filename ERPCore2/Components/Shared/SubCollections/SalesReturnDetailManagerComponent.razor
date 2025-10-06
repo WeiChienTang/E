@@ -263,7 +263,7 @@ else
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                var value = returnItem.ReturnUnitPrice > 0 ? returnItem.ReturnUnitPrice : returnItem.OriginalUnitPrice;
+                var value = returnItem.OriginalUnitPrice;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
                     <span class="fw-bold">@value.ToString("N0")</span>
@@ -369,8 +369,6 @@ else
                 AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail?.Id ?? 0),
                 ReturnQuantity = (int)detail.ReturnQuantity,
                 OriginalUnitPrice = orderDetail?.UnitPrice ?? detail.OriginalUnitPrice,
-                ReturnUnitPrice = detail.ReturnUnitPrice,
-                QualityCondition = detail.QualityCondition ?? string.Empty,
                 ReturnReason = string.Empty,
                 Remarks = detail.Remarks ?? string.Empty,
                 ExistingDetailEntity = detail
@@ -510,7 +508,7 @@ else
             returnItem.OriginalQuantity = (int)selectedDetail.OrderQuantity;
             returnItem.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(selectedDetail.Id);
             returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-            returnItem.ReturnUnitPrice = selectedDetail.UnitPrice; // 預設使用原始單價
+            returnItem.OriginalUnitPrice = selectedDetail.UnitPrice; // 使用原始單價
             
             // 清空驗證錯誤
             returnItem.ValidationError = null;
@@ -527,8 +525,7 @@ else
             returnItem.AlreadyReturnedQuantity = 0;
             returnItem.ReturnQuantity = 0;
             returnItem.OriginalUnitPrice = 0;
-            returnItem.ReturnUnitPrice = 0;
-            returnItem.QualityCondition = "";
+            returnItem.OriginalUnitPrice = 0;
             returnItem.ReturnReason = "";
             returnItem.Remarks = "";
             returnItem.ValidationError = null;
@@ -559,12 +556,6 @@ else
     private async Task OnReturnReasonInput(ReturnItem returnItem, string? value)
     {
         returnItem.ReturnReason = value ?? string.Empty;
-        await NotifyDetailsChanged();
-    }
-
-    private async Task OnQualityConditionInput(ReturnItem returnItem, string? value)
-    {
-        returnItem.QualityCondition = value ?? string.Empty;
         await NotifyDetailsChanged();
     }
 
@@ -601,7 +592,7 @@ else
                 emptyItem.OriginalQuantity = (int)orderDetail.OrderQuantity;
                 emptyItem.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail.Id);
                 emptyItem.OriginalUnitPrice = orderDetail.UnitPrice;
-                emptyItem.ReturnUnitPrice = orderDetail.UnitPrice;
+                emptyItem.OriginalUnitPrice = orderDetail.UnitPrice;
             }
             
             EnsureOneEmptyRow();
@@ -678,7 +669,7 @@ else
         }
         
         // 計算小計金額
-        var subtotalAmount = item.ReturnQuantity * item.ReturnUnitPrice;
+        var subtotalAmount = item.ReturnQuantity * item.OriginalUnitPrice;
         
         // 如果已有實體，更新它
         if (item.ExistingDetailEntity != null)
@@ -687,9 +678,6 @@ else
             item.ExistingDetailEntity.ProductId = item.SelectedProduct.Id;
             item.ExistingDetailEntity.ReturnQuantity = item.ReturnQuantity;
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
-            item.ExistingDetailEntity.ReturnUnitPrice = item.ReturnUnitPrice;
-            item.ExistingDetailEntity.ReturnSubtotalAmount = subtotalAmount;
-            item.ExistingDetailEntity.QualityCondition = item.QualityCondition;
             item.ExistingDetailEntity.Remarks = item.Remarks;
             
             return item.ExistingDetailEntity;
@@ -702,9 +690,6 @@ else
             ProductId = item.SelectedProduct.Id,
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
-            ReturnUnitPrice = item.ReturnUnitPrice,
-            ReturnSubtotalAmount = subtotalAmount,
-            QualityCondition = item.QualityCondition,
             Remarks = item.Remarks
         };
     }
@@ -803,9 +788,9 @@ else
                     errors.Add($"商品 {item.SelectedProduct?.Code} 的退貨數量超過可退數量");
                 }
                 
-                if (item.ReturnUnitPrice < 0)
+                if (item.OriginalUnitPrice < 0)
                 {
-                    errors.Add($"商品 {item.SelectedProduct?.Code} 的退貨單價不可為負數");
+                    errors.Add($"商品 {item.SelectedProduct?.Code} 的原始單價不可為負數");
                 }
             }
             
@@ -836,9 +821,7 @@ else
         public int ReturnQuantity { get; set; } = 0;
         
         public decimal OriginalUnitPrice { get; set; } = 0;
-        public decimal ReturnUnitPrice { get; set; } = 0;
         
-        public string QualityCondition { get; set; } = string.Empty;
         public string ReturnReason { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
         
@@ -852,7 +835,7 @@ else
         public int SelectedIndex { get; set; } = -1;
         
         // 計算屬性
-        public decimal ReturnSubtotalAmount => ReturnQuantity * ReturnUnitPrice;
+        public decimal ReturnSubtotalAmount => ReturnQuantity * OriginalUnitPrice;
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>

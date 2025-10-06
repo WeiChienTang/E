@@ -478,7 +478,7 @@ else
         // 採購數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = OrderQuantityLabel, 
+            Title = "採購數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -495,7 +495,7 @@ else
         // 入庫數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = ReceivedQuantityLabel, 
+            Title = "入庫數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -550,7 +550,7 @@ else
         // 單價欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = PriceLabel, 
+            Title = "單價", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -569,7 +569,7 @@ else
         {
             columns.Add(new InteractiveColumnDefinition
             { 
-                Title = WarehouseLabel, 
+                Title = "倉庫", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "12%",
@@ -609,7 +609,7 @@ else
         {
             columns.Add(new InteractiveColumnDefinition
             { 
-                Title = WarehouseLocationLabel, 
+                Title = "庫位", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "12%",
@@ -654,7 +654,7 @@ else
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = RemarksLabel, 
+            Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = ShowWarehouse && ShowWarehouseLocation ? "8%" : ShowWarehouse ? "10%" : "15%",
@@ -780,7 +780,7 @@ else
                     // 直接使用屬性值，不需要反射
                     ReceivedQuantity = purchaseDetail.ReceivedQuantity,
                     UnitPrice = purchaseDetail.UnitPrice,
-                    Remarks = purchaseDetail.InspectionRemarks ?? string.Empty,
+                    Remarks = string.Empty,
                     ExistingDetailEntity = detail
                 };
                 
@@ -882,7 +882,6 @@ else
                 {
                     purchaseDetail.ReceivedQuantity = item.ReceivedQuantity;
                     purchaseDetail.UnitPrice = item.UnitPrice;
-                    purchaseDetail.InspectionRemarks = item.Remarks;
                     purchaseDetail.OrderQuantity = item.OrderQuantity > 0 ? item.OrderQuantity : item.ReceivedQuantity;
                     
                     if (item.SelectedWarehouse != null)

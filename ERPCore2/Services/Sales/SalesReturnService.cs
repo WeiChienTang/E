@@ -150,9 +150,6 @@ namespace ERPCore2.Services
                 if (entity.ReturnTaxAmount < 0)
                     errors.Add("退回稅額不能為負數");
 
-                if (entity.IsRefunded && entity.RefundDate == null)
-                    errors.Add("已標示為退款但未設定退款日期");
-
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 
@@ -479,7 +476,7 @@ namespace ERPCore2.Services
                                     (int)Math.Ceiling(quantityDiff), // 轉為整數，向上取整
                                     InventoryTransactionTypeEnum.Return,
                                     savedEntity.SalesReturnNumber,
-                                    detail.ReturnUnitPrice, // 使用退回單價
+                                    detail.OriginalUnitPrice, // 使用原始單價
                                     null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
                                     $"銷貨退回增量 - {savedEntity.SalesReturnNumber}"
                                 );
@@ -645,7 +642,7 @@ namespace ERPCore2.Services
                     .ToListAsync();
 
                 // 計算總金額
-                var totalAmount = details.Sum(d => d.ReturnQuantity * d.ReturnUnitPrice);
+                var totalAmount = details.Sum(d => d.ReturnQuantity * d.OriginalUnitPrice);
                 salesReturn.TotalReturnAmount = totalAmount;
                 salesReturn.UpdatedAt = DateTime.UtcNow;
 

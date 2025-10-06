@@ -26,27 +26,15 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "折扣金額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal DiscountAmount { get; set; } = 0;
+        public decimal DiscountAmount => UnitPrice * DiscountPercentage;
 
         [Display(Name = "小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal SubtotalAmount { get; set; } = 0;
-
-        [Display(Name = "已出貨數量")]
-        [Column(TypeName = "decimal(18,3)")]
-        public decimal DeliveredQuantity { get; set; } = 0;
-
-        [Display(Name = "待出貨數量")]
-        [Column(TypeName = "decimal(18,3)")]
-        public decimal PendingQuantity { get; set; } = 0;
+        public decimal SubtotalAmount => OrderQuantity * UnitPrice;
 
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]
         public bool IsSettled { get; set; } = false;
-
-        [Display(Name = "本次收款金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal ReceivedAmount { get; set; } = 0;
 
         [Display(Name = "累計收款金額")]
         [Column(TypeName = "decimal(18,2)")]

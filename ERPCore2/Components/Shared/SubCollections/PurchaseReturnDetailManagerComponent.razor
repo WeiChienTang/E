@@ -265,7 +265,7 @@ else
         // 原始進貨數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = OriginalQuantityLabel, 
+            Title = "原始進貨數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -282,7 +282,7 @@ else
         // 退回數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = ReturnQuantityLabel, 
+            Title = "退回數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "10%",
@@ -320,30 +320,10 @@ else
             }
         });
 
-        // 品質狀況欄位
-        columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = QualityConditionLabel, 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
-            HideOnMobile = true,
-            CustomTemplate = item => 
-            {
-                var returnItem = (ReturnItem)item;
-                
-                return @<input type="text" class="form-control form-control-sm" 
-                               value="@returnItem.QualityCondition"
-                               @oninput="(e) => OnQualityConditionInput(returnItem, e.Value?.ToString())"
-                               placeholder="品質狀況..."
-                               readonly="@IsReadOnly" />;
-            }
-        });
-
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = RemarksLabel, 
+            Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "12%",
@@ -428,9 +408,7 @@ else
                 // 使用屬性值
                 ReturnQuantity = detail.ReturnQuantity,
                 OriginalUnitPrice = detail.OriginalUnitPrice,
-                ReturnUnitPrice = detail.ReturnUnitPrice,
-                QualityCondition = detail.QualityCondition ?? string.Empty,
-                Remarks = detail.DetailRemarks ?? string.Empty,
+                Remarks = detail.Remarks ?? string.Empty,
                 BatchNumber = detail.BatchNumber ?? string.Empty,
                 ExistingDetailEntity = detail
             };
@@ -582,7 +560,6 @@ else
             
             // 設置單價資訊
             returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-            returnItem.ReturnUnitPrice = selectedDetail.UnitPrice; // 預設為原始單價
             
             // 確保有空行可以輸入新項目
             EnsureOneEmptyRow();
@@ -610,7 +587,6 @@ else
                 
                 // 設置單價資訊
                 returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-                returnItem.ReturnUnitPrice = selectedDetail.UnitPrice; // 預設為原始單價
                 
                 // 確保有空行可以輸入新項目
                 EnsureOneEmptyRow();
@@ -627,8 +603,6 @@ else
             returnItem.AlreadyReturnedQuantity = 0;
             returnItem.ReturnQuantity = 0;
             returnItem.OriginalUnitPrice = 0;
-            returnItem.ReturnUnitPrice = 0;
-            returnItem.QualityCondition = string.Empty;
             returnItem.Remarks = string.Empty;
             
             await NotifyDetailsChanged();
@@ -649,26 +623,6 @@ else
             returnItem.ReturnQuantity = 0;
         }
         
-        await NotifyDetailsChanged();
-    }
-
-    private async Task OnReturnPriceInput(ReturnItem returnItem, string? value)
-    {
-        if (decimal.TryParse(value, out var price) && price >= 0)
-        {
-            returnItem.ReturnUnitPrice = price;
-        }
-        else
-        {
-            returnItem.ReturnUnitPrice = 0;
-        }
-        
-        await NotifyDetailsChanged();
-    }
-
-    private async Task OnQualityConditionInput(ReturnItem returnItem, string? value)
-    {
-        returnItem.QualityCondition = value ?? string.Empty;
         await NotifyDetailsChanged();
     }
 
@@ -703,8 +657,7 @@ else
                     OriginalQuantity = detail.ReceivedQuantity,
                     AlreadyReturnedQuantity = 0, // TODO: 需要從資料庫計算已退回數量
                     ReturnQuantity = 0,
-                    OriginalUnitPrice = detail.UnitPrice,
-                    ReturnUnitPrice = detail.UnitPrice
+                    OriginalUnitPrice = detail.UnitPrice
                 };
                 
                 // 設置搜尋顯示文字
@@ -794,9 +747,7 @@ else
             var existingDetail = item.ExistingDetailEntity;
             existingDetail.ReturnQuantity = item.ReturnQuantity;
             existingDetail.OriginalUnitPrice = item.OriginalUnitPrice;
-            existingDetail.ReturnUnitPrice = item.ReturnUnitPrice;
-            existingDetail.QualityCondition = item.QualityCondition;
-            existingDetail.DetailRemarks = item.Remarks;
+            existingDetail.Remarks = item.Remarks;
             existingDetail.BatchNumber = item.BatchNumber;
             existingDetail.PurchaseReceivingDetailId = item.SelectedReceivingDetail.Id;
             existingDetail.ProductId = item.SelectedProduct.Id;
@@ -811,14 +762,8 @@ else
             PurchaseReceivingDetailId = item.SelectedReceivingDetail.Id,
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
-            ReturnUnitPrice = item.ReturnUnitPrice,
-            QualityCondition = item.QualityCondition,
-            DetailRemarks = item.Remarks,
-            BatchNumber = item.BatchNumber,
-            ProcessedQuantity = 0,
-            IsShipped = false,
-            ShippedQuantity = 0,
-            ScrapQuantity = 0
+            Remarks = item.Remarks,
+            BatchNumber = item.BatchNumber
         };
     }
 
@@ -867,9 +812,7 @@ else
         public int ReturnQuantity { get; set; } = 0;
         
         public decimal OriginalUnitPrice { get; set; } = 0;
-        public decimal ReturnUnitPrice { get; set; } = 0;
         
-        public string QualityCondition { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
         public string BatchNumber { get; set; } = string.Empty;
         
@@ -882,7 +825,7 @@ else
         public int SelectedIndex { get; set; } = -1;
         
         // 計算屬性
-        public decimal ReturnSubtotal => ReturnQuantity * ReturnUnitPrice;
+        public decimal ReturnSubtotal => ReturnQuantity * OriginalUnitPrice;
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>

@@ -112,54 +112,7 @@ namespace ERPCore2.FieldConfiguration
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
                         }
-                    },
-                    {
-                        nameof(PurchaseReturn.IsRefunded),
-                        new FieldDefinition<PurchaseReturn>
-                        {
-                            PropertyName = nameof(PurchaseReturn.IsRefunded),
-                            DisplayName = "退款狀態",
-                            TableOrder = 7,
-                            FilterOrder = 6,
-                            FilterType = SearchFilterType.Select,
-                            HeaderStyle = "width: 100px; text-align: center;",
-                            Options = new List<SelectOption>
-                            {
-                                new SelectOption { Text = "未退款", Value = "false" },
-                                new SelectOption { Text = "已退款", Value = "true" }
-                            },
-                            FilterFunction = (model, query) =>
-                            {
-                                var filterValue = model.GetFilterValue(nameof(PurchaseReturn.IsRefunded))?.ToString();
-                                if (!string.IsNullOrWhiteSpace(filterValue) && bool.TryParse(filterValue, out var isRefunded))
-                                {
-                                    return query.Where(pr => pr.IsRefunded == isRefunded);
-                                }
-                                return query;
-                            },
-                            CustomTemplate = item => builder =>
-                            {
-                                var purchaseReturn = (PurchaseReturn)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", "badge text-white");
-                                builder.AddAttribute(2, "style", purchaseReturn.IsRefunded ? "background-color: #28a745;" : "background-color: #dc3545;");
-                                builder.AddContent(3, purchaseReturn.IsRefunded ? "已退款" : "未退款");
-                                builder.CloseElement();
-                            }
-                        }
-                    },
-                    {
-                        nameof(PurchaseReturn.RefundDate),
-                        new FieldDefinition<PurchaseReturn>
-                        {
-                            PropertyName = nameof(PurchaseReturn.RefundDate),
-                            DisplayName = "退款日期",
-                            ColumnType = ColumnDataType.Date,
-                            TableOrder = 8,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 120px;",
-                        }
-                    },
+                    }
 
                 };
             }

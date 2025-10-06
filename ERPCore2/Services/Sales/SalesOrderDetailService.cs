@@ -111,18 +111,6 @@ namespace ERPCore2.Services
                     }
                 }
 
-                // 驗證已出貨數量不能超過訂單數量
-                if (entity.DeliveredQuantity > entity.OrderQuantity)
-                {
-                    errors.Add("已出貨數量不能超過訂單數量");
-                }
-
-                // 驗證待出貨數量
-                if (entity.PendingQuantity < 0)
-                {
-                    errors.Add("待出貨數量不能為負數");
-                }
-
                 return errors.Any() 
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();
@@ -262,9 +250,8 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的銷貨訂單明細");
                 }
 
-                // 計算小計：數量 × 單價 - 折扣金額
-                var subtotal = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
-                detail.SubtotalAmount = subtotal;
+                // SubtotalAmount 現在是計算屬性，由 OrderQuantity * UnitPrice 自動計算
+                // 不需要手動設定
                 detail.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
@@ -295,8 +282,7 @@ namespace ERPCore2.Services
                     // 只處理有效的明細（已選擇產品的）
                     if (detail.ProductId > 0)
                     {
-                        // 重新計算小計
-                        detail.SubtotalAmount = detail.OrderQuantity * detail.UnitPrice - detail.DiscountAmount;
+                        // SubtotalAmount 現在是計算屬性，由 OrderQuantity * UnitPrice 自動計算
                         detail.UpdatedAt = DateTime.UtcNow;
                         
                         context.SalesOrderDetails.Update(detail);

@@ -40,42 +40,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(SetoffDocument.SetoffType),
-                        new FieldDefinition<SetoffDocument>
-                        {
-                            PropertyName = nameof(SetoffDocument.SetoffType),
-                            DisplayName = "沖款類型",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
-                            Options = new List<SelectOption>
-                            {
-                                new SelectOption { Text = "應收帳款", Value = ((int)SetoffType.AccountsReceivable).ToString() },
-                                new SelectOption { Text = "應付帳款", Value = ((int)SetoffType.AccountsPayable).ToString() }
-                            },
-                            CustomTemplate = (context) => builder =>
-                            {
-                                var setoffDoc = context as SetoffDocument;
-                                if (setoffDoc != null)
-                                {
-                                    var badgeClass = setoffDoc.SetoffType == SetoffType.AccountsReceivable 
-                                        ? "badge bg-success" 
-                                        : "badge bg-primary";
-                                    var displayText = setoffDoc.SetoffType == SetoffType.AccountsReceivable 
-                                        ? "應收帳款" 
-                                        : "應付帳款";
-                                    
-                                    builder.OpenElement(0, "span");
-                                    builder.AddAttribute(1, "class", badgeClass);
-                                    builder.AddContent(2, displayText);
-                                    builder.CloseElement();
-                                }
-                            },
-                            FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(SetoffDocument.SetoffType), s => (int)s.SetoffType)
-                        }
-                    },
-                    {
                         nameof(SetoffDocument.SetoffDate),
                         new FieldDefinition<SetoffDocument>
                         {
@@ -104,8 +68,16 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "關聯方名稱",
                             FilterPlaceholder = "輸入客戶或供應商名稱搜尋",
                             TableOrder = 4,
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SetoffDocument.RelatedPartyName), s => s.RelatedPartyName)
+                            ShowInFilter = false, // NotMapped 屬性無法在資料庫查詢中篩選
+                            CustomTemplate = (context) => builder =>
+                            {
+                                var setoffDoc = context as SetoffDocument;
+                                if (setoffDoc != null)
+                                {
+                                    builder.AddContent(0, setoffDoc.RelatedPartyName ?? "");
+                                }
+                            },
+                            FilterFunction = null
                         }
                     },
                     {
@@ -145,36 +117,6 @@ namespace ERPCore2.FieldConfiguration
                                     builder.AddAttribute(1, "style", "text-align: right;");
                                     builder.AddContent(2, setoffDoc.TotalSetoffAmount.ToString("N2"));
                                     builder.CloseElement();
-                                }
-                            },
-                            FilterFunction = null // 不提供篩選功能
-                        }
-                    },
-                    {
-                        nameof(SetoffDocument.CompletedDate),
-                        new FieldDefinition<SetoffDocument>
-                        {
-                            PropertyName = nameof(SetoffDocument.CompletedDate),
-                            DisplayName = "完成日期",
-                            TableOrder = 7,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 150px;",
-                            CustomTemplate = (context) => builder =>
-                            {
-                                var setoffDoc = context as SetoffDocument;
-                                if (setoffDoc != null)
-                                {
-                                    if (setoffDoc.CompletedDate.HasValue)
-                                    {
-                                        builder.AddContent(0, setoffDoc.CompletedDate.Value.ToString("yyyy-MM-dd"));
-                                    }
-                                    else
-                                    {
-                                        builder.OpenElement(0, "span");
-                                        builder.AddAttribute(1, "class", "text-muted");
-                                        builder.AddContent(2, "未完成");
-                                        builder.CloseElement();
-                                    }
                                 }
                             },
                             FilterFunction = null // 不提供篩選功能

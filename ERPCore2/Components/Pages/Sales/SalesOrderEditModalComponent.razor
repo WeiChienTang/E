@@ -705,25 +705,12 @@
                 {
                     var subtotal = detail.OrderQuantity * detail.UnitPrice;
                     
-                    // 計算折扣
+                    // 折扣金額會自動計算，不需要手動設定
+                    // DiscountAmount = UnitPrice * DiscountPercentage
                     if (detail.DiscountPercentage > 0 && detail.DiscountPercentage <= 100)
                     {
-                        detail.DiscountAmount = subtotal * (detail.DiscountPercentage / 100);
                         subtotal = subtotal - detail.DiscountAmount;
                     }
-                    else
-                    {
-                        detail.DiscountAmount = 0;
-                    }
-                    
-                    detail.SubtotalAmount = subtotal;
-                    detail.PendingQuantity = detail.OrderQuantity - detail.DeliveredQuantity;
-                }
-                else
-                {
-                    detail.SubtotalAmount = 0;
-                    detail.DiscountAmount = 0;
-                    detail.PendingQuantity = 0;
                 }
             }
             

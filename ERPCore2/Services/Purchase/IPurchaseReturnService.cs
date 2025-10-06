@@ -19,7 +19,6 @@ namespace ERPCore2.Services
 
         // 業務邏輯
         Task<ServiceResult> CalculateTotalsAsync(int id);
-        Task<ServiceResult> RefundProcessAsync(int id, decimal refundAmount);
 
         Task<ServiceResult> CreateFromPurchaseReceivingAsync(int purchaseReceivingId, List<PurchaseReturnDetail> details);
 
