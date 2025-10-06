@@ -7,6 +7,7 @@
 @inject IEmployeeService EmployeeService
 @inject IUnitService UnitService
 @inject IWarehouseService WarehouseService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
@@ -94,6 +95,9 @@
     private List<SelectOption> companyOptions = new();
     private List<SelectOption> employeeOptions = new();
     private List<SelectOption> statusOptions = new();
+    
+    // 稅率快取變數（一次性載入，避免每次計算都查詢資料庫）
+    private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -275,6 +279,17 @@
                 new SelectOption { Text = "啟用", Value = "Active" },
                 new SelectOption { Text = "停用", Value = "Inactive" }
             };
+            
+            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            try
+            {
+                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
+            }
+            catch (Exception)
+            {
+                // 如果載入失敗，使用預設值 5%
+                currentTaxRate = 5.0m;
+            }
         }
         catch (Exception ex)
         {
@@ -344,6 +359,34 @@
                     IsRequired = false,
                     HelpText = "預計出貨給客戶的日期"
                 },
+
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.TotalAmount),
+                    Label = "銷貨總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "銷貨單的總金額，根據明細自動計算",
+                    IsReadOnly = true // 總金額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.SalesTaxAmount),
+                    Label = $"銷貨稅額({currentTaxRate:F2}%)",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = $"銷貨單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）",
+                    IsReadOnly = true // 稅額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.TotalAmountWithTax),
+                    Label = "含稅總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "銷貨單的含稅總金額，根據明細自動計算",
+                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                },
                 new()
                 {
                     PropertyName = nameof(SalesOrder.PaymentTerms),
@@ -353,7 +396,7 @@
                     IsRequired = false,
                     MaxLength = 200,
                     HelpText = "與客戶約定的付款方式和期限",
-                    ContainerCssClass = "col-6" 
+                    ContainerCssClass = "col-3" 
                 },
                 new()
                 {
@@ -364,7 +407,7 @@
                     IsRequired = false,
                     MaxLength = 200,
                     HelpText = "與客戶約定的交貨方式和條件",
-                    ContainerCssClass = "col-6" 
+                    ContainerCssClass = "col-3" 
                 },
                 new()
                 {
@@ -374,9 +417,8 @@
                     Placeholder = "請輸入備註",
                     IsRequired = false,
                     MaxLength = 500,
-                    Rows = 2,
                     HelpText = "銷貨訂單的額外說明或注意事項",
-                    ContainerCssClass = "col-12"
+                    ContainerCssClass = "col-6"
                 }
             };
 
@@ -387,8 +429,11 @@
                 { nameof(SalesOrder.EmployeeId), "基本資訊" },
                 { nameof(SalesOrder.OrderDate), "基本資訊" },
                 { nameof(SalesOrder.ExpectedDeliveryDate), "基本資訊" },
-                { nameof(SalesOrder.PaymentTerms), "交易條件" },
-                { nameof(SalesOrder.DeliveryTerms), "交易條件" },
+                { nameof(SalesOrder.TotalAmount), "金額資訊" },
+                { nameof(SalesOrder.SalesTaxAmount), "金額資訊" },
+                { nameof(SalesOrder.TotalAmountWithTax), "金額資訊" },
+                { nameof(SalesOrder.PaymentTerms), "額外資訊" },
+                { nameof(SalesOrder.DeliveryTerms), "額外資訊" },                
                 { nameof(SalesOrder.Remarks), "額外資訊" }
             };
         }
@@ -698,26 +743,24 @@
         {
             salesOrderDetails = details ?? new List<SalesOrderDetail>();
             
-            // 重新計算每項明細的小計
-            foreach (var detail in salesOrderDetails)
-            {
-                if (detail.ProductId > 0) // 只有選擇了產品的明細才計算
-                {
-                    var subtotal = detail.OrderQuantity * detail.UnitPrice;
-                    
-                    // 折扣金額會自動計算，不需要手動設定
-                    // DiscountAmount = UnitPrice * DiscountPercentage
-                    if (detail.DiscountPercentage > 0 && detail.DiscountPercentage <= 100)
-                    {
-                        subtotal = subtotal - detail.DiscountAmount;
-                    }
-                }
-            }
+            // 明細的小計已經在 SalesOrderDetailManagerComponent 中計算好了
+            // 這裡只需要更新主檔的總金額和稅額
             
-            // 更新主檔的總金額
+            // 更新主檔的總金額和稅額
             if (editModalComponent?.Entity != null)
             {
+                // 1. 計算總金額（未稅）- 使用明細的 SubtotalAmount（已扣除折扣）
                 editModalComponent.Entity.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
+                
+                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
+                editModalComponent.Entity.SalesTaxAmount = Math.Round(
+                    editModalComponent.Entity.TotalAmount * (currentTaxRate / 100), 
+                    2  // 四捨五入到小數點後2位
+                );
+                
+                // 3. 含稅總金額會自動計算（TotalAmountWithTax 是計算屬性）
+                //    = TotalAmount + SalesTaxAmount
+                
                 StateHasChanged();
             }
         }
@@ -773,8 +816,12 @@
                 }
             }
 
-            // 更新總金額
+            // 更新總金額和稅額
             salesOrder.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
+            salesOrder.SalesTaxAmount = Math.Round(
+                salesOrder.TotalAmount * (currentTaxRate / 100), 
+                2
+            );
 
             var isEditMode = SalesOrderId.HasValue;
             

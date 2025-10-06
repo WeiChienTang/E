@@ -24,13 +24,9 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(5,2)")]
         public decimal DiscountPercentage { get; set; } = 0;
 
-        [Display(Name = "折扣金額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal DiscountAmount => UnitPrice * DiscountPercentage;
-
         [Display(Name = "小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal SubtotalAmount => OrderQuantity * UnitPrice;
+        public decimal SubtotalAmount => Math.Round(OrderQuantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
 
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]

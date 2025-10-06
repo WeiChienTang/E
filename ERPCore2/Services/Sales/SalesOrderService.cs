@@ -205,8 +205,6 @@ namespace ERPCore2.Services
             }
         }
 
-
-
         public async Task<List<SalesOrder>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
@@ -231,8 +229,6 @@ namespace ERPCore2.Services
             }
         }
 
-
-
         public async Task<ServiceResult> CalculateOrderTotalAsync(int orderId)
         {
             try
@@ -250,8 +246,7 @@ namespace ERPCore2.Services
                 var totalAmountWithTax = totalAmount + taxAmount;
 
                 order.TotalAmount = totalAmount;
-                order.TaxAmount = taxAmount;
-                order.TotalAmountWithTax = totalAmountWithTax;
+                order.SalesTaxAmount = taxAmount;
                 order.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();

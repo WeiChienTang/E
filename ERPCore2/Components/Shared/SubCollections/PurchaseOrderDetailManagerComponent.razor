@@ -30,8 +30,7 @@ else
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="true"
                                       ActionsColumnWidth = "60px"
-                                      OnItemDelete="@HandleItemDelete"
-                                      ShowTotalRow="true"/>
+                                      OnItemDelete="@HandleItemDelete"/>
         </div>
 
         
@@ -197,6 +196,7 @@ else
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
                                @oninput="(e) => OnQuantityInput(productItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
                                step="1" 
@@ -237,6 +237,7 @@ else
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
                                @oninput="(e) => OnPriceInput(productItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder=""
                                step="1"
                                min="0" 

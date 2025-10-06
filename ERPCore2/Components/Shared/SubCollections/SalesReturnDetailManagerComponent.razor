@@ -32,7 +32,8 @@ else
                                       EmptyMessage="@EmptyMessage"
                                       ShowTotalRow="true"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"                                      
+                                      ShowBuiltInDeleteButton="true"     
+                                      ActionsColumnWidth = "60px"                                 
                                       TotalRowTemplate="@GetTotalRowTemplate"
                                       OnItemDelete="@HandleItemDelete" />
         </div>
@@ -195,7 +196,7 @@ else
         // 銷售訂單明細選擇欄位 - 使用新的 ProductSelectHelper
         columns.Add(ProductSelectHelper.CreateOrderDetailSelect<ReturnItem>(
             title: "銷售商品",
-            width: "25%",
+            width: "300px",
             availableOrderDetailsProvider: () => GetAvailableOrderDetails(),
             onOrderDetailSelected: EventCallback.Factory.Create<(ReturnItem item, SalesOrderDetail? selectedDetail)>(this, async args => {
                 await OnOrderDetailSelected(args.item, args.selectedDetail);
@@ -213,7 +214,7 @@ else
             Title = "原始數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -230,7 +231,7 @@ else
             Title = "退貨數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -242,7 +243,8 @@ else
                            value="@value"
                            min="0" max="@returnableQuantity"
                            step="1"
-                           @onchange="@(async (e) => await OnReturnQuantityInput(returnItem, e.Value?.ToString()))"
+                           @oninput="@((e) => OnReturnQuantityInput(returnItem, e.Value?.ToString()))"
+                           onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                            placeholder="0"
                            disabled="@(IsReadOnly || returnItem.SelectedOrderDetail == null)" />
                     @if (!string.IsNullOrEmpty(returnItem.ValidationError))
@@ -259,7 +261,7 @@ else
             Title = "退貨單價", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -271,13 +273,31 @@ else
             }
         });
 
+        // 折扣欄位 (只讀顯示)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "當初折扣(%)", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            CustomTemplate = item => 
+            {
+                var returnItem = (ReturnItem)item;
+                var discount = returnItem.SelectedOrderDetail?.DiscountPercentage ?? 0;
+                
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@discount.ToString("N0")</span>
+                </div>;
+            }
+        });
+
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "150px",
             CustomTemplate = item =>
             {
                 var returnItem = (ReturnItem)item;
@@ -369,6 +389,7 @@ else
                 AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail?.Id ?? 0),
                 ReturnQuantity = (int)detail.ReturnQuantity,
                 OriginalUnitPrice = orderDetail?.UnitPrice ?? detail.OriginalUnitPrice,
+                DiscountPercentage = orderDetail?.DiscountPercentage ?? detail.DiscountPercentage,
                 ReturnReason = string.Empty,
                 Remarks = detail.Remarks ?? string.Empty,
                 ExistingDetailEntity = detail
@@ -508,7 +529,7 @@ else
             returnItem.OriginalQuantity = (int)selectedDetail.OrderQuantity;
             returnItem.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(selectedDetail.Id);
             returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-            returnItem.OriginalUnitPrice = selectedDetail.UnitPrice; // 使用原始單價
+            returnItem.DiscountPercentage = selectedDetail.DiscountPercentage; // 複製折扣
             
             // 清空驗證錯誤
             returnItem.ValidationError = null;
@@ -525,7 +546,7 @@ else
             returnItem.AlreadyReturnedQuantity = 0;
             returnItem.ReturnQuantity = 0;
             returnItem.OriginalUnitPrice = 0;
-            returnItem.OriginalUnitPrice = 0;
+            returnItem.DiscountPercentage = 0;
             returnItem.ReturnReason = "";
             returnItem.Remarks = "";
             returnItem.ValidationError = null;
@@ -551,6 +572,7 @@ else
         }
         
         await NotifyDetailsChanged();
+        StateHasChanged();
     }
 
     private async Task OnReturnReasonInput(ReturnItem returnItem, string? value)
@@ -592,7 +614,7 @@ else
                 emptyItem.OriginalQuantity = (int)orderDetail.OrderQuantity;
                 emptyItem.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail.Id);
                 emptyItem.OriginalUnitPrice = orderDetail.UnitPrice;
-                emptyItem.OriginalUnitPrice = orderDetail.UnitPrice;
+                emptyItem.DiscountPercentage = orderDetail.DiscountPercentage; // 複製折扣
             }
             
             EnsureOneEmptyRow();
@@ -637,8 +659,9 @@ else
 
     private async Task NotifyDetailsChanged()
     {
-        // 轉換為 SalesReturnDetail 實體
-        var details = ReturnItems.Where(item => !IsEmptyRow(item) && item.ReturnQuantity > 0)
+        // 轉換為 SalesReturnDetail 實體（包含所有非空行的明細，即使 ReturnQuantity 為 0）
+        // 這樣父組件才能正確計算總金額和稅額
+        var details = ReturnItems.Where(item => !IsEmptyRow(item))
                                  .Select(item => ConvertToEntity(item))
                                  .Where(entity => entity != null)
                                  .ToList();
@@ -663,13 +686,11 @@ else
 
     private SalesReturnDetail? ConvertToEntity(ReturnItem item)
     {
-        if (item.SelectedOrderDetail == null || item.SelectedProduct == null || item.ReturnQuantity <= 0)
+        // 只要選擇了商品就轉換，即使 ReturnQuantity 為 0（用於計算）
+        if (item.SelectedOrderDetail == null || item.SelectedProduct == null)
         {
             return null;
         }
-        
-        // 計算小計金額
-        var subtotalAmount = item.ReturnQuantity * item.OriginalUnitPrice;
         
         // 如果已有實體，更新它
         if (item.ExistingDetailEntity != null)
@@ -678,6 +699,7 @@ else
             item.ExistingDetailEntity.ProductId = item.SelectedProduct.Id;
             item.ExistingDetailEntity.ReturnQuantity = item.ReturnQuantity;
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
+            item.ExistingDetailEntity.DiscountPercentage = item.DiscountPercentage;
             item.ExistingDetailEntity.Remarks = item.Remarks;
             
             return item.ExistingDetailEntity;
@@ -690,6 +712,7 @@ else
             ProductId = item.SelectedProduct.Id,
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
+            DiscountPercentage = item.DiscountPercentage,
             Remarks = item.Remarks
         };
     }
@@ -821,6 +844,7 @@ else
         public int ReturnQuantity { get; set; } = 0;
         
         public decimal OriginalUnitPrice { get; set; } = 0;
+        public decimal DiscountPercentage { get; set; } = 0;
         
         public string ReturnReason { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
@@ -835,7 +859,7 @@ else
         public int SelectedIndex { get; set; } = -1;
         
         // 計算屬性
-        public decimal ReturnSubtotalAmount => ReturnQuantity * OriginalUnitPrice;
+        public decimal ReturnSubtotalAmount => Math.Round(ReturnQuantity * OriginalUnitPrice * (1 - DiscountPercentage / 100), 2);
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>

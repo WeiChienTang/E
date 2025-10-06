@@ -123,6 +123,7 @@
                                            step="@column.Step"
                                            disabled="@isDisabled"
                                            readonly="@column.IsReadOnly"
+                                           onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                            @oninput="async (e) => await HandleInputChange(column, item, e.Value?.ToString())" />
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Select)

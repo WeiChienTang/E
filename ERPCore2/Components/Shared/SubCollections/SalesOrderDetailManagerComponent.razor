@@ -32,9 +32,8 @@ else
                                       EmptyMessage="@EmptyMessage"
                                       ShowBuiltInActions="@(!IsReadOnly)"
                                       ShowBuiltInDeleteButton="true"
-                                      OnItemDelete="HandleItemDelete"
-                                      ShowTotalRow="true"
-                                      TotalRowTemplate="GetTotalRowTemplate" />
+                                      ActionsColumnWidth = "60px"
+                                      OnItemDelete="HandleItemDelete"/>
         </div>
 
         <div class="card-footer">
@@ -115,14 +114,7 @@ else
     [Parameter] public string? UnitIdPropertyName { get; set; }
     [Parameter] public string? WarehouseIdPropertyName { get; set; }
     [Parameter] public string? DiscountPercentagePropertyName { get; set; } = "DiscountPercentage";
-    [Parameter] public string? DiscountAmountPropertyName { get; set; } = "DiscountAmount";
-    [Parameter] public string? SubtotalPropertyName { get; set; } = "Subtotal";
-
-    // ===== 顯示控制參數 =====
-    [Parameter] public bool ShowWarehouse { get; set; } = true;
-    [Parameter] public bool ShowDiscount { get; set; } = true;
-    [Parameter] public bool ShowUnitPrice { get; set; } = true;
-    
+    [Parameter] public string? SubtotalPropertyName { get; set; } = "Subtotal";    
 
     
     // ===== 顯示設定 =====
@@ -253,7 +245,6 @@ else
                     OrderQuantity = salesDetail.OrderQuantity,
                     UnitPrice = salesDetail.UnitPrice,
                     DiscountPercentage = salesDetail.DiscountPercentage,
-                    DiscountAmount = salesDetail.DiscountAmount,
                     Subtotal = salesDetail.SubtotalAmount,
                     DetailRemarks = salesDetail.Remarks ?? "",
                     SelectedWarehouse = salesDetail.Warehouse ?? Warehouses.FirstOrDefault(w => w.Id == salesDetail.WarehouseId),
@@ -281,9 +272,6 @@ else
                 
                 if (!string.IsNullOrEmpty(DiscountPercentagePropertyName))
                     salesItem.DiscountPercentage = GetPropertyValue<decimal>(detail, DiscountPercentagePropertyName);
-                
-                if (!string.IsNullOrEmpty(DiscountAmountPropertyName))
-                    salesItem.DiscountAmount = GetPropertyValue<decimal>(detail, DiscountAmountPropertyName);
                     
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     salesItem.Subtotal = GetPropertyValue<decimal>(detail, SubtotalPropertyName);
@@ -324,9 +312,6 @@ else
                 // 更新可選屬性
                 if (!string.IsNullOrEmpty(DiscountPercentagePropertyName))
                     SetPropertyValue(detail, DiscountPercentagePropertyName, item.DiscountPercentage);
-                
-                if (!string.IsNullOrEmpty(DiscountAmountPropertyName))
-                    SetPropertyValue(detail, DiscountAmountPropertyName, item.DiscountAmount);
                     
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     SetPropertyValue(detail, SubtotalPropertyName, item.Subtotal);
@@ -352,9 +337,6 @@ else
                 // 設定可選屬性
                 if (!string.IsNullOrEmpty(DiscountPercentagePropertyName))
                     SetPropertyValue(detail, DiscountPercentagePropertyName, item.DiscountPercentage);
-                
-                if (!string.IsNullOrEmpty(DiscountAmountPropertyName))
-                    SetPropertyValue(detail, DiscountAmountPropertyName, item.DiscountAmount);
                     
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     SetPropertyValue(detail, SubtotalPropertyName, item.Subtotal);
@@ -439,7 +421,7 @@ else
                 Title = "倉庫", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "10%",
+                Width = "150px",
                 HideOnMobile = true,
                 CustomTemplate = item => 
                 {
@@ -465,15 +447,16 @@ else
             Title = "訂單數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
-                var value = salesItem.OrderQuantity > 0 ? salesItem.OrderQuantity.ToString() : "";
+                var value = salesItem.OrderQuantity > 0 ? ((int)salesItem.OrderQuantity).ToString() : "";
                 
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
                                @oninput="(e) => OnOrderQuantityInput(salesItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
                                step="1" 
@@ -481,56 +464,52 @@ else
             }
         });
 
-        // 單價欄位
-        if (ShowUnitPrice)
-        {
-            columns.Add(new InteractiveColumnDefinition
-            { 
-                Title = "單價", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "10%",
-                CustomTemplate = item => 
-                {
-                    var salesItem = (SalesItem)item;
-                    
-                    return @<input type="number" class="form-control form-control-sm"
-                                  min="0"
-                                  step="1"
-                                  value="@((int)salesItem.UnitPrice)"
-                                  @oninput="(e) => OnUnitPriceInput(salesItem, e.Value?.ToString())"
-                                  readonly="@IsReadOnly" />;
-                }
-            });
-        }
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "單價", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item => 
+            {
+                var salesItem = (SalesItem)item;
+                
+                return @<input type="number" class="form-control form-control-sm"
+                                min="0"
+                                step="1"
+                                value="@((int)salesItem.UnitPrice)"
+                                @oninput="(e) => OnUnitPriceInput(salesItem, e.Value?.ToString())"
+                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                                placeholder="" 
+                                readonly="@IsReadOnly" />;
+            }
+        });        
 
-        // 折扣欄位
-        if (ShowDiscount)
-        {
-            columns.Add(new InteractiveColumnDefinition
-            { 
-                Title = "折扣", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "8%",
-                HideOnMobile = true,
-                CustomTemplate = item => 
-                {
-                    var salesItem = (SalesItem)item;
-                    
-                    return @<div class="input-group input-group-sm">
-                        <input type="number" class="form-control"
-                               min="0"
-                               max="100"
-                               step="1"
-                               value="@((int)salesItem.DiscountPercentage)"
-                               @oninput="(e) => OnDiscountPercentageInput(salesItem, e.Value?.ToString())"
-                               readonly="@IsReadOnly"
-                               placeholder="%" />
-                    </div>;
-                }
-            });
-        }
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "折扣%", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            HideOnMobile = true,
+            CustomTemplate = item => 
+            {
+                var salesItem = (SalesItem)item;
+                
+                return @<div class="input-group input-group-sm">
+                    <input type="number" class="form-control"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value="@((int)salesItem.DiscountPercentage)"
+                            @oninput="(e) => OnDiscountPercentageInput(salesItem, e.Value?.ToString())"
+                            onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                            readonly="@IsReadOnly"
+                            placeholder="%" />
+                </div>;
+            }
+        });
+        
 
         // 小計欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
@@ -538,7 +517,7 @@ else
             Title = "小計", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -555,7 +534,7 @@ else
             Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "8%",
+            Width = "150px",
             HideOnMobile = true,
             CustomTemplate = item => 
             {
@@ -571,14 +550,6 @@ else
 
         return columns;
     }
-
-    private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
-    {
-        if (column.Title == "小計")
-        {
-            <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
-        }
-    };
 
     private async Task HandleItemDelete(SalesItem item)
     {
@@ -610,7 +581,6 @@ else
         public decimal OrderQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
-        public decimal DiscountAmount { get; set; } = 0;
         public decimal Subtotal { get; set; } = 0;
         public string DetailRemarks { get; set; } = string.Empty;
         public Warehouse? SelectedWarehouse { get; set; }
@@ -624,11 +594,11 @@ else
         /// </summary>
         public void CalculateSubtotal()
         {
-            var discountAmount = DiscountPercentage > 0 
-                ? (OrderQuantity * UnitPrice * DiscountPercentage / 100) 
-                : DiscountAmount;
+            // 小計 = 數量 × 單價 × (1 - 折扣% / 100)
+            // 例如：50 × 62 × (1 - 1/100) = 50 × 62 × 0.99 = 3069
+            Subtotal = Math.Round(OrderQuantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
             
-            Subtotal = OrderQuantity * UnitPrice - discountAmount;
+            // 確保小計不為負數
             if (Subtotal < 0) Subtotal = 0;
         }
         
@@ -781,19 +751,20 @@ else
         if (string.IsNullOrEmpty(value))
         {
             item.DiscountPercentage = 0;
-            item.DiscountAmount = 0;
         }
         else if (decimal.TryParse(value, out var percentage))
         {
+            // 限制折扣百分比在 0-100 之間
             item.DiscountPercentage = Math.Max(0, Math.Min(100, percentage));
-            item.DiscountAmount = 0; // 清空金額折扣
         }
         
+        // 重新計算小計（會根據折扣百分比計算）
         item.CalculateSubtotal();
         
         AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
             SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
+        // 通知父組件資料已變更（這會觸發 HandleDetailsChanged）
         await NotifyDetailsChanged();
         StateHasChanged();
     }

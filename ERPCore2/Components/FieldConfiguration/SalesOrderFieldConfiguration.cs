@@ -67,11 +67,11 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(SalesOrder.TotalAmount),
+                        nameof(SalesOrder.TotalAmountWithTax),
                         new FieldDefinition<SalesOrder>
                         {
-                            PropertyName = nameof(SalesOrder.TotalAmount),
-                            DisplayName = "訂單總額",
+                            PropertyName = nameof(SalesOrder.TotalAmountWithTax),
+                            DisplayName = "總額(含稅)",
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Currency,
                             TableOrder = 4,
@@ -84,7 +84,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.OrderDate),
-                            DisplayName = "訂單日期",
+                            DisplayName = "訂單日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 5,
@@ -98,7 +98,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
-                            DisplayName = "預計交貨日",
+                            DisplayName = "交貨日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 6,
@@ -108,19 +108,6 @@ namespace ERPCore2.FieldConfiguration
                                 model, query, nameof(SalesOrder.ExpectedDeliveryDate), so => so.ExpectedDeliveryDate)
                         }
                     },
-                    {
-                        nameof(SalesOrder.PaymentTerms),
-                        new FieldDefinition<SalesOrder>
-                        {
-                            PropertyName = nameof(SalesOrder.PaymentTerms),
-                            DisplayName = "付款條件",
-                            FilterPlaceholder = "輸入付款條件搜尋",
-                            ShowInTable = false, // 不在表格中顯示，但可用於篩選
-                            FilterOrder = 7,
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SalesOrder.PaymentTerms), so => so.PaymentTerms, allowNull: true)
-                        }
-                    }
                 };
             }
             catch (Exception ex)

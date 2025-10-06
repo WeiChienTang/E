@@ -7,6 +7,7 @@
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ISystemParameterService SystemParameterService
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
                           TService="IPurchaseReturnService"
@@ -80,6 +81,9 @@
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
+    private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
@@ -237,6 +241,16 @@
                 LoadProductsAsync()
             );
             
+            // 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            try
+            {
+                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
+            }
+            catch (Exception)
+            {
+                // 如果載入失敗，使用預設值 5%
+                currentTaxRate = 5.0m;
+            }
         }
         catch (Exception ex)
         {
@@ -352,12 +366,12 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.ReturnTaxAmount),
-                    Label = "退回稅額(5%)",
+                    Label = $"退回稅額({currentTaxRate:F2}%)",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
                     Order = 8,
-                    HelpText = "系統自動計算的退回稅額"
+                    HelpText = $"退回單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）"
                 },
                 new()
                 {
@@ -852,9 +866,25 @@
             // 儲存退貨明細到內部狀態
             purchaseReturnDetails = returnDetails ?? new List<PurchaseReturnDetail>();
             
-            // 這裡可以處理退貨明細變更的邏輯
-            // 例如計算總金額等
-            StateHasChanged();
+            // 更新主檔的總金額和稅額
+            if (editModalComponent?.Entity != null)
+            {
+                // 1. 計算總金額（未稅）= Σ(退回數量 × 單價)
+                editModalComponent.Entity.TotalReturnAmount = purchaseReturnDetails
+                    .Where(d => d.ProductId > 0 && d.ReturnQuantity > 0)
+                    .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice);
+                
+                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
+                editModalComponent.Entity.ReturnTaxAmount = Math.Round(
+                    editModalComponent.Entity.TotalReturnAmount * (currentTaxRate / 100), 
+                    2  // 四捨五入到小數點後2位
+                );
+                
+                // 3. 含稅總金額會自動計算（TotalReturnAmountWithTax 是計算屬性）
+                //    = TotalReturnAmount + ReturnTaxAmount
+                
+                StateHasChanged();
+            }
         }
         catch (Exception ex)
         {

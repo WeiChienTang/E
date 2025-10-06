@@ -20,13 +20,13 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal OriginalUnitPrice { get; set; } = 0;
 
-
+        [Display(Name = "折扣")]
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal DiscountPercentage { get; set; } = 0;
 
         [Display(Name = "退回小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal ReturnSubtotalAmount => ReturnQuantity * OriginalUnitPrice;
-
-
+        public decimal ReturnSubtotalAmount => Math.Round(ReturnQuantity * OriginalUnitPrice * (1 - DiscountPercentage / 100), 2);
 
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]
@@ -35,8 +35,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "累計付款金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPaidAmount { get; set; } = 0;
-
-
 
         // Foreign Keys
         [Required(ErrorMessage = "銷貨退回為必填")]
@@ -52,7 +50,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "原始銷貨訂單明細")]
         [ForeignKey(nameof(SalesOrderDetail))]
         public int? SalesOrderDetailId { get; set; }
-
 
 
         // Navigation Properties

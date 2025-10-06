@@ -25,9 +25,13 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;
 
-        [Display(Name = "稅額")]
+        [Display(Name = "進貨稅額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TaxAmount { get; set; } = 0;
+        public decimal PurchaseReceivingTaxAmount { get; set; } = 0;
+
+        [Display(Name = "進貨含稅總金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PurchaseReceivingTotalAmountIncludingTax => TotalAmount + PurchaseReceivingTaxAmount;
 
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]

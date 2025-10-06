@@ -32,9 +32,7 @@ else
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
-                                      ActionsColumnWidth = "60px"
-                                      ShowTotalRow="true"
-                                      TotalRowTemplate="@GetTotalRowTemplate" />
+                                      ActionsColumnWidth = "60px" />
         </div>
 
         <div class="card-footer">
@@ -408,7 +406,7 @@ else
             Title = "商品", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "25%",
+            Width = "300px",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -481,7 +479,7 @@ else
             Title = "採購數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "100px",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -498,7 +496,7 @@ else
             Title = "入庫數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "100px",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -515,13 +513,6 @@ else
                         <span class="text-muted small" title="@title">
                             @(receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString("N0") : "0")
                         </span>
-                        
-                        @if (hasReturnRecord && returnedQty > 0)
-                        {
-                            <div class="position-absolute text-warning" style="top: 2px; right: 8px; pointer-events: none; font-size: 0.75rem;">
-                                <i class="fas fa-exclamation-triangle" title="已退貨 @returnedQty 個"></i>
-                            </div>
-                        }
                     </div>;
                 }
                 
@@ -533,16 +524,10 @@ else
                            value="@value"
                            title="@title"
                            @oninput="(e) => OnReceivedQuantityInput(receivingItem, e.Value?.ToString())"
+                           onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                            placeholder="" 
                            min="@minValue" 
                            step="1" />
-                    
-                    @if (hasReturnRecord && returnedQty > 0)
-                    {
-                        <div class="position-absolute text-warning" style="top: 2px; right: 8px; pointer-events: none; font-size: 0.75rem;">
-                            <i class="fas fa-exclamation-triangle" title="已退貨 @returnedQty 個"></i>
-                        </div>
-                    }
                 </div>;
             }
         });
@@ -553,7 +538,7 @@ else
             Title = "單價", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "100px",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -572,7 +557,7 @@ else
                 Title = "倉庫", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "12%",
+                Width = "120px",
                 CustomTemplate = item => 
                 {
                     var receivingItem = (ReceivingItem)item;
@@ -612,7 +597,7 @@ else
                 Title = "庫位", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "12%",
+                Width = "120px",
                 CustomTemplate = item => 
                 {
                     var receivingItem = (ReceivingItem)item;
@@ -657,7 +642,7 @@ else
             Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = ShowWarehouse && ShowWarehouseLocation ? "8%" : ShowWarehouse ? "10%" : "15%",
+            Width = "150px",
             HideOnMobile = true,
             CustomTemplate = item => 
             {
@@ -682,14 +667,6 @@ else
 
         return columns;
     }
-
-    private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
-    {
-        if (column.Title == PriceLabel)
-        {
-            <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
-        }
-    };
 
     private RenderFragment<ReceivingItem> GetCustomActionsTemplate => item => __builder =>
     {

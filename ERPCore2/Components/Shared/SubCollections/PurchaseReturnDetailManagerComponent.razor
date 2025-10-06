@@ -30,9 +30,7 @@ else
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="true"
                                       ActionsColumnWidth = "60px"
-                                      OnItemDelete="@HandleItemDelete"
-                                      ShowTotalRow="true"
-                                      TotalRowTemplate="@GetTotalRowTemplate" />
+                                      OnItemDelete="@HandleItemDelete" />
         </div>
 
         <div class="card-footer">
@@ -82,14 +80,6 @@ else
     
     // ===== 編輯模式參數 =====
     [Parameter] public bool IsEditMode { get; set; } = false;
-    
-    // ===== 顯示標籤參數 =====
-    [Parameter] public string OriginalQuantityLabel { get; set; } = "原始數量";
-    [Parameter] public string ReturnQuantityLabel { get; set; } = "退回數量";
-    [Parameter] public string ReturnPriceLabel { get; set; } = "退回單價";
-    [Parameter] public string RemarksLabel { get; set; } = "備註";
-    [Parameter] public string QualityConditionLabel { get; set; } = "品質狀況";
-    [Parameter] public string BatchNumberLabel { get; set; } = "批號";
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "退回明細";
@@ -249,7 +239,7 @@ else
         // 進貨明細選擇欄位 - 使用新的 ProductSelectHelper
         columns.Add(ProductSelectHelper.CreateReceivingDetailSelect<ReturnItem>(
             title: "商品",
-            width: "25%",
+            width: "300px",
             availableReceivingDetailsProvider: () => GetAvailableReceivingDetails(),
             onReceivingDetailSelected: EventCallback.Factory.Create<(ReturnItem item, PurchaseReceivingDetail? selectedDetail)>(this, async args => {
                 if (args.selectedDetail != null)
@@ -268,7 +258,7 @@ else
             Title = "原始進貨數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -285,7 +275,7 @@ else
             Title = "退回數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "120px",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -295,6 +285,7 @@ else
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
                                @oninput="(e) => OnReturnQuantityInput(returnItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
                                max="@maxQuantity"
@@ -309,7 +300,7 @@ else
             Title = "單價", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "10%",
+            Width = "100px",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -326,7 +317,7 @@ else
             Title = "備註", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "12%",
+            Width = "150px",
             HideOnMobile = true,
             CustomTemplate = item => 
             {
@@ -342,14 +333,6 @@ else
 
         return columns;
     }
-
-    private RenderFragment<InteractiveColumnDefinition> GetTotalRowTemplate => column => __builder =>
-    {
-        if (column.Title == "單價")
-        {
-            <strong class="text-success">總計: @GetTotalAmount().ToString("C")</strong>
-        }
-    };
 
     private async Task HandleItemDelete(ReturnItem item)
     {

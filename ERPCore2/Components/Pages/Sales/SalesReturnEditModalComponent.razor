@@ -10,6 +10,7 @@
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
+@inject ISystemParameterService SystemParameterService
 @inject ActionButtonHelper ActionButtonHelper
 @implements IDisposable
 
@@ -84,6 +85,9 @@
     private int? filterProductId = null;
     private int? FilterProductId => filterProductId;
     private int? FilterSalesOrderId = null;
+    
+    // ===== 稅率快取 =====
+    private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
     
     // ===== Modal 管理器 =====
     private CustomerEditModalComponent? customerEditModal;
@@ -213,6 +217,9 @@
             await LoadEmployeesAsync();
             await LoadProductsAsync();
             await LoadReturnReasonsAsync();
+            
+            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            await LoadTaxRateAsync();
         }
         catch (Exception ex)
         {
@@ -316,6 +323,22 @@
         {
             await NotificationService.ShowErrorAsync($"載入退貨原因資料時發生錯誤：{ex.Message}");
             returnReasons = new List<ERPCore2.Data.Entities.SalesReturnReason>();
+        }
+    }
+
+    /// <summary>
+    /// 載入系統稅率 - 一次性載入並快取，避免每次計算都查詢資料庫
+    /// </summary>
+    private async Task LoadTaxRateAsync()
+    {
+        try
+        {
+            currentTaxRate = await SystemParameterService.GetTaxRateAsync();
+        }
+        catch (Exception)
+        {
+            // 如果載入失敗，使用預設值 5%
+            currentTaxRate = 5.0m;
         }
     }
 
@@ -459,6 +482,35 @@
                     })).ToList(),
                     HelpText = "選擇性填寫退貨原因"
                 },
+
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesReturn.TotalReturnAmount),
+                    Label = "退貨總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "退貨單的總金額，根據明細自動計算",
+                    IsReadOnly = true // 總金額欄位始終為唯讀
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(SalesReturn.ReturnTaxAmount),
+                    Label = $"退貨稅額({currentTaxRate:F2}%)",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = $"退貨單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）",
+                    IsReadOnly = true // 稅額欄位始終為唯讀
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(SalesReturn.TotalReturnAmountWithTax),
+                    Label = "含稅總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "退貨單的含稅總金額，根據明細自動計算",
+                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                },
+
                 FormFieldConfigurationHelper.CreateRemarksField<SalesReturn>()
             };
 
@@ -470,6 +522,9 @@
                 { nameof(SalesReturn.SalesOrderId), "基本資訊" },
                 { nameof(SalesReturn.ReturnDate), "基本資訊" },
                 { nameof(SalesReturn.ReturnReasonId), "基本資訊" },
+                { nameof(SalesReturn.TotalReturnAmount), "金額資訊(系統自動計算)" },
+                { nameof(SalesReturn.ReturnTaxAmount), "金額資訊(系統自動計算)" },
+                { nameof(SalesReturn.TotalReturnAmountWithTax), "金額資訊(系統自動計算)" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }
             };
         }
@@ -634,7 +689,7 @@
     }
 
     /// <summary>
-    /// 處理退貨明細變更
+    /// 處理退貨明細變更 - 自動計算總金額和稅額
     /// </summary>
     private async Task HandleReturnDetailsChanged(List<SalesReturnDetail> details)
     {
@@ -642,14 +697,22 @@
         {
             salesReturnDetails = details;
             
-            // 重新計算總金額
-            var totalAmount = details.Where(d => d.ProductId > 0)
-                                    .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice);
-            
-            // 更新主檔總金額
             if (editModalComponent?.Entity != null)
             {
-                editModalComponent.Entity.TotalReturnAmount = totalAmount;
+                // 1. 計算總金額（未稅）- 考慮折扣
+                editModalComponent.Entity.TotalReturnAmount = details
+                    .Where(d => d.ProductId > 0)
+                    .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100));
+                
+                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
+                editModalComponent.Entity.ReturnTaxAmount = Math.Round(
+                    editModalComponent.Entity.TotalReturnAmount * (currentTaxRate / 100), 
+                    2  // 四捨五入到小數點後2位
+                );
+                
+                // 3. 含稅總金額會自動計算（TotalReturnAmountWithTax 是計算屬性）
+                //    = TotalReturnAmount + ReturnTaxAmount
+                
                 StateHasChanged();
             }
         }
@@ -783,6 +846,16 @@
             {
                 salesReturnDetails = new List<SalesReturnDetail>();
             }
+            
+            // 🔑 儲存前再次計算總金額和稅額（確保資料一致性）
+            salesReturn.TotalReturnAmount = salesReturnDetails
+                .Where(d => d.ProductId > 0)
+                .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100));
+            
+            salesReturn.ReturnTaxAmount = Math.Round(
+                salesReturn.TotalReturnAmount * (currentTaxRate / 100), 
+                2
+            );
                         
             // 呼叫服務的 SaveWithDetailsAsync 方法
             var result = await SalesReturnService.SaveWithDetailsAsync(salesReturn, salesReturnDetails);

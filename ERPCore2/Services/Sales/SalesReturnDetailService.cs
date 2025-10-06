@@ -224,16 +224,6 @@ namespace ERPCore2.Services
             }
         }
 
-
-
-
-
-
-
-
-
-
-
         public async Task<ServiceResult> UpdateDetailsAsync(List<SalesReturnDetail> details)
         {
             try
@@ -243,7 +233,7 @@ namespace ERPCore2.Services
 
                 foreach (var detail in details)
                 {
-                    // ReturnSubtotalAmount 現在是計算屬性，由 ReturnQuantity * OriginalUnitPrice 自動計算
+                    // ReturnSubtotalAmount 現在是計算屬性，由 ReturnQuantity * OriginalUnitPrice * (1 - DiscountPercentage / 100) 自動計算
                     detail.UpdatedAt = DateTime.UtcNow;
 
                     if (detail.Id == 0)

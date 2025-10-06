@@ -24,7 +24,7 @@ namespace ERPCore2.FieldConfiguration
             string label = "備註",
             string placeholder = "請輸入備註",
             string helpText = "其他需要補充的資訊",
-            int rows = 2,
+            int rows = 1,
             string containerCssClass = "col-12") where TEntity : BaseEntity
         {
             // 統一使用 120 字元限制，但保持 500 位元組的資料庫限制
@@ -41,46 +41,6 @@ namespace ERPCore2.FieldConfiguration
                 ContainerCssClass = containerCssClass
             };
         }
-
-        /// <summary>
-        /// 建立帶字數統計的 TextArea 欄位
-        /// </summary>
-        /// <param name="propertyName">屬性名稱</param>
-        /// <param name="label">欄位標籤</param>
-        /// <param name="maxCharacters">最大字元數，預設為 500</param>
-        /// <param name="maxBytes">最大位元組數，預設與字元數相同</param>
-        /// <param name="placeholder">佔位符文字</param>
-        /// <param name="helpText">說明文字</param>
-        /// <param name="rows">文字區域列數，預設為 3</param>
-        /// <param name="isRequired">是否必填，預設為 false</param>
-        /// <param name="containerCssClass">容器 CSS 類別</param>
-        /// <returns>配置好的 FormFieldDefinition</returns>
-        public static FormFieldDefinition CreateTextAreaWithCharacterCount(
-            string propertyName,
-            string label,
-            int maxCharacters = 120,    // 統一預設為 120 字元
-            int? maxBytes = null,
-            string? placeholder = null,
-            string? helpText = null,
-            int rows = 3,
-            bool isRequired = false,
-            string? containerCssClass = null)
-        {
-            return new FormFieldDefinition
-            {
-                PropertyName = propertyName,
-                Label = label,
-                FieldType = FormFieldType.TextAreaWithCharacterCount,
-                Placeholder = placeholder ?? $"請輸入{label}",
-                Rows = rows,
-                MaxLength = maxCharacters,
-                MaxBytes = maxBytes ?? 500,    // 預設保持 500 位元組限制
-                HelpText = helpText,
-                IsRequired = isRequired,
-                ContainerCssClass = containerCssClass
-            };
-        }
-
         /// <summary>
         /// 取得實體屬性的 MaxLength 值
         /// </summary>

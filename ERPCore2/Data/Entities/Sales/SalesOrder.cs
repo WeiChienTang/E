@@ -28,13 +28,13 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;
 
-        [Display(Name = "稅額")]
+        [Display(Name = "銷貨稅額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TaxAmount { get; set; } = 0;
+        public decimal SalesTaxAmount { get; set; } = 0;
 
         [Display(Name = "含稅總金額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalAmountWithTax { get; set; } = 0;
+        public decimal TotalAmountWithTax => TotalAmount + SalesTaxAmount;
 
         [Display(Name = "折扣金額")]
         [Column(TypeName = "decimal(18,2)")]

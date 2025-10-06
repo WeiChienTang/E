@@ -34,7 +34,7 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "退回含稅總金額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalReturnAmountWithTax { get; set; } = 0;
+        public decimal TotalReturnAmountWithTax => TotalReturnAmount + ReturnTaxAmount;
 
         [Display(Name = "是否已退款")]
         public bool IsRefunded { get; set; } = false;

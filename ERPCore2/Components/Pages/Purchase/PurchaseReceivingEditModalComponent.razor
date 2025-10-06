@@ -9,6 +9,7 @@
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
+@inject ISystemParameterService SystemParameterService
 @inject ActionButtonHelper ActionButtonHelper
 @implements IDisposable
 
@@ -82,6 +83,9 @@
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
+    private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -226,6 +230,17 @@
             };
             
             await Task.WhenAll(tasks);
+            
+            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            try
+            {
+                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
+            }
+            catch (Exception)
+            {
+                // 如果載入失敗，使用預設值 5%
+                currentTaxRate = 5.0m;
+            }
         }
         catch (Exception ex)
         {
@@ -449,6 +464,36 @@
                     IsRequired = true,
                     HelpText = "貨品實際進貨日"
                 },
+                
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseReceiving.TotalAmount),
+                    Label = "入庫總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "入庫單的總金額，根據明細自動計算",
+                    IsReadOnly = true // 總金額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTaxAmount),
+                    Label = $"採購稅額({currentTaxRate:F2}%)",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = $"採購單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）",
+                    IsReadOnly = true // 稅額欄位始終為唯讀
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTotalAmountIncludingTax),
+                    Label = "含稅總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "採購單的含稅總金額，根據明細自動計算",
+                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                },
+
+
                 FormFieldConfigurationHelper.CreateRemarksField<PurchaseReceiving>()
             };
 
@@ -459,6 +504,9 @@
                 { "FilterProductId", "基本資訊" },
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
                 { nameof(PurchaseReceiving.ReceiptDate), "基本資訊" },
+                { nameof(PurchaseReceiving.TotalAmount), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseReceiving.PurchaseReceivingTaxAmount), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseReceiving.PurchaseReceivingTotalAmountIncludingTax), "金額資訊(系統自動計算)" },
                 { nameof(BaseEntity.Remarks), "其他資訊" }
             };
         }
@@ -634,7 +682,7 @@
     }
 
     /// <summary>
-    /// 處理進貨明細變更
+    /// 處理進貨明細變更 - 自動計算稅額
     /// </summary>
     private async Task HandleReceivingDetailsChanged(List<PurchaseReceivingDetail> details)
     {
@@ -642,10 +690,21 @@
         {
             purchaseReceivingDetails = details ?? new List<PurchaseReceivingDetail>();
             
-            // 更新主檔的總金額
+            // 更新主檔的總金額和稅額（參考 README_稅額自動計算.md）
             if (editModalComponent?.Entity != null)
             {
+                // 1. 計算總金額（未稅）= Σ(進貨數量 × 單價)
                 editModalComponent.Entity.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+                
+                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
+                editModalComponent.Entity.PurchaseReceivingTaxAmount = Math.Round(
+                    editModalComponent.Entity.TotalAmount * (currentTaxRate / 100), 
+                    2  // 四捨五入到小數點後2位
+                );
+                
+                // 3. 含稅總金額會自動計算（PurchaseReceivingTotalAmountIncludingTax 是計算屬性）
+                //    = TotalAmount + PurchaseReceivingTaxAmount
+                
                 StateHasChanged();
             }
         }
@@ -853,8 +912,13 @@
                 purchaseReceivingDetails = await PurchaseReceivingDetailService.GetByPurchaseReceivingIdAsync(purchaseReceiving.Id);
             }
 
-            // 更新主檔的總金額
+            // 更新主檔的總金額和稅額
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+            purchaseReceiving.PurchaseReceivingTaxAmount = Math.Round(
+                purchaseReceiving.TotalAmount * (currentTaxRate / 100), 
+                2  // 四捨五入到小數點後2位
+            );
+            
             if (purchaseReceiving.TotalAmount > 0)
             {
                 var updateResult = await PurchaseReceivingService.UpdateAsync(purchaseReceiving);
