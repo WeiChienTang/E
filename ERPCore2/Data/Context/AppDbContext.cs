@@ -74,6 +74,7 @@ namespace ERPCore2.Data.Context
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
       public DbSet<SetoffPrepayment> SetoffPrepayments { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
+      public DbSet<Entities.PrepaymentType> PrepaymentTypes { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
       
@@ -713,7 +714,7 @@ namespace ERPCore2.Data.Context
                               .IsUnique();
 
                         // 設定其他索引
-                        entity.HasIndex(e => e.PrepaymentType);
+                        entity.HasIndex(e => e.PrepaymentTypeId);
                         entity.HasIndex(e => e.CustomerId);
                         entity.HasIndex(e => e.SupplierId);
                   });

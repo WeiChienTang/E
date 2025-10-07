@@ -1,5 +1,4 @@
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Services
 {
@@ -39,9 +38,9 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據預收付類型取得款項
         /// </summary>
-        /// <param name="prepaymentType">預收付類型</param>
+        /// <param name="prepaymentTypeId">預收付類型ID</param>
         /// <returns>預收付款項列表</returns>
-        Task<List<SetoffPrepayment>> GetByPrepaymentTypeAsync(PrepaymentType prepaymentType);
+        Task<List<SetoffPrepayment>> GetByPrepaymentTypeAsync(int prepaymentTypeId);
 
         /// <summary>
         /// 檢查來源單號是否存在

@@ -280,7 +280,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據預收付類型取得款項
         /// </summary>
-        public async Task<List<SetoffPrepayment>> GetByPrepaymentTypeAsync(PrepaymentType prepaymentType)
+        public async Task<List<SetoffPrepayment>> GetByPrepaymentTypeAsync(int prepaymentTypeId)
         {
             try
             {
@@ -289,7 +289,8 @@ namespace ERPCore2.Services
                     .Include(sp => sp.Customer)
                     .Include(sp => sp.Supplier)
                     .Include(sp => sp.SetoffDocument)
-                    .Where(sp => sp.PrepaymentType == prepaymentType)
+                    .Include(sp => sp.PrepaymentType)
+                    .Where(sp => sp.PrepaymentTypeId == prepaymentTypeId)
                     .OrderByDescending(sp => sp.CreatedAt)
                     .ToListAsync();
             }
@@ -299,7 +300,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(GetByPrepaymentTypeAsync),
                     ServiceType = GetType().Name,
-                    PrepaymentType = prepaymentType
+                    PrepaymentTypeId = prepaymentTypeId
                 });
                 return new List<SetoffPrepayment>();
             }

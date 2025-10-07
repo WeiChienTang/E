@@ -11,18 +11,19 @@ namespace ERPCore2.Data.Entities
     /// 當其他的沖款表要使用預收/付沖款時會根據來源單號查詢對應的廠商/客戶是否曾經有預收/付然後還沒有用完的，就可以用來沖款
     /// </summary>
     [Index(nameof(SourceDocumentCode))]
-    [Index(nameof(PrepaymentType))]
+    [Index(nameof(PrepaymentTypeId))]
     [Index(nameof(CustomerId))]
     [Index(nameof(SupplierId))]
     [Index(nameof(SetoffDocumentId))]
     public class SetoffPrepayment : BaseEntity
     {
         /// <summary>
-        /// 預收付類型（應收/應收轉沖款/預付/預付轉沖款/其他）
+        /// 預收付類型ID
         /// </summary>
         [Required(ErrorMessage = "預收付類型為必填")]
         [Display(Name = "預收付類型")]
-        public PrepaymentType PrepaymentType { get; set; }
+        [ForeignKey(nameof(PrepaymentType))]
+        public int PrepaymentTypeId { get; set; }
         
         /// <summary>
         /// 來源單號 - 此預收付款項的來源憑證單號
@@ -69,6 +70,11 @@ namespace ERPCore2.Data.Entities
         public int? SetoffDocumentId { get; set; }
         
         // Navigation Properties
+        
+        /// <summary>
+        /// 預收付類型導航屬性
+        /// </summary>
+        public PrepaymentType PrepaymentType { get; set; } = null!;
         
         /// <summary>
         /// 客戶導航屬性

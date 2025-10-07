@@ -2,6 +2,7 @@
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ISetoffProductDetailService SetoffProductDetailService
 @inject ISetoffPaymentService SetoffPaymentService
+@inject ISetoffPrepaymentService SetoffPrepaymentService
 @inject ICompanyService CompanyService
 @inject ICustomerService CustomerService
 @inject ISupplierService SupplierService
@@ -100,6 +101,10 @@
     // 收款記錄相關
     private List<SetoffPayment> setoffPayments = new();
     private SetoffPaymentDetailManagerComponent? setoffPaymentDetailManager;
+    
+    // 預收付款項相關
+    private List<SetoffPrepayment> setoffPrepayments = new();
+    private SetoffPrepaymentDetailManagerComponent? setoffPrepaymentDetailManager;
     
     // 日期篩選
     private DateTime? filterStartDate;
@@ -336,6 +341,35 @@
                     }
                 }
             }
+            
+            // 儲存預收付款項（過濾掉使用金額為 0 的項目）
+            var validPrepayments = setoffPrepayments
+                .Where(p => p.UsedAmount > 0)
+                .ToList();
+                
+            if (entity.Id > 0)
+            {
+                // 先刪除舊的預收付款項記錄
+                var existingPrepayments = await SetoffPrepaymentService.GetBySetoffDocumentIdAsync(entity.Id);
+                foreach (var existingPrepayment in existingPrepayments)
+                {
+                    await SetoffPrepaymentService.DeleteAsync(existingPrepayment.Id);
+                }
+                
+                // 新增預收付款項記錄
+                foreach (var prepayment in validPrepayments)
+                {
+                    prepayment.SetoffDocumentId = entity.Id;
+                    prepayment.Id = 0; // 確保是新增
+                    
+                    var prepaymentResult = await SetoffPrepaymentService.CreateAsync(prepayment);
+                    if (!prepaymentResult.IsSuccess)
+                    {
+                        await NotificationService.ShowErrorAsync($"預收付款項儲存失敗：{prepaymentResult.ErrorMessage}");
+                        return;
+                    }
+                }
+            }
 
             await OnSetoffDocumentSaved.InvokeAsync(entity);
             await CloseModal();
@@ -410,6 +444,20 @@
         //     var allowanceFromPayments = setoffPaymentDetailManager.GetTotalAllowanceAmount();
         //     editModalComponent.Entity.TotalAllowanceAmount = allowanceFromDetails + allowanceFromPayments;
         // }
+        
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// 處理預收付款項變更事件
+    /// </summary>
+    private Task HandlePrepaymentsChanged(List<SetoffPrepayment> prepayments)
+    {
+        setoffPrepayments = prepayments;
+        
+        // 註：預收付款項的金額變更不會直接影響主表單的金額欄位
+        // 預收付款項主要用於記錄使用了哪些預收/預付款項來沖銷本次的應收/應付帳款
         
         StateHasChanged();
         return Task.CompletedTask;
@@ -977,6 +1025,12 @@
                     Title = "",
                     Content = CreateSetoffPaymentDetailManagerContent(),
                     Order = 2
+                },
+                new GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateSetoffPrepaymentDetailManagerContent(),
+                    Order = 3
                 }
             };
         }
@@ -1044,6 +1098,33 @@
         {
             <div class="alert alert-warning" role="alert">
                 載入收款記錄管理器時發生錯誤,請重新整理頁面。
+            </div>
+        }
+    };
+    
+    /// <summary>
+    /// 創建預收付款項管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSetoffPrepaymentDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
+            {
+                <SetoffPrepaymentDetailManagerComponent 
+                    @ref="setoffPrepaymentDetailManager"
+                    SetoffDocumentId="@SetoffDocumentId"
+                    RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
+                    RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
+                    ExistingPrepayments="@setoffPrepayments"
+                    OnPrepaymentsChanged="@HandlePrepaymentsChanged"
+                    IsReadOnly="@IsReadOnly" />
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入預收付款項管理器時發生錯誤,請重新整理頁面。
             </div>
         }
     };

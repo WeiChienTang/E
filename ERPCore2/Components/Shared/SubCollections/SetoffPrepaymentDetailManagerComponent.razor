@@ -1,0 +1,486 @@
+@* 預收付款項管理組件 - 管理預收款、預付款項的使用記錄 *@
+
+@using ERPCore2.Data.Context
+@using Microsoft.EntityFrameworkCore
+
+@inject ISetoffPrepaymentService SetoffPrepaymentService
+@inject ICustomerService CustomerService
+@inject ISupplierService SupplierService
+@inject INotificationService NotificationService
+@inject AppDbContext DbContext
+
+<div class="card-body p-0">
+    <InteractiveTableComponent TItem="SetoffPrepaymentItem" 
+                                Items="@PrepaymentItems"
+                                ColumnDefinitions="@GetPrepaymentColumnDefinitions()"
+                                IsReadOnly="@IsReadOnly"
+                                EmptyMessage="尚未新增預收付款項記錄"
+                                ShowBuiltInActions="true"
+                                OnItemDelete="@HandleRemovePrepaymentRecord"
+                                ActionsColumnWidth = "60px" />
+</div>
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter] public int? SetoffDocumentId { get; set; }
+    [Parameter] public string? RelatedPartyType { get; set; } // "Customer" 或 "Supplier"
+    [Parameter] public int? RelatedPartyId { get; set; }
+    
+    // 資料綁定
+    [Parameter] public List<SetoffPrepayment> ExistingPrepayments { get; set; } = new();
+    [Parameter] public EventCallback<List<SetoffPrepayment>> OnPrepaymentsChanged { get; set; }
+    
+    // 顯示控制
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 內部狀態 =====
+    private List<SetoffPrepaymentItem> PrepaymentItems { get; set; } = new();
+    private List<SetoffPrepayment> AvailablePrepayments { get; set; } = new();
+    private List<PrepaymentType> PrepaymentTypes { get; set; } = new();
+
+    // ===== 計算屬性 =====
+    private decimal TotalUsedAmount => PrepaymentItems
+        .Where(p => !IsEmptyRow(p))
+        .Sum(p => p.UsedAmount);
+
+    // ===== 生命週期方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPrepaymentTypesAsync();
+        await LoadAvailablePrepaymentsAsync();
+        LoadExistingPrepayments();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當參數變更時，重新載入可用的預收付款項
+        if (RelatedPartyType != null && RelatedPartyId.HasValue)
+        {
+            await LoadAvailablePrepaymentsAsync();
+        }
+        
+        // 當 ExistingPrepayments 參數變更時，重新載入資料
+        LoadExistingPrepayments();
+        
+        // 總是確保有一行空行可以輸入
+        EnsureOneEmptyRow();
+        
+        await base.OnParametersSetAsync();
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了預收付類型，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(SetoffPrepaymentItem item)
+    {
+        // 檢查預收付類型ID是否有值
+        var isEmpty = !item.PrepaymentTypeId.HasValue || item.PrepaymentTypeId.Value == 0;
+        
+        // 只要預收付類型有值，就不是空行
+        // 預收付類型是核心欄位，其他欄位可以後續填寫
+        return isEmpty;
+    }
+    
+    /// <summary>
+    /// 創建空的預收付款項項目
+    /// </summary>
+    private SetoffPrepaymentItem CreateEmptyItem()
+    {
+        return new SetoffPrepaymentItem
+        {
+            Id = 0,
+            PrepaymentTypeId = null,
+            SourceDocumentCode = null,
+            Amount = 0,
+            AvailableBalance = 0,
+            UsedAmount = 0,
+            CustomerId = null,
+            SupplierId = null,
+            ExistingPrepayment = null
+        };
+    }
+    
+    /// <summary>
+    /// 設定父實體ID（預收付款項不需要此操作，但為了統一介面保留）
+    /// </summary>
+    private void SetParentId(SetoffPrepaymentItem item, int parentId)
+    {
+        // SetoffPrepayment 的 SetoffDocumentId 會在 NotifyPrepaymentsChanged 時設定
+        // 這裡不需要額外操作
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.EnsureOneEmptyRow(
+            PrepaymentItems, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            SetParentId, 
+            SetoffDocumentId ?? 0
+        );
+    }
+
+    // ===== 資料載入方法 =====
+    
+    /// <summary>
+    /// 載入預收付類型清單
+    /// </summary>
+    private async Task LoadPrepaymentTypesAsync()
+    {
+        try
+        {
+            PrepaymentTypes = await DbContext.Set<PrepaymentType>()
+                .AsNoTracking()
+                .OrderBy(pt => pt.Id)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入預收付類型失敗：{ex.Message}");
+            PrepaymentTypes = new List<PrepaymentType>();
+        }
+    }
+    
+    private async Task LoadAvailablePrepaymentsAsync()
+    {
+        try
+        {
+            if (RelatedPartyType == "Customer" && RelatedPartyId.HasValue)
+            {
+                // 載入客戶的可用預收款項
+                AvailablePrepayments = await SetoffPrepaymentService.GetAvailableByCustomerIdAsync(RelatedPartyId.Value);
+            }
+            else if (RelatedPartyType == "Supplier" && RelatedPartyId.HasValue)
+            {
+                // 載入供應商的可用預付款項
+                AvailablePrepayments = await SetoffPrepaymentService.GetAvailableBySupplierIdAsync(RelatedPartyId.Value);
+            }
+            else
+            {
+                AvailablePrepayments = new List<SetoffPrepayment>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入可用預收付款項失敗：{ex.Message}");
+            AvailablePrepayments = new List<SetoffPrepayment>();
+        }
+    }
+
+    private void LoadExistingPrepayments()
+    {
+        if (ExistingPrepayments.Any())
+        {
+            // 編輯模式：載入已存在的預收付款項記錄
+            PrepaymentItems = ExistingPrepayments.Select(prepayment => new SetoffPrepaymentItem
+            {
+                Id = prepayment.Id,
+                PrepaymentTypeId = prepayment.PrepaymentTypeId,
+                SourceDocumentCode = prepayment.SourceDocumentCode,
+                Amount = prepayment.Amount,
+                AvailableBalance = prepayment.AvailableBalance,
+                UsedAmount = prepayment.UsedAmount,
+                CustomerId = prepayment.CustomerId,
+                SupplierId = prepayment.SupplierId,
+                ExistingPrepayment = prepayment
+            }).ToList();
+        }
+        else
+        {
+            // 新增模式：初始化為空列表
+            PrepaymentItems = new List<SetoffPrepaymentItem>();
+        }
+    }
+
+    // ===== InteractiveTable 欄位定義 =====
+    private List<InteractiveColumnDefinition> GetPrepaymentColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "預收付類型",
+                PropertyName = nameof(SetoffPrepaymentItem.PrepaymentTypeId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "150px",
+                IsRequired = false,
+                Options = new List<InteractiveSelectOption> 
+                { 
+                    new InteractiveSelectOption { Value = 0, Text = "請選擇.." } 
+                }
+                .Concat(PrepaymentTypes.Select(pt => new InteractiveSelectOption
+                { 
+                    Value = pt.Id, 
+                    Text = pt.Name
+                })).ToList(),
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+                {
+                    var (itemObj, value) = args;
+                    var item = (SetoffPrepaymentItem)itemObj;
+                    var wasEmpty = IsEmptyRow(item);
+                    
+                    if (value != null && int.TryParse(value.ToString(), out int typeValue) && typeValue > 0)
+                    {
+                        item.PrepaymentTypeId = typeValue;
+                        
+                        // 清空之前選擇的來源單號資料
+                        item.SourceDocumentCode = null;
+                        item.Amount = 0;
+                        item.AvailableBalance = 0;
+                        item.UsedAmount = 0;
+                    }
+                    else
+                    {
+                        item.PrepaymentTypeId = null;
+                    }
+                    
+                    // 使用 AutoEmptyRowHelper 處理自動空行
+                    AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
+                        PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+                    
+                    await NotifyPrepaymentsChanged();
+                    StateHasChanged();
+                })
+            },
+            new()
+            {
+                Title = "來源單號",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "200px",
+                CustomTemplate = item =>
+                {
+                    var prepaymentItem = (SetoffPrepaymentItem)item;
+                    
+                    // 動態產生選項
+                    var options = new List<InteractiveSelectOption> 
+                    { 
+                        new InteractiveSelectOption { Value = "", Text = "請選擇.." } 
+                    };
+                    
+                    // 根據預收付類型篩選可用的來源單號
+                    if (prepaymentItem.PrepaymentTypeId.HasValue && prepaymentItem.PrepaymentTypeId.Value > 0)
+                    {
+                        var filteredPrepayments = AvailablePrepayments
+                            .Where(p => p.PrepaymentTypeId == prepaymentItem.PrepaymentTypeId.Value)
+                            .ToList();
+                        
+                        options.AddRange(filteredPrepayments.Select(p => new InteractiveSelectOption
+                        {
+                            Value = p.SourceDocumentCode ?? "",
+                            Text = $"{p.SourceDocumentCode} (餘額: {p.AvailableBalance:N0})"
+                        }));
+                    }
+                    
+                    var selectedValue = prepaymentItem.SourceDocumentCode ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    @onchange="@(async e => await OnSourceDocumentCodeChanged(prepaymentItem, e.Value?.ToString()))"
+                                    disabled="@IsReadOnly">
+                        @foreach (var option in options)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>;
+                }
+            },
+            new()
+            {
+                Title = "總金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item =>
+                {
+                    var prepaymentItem = (SetoffPrepaymentItem)item;
+                    var displayValue = prepaymentItem.Amount == 0 ? "" : prepaymentItem.Amount.ToString("N0");
+                    return @<div class="text-end text-muted">@displayValue</div>;
+                }
+            },
+            new()
+            {
+                Title = "可用餘額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item =>
+                {
+                    var prepaymentItem = (SetoffPrepaymentItem)item;
+                    var displayValue = prepaymentItem.AvailableBalance == 0 ? "" : prepaymentItem.AvailableBalance.ToString("N0");
+                    return @<div class="text-end text-info fw-bold">@displayValue</div>;
+                }
+            },
+            new()
+            {
+                Title = "本次使用",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var prepaymentItem = (SetoffPrepaymentItem)item;
+                    return @<div class="position-relative">
+                        <input type="number" 
+                               class="form-control text-end"
+                               value="@(prepaymentItem.UsedAmount == 0 ? "" : prepaymentItem.UsedAmount.ToString("F0"))"
+                               @oninput="@(e => OnUsedAmountInput(prepaymentItem, e.Value?.ToString()))"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               disabled="@IsReadOnly"
+                               placeholder=""
+                               step="1"
+                               min="0"
+                               max="@prepaymentItem.AvailableBalance" />
+                    </div>;
+                }
+            }
+        };
+
+        return columns;
+    }
+
+    // ===== 事件處理方法 =====
+    private async Task HandleRemovePrepaymentRecord(SetoffPrepaymentItem item)
+    {
+        if (IsReadOnly) return;
+        
+        // 使用 AutoEmptyRowHelper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleItemRemove(
+            PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotificationService.ShowInfoAsync("已移除預收付款項記錄");
+        await NotifyPrepaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnSourceDocumentCodeChanged(SetoffPrepaymentItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (!string.IsNullOrEmpty(value))
+        {
+            var sourceCode = value;
+            item.SourceDocumentCode = sourceCode;
+            
+            // 從可用預收付款項中取得詳細資料
+            var prepayment = AvailablePrepayments
+                .FirstOrDefault(p => p.SourceDocumentCode == sourceCode);
+            
+            if (prepayment != null)
+            {
+                item.Amount = prepayment.Amount;
+                item.AvailableBalance = prepayment.AvailableBalance;
+                item.CustomerId = prepayment.CustomerId;
+                item.SupplierId = prepayment.SupplierId;
+                
+                // 預設使用全部可用餘額
+                item.UsedAmount = prepayment.AvailableBalance;
+            }
+        }
+        else
+        {
+            item.SourceDocumentCode = null;
+            item.Amount = 0;
+            item.AvailableBalance = 0;
+            item.UsedAmount = 0;
+        }
+        
+        // 使用 AutoEmptyRowHelper 處理自動空行
+        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
+            PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotifyPrepaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnUsedAmountInput(SetoffPrepaymentItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (decimal.TryParse(value, out var amount))
+        {
+            // 檢查使用金額不能超過可用餘額
+            if (amount > item.AvailableBalance)
+            {
+                await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {item.AvailableBalance:N0}");
+                item.UsedAmount = item.AvailableBalance;
+            }
+            else if (amount < 0)
+            {
+                await NotificationService.ShowWarningAsync("使用金額不能小於 0");
+                item.UsedAmount = 0;
+            }
+            else
+            {
+                item.UsedAmount = amount;
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(value))
+        {
+            // 如果輸入為空白，設為0
+            item.UsedAmount = 0;
+        }
+        
+        // 使用 AutoEmptyRowHelper 處理自動空行
+        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
+            PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotifyPrepaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task NotifyPrepaymentsChanged()
+    {
+        // 只傳遞非空行且有使用金額的預收付款項記錄
+        var prepayments = PrepaymentItems
+            .Where(item => !IsEmptyRow(item) && item.UsedAmount > 0)
+            .Select(item => new SetoffPrepayment
+            {
+                Id = item.ExistingPrepayment?.Id ?? 0,
+                SetoffDocumentId = SetoffDocumentId ?? 0,
+                PrepaymentTypeId = item.PrepaymentTypeId!.Value,
+                SourceDocumentCode = item.SourceDocumentCode ?? "",
+                Amount = item.Amount,
+                UsedAmount = item.UsedAmount,
+                CustomerId = item.CustomerId,
+                SupplierId = item.SupplierId
+            }).ToList();
+
+        await OnPrepaymentsChanged.InvokeAsync(prepayments);
+    }
+
+    // ===== 公開方法（供父組件調用）=====
+    
+    /// <summary>
+    /// 取得總使用金額
+    /// </summary>
+    public decimal GetTotalUsedAmount() => TotalUsedAmount;
+
+    /// <summary>
+    /// 重新載入可用的預收付款項
+    /// </summary>
+    public async Task RefreshAvailablePrepaymentsAsync()
+    {
+        await LoadAvailablePrepaymentsAsync();
+        StateHasChanged();
+    }
+
+    // ===== 內部資料類別 =====
+    private class SetoffPrepaymentItem : BaseEntity
+    {
+        public int? PrepaymentTypeId { get; set; }
+        public string? SourceDocumentCode { get; set; }
+        public decimal Amount { get; set; }
+        public decimal AvailableBalance { get; set; }
+        public decimal UsedAmount { get; set; }
+        public int? CustomerId { get; set; }
+        public int? SupplierId { get; set; }
+        public SetoffPrepayment? ExistingPrepayment { get; set; }
+    }
+}
