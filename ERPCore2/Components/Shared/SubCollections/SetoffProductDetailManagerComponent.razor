@@ -24,7 +24,6 @@
 else
 {
     @* 本次沖款明細編輯 - 直接顯示所有未結清明細 *@
-    <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent TItem="SetoffProductDetailItem" 
                                       Items="@SetoffItems"
@@ -32,18 +31,12 @@ else
                                       IsReadOnly="@IsReadOnly"
                                       ShowRowNumbers="false"
                                       EmptyMessage="@GetUnsettledEmptyMessage()"
-                                      ShowBuiltInActions="false"
-                                      ShowTotalRow="true"/>
+                                      ShowBuiltInActions="true"
+                                      ShowBuiltInDeleteButton="true"
+                                      OnItemDelete="@HandleRemoveItem"
+                                      ShowActions="false"
+                                      ActionsColumnWidth = "60px" />
         </div>
-
-        <div class="card-footer">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="text-muted">
-                    <small>提示：直接在表格中輸入本次沖款金額或折讓金額，儲存時會自動過濾零金額項目</small>
-                </div>
-            </div>
-        </div>
-    </div>
 }
 
 @code {
@@ -244,7 +237,7 @@ else
                 Title = "來源單號",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "12%",
+                Width = "150px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
@@ -256,7 +249,7 @@ else
                 Title = "商品名稱",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "18%",
+                Width = "200px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
@@ -271,7 +264,7 @@ else
                 Title = "應收/付金額",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "15%",
+                Width = "150px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
@@ -285,7 +278,7 @@ else
                 Title = "未沖款餘額",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "15%",
+                Width = "150px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
@@ -299,7 +292,7 @@ else
                 Title = "本次沖款",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = ShowAllowance ? "15%" : "20%",
+                Width = ShowAllowance ? "150px" : "200px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
@@ -307,9 +300,9 @@ else
                     return @<input type="number"
                                   class="form-control form-control-sm text-end"
                                   min="0"
-                                  step="0.01"
+                                  step="1"
                                   value="@displayValue"
-                                  placeholder="0.00"
+                                  placeholder=""
                                   @oninput="@(e => OnSetoffAmountInput(setoffItem, e.Value?.ToString()))"
                                   readonly="@IsReadOnly" />;
                 }
@@ -323,7 +316,7 @@ else
                 Title = "本次折讓",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "15%",
+                Width = "150px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
@@ -331,9 +324,9 @@ else
                     return @<input type="number"
                                   class="form-control form-control-sm text-end"
                                   min="0"
-                                  step="0.01"
+                                  step="1"
                                   value="@displayValue"
-                                  placeholder="0.00"
+                                  placeholder=""
                                   @oninput="@(e => OnAllowanceAmountInput(setoffItem, e.Value?.ToString()))"
                                   readonly="@IsReadOnly" />;
                 }
@@ -345,7 +338,7 @@ else
             Title = "小計",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "15%",
+            Width = "150px",
             CustomTemplate = item =>
             {
                 var setoffItem = (SetoffProductDetailItem)item;
@@ -408,6 +401,30 @@ else
             }).ToList();
 
         await OnDetailsChanged.InvokeAsync(details);
+    }
+    
+    /// <summary>
+    /// 處理移除明細項目
+    /// </summary>
+    private async Task HandleRemoveItem(SetoffProductDetailItem item)
+    {
+        // 如果是編輯模式中的已存在明細，將金額清零而不移除項目（保留在列表中以便恢復）
+        if (item.ExistingDetail != null)
+        {
+            item.CurrentSetoffAmount = 0;
+            item.CurrentAllowanceAmount = 0;
+            await NotificationService.ShowInfoAsync("已清除此項目的沖款金額");
+        }
+        else
+        {
+            // 新增模式下的項目可以直接移除（實際上是將金額清零）
+            item.CurrentSetoffAmount = 0;
+            item.CurrentAllowanceAmount = 0;
+            await NotificationService.ShowInfoAsync("已清除此項目的沖款金額");
+        }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
     }
     
     /// <summary>

@@ -1,0 +1,482 @@
+@* 沖款收款記錄管理組件 - 管理收款、折讓等財務資訊 *@
+
+@inject ISetoffPaymentService SetoffPaymentService
+@inject IBankService BankService
+@inject IPaymentMethodService PaymentMethodService
+@inject INotificationService NotificationService
+
+<div class="card-body p-0">
+    <InteractiveTableComponent TItem="SetoffPaymentItem" 
+                                Items="@PaymentItems"
+                                ColumnDefinitions="@GetPaymentColumnDefinitions()"
+                                IsReadOnly="@IsReadOnly"
+                                ShowRowNumbers="false"
+                                EmptyMessage="尚未新增收款記錄"
+                                ShowBuiltInActions="true"
+                                ShowBuiltInDeleteButton="true"
+                                OnItemDelete="@HandleRemovePaymentRecord"
+                                ShowActions="false"
+                                ActionsColumnWidth = "60px" />
+</div>
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter] public int? SetoffDocumentId { get; set; }
+    
+    // 資料綁定
+    [Parameter] public List<SetoffPayment> ExistingPayments { get; set; } = new();
+    [Parameter] public EventCallback<List<SetoffPayment>> OnPaymentsChanged { get; set; }
+    
+    // 顯示控制
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 內部狀態 =====
+    private List<SetoffPaymentItem> PaymentItems { get; set; } = new();
+    private List<Bank> Banks { get; set; } = new();
+    private List<PaymentMethod> PaymentMethods { get; set; } = new();
+
+    // ===== 計算屬性 =====
+    private decimal TotalReceivedAmount => PaymentItems
+        .Where(p => !IsEmptyRow(p))
+        .Sum(p => p.ReceivedAmount);
+    
+    private decimal TotalAllowanceAmount => PaymentItems
+        .Where(p => !IsEmptyRow(p))
+        .Sum(p => p.AllowanceAmount);
+
+    // ===== 生命週期方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBanksAndPaymentMethodsAsync();
+        LoadExistingPayments();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當 ExistingPayments 參數變更時，重新載入資料
+        LoadExistingPayments();
+        
+        // 總是確保有一行空行可以輸入
+        EnsureOneEmptyRow();
+        
+        await base.OnParametersSetAsync();
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了付款方式，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(SetoffPaymentItem item)
+    {
+        var paymentMethodId = item.PaymentMethodId;
+        // 檢查付款方式ID是否為空（null 或 0 都算空）
+        var isEmpty = !paymentMethodId.HasValue || paymentMethodId.Value <= 0;
+        
+        // 只要付款方式有值（大於0），就不是空行
+        // 付款方式是核心欄位，其他欄位可以後續填寫
+        return isEmpty;
+    }
+    
+    /// <summary>
+    /// 創建空的收款記錄項目
+    /// </summary>
+    private SetoffPaymentItem CreateEmptyItem()
+    {
+        return new SetoffPaymentItem
+        {
+            Id = 0,
+            BankId = null,
+            PaymentMethodId = null,
+            ReceivedAmount = 0,
+            AllowanceAmount = 0,
+            CheckNumber = null,
+            DueDate = null,
+            ExistingPayment = null
+        };
+    }
+    
+    /// <summary>
+    /// 設定父實體ID（收款記錄不需要此操作，但為了統一介面保留）
+    /// </summary>
+    private void SetParentId(SetoffPaymentItem item, int parentId)
+    {
+        // SetoffPayment 的 SetoffDocumentId 會在 NotifyPaymentsChanged 時設定
+        // 這裡不需要額外操作
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<SetoffPaymentItem>.EnsureOneEmptyRow(
+            PaymentItems, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            SetParentId, 
+            SetoffDocumentId ?? 0
+        );
+    }
+
+    // ===== 資料載入方法 =====
+    private async Task LoadBanksAndPaymentMethodsAsync()
+    {
+        try
+        {
+            Banks = await BankService.GetAllAsync();
+            PaymentMethods = await PaymentMethodService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入銀行和付款方式資料失敗：{ex.Message}");
+            Banks = new List<Bank>();
+            PaymentMethods = new List<PaymentMethod>();
+        }
+    }
+
+    private void LoadExistingPayments()
+    {
+        if (ExistingPayments.Any())
+        {
+            // 編輯模式：載入已存在的收款記錄
+            PaymentItems = ExistingPayments.Select(payment => new SetoffPaymentItem
+            {
+                Id = payment.Id,
+                BankId = payment.BankId,
+                PaymentMethodId = payment.PaymentMethodId,
+                ReceivedAmount = payment.ReceivedAmount,
+                AllowanceAmount = payment.AllowanceAmount,
+                CheckNumber = payment.CheckNumber,
+                DueDate = payment.DueDate,
+                ExistingPayment = payment
+            }).ToList();
+        }
+        else
+        {
+            // 新增模式：初始化為空列表
+            PaymentItems = new List<SetoffPaymentItem>();
+        }
+    }
+
+    // ===== InteractiveTable 欄位定義 =====
+    private List<InteractiveColumnDefinition> GetPaymentColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+
+            new()
+            {
+                Title = "付款方式",
+                PropertyName = nameof(SetoffPaymentItem.PaymentMethodId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "180px",
+                IsRequired = false,
+                Options = new List<InteractiveSelectOption> 
+                { 
+                    new InteractiveSelectOption { Value = 0, Text = "請選擇.." } 
+                }
+                .Concat(PaymentMethods.Select(pm => new InteractiveSelectOption
+                { 
+                    Value = pm.Id, 
+                    Text = pm.Name 
+                })).ToList(),
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+                {
+                    var (itemObj, value) = args;
+                    var item = (SetoffPaymentItem)itemObj;
+                    var wasEmpty = IsEmptyRow(item);
+                    
+                    if (value != null && int.TryParse(value.ToString(), out int methodId))
+                    {
+                        item.PaymentMethodId = methodId;
+                    }
+                    else
+                    {
+                        item.PaymentMethodId = null;
+                    }
+                    
+                    // 使用 AutoEmptyRowHelper 處理自動空行
+                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+                    
+                    await NotifyPaymentsChanged();
+                    StateHasChanged();
+                })
+            },
+            new()
+            {
+                Title = "收款金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var paymentItem = (SetoffPaymentItem)item;
+                    return @<div class="position-relative">
+                        <input type="number" 
+                               class="form-control text-end"
+                               value="@(paymentItem.ReceivedAmount == 0 ? "" : paymentItem.ReceivedAmount.ToString("F0"))"
+                               @oninput="@(e => OnReceivedAmountInput(paymentItem, e.Value?.ToString()))"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               disabled="@IsReadOnly"
+                               placeholder=""
+                               step="1"
+                               min="0" />
+                    </div>;
+                }
+            },
+            new()
+            {
+                Title = "折讓金額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var paymentItem = (SetoffPaymentItem)item;
+                    return @<div class="position-relative">
+                        <input type="number" 
+                               class="form-control text-end"
+                               value="@(paymentItem.AllowanceAmount == 0 ? "" : paymentItem.AllowanceAmount.ToString("F0"))"
+                               @oninput="@(e => OnAllowanceAmountInput(paymentItem, e.Value?.ToString()))"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               disabled="@IsReadOnly"
+                               placeholder=""
+                               step="1"
+                               min="0" />
+                    </div>;
+                }
+            },
+
+
+
+            new()
+            {
+                Title = "銀行別",
+                PropertyName = nameof(SetoffPaymentItem.BankId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "180px",
+                IsRequired = false,
+                Options = new List<InteractiveSelectOption> 
+                { 
+                    new InteractiveSelectOption { Value = 0, Text = "請選擇.." } 
+                }
+                .Concat(Banks.Select(b => new InteractiveSelectOption
+                { 
+                    Value = b.Id, 
+                    Text = b.BankName 
+                })).ToList(),
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+                {
+                    var (itemObj, value) = args;
+                    var item = (SetoffPaymentItem)itemObj;
+                    var wasEmpty = IsEmptyRow(item);
+                    
+                    if (value != null && int.TryParse(value.ToString(), out int bankId))
+                    {
+                        item.BankId = bankId;
+                    }
+                    else
+                    {
+                        item.BankId = null;
+                    }
+                    
+                    // 使用 AutoEmptyRowHelper 處理自動空行
+                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+                    
+                    await NotifyPaymentsChanged();
+                    StateHasChanged();
+                })
+            },
+            new()
+            {
+                Title = "支票號碼",
+                PropertyName = nameof(SetoffPaymentItem.CheckNumber),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "150px",
+                IsRequired = false,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+                {
+                    var (itemObj, value) = args;
+                    var item = (SetoffPaymentItem)itemObj;
+                    var wasEmpty = IsEmptyRow(item);
+                    
+                    item.CheckNumber = value;
+                    
+                    // 使用 AutoEmptyRowHelper 處理自動空行
+                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+                    
+                    await NotifyPaymentsChanged();
+                    StateHasChanged();
+                })
+            },
+            new()
+            {
+                Title = "到期日",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var paymentItem = (SetoffPaymentItem)item;
+                    var dateValue = paymentItem.DueDate?.ToString("yyyy-MM-dd") ?? "";
+                    return @<div class="position-relative">
+                        <input type="date" 
+                               class="form-control"
+                               value="@dateValue"
+                               @onchange="@(e => OnDueDateChanged(paymentItem, e.Value?.ToString()))"
+                               disabled="@IsReadOnly" />
+                    </div>;
+                }
+            },
+            new()
+            {
+                Title = "小計",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var paymentItem = (SetoffPaymentItem)item;
+                    var subtotal = paymentItem.ReceivedAmount + paymentItem.AllowanceAmount;
+                    var displayValue = subtotal == 0 ? "" : subtotal.ToString("N2");
+                    return @<div class="text-end fw-bold text-success">@displayValue</div>;
+                }
+            }
+        };
+
+        return columns;
+    }
+
+    // ===== 事件處理方法 =====
+    private async Task HandleRemovePaymentRecord(SetoffPaymentItem item)
+    {
+        if (IsReadOnly) return;
+        
+        // 使用 AutoEmptyRowHelper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleItemRemove(
+            PaymentItems, item, IsEmptyRow, CreateEmptyItem, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotificationService.ShowInfoAsync("已移除收款記錄");
+        await NotifyPaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnReceivedAmountInput(SetoffPaymentItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (decimal.TryParse(value, out var amount))
+        {
+            item.ReceivedAmount = amount;
+        }
+        else if (string.IsNullOrWhiteSpace(value))
+        {
+            // 如果輸入為空白，設為0
+            item.ReceivedAmount = 0;
+        }
+        
+        // 使用 AutoEmptyRowHelper 處理自動空行
+        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+            PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotifyPaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnAllowanceAmountInput(SetoffPaymentItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (decimal.TryParse(value, out var amount))
+        {
+            item.AllowanceAmount = amount;
+        }
+        else if (string.IsNullOrWhiteSpace(value))
+        {
+            // 如果輸入為空白，設為0
+            item.AllowanceAmount = 0;
+        }
+        
+        // 使用 AutoEmptyRowHelper 處理自動空行
+        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+            PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotifyPaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnDueDateChanged(SetoffPaymentItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (DateTime.TryParse(value, out var dueDate))
+        {
+            item.DueDate = dueDate;
+        }
+        else
+        {
+            item.DueDate = null;
+        }
+        
+        // 使用 AutoEmptyRowHelper 處理自動空行
+        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+            PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+        
+        await NotifyPaymentsChanged();
+        StateHasChanged();
+    }
+
+    private async Task NotifyPaymentsChanged()
+    {
+        // 只傳遞非空行的收款記錄
+        var payments = PaymentItems
+            .Where(item => !IsEmptyRow(item))
+            .Select(item => new SetoffPayment
+            {
+                Id = item.ExistingPayment?.Id ?? 0,
+                SetoffDocumentId = SetoffDocumentId ?? 0,
+                BankId = item.BankId,
+                PaymentMethodId = item.PaymentMethodId,
+                ReceivedAmount = item.ReceivedAmount,
+                AllowanceAmount = item.AllowanceAmount,
+                CheckNumber = item.CheckNumber,
+                DueDate = item.DueDate
+            }).ToList();
+
+        await OnPaymentsChanged.InvokeAsync(payments);
+    }
+
+    // ===== 公開方法（供父組件調用）=====
+    
+    /// <summary>
+    /// 取得總收款金額
+    /// </summary>
+    public decimal GetTotalReceivedAmount() => TotalReceivedAmount;
+
+    /// <summary>
+    /// 取得總折讓金額
+    /// </summary>
+    public decimal GetTotalAllowanceAmount() => TotalAllowanceAmount;
+
+    /// <summary>
+    /// 取得總金額（收款 + 折讓）
+    /// </summary>
+    public decimal GetTotalAmount() => TotalReceivedAmount + TotalAllowanceAmount;
+
+    // ===== 內部資料類別 =====
+    private class SetoffPaymentItem : BaseEntity
+    {
+        public int? BankId { get; set; }
+        public int? PaymentMethodId { get; set; }
+        public decimal ReceivedAmount { get; set; }
+        public decimal AllowanceAmount { get; set; }
+        public string? CheckNumber { get; set; }
+        public DateTime? DueDate { get; set; }
+        public SetoffPayment? ExistingPayment { get; set; }
+    }
+}

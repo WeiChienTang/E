@@ -98,6 +98,21 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         public ICollection<FinancialTransaction> FinancialTransactions { get; set; } = new List<FinancialTransaction>();
 
+        /// <summary>
+        /// 關聯的收款記錄
+        /// </summary>
+        public ICollection<SetoffPayment> SetoffPayments { get; set; } = new List<SetoffPayment>();
+
+        /// <summary>
+        /// 關聯的商品明細
+        /// </summary>
+        public ICollection<SetoffProductDetail> SetoffProductDetails { get; set; } = new List<SetoffProductDetail>();
+
+        /// <summary>
+        /// 關聯的預收付款項記錄
+        /// </summary>
+        public ICollection<SetoffPrepayment> Prepayments { get; set; } = new List<SetoffPrepayment>();
+
         #region 計算屬性
 
         /// <summary>

@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251007031045_新增SetoffPayment和SetoffProductDetail資料表")]
+    partial class 新增SetoffPayment和SetoffProductDetail資料表
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1649,6 +1652,77 @@ namespace ERPCore2.Migrations
                     b.ToTable("Permissions");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Prepayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FinancialTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PrepaymentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("FinancialTransactionId");
+
+                    b.HasIndex("PaymentDate");
+
+                    b.HasIndex("PrepaymentType");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("Prepayments");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -3164,87 +3238,6 @@ namespace ERPCore2.Migrations
                     b.ToTable("SetoffPayments");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.SetoffPrepayment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("FinancialTransactionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PrepaymentType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("SetoffDocumentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SourceDocumentCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SupplierId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<decimal>("UsedAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("[Code] IS NOT NULL");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("FinancialTransactionId");
-
-                    b.HasIndex("PrepaymentType");
-
-                    b.HasIndex("SetoffDocumentId");
-
-                    b.HasIndex("SourceDocumentCode");
-
-                    b.HasIndex("SupplierId");
-
-                    b.ToTable("SetoffPrepayments");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.SetoffProductDetail", b =>
                 {
                     b.Property<int>("Id")
@@ -4239,6 +4232,29 @@ namespace ERPCore2.Migrations
                     b.Navigation("WarehouseLocation");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.Prepayment", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ERPCore2.Data.Entities.FinancialTransaction", "FinancialTransaction")
+                        .WithMany("Prepayments")
+                        .HasForeignKey("FinancialTransactionId");
+
+                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("FinancialTransaction");
+
+                    b.Navigation("Supplier");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
@@ -4689,33 +4705,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("SetoffDocument");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.SetoffPrepayment", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ERPCore2.Data.Entities.FinancialTransaction", null)
-                        .WithMany("Prepayments")
-                        .HasForeignKey("FinancialTransactionId");
-
-                    b.HasOne("ERPCore2.Data.Entities.SetoffDocument", "SetoffDocument")
-                        .WithMany("Prepayments")
-                        .HasForeignKey("SetoffDocumentId");
-
-                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
-                        .WithMany()
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("SetoffDocument");
-
-                    b.Navigation("Supplier");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.SetoffProductDetail", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
@@ -4948,8 +4937,6 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.SetoffDocument", b =>
                 {
                     b.Navigation("FinancialTransactions");
-
-                    b.Navigation("Prepayments");
 
                     b.Navigation("SetoffPayments");
 

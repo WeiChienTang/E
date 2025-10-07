@@ -17,12 +17,10 @@ namespace ERPCore2.Data.Entities
         // ===== 主要關聯 =====
         [Required(ErrorMessage = "沖銷單據為必填")]
         [Display(Name = "沖銷單據")]
-        [ForeignKey(nameof(SetoffDocument))]
         public int SetoffDocumentId { get; set; }
 
         [Required(ErrorMessage = "商品為必填")]
         [Display(Name = "商品")]
-        [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 
         // ===== 來源明細關聯（使用 Enum + Id）=====

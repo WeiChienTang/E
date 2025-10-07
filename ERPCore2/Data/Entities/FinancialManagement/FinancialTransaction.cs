@@ -243,7 +243,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 預收預付款項集合 - 此財務交易包含的預收預付款項記錄
         /// </summary>
-        public ICollection<Prepayment> Prepayments { get; set; } = new List<Prepayment>();
+        public ICollection<SetoffPrepayment> Prepayments { get; set; } = new List<SetoffPrepayment>();
         
         // === 計算屬性 ===
         

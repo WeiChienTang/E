@@ -1,6 +1,7 @@
 @* 沖款單編輯組件 *@
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ISetoffProductDetailService SetoffProductDetailService
+@inject ISetoffPaymentService SetoffPaymentService
 @inject ICompanyService CompanyService
 @inject ICustomerService CustomerService
 @inject ISupplierService SupplierService
@@ -32,6 +33,7 @@
                           SaveSuccessMessage="@(SetoffDocumentId.HasValue ? "沖款單更新成功" : "沖款單新增成功")"
                           SaveFailureMessage="沖款單儲存失敗"
                           RequiredPermission="SetoffDocument.Read"
+                          CustomValidator="@ValidateBeforeSave"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -94,6 +96,10 @@
     private List<SetoffProductDetail> setoffProductDetails = new();
     private bool IsReadOnly => false; // 可根據權限或狀態控制
     private SetoffProductDetailManagerComponent? setoffProductDetailManager;
+    
+    // 收款記錄相關
+    private List<SetoffPayment> setoffPayments = new();
+    private SetoffPaymentDetailManagerComponent? setoffPaymentDetailManager;
     
     // 日期篩選
     private DateTime? filterStartDate;
@@ -222,6 +228,53 @@
             .Build();
     }
 
+    /// <summary>
+    /// 儲存前驗證（在主表單儲存之前執行）
+    /// </summary>
+    private async Task<bool> ValidateBeforeSave(SetoffDocument entity)
+    {
+        try
+        {
+            if (entity == null)
+            {
+                await NotificationService.ShowErrorAsync("沒有可儲存的資料");
+                return false;
+            }
+
+            // ===== 儲存前驗證金額 =====
+            // 驗證收款記錄的金額是否與主表單一致
+            var receivedFromPayments = setoffPaymentDetailManager?.GetTotalReceivedAmount() ?? 0;
+            var allowanceFromPayments = setoffPaymentDetailManager?.GetTotalAllowanceAmount() ?? 0;
+            
+            // 檢查收款記錄的收款金額是否等於本期已收
+            if (Math.Abs(receivedFromPayments - entity.TotalCollectionAmount) > 0.01m)
+            {
+                await NotificationService.ShowErrorAsync(
+                    $"收款記錄金額錯誤：收款記錄總額 {receivedFromPayments:N2}，應等於本期已收 {entity.TotalCollectionAmount:N2}。請檢查收款記錄。");
+                return false;
+            }
+            
+            // 檢查收款記錄的折讓金額是否等於本期折讓
+            if (Math.Abs(allowanceFromPayments - entity.TotalAllowanceAmount) > 0.01m)
+            {
+                await NotificationService.ShowErrorAsync(
+                    $"折讓記錄金額錯誤：收款記錄折讓總額 {allowanceFromPayments:N2}，應等於本期折讓 {entity.TotalAllowanceAmount:N2}。請檢查收款記錄。");
+                return false;
+            }
+
+            // 驗證通過
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"驗證資料時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 儲存成功後處理（在主表單儲存成功之後執行）
+    /// </summary>
     private async Task HandleSaveSuccess()
     {
         try
@@ -252,6 +305,35 @@
                 {
                     await NotificationService.ShowErrorAsync($"商品明細儲存失敗：{detailResult.ErrorMessage}");
                     return;
+                }
+            }
+
+            // 儲存收款記錄（過濾掉付款方式為空的項目）
+            var validPayments = setoffPayments
+                .Where(p => p.PaymentMethodId.HasValue && p.PaymentMethodId.Value > 0)
+                .ToList();
+                
+            if (entity.Id > 0)
+            {
+                // 先刪除舊的收款記錄
+                var existingPayments = await SetoffPaymentService.GetBySetoffDocumentIdAsync(entity.Id);
+                foreach (var existingPayment in existingPayments)
+                {
+                    await SetoffPaymentService.DeleteAsync(existingPayment.Id);
+                }
+                
+                // 新增收款記錄
+                foreach (var payment in validPayments)
+                {
+                    payment.SetoffDocumentId = entity.Id;
+                    payment.Id = 0; // 確保是新增
+                    
+                    var paymentResult = await SetoffPaymentService.CreateAsync(payment);
+                    if (!paymentResult.IsSuccess)
+                    {
+                        await NotificationService.ShowErrorAsync($"收款記錄儲存失敗：{paymentResult.ErrorMessage}");
+                        return;
+                    }
                 }
             }
 
@@ -304,6 +386,34 @@
         StateHasChanged();
         return Task.CompletedTask;
     }
+    
+    /// <summary>
+    /// 處理收款記錄變更事件
+    /// </summary>
+    /// <remarks>
+    /// 註：收款記錄變更時不即時更新主表單金額欄位，改為在儲存時進行驗證
+    /// </remarks>
+    private Task HandlePaymentsChanged(List<SetoffPayment> payments)
+    {
+        setoffPayments = payments;
+        
+        // 註解：不在此處更新金額，改為在儲存時驗證
+        // 讓使用者自由輸入 Payment 資料，不會即時影響已收或折讓欄位
+        // if (editModalComponent?.Entity != null && setoffPaymentDetailManager != null)
+        // {
+        //     // 【本期已收】= 收款記錄的收款金額總和
+        //     var receivedFromPayments = setoffPaymentDetailManager.GetTotalReceivedAmount();
+        //     editModalComponent.Entity.TotalCollectionAmount = receivedFromPayments;
+        //     
+        //     // 【本期折讓】= 商品明細的折讓 + 收款記錄的折讓金額總和
+        //     var allowanceFromDetails = setoffProductDetails.Sum(d => d.CurrentAllowanceAmount);
+        //     var allowanceFromPayments = setoffPaymentDetailManager.GetTotalAllowanceAmount();
+        //     editModalComponent.Entity.TotalAllowanceAmount = allowanceFromDetails + allowanceFromPayments;
+        // }
+        
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 
     private async Task HandleCancel()
     {
@@ -333,8 +443,9 @@
                     TotalSetoffAmount = 0
                 };
                 
-                // 新增模式：清空商品明細
+                // 新增模式：清空商品明細和收款記錄
                 setoffProductDetails = new List<SetoffProductDetail>();
+                setoffPayments = new List<SetoffPayment>();
             }
             else
             {
@@ -343,6 +454,9 @@
                 
                 // 載入商品明細
                 setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
+                
+                // 載入收款記錄
+                setoffPayments = await SetoffPaymentService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
             }
             
             // 資料載入後，重新初始化表單欄位以正確顯示客戶或廠商欄位
@@ -456,6 +570,22 @@
                 },
                 new()
                 {
+                    PropertyName = "FilterStartDate",
+                    Label = "來源單據起始日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "篩選該日期之後的銷貨、銷貨退回、入庫、入庫退出單據"
+                },
+                new()
+                {
+                    PropertyName = "FilterEndDate",
+                    Label = "來源單據結束日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "篩選該日期之前的銷貨、銷貨退回、入庫、入庫退出單據"
+                },
+                new()
+                {
                     PropertyName = nameof(SetoffDocument.SetoffDate),
                     Label = "沖款日期",
                     FieldType = FormFieldType.Date,
@@ -479,6 +609,16 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(SetoffDocument.CurrentSetoffAmount),
+                    Label = "本期沖銷",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "系統自動計算",
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "本次沖款單所沖銷的金額",
+                },
+                new()
+                {
                     PropertyName = nameof(SetoffDocument.TotalCollectionAmount),
                     Label = "本期已收",
                     FieldType = FormFieldType.Number,
@@ -489,17 +629,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SetoffDocument.CurrentSetoffAmount),
-                    Label = "本期沖銷",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "系統自動計算",
-                    IsRequired = false,
-                    IsReadOnly = true,
-                    HelpText = "本次沖款單所沖銷的金額",
-                },
-
-                new()
-                {
                     PropertyName = nameof(SetoffDocument.TotalAllowanceAmount),
                     Label = "本期折讓",
                     FieldType = FormFieldType.Number,
@@ -507,8 +636,12 @@
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = "折讓抵銷的總額",
-                }
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<SetoffDocument>(),
             });
+
+
             
             // 動態設定表單區段 - 使用有序列表以控制欄位順序
             var sectionList = new List<KeyValuePair<string, string>>
@@ -530,16 +663,19 @@
             sectionList.AddRange(new[]
             {
                 new KeyValuePair<string, string>(nameof(SetoffDocument.CompanyId), "基本資訊"),
+                new KeyValuePair<string, string>("FilterStartDate", "基本資訊"),
+                new KeyValuePair<string, string>("FilterEndDate", "基本資訊"),
                 new KeyValuePair<string, string>(nameof(SetoffDocument.SetoffDate), "基本資訊")
             });
 
             // 加入金額相關區段
             sectionList.AddRange(new[]
             {
-                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalSetoffAmount), "金額資訊"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalCollectionAmount), "金額資訊"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentSetoffAmount), "金額資訊"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalAllowanceAmount), "金額資訊")
+                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalSetoffAmount), "金額資訊(系統自動計算)"),                
+                new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentSetoffAmount), "金額資訊(系統自動計算)"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalCollectionAmount), "金額資訊(系統自動計算)"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalAllowanceAmount), "金額資訊(系統自動計算)"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.Remarks), "其他資訊")
             });
 
             // 轉換為 Dictionary
@@ -656,6 +792,33 @@
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         supplierModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
+            }
+            
+            // 處理日期篩選變更
+            if (fieldChange.PropertyName == "FilterStartDate")
+            {
+                if (fieldChange.Value != null && DateTime.TryParse(fieldChange.Value.ToString(), out DateTime startDate))
+                {
+                    filterStartDate = startDate;
+                }
+                else
+                {
+                    filterStartDate = null;
+                }
+                StateHasChanged();
+            }
+            
+            if (fieldChange.PropertyName == "FilterEndDate")
+            {
+                if (fieldChange.Value != null && DateTime.TryParse(fieldChange.Value.ToString(), out DateTime endDate))
+                {
+                    filterEndDate = endDate;
+                }
+                else
+                {
+                    filterEndDate = null;
+                }
+                StateHasChanged();
             }
         }
         catch (Exception)
@@ -788,15 +951,6 @@
     {
         await supplierModalManager.HandleEntitySavedAsync(supplier, shouldAutoSelect: true);
     }
-    
-    /// <summary>
-    /// 日期篩選變更事件
-    /// </summary>
-    private void OnDateFilterChanged()
-    {
-        // 觸發重新渲染，讓 SetoffProductDetailManagerComponent 接收新的日期參數
-        StateHasChanged();
-    }
 
     /// <summary>
     /// 配置自訂模組
@@ -817,6 +971,12 @@
                     Title = "",
                     Content = CreateSetoffProductDetailManagerContent(),
                     Order = 1
+                },
+                new GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule
+                {
+                    Title = "",
+                    Content = CreateSetoffPaymentDetailManagerContent(),
+                    Order = 2
                 }
             };
         }
@@ -835,27 +995,6 @@
         {
             @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
             {
-                <div class="mb-3">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">來源單據起始日期</label>
-                            <input type="date" 
-                                   class="form-control" 
-                                   @bind="filterStartDate"
-                                   @bind:after="OnDateFilterChanged" />
-                            <small class="text-muted">篩選該日期之後的銷貨、銷貨退回、入庫、入庫退出單據</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">來源單據結束日期</label>
-                            <input type="date" 
-                                   class="form-control" 
-                                   @bind="filterEndDate"
-                                   @bind:after="OnDateFilterChanged" />
-                            <small class="text-muted">篩選該日期之前的銷貨、銷貨退回、入庫、入庫退出單據</small>
-                        </div>
-                    </div>
-                </div>
-                
                 <SetoffProductDetailManagerComponent 
                     @ref="setoffProductDetailManager"
                     SetoffDocumentId="@SetoffDocumentId"
@@ -880,6 +1019,31 @@
         {
             <div class="alert alert-warning" role="alert">
                 載入明細管理器時發生錯誤,請重新整理頁面。
+            </div>
+        }
+    };
+    
+    /// <summary>
+    /// 創建收款記錄管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateSetoffPaymentDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
+            {
+                <SetoffPaymentDetailManagerComponent 
+                    @ref="setoffPaymentDetailManager"
+                    SetoffDocumentId="@SetoffDocumentId"
+                    ExistingPayments="@setoffPayments"
+                    OnPaymentsChanged="@HandlePaymentsChanged"
+                    IsReadOnly="@IsReadOnly" />
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入收款記錄管理器時發生錯誤,請重新整理頁面。
             </div>
         }
     };

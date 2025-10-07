@@ -70,8 +70,9 @@ namespace ERPCore2.Data.Context
       // Financial Management
       // 統一沖款管理
       public DbSet<SetoffDocument> SetoffDocuments { get; set; }
+      public DbSet<SetoffPayment> SetoffPayments { get; set; }
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
-      public DbSet<Prepayment> Prepayments { get; set; }
+      public DbSet<SetoffPrepayment> SetoffPrepayments { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       // Currency
       public DbSet<Currency> Currencies { get; set; }
@@ -572,6 +573,41 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.CompanyId);
                   });
 
+                  // 統一沖款收款記錄配置
+                  modelBuilder.Entity<SetoffPayment>(entity =>
+                  {
+                        entity.HasKey(sp => sp.Id);
+
+                        // 沖款單關聯
+                        entity.HasOne(sp => sp.SetoffDocument)
+                              .WithMany(sd => sd.SetoffPayments)
+                              .HasForeignKey(sp => sp.SetoffDocumentId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 銀行關聯（可選）
+                        entity.HasOne(sp => sp.Bank)
+                              .WithMany()
+                              .HasForeignKey(sp => sp.BankId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        // 付款方式關聯（可選）
+                        entity.HasOne(sp => sp.PaymentMethod)
+                              .WithMany()
+                              .HasForeignKey(sp => sp.PaymentMethodId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.ReceivedAmount)
+                              .HasPrecision(18, 2);
+                        entity.Property(e => e.AllowanceAmount)
+                              .HasPrecision(18, 2);
+
+                        // 設定索引
+                        entity.HasIndex(e => e.SetoffDocumentId);
+                        entity.HasIndex(e => e.BankId);
+                        entity.HasIndex(e => e.PaymentMethodId);
+                  });
+
                   // 統一沖款商品明細配置
                   modelBuilder.Entity<SetoffProductDetail>(entity =>
                   {
@@ -579,7 +615,7 @@ namespace ERPCore2.Data.Context
 
                         // 沖款單關聯
                         entity.HasOne(spd => spd.SetoffDocument)
-                              .WithMany()
+                              .WithMany(sd => sd.SetoffProductDetails)
                               .HasForeignKey(spd => spd.SetoffDocumentId)
                               .OnDelete(DeleteBehavior.Cascade);
 
@@ -652,7 +688,7 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.VendorId); // 為未來的供應商功能預留
                   });
 
-                  modelBuilder.Entity<Prepayment>(entity =>
+                  modelBuilder.Entity<SetoffPrepayment>(entity =>
                   {
                         entity.HasKey(p => p.Id);
 
@@ -678,7 +714,6 @@ namespace ERPCore2.Data.Context
 
                         // 設定其他索引
                         entity.HasIndex(e => e.PrepaymentType);
-                        entity.HasIndex(e => e.PaymentDate);
                         entity.HasIndex(e => e.CustomerId);
                         entity.HasIndex(e => e.SupplierId);
                   });
