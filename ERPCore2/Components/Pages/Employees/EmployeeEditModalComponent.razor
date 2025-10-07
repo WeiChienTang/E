@@ -425,16 +425,7 @@
             });
 
             // 備註區段 - 所有人都可見
-            formFields.Add(new()
-            {
-                PropertyName = nameof(Employee.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                Rows = 2,
-                HelpText = "其他需要補充的資訊",
-                ContainerCssClass = "col-12" // 使用整排寬度
-            });
+            formFields.Add(FormFieldConfigurationHelper.CreateRemarksField<Employee>());
 
             // 更新表單區段定義
             formSections = new Dictionary<string, string>

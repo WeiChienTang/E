@@ -183,18 +183,8 @@
                     MaxLength = 50,
                     HelpText = "角色的唯一名稱，用於區別不同的系統權限群組，最多50個字元"
                 },
-                new()
-                {
-                    PropertyName = nameof(Role.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    Rows = 2,
-                    HelpText = "角色的額外說明或注意事項，可記錄特殊使用情況或限制，最多500個字元",
-                    ContainerCssClass = "col-12"
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<Role>()
             };
 
             // 設定表單區段

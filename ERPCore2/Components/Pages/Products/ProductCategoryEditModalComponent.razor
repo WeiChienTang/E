@@ -152,18 +152,8 @@
                 MaxLength = 50,
                 HelpText = "商品分類的名稱，用於區分不同的商品類型"
             },
-            new()
-            {
-                PropertyName = nameof(ProductCategory.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                IsRequired = false,
-                MaxLength = 500,
-                Rows = 2,
-                HelpText = "商品分類的額外說明或注意事項",
-                ContainerCssClass = "col-12"
-            }
+
+            FormFieldConfigurationHelper.CreateRemarksField<ProductCategory>()
         };
 
         formSections = new Dictionary<string, string>

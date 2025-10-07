@@ -220,18 +220,8 @@
                     HelpText = "輸入廠商類型名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetSupplierTypeActionButtonsAsync()
                 },
-                new()
-                {
-                    PropertyName = nameof(Supplier.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    Rows = 2,
-                    HelpText = "廠商的額外說明或注意事項",
-                    ContainerCssClass = "col-12"
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<Supplier>()
             };
 
             // 更新表單區段定義

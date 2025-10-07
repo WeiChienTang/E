@@ -266,6 +266,17 @@
                     $"折讓記錄金額錯誤：收款記錄折讓總額 {allowanceFromPayments:N2}，應等於本期折讓 {entity.TotalAllowanceAmount:N2}。請檢查收款記錄。");
                 return false;
             }
+            
+            // 驗證預收付款項（如果有填寫的話）
+            if (setoffPrepaymentDetailManager != null)
+            {
+                var prepaymentValidationResult = await setoffPrepaymentDetailManager.ValidateAsync();
+                if (!prepaymentValidationResult)
+                {
+                    // 驗證失敗訊息已在 ValidateAsync 中顯示
+                    return false;
+                }
+            }
 
             // 驗證通過
             return true;
@@ -1101,7 +1112,6 @@
             </div>
         }
     };
-    
     /// <summary>
     /// 創建預收付款項管理器內容的 RenderFragment
     /// </summary>
@@ -1109,16 +1119,16 @@
     {
         try
         {
-            @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
+            @if (editModalComponent?.Entity != null)
             {
-                <SetoffPrepaymentDetailManagerComponent 
-                    @ref="setoffPrepaymentDetailManager"
-                    SetoffDocumentId="@SetoffDocumentId"
-                    RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
-                    RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
-                    ExistingPrepayments="@setoffPrepayments"
-                    OnPrepaymentsChanged="@HandlePrepaymentsChanged"
-                    IsReadOnly="@IsReadOnly" />
+                <SetoffPrepaymentDetailManagerComponent @ref="setoffPrepaymentDetailManager"
+                                                       SetoffDocumentId="@SetoffDocumentId"
+                                                       SetoffType="@editModalComponent.Entity.SetoffType"
+                                                       CustomerId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsReceivable ? editModalComponent.Entity.RelatedPartyId : null)"
+                                                       SupplierId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsPayable ? editModalComponent.Entity.RelatedPartyId : null)"
+                                                       ExistingPrepayments="@setoffPrepayments"
+                                                       OnPrepaymentsChanged="@HandlePrepaymentsChanged"
+                                                       IsReadOnly="@IsReadOnly" />
             }
         }
         catch

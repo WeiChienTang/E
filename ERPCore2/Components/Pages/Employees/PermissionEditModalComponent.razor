@@ -172,18 +172,8 @@
                         }).ToList(),
                     HelpText = "選擇權限動作類型"
                 },
-                new()
-                {
-                    PropertyName = nameof(Permission.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    Rows = 2,
-                    HelpText = "權限的額外說明或注意事項",
-                    ContainerCssClass = "col-12"
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<Permission>()
             };
 
             formSections = new Dictionary<string, string>

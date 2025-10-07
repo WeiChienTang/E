@@ -232,19 +232,7 @@
                     HelpText = "銀行的地址",
                     ContainerCssClass = "col-12"
                 },
-                
-                // 備註區段
-                new()
-                {
-                    PropertyName = nameof(Bank.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    Rows = 2,
-                    HelpText = "關於此銀行的補充說明",
-                    ContainerCssClass = "col-12"
-                }
+                FormFieldConfigurationHelper.CreateRemarksField<Bank>()
             };
 
             formSections = new Dictionary<string, string>

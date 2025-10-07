@@ -185,14 +185,8 @@
                     IsRequired = true,
                     HelpText = "職位的正式名稱，將顯示在系統各處"
                 },
-
-                FormFieldConfigurationHelper.CreateRemarksField<EmployeePosition>(
-                    label: "職位備註",
-                    placeholder: "請輸入職位備註",
-                    helpText: "其他需要補充的資訊",
-                    rows: 2,
-                    containerCssClass: "col-12"
-                )
+                
+                FormFieldConfigurationHelper.CreateRemarksField<EmployeePosition>()
             };
 
             formSections = new Dictionary<string, string>

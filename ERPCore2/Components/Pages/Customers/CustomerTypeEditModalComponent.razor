@@ -199,16 +199,8 @@
                     IsRequired = true,
                     HelpText = "客戶類型的正式名稱，將顯示在系統各處"
                 },
-                new()
-                {
-                    PropertyName = nameof(CustomerType.Remarks),
-                    Label = "類型備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入類型備註",
-                    Rows = 2,
-                    HelpText = "其他需要補充的資訊",
-                    ContainerCssClass = "col-12"
-                }
+                
+                FormFieldConfigurationHelper.CreateRemarksField<CustomerType>()
             };
 
             formSections = new Dictionary<string, string>

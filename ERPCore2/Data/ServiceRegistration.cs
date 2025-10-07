@@ -59,6 +59,7 @@ namespace ERPCore2.Data
             services.AddScoped<ISetoffProductDetailService, SetoffProductDetailService>();
             services.AddScoped<ISetoffPaymentService, SetoffPaymentService>();
             services.AddScoped<ISetoffPrepaymentService, SetoffPrepaymentService>();
+            services.AddScoped<IPrepaymentTypeService, PrepaymentTypeService>();
 
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();

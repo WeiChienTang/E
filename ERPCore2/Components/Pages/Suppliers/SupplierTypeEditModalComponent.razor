@@ -82,18 +82,8 @@
                     MaxLength = 50,
                     HelpText = "廠商類型的唯一名稱，用於區別不同的廠商分類"
                 },
-                new()
-                {
-                    PropertyName = nameof(SupplierType.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    MaxLength = 500,
-                    Rows = 2,
-                    HelpText = "廠商類型的額外說明或注意事項",
-                    ContainerCssClass = "col-12"
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<SupplierType>()
             };
 
             formSections = new Dictionary<string, string>

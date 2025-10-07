@@ -42,26 +42,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new PaymentMethod
                 {
-                    Name = "信用卡",
-                    IsDefault = false,
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt2,
-                    CreatedBy = createdBy
-                },
-                new PaymentMethod
-                {
-                    Name = "銀行轉帳",
+                    Name = "轉帳",
                     IsDefault = false,
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt3,
-                    CreatedBy = createdBy
-                },
-                new PaymentMethod
-                {
-                    Name = "月結",
-                    IsDefault = false,
-                    Status = EntityStatus.Active,
-                    CreatedAt = createdAt4,
                     CreatedBy = createdBy
                 },
                 new PaymentMethod

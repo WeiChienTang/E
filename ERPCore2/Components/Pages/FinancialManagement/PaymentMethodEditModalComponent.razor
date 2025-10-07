@@ -197,12 +197,15 @@
                     HelpText = "付款方式的名稱，例如：現金、信用卡、轉帳等",
                     MaxLength = 50
                 },
+
+                FormFieldConfigurationHelper.CreateRemarksField<PaymentMethod>()
             };
 
             formSections = new Dictionary<string, string>
             {
                 { nameof(PaymentMethod.Code), "基本資訊" },
                 { nameof(PaymentMethod.Name), "基本資訊" },
+                { nameof(PaymentMethod.Remarks), "其他資訊" }
             };
         }
         catch (Exception ex)

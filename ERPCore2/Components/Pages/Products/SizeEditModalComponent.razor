@@ -135,18 +135,8 @@
                 MaxLength = 50,
                 HelpText = "顯示用的尺寸名稱，最多50個字元"
             },
-            new()
-            {
-                PropertyName = nameof(Size.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                IsRequired = false,
-                MaxLength = 500,
-                Rows = 2,
-                HelpText = "尺寸的額外說明或注意事項",
-                ContainerCssClass = "col-12"
-            }
+
+            FormFieldConfigurationHelper.CreateRemarksField<Size>()
         };
 
         formSections = new Dictionary<string, string>

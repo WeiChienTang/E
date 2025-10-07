@@ -135,18 +135,8 @@
                 MaxLength = 20,
                 HelpText = "單位的顯示名稱"
             },
-            new()
-            {
-                PropertyName = nameof(Unit.Remarks),
-                Label = "備註",
-                FieldType = FormFieldType.TextArea,
-                Placeholder = "請輸入備註",
-                IsRequired = false,
-                MaxLength = 500,
-                Rows = 2,
-                HelpText = "單位的額外說明或注意事項",
-                ContainerCssClass = "col-12"
-            }
+
+            FormFieldConfigurationHelper.CreateRemarksField<Unit>()
         };
 
         formSections = new Dictionary<string, string>
