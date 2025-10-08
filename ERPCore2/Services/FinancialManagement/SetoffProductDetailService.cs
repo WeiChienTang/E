@@ -175,6 +175,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SetoffProductDetails
+                    .AsNoTracking()  // 不追蹤實體，避免後續操作時的追蹤衝突
                     .Include(d => d.Product)
                     .Where(d => d.SetoffDocumentId == setoffDocumentId)
                     .OrderBy(d => d.Product.Name)
@@ -699,11 +700,17 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查沖款金額是否超過未結清餘額
         /// </summary>
+        /// <param name="sourceDetailId">來源明細ID</param>
+        /// <param name="sourceType">來源明細類型</param>
+        /// <param name="currentSetoffAmount">本次沖款金額</param>
+        /// <param name="currentAllowanceAmount">本次折讓金額</param>
+        /// <param name="excludeSetoffDetailId">要排除的沖銷明細ID（編輯模式用）</param>
         public async Task<ServiceResult> ValidateSetoffAmountAsync(
             int sourceDetailId,
             SetoffDetailType sourceType,
             decimal currentSetoffAmount,
-            decimal currentAllowanceAmount)
+            decimal currentAllowanceAmount,
+            int? excludeSetoffDetailId = null)
         {
             try
             {
@@ -748,7 +755,23 @@ namespace ERPCore2.Services
                         break;
                 }
 
-                var remainingAmount = totalAmount - paidAmount;
+                // 如果是編輯模式，需要扣除原本這筆沖銷明細已經計入的金額
+                var previousSetoffAmount = 0m;
+                if (excludeSetoffDetailId.HasValue && excludeSetoffDetailId.Value > 0)
+                {
+                    var existingDetail = await context.SetoffProductDetails
+                        .FirstOrDefaultAsync(d => d.Id == excludeSetoffDetailId.Value 
+                                                && d.SourceDetailId == sourceDetailId 
+                                                && d.SourceDetailType == sourceType);
+                    
+                    if (existingDetail != null)
+                    {
+                        previousSetoffAmount = existingDetail.CurrentSetoffAmount + existingDetail.CurrentAllowanceAmount;
+                    }
+                }
+
+                // 計算可用餘額 = 總金額 - 已付金額 + 原本這筆明細的沖銷金額（編輯模式）
+                var remainingAmount = totalAmount - paidAmount + previousSetoffAmount;
                 var totalCurrentAmount = currentSetoffAmount + currentAllowanceAmount;
 
                 // 驗證金額範圍
@@ -773,7 +796,8 @@ namespace ERPCore2.Services
                     SourceDetailId = sourceDetailId,
                     SourceType = sourceType,
                     CurrentSetoffAmount = currentSetoffAmount,
-                    CurrentAllowanceAmount = currentAllowanceAmount
+                    CurrentAllowanceAmount = currentAllowanceAmount,
+                    ExcludeSetoffDetailId = excludeSetoffDetailId
                 });
                 return ServiceResult.Failure("驗證沖款金額時發生錯誤");
             }

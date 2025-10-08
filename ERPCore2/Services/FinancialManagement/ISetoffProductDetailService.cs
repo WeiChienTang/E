@@ -52,11 +52,17 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查沖款金額是否超過未結清餘額
         /// </summary>
+        /// <param name="sourceDetailId">來源明細ID</param>
+        /// <param name="sourceType">來源明細類型</param>
+        /// <param name="currentSetoffAmount">本次沖款金額</param>
+        /// <param name="currentAllowanceAmount">本次折讓金額</param>
+        /// <param name="excludeSetoffDetailId">要排除的沖銷明細ID（編輯模式用）</param>
         Task<ServiceResult> ValidateSetoffAmountAsync(
             int sourceDetailId, 
             SetoffDetailType sourceType, 
             decimal currentSetoffAmount,
-            decimal currentAllowanceAmount);
+            decimal currentAllowanceAmount,
+            int? excludeSetoffDetailId = null);
     }
 
     /// <summary>

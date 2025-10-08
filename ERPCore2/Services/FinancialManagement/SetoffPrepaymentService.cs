@@ -258,6 +258,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SetoffPrepayments
+                    .AsNoTracking()  // 不追蹤實體，避免後續操作時的追蹤衝突
                     .Include(sp => sp.Customer)
                     .Include(sp => sp.Supplier)
                     .Include(sp => sp.SetoffDocument)

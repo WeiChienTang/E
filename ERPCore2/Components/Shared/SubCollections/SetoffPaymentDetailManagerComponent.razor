@@ -181,7 +181,7 @@
                     Value = pm.Id, 
                     Text = pm.Name 
                 })).ToList(),
-                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, args =>
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
@@ -200,7 +200,8 @@
                     AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
                         PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
-                    await NotifyPaymentsChanged();
+                    // 付款方式變更時也需要通知父組件，以便正確追蹤變更
+                    _ = NotifyPaymentsChanged();
                     StateHasChanged();
                 })
             },
@@ -267,7 +268,7 @@
                     Value = b.Id, 
                     Text = b.BankName 
                 })).ToList(),
-                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, args =>
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
@@ -286,7 +287,8 @@
                     AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
                         PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
-                    await NotifyPaymentsChanged();
+                    // 銀行別變更時也需要通知父組件，以便正確追蹤變更
+                    _ = NotifyPaymentsChanged();
                     StateHasChanged();
                 })
             },
@@ -297,7 +299,7 @@
                 ColumnType = InteractiveColumnType.Input,
                 Width = "150px",
                 IsRequired = false,
-                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, args =>
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
@@ -309,7 +311,8 @@
                     AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
                         PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
-                    await NotifyPaymentsChanged();
+                    // 支票號碼變更時也需要通知父組件，以便正確追蹤變更
+                    _ = NotifyPaymentsChanged();
                     StateHasChanged();
                 })
             },
@@ -426,6 +429,7 @@
         AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
             PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
         
+        // 到期日變更時也需要通知父組件，以便正確追蹤變更
         await NotifyPaymentsChanged();
         StateHasChanged();
     }
@@ -444,7 +448,11 @@
                 ReceivedAmount = item.ReceivedAmount,
                 AllowanceAmount = item.AllowanceAmount,
                 CheckNumber = item.CheckNumber,
-                DueDate = item.DueDate
+                DueDate = item.DueDate,
+                // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
+                SetoffDocument = null!,
+                Bank = null,
+                PaymentMethod = null
             }).ToList();
 
         await OnPaymentsChanged.InvokeAsync(payments);

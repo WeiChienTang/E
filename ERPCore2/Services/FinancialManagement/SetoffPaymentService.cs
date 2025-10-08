@@ -115,6 +115,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SetoffPayments
+                    .AsNoTracking()  // 不追蹤實體，避免後續操作時的追蹤衝突
                     .Include(sp => sp.Bank)
                     .Include(sp => sp.PaymentMethod)
                     .Where(sp => sp.SetoffDocumentId == setoffDocumentId)
