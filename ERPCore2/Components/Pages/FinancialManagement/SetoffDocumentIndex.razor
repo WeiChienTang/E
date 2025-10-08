@@ -11,8 +11,8 @@
                       TService="ISetoffDocumentService"
                       Service="@SetoffDocumentService"
                       EntityBasePath="/setoffDocuments"
-                      PageTitle="@GetPageTitle()"
-                      PageSubtitle="@GetPageSubtitle()"
+                      PageTitle="@PageTitle"
+                      PageSubtitle="@PageSubtitle"
                       EntityName="沖款單"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
@@ -53,6 +53,38 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    
+    // 追蹤當前路由以偵測變更
+    private string? currentRoute;
+    
+    // 頁面標題和副標題 - 使用計算屬性以便即時響應路由變更
+    private string PageTitle
+    {
+        get
+        {
+            var defaultSetoffType = GetDefaultSetoffType();
+            return defaultSetoffType switch
+            {
+                SetoffType.AccountsReceivable => "應收帳款沖款單",
+                SetoffType.AccountsPayable => "應付帳款沖款單",
+                _ => "沖款單維護"
+            };
+        }
+    }
+    
+    private string PageSubtitle
+    {
+        get
+        {
+            var defaultSetoffType = GetDefaultSetoffType();
+            return defaultSetoffType switch
+            {
+                SetoffType.AccountsReceivable => "管理客戶應收帳款沖款作業",
+                SetoffType.AccountsPayable => "管理廠商應付帳款沖款作業",
+                _ => "管理應收與應付帳款沖款作業"
+            };
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,6 +100,9 @@
             
             // 監聽 URL 變更事件，確保標題和副標題能即時更新
             NavigationManager.LocationChanged += OnLocationChanged;
+            
+            // 記錄當前路由
+            currentRoute = NavigationManager.Uri;
             
             await InitializeBreadcrumbsAsync();
             
@@ -89,14 +124,53 @@
     }
 
     /// <summary>
+    /// 當路由參數變更時觸發，確保頁面標題和資料正確更新
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            // 檢查路由是否真的變更了
+            var newRoute = NavigationManager.Uri;
+            if (currentRoute != newRoute)
+            {
+                currentRoute = newRoute;
+                
+                // 強制重新渲染以更新頁面標題和副標題（使用計算屬性）
+                StateHasChanged();
+                
+                // 重新載入資料以顯示對應類型的沖款單
+                if (indexComponent != null)
+                {
+                    await indexComponent.Refresh();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(), additionalData: "更新頁面參數失敗");
+        }
+    }
+
+    /// <summary>
     /// 處理 URL 變更事件
     /// </summary>
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        // 當 URL 變更時，重新載入資料以顯示對應類型的沖款單
+        // 當 URL 變更時，更新頁面標題和重新載入資料
         InvokeAsync(async () =>
         {
-            await indexComponent.Refresh();
+            // 更新當前路由
+            currentRoute = NavigationManager.Uri;
+            
+            // 強制重新渲染
+            StateHasChanged();
+            
+            // 重新載入資料以顯示對應類型的沖款單
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
         });
     }
 
@@ -207,35 +281,5 @@
         }
         
         return null; // 如果是其他 URL，不設定預設值
-    }
-
-    /// <summary>
-    /// 根據當前 URL 取得頁面標題
-    /// </summary>
-    private string GetPageTitle()
-    {
-        var defaultSetoffType = GetDefaultSetoffType();
-        
-        return defaultSetoffType switch
-        {
-            SetoffType.AccountsReceivable => "應收帳款沖款單",
-            SetoffType.AccountsPayable => "應付帳款沖款單",
-            _ => "沖款單維護"
-        };
-    }
-
-    /// <summary>
-    /// 根據當前 URL 取得頁面副標題
-    /// </summary>
-    private string GetPageSubtitle()
-    {
-        var defaultSetoffType = GetDefaultSetoffType();
-        
-        return defaultSetoffType switch
-        {
-            SetoffType.AccountsReceivable => "管理客戶應收帳款沖款作業",
-            SetoffType.AccountsPayable => "管理廠商應付帳款沖款作業",
-            _ => "管理應收與應付帳款沖款作業"
-        };
     }
 }

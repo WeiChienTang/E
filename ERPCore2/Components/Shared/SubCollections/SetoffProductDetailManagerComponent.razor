@@ -133,6 +133,9 @@ else
 
     private void LoadExistingDetails()
     {
+        // 判斷是否為編輯模式（SetoffDocumentId 有值且大於 0）
+        bool isEditMode = SetoffDocumentId.HasValue && SetoffDocumentId.Value > 0;
+        
         // 如果有已存在的明細（編輯模式），則顯示已存在的明細
         if (ExistingDetails.Any())
         {
@@ -160,7 +163,7 @@ else
             // 對於需要載入來源明細的項目，非同步載入
             _ = LoadMissingSourceDetailsAsync();
         }
-        else
+        else if (!isEditMode)
         {
             // 新增模式：將所有未結清明細轉換為 SetoffItems，預設本次沖款和折讓為0
             SetoffItems = UnsettledDetails
@@ -178,6 +181,11 @@ else
                     UnsettledDetail = detail, // 保留未結清明細資訊
                     NeedsSourceDetailLoad = false
                 }).ToList();
+        }
+        else
+        {
+            // 編輯模式但沒有任何已儲存的商品明細：顯示空列表
+            SetoffItems = new List<SetoffProductDetailItem>();
         }
     }
     

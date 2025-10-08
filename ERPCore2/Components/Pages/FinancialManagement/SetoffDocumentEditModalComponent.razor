@@ -353,9 +353,11 @@
                 }
             }
             
-            // 儲存預收付款項（過濾掉使用金額為 0 的項目）
+            // 儲存預收付款項（過濾掉金額為 0 的項目）
+            // 預收/預付類型：Amount > 0
+            // 轉沖款類型：UsedAmount > 0
             var validPrepayments = setoffPrepayments
-                .Where(p => p.UsedAmount > 0)
+                .Where(p => p.Amount > 0 || p.UsedAmount > 0)
                 .ToList();
                 
             if (entity.Id > 0)
@@ -463,12 +465,26 @@
     /// <summary>
     /// 處理預收付款項變更事件
     /// </summary>
+    /// <remarks>
+    /// 當使用預收付款項時，會增加本期已收金額
+    /// 預收/預付類型：計算 Amount
+    /// 轉沖款類型：計算 UsedAmount
+    /// </remarks>
     private Task HandlePrepaymentsChanged(List<SetoffPrepayment> prepayments)
     {
         setoffPrepayments = prepayments;
         
-        // 註：預收付款項的金額變更不會直接影響主表單的金額欄位
-        // 預收付款項主要用於記錄使用了哪些預收/預付款項來沖銷本次的應收/應付帳款
+        // 更新本期已收金額
+        if (editModalComponent?.Entity != null)
+        {
+            // 【本期已收】= 商品明細的本次沖款 + 預收付款項的總金額
+            var collectionFromDetails = setoffProductDetails.Sum(d => d.CurrentSetoffAmount);
+            
+            // 預收付款項的金額 = Amount（預收/預付類型） + UsedAmount（轉沖款類型）
+            var collectionFromPrepayments = prepayments.Sum(p => p.Amount + p.UsedAmount);
+            
+            editModalComponent.Entity.TotalCollectionAmount = collectionFromDetails + collectionFromPrepayments;
+        }
         
         StateHasChanged();
         return Task.CompletedTask;
@@ -496,15 +512,16 @@
                 // 新增模式 - 使用 DefaultSetoffType 或預設為應收帳款
                 setoffDocument = new SetoffDocument
                 {
-                    SetoffNumber = await GenerateSetoffNumberAsync(),
+                    SetoffNumber = await GenerateSetoffNumberAsync(DefaultSetoffType),
                     SetoffDate = DateTime.Today,
                     SetoffType = DefaultSetoffType ?? SetoffType.AccountsReceivable,
                     TotalSetoffAmount = 0
                 };
                 
-                // 新增模式：清空商品明細和收款記錄
+                // 新增模式：清空商品明細、收款記錄和預收付款項
                 setoffProductDetails = new List<SetoffProductDetail>();
                 setoffPayments = new List<SetoffPayment>();
+                setoffPrepayments = new List<SetoffPrepayment>(); 
             }
             else
             {
@@ -516,6 +533,9 @@
                 
                 // 載入收款記錄
                 setoffPayments = await SetoffPaymentService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
+                
+                // 載入預收付款項
+                setoffPrepayments = await SetoffPrepaymentService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
             }
             
             // 資料載入後，重新初始化表單欄位以正確顯示客戶或廠商欄位
@@ -754,13 +774,22 @@
     /// <summary>
     /// 產生沖款單號
     /// </summary>
-    private async Task<string> GenerateSetoffNumberAsync()
+    /// <remarks>
+    /// 單號格式:
+    /// - 應收帳款: SO-YYYYMMDD-001 (Sales Offset - 銷貨沖款)
+    /// - 應付帳款: PO-YYYYMMDD-001 (Purchase Offset - 進貨沖款)
+    /// </remarks>
+    private async Task<string> GenerateSetoffNumberAsync(SetoffType? setoffType = null)
     {
         try
         {
-            // 格式: SO-YYYYMMDD-001
+            // 根據沖款類型決定前綴
+            // 應收帳款使用 SO (Sales Offset), 應付帳款使用 PO (Purchase Offset)
+            var currentSetoffType = setoffType ?? editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
+            var typePrefix = currentSetoffType == SetoffType.AccountsReceivable ? "SO" : "PO";
+            
             var today = DateTime.Today;
-            var prefix = $"SO-{today:yyyyMMdd}";
+            var prefix = $"{typePrefix}-{today:yyyyMMdd}";
             
             var allSetoffDocs = await SetoffDocumentService.GetAllAsync();
             var todaySetoffDocs = allSetoffDocs
@@ -779,7 +808,10 @@
         }
         catch (Exception)
         {
-            return $"SO-{DateTime.Today:yyyyMMdd}-001";
+            // 例外處理時也根據類型決定前綴
+            var currentSetoffType = setoffType ?? editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
+            var typePrefix = currentSetoffType == SetoffType.AccountsReceivable ? "SO" : "PO";
+            return $"{typePrefix}-{DateTime.Today:yyyyMMdd}-001";
         }
     }
 
@@ -1119,13 +1151,14 @@
     {
         try
         {
-            @if (editModalComponent?.Entity != null)
+            @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
             {
                 <SetoffPrepaymentDetailManagerComponent @ref="setoffPrepaymentDetailManager"
                                                        SetoffDocumentId="@SetoffDocumentId"
                                                        SetoffType="@editModalComponent.Entity.SetoffType"
                                                        CustomerId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsReceivable ? editModalComponent.Entity.RelatedPartyId : null)"
                                                        SupplierId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsPayable ? editModalComponent.Entity.RelatedPartyId : null)"
+                                                       SetoffDocumentNumber="@editModalComponent.Entity.SetoffNumber"
                                                        ExistingPrepayments="@setoffPrepayments"
                                                        OnPrepaymentsChanged="@HandlePrepaymentsChanged"
                                                        IsReadOnly="@IsReadOnly" />
