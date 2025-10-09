@@ -5,9 +5,11 @@
 }
 
 .statistics-card-wrapper {
-    flex: 1;
-    min-width: 120px;
-    max-width: calc(12.5% - 15px);
+    flex: 1 1 auto;
+    min-width: 150px;
+    max-width: 100%;
+    /* 當超過8個卡片時自動換行 */
+    flex-basis: calc(12.5% - 15px);
 }
 
 /* 響應式設計 */

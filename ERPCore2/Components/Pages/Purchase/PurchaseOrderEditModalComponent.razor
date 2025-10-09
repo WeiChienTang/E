@@ -47,9 +47,20 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnReject="@HandlePurchaseOrderReject"
-                          GetApprovalStatus="@GetPurchaseOrderApprovalStatus"
-                          >
-
+                          GetApprovalStatus="@GetPurchaseOrderApprovalStatus">
+    @* 暫時隱藏轉單功能 - 設計上還有問題需要調整 *@
+    @* <CustomActionButtons>
+        只有在編輯模式且採購單已核准時才顯示轉單按鈕
+        @if (PurchaseOrderId.HasValue && editModalComponent?.Entity?.IsApproved == true)
+        {
+            <GenericButtonComponent Text="轉進貨單" 
+                                  Variant="ButtonVariant.Primary" 
+                                  OnClick="HandleConvertToPurchaseReceiving" 
+                                  IsDisabled="@isConvertingToReceiving"
+                                  IsLoading="@isConvertingToReceiving"
+                                  Title="將此採購單轉為進貨單" />
+        }
+    </CustomActionButtons> *@
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -99,6 +110,9 @@
     
     // 系統參數 - 稅率快取（避免重複查詢資料庫）
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
+    
+    // 轉單操作狀態
+    private bool isConvertingToReceiving = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -1244,6 +1258,66 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetCurrentUserIdAsync), GetType(), 
                 additionalData: "取得當前使用者ID失敗");
             return null;
+        }
+    }
+    
+    // ===== 轉單功能 =====
+    
+    /// <summary>
+    /// 處理轉為進貨單
+    /// </summary>
+    private async Task HandleConvertToPurchaseReceiving()
+    {
+        if (isConvertingToReceiving) return;
+        
+        try
+        {
+            isConvertingToReceiving = true;
+            StateHasChanged();
+            
+            // 驗證採購單狀態
+            if (!PurchaseOrderId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法轉單：採購單ID不存在");
+                return;
+            }
+            
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowErrorAsync("無法轉單：採購單資料不存在");
+                return;
+            }
+            
+            if (!editModalComponent.Entity.IsApproved)
+            {
+                await NotificationService.ShowErrorAsync("無法轉單：採購單尚未核准");
+                return;
+            }
+            
+            // 驗證是否有採購明細
+            if (purchaseOrderDetails == null || !purchaseOrderDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("無法轉單：此採購單沒有明細資料");
+                return;
+            }
+            
+            // TODO: 實作轉入庫單的邏輯
+            // 1. 檢查是否已經有關聯的進貨單
+            // 2. 創建新的進貨單並複製相關資料
+            // 3. 導航到進貨單編輯頁面或顯示成功訊息
+            
+            await NotificationService.ShowInfoAsync("轉入庫單功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleConvertToPurchaseReceiving), GetType(), 
+                additionalData: $"轉入庫單失敗 - 採購單ID: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync("轉入庫單時發生錯誤");
+        }
+        finally
+        {
+            isConvertingToReceiving = false;
+            StateHasChanged();
         }
     }
 }

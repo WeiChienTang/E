@@ -211,14 +211,6 @@
             {
                 new()
                 {
-                    Title = "總商品數量",
-                    DataKey = "TotalProducts",
-                    BorderColor = "primary",
-                    TextColor = "primary",
-                    OnClick = EventCallback.Factory.Create(this, HandleTotalProductsClick)
-                },
-                new()
-                {
                     Title = "總庫存價值",
                     DataKey = "TotalInventoryValue",
                     BorderColor = "success",
@@ -236,14 +228,6 @@
                 },
                 new()
                 {
-                    Title = "零庫存商品",
-                    DataKey = "ZeroStockCount",
-                    BorderColor = "danger",
-                    TextColor = "danger",
-                    OnClick = EventCallback.Factory.Create(this, HandleZeroStockClick)
-                },
-                new()
-                {
                     Title = "未設警戒線",
                     DataKey = "NoWarningLevelCount",
                     BorderColor = "secondary",
@@ -258,22 +242,6 @@
                     TextColor = "info",
                     OnClick = EventCallback.Factory.Create(this, HandleOverStockClick)
                 },
-                new()
-                {
-                    Title = "呆滯庫存",
-                    DataKey = "StaleStockCount",
-                    BorderColor = "warning",
-                    TextColor = "warning",
-                    OnClick = EventCallback.Factory.Create(this, HandleStaleStockClick)
-                },
-                new()
-                {
-                    Title = "預留過高",
-                    DataKey = "HighReservedStockCount",
-                    BorderColor = "danger",
-                    TextColor = "danger",
-                    OnClick = EventCallback.Factory.Create(this, HandleHighReservedStockClick)
-                }
             };
         }
         catch (Exception ex)
@@ -303,23 +271,6 @@
         }
     }
     
-    // ===== 統計卡片點擊事件處理 =====
-    
-    private async Task HandleTotalProductsClick()
-    {
-        try
-        {
-            // 清除所有篩選，顯示全部商品
-            if (indexComponent != null)
-            {
-                indexComponent.ResetFilters();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalProductsClick), GetType());
-        }
-    }
     
     private async Task HandleTotalValueClick()
     {
@@ -348,20 +299,6 @@
         }
     }
     
-    private async Task HandleZeroStockClick()
-    {
-        try
-        {
-            // 篩選顯示零庫存商品
-            // 這裡需要透過篩選器來實現，暫時顯示訊息
-            await NotificationService.ShowWarningAsync("零庫存商品篩選功能開發中...");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleZeroStockClick), GetType());
-        }
-    }
-    
     private async Task HandleNoWarningLevelClick()
     {
         try
@@ -383,30 +320,6 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleOverStockClick), GetType());
-        }
-    }
-    
-    private async Task HandleStaleStockClick()
-    {
-        try
-        {
-            await NotificationService.ShowWarningAsync("發現30天內沒有異動的呆滯庫存。建議檢查這些商品是否需要促銷或調整庫存策略。");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleStaleStockClick), GetType());
-        }
-    }
-    
-    private async Task HandleHighReservedStockClick()
-    {
-        try
-        {
-            await NotificationService.ShowWarningAsync("發現預留庫存比例過高的商品。預留庫存超過總庫存的50%可能影響可用庫存，建議檢查預留設定。");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleHighReservedStockClick), GetType());
         }
     }
 

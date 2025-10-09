@@ -45,5 +45,12 @@ namespace ERPCore2.Services
         /// <param name="endDate">結束日期</param>
         /// <returns>沖款單列表</returns>
         Task<List<SetoffDocument>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// 重建所有來源明細的快取金額（修復工具）
+        /// </summary>
+        /// <param name="sourceDetailType">來源明細類型（null 表示全部）</param>
+        /// <returns>重建結果</returns>
+        Task<ServiceResult> RebuildCacheAsync(SetoffDetailType? sourceDetailType = null);
     }
 }

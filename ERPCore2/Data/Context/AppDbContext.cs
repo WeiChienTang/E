@@ -693,30 +693,38 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasKey(p => p.Id);
 
+                        // 沖款單關聯（級聯刪除）
+                        entity.HasOne(p => p.SetoffDocument)
+                              .WithMany(sd => sd.Prepayments)
+                              .HasForeignKey(p => p.SetoffDocumentId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
                         // 客戶關聯（預收款時使用）
                         entity.HasOne(p => p.Customer)
-                        .WithMany()
-                        .HasForeignKey(p => p.CustomerId)
-                        .OnDelete(DeleteBehavior.Restrict);
+                              .WithMany()
+                              .HasForeignKey(p => p.CustomerId)
+                              .OnDelete(DeleteBehavior.Restrict);
 
                         // 供應商關聯（預付款時使用）
                         entity.HasOne(p => p.Supplier)
-                        .WithMany()
-                        .HasForeignKey(p => p.SupplierId)
-                        .OnDelete(DeleteBehavior.Restrict);
+                              .WithMany()
+                              .HasForeignKey(p => p.SupplierId)
+                              .OnDelete(DeleteBehavior.Restrict);
 
                         // 為 decimal 屬性設定精確度和小數位數
                         entity.Property(e => e.Amount)
                               .HasPrecision(18, 2);
+                        entity.Property(e => e.UsedAmount)
+                              .HasPrecision(18, 2);
 
                         // 設定唯一索引
-                        entity.HasIndex(e => e.Code)
-                              .IsUnique();
+                        entity.HasIndex(e => e.SourceDocumentCode);
 
                         // 設定其他索引
                         entity.HasIndex(e => e.PrepaymentTypeId);
                         entity.HasIndex(e => e.CustomerId);
                         entity.HasIndex(e => e.SupplierId);
+                        entity.HasIndex(e => e.SetoffDocumentId);
                   });
 
                   // 紙張設定相關

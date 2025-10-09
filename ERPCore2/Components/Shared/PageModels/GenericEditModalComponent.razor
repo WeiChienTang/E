@@ -38,8 +38,16 @@
 
                 @* Modal Actions - 按鈕區塊移到頂部 *@
                 <div class="modal-footer border-bottom border-top-0 d-flex align-items-center">
+                    @* 最左側：自訂操作按鈕（例如：轉入庫、轉沖款等業務流程按鈕） *@
+                    @if (CustomActionButtons != null)
+                    {
+                        <div class="d-flex gap-2 me-auto">
+                            @CustomActionButtons
+                        </div>
+                    }
+                    
                     @* 左側：審核狀態顯示 *@
-                    <div class="flex-grow-1">
+                    <div class="@(CustomActionButtons == null ? "flex-grow-1" : "")">
                         @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0 && !string.IsNullOrEmpty(ApprovalStatusText))
                         {
                             <span class="badge bg-info me-2">
@@ -271,6 +279,9 @@
     [Parameter] public string CancelButtonText { get; set; } = "取消";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
     [Parameter] public bool ShowPrintButton { get; set; } = false;
+    
+    // 自訂操作按鈕區域（顯示在頂部按鈕列的最左側）
+    [Parameter] public RenderFragment? CustomActionButtons { get; set; }
     
     // 表單設定
     [Parameter] public bool UseGenericForm { get; set; } = true;

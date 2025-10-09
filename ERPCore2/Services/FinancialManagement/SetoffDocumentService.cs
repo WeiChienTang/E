@@ -382,5 +382,292 @@ namespace ERPCore2.Services
                 }
             }
         }
+
+        /// <summary>
+        /// 覆寫刪除方法 - 在刪除沖款單前先回朔來源明細的累計金額
+        /// </summary>
+        public override async Task<ServiceResult> DeleteAsync(int id)
+        {
+            // 直接調用 PermanentDeleteAsync，保持與基礎類別的一致性
+            return await PermanentDeleteAsync(id);
+        }
+
+        /// <summary>
+        /// 覆寫永久刪除方法 - 在刪除沖款單前先回朔來源明細的累計金額
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            using var transaction = await context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 📦 載入完整資料（含所有關聯明細）
+                var document = await context.SetoffDocuments
+                    .Include(d => d.SetoffProductDetails)
+                    .Include(d => d.SetoffPayments)
+                    .Include(d => d.Prepayments)
+                    .Include(d => d.FinancialTransactions)
+                    .FirstOrDefaultAsync(d => d.Id == id);
+
+                if (document == null)
+                {
+                    await transaction.RollbackAsync();
+                    return ServiceResult.Failure("找不到要刪除的沖款單");
+                }
+
+                // 檢查是否可以刪除
+                var canDeleteResult = await CanDeleteAsync(document);
+                if (!canDeleteResult.IsSuccess)
+                {
+                    await transaction.RollbackAsync();
+                    return canDeleteResult;
+                }
+
+                // 🔄 【關鍵步驟】先回朔所有來源 Detail 的累計金額
+                _logger?.LogInformation("開始回朔沖款單 {SetoffNumber} 的來源明細累計金額", document.SetoffNumber);
+                
+                foreach (var detail in document.SetoffProductDetails)
+                {
+                    await RollbackSourceDetailAmountAsync(context, detail);
+                }
+
+                _logger?.LogInformation("已完成 {Count} 筆來源明細的金額回朔", document.SetoffProductDetails.Count);
+
+                // 🗑️ 刪除沖款單（級聯刪除所有關聯明細）
+                context.SetoffDocuments.Remove(document);
+
+                // 💾 儲存變更
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger?.LogInformation("成功刪除沖款單 {SetoffNumber} (Id={Id})", document.SetoffNumber, id);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new
+                {
+                    Method = nameof(PermanentDeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                return ServiceResult.Failure($"刪除沖款單時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 回朔來源明細的累計金額（排除當前要刪除的明細）
+        /// </summary>
+        /// <param name="context">資料庫上下文</param>
+        /// <param name="detailToDelete">要刪除的沖款明細</param>
+        private async Task RollbackSourceDetailAmountAsync(AppDbContext context, SetoffProductDetail detailToDelete)
+        {
+            try
+            {
+                // 🔍 重新計算累計金額（排除當前要刪除的明細）
+                var newTotalSetoff = await context.SetoffProductDetails
+                    .Where(spd => spd.SourceDetailType == detailToDelete.SourceDetailType
+                               && spd.SourceDetailId == detailToDelete.SourceDetailId
+                               && spd.Id != detailToDelete.Id)  // ← 排除當前要刪除的
+                    .SumAsync(spd => spd.TotalSetoffAmount);
+
+                var newTotalAllowance = await context.SetoffProductDetails
+                    .Where(spd => spd.SourceDetailType == detailToDelete.SourceDetailType
+                               && spd.SourceDetailId == detailToDelete.SourceDetailId
+                               && spd.Id != detailToDelete.Id)
+                    .SumAsync(spd => spd.TotalAllowanceAmount);
+
+                // 💾 根據來源明細類型，更新對應的累計金額（快取欄位）
+                switch (detailToDelete.SourceDetailType)
+                {
+                    case SetoffDetailType.PurchaseReceivingDetail:
+                        var purchaseDetail = await context.PurchaseReceivingDetails
+                            .FindAsync(detailToDelete.SourceDetailId);
+                        if (purchaseDetail != null)
+                        {
+                            purchaseDetail.TotalPaidAmount = newTotalSetoff;
+                            purchaseDetail.IsSettled = newTotalSetoff >= purchaseDetail.SubtotalAmount;
+                            
+                            _logger?.LogDebug(
+                                "回朔 PurchaseReceivingDetail Id={Id}: TotalPaidAmount {Old} → {New}",
+                                purchaseDetail.Id,
+                                purchaseDetail.TotalPaidAmount + detailToDelete.TotalSetoffAmount,
+                                newTotalSetoff);
+                        }
+                        break;
+
+                    case SetoffDetailType.SalesOrderDetail:
+                        var salesDetail = await context.SalesOrderDetails
+                            .FindAsync(detailToDelete.SourceDetailId);
+                        if (salesDetail != null)
+                        {
+                            salesDetail.TotalReceivedAmount = newTotalSetoff;
+                            salesDetail.IsSettled = newTotalSetoff >= salesDetail.SubtotalAmount;
+                            
+                            _logger?.LogDebug(
+                                "回朔 SalesOrderDetail Id={Id}: TotalReceivedAmount {Old} → {New}",
+                                salesDetail.Id,
+                                salesDetail.TotalReceivedAmount + detailToDelete.TotalSetoffAmount,
+                                newTotalSetoff);
+                        }
+                        break;
+
+                    case SetoffDetailType.SalesReturnDetail:
+                        var salesReturnDetail = await context.SalesReturnDetails
+                            .FindAsync(detailToDelete.SourceDetailId);
+                        if (salesReturnDetail != null)
+                        {
+                            salesReturnDetail.TotalPaidAmount = newTotalSetoff;
+                            salesReturnDetail.IsSettled = newTotalSetoff >= salesReturnDetail.ReturnSubtotalAmount;
+                            
+                            _logger?.LogDebug(
+                                "回朔 SalesReturnDetail Id={Id}: TotalPaidAmount {Old} → {New}",
+                                salesReturnDetail.Id,
+                                salesReturnDetail.TotalPaidAmount + detailToDelete.TotalSetoffAmount,
+                                newTotalSetoff);
+                        }
+                        break;
+
+                    case SetoffDetailType.PurchaseReturnDetail:
+                        var purchaseReturnDetail = await context.PurchaseReturnDetails
+                            .FindAsync(detailToDelete.SourceDetailId);
+                        if (purchaseReturnDetail != null)
+                        {
+                            purchaseReturnDetail.TotalReceivedAmount = newTotalSetoff;
+                            purchaseReturnDetail.IsSettled = newTotalSetoff >= purchaseReturnDetail.ReturnSubtotalAmount;
+                            
+                            _logger?.LogDebug(
+                                "回朔 PurchaseReturnDetail Id={Id}: TotalReceivedAmount {Old} → {New}",
+                                purchaseReturnDetail.Id,
+                                purchaseReturnDetail.TotalReceivedAmount + detailToDelete.TotalSetoffAmount,
+                                newTotalSetoff);
+                        }
+                        break;
+
+                    default:
+                        _logger?.LogWarning(
+                            "未知的來源明細類型: {SourceDetailType}",
+                            detailToDelete.SourceDetailType);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, 
+                    "回朔來源明細金額時發生錯誤 SourceType={SourceType} SourceId={SourceId}",
+                    detailToDelete.SourceDetailType,
+                    detailToDelete.SourceDetailId);
+                throw; // 重新拋出例外，讓 Transaction 回滾
+            }
+        }
+
+        /// <summary>
+        /// 重建所有來源明細的快取金額（修復工具）
+        /// </summary>
+        /// <param name="sourceDetailType">來源明細類型（null 表示全部）</param>
+        /// <returns>重建結果</returns>
+        public async Task<ServiceResult> RebuildCacheAsync(SetoffDetailType? sourceDetailType = null)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            using var transaction = await context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var rebuiltCount = 0;
+
+                // 根據類型重建快取
+                var typesToRebuild = sourceDetailType.HasValue
+                    ? new[] { sourceDetailType.Value }
+                    : Enum.GetValues<SetoffDetailType>();
+
+                foreach (var type in typesToRebuild)
+                {
+                    rebuiltCount += await RebuildCacheByTypeAsync(context, type);
+                }
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger?.LogInformation("成功重建 {Count} 筆快取資料", rebuiltCount);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RebuildCacheAsync), GetType(), _logger);
+                return ServiceResult.Failure($"重建快取時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 根據類型重建快取
+        /// </summary>
+        private async Task<int> RebuildCacheByTypeAsync(AppDbContext context, SetoffDetailType type)
+        {
+            var count = 0;
+
+            switch (type)
+            {
+                case SetoffDetailType.PurchaseReceivingDetail:
+                    var purchaseDetails = await context.PurchaseReceivingDetails.ToListAsync();
+                    foreach (var detail in purchaseDetails)
+                    {
+                        var total = await context.SetoffProductDetails
+                            .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
+                            .SumAsync(spd => spd.TotalSetoffAmount);
+                        
+                        detail.TotalPaidAmount = total;
+                        detail.IsSettled = total >= detail.SubtotalAmount;
+                        count++;
+                    }
+                    break;
+
+                case SetoffDetailType.SalesOrderDetail:
+                    var salesDetails = await context.SalesOrderDetails.ToListAsync();
+                    foreach (var detail in salesDetails)
+                    {
+                        var total = await context.SetoffProductDetails
+                            .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
+                            .SumAsync(spd => spd.TotalSetoffAmount);
+                        
+                        detail.TotalReceivedAmount = total;
+                        detail.IsSettled = total >= detail.SubtotalAmount;
+                        count++;
+                    }
+                    break;
+
+                case SetoffDetailType.SalesReturnDetail:
+                    var salesReturnDetails = await context.SalesReturnDetails.ToListAsync();
+                    foreach (var detail in salesReturnDetails)
+                    {
+                        var total = await context.SetoffProductDetails
+                            .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
+                            .SumAsync(spd => spd.TotalSetoffAmount);
+                        
+                        detail.TotalPaidAmount = total;
+                        detail.IsSettled = total >= detail.ReturnSubtotalAmount;
+                        count++;
+                    }
+                    break;
+
+                case SetoffDetailType.PurchaseReturnDetail:
+                    var purchaseReturnDetails = await context.PurchaseReturnDetails.ToListAsync();
+                    foreach (var detail in purchaseReturnDetails)
+                    {
+                        var total = await context.SetoffProductDetails
+                            .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
+                            .SumAsync(spd => spd.TotalSetoffAmount);
+                        
+                        detail.TotalReceivedAmount = total;
+                        detail.IsSettled = total >= detail.ReturnSubtotalAmount;
+                        count++;
+                    }
+                    break;
+            }
+
+            return count;
+        }
     }
 }
