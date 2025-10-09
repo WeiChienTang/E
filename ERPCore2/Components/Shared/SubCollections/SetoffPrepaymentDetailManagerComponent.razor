@@ -1,6 +1,7 @@
 @* 沖款預收付款項管理組件 - 管理預收付款項的使用記錄 *@
 
 @inject ISetoffPrepaymentService SetoffPrepaymentService
+@inject ISetoffPrepaymentUsageService SetoffPrepaymentUsageService
 @inject IPrepaymentTypeService PrepaymentTypeService
 @inject INotificationService NotificationService
 
@@ -24,7 +25,6 @@
     [Parameter] public int? SupplierId { get; set; }
     [Parameter] public SetoffType SetoffType { get; set; } // 新增：沖款類型（應收/應付）
     [Parameter] public string? SetoffDocumentNumber { get; set; } // 沖款單號（用於設定來源單號）
-    [Parameter] public bool HasProductSetoff { get; set; } = false; // 新增：是否有商品沖款/折讓
     
     // 資料綁定
     [Parameter] public List<SetoffPrepayment> ExistingPrepayments { get; set; } = new();
@@ -43,7 +43,6 @@
     private int? _previousCustomerId;
     private int? _previousSupplierId;
     private int _previousExistingPrepaymentsCount;
-    private bool _previousHasProductSetoff;
 
     // ===== 計算屬性 =====
     /// <summary>
@@ -80,22 +79,12 @@
         _previousCustomerId = CustomerId;
         _previousSupplierId = SupplierId;
         _previousExistingPrepaymentsCount = ExistingPrepayments?.Count ?? 0;
-        _previousHasProductSetoff = HasProductSetoff;
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 優先篩選預收付類型（確保 SetoffType 已正確設定）
-        var previousHasProductSetoff = _previousHasProductSetoff;
-        if (_previousHasProductSetoff != HasProductSetoff)
-        {
-            FilterPrepaymentTypes();
-            _previousHasProductSetoff = HasProductSetoff;
-        }
-        else
-        {
-            FilterPrepaymentTypes();
-        }
+        // 篩選預收付類型（確保 SetoffType 已正確設定）
+        FilterPrepaymentTypes();
         
         // 只有當 CustomerId 或 SupplierId 真正變更時，才重新載入可用的預收付款項
         if (_previousCustomerId != CustomerId || _previousSupplierId != SupplierId)
@@ -154,23 +143,10 @@
     
     /// <summary>
     /// 確保有一行空行
-    /// 預收/付類型：只能有一筆有效記錄
-    /// 轉沖款類型：可以有多筆有效記錄
     /// </summary>
     private void EnsureOneEmptyRow()
     {
-        // 如果是預收/付類型（無商品沖款），檢查是否已有有效記錄
-        if (!HasProductSetoff)
-        {
-            var validItemsCount = PrepaymentItems.Count(item => !IsEmptyRow(item));
-            if (validItemsCount >= 1)
-            {
-                // 預收/付類型只能有一筆，不再新增空行
-                return;
-            }
-        }
-        
-        // 轉沖款類型或沒有有效記錄時，確保有一行空行
+        // 確保有一行空行可以輸入
         AutoEmptyRowHelper.For<SetoffPrepaymentItem>.EnsureOneEmptyRow(
             PrepaymentItems, 
             IsEmptyRow, 
@@ -201,13 +177,8 @@
     
     /// <summary>
     /// 根據沖款類型篩選預收付類型
-    /// 應收：顯示「預收」、「預收轉沖款」
-    /// <summary>
-    /// 根據沖款類型和商品沖款狀態篩選預收付類型
-    /// 應收 + 有商品沖款：只顯示「預收轉沖款」
-    /// 應收 + 無商品沖款：只顯示「預收」（非轉沖款）
-    /// 應付 + 有商品沖款：只顯示「預付轉沖款」
-    /// 應付 + 無商品沖款：只顯示「預付」（非轉沖款）
+    /// 應收：顯示「預收」和「預收轉沖款」
+    /// 應付：顯示「預付」和「預付轉沖款」
     /// </summary>
     private void FilterPrepaymentTypes()
     {
@@ -217,49 +188,23 @@
             return;
         }
         
-        if (HasProductSetoff)
+        if (SetoffType == SetoffType.AccountsReceivable)
         {
-            // 有商品沖款/折讓：只顯示「轉沖款」類型
-            if (SetoffType == SetoffType.AccountsReceivable)
-            {
-                // 應收帳款：只顯示「預收轉沖款」
-                FilteredPrepaymentTypes = AllPrepaymentTypes
-                    .Where(pt => pt.Name.Contains("預收") && pt.Name.Contains("轉沖款"))
-                    .ToList();
-            }
-            else if (SetoffType == SetoffType.AccountsPayable)
-            {
-                // 應付帳款：只顯示「預付轉沖款」
-                FilteredPrepaymentTypes = AllPrepaymentTypes
-                    .Where(pt => pt.Name.Contains("預付") && pt.Name.Contains("轉沖款"))
-                    .ToList();
-            }
-            else
-            {
-                FilteredPrepaymentTypes = new List<PrepaymentType>();
-            }
+            // 應收帳款：顯示所有「預收」相關類型（包括預收和預收轉沖款）
+            FilteredPrepaymentTypes = AllPrepaymentTypes
+                .Where(pt => pt.Name.Contains("預收"))
+                .ToList();
+        }
+        else if (SetoffType == SetoffType.AccountsPayable)
+        {
+            // 應付帳款：顯示所有「預付」相關類型（包括預付和預付轉沖款）
+            FilteredPrepaymentTypes = AllPrepaymentTypes
+                .Where(pt => pt.Name.Contains("預付"))
+                .ToList();
         }
         else
         {
-            // 沒有商品沖款/折讓：只顯示「預收/付」類型（非轉沖款）
-            if (SetoffType == SetoffType.AccountsReceivable)
-            {
-                // 應收帳款：只顯示「預收」（排除轉沖款）
-                FilteredPrepaymentTypes = AllPrepaymentTypes
-                    .Where(pt => pt.Name.Contains("預收") && !pt.Name.Contains("轉沖款"))
-                    .ToList();
-            }
-            else if (SetoffType == SetoffType.AccountsPayable)
-            {
-                // 應付帳款：只顯示「預付」（排除轉沖款）
-                FilteredPrepaymentTypes = AllPrepaymentTypes
-                    .Where(pt => pt.Name.Contains("預付") && !pt.Name.Contains("轉沖款"))
-                    .ToList();
-            }
-            else
-            {
-                FilteredPrepaymentTypes = new List<PrepaymentType>();
-            }
+            FilteredPrepaymentTypes = new List<PrepaymentType>();
         }
     }
     
@@ -280,11 +225,54 @@
             {
                 AvailablePrepayments = new List<SetoffPrepayment>();
             }
+            
+            // ✅ 載入可用預收付款項後，自動比對並設定編輯模式下的 SourcePrepaymentId
+            MatchSourcePrepaymentIds();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入可用預收付款項失敗：{ex.Message}");
             AvailablePrepayments = new List<SetoffPrepayment>();
+        }
+    }
+    
+    /// <summary>
+    /// 自動比對並設定 SourcePrepaymentId（編輯模式用）
+    /// </summary>
+    private void MatchSourcePrepaymentIds()
+    {
+        if (!PrepaymentItems.Any() || !AvailablePrepayments.Any())
+            return;
+        
+        foreach (var item in PrepaymentItems)
+        {
+            // 只處理轉沖款類型且尚未設定 SourcePrepaymentId 的項目
+            if (!item.PrepaymentTypeId.HasValue)
+                continue;
+            
+            var selectedType = FilteredPrepaymentTypes?.FirstOrDefault(pt => pt.Id == item.PrepaymentTypeId.Value);
+            if (selectedType == null || !IsTransferType(selectedType.Name))
+                continue;
+            
+            // 如果已經有 SourcePrepaymentId，不需要再比對
+            if (item.SourcePrepaymentId.HasValue && item.SourcePrepaymentId.Value > 0)
+                continue;
+            
+            // 根據 SourceDocumentCode 查詢對應的來源預收付款項
+            if (!string.IsNullOrEmpty(item.SourceDocumentCode))
+            {
+                var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.SourceDocumentCode == item.SourceDocumentCode);
+                if (sourcePrepayment != null)
+                {
+                    item.SourcePrepaymentId = sourcePrepayment.Id;
+                    
+                    // 同時設定 Amount（來源的總金額，用於顯示）
+                    if (item.Amount == 0)
+                    {
+                        item.Amount = sourcePrepayment.Amount;
+                    }
+                }
+            }
         }
     }
 
@@ -303,6 +291,12 @@
                 UsedAmount = prepayment.UsedAmount,
                 ExistingPrepayment = prepayment
             }).ToList();
+            
+            // ✅ 載入後立即嘗試比對 SourcePrepaymentId（如果 AvailablePrepayments 已載入）
+            if (AvailablePrepayments?.Any() == true)
+            {
+                MatchSourcePrepaymentIds();
+            }
         }
         else
         {
@@ -340,17 +334,6 @@
                     
                     if (value != null && int.TryParse(value.ToString(), out int typeId) && typeId > 0)
                     {
-                        // 如果是預收/付類型（無商品沖款），檢查是否已有其他有效記錄
-                        if (!HasProductSetoff && wasEmpty)
-                        {
-                            var existingValidItemsCount = PrepaymentItems.Count(i => !IsEmptyRow(i) && i != item);
-                            if (existingValidItemsCount >= 1)
-                            {
-                                await NotificationService.ShowWarningAsync("預收/付類型只能有一筆記錄");
-                                return;
-                            }
-                        }
-                        
                         item.PrepaymentTypeId = typeId;
                         
                         // 判斷是否需要顯示來源單號欄位
@@ -399,18 +382,38 @@
                     if (selectedType == null || !IsTransferType(selectedType.Name))
                         return @<span class="text-muted">-</span>;
                     
-                    // 只有轉沖款類型才顯示下拉選單
+                    // 建立下拉選單選項
                     var options = new List<InteractiveSelectOption> 
                     { 
                         new InteractiveSelectOption { Value = 0, Text = "請選擇預收付款項.." } 
-                    }
-                    .Concat(AvailablePrepayments.Select(p => new InteractiveSelectOption
+                    };
+                    
+                    // 加入可用的預收付款項
+                    var availableOptions = AvailablePrepayments.Select(p => new InteractiveSelectOption
                     { 
                         Value = p.Id, 
                         Text = $"{p.SourceDocumentCode} (可用餘額: {p.AvailableBalance:N2})" 
-                    })).ToList();
+                    });
+                    options.AddRange(availableOptions);
                     
                     var currentValue = prepaymentItem.SourcePrepaymentId ?? 0;
+                    
+                    // ✅ 編輯模式：如果當前選中的項目不在 AvailablePrepayments 中，需要加入到選項清單
+                    // 這種情況發生在：來源預收付款項已經用完，不再顯示在可用清單中
+                    if (currentValue > 0 && !options.Any(o => o.Value.Equals(currentValue)))
+                    {
+                        // 使用 SourceDocumentCode 和 Amount 顯示（因為 AvailablePrepayments 中找不到）
+                        var displayText = !string.IsNullOrEmpty(prepaymentItem.SourceDocumentCode)
+                            ? $"{prepaymentItem.SourceDocumentCode} (總金額: {prepaymentItem.Amount:N2})"
+                            : "未知來源";
+                        
+                        // 插入到第二個位置（"請選擇..."之後）
+                        options.Insert(1, new InteractiveSelectOption
+                        {
+                            Value = currentValue,
+                            Text = displayText
+                        });
+                    }
                     
                     // 直接綁定到 item 的屬性，不使用局部變數
                     return @<select class="form-select form-select-sm" 
@@ -442,9 +445,14 @@
                     if (selectedType == null || !IsTransferType(selectedType.Name))
                         return @<span class="text-muted">-</span>;
                     
-                    // 只有轉沖款類型才顯示來源的總金額
-                    var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == prepaymentItem.SourcePrepaymentId);
-                    var amount = sourcePrepayment?.Amount ?? 0;
+                    // 優先使用 item.Amount（編輯模式時已經設定好）
+                    // 如果 Amount 為 0，則從 AvailablePrepayments 查詢（新增模式）
+                    var amount = prepaymentItem.Amount;
+                    if (amount == 0 && prepaymentItem.SourcePrepaymentId.HasValue)
+                    {
+                        var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == prepaymentItem.SourcePrepaymentId);
+                        amount = sourcePrepayment?.Amount ?? 0;
+                    }
                     
                     return @<span class="text-muted">@amount.ToString("N2")</span>;
                 }
@@ -764,68 +772,6 @@
         }
         
         return true;
-    }
-    
-    /// <summary>
-    /// 當商品沖款狀態改變時的處理
-    /// </summary>
-    public async Task OnProductSetoffStateChanged(bool hasProductSetoff)
-    {
-        // 更新狀態
-        HasProductSetoff = hasProductSetoff;
-        
-        // 重新篩選預收付類型
-        FilterPrepaymentTypes();
-        
-        // 清理不符合當前狀態的預收付記錄
-        await CleanupInvalidPrepayments();
-        
-        // 重新渲染
-        StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 清理不符合當前狀態的預收付記錄
-    /// </summary>
-    private async Task CleanupInvalidPrepayments()
-    {
-        var itemsToClean = new List<SetoffPrepaymentItem>();
-        
-        foreach (var item in PrepaymentItems.Where(i => !IsEmptyRow(i)))
-        {
-            if (!item.PrepaymentTypeId.HasValue) continue;
-            
-            var selectedType = FilteredPrepaymentTypes.FirstOrDefault(pt => pt.Id == item.PrepaymentTypeId.Value);
-            if (selectedType == null)
-            {
-                // 如果當前選擇的類型不在篩選後的列表中，表示不符合當前狀態
-                itemsToClean.Add(item);
-            }
-        }
-        
-        if (itemsToClean.Any())
-        {
-            // 清空不符合的記錄
-            foreach (var item in itemsToClean)
-            {
-                item.PrepaymentTypeId = null;
-                item.SourcePrepaymentId = null;
-                item.SourceDocumentCode = string.Empty;
-                item.Amount = 0;
-                item.UsedAmount = 0;
-            }
-            
-            // 重新整理列表，移除空行後確保有一個空行
-            PrepaymentItems.RemoveAll(item => IsEmptyRow(item));
-            EnsureOneEmptyRow();
-            
-            await NotificationService.ShowWarningAsync(
-                HasProductSetoff 
-                    ? "因商品有沖款/折讓，預收付款項已自動調整為「轉沖款」類型" 
-                    : "因商品無沖款/折讓，預收付款項已自動調整為「預收/付」類型");
-            
-            await NotifyPrepaymentsChanged();
-        }
     }
 
     // ===== 內部資料類別 =====

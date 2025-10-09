@@ -113,63 +113,63 @@ namespace ERPCore2.Services
             }
         }
 
-        /// <summary>
-        /// 覆寫驗證功能
-        /// </summary>
-        public override async Task<ServiceResult> ValidateAsync(SetoffPrepayment entity)
+    /// <summary>
+    /// 覆寫驗證功能
+    /// 注意：此驗證僅針對「預收/預付」主記錄，不包含「轉沖款」
+    /// 轉沖款使用 SetoffPrepaymentUsage 表，由 SetoffPrepaymentUsageService 負責驗證
+    /// </summary>
+    public override async Task<ServiceResult> ValidateAsync(SetoffPrepayment entity)
+    {
+        try
         {
-            try
-            {
-                var errors = new List<string>();
+            var errors = new List<string>();
 
-                // 檢查來源單號
-                if (string.IsNullOrWhiteSpace(entity.SourceDocumentCode))
-                    errors.Add("來源單號為必填");
+            // 檢查來源單號
+            if (string.IsNullOrWhiteSpace(entity.SourceDocumentCode))
+                errors.Add("來源單號為必填");
 
-                // 檢查金額
-                if (entity.Amount <= 0)
-                    errors.Add("金額必須大於0");
+            // 檢查金額必須大於0（預收/預付主記錄必須有金額）
+            if (entity.Amount <= 0)
+                errors.Add("金額必須大於0");
 
-                // 檢查已用金額不能大於總金額
-                if (entity.UsedAmount > entity.Amount)
-                    errors.Add("已用金額不能大於總金額");
+            // 檢查已用金額不能大於總金額
+            if (entity.UsedAmount > entity.Amount)
+                errors.Add("已用金額不能大於總金額");
 
-                // 檢查已用金額不能小於0
-                if (entity.UsedAmount < 0)
-                    errors.Add("已用金額不能小於0");
+            // 檢查已用金額不能小於0
+            if (entity.UsedAmount < 0)
+                errors.Add("已用金額不能小於0");
 
-                // 檢查客戶或供應商至少要有一個
-                if (!entity.CustomerId.HasValue && !entity.SupplierId.HasValue)
-                    errors.Add("客戶或供應商至少需填寫一個");
+            // 檢查客戶或供應商至少要有一個
+            if (!entity.CustomerId.HasValue && !entity.SupplierId.HasValue)
+                errors.Add("客戶或供應商至少需填寫一個");
 
-                // 檢查客戶和供應商不能同時存在
-                if (entity.CustomerId.HasValue && entity.SupplierId.HasValue)
-                    errors.Add("客戶和供應商不能同時填寫");
+            // 檢查客戶和供應商不能同時存在
+            if (entity.CustomerId.HasValue && entity.SupplierId.HasValue)
+                errors.Add("客戶和供應商不能同時填寫");
 
-                // 檢查來源單號是否重複
-                if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode) &&
-                    await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("來源單號已存在");
+            // 檢查來源單號是否重複（預收/預付主記錄的來源單號必須唯一）
+            if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode) &&
+                await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, entity.Id == 0 ? null : entity.Id))
+                errors.Add("來源單號已存在");
 
-                if (errors.Any())
-                    return ServiceResult.Failure(string.Join("; ", errors));
+            if (errors.Any())
+                return ServiceResult.Failure(string.Join("; ", errors));
 
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new
-                {
-                    Method = nameof(ValidateAsync),
-                    ServiceType = GetType().Name,
-                    EntityId = entity.Id,
-                    SourceDocumentCode = entity.SourceDocumentCode
-                });
-                return ServiceResult.Failure("驗證過程發生錯誤");
-            }
+            return ServiceResult.Success();
         }
-
-        /// <summary>
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new
+            {
+                Method = nameof(ValidateAsync),
+                ServiceType = GetType().Name,
+                EntityId = entity.Id,
+                SourceDocumentCode = entity.SourceDocumentCode
+            });
+            return ServiceResult.Failure("驗證過程發生錯誤");
+        }
+    }        /// <summary>
         /// 根據來源單號取得預收付款項
         /// </summary>
         public async Task<SetoffPrepayment?> GetBySourceDocumentCodeAsync(string sourceDocumentCode)
@@ -259,6 +259,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SetoffPrepayments
                     .AsNoTracking()  // 不追蹤實體，避免後續操作時的追蹤衝突
+                    .Include(sp => sp.PrepaymentType)  // 載入預收付類型，供前端判斷
                     .Include(sp => sp.Customer)
                     .Include(sp => sp.Supplier)
                     .Include(sp => sp.SetoffDocument)

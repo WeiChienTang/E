@@ -73,6 +73,7 @@ namespace ERPCore2.Data.Context
       public DbSet<SetoffPayment> SetoffPayments { get; set; }
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
       public DbSet<SetoffPrepayment> SetoffPrepayments { get; set; }
+      public DbSet<SetoffPrepaymentUsage> SetoffPrepaymentUsages { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       public DbSet<Entities.PrepaymentType> PrepaymentTypes { get; set; }
       // Currency

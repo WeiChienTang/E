@@ -109,9 +109,14 @@ namespace ERPCore2.Data.Entities
         public ICollection<SetoffProductDetail> SetoffProductDetails { get; set; } = new List<SetoffProductDetail>();
 
         /// <summary>
-        /// 關聯的預收付款項記錄
+        /// 關聯的預收付款項記錄（建立的預收付款項）
         /// </summary>
         public ICollection<SetoffPrepayment> Prepayments { get; set; } = new List<SetoffPrepayment>();
+        
+        /// <summary>
+        /// 關聯的預收付款項使用記錄（使用既有預收付款項的記錄）
+        /// </summary>
+        public ICollection<SetoffPrepaymentUsage> PrepaymentUsages { get; set; } = new List<SetoffPrepaymentUsage>();
 
         #region 計算屬性
 

@@ -6,11 +6,12 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 預收付款項實體 - 記錄預收款、預付款項，供沖款單使用
-    /// 當廠商/客戶要進行預付/收的時候，就是透過此表作紀錄
-    /// 當其他的沖款表要使用預收/付沖款時會根據來源單號查詢對應的廠商/客戶是否曾經有預收/付然後還沒有用完的，就可以用來沖款
+    /// 預收付款項實體 - 記錄預收款、預付款項的主檔資料
+    /// 用途：當廠商/客戶預先支付款項時，建立此主記錄
+    /// 關係：一筆 SetoffPrepayment 可以被多筆 SetoffPrepaymentUsage 使用（轉沖款）
+    /// 注意：UsedAmount 應該等於所有相關 SetoffPrepaymentUsage 的 UsedAmount 總和
     /// </summary>
-    [Index(nameof(SourceDocumentCode))]
+    [Index(nameof(SourceDocumentCode), IsUnique = true)]
     [Index(nameof(PrepaymentTypeId))]
     [Index(nameof(CustomerId))]
     [Index(nameof(SupplierId))]
@@ -63,9 +64,11 @@ namespace ERPCore2.Data.Entities
         public int? SupplierId { get; set; }
         
         /// <summary>
-        /// 沖款單ID - 此預收付款項所關聯的沖款單（多對一關係）
+        /// 沖款單ID - 建立此預收付款項的沖款單（預收/預付時使用）
+        /// 注意：此欄位記錄的是「建立」此預收付款項的沖款單，非必填
+        /// 若要查詢「使用」此預收付款項的沖款單，請使用 SetoffPrepaymentUsage 表
         /// </summary>
-        [Display(Name = "沖款單")]
+        [Display(Name = "建立沖款單")]
         [ForeignKey(nameof(SetoffDocument))]
         public int? SetoffDocumentId { get; set; }
         
@@ -87,9 +90,14 @@ namespace ERPCore2.Data.Entities
         public Supplier? Supplier { get; set; }
         
         /// <summary>
-        /// 沖款單導航屬性 - 此預收付款項所屬的沖款單
+        /// 沖款單導航屬性 - 建立此預收付款項的沖款單
         /// </summary>
         public SetoffDocument? SetoffDocument { get; set; }
+        
+        /// <summary>
+        /// 使用記錄集合 - 此預收付款項被哪些沖款單使用的記錄
+        /// </summary>
+        public ICollection<SetoffPrepaymentUsage> UsageRecords { get; set; } = new List<SetoffPrepaymentUsage>();
         
         // Computed Properties (NotMapped)
         
