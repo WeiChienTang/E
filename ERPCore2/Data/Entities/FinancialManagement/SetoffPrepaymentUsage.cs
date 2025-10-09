@@ -44,6 +44,14 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "使用日期")]
         public DateTime UsageDate { get; set; } = DateTime.Now;
         
+        /// <summary>
+        /// 來源預收付款項單號 - 冗餘欄位，方便前端查詢和顯示
+        /// 與 SetoffPrepayment.SourceDocumentCode 相同
+        /// </summary>
+        [MaxLength(50)]
+        [Display(Name = "來源單號")]
+        public string? SourcePrepaymentCode { get; set; }
+        
         // Navigation Properties
         
         /// <summary>

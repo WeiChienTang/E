@@ -259,6 +259,16 @@ namespace ERPCore2.Services
         {
             try
             {
+                // ✅ 自動填入來源預收付款項單號（冗餘欄位，方便查詢）
+                if (entity.SetoffPrepaymentId > 0 && string.IsNullOrEmpty(entity.SourcePrepaymentCode))
+                {
+                    var sourcePrepayment = await _prepaymentService.GetByIdAsync(entity.SetoffPrepaymentId);
+                    if (sourcePrepayment != null)
+                    {
+                        entity.SourcePrepaymentCode = sourcePrepayment.SourceDocumentCode;
+                    }
+                }
+                
                 // 先執行基礎建立
                 var result = await base.CreateAsync(entity);
                 if (!result.IsSuccess)
