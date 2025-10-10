@@ -24,6 +24,7 @@
 else
 {
     @* 本次沖款明細編輯 - 直接顯示所有未結清明細 *@
+    <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent TItem="SetoffProductDetailItem" 
                                       Items="@SetoffItems"
@@ -37,6 +38,22 @@ else
                                       ShowActions="false"
                                       ActionsColumnWidth = "60px" />
         </div>
+
+        <div class="card-footer">
+            <div class="d-flex justify-content-end gap-2">
+                <GenericButtonComponent Text="全部沖款"
+                                      Variant="ButtonVariant.Success"
+                                      IconClass="fas fa-check-double"
+                                      OnClick="FillAllSetoffAmounts"
+                                      IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+                <GenericButtonComponent Text="沖款清空"
+                                      Variant="ButtonVariant.Danger"
+                                      IconClass="fas fa-eraser"
+                                      OnClick="ClearAllSetoffAmounts"
+                                      IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -388,6 +405,86 @@ else
             // 如果輸入為空白，設為0
             item.CurrentAllowanceAmount = 0;
             await NotifyDetailsChanged();
+        }
+    }
+
+    /// <summary>
+    /// 全部沖款 - 將所有未結清項目的本次沖款填滿至未沖款餘額
+    /// </summary>
+    private async Task FillAllSetoffAmounts()
+    {
+        if (IsReadOnly) return;
+
+        try
+        {
+            int filledCount = 0;
+            
+            foreach (var item in SetoffItems)
+            {
+                if (item.UnsettledDetail != null && item.UnsettledDetail.RemainingAmount > 0)
+                {
+                    // 將本次沖款設定為未沖款餘額
+                    item.CurrentSetoffAmount = item.UnsettledDetail.RemainingAmount;
+                    filledCount++;
+                }
+            }
+
+            await NotifyDetailsChanged();
+            
+            if (filledCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已自動填入 {filledCount} 項沖款金額", "全部沖款完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("沒有可填入的沖款項目", "提示");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"全部沖款失敗：{ex.Message}", "錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 沖款清空 - 清空所有本次沖款和本次折讓金額
+    /// </summary>
+    private async Task ClearAllSetoffAmounts()
+    {
+        if (IsReadOnly) return;
+
+        try
+        {
+            int clearedCount = 0;
+            
+            foreach (var item in SetoffItems)
+            {
+                if (item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+                {
+                    item.CurrentSetoffAmount = 0;
+                    item.CurrentAllowanceAmount = 0;
+                    clearedCount++;
+                }
+            }
+
+            await NotifyDetailsChanged();
+            
+            if (clearedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已清空 {clearedCount} 項沖款金額", "沖款清空完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("沒有需要清空的沖款項目", "提示");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"沖款清空失敗：{ex.Message}", "錯誤");
         }
     }
 

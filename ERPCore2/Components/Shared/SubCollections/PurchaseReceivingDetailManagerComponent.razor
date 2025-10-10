@@ -231,6 +231,79 @@ else
         }
         return 0;
     }
+    
+    /// <summary>
+    /// 檢查指定的進貨明細項目是否有沖款記錄
+    /// 檢查邏輯：
+    /// - 資料表：PurchaseReceivingDetail
+    /// - 欄位：TotalPaidAmount (累計付款金額)
+    /// - 條件：TotalPaidAmount > 0 表示已有沖款記錄，不可刪除
+    /// </summary>
+    /// <param name="item">要檢查的進貨明細項目</param>
+    /// <returns>true 表示有沖款記錄，false 表示沒有</returns>
+    private bool HasPaymentRecord(ReceivingItem item)
+    {
+        if (item.ExistingDetailEntity is PurchaseReceivingDetail detail && detail.Id > 0)
+        {
+            // 檢查 TotalPaidAmount 是否大於 0
+            return detail.TotalPaidAmount > 0;
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// 取得指定進貨明細項目的已沖款金額
+    /// </summary>
+    /// <param name="item">要檢查的進貨明細項目</param>
+    /// <returns>已沖款金額</returns>
+    private decimal GetPaidAmount(ReceivingItem item)
+    {
+        if (item.ExistingDetailEntity is PurchaseReceivingDetail detail && detail.Id > 0)
+        {
+            return detail.TotalPaidAmount;
+        }
+        return 0;
+    }
+    
+    /// <summary>
+    /// 檢查項目是否可以刪除
+    /// 綜合檢查以下條件：
+    /// 1. 退貨記錄檢查 (HasReturnRecord)
+    ///    - 資料來源：透過 PurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync() 查詢
+    ///    - 檢查資料表：PurchaseReturnDetail (採購退貨明細)
+    ///    - 檢查欄位：PurchaseReceivingDetailId (關聯的進貨明細ID)
+    ///    - 限制原因：已有退貨記錄的進貨明細不可刪除，以保持資料一致性
+    /// 
+    /// 2. 沖款記錄檢查 (HasPaymentRecord)
+    ///    - 資料來源：直接讀取 PurchaseReceivingDetail 實體
+    ///    - 檢查資料表：PurchaseReceivingDetail (採購進貨明細)
+    ///    - 檢查欄位：TotalPaidAmount (累計付款金額)
+    ///    - 限制原因：已沖款的進貨明細不可刪除，避免財務資料錯亂
+    /// </summary>
+    /// <param name="item">要檢查的項目</param>
+    /// <param name="reason">不可刪除的原因（輸出參數）</param>
+    /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
+    private bool CanDeleteItem(ReceivingItem item, out string reason)
+    {
+        // 檢查 1：退貨記錄
+        if (HasReturnRecord(item))
+        {
+            var returnedQty = GetReturnedQuantity(item);
+            reason = $"此商品已有退貨記錄（已退貨 {returnedQty} 個），無法刪除";
+            return false;
+        }
+        
+        // 檢查 2：沖款記錄
+        if (HasPaymentRecord(item))
+        {
+            var paidAmount = GetPaidAmount(item);
+            reason = $"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元），無法刪除";
+            return false;
+        }
+        
+        reason = string.Empty;
+        return true;
+    }
 
     private void FillAllQuantities()
     {
@@ -411,8 +484,21 @@ else
             {
                 var receivingItem = (ReceivingItem)item;
                 var hasReturnRecord = HasReturnRecord(receivingItem);
-                var isFieldReadOnly = IsReadOnly || hasReturnRecord;
-                var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改商品選擇" : "";
+                var hasPaymentRecord = HasPaymentRecord(receivingItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                
+                // 組合 tooltip 訊息
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                    tooltipMessages.Add("此商品已有退貨記錄");
+                if (hasPaymentRecord)
+                {
+                    var paidAmount = GetPaidAmount(receivingItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元）");
+                }
+                var title = tooltipMessages.Any() 
+                    ? string.Join("；", tooltipMessages) + "，無法修改商品選擇" 
+                    : "";
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (isFieldReadOnly)
@@ -422,10 +508,10 @@ else
                             @(string.IsNullOrEmpty(receivingItem.ProductSearch) ? "無商品選擇" : receivingItem.ProductSearch)
                         </span>
                         
-                        @if (hasReturnRecord)
+                        @if (hasReturnRecord || hasPaymentRecord)
                         {
                             <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
-                                <i class="fas fa-lock text-danger" title="此商品已有退貨記錄"></i>
+                                <i class="fas fa-lock text-danger" title="@title"></i>
                             </div>
                         }
                     </div>;
@@ -563,8 +649,21 @@ else
                     var receivingItem = (ReceivingItem)item;
                     var selectedWarehouseId = receivingItem.SelectedWarehouse?.Id.ToString() ?? "";
                     var hasReturnRecord = HasReturnRecord(receivingItem);
-                    var isFieldDisabled = IsReadOnly || hasReturnRecord;
-                    var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改倉庫" : "";
+                    var hasPaymentRecord = HasPaymentRecord(receivingItem);
+                    var isFieldDisabled = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                    
+                    // 組合 tooltip 訊息
+                    var tooltipMessages = new List<string>();
+                    if (hasReturnRecord)
+                        tooltipMessages.Add("此商品已有退貨記錄");
+                    if (hasPaymentRecord)
+                    {
+                        var paidAmount = GetPaidAmount(receivingItem);
+                        tooltipMessages.Add($"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元）");
+                    }
+                    var title = tooltipMessages.Any() 
+                        ? string.Join("；", tooltipMessages) + "，無法修改倉庫" 
+                        : "";
                     
                 // 如果是唯讀狀態，直接顯示 span
                 if (isFieldDisabled)
@@ -603,8 +702,21 @@ else
                     var receivingItem = (ReceivingItem)item;
                     var selectedWarehouseLocationId = receivingItem.SelectedWarehouseLocation?.Id.ToString() ?? "";
                     var hasReturnRecord = HasReturnRecord(receivingItem);
-                    var isFieldDisabled = IsReadOnly || hasReturnRecord;
-                    var title = hasReturnRecord ? "此商品已有退貨記錄，無法修改庫位" : "";
+                    var hasPaymentRecord = HasPaymentRecord(receivingItem);
+                    var isFieldDisabled = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                    
+                    // 組合 tooltip 訊息
+                    var tooltipMessages = new List<string>();
+                    if (hasReturnRecord)
+                        tooltipMessages.Add("此商品已有退貨記錄");
+                    if (hasPaymentRecord)
+                    {
+                        var paidAmount = GetPaidAmount(receivingItem);
+                        tooltipMessages.Add($"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元）");
+                    }
+                    var title = tooltipMessages.Any() 
+                        ? string.Join("；", tooltipMessages) + "，無法修改庫位" 
+                        : "";
                     
                     // 根據選擇的倉庫篩選庫位
                     var availableLocations = receivingItem.SelectedWarehouse != null 
@@ -670,8 +782,11 @@ else
 
     private RenderFragment<ReceivingItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 只有當項目沒有退貨記錄時才顯示刪除按鈕
-        if (!HasReturnRecord(item))
+        // 檢查項目是否可以刪除（綜合退貨記錄和沖款記錄檢查）
+        var canDelete = CanDeleteItem(item, out _);
+        
+        // 只有當項目可以刪除時才顯示刪除按鈕
+        if (canDelete)
         {
             <GenericButtonComponent Variant="ButtonVariant.Danger"
                                    IconClass="bi bi-trash text-white"
@@ -686,11 +801,11 @@ else
 
     private async Task HandleItemDelete(ReceivingItem item)
     {
-        // 檢查是否有退貨記錄，如果有則阻止刪除
-        if (HasReturnRecord(item))
+        // 使用綜合檢查方法，確認是否可以刪除
+        if (!CanDeleteItem(item, out string reason))
         {
             await NotificationService.ShowWarningAsync(
-                "此商品已有退貨記錄，無法刪除", 
+                reason, 
                 "操作限制"
             );
             return;
@@ -1154,11 +1269,16 @@ else
     {
         if (IsReadOnly) return;
         
-        // 新增：檢查退貨記錄限制
-        if (HasReturnRecord(item))
+        // 檢查是否可以修改（退貨記錄或沖款記錄限制）
+        if (!CanDeleteItem(item, out string reason))
         {
+            // 使用更友善的訊息
+            var friendlyMessage = HasReturnRecord(item) 
+                ? "此商品已有退貨記錄，無法修改倉庫設定" 
+                : "此商品已有沖款記錄，無法修改倉庫設定";
+            
             await NotificationService.ShowWarningAsync(
-                "此商品已有退貨記錄，無法修改倉庫設定", 
+                friendlyMessage, 
                 "操作限制"
             );
             return;
@@ -1188,11 +1308,16 @@ else
     {
         if (IsReadOnly) return;
         
-        // 新增：檢查退貨記錄限制
-        if (HasReturnRecord(item))
+        // 檢查是否可以修改（退貨記錄或沖款記錄限制）
+        if (!CanDeleteItem(item, out string reason))
         {
+            // 使用更友善的訊息
+            var friendlyMessage = HasReturnRecord(item) 
+                ? "此商品已有退貨記錄，無法修改庫位設定" 
+                : "此商品已有沖款記錄，無法修改庫位設定";
+            
             await NotificationService.ShowWarningAsync(
-                "此商品已有退貨記錄，無法修改庫位設定", 
+                friendlyMessage, 
                 "操作限制"
             );
             return;
