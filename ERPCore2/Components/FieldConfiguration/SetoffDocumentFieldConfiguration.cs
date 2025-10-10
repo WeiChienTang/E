@@ -47,7 +47,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "沖款日期",
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
-                            HeaderStyle = "width: 150px;",
                             CustomTemplate = (context) => builder =>
                             {
                                 var setoffDoc = context as SetoffDocument;
@@ -69,6 +68,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入客戶或供應商名稱搜尋",
                             TableOrder = 4,
                             ShowInFilter = false, // NotMapped 屬性無法在資料庫查詢中篩選
+                            HeaderStyle = "width: 200px;",
                             CustomTemplate = (context) => builder =>
                             {
                                 var setoffDoc = context as SetoffDocument;
@@ -89,7 +89,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "公司",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            HeaderStyle = "width: 180px;",
                             Options = _companies.Select(c => new SelectOption 
                             { 
                                 Text = c.CompanyName, 
@@ -99,29 +98,6 @@ namespace ERPCore2.FieldConfiguration
                                 model, query, nameof(SetoffDocument.CompanyId), s => s.CompanyId)
                         }
                     },
-                    {
-                        nameof(SetoffDocument.TotalSetoffAmount),
-                        new FieldDefinition<SetoffDocument>
-                        {
-                            PropertyName = nameof(SetoffDocument.TotalSetoffAmount),
-                            DisplayName = "總沖款金額",
-                            TableOrder = 6,
-                            ShowInFilter = false,
-                            HeaderStyle = "width: 150px; text-align: right;",
-                            CustomTemplate = (context) => builder =>
-                            {
-                                var setoffDoc = context as SetoffDocument;
-                                if (setoffDoc != null)
-                                {
-                                    builder.OpenElement(0, "div");
-                                    builder.AddAttribute(1, "style", "text-align: right;");
-                                    builder.AddContent(2, setoffDoc.TotalSetoffAmount.ToString("N2"));
-                                    builder.CloseElement();
-                                }
-                            },
-                            FilterFunction = null // 不提供篩選功能
-                        }
-                    }
                 };
             }
             catch (Exception ex)

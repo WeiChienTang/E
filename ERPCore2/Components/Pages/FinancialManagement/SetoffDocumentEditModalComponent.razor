@@ -248,6 +248,22 @@
                 return false;
             }
 
+            // ===== 驗證三個明細表至少有一個包含資料 =====
+            var hasProductDetails = setoffProductDetails?.Any(d => 
+                d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0) ?? false;
+            
+            var hasPaymentDetails = setoffPayments?.Any(p => 
+                p.ReceivedAmount > 0 || p.AllowanceAmount > 0) ?? false;
+            
+            var hasPrepaymentDetails = setoffPrepayments?.Any(p => 
+                p.Amount > 0 || p.UsedAmount > 0) ?? false;
+            
+            if (!hasProductDetails && !hasPaymentDetails && !hasPrepaymentDetails)
+            {
+                await NotificationService.ShowErrorAsync("商品明細、收款記錄和預收付款項不可都為空白。");
+                return false;
+            }
+
             // ===== 儲存前驗證金額 =====
             var receivedFromPayments = setoffPaymentDetailManager?.GetTotalReceivedAmount() ?? 0;
             var allowanceFromPayments = setoffPaymentDetailManager?.GetTotalAllowanceAmount() ?? 0;
@@ -259,16 +275,19 @@
             var prepaymentAmount = 0m;      // 預收/付類型的 Amount
             var prepaymentUsedAmount = 0m;  // 轉沖款類型的 UsedAmount
             
-            foreach (var prepayment in setoffPrepayments)
+            if (setoffPrepayments != null)
             {
-                var prepaymentType = allPrepaymentTypes.FirstOrDefault(pt => pt.Id == prepayment.PrepaymentTypeId);
-                if (prepaymentType != null && prepaymentType.Name.Contains("轉沖款"))
+                foreach (var prepayment in setoffPrepayments)
                 {
-                    prepaymentUsedAmount += prepayment.UsedAmount;
-                }
-                else
-                {
-                    prepaymentAmount += prepayment.Amount;
+                    var prepaymentType = allPrepaymentTypes.FirstOrDefault(pt => pt.Id == prepayment.PrepaymentTypeId);
+                    if (prepaymentType != null && prepaymentType.Name.Contains("轉沖款"))
+                    {
+                        prepaymentUsedAmount += prepayment.UsedAmount;
+                    }
+                    else
+                    {
+                        prepaymentAmount += prepayment.Amount;
+                    }
                 }
             }
             
@@ -298,21 +317,32 @@
                 if (Math.Abs(actualReceivedAmount - expectedReceivedFromProduct) > 0.01m)
                 {
                     await NotificationService.ShowErrorAsync(
-                        $"收款記錄驗證失敗：\n" +
-                        $"商品明細本次沖款: {expectedReceivedFromProduct:N2}\n" +
-                        $"Payment收款({receivedFromPayments:N2}) - 預付({prepaymentAmount:N2}) + 轉沖款({prepaymentUsedAmount:N2}) = {actualReceivedAmount:N2}\n" +
-                        $"兩者必須相等，請調整收款金額或預收付款項");
+                        $"收款記錄驗證失敗：\n\n" +
+                        $"【商品明細】\n" +
+                        $"  本次沖款: {expectedReceivedFromProduct:N2}\n" +
+                        $"  本次折讓: {expectedAllowanceFromProduct:N2}\n\n" +
+                        $"【收/付款記錄】\n" +
+                        $"  收款金額: {receivedFromPayments:N2}\n" +
+                        $"  折讓金額: {allowanceFromPayments:N2}\n\n" +
+                        $"【預收付款項】\n" +
+                        $"  預付: {prepaymentAmount:N2}\n" +
+                        $"  轉沖款: {prepaymentUsedAmount:N2}\n\n" +
+                        $"請確認：付款收款金額應為 {expectedReceivedFromProduct:N2}，折讓金額應為 {expectedAllowanceFromProduct:N2}");
                     return false;
                 }
-                
-                // 驗證 Payment折讓金額 = 商品明細本次折讓總和
+
+                // 驗證 付款折讓金額 = 商品明細本次折讓總和
                 if (Math.Abs(allowanceFromPayments - expectedAllowanceFromProduct) > 0.01m)
                 {
                     await NotificationService.ShowErrorAsync(
-                        $"折讓金額驗證失敗：\n" +
-                        $"商品明細本次折讓: {expectedAllowanceFromProduct:N2}\n" +
-                        $"Payment折讓金額: {allowanceFromPayments:N2}\n" +
-                        $"兩者必須相等，請調整折讓金額");
+                        $"折讓金額驗證失敗：\n\n" +
+                        $"【商品明細】\n" +
+                        $"  本次沖款: {expectedReceivedFromProduct:N2}\n" +
+                        $"  本次折讓: {expectedAllowanceFromProduct:N2}\n\n" +
+                        $"【收/付款記錄】\n" +
+                        $"  收款金額: {receivedFromPayments:N2}\n" +
+                        $"  折讓金額: {allowanceFromPayments:N2}\n\n" +
+                        $"請確認：付款折讓金額應為 {expectedAllowanceFromProduct:N2}");
                     return false;
                 }
                 
@@ -338,20 +368,12 @@
             else
             {
                 // ===== 情境B：無商品明細（預收/付） =====
-                // 驗證本期沖銷 = Prepayment.Amount（預收/付金額）
-                if (Math.Abs(prepaymentAmount - entity.CurrentSetoffAmount) > 0.01m)
+                // 驗證本期已收 = Prepayment預收/付金額
+                // 注意：這裡不驗證 Payment，因為純預收/付情境下，本期已收直接等於預收付金額
+                if (Math.Abs(prepaymentAmount - entity.TotalCollectionAmount) > 0.01m)
                 {
                     await NotificationService.ShowErrorAsync(
-                        $"預收付驗證失敗：Prepayment金額 {prepaymentAmount:N2} 必須等於本期沖銷 {entity.CurrentSetoffAmount:N2}");
-                    return false;
-                }
-                
-                // 驗證本期已收 = Payment收款 + Payment折讓 + Prepayment預收/付
-                var expectedTotalCollection = receivedFromPayments + allowanceFromPayments + prepaymentAmount;
-                if (Math.Abs(expectedTotalCollection - entity.TotalCollectionAmount) > 0.01m)
-                {
-                    await NotificationService.ShowErrorAsync(
-                        $"本期已收驗證失敗：Payment收款({receivedFromPayments:N2}) + Payment折讓({allowanceFromPayments:N2}) + Prepayment({prepaymentAmount:N2}) = {expectedTotalCollection:N2}，應等於本期已收 {entity.TotalCollectionAmount:N2}");
+                        $"本期已收驗證失敗：無商品明細時，本期已收({entity.TotalCollectionAmount:N2}) 應等於預收/付金額({prepaymentAmount:N2})");
                     return false;
                 }
                 
@@ -856,22 +878,22 @@
     /// 處理預收付款項變更事件
     /// </summary>
     /// <remarks>
-    /// 預收付款項變更時更新相關金額欄位
-    /// - 轉沖款類型（情境A）：使用 UsedAmount，更新本期已收
-    /// - 預收/付類型（情境B）：使用 Amount，更新本期已收和本期沖銷
+    /// 預收付款項變更時更新預收付款項相關的欄位
+    /// - 本期預收/付（CurrentPrepaymentAmount）：新建立的預收付款項金額
+    /// - 預收/付沖款（PrepaymentSetoffAmount）：使用既有預收付款項進行沖款的金額
+    /// 
+    /// 特殊情境：無商品明細時（純預收/付）
+    /// - 本期已收 = 本期預收/付（TotalCollectionAmount = CurrentPrepaymentAmount）
     /// </remarks>
     private async Task HandlePrepaymentsChanged(List<SetoffPrepayment> prepayments)
     {
         setoffPrepayments = prepayments;
         
-        if (editModalComponent?.Entity != null && setoffPaymentDetailManager != null)
+        if (editModalComponent?.Entity != null)
         {
-            var receivedFromPayments = setoffPaymentDetailManager.GetTotalReceivedAmount();
-            var allowanceFromPayments = setoffPaymentDetailManager.GetTotalAllowanceAmount();
-            
             // 計算預收付款項金額
-            var prepaymentUsedAmount = 0m;  // 轉沖款類型
-            var prepaymentAmount = 0m;       // 預收/付類型
+            var prepaymentUsedAmount = 0m;  // 轉沖款類型（使用既有預收付款項進行沖款）
+            var prepaymentAmount = 0m;       // 預收/付類型（建立新的預收付款項）
             
             // 需要判斷預收付類型，需要先載入 PrepaymentType 資料
             var allPrepaymentTypes = await PrepaymentTypeService.GetAllAsync();
@@ -880,39 +902,32 @@
                 var prepaymentType = allPrepaymentTypes.FirstOrDefault(pt => pt.Id == prepayment.PrepaymentTypeId);
                 if (prepaymentType != null && prepaymentType.Name.Contains("轉沖款"))
                 {
+                    // 預收/付轉沖款類型：累加 UsedAmount
                     prepaymentUsedAmount += prepayment.UsedAmount;
                 }
                 else
                 {
+                    // 預收/付類型：累加 Amount
                     prepaymentAmount += prepayment.Amount;
                 }
             }
             
-            // 判斷是否有商品明細
+            // ===== 更新預收付款項相關的顯示欄位 =====
+            // 本期預收/付：顯示新建立的預收付款項金額
+            editModalComponent.Entity.CurrentPrepaymentAmount = prepaymentAmount;
+            
+            // 預收/付沖款：顯示使用既有預收付款項進行沖款的金額
+            editModalComponent.Entity.PrepaymentSetoffAmount = prepaymentUsedAmount;
+            
+            // ===== 特殊處理：無商品明細時（純預收/付情境）=====
             var hasProductSetoff = setoffProductDetails?.Any(d => 
                 d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0) ?? false;
             
-            if (hasProductSetoff)
+            if (!hasProductSetoff && prepaymentAmount > 0)
             {
-                // ===== 情境A：有商品明細（轉沖款） =====
-                // 本期已收 = Payment收款 + Payment折讓 + Prepayment轉沖款 - Prepayment預付
-                // 說明：預付款是預先支付的，所以要從已收中扣除；轉沖款是額外的收款，所以要加上
-                editModalComponent.Entity.TotalCollectionAmount = receivedFromPayments + allowanceFromPayments + prepaymentUsedAmount - prepaymentAmount;
-                
-                // 【本期沖銷】不在此更新，由商品明細決定
-                // 【本期折讓】不在此更新，由商品明細決定
-            }
-            else
-            {
-                // ===== 情境B：無商品明細（預收/付） =====
-                // 本期已收 = Payment收款 + Payment折讓 + Prepayment預收/付
-                editModalComponent.Entity.TotalCollectionAmount = receivedFromPayments + allowanceFromPayments + prepaymentAmount;
-                
-                // 本期沖銷 = Prepayment.Amount (預收/付金額)
-                editModalComponent.Entity.CurrentSetoffAmount = prepaymentAmount;
-                
-                // 本期折讓 = 0（無商品明細時，本期折讓為0）
-                editModalComponent.Entity.TotalAllowanceAmount = 0;
+                // 情境B：無商品明細且有預收/付類型的款項
+                // 本期已收 = 本期預收/付
+                editModalComponent.Entity.TotalCollectionAmount = prepaymentAmount;
             }
         }
         
@@ -944,7 +959,9 @@
                     SetoffNumber = await GenerateSetoffNumberAsync(DefaultSetoffType),
                     SetoffDate = DateTime.Today,
                     SetoffType = DefaultSetoffType ?? SetoffType.AccountsReceivable,
-                    TotalSetoffAmount = 0
+                    TotalSetoffAmount = 0,
+                    CurrentPrepaymentAmount = 0,
+                    PrepaymentSetoffAmount = 0
                 };
                 
                 // 新增模式：清空商品明細、收款記錄和預收付款項
@@ -1011,6 +1028,30 @@
                         SetoffDocumentId = SetoffDocumentId.Value,
                         Remarks = $"SOURCE_ID:{usage.SetoffPrepaymentId}"  // ✅ 暫存來源 SetoffPrepayment.Id
                     });
+                }
+                
+                // 編輯模式：載入資料後，重新計算預收付款項相關欄位
+                if (setoffDocument != null)
+                {
+                    var prepaymentUsedAmount = 0m;  // 轉沖款類型
+                    var prepaymentAmount = 0m;       // 預收/付類型
+                    
+                    foreach (var prepayment in setoffPrepayments)
+                    {
+                        var prepaymentType = allPrepaymentTypes.FirstOrDefault(pt => pt.Id == prepayment.PrepaymentTypeId);
+                        if (prepaymentType != null && prepaymentType.Name.Contains("轉沖款"))
+                        {
+                            prepaymentUsedAmount += prepayment.UsedAmount;
+                        }
+                        else
+                        {
+                            prepaymentAmount += prepayment.Amount;
+                        }
+                    }
+                    
+                    // 設定預收付款項相關欄位
+                    setoffDocument.CurrentPrepaymentAmount = prepaymentAmount;
+                    setoffDocument.PrepaymentSetoffAmount = prepaymentUsedAmount;
                 }
             }
             
@@ -1149,13 +1190,20 @@
                 }
             });
 
+            // 根據沖款類型決定欄位標籤
+            var isReceivable = currentSetoffType == SetoffType.AccountsReceivable;
+            var receivableOrPayableLabel = isReceivable ? "應收" : "應付";
+            var receivedOrPaidLabel = isReceivable ? "已收" : "已付";
+            var prepaymentLabel = isReceivable ? "預收" : "預付";
+            var prepaymentSetoffLabel = isReceivable ? "預收沖款" : "預付沖款";
+            
             // 繼續加入金額相關欄位
             formFields.AddRange(new List<FormFieldDefinition>
             {
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.TotalSetoffAmount),
-                    Label = "本期應收",
+                    Label = $"本期{receivableOrPayableLabel}",
                     FieldType = FormFieldType.Number,
                     Placeholder = "系統自動計算",
                     IsRequired = false,
@@ -1165,12 +1213,12 @@
                 new()
                 {
                     PropertyName = nameof(SetoffDocument.TotalCollectionAmount),
-                    Label = "本期已收",
+                    Label = $"本期{receivedOrPaidLabel}",
                     FieldType = FormFieldType.Number,
                     Placeholder = "系統自動計算",
                     IsRequired = false,
                     IsReadOnly = true,
-                    HelpText = "實際收到的款項總額",
+                    HelpText = $"實際{receivedOrPaidLabel.Substring(1)}的款項總額",
                 },
                 new()
                 {
@@ -1191,6 +1239,26 @@
                     IsRequired = false,
                     IsReadOnly = true,
                     HelpText = "折讓抵銷的總額",
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SetoffDocument.CurrentPrepaymentAmount),
+                    Label = $"本期{prepaymentLabel}",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "系統自動計算",
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = $"本次{prepaymentLabel}的總額",
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SetoffDocument.PrepaymentSetoffAmount),
+                    Label = prepaymentSetoffLabel,
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "系統自動計算",
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = $"{prepaymentSetoffLabel}的總額",
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<SetoffDocument>(),
@@ -1230,6 +1298,8 @@
                 new KeyValuePair<string, string>(nameof(SetoffDocument.TotalCollectionAmount), "金額資訊(系統自動計算)"),            
                 new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentSetoffAmount), "金額資訊(系統自動計算)"),                
                 new KeyValuePair<string, string>(nameof(SetoffDocument.TotalAllowanceAmount), "金額資訊(系統自動計算)"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentPrepaymentAmount), "金額資訊(系統自動計算)"),
+                new KeyValuePair<string, string>(nameof(SetoffDocument.PrepaymentSetoffAmount), "金額資訊(系統自動計算)"),
                 new KeyValuePair<string, string>(nameof(SetoffDocument.Remarks), "其他資訊")
             });
 
@@ -1608,6 +1678,7 @@
                 <SetoffPaymentDetailManagerComponent 
                     @ref="setoffPaymentDetailManager"
                     SetoffDocumentId="@SetoffDocumentId"
+                    SetoffType="@(editModalComponent.Entity.SetoffType)"
                     ExistingPayments="@setoffPayments"
                     OnPaymentsChanged="@HandlePaymentsChanged"
                     IsReadOnly="@IsReadOnly" />

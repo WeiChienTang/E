@@ -12,8 +12,8 @@
                                 IsReadOnly="@IsReadOnly"
                                 ShowRowNumbers="false"
                                 EmptyMessage="尚未新增預收付款項記錄"
-                                ShowBuiltInActions="true"
-                                ShowBuiltInDeleteButton="true"
+                                ShowBuiltInActions="@(!IsEditMode())"
+                                ShowBuiltInDeleteButton="@(!IsEditMode())"
                                 OnItemDelete="@HandleRemovePrepaymentRecord"
                                 ActionsColumnWidth = "60px" />
 </div>
@@ -800,6 +800,14 @@
         }
         
         return true;
+    }
+    
+    /// <summary>
+    /// 判斷是否為編輯模式（編輯模式下不允許刪除明細）
+    /// </summary>
+    private bool IsEditMode()
+    {
+        return SetoffDocumentId.HasValue && SetoffDocumentId.Value > 0;
     }
 
     // ===== 內部資料類別 =====

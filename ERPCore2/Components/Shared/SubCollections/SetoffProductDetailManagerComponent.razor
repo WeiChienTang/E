@@ -31,8 +31,8 @@ else
                                       IsReadOnly="@IsReadOnly"
                                       ShowRowNumbers="false"
                                       EmptyMessage="@GetUnsettledEmptyMessage()"
-                                      ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
+                                      ShowBuiltInActions="@(!IsEditMode())"
+                                      ShowBuiltInDeleteButton="@(!IsEditMode())"
                                       OnItemDelete="@HandleRemoveItem"
                                       ShowActions="false"
                                       ActionsColumnWidth = "60px" />
@@ -443,6 +443,14 @@ else
         return SetoffItems
             .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
             .Sum(item => item.SourceTotalAmount);
+    }
+    
+    /// <summary>
+    /// 判斷是否為編輯模式（編輯模式下不允許刪除明細）
+    /// </summary>
+    private bool IsEditMode()
+    {
+        return SetoffDocumentId.HasValue && SetoffDocumentId.Value > 0;
     }
 
     // ===== 內部資料類別 =====

@@ -62,7 +62,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 本期應收
         /// </summary>
-        [Display(Name = "本期總應收")]
+        [Display(Name = "本期總應收/應付")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalSetoffAmount { get; set; } = 0;
 
@@ -86,6 +86,20 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "本期總折讓")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAllowanceAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 本期預收/付（當使用者有預收的時候會顯示在此欄位）
+        /// </summary>
+        [Display(Name = "本期預收/付")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CurrentPrepaymentAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 預收/付沖款（使用預收/付的金額進行沖款）
+        /// </summary>
+        [Display(Name = "預收/付沖款")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PrepaymentSetoffAmount { get; set; } = 0;
 
         // Navigation Properties
         /// <summary>

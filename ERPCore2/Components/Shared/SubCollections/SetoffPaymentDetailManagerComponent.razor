@@ -1,5 +1,6 @@
 @* 沖款收款記錄管理組件 - 管理收款、折讓等財務資訊 *@
 
+@using ERPCore2.Data.Enums
 @inject ISetoffPaymentService SetoffPaymentService
 @inject IBankService BankService
 @inject IPaymentMethodService PaymentMethodService
@@ -12,8 +13,8 @@
                                 IsReadOnly="@IsReadOnly"
                                 ShowRowNumbers="false"
                                 EmptyMessage="尚未新增收款記錄"
-                                ShowBuiltInActions="true"
-                                ShowBuiltInDeleteButton="true"
+                                ShowBuiltInActions="@(!IsEditMode())"
+                                ShowBuiltInDeleteButton="@(!IsEditMode())"
                                 OnItemDelete="@HandleRemovePaymentRecord"
                                 ActionsColumnWidth = "60px" />
 </div>
@@ -28,6 +29,9 @@
     
     // 顯示控制
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // 沖款類型 - 用於動態調整欄位標題
+    [Parameter] public SetoffType SetoffType { get; set; } = SetoffType.AccountsReceivable;
     
     // ===== 內部狀態 =====
     private List<SetoffPaymentItem> PaymentItems { get; set; } = new();
@@ -162,6 +166,9 @@
     // ===== InteractiveTable 欄位定義 =====
     private List<InteractiveColumnDefinition> GetPaymentColumnDefinitions()
     {
+        // 根據沖款類型決定欄位標題
+        var receivedAmountLabel = SetoffType == SetoffType.AccountsReceivable ? "收款金額" : "付款金額";
+        
         var columns = new List<InteractiveColumnDefinition>
         {
 
@@ -207,7 +214,7 @@
             },
             new()
             {
-                Title = "收款金額",
+                Title = receivedAmountLabel,
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -474,6 +481,14 @@
     /// 取得總金額（收款 + 折讓）
     /// </summary>
     public decimal GetTotalAmount() => TotalReceivedAmount + TotalAllowanceAmount;
+    
+    /// <summary>
+    /// 判斷是否為編輯模式（編輯模式下不允許刪除明細）
+    /// </summary>
+    private bool IsEditMode()
+    {
+        return SetoffDocumentId.HasValue && SetoffDocumentId.Value > 0;
+    }
 
     // ===== 內部資料類別 =====
     private class SetoffPaymentItem : BaseEntity
