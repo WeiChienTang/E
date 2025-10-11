@@ -69,6 +69,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturns
+                    .AsNoTracking()  // 🔑 不追蹤實體，確保每次都載入最新資料
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
                     .Include(pr => pr.PurchaseReturnDetails)
@@ -826,6 +827,75 @@ namespace ERPCore2.Services
                     PurchaseReturnId = purchaseReturnId 
                 });
                 return ServiceResult.Failure($"更新採購退貨明細時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 檢查採購退貨單是否可以被刪除
+        /// 
+        /// 檢查項目：
+        /// 1. 基類檢查（外鍵關聯等）
+        /// 2. 檢查明細是否有收款記錄
+        ///    - 檢查欄位：TotalReceivedAmount
+        ///    - 限制原因：已收款的退貨明細不可刪除，避免財務資料錯亂
+        /// 
+        /// 任一明細被鎖定則整個主檔無法刪除
+        /// </summary>
+        /// <param name="entity">要檢查的採購退貨單實體</param>
+        /// <returns>檢查結果，包含是否可刪除及錯誤訊息</returns>
+        protected override async Task<ServiceResult> CanDeleteAsync(PurchaseReturn entity)
+        {
+            try
+            {
+                // 1. 先檢查基類的刪除條件（外鍵關聯等）
+                var baseResult = await base.CanDeleteAsync(entity);
+                if (!baseResult.IsSuccess)
+                {
+                    return baseResult;
+                }
+
+                // 2. 載入明細資料（如果尚未載入）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var loadedEntity = await context.PurchaseReturns
+                    .Include(pr => pr.PurchaseReturnDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .FirstOrDefaultAsync(pr => pr.Id == entity.Id);
+
+                if (loadedEntity == null)
+                {
+                    return ServiceResult.Failure("找不到要檢查的退貨單");
+                }
+
+                // 如果沒有明細，可以刪除
+                if (loadedEntity.PurchaseReturnDetails == null || !loadedEntity.PurchaseReturnDetails.Any())
+                {
+                    return ServiceResult.Success();
+                }
+
+                // 3. 檢查每個明細項目是否有收款記錄
+                foreach (var detail in loadedEntity.PurchaseReturnDetails)
+                {
+                    // 檢查收款記錄
+                    if (detail.TotalReceivedAmount > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此退貨單，因為商品「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N0} 元）"
+                        );
+                    }
+                }
+
+                // 4. 所有檢查通過，允許刪除
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, nameof(CanDeleteAsync), GetType(), _logger,
+                    new { EntityId = entity.Id, PurchaseReturnNumber = entity.PurchaseReturnNumber }
+                );
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
 

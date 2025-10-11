@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 // 使用別名來避免命名衝突
 using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;
 
-namespace ERPCore2.Services.Sales
+namespace ERPCore2.Services
 {
     /// <summary>
     /// 銷貨退貨原因服務實作

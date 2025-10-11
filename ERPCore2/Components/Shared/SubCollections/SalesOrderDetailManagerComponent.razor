@@ -2,10 +2,9 @@
 
 @inject IProductService ProductService
 @inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
-@using ERPCore2.Helpers
-@using ERPCore2.Data.Entities
-@using ERPCore2.Components.Shared.Buttons
+
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
 
@@ -31,7 +30,8 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="@EmptyMessage"
                                       ShowBuiltInActions="@(!IsReadOnly)"
-                                      ShowBuiltInDeleteButton="true"
+                                      ShowBuiltInDeleteButton="false"
+                                      CustomActionsTemplate="GetCustomActionsTemplate"
                                       ActionsColumnWidth = "60px"
                                       OnItemDelete="HandleItemDelete"/>
         </div>
@@ -136,11 +136,15 @@ else
     private int? _previousSelectedCustomerId = null;
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
+    
+    // ===== 退貨數量管理 =====
+    private Dictionary<int, decimal> _returnedQuantities = new(); // Key: SalesOrderDetailId, Value: 已退貨數量
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
         LoadExistingDetailsAsync();
+        await LoadReturnedQuantitiesAsync();
         EnsureOneEmptyRow();
     }
 
@@ -176,6 +180,138 @@ else
         
         // 總是確保有一行空行可以輸入，不論是否已有資料
         EnsureOneEmptyRow();
+    }
+
+    // ===== 退貨數量管理方法 =====
+    
+    /// <summary>
+    /// 載入所有銷貨訂單明細的退貨數量
+    /// </summary>
+    private async Task LoadReturnedQuantitiesAsync()
+    {
+        _returnedQuantities.Clear();
+        
+        // 先複製要處理的項目到列表中，避免在迭代時修改集合
+        var itemsToProcess = SalesItems
+            .Where(item => item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
+            .ToList();
+        
+        foreach (var item in itemsToProcess)
+        {
+            try
+            {
+                if (item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
+                {
+                    // 使用服務查詢該銷貨訂單明細的已退貨數量
+                    var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByOrderDetailAsync(detail.Id);
+                    
+                    if (returnedQty > 0)
+                    {
+                        _returnedQuantities[detail.Id] = returnedQty;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReturnedQuantitiesAsync), GetType());
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 檢查指定的銷貨訂單明細項目是否有退貨記錄
+    /// </summary>
+    private bool HasReturnRecord(SalesItem item)
+    {
+        if (item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
+        {
+            return _returnedQuantities.ContainsKey(detail.Id);
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// 取得指定銷貨訂單明細項目的已退貨數量
+    /// </summary>
+    private decimal GetReturnedQuantity(SalesItem item)
+    {
+        if (item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
+        {
+            return _returnedQuantities.TryGetValue(detail.Id, out var qty) ? qty : 0;
+        }
+        return 0;
+    }
+    
+    /// <summary>
+    /// 檢查指定的銷貨訂單明細項目是否有沖款記錄
+    /// 檢查邏輯：
+    /// - 資料表：SalesOrderDetail
+    /// - 欄位：TotalReceivedAmount (累計收款金額)
+    /// - 條件：TotalReceivedAmount > 0 表示已有沖款記錄，不可刪除
+    /// </summary>
+    /// <param name="item">要檢查的銷貨訂單明細項目</param>
+    /// <returns>true 表示有沖款記錄，false 表示沒有</returns>
+    private bool HasPaymentRecord(SalesItem item)
+    {
+        if (item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
+        {
+            return detail.TotalReceivedAmount > 0;
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// 取得指定銷貨訂單明細項目的已收款金額
+    /// </summary>
+    /// <param name="item">要檢查的銷貨訂單明細項目</param>
+    /// <returns>已收款金額</returns>
+    private decimal GetReceivedAmount(SalesItem item)
+    {
+        if (item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
+        {
+            return detail.TotalReceivedAmount;
+        }
+        return 0;
+    }
+    
+    /// <summary>
+    /// 檢查項目是否可以刪除
+    /// 綜合檢查以下條件：
+    /// 1. 退貨記錄檢查 (HasReturnRecord)
+    ///    - 資料來源：透過 SalesReturnDetailService.GetReturnedQuantityByOrderDetailAsync() 查詢
+    ///    - 檢查資料表：SalesReturnDetail (銷貨退回明細)
+    ///    - 檢查欄位：SalesOrderDetailId (關聯的銷貨訂單明細ID)
+    ///    - 限制原因：已有退貨記錄的銷貨訂單明細不可刪除，以保持資料一致性
+    /// 
+    /// 2. 沖款記錄檢查 (HasPaymentRecord)
+    ///    - 資料來源：直接讀取 SalesOrderDetail 實體
+    ///    - 檢查資料表：SalesOrderDetail (銷貨訂單明細)
+    ///    - 檢查欄位：TotalReceivedAmount (累計收款金額)
+    ///    - 限制原因：已收款的銷貨訂單明細不可刪除，避免財務資料錯亂
+    /// </summary>
+    /// <param name="item">要檢查的項目</param>
+    /// <param name="reason">不可刪除的原因（輸出參數）</param>
+    /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
+    private bool CanDeleteItem(SalesItem item, out string reason)
+    {
+        // 檢查 1：退貨記錄
+        if (HasReturnRecord(item))
+        {
+            var returnedQty = GetReturnedQuantity(item);
+            reason = $"此商品已有退貨記錄（已退貨 {returnedQty} 個），無法刪除";
+            return false;
+        }
+        
+        // 檢查 2：沉款記錄
+        if (HasPaymentRecord(item))
+        {
+            var receivedAmount = GetReceivedAmount(item);
+            reason = $"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元），無法刪除";
+            return false;
+        }
+        
+        reason = string.Empty;
+        return true;
     }
 
     // ===== AutoEmptyRowHelper 相關方法 =====
@@ -404,18 +540,83 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位
-        columns.Add(ProductSelectHelper.CreateProductSelect<SalesItem>(
-            title: "商品",
-            availableProductsProvider: () => GetAvailableProducts(),
-            onSearchInputChanged: EventCallback.Factory.Create<(SalesItem item, string? searchValue)>(this, async args => await OnProductSearchInput(args.item, args.searchValue)),
-            onProductSelected: EventCallback.Factory.Create<(SalesItem item, Product? selectedProduct)>(this, async args => await OnProductSelected(args.item, args.selectedProduct)),
-            onInputFocus: EventCallback.Factory.Create<SalesItem>(this, item => OnProductInputFocus(item)),
-            onInputBlur: EventCallback.Factory.Create<SalesItem>(this, async item => await OnProductInputBlur(item)),
-            onItemMouseEnter: EventCallback.Factory.Create<(SalesItem item, int index)>(this, args => OnProductItemMouseEnter(args.item, args.index)),
-            isReadOnly: IsReadOnly
-        ));        
+        // 商品選擇欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "商品",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "250px",
+            CustomTemplate = item =>
+            {
+                var salesItem = (SalesItem)item;
+                var hasReturnRecord = HasReturnRecord(salesItem);
+                var hasPaymentRecord = HasPaymentRecord(salesItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
 
+                // 組合 tooltip 訊息
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                {
+                    var returnedQty = GetReturnedQuantity(salesItem);
+                    tooltipMessages.Add($"此商品已有退貨記錄（已退貨 {returnedQty} 個）");
+                }
+                if (hasPaymentRecord)
+                {
+                    var receivedAmount = GetReceivedAmount(salesItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
+                }
+                var title = tooltipMessages.Any()
+                    ? string.Join("；", tooltipMessages) + "，無法修改商品選擇"
+                    : "";
+
+                if (isFieldReadOnly && salesItem.SelectedProduct != null)
+                {
+                    // 唯讀模式：顯示純文字 + 鎖定圖示
+                    return @<div class="d-flex align-items-center justify-content-between gap-2">
+                        <span class="text-muted small" title="@title">
+                            @salesItem.SelectedProduct.Code - @salesItem.SelectedProduct.Name
+                        </span>
+                        @if (hasReturnRecord || hasPaymentRecord)
+                        {
+                            <i class="fas fa-lock text-danger ms-auto" title="@title"></i>
+                        }
+                    </div>;
+                }
+                else
+                {
+                    // 可編輯模式：使用標準的搜尋下拉選單
+                    return @<div class="position-relative">
+                        <input type="text"
+                               class="form-control form-control-sm"
+                               value="@salesItem.ProductSearch"
+                               @oninput="(e) => OnProductSearchInput(salesItem, e.Value?.ToString())"
+                               @onfocus="() => OnProductInputFocus(salesItem)"
+                               @onblur="() => OnProductInputBlur(salesItem)"
+                               placeholder="搜尋商品..."
+                               readonly="@IsReadOnly" />
+
+                        @if (salesItem.ShowDropdown && salesItem.FilteredProducts.Any())
+                        {
+                            <div class="dropdown-menu show w-100" style="max-height: 200px; overflow-y: auto;">
+                                @foreach (var (product, index) in salesItem.FilteredProducts.Select((p, i) => (p, i)))
+                                {
+                                    <a class="dropdown-item @(index == salesItem.SelectedIndex ? "active" : "")"
+                                       href="#"
+                                       @onclick="() => OnProductSelected(salesItem, product)"
+                                       @onclick:preventDefault="true"
+                                       @onmouseenter="() => OnProductItemMouseEnter(salesItem, index)">
+                                        <div><strong>@product.Code</strong> - @product.Name</div>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>;
+                }
+            }
+        });
+
+        // 倉庫選擇欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
             { 
                 Title = "倉庫", 
@@ -426,22 +627,49 @@ else
                 CustomTemplate = item => 
                 {
                     var salesItem = (SalesItem)item;
+                    var hasReturnRecord = HasReturnRecord(salesItem);
+                    var hasPaymentRecord = HasPaymentRecord(salesItem);
+                    var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                     var selectedWarehouseId = salesItem.SelectedWarehouse?.Id.ToString() ?? "";
                     
-                    return @<select class="form-select form-select-sm"
-                                   value="@selectedWarehouseId"
-                                   @onchange="(e) => OnWarehouseSelectionChanged(salesItem, e.Value?.ToString())"
-                                   disabled="@IsReadOnly">
-                        <option value="">選擇倉庫</option>
-                        @foreach (var warehouse in Warehouses)
-                        {
-                            <option value="@warehouse.Id">@warehouse.Name</option>
-                        }
-                    </select>;
+                    // 組合 tooltip 訊息
+                    var tooltipMessages = new List<string>();
+                    if (hasReturnRecord)
+                        tooltipMessages.Add("此商品已有退貨記錄");
+                    if (hasPaymentRecord)
+                    {
+                        var receivedAmount = GetReceivedAmount(salesItem);
+                        tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
+                    }
+                    var title = tooltipMessages.Any()
+                        ? string.Join("；", tooltipMessages) + "，無法修改倉庫設定"
+                        : "";
+                    
+                    if (isFieldReadOnly && salesItem.SelectedWarehouse != null)
+                    {
+                        // 唯讀模式：顯示純文字
+                        return @<span class="text-muted small" title="@title">
+                            @salesItem.SelectedWarehouse.Name
+                        </span>;
+                    }
+                    else
+                    {
+                        // 可編輯模式：顯示下拉選單
+                        return @<select class="form-select form-select-sm"
+                                       value="@selectedWarehouseId"
+                                       @onchange="(e) => OnWarehouseSelectionChanged(salesItem, e.Value?.ToString())"
+                                       disabled="@IsReadOnly">
+                            <option value="">選擇倉庫</option>
+                            @foreach (var warehouse in Warehouses)
+                            {
+                                <option value="@warehouse.Id">@warehouse.Name</option>
+                            }
+                        </select>;
+                    }
                 }
         });
 
-        // 訂單數量欄位
+        // 訂單數量欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "訂單數量", 
@@ -451,19 +679,46 @@ else
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
+                var hasReturnRecord = HasReturnRecord(salesItem);
+                var hasPaymentRecord = HasPaymentRecord(salesItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                 var value = salesItem.OrderQuantity > 0 ? ((int)salesItem.OrderQuantity).ToString() : "";
                 
+                // 組合 tooltip 訊息
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                    tooltipMessages.Add("此商品已有退貨記錄");
+                if (hasPaymentRecord)
+                {
+                    var receivedAmount = GetReceivedAmount(salesItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
+                }
+                var title = tooltipMessages.Any() 
+                    ? string.Join("；", tooltipMessages) + "，無法修改訂單數量" 
+                    : "";
+                
+                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">
+                            @(salesItem.OrderQuantity > 0 ? salesItem.OrderQuantity.ToString("N0") : "0")
+                        </span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
                                @oninput="(e) => OnOrderQuantityInput(salesItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
-                               step="1" 
-                               readonly="@IsReadOnly" />;
+                               step="1" />;
             }
         });
 
+        // 單價欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單價", 
@@ -473,18 +728,45 @@ else
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
+                var hasReturnRecord = HasReturnRecord(salesItem);
+                var hasPaymentRecord = HasPaymentRecord(salesItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                 
+                // 組合 tooltip 訊息
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                    tooltipMessages.Add("此商品已有退貨記錄");
+                if (hasPaymentRecord)
+                {
+                    var receivedAmount = GetReceivedAmount(salesItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
+                }
+                var title = tooltipMessages.Any() 
+                    ? string.Join("；", tooltipMessages) + "，無法修改單價" 
+                    : "";
+                
+                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">
+                            @(salesItem.UnitPrice > 0 ? salesItem.UnitPrice.ToString("N0") : "0")
+                        </span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
                 return @<input type="number" class="form-control form-control-sm"
                                 min="0"
                                 step="1"
                                 value="@((int)salesItem.UnitPrice)"
                                 @oninput="(e) => OnUnitPriceInput(salesItem, e.Value?.ToString())"
                                 onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                                placeholder="" 
-                                readonly="@IsReadOnly" />;
+                                placeholder="" />;
             }
         });        
 
+        // 折扣欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "折扣%", 
@@ -495,7 +777,34 @@ else
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
+                var hasReturnRecord = HasReturnRecord(salesItem);
+                var hasPaymentRecord = HasPaymentRecord(salesItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                 
+                // 組合 tooltip 訊息
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                    tooltipMessages.Add("此商品已有退貨記錄");
+                if (hasPaymentRecord)
+                {
+                    var receivedAmount = GetReceivedAmount(salesItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
+                }
+                var title = tooltipMessages.Any() 
+                    ? string.Join("；", tooltipMessages) + "，無法修改折扣" 
+                    : "";
+                
+                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">
+                            @(salesItem.DiscountPercentage > 0 ? $"{salesItem.DiscountPercentage:N0}%" : "0%")
+                        </span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
                 return @<div class="input-group input-group-sm">
                     <input type="number" class="form-control"
                             min="0"
@@ -504,7 +813,6 @@ else
                             value="@((int)salesItem.DiscountPercentage)"
                             @oninput="(e) => OnDiscountPercentageInput(salesItem, e.Value?.ToString())"
                             onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                            readonly="@IsReadOnly"
                             placeholder="%" />
                 </div>;
             }
@@ -551,8 +859,34 @@ else
         return columns;
     }
 
+    private RenderFragment<SalesItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        // 檢查項目是否可以刪除（綜合退貨記錄和沖款記錄檢查）
+        var canDelete = CanDeleteItem(item, out _);
+        
+        // 只有當項目可以刪除時才顯示刪除按鈕
+        if (canDelete)
+        {
+            <GenericButtonComponent Variant="ButtonVariant.Danger"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+    };
+
     private async Task HandleItemDelete(SalesItem item)
     {
+        // 使用綜合檢查方法，確認是否可以刪除
+        if (!CanDeleteItem(item, out string reason))
+        {
+            await NotificationService.ShowWarningAsync(reason, "操作限制");
+            return;
+        }
+        
         var index = SalesItems.IndexOf(item);
         await RemoveItemAsync(index);
     }
@@ -639,6 +973,17 @@ else
 
     private async Task OnProductSelected(SalesItem item, Product? product)
     {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改商品選擇"
+                : "此商品已有沖款記錄，無法修改商品選擇";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         // 設定選中的商品
@@ -702,6 +1047,17 @@ else
 
     private async Task OnOrderQuantityInput(SalesItem item, string? value)
     {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改數量"
+                : "此商品已有沖款記錄，無法修改數量";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
@@ -724,6 +1080,17 @@ else
 
     private async Task OnUnitPriceInput(SalesItem item, string? value)
     {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改單價"
+                : "此商品已有沖款記錄，無法修改單價";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
@@ -746,6 +1113,17 @@ else
 
     private async Task OnDiscountPercentageInput(SalesItem item, string? value)
     {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改折扣"
+                : "此商品已有沖款記錄，無法修改折扣";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
@@ -771,6 +1149,17 @@ else
 
     private async Task OnWarehouseSelectionChanged(SalesItem item, string? warehouseIdStr)
     {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改倉庫設定"
+                : "此商品已有沖款記錄，無法修改倉庫設定";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(warehouseIdStr) || !int.TryParse(warehouseIdStr, out var warehouseId))

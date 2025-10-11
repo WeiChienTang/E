@@ -4,8 +4,10 @@
 
 /* 桌面專用尺寸 - 最大化利用螢幕空間 */
 .modal-desktop {
-    width: 98% !important;
+    width: 99% !important;
     max-width: none !important;
+    height: 99% !important;
+    max-height: none !important;
 }
 
 /* 自訂超大尺寸 Modal - 適合桌面螢幕 */

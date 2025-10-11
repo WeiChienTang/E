@@ -168,6 +168,63 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 檢查銷貨退回單是否可以被刪除
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(SalesReturn entity)
+        {
+            try
+            {
+                // 1. 執行基類檢查（外鍵關聯等）
+                var baseResult = await base.CanDeleteAsync(entity);
+                if (!baseResult.IsSuccess)
+                    return baseResult;
+
+                // 2. 如果實體沒有載入明細資料，從資料庫重新載入
+                if (entity.SalesReturnDetails == null || !entity.SalesReturnDetails.Any())
+                {
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var entityWithDetails = await context.SalesReturns
+                        .Include(sr => sr.SalesReturnDetails)
+                            .ThenInclude(srd => srd.Product)
+                        .FirstOrDefaultAsync(sr => sr.Id == entity.Id);
+
+                    if (entityWithDetails == null)
+                    {
+                        return ServiceResult.Failure("找不到要刪除的銷貨退回單");
+                    }
+
+                    entity = entityWithDetails;
+                }
+
+                // 3. 檢查每個明細是否被鎖定
+                foreach (var detail in entity.SalesReturnDetails)
+                {
+                    // 檢查是否有沖款記錄（TotalPaidAmount > 0 表示已有沖款）
+                    if (detail.TotalPaidAmount > 0)
+                    {
+                        var productName = detail.Product?.Name ?? $"產品ID:{detail.ProductId}";
+                        return ServiceResult.Failure(
+                            $"無法刪除此銷貨退回單，因為商品「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N2} 元）");
+                    }
+                }
+
+                // 4. 所有檢查都通過
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new
+                {
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    EntityNumber = entity.SalesReturnNumber
+                });
+                return ServiceResult.Failure("檢查刪除權限時發生錯誤");
+            }
+        }
+
         public async Task<bool> IsSalesReturnNumberExistsAsync(string salesReturnNumber, int? excludeId = null)
         {
             try

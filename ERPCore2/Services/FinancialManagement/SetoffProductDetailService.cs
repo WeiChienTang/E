@@ -802,7 +802,6 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("驗證沖款金額時發生錯誤");
             }
         }
-
         /// <summary>
         /// 實作搜尋功能
         /// </summary>

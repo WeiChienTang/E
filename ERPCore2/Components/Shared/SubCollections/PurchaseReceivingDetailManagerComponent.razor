@@ -576,7 +576,7 @@ else
             }
         });
 
-        // 入庫數量欄位
+        // 入庫數量欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "入庫數量", 
@@ -590,10 +590,24 @@ else
                 var returnedQty = GetReturnedQuantity(receivingItem);
                 var minValue = returnedQty > 0 ? returnedQty : 0;
                 var hasReturnRecord = HasReturnRecord(receivingItem);
-                var title = hasReturnRecord ? $"此商品已退貨 {returnedQty} 個，數量不可低於此值" : "";
+                var hasPaymentRecord = HasPaymentRecord(receivingItem);
+                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                 
-                // 如果是唯讀狀態，直接顯示 span
-                if (IsReadOnly)
+                // 組合 tooltip 訊息
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                    tooltipMessages.Add($"此商品已退貨 {returnedQty} 個");
+                if (hasPaymentRecord)
+                {
+                    var paidAmount = GetPaidAmount(receivingItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元）");
+                }
+                var title = tooltipMessages.Any() 
+                    ? string.Join("；", tooltipMessages) + "，無法修改入庫數量" 
+                    : "";
+                
+                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
+                if (isFieldReadOnly)
                 {
                     return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
                         <span class="text-muted small" title="@title">
@@ -1233,6 +1247,17 @@ else
 
     private async Task OnReceivedQuantityInput(ReceivingItem item, string? value)
     {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改入庫數量"
+                : "此商品已有沖款記錄，無法修改入庫數量";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))

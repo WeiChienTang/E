@@ -15,6 +15,7 @@ namespace ERPCore2.Services
     {
         private readonly IInventoryStockService _inventoryStockService;
         private readonly ISalesOrderDetailService? _detailService;
+        private readonly ISalesReturnDetailService? _salesReturnDetailService;
 
         /// <summary>
         /// 完整建構子 - 使用 ILogger、InventoryStockService 和 SalesOrderDetailService
@@ -23,10 +24,12 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<SalesOrder>> logger,
             IInventoryStockService inventoryStockService,
-            ISalesOrderDetailService? detailService = null) : base(contextFactory, logger)
+            ISalesOrderDetailService? detailService = null,
+            ISalesReturnDetailService? salesReturnDetailService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
+            _salesReturnDetailService = salesReturnDetailService;
         }
 
         /// <summary>
@@ -344,6 +347,75 @@ namespace ERPCore2.Services
                     DetailCount = salesOrderDetails?.Count ?? 0
                 });
                 return ServiceResult.Failure("驗證倉庫庫存時發生錯誤");
+            }
+        }
+
+        #endregion
+
+        #region 刪除限制檢查
+
+        /// <summary>
+        /// 檢查銷貨訂單是否可以被刪除
+        /// 如果訂單的任何明細被鎖定（有退貨記錄或收款記錄），則整個訂單都不能刪除
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(SalesOrder entity)
+        {
+            try
+            {
+                // 1. 基礎檢查（外鍵關聯等）
+                var baseResult = await base.CanDeleteAsync(entity);
+                if (!baseResult.IsSuccess)
+                    return baseResult;
+
+                // 2. 載入訂單明細（含商品資訊）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var orderWithDetails = await context.SalesOrders
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Product)
+                    .FirstOrDefaultAsync(so => so.Id == entity.Id);
+
+                if (orderWithDetails == null || orderWithDetails.SalesOrderDetails == null || !orderWithDetails.SalesOrderDetails.Any())
+                {
+                    return ServiceResult.Success(); // 沒有明細，可以刪除
+                }
+
+                // 3. 檢查每個明細項目
+                foreach (var detail in orderWithDetails.SalesOrderDetails)
+                {
+                    // 檢查 1：退貨記錄檢查
+                    if (_salesReturnDetailService != null)
+                    {
+                        var returnDetails = await _salesReturnDetailService.GetBySalesOrderDetailIdAsync(detail.Id);
+                        if (returnDetails != null && returnDetails.Any())
+                        {
+                            var totalReturnQuantity = returnDetails.Sum(rd => rd.ReturnQuantity);
+                            var productName = detail.Product?.Name ?? "未知商品";
+                            return ServiceResult.Failure(
+                                $"無法刪除此銷貨訂單，因為商品「{productName}」已有退貨記錄（已退貨 {totalReturnQuantity} 個）");
+                        }
+                    }
+
+                    // 檢查 2：收款記錄檢查
+                    if (detail.TotalReceivedAmount > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此銷貨訂單，因為商品「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N2} 元）");
+                    }
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new
+                {
+                    Method = nameof(CanDeleteAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    SalesOrderNumber = entity.SalesOrderNumber
+                });
+                return ServiceResult.Failure("檢查刪除權限時發生錯誤");
             }
         }
 

@@ -3,7 +3,6 @@ using ERPCore2.Components.Shared.Tables;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
-using ERPCore2.Services.Sales;
 using Microsoft.AspNetCore.Components;
 using ERPCore2.Helpers;
 

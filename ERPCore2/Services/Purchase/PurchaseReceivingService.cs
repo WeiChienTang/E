@@ -29,6 +29,11 @@ namespace ERPCore2.Services
         private readonly IPurchaseOrderDetailService? _purchaseOrderDetailService;
 
         /// <summary>
+        /// 採購退貨明細服務 - 用於檢查進貨明細是否有退貨記錄
+        /// </summary>
+        private readonly IPurchaseReturnDetailService? _purchaseReturnDetailService;
+
+        /// <summary>
         /// 簡易建構子 - 適用於測試環境或最小依賴場景
         /// </summary>
         /// <param name="contextFactory">資料庫上下文工廠</param>
@@ -56,16 +61,19 @@ namespace ERPCore2.Services
         /// <param name="inventoryStockService">庫存管理服務</param>
         /// <param name="detailService">進貨明細服務</param>
         /// <param name="purchaseOrderDetailService">採購訂單明細服務</param>
+        /// <param name="purchaseReturnDetailService">採購退貨明細服務</param>
         public PurchaseReceivingService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReceiving>> logger,
             IInventoryStockService inventoryStockService,
             IPurchaseReceivingDetailService detailService,
-            IPurchaseOrderDetailService purchaseOrderDetailService) : base(contextFactory, logger)
+            IPurchaseOrderDetailService purchaseOrderDetailService,
+            IPurchaseReturnDetailService purchaseReturnDetailService) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
             _purchaseOrderDetailService = purchaseOrderDetailService;
+            _purchaseReturnDetailService = purchaseReturnDetailService;
         }
 
         #region 覆寫基本方法
@@ -553,6 +561,96 @@ namespace ERPCore2.Services
                 
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger);
                 return ServiceResult.Failure($"永久刪除資料時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 檢查採購進貨單是否可以被刪除
+        /// 檢查邏輯：
+        /// 1. 先執行基類的刪除檢查（外鍵關聯等）
+        /// 2. 檢查所有明細項目是否有退貨記錄
+        ///    - 資料來源：透過 IPurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync() 查詢
+        ///    - 檢查資料表：PurchaseReturnDetail (採購退貨明細)
+        ///    - 檢查欄位：PurchaseReceivingDetailId (關聯的進貨明細ID)
+        ///    - 限制原因：已有退貨記錄的進貨明細不可刪除，以保持資料一致性
+        /// 3. 檢查所有明細項目是否有沖款記錄
+        ///    - 資料來源：直接讀取 PurchaseReceivingDetail 實體
+        ///    - 檢查資料表：PurchaseReceivingDetail (採購進貨明細)
+        ///    - 檢查欄位：TotalPaidAmount (累計付款金額)
+        ///    - 限制原因：已沖款的進貨明細不可刪除，避免財務資料錯亂
+        /// 
+        /// 任一明細被鎖定則整個主檔無法刪除
+        /// </summary>
+        /// <param name="entity">要檢查的採購進貨單實體</param>
+        /// <returns>檢查結果，包含是否可刪除及錯誤訊息</returns>
+        protected override async Task<ServiceResult> CanDeleteAsync(PurchaseReceiving entity)
+        {
+            try
+            {
+                // 1. 先檢查基類的刪除條件（外鍵關聯等）
+                var baseResult = await base.CanDeleteAsync(entity);
+                if (!baseResult.IsSuccess)
+                {
+                    return baseResult;
+                }
+
+                // 2. 載入明細資料（如果尚未載入）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var loadedEntity = await context.PurchaseReceivings
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .FirstOrDefaultAsync(pr => pr.Id == entity.Id);
+
+                if (loadedEntity == null)
+                {
+                    return ServiceResult.Failure("找不到要檢查的進貨單");
+                }
+
+                // 如果沒有明細，可以刪除
+                if (loadedEntity.PurchaseReceivingDetails == null || !loadedEntity.PurchaseReceivingDetails.Any())
+                {
+                    return ServiceResult.Success();
+                }
+
+                // 3. 檢查每個明細項目是否有退貨或沖款記錄
+                foreach (var detail in loadedEntity.PurchaseReceivingDetails)
+                {
+                    // 3.1 檢查退貨記錄
+                    if (_purchaseReturnDetailService != null)
+                    {
+                        var returnedQty = await _purchaseReturnDetailService
+                            .GetReturnedQuantityByReceivingDetailAsync(detail.Id);
+
+                        if (returnedQty > 0)
+                        {
+                            var productName = detail.Product?.Name ?? "未知商品";
+                            return ServiceResult.Failure(
+                                $"無法刪除此進貨單，因為商品「{productName}」已有退貨記錄（已退貨 {returnedQty} 個）"
+                            );
+                        }
+                    }
+
+                    // 3.2 檢查沖款記錄
+                    if (detail.TotalPaidAmount > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此進貨單，因為商品「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N0} 元）"
+                        );
+                    }
+                }
+
+                // 4. 所有檢查通過，允許刪除
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, nameof(CanDeleteAsync), GetType(), _logger,
+                    new { EntityId = entity.Id, ReceiptNumber = entity.ReceiptNumber }
+                );
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
         }
 

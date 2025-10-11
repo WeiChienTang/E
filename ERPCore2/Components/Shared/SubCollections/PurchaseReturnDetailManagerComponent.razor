@@ -4,8 +4,6 @@
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject INotificationService NotificationService
-@using ERPCore2.Helpers
-@using ERPCore2.Data.Entities
 
 @if (!EffectiveSupplierId.HasValue || EffectiveSupplierId.Value <= 0)
 {
@@ -28,9 +26,9 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="@EmptyMessage"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
-                                      ActionsColumnWidth = "60px"
-                                      OnItemDelete="@HandleItemDelete" />
+                                      ShowBuiltInDeleteButton="false"
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
+                                      ActionsColumnWidth = "60px" />
         </div>
 
         <div class="card-footer">
@@ -117,6 +115,67 @@ else
         await LoadAvailableProductsAsync();
         LoadExistingDetailsAsync();
         EnsureOneEmptyRow();
+    }
+
+    // ===== 沖款記錄管理方法 =====
+    
+    /// <summary>
+    /// 檢查指定的退回明細項目是否有沖款記錄
+    /// 檢查邏輯：
+    /// - 資料表：PurchaseReturnDetail
+    /// - 欄位：TotalReceivedAmount (累計收款金額)
+    /// - 條件：TotalReceivedAmount > 0 表示已有沖款記錄，不可刪除
+    /// </summary>
+    /// <param name="item">要檢查的退回明細項目</param>
+    /// <returns>true 表示有沖款記錄，false 表示沒有</returns>
+    private bool HasPaymentRecord(ReturnItem item)
+    {
+        if (item.ExistingDetailEntity is PurchaseReturnDetail detail && detail.Id > 0)
+        {
+            // 檢查 TotalReceivedAmount 是否大於 0
+            return detail.TotalReceivedAmount > 0;
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// 取得指定退回明細項目的已收款金額
+    /// </summary>
+    /// <param name="item">要檢查的退回明細項目</param>
+    /// <returns>已收款金額</returns>
+    private decimal GetReceivedAmount(ReturnItem item)
+    {
+        if (item.ExistingDetailEntity is PurchaseReturnDetail detail && detail.Id > 0)
+        {
+            return detail.TotalReceivedAmount;
+        }
+        return 0;
+    }
+    
+    /// <summary>
+    /// 檢查項目是否可以刪除
+    /// 檢查條件：
+    /// - 沖款記錄檢查 (HasPaymentRecord)
+    ///   - 資料來源：直接讀取 PurchaseReturnDetail 實體
+    ///   - 檢查資料表：PurchaseReturnDetail (採購退回明細)
+    ///   - 檢查欄位：TotalReceivedAmount (累計收款金額)
+    ///   - 限制原因：已收款的退回明細不可刪除，避免財務資料錯亂
+    /// </summary>
+    /// <param name="item">要檢查的項目</param>
+    /// <param name="reason">不可刪除的原因（輸出參數）</param>
+    /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
+    private bool CanDeleteItem(ReturnItem item, out string reason)
+    {
+        // 檢查：沖款記錄
+        if (HasPaymentRecord(item))
+        {
+            var receivedAmount = GetReceivedAmount(item);
+            reason = $"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元），無法刪除";
+            return false;
+        }
+        
+        reason = string.Empty;
+        return true;
     }
 
     private async Task FillAllQuantities()
@@ -236,21 +295,73 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 進貨明細選擇欄位 - 使用新的 ProductSelectHelper
-        columns.Add(ProductSelectHelper.CreateReceivingDetailSelect<ReturnItem>(
-            title: "商品",
-            width: "300px",
-            availableReceivingDetailsProvider: () => GetAvailableReceivingDetails(),
-            onReceivingDetailSelected: EventCallback.Factory.Create<(ReturnItem item, PurchaseReceivingDetail? selectedDetail)>(this, async args => {
-                if (args.selectedDetail != null)
-                    await OnReceivingDetailSelected(args.item, args.selectedDetail);
-            }),
-            onSearchInputChanged: EventCallback.Factory.Create<(ReturnItem item, string? searchValue)>(this, args => OnReceivingDetailSearchInput(args.item, args.searchValue)),
-            onInputFocus: EventCallback.Factory.Create<ReturnItem>(this, item => OnReceivingDetailInputFocus(item)),
-            onInputBlur: EventCallback.Factory.Create<ReturnItem>(this, async item => await OnReceivingDetailInputBlur(item)),
-            onItemMouseEnter: EventCallback.Factory.Create<(ReturnItem item, int index)>(this, args => OnReceivingDetailItemMouseEnter(args.item, args.index)),
-            isReadOnly: IsReadOnly
-        ));
+        // 進貨明細選擇欄位 - 自訂模板支援動態唯讀
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "商品", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "300px",
+            CustomTemplate = item => 
+            {
+                var returnItem = (ReturnItem)item;
+                var hasPaymentRecord = HasPaymentRecord(returnItem);
+                var isFieldReadOnly = IsReadOnly || hasPaymentRecord;
+                
+                // 組合 tooltip 訊息
+                var title = hasPaymentRecord 
+                    ? $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改商品選擇" 
+                    : "";
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">
+                            @(string.IsNullOrEmpty(returnItem.ReceivingDetailSearch) ? "無商品選擇" : returnItem.ReceivingDetailSearch)
+                        </span>
+                        
+                        @if (hasPaymentRecord)
+                        {
+                            <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
+                                <i class="fas fa-lock text-danger" title="@title"></i>
+                            </div>
+                        }
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
+                return @<div class="position-relative">
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           value="@returnItem.ReceivingDetailSearch"
+                           placeholder="請選擇進貨明細..."
+                           @onfocus="() => OnReceivingDetailInputFocus(returnItem)"
+                           @onblur="() => OnReceivingDetailInputBlur(returnItem)"
+                           @oninput="(e) => OnReceivingDetailSearchInput(returnItem, e.Value?.ToString())" />
+                    
+                    @if (returnItem.ShowDropdown && returnItem.FilteredReceivingDetails.Any())
+                    {
+                        <div class="dropdown-menu show position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto;">
+                            @for (int i = 0; i < returnItem.FilteredReceivingDetails.Count; i++)
+                            {
+                                var index = i;
+                                var detail = returnItem.FilteredReceivingDetails[i];
+                                var isSelected = index == returnItem.SelectedIndex;
+                                var itemClass = isSelected ? "dropdown-item active" : "dropdown-item";
+                                
+                                <a href="#" class="@itemClass" 
+                                   @onclick="() => OnReceivingDetailSelected(returnItem, detail)"
+                                   @onclick:preventDefault="true"
+                                   @onmouseenter="() => OnReceivingDetailItemMouseEnter(returnItem, index)">
+                                    @((MarkupString)FormatReceivingDetailDisplay(detail))
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>;
+            }
+        });
 
         // 原始進貨數量欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
@@ -264,7 +375,7 @@ else
                 var returnItem = (ReturnItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@returnItem.OriginalQuantity.ToString("N0")</span>
+                    <span>@returnItem.OriginalQuantity.ToString("N0")</span>
                 </div>;
             }
         });
@@ -279,18 +390,33 @@ else
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString() : "";
-                var maxQuantity = returnItem.OriginalQuantity - returnItem.AlreadyReturnedQuantity;
+                var returnableQuantity = returnItem.AvailableQuantity;
+                var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString("N0") : "";
+                var hasPaymentRecord = HasPaymentRecord(returnItem);
+                var isFieldReadOnly = IsReadOnly || hasPaymentRecord;
                 
+                // 組合 tooltip 訊息
+                var title = hasPaymentRecord 
+                    ? $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改退回數量" 
+                    : "";
+                
+                // 如果是唯讀狀態（含沖款記錄），直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    return @<div class="d-flex align-items-center justify-content-end">
+                        <span class="text-muted" title="@title">@value</span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
                                @oninput="(e) => OnReturnQuantityInput(returnItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
-                               max="@maxQuantity"
-                               step="1" 
-                               readonly="@IsReadOnly" />;
+                               max="@returnableQuantity"
+                               step="1" />;
             }
         });
 
@@ -306,7 +432,24 @@ else
                 var returnItem = (ReturnItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@returnItem.OriginalUnitPrice.ToString("F0")</span>
+                    <span>@returnItem.OriginalUnitPrice.ToString("F0")</span>
+                </div>;
+            }
+        });
+
+        // 小計欄位 (只讀顯示)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "小計", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item => 
+            {
+                var returnItem = (ReturnItem)item;
+                
+                return @<div class="text-end fw-bold text-success">
+                    @returnItem.ReturnSubtotal.ToString("C")
                 </div>;
             }
         });
@@ -334,8 +477,37 @@ else
         return columns;
     }
 
+    private RenderFragment<ReturnItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        // 檢查項目是否可以刪除（檢查沖款記錄）
+        var canDelete = CanDeleteItem(item, out _);
+        
+        // 只有當項目可以刪除時才顯示刪除按鈕
+        if (canDelete)
+        {
+            <GenericButtonComponent Variant="ButtonVariant.Danger"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+    };
+
     private async Task HandleItemDelete(ReturnItem item)
     {
+        // 使用綜合檢查方法，確認是否可以刪除
+        if (!CanDeleteItem(item, out string reason))
+        {
+            await NotificationService.ShowWarningAsync(
+                reason, 
+                "操作限制"
+            );
+            return;
+        }
+        
         var index = ReturnItems.IndexOf(item);
         await RemoveItemAsync(index);
     }
@@ -800,6 +972,7 @@ else
         public string BatchNumber { get; set; } = string.Empty;
         
         public PurchaseReturnDetail? ExistingDetailEntity { get; set; }
+        public string? ValidationError { get; set; }
         
         // SearchableSelect 支援屬性
         public string ReceivingDetailSearch { get; set; } = string.Empty;
