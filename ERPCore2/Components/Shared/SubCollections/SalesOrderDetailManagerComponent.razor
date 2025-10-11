@@ -377,7 +377,6 @@ else
                 var salesItem = new SalesItem
                 {
                     SelectedProduct = salesDetail.Product ?? Products.FirstOrDefault(p => p.Id == salesDetail.ProductId),
-                    ProductSearch = salesDetail.Product?.Name ?? "",
                     OrderQuantity = salesDetail.OrderQuantity,
                     UnitPrice = salesDetail.UnitPrice,
                     DiscountPercentage = salesDetail.DiscountPercentage,
@@ -400,7 +399,6 @@ else
                 // 使用反射設定屬性
                 var productId = GetPropertyValue<int>(detail, "ProductId");
                 salesItem.SelectedProduct = Products.FirstOrDefault(p => p.Id == productId);
-                salesItem.ProductSearch = salesItem.SelectedProduct?.Name ?? "";
                 
                 salesItem.OrderQuantity = GetPropertyValue<decimal>(detail, QuantityPropertyName);
                 salesItem.UnitPrice = GetPropertyValue<decimal>(detail, UnitPricePropertyName);
@@ -540,7 +538,7 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
+        // 商品選擇欄位
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "商品",
@@ -553,6 +551,7 @@ else
                 var hasReturnRecord = HasReturnRecord(salesItem);
                 var hasPaymentRecord = HasPaymentRecord(salesItem);
                 var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                var selectedValue = salesItem.SelectedProduct?.Id.ToString() ?? "";
 
                 // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
@@ -570,49 +569,26 @@ else
                     ? string.Join("；", tooltipMessages) + "，無法修改商品選擇"
                     : "";
 
-                if (isFieldReadOnly && salesItem.SelectedProduct != null)
-                {
-                    // 唯讀模式：顯示純文字 + 鎖定圖示
-                    return @<div class="d-flex align-items-center justify-content-between gap-2">
-                        <span class="text-muted small" title="@title">
-                            @salesItem.SelectedProduct.Code - @salesItem.SelectedProduct.Name
-                        </span>
-                        @if (hasReturnRecord || hasPaymentRecord)
+                return @<div class="position-relative">
+                    <select class="form-select form-select-sm" 
+                            value="@selectedValue"
+                            disabled="@isFieldReadOnly"
+                            title="@title"
+                            @onchange="@(async (e) => await OnProductChanged(salesItem, e.Value))">
+                        <option value="">請選擇商品</option>
+                        @foreach (var product in GetAvailableProducts())
                         {
-                            <i class="fas fa-lock text-danger ms-auto" title="@title"></i>
+                            <option value="@product.Id">[@product.Code] @product.Name</option>
                         }
-                    </div>;
-                }
-                else
-                {
-                    // 可編輯模式：使用標準的搜尋下拉選單
-                    return @<div class="position-relative">
-                        <input type="text"
-                               class="form-control form-control-sm"
-                               value="@salesItem.ProductSearch"
-                               @oninput="(e) => OnProductSearchInput(salesItem, e.Value?.ToString())"
-                               @onfocus="() => OnProductInputFocus(salesItem)"
-                               @onblur="() => OnProductInputBlur(salesItem)"
-                               placeholder="搜尋商品..."
-                               readonly="@IsReadOnly" />
-
-                        @if (salesItem.ShowDropdown && salesItem.FilteredProducts.Any())
-                        {
-                            <div class="dropdown-menu show w-100" style="max-height: 200px; overflow-y: auto;">
-                                @foreach (var (product, index) in salesItem.FilteredProducts.Select((p, i) => (p, i)))
-                                {
-                                    <a class="dropdown-item @(index == salesItem.SelectedIndex ? "active" : "")"
-                                       href="#"
-                                       @onclick="() => OnProductSelected(salesItem, product)"
-                                       @onclick:preventDefault="true"
-                                       @onmouseenter="() => OnProductItemMouseEnter(salesItem, index)">
-                                        <div><strong>@product.Code</strong> - @product.Name</div>
-                                    </a>
-                                }
-                            </div>
-                        }
-                    </div>;
-                }
+                    </select>
+                    
+                    @if (hasReturnRecord || hasPaymentRecord)
+                    {
+                        <div class="position-absolute" style="top: 2px; right: 30px; pointer-events: none;">
+                            <i class="fas fa-lock text-danger" title="@title"></i>
+                        </div>
+                    }
+                </div>;
             }
         });
 
@@ -910,7 +886,6 @@ else
 
     public class SalesItem
     {
-        public string ProductSearch { get; set; } = string.Empty;
         public Product? SelectedProduct { get; set; }
         public decimal OrderQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
@@ -918,9 +893,6 @@ else
         public decimal Subtotal { get; set; } = 0;
         public string DetailRemarks { get; set; } = string.Empty;
         public Warehouse? SelectedWarehouse { get; set; }
-        public bool ShowDropdown { get; set; } = false;
-        public int SelectedIndex { get; set; } = -1;
-        public List<Product> FilteredProducts { get; set; } = new List<Product>();
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
         /// <summary>
@@ -942,102 +914,39 @@ else
         public string DisplayName => 
             SelectedProduct != null 
                 ? $"{SelectedProduct.Code} - {SelectedProduct.Name}" 
-                : ProductSearch;
+                : "";
     }
 
     // ===== 事件處理方法 =====
     
-    // ===== SearchableSelect 事件處理 =====
-    private void OnProductInputFocus(SalesItem item)
-    {
-        if (!string.IsNullOrWhiteSpace(item.ProductSearch))
-        {
-            _ = OnProductSearchInput(item, item.ProductSearch);
-        }
-        else
-        {
-            item.SelectedIndex = -1;
-            var availableProducts = GetAvailableProducts();
-            item.FilteredProducts = availableProducts.Take(20).ToList();
-            item.ShowDropdown = item.FilteredProducts.Any();
-            StateHasChanged();
-        }
-    }
-
-    private async Task OnProductInputBlur(SalesItem item)
-    {
-        await Task.Delay(100);
-        item.ShowDropdown = false;
-        StateHasChanged();
-    }
-
-    private async Task OnProductSelected(SalesItem item, Product? product)
+    // ===== 商品選擇事件處理 =====
+    private async Task OnProductChanged(SalesItem item, object? value)
     {
         // 檢查是否可以修改
         if (!CanDeleteItem(item, out string reason))
         {
-            var friendlyMessage = HasReturnRecord(item)
-                ? "此商品已有退貨記錄，無法修改商品選擇"
-                : "此商品已有沖款記錄，無法修改商品選擇";
-            
-            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            await NotificationService.ShowWarningAsync(
+                "無法修改商品",
+                reason
+            );
+            StateHasChanged(); // 強制重新渲染以恢復原值
             return;
         }
         
         var wasEmpty = IsEmptyRow(item);
         
-        // 設定選中的商品
-        item.SelectedProduct = product;
-        item.ProductSearch = product?.Name ?? "";
-        
-        // 商品選中後不自動填入單價，由使用者手動輸入
-        
-        item.ShowDropdown = false;
-        item.SelectedIndex = -1;
-        
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
-    private void OnProductItemMouseEnter(SalesItem item, int index)
-    {
-        item.SelectedIndex = index;
-        StateHasChanged();
-    }
-
-    private async Task OnProductSearchInput(SalesItem item, string? searchValue)
-    {
-        var wasEmpty = IsEmptyRow(item);
-        
-        item.ProductSearch = searchValue ?? string.Empty;
-        
-        if (string.IsNullOrWhiteSpace(searchValue))
+        var productIdStr = value?.ToString();
+        if (string.IsNullOrEmpty(productIdStr))
         {
             item.SelectedProduct = null;
-            item.SelectedIndex = -1;
-            
-            var availableProducts = GetAvailableProducts();
-            item.FilteredProducts = availableProducts.Take(20).ToList();
-            item.ShowDropdown = item.FilteredProducts.Any();
         }
-        else
+        else if (int.TryParse(productIdStr, out var productId))
         {
-            var availableProducts = GetAvailableProducts();
-            
-            // 搜尋邏輯：支援商品代碼、商品名稱
-            item.FilteredProducts = availableProducts
-                .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                           (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
-                .Take(20)
-                .ToList();
-            
-            item.ShowDropdown = item.FilteredProducts.Any();
-            item.SelectedIndex = item.FilteredProducts.Any() ? 0 : -1;
+            var product = GetAvailableProducts().FirstOrDefault(p => p.Id == productId);
+            item.SelectedProduct = product;
         }
         
+        // 處理自動空行邏輯
         AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
             SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
@@ -1365,7 +1274,6 @@ else
                 var salesItem = new SalesItem
                 {
                     SelectedProduct = detail.Product,
-                    ProductSearch = detail.Product?.Name ?? "",
                     OrderQuantity = detail.OrderQuantity,
                     UnitPrice = detail.UnitPrice,
                     DetailRemarks = detail.Remarks ?? "",

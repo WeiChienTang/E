@@ -295,7 +295,7 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 進貨明細選擇欄位 - 自訂模板支援動態唯讀
+        // 進貨明細選擇欄位
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "商品", 
@@ -307,56 +307,31 @@ else
                 var returnItem = (ReturnItem)item;
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
                 var isFieldReadOnly = IsReadOnly || hasPaymentRecord;
+                var selectedValue = returnItem.SelectedReceivingDetail?.Id.ToString() ?? "";
                 
                 // 組合 tooltip 訊息
                 var title = hasPaymentRecord 
                     ? $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改商品選擇" 
                     : "";
                 
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
-                            @(string.IsNullOrEmpty(returnItem.ReceivingDetailSearch) ? "無商品選擇" : returnItem.ReceivingDetailSearch)
-                        </span>
-                        
-                        @if (hasPaymentRecord)
-                        {
-                            <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
-                                <i class="fas fa-lock text-danger" title="@title"></i>
-                            </div>
-                        }
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
                 return @<div class="position-relative">
-                    <input type="text" 
-                           class="form-control form-control-sm" 
-                           value="@returnItem.ReceivingDetailSearch"
-                           placeholder="請選擇進貨明細..."
-                           @onfocus="() => OnReceivingDetailInputFocus(returnItem)"
-                           @onblur="() => OnReceivingDetailInputBlur(returnItem)"
-                           @oninput="(e) => OnReceivingDetailSearchInput(returnItem, e.Value?.ToString())" />
+                    <select class="form-select form-select-sm" 
+                            value="@selectedValue"
+                            disabled="@isFieldReadOnly"
+                            title="@title"
+                            @onchange="@(async (e) => await OnReceivingDetailChanged(returnItem, e.Value))">
+                        <option value="">請選擇進貨明細</option>
+                        @foreach (var detail in GetAvailableReceivingDetails())
+                        {
+                            var displayText = FormatReceivingDetailDisplayText(detail);
+                            <option value="@detail.Id">@displayText</option>
+                        }
+                    </select>
                     
-                    @if (returnItem.ShowDropdown && returnItem.FilteredReceivingDetails.Any())
+                    @if (hasPaymentRecord)
                     {
-                        <div class="dropdown-menu show position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto;">
-                            @for (int i = 0; i < returnItem.FilteredReceivingDetails.Count; i++)
-                            {
-                                var index = i;
-                                var detail = returnItem.FilteredReceivingDetails[i];
-                                var isSelected = index == returnItem.SelectedIndex;
-                                var itemClass = isSelected ? "dropdown-item active" : "dropdown-item";
-                                
-                                <a href="#" class="@itemClass" 
-                                   @onclick="() => OnReceivingDetailSelected(returnItem, detail)"
-                                   @onclick:preventDefault="true"
-                                   @onmouseenter="() => OnReceivingDetailItemMouseEnter(returnItem, index)">
-                                    @((MarkupString)FormatReceivingDetailDisplay(detail))
-                                </a>
-                            }
+                        <div class="position-absolute" style="top: 2px; right: 30px; pointer-events: none;">
+                            <i class="fas fa-lock text-danger" title="@title"></i>
                         </div>
                     }
                 </div>;
@@ -574,9 +549,6 @@ else
                 item.OriginalQuantity = item.SelectedReceivingDetail.ReceivedQuantity;
                 // 已退回數量需要從資料庫計算，暫時設為0
                 item.AlreadyReturnedQuantity = 0; // TODO: 需要實作計算已退回數量的邏輯
-                
-                // 設置搜尋顯示文字 - 使用 DisplayName 計算屬性
-                item.ReceivingDetailSearch = item.DisplayName;
             }
             
             ReturnItems.Add(item);
@@ -607,23 +579,10 @@ else
 
     // ===== 事件處理方法 =====
     
-    // ===== SearchableSelect 相關方法 =====
-    private string FormatReceivingDetailDisplay(PurchaseReceivingDetail detail)
-    {
-        if (detail?.Product == null || detail.PurchaseReceiving == null) return "";
-        
-        var product = detail.Product;
-        var receiptNumber = detail.PurchaseReceiving.ReceiptNumber ?? "N/A";
-        
-        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
-            ? $"<strong>[{product.Code}]</strong> {product.Name}"
-            : (!string.IsNullOrEmpty(product.Code) ? $"<strong>[{product.Code}]</strong>" : product.Name);
-        
-        return $"<span class='text-primary'>[{receiptNumber}]</span> {productDisplay}";
-    }
+    // ===== 進貨明細選擇事件處理 =====
     
     /// <summary>
-    /// 格式化進貨明細顯示文字（純文字版本，用於搜尋輸入框）
+    /// 格式化進貨明細顯示文字（用於下拉選單）
     /// </summary>
     private string FormatReceivingDetailDisplayText(PurchaseReceivingDetail detail)
     {
@@ -639,130 +598,41 @@ else
         return $"[{receiptNumber}] {productDisplay}";
     }
 
-    private bool FilterReceivingDetail(PurchaseReceivingDetail detail, string searchValue)
-    {
-        if (string.IsNullOrWhiteSpace(searchValue))
-            return true;
+    // ===== 進貨明細選擇事件處理 =====
 
-        var search = searchValue.ToLower();
-        return (detail.Product?.Code?.ToLower().Contains(search) == true) ||
-               (detail.Product?.Name?.ToLower().Contains(search) == true) ||
-               (detail.PurchaseReceiving?.ReceiptNumber?.ToLower().Contains(search) == true); // 新增進貨單號搜尋
-    }
-
-    private void OnReceivingDetailSearchInput(ReturnItem returnItem, string? searchValue)
+    private async Task OnReceivingDetailChanged(ReturnItem returnItem, object? value)
     {
-        var availableDetails = GetAvailableReceivingDetails();
+        var wasEmpty = IsEmptyRow(returnItem);
         
-        if (string.IsNullOrWhiteSpace(searchValue))
+        var receivingDetailIdStr = value?.ToString();
+        if (string.IsNullOrEmpty(receivingDetailIdStr))
         {
-            returnItem.FilteredReceivingDetails = availableDetails.Take(20).ToList();
-        }
-        else
-        {
-            returnItem.FilteredReceivingDetails = availableDetails
-                .Where(detail => FilterReceivingDetail(detail, searchValue))
-                .Take(20)
-                .ToList();
-        }
-        
-        returnItem.ShowDropdown = returnItem.FilteredReceivingDetails.Any();
-        returnItem.SelectedIndex = -1;
-        StateHasChanged();
-    }
-
-    private void OnReceivingDetailInputFocus(ReturnItem returnItem)
-    {
-        if (!string.IsNullOrWhiteSpace(returnItem.ReceivingDetailSearch))
-        {
-            OnReceivingDetailSearchInput(returnItem, returnItem.ReceivingDetailSearch);
-        }
-        else
-        {
-            returnItem.SelectedIndex = -1;
-            var availableDetails = GetAvailableReceivingDetails();
-            returnItem.FilteredReceivingDetails = availableDetails.Take(20).ToList();
-            returnItem.ShowDropdown = returnItem.FilteredReceivingDetails.Any();
-            StateHasChanged();
-        }
-    }
-
-    private async Task OnReceivingDetailInputBlur(ReturnItem returnItem)
-    {
-        // 延遲隱藏下拉選單以允許點擊
-        await Task.Delay(200);
-        returnItem.ShowDropdown = false;
-        StateHasChanged();
-    }
-
-    private void OnReceivingDetailItemMouseEnter(ReturnItem returnItem, int index)
-    {
-        returnItem.SelectedIndex = index;
-        StateHasChanged();
-    }
-
-    private async Task OnReceivingDetailSelected(ReturnItem returnItem, PurchaseReceivingDetail selectedDetail)
-    {
-        if (selectedDetail != null)
-        {
-            returnItem.SelectedReceivingDetail = selectedDetail;
-            returnItem.SelectedProduct = selectedDetail.Product;
-            returnItem.ReceivingDetailSearch = FormatReceivingDetailDisplayText(selectedDetail); // 使用純文字版本
-            
-            // 設置數量資訊
-            returnItem.OriginalQuantity = selectedDetail.ReceivedQuantity;
-            returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要從資料庫計算已退回數量
-            
-            // 設置單價資訊
-            returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-            
-            // 確保有空行可以輸入新項目
-            EnsureOneEmptyRow();
-            
-            await NotifyDetailsChanged();
-        }
-        
-        returnItem.ShowDropdown = false;
-        StateHasChanged();
-    }
-
-    private async Task OnReceivingDetailSelected(ReturnItem returnItem, int? receivingDetailId)
-    {
-        if (receivingDetailId.HasValue)
-        {
-            var selectedDetail = AvailableReceivingDetails.FirstOrDefault(rd => rd.Id == receivingDetailId.Value);
-            if (selectedDetail != null)
-            {
-                returnItem.SelectedReceivingDetail = selectedDetail;
-                returnItem.SelectedProduct = selectedDetail.Product;
-                
-                // 設置數量資訊
-                returnItem.OriginalQuantity = selectedDetail.ReceivedQuantity;
-                returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要從資料庫計算已退回數量
-                
-                // 設置單價資訊
-                returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
-                
-                // 確保有空行可以輸入新項目
-                EnsureOneEmptyRow();
-                
-                await NotifyDetailsChanged();
-            }
-        }
-        else
-        {
-            // 清除選擇
             returnItem.SelectedReceivingDetail = null;
             returnItem.SelectedProduct = null;
             returnItem.OriginalQuantity = 0;
             returnItem.AlreadyReturnedQuantity = 0;
             returnItem.ReturnQuantity = 0;
             returnItem.OriginalUnitPrice = 0;
-            returnItem.Remarks = string.Empty;
-            
-            await NotifyDetailsChanged();
+        }
+        else if (int.TryParse(receivingDetailIdStr, out var receivingDetailId))
+        {
+            var detail = GetAvailableReceivingDetails().FirstOrDefault(d => d.Id == receivingDetailId);
+            if (detail != null)
+            {
+                returnItem.SelectedReceivingDetail = detail;
+                returnItem.SelectedProduct = detail.Product;
+                returnItem.OriginalQuantity = detail.ReceivedQuantity;
+                returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要實作計算已退回數量的邏輯
+                returnItem.ReturnQuantity = 0;
+                returnItem.OriginalUnitPrice = detail.UnitPrice;
+            }
         }
         
+        // 處理自動空行邏輯
+        AutoEmptyRowHelper.ForAny<ReturnItem>.HandleInputChange(
+            ReturnItems, returnItem, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(returnItem));
+        
+        await NotifyDetailsChanged();
         StateHasChanged();
     }
 
@@ -814,9 +684,6 @@ else
                     ReturnQuantity = 0,
                     OriginalUnitPrice = detail.UnitPrice
                 };
-                
-                // 設置搜尋顯示文字
-                newItem.ReceivingDetailSearch = newItem.DisplayName;
                 
                 ReturnItems.Add(newItem);
             }
@@ -974,12 +841,6 @@ else
         public PurchaseReturnDetail? ExistingDetailEntity { get; set; }
         public string? ValidationError { get; set; }
         
-        // SearchableSelect 支援屬性
-        public string ReceivingDetailSearch { get; set; } = string.Empty;
-        public List<PurchaseReceivingDetail> FilteredReceivingDetails { get; set; } = new();
-        public bool ShowDropdown { get; set; } = false;
-        public int SelectedIndex { get; set; } = -1;
-        
         // 計算屬性
         public decimal ReturnSubtotal => ReturnQuantity * OriginalUnitPrice;
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
@@ -992,11 +853,6 @@ else
                 ? $"[{SelectedReceivingDetail.PurchaseReceiving.ReceiptNumber}] [{SelectedReceivingDetail.Product.Code}] {SelectedReceivingDetail.Product.Name}"
                 : SelectedProduct != null 
                     ? $"[{SelectedProduct.Code}] {SelectedProduct.Name}" 
-                    : ReceivingDetailSearch;
-        
-        // 顯示名稱（舊版，保持向下相容）
-        public string DisplayNameLegacy => SelectedProduct != null 
-            ? $"{SelectedProduct.Code} - {SelectedProduct.Name}"
-            : "";
+                    : "";
     }
 }

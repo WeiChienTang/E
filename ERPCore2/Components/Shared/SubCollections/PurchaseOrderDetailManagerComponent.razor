@@ -165,20 +165,30 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 使用統一的 SearchableSelect
-        columns.Add(SearchableSelectHelper.CreateProductSearchableSelect<ProductItem, Product>(
-            title: "商品",
-            availableProductsProvider: () => GetAvailableProducts(),
-            onSearchInputChanged: EventCallback.Factory.Create<(ProductItem item, string? searchValue)>(this, async args => await OnProductSearchInput(args.item, args.searchValue)),
-            onProductSelected: EventCallback.Factory.Create<(ProductItem item, Product? selectedProduct)>(this, async args => {
-                if (args.selectedProduct != null)
-                    await OnProductSelected(args.item, args.selectedProduct);
-            }),
-            onInputFocus: EventCallback.Factory.Create<ProductItem>(this, item => OnProductInputFocus(item)),
-            onInputBlur: EventCallback.Factory.Create<ProductItem>(this, async item => await OnProductInputBlur(item)),
-            onItemMouseEnter: EventCallback.Factory.Create<(ProductItem item, int index)>(this, args => OnProductItemMouseEnter(args.item, args.index)),
-            isReadOnly: IsReadOnly
-        ));
+        // 商品選擇欄位
+        columns.Add(new() 
+        { 
+            Title = "商品", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "150px",
+            CustomTemplate = item => 
+            {
+                var productItem = (ProductItem)item;
+                var selectedValue = productItem.SelectedProduct?.Id.ToString() ?? "";
+                
+                return @<select class="form-select form-select-sm" 
+                                value="@selectedValue"
+                                disabled="@IsReadOnly"
+                                @onchange="@(async (e) => await OnProductChanged(productItem, e.Value))">
+                    <option value="">請選擇商品</option>
+                    @foreach (var product in GetAvailableProducts())
+                    {
+                        <option value="@product.Id">[@product.Code] @product.Name</option>
+                    }
+                </select>;
+            }
+        });
         
         // 數量欄位
         columns.Add(new() 
@@ -356,7 +366,6 @@ else
                 var item = new ProductItem
                 {
                     SelectedProduct = product,
-                    ProductSearch = $"{product.Code} - {product.Name}",
                     Quantity = Convert.ToInt32(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0),
                     ReceivedQuantity = Convert.ToInt32(GetPropertyValue<object>(detail, ReceivedQuantityPropertyName) ?? 0),
                     Price = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
@@ -468,43 +477,22 @@ else
         }
     }
 
-    // ===== FilterableDropdown 事件處理 =====
+    // ===== 商品選擇事件處理 =====
 
-    private void OnProductInputFocus(ProductItem item)
-    {
-        if (!string.IsNullOrWhiteSpace(item.ProductSearch))
-        {
-            // 如果有輸入內容，重新觸發搜尋
-            _ = OnProductSearchInput(item, item.ProductSearch);
-        }
-        else
-        {
-            // 顯示所有可用選項
-            item.SelectedIndex = -1;
-            var availableProducts = GetAvailableProducts();
-            item.FilteredProducts = availableProducts.Take(20).ToList();
-            item.ShowDropdown = item.FilteredProducts.Any();
-            StateHasChanged();
-        }
-    }
-
-    private async Task OnProductInputBlur(ProductItem item)
-    {
-        // 延遲關閉下拉選單，讓用戶有時間點擊下拉選項
-        await Task.Delay(100);
-        item.ShowDropdown = false;
-        StateHasChanged();
-    }
-
-    private async Task OnProductSelected(ProductItem item, Product product)
+    private async Task OnProductChanged(ProductItem item, object? value)
     {
         var wasEmpty = IsEmptyRow(item);
         
-        // 更新ProductItem
-        item.SelectedProduct = product;
-        item.ProductSearch = $"{product.Code} - {product.Name}";
-        item.ShowDropdown = false;
-        item.SelectedIndex = -1;
+        var productIdStr = value?.ToString();
+        if (string.IsNullOrEmpty(productIdStr))
+        {
+            item.SelectedProduct = null;
+        }
+        else if (int.TryParse(productIdStr, out var productId))
+        {
+            var product = GetAvailableProducts().FirstOrDefault(p => p.Id == productId);
+            item.SelectedProduct = product;
+        }
         
         // 處理自動空行邏輯
         AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
@@ -512,50 +500,6 @@ else
         
         await NotifyDetailsChanged();
         StateHasChanged();
-    }
-
-    private void OnProductItemMouseEnter(ProductItem item, int index)
-    {
-        item.SelectedIndex = index;
-        StateHasChanged();
-    }
-
-    private async Task OnProductSearchInput(ProductItem item, string? searchValue)
-    {
-        var wasEmpty = IsEmptyRow(item);
-        
-        item.ProductSearch = searchValue ?? string.Empty;
-        
-        if (string.IsNullOrWhiteSpace(searchValue))
-        {
-            item.SelectedProduct = null;
-            item.SelectedIndex = -1;
-            
-            var availableProducts = GetAvailableProducts();
-            item.FilteredProducts = availableProducts.Take(20).ToList();
-            item.ShowDropdown = item.FilteredProducts.Any();
-        }
-        else
-        {
-            var availableProducts = GetAvailableProducts();
-            
-            item.FilteredProducts = availableProducts
-                .Where(p => p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
-                           p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true)
-                .Take(20)
-                .ToList();
-            
-            item.ShowDropdown = item.FilteredProducts.Any();
-            item.SelectedIndex = item.FilteredProducts.Any() ? 0 : -1;
-        }
-        
-        AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
-            ProductItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-        
-        // 下拉選單定位現在由 SearchableSelect 統一處理
     }
 
     private async Task OnQuantityInput(ProductItem item, string? value)
@@ -794,11 +738,6 @@ else
                     Remarks = string.Empty           // 備註重新開始
                 };
 
-                // 設置搜尋顯示文字
-                productItem.ProductSearch = detail.Product != null 
-                    ? $"[{detail.Product.Code}] {detail.Product.Name}" 
-                    : string.Empty;
-
                 ProductItems.Add(productItem);
             }
 
@@ -837,16 +776,12 @@ else
 
     public class ProductItem
     {
-        public string ProductSearch { get; set; } = string.Empty;
         public Product? SelectedProduct { get; set; }
         public int Quantity { get; set; } = 0;
         public int ReceivedQuantity { get; set; } = 0;
         public decimal Price { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public bool IsReceivingCompleted { get; set; } = false;
-        public bool ShowDropdown { get; set; } = false;
-        public int SelectedIndex { get; set; } = -1;
-        public List<Product> FilteredProducts { get; set; } = new List<Product>();
         public TDetailEntity? ExistingDetailEntity { get; set; }
     }
 }

@@ -146,6 +146,9 @@ else
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
+    // ===== 狀態通知參數 =====
+    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
+    
     // ===== 下拉選項參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
@@ -206,6 +209,9 @@ else
                 }
             }
         }
+        
+        // 載入完退貨數量後,通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
     
     /// <summary>
@@ -303,6 +309,27 @@ else
         
         reason = string.Empty;
         return true;
+    }
+
+    /// <summary>
+    /// 檢查是否有不可刪除的明細（已有退貨或沖款記錄）
+    /// </summary>
+    private bool HasUndeletableDetails()
+    {
+        return ReceivingItems.Any(item => 
+            !IsEmptyRow(item) && !CanDeleteItem(item, out _));
+    }
+
+    /// <summary>
+    /// 通知父組件是否有不可刪除的明細
+    /// </summary>
+    private async Task NotifyHasUndeletableDetailsChanged()
+    {
+        if (OnHasUndeletableDetailsChanged.HasDelegate)
+        {
+            var hasUndeletableDetails = HasUndeletableDetails();
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+        }
     }
 
     private void FillAllQuantities()
@@ -486,6 +513,7 @@ else
                 var hasReturnRecord = HasReturnRecord(receivingItem);
                 var hasPaymentRecord = HasPaymentRecord(receivingItem);
                 var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                var selectedValue = receivingItem.SelectedPurchaseDetail?.Id.ToString() ?? "";
                 
                 // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
@@ -500,59 +528,24 @@ else
                     ? string.Join("；", tooltipMessages) + "，無法修改商品選擇" 
                     : "";
                 
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
-                            @(string.IsNullOrEmpty(receivingItem.ProductSearch) ? "無商品選擇" : receivingItem.ProductSearch)
-                        </span>
-                        
-                        @if (hasReturnRecord || hasPaymentRecord)
-                        {
-                            <div class="position-absolute" style="top: 2px; right: 8px; pointer-events: none;">
-                                <i class="fas fa-lock text-danger" title="@title"></i>
-                            </div>
-                        }
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
                 return @<div class="position-relative">
-                    <input type="text" 
-                           class="form-control form-control-sm" 
-                           value="@receivingItem.ProductSearch"
-                           placeholder="請選擇採購明細..."
-                           @onfocus="() => OnPurchaseDetailInputFocus(receivingItem)"
-                           @onblur="() => OnPurchaseDetailInputBlur(receivingItem)"
-                           @oninput="(e) => OnPurchaseDetailSearchInput(receivingItem, e.Value?.ToString())" />
+                    <select class="form-select form-select-sm" 
+                            value="@selectedValue"
+                            disabled="@isFieldReadOnly"
+                            title="@title"
+                            @onchange="@(async (e) => await OnPurchaseDetailChanged(receivingItem, e.Value))">
+                        <option value="">請選擇採購明細</option>
+                        @foreach (var detail in GetAvailablePurchaseDetails())
+                        {
+                            var displayText = FormatPurchaseDetailDisplayText(detail);
+                            <option value="@detail.Id">@displayText</option>
+                        }
+                    </select>
                     
-                    @if (receivingItem.ShowDropdown && receivingItem.FilteredPurchaseDetails.Any())
+                    @if (hasReturnRecord || hasPaymentRecord)
                     {
-                        <div class="dropdown-menu show position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto;">
-                            @for (int i = 0; i < receivingItem.FilteredPurchaseDetails.Count; i++)
-                            {
-                                var index = i;
-                                var detail = receivingItem.FilteredPurchaseDetails[i];
-                                var isSelected = index == receivingItem.SelectedIndex;
-                                var itemClass = isSelected ? "dropdown-item active" : "dropdown-item";
-                                
-                                <a href="#" class="@itemClass" 
-                                   @onclick="() => OnPurchaseDetailSelected(receivingItem, detail)"
-                                   @onmouseenter="() => OnPurchaseDetailItemMouseEnter(receivingItem, index)"
-                                   @onclick:preventDefault="true">
-                                    <div class="d-flex flex-column">
-                                        <div class="small">[@detail.Product?.Code] @detail.Product?.Name</div>
-                                        @if (!string.IsNullOrEmpty(detail.PurchaseOrder?.PurchaseOrderNumber))
-                                        {
-                                            <small class="text-muted">採購單：@detail.PurchaseOrder.PurchaseOrderNumber</small>
-                                        }
-                                        <small class="text-info">
-                                            訂購：@detail.OrderQuantity | 已進：@detail.ReceivedQuantity | 待進：@(detail.OrderQuantity - detail.ReceivedQuantity)
-                                        </small>
-                                    </div>
-                                </a>
-                            }
+                        <div class="position-absolute" style="top: 2px; right: 30px; pointer-events: none;">
+                            <i class="fas fa-lock text-danger" title="@title"></i>
                         </div>
                     }
                 </div>;
@@ -890,9 +883,6 @@ else
                     ExistingDetailEntity = detail
                 };
                 
-                // 設置搜尋顯示文字
-                item.ProductSearch = item.DisplayName;
-                
                 ReceivingItems.Add(item);
             }
             else
@@ -943,21 +933,8 @@ else
                             if (purchaseDetailFromList != null)
                             {
                                 item.SelectedPurchaseDetail = purchaseDetailFromList;
-                                item.ProductSearch = item.DisplayName;
-                            }
-                            else
-                            {
-                                item.ProductSearch = $"[{product.Code}] {product.Name}";
                             }
                         }
-                        else
-                        {
-                            item.ProductSearch = $"[{product.Code}] {product.Name}";
-                        }
-                    }
-                    else
-                    {
-                        item.ProductSearch = $"[{product.Code}] {product.Name}";
                     }
                     
                     ReceivingItems.Add(item);
@@ -1083,6 +1060,9 @@ else
             await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
             _deletedDetailIds.Clear(); // 清空已通知的刪除ID
         }
+        
+        // 通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
 
     private async Task<(Warehouse? warehouse, WarehouseLocation? location)> GetLastReceivingWarehouseAsync(int productId)
@@ -1134,115 +1114,68 @@ else
         }
     }
 
-    // ===== SearchableSelect 事件處理 =====
-    private void OnPurchaseDetailInputFocus(ReceivingItem item)
-    {
-        if (!string.IsNullOrWhiteSpace(item.ProductSearch))
-        {
-            _ = OnPurchaseDetailSearchInput(item, item.ProductSearch);
-        }
-        else
-        {
-            item.SelectedIndex = -1;
-            var availableDetails = GetAvailablePurchaseDetails();
-            item.FilteredPurchaseDetails = availableDetails.Take(20).ToList();
-            item.ShowDropdown = item.FilteredPurchaseDetails.Any();
-            StateHasChanged();
-        }
-    }
+    // ===== 採購明細選擇事件處理 =====
 
-    private async Task OnPurchaseDetailInputBlur(ReceivingItem item)
+    private async Task OnPurchaseDetailChanged(ReceivingItem receivingItem, object? value)
     {
-        await Task.Delay(100);
-        item.ShowDropdown = false;
-        StateHasChanged();
-    }
-
-    private async Task OnPurchaseDetailSelected(ReceivingItem item, PurchaseOrderDetail detail)
-    {
-        var wasEmpty = IsEmptyRow(item);
+        var wasEmpty = IsEmptyRow(receivingItem);
         
-        // 設定選中的採購明細
-        item.SelectedPurchaseDetail = detail;
-        item.SelectedProduct = detail.Product; // 同時更新 SelectedProduct 以保持向下相容
-        item.UnitPrice = detail.UnitPrice; // 預填採購單價
-        item.ProductSearch = item.DisplayName; // 使用包含採購單號的顯示名稱
-        
-        // 自動帶出最近進貨的倉庫和庫位（只有在尚未選擇時才自動填入）
-        if (item.SelectedWarehouse == null && detail.Product != null)
+        var purchaseDetailIdStr = value?.ToString();
+        if (string.IsNullOrEmpty(purchaseDetailIdStr))
         {
-            var (warehouse, location) = await GetLastReceivingWarehouseAsync(detail.Product.Id);
-            if (warehouse != null)
+            receivingItem.SelectedPurchaseDetail = null;
+            receivingItem.SelectedProduct = null;
+            receivingItem.ReceivedQuantity = 0;
+            receivingItem.UnitPrice = 0;
+        }
+        else if (int.TryParse(purchaseDetailIdStr, out var purchaseDetailId))
+        {
+            var detail = GetAvailablePurchaseDetails().FirstOrDefault(d => d.Id == purchaseDetailId);
+            if (detail != null)
             {
-                item.SelectedWarehouse = warehouse;
-                if (location != null && item.SelectedWarehouseLocation == null)
+                receivingItem.SelectedPurchaseDetail = detail;
+                receivingItem.SelectedProduct = detail.Product;
+                receivingItem.UnitPrice = detail.UnitPrice;
+                
+                // 自動帶出最近進貨的倉庫和庫位（只有在尚未選擇時才自動填入）
+                if (receivingItem.SelectedWarehouse == null && detail.Product != null)
                 {
-                    item.SelectedWarehouseLocation = location;
+                    var (warehouse, location) = await GetLastReceivingWarehouseAsync(detail.Product.Id);
+                    if (warehouse != null)
+                    {
+                        receivingItem.SelectedWarehouse = warehouse;
+                        if (location != null)
+                        {
+                            receivingItem.SelectedWarehouseLocation = location;
+                        }
+                    }
                 }
             }
         }
         
-        item.ShowDropdown = false;
-        item.SelectedIndex = -1;
-        
+        // 處理自動空行邏輯
         AutoEmptyRowHelper.ForAny<ReceivingItem>.HandleInputChange(
-            ReceivingItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+            ReceivingItems, receivingItem, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(receivingItem));
         
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
-    private void OnPurchaseDetailItemMouseEnter(ReceivingItem item, int index)
+    /// <summary>
+    /// 格式化採購明細顯示文字（用於下拉選單）
+    /// </summary>
+    private string FormatPurchaseDetailDisplayText(PurchaseOrderDetail detail)
     {
-        item.SelectedIndex = index;
-        StateHasChanged();
-    }
-
-    private async Task OnPurchaseDetailSearchInput(ReceivingItem item, string? searchValue)
-    {
-        var wasEmpty = IsEmptyRow(item);
+        if (detail?.Product == null) return "";
         
-        item.ProductSearch = searchValue ?? string.Empty;
+        var product = detail.Product;
+        var purchaseOrderNumber = detail.PurchaseOrder?.PurchaseOrderNumber ?? "N/A";
         
-        if (string.IsNullOrWhiteSpace(searchValue))
-        {
-            item.SelectedPurchaseDetail = null;
-            item.SelectedProduct = null;
-            item.SelectedIndex = -1;
-            
-            var availableDetails = GetAvailablePurchaseDetails();
-            item.FilteredPurchaseDetails = availableDetails.Take(20).ToList();
-            item.ShowDropdown = item.FilteredPurchaseDetails.Any();
-        }
-        else
-        {
-            var availableDetails = GetAvailablePurchaseDetails();
-            
-            // 搜尋邏輯：支援商品代碼、商品名稱、採購單號
-            item.FilteredPurchaseDetails = availableDetails
-                .Where(pd => 
-                {
-                    // 基本商品搜尋
-                    var basicMatch = pd.Product?.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true ||
-                                   pd.Product?.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
-                    
-                    // 採購單號搜尋
-                    var purchaseOrderMatch = pd.PurchaseOrder?.PurchaseOrderNumber?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
-                    
-                    return basicMatch || purchaseOrderMatch;
-                })
-                .Take(20)
-                .ToList();
-            
-            item.ShowDropdown = item.FilteredPurchaseDetails.Any();
-            item.SelectedIndex = item.FilteredPurchaseDetails.Any() ? 0 : -1;
-        }
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"[{product.Code}] {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? "");
         
-        AutoEmptyRowHelper.ForAny<ReceivingItem>.HandleInputChange(
-            ReceivingItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
+        return $"[{purchaseOrderNumber}] {productDisplay}";
     }
 
     private async Task OnReceivedQuantityInput(ReceivingItem item, string? value)
@@ -1571,9 +1504,6 @@ else
                     SelectedWarehouse = defaultWarehouse,
                     SelectedWarehouseLocation = GetDefaultWarehouseLocation(defaultWarehouse)
                 };
-
-                // 使用與手動選取相同的顯示格式
-                receivingItem.ProductSearch = receivingItem.DisplayName;
                 
                 // 自動載入最近進貨的倉庫和庫位（如果沒有預設倉庫的話）
                 if (receivingItem.SelectedWarehouse == null && detail.Product != null)
@@ -1712,21 +1642,16 @@ else
 
     public class ReceivingItem
     {
-        public string ProductSearch { get; set; } = string.Empty;
         public Product? SelectedProduct { get; set; }
         public int ReceivedQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public Warehouse? SelectedWarehouse { get; set; }
         public WarehouseLocation? SelectedWarehouseLocation { get; set; }
-        public bool ShowDropdown { get; set; } = false;
-        public int SelectedIndex { get; set; } = -1;
-        public List<Product> FilteredProducts { get; set; } = new List<Product>();
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
-        // === 新增：採購明細相關屬性 ===
+        // === 採購明細相關屬性 ===
         public PurchaseOrderDetail? SelectedPurchaseDetail { get; set; }
-        public List<PurchaseOrderDetail> FilteredPurchaseDetails { get; set; } = new List<PurchaseOrderDetail>();
         
         // === 採購單相關資訊（從選中的採購明細中獲取） ===
         public string? PurchaseOrderNumber => SelectedPurchaseDetail?.PurchaseOrder?.PurchaseOrderNumber;
@@ -1744,6 +1669,6 @@ else
                 ? $"[{SelectedPurchaseDetail.Product.Code}] {SelectedPurchaseDetail.Product.Name}"
                 : SelectedProduct != null 
                     ? $"[{SelectedProduct.Code}] {SelectedProduct.Name}" 
-                    : ProductSearch;
+                    : "";
     }
 }

@@ -253,15 +253,8 @@
                     IsRequired = false,
                     HelpText = "此庫位可容納的最大數量（選填）",                    
                 },
-                new()
-                {
-                    PropertyName = nameof(WarehouseLocation.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    IsRequired = false,
-                    HelpText = "其他備註信息（選填）",
-                    ContainerCssClass = "col-12"
-                }
+
+                FormFieldConfigurationHelper.CreateRemarksField<WarehouseLocation>()
             };
 
             formSections = new Dictionary<string, string>

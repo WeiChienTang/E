@@ -190,8 +190,10 @@
                     MaxLength = 200,
                     Rows = 3,
                     HelpText = "倉庫的詳細地址",
-                    ContainerCssClass = "col-12"
-                }
+                    ContainerCssClass = "col-6"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<Warehouse>()
             };
 
             formSections = new Dictionary<string, string>
@@ -200,7 +202,8 @@
                 { nameof(Warehouse.Name), "基本資訊" },
                 { nameof(Warehouse.ContactPerson), "聯絡資訊" },
                 { nameof(Warehouse.Phone), "聯絡資訊" },
-                { nameof(Warehouse.Address), "聯絡資訊" }
+                { nameof(Warehouse.Address), "聯絡資訊" },
+                { nameof(Warehouse.Remarks), "額外資料" }
             };
         }
         catch (Exception ex)

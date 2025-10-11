@@ -69,7 +69,7 @@
     padding: 2rem 1.5rem !important;
     background-color: #fafafa !important;
     min-height: 400px !important;
-    max-height: 70vh !important;
+    max-height: calc(99vh - 200px) !important; /* 調整為配合 99% 高度，減去 header 和 footer 的空間 */
     overflow-y: auto !important;
 }
 
@@ -93,9 +93,9 @@
 
 /* 表單區段間距調整 */
 ::deep .form-section {
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 0.75rem !important; /* 從 1.25rem 縮短到 0.75rem */
     background-color: white !important;
-    padding: 2rem !important; /* 增加內邊距讓欄位有更多空間 */
+    padding: 1.25rem !important; /* 從 2rem 縮短到 1.25rem，讓內容更緊湊 */
     border-radius: 10px !important;
     border: 1px solid #e5e7eb !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
@@ -104,7 +104,7 @@
 /* 表單欄位間距縮短 */
 ::deep .form-group,
 ::deep .mb-3 {
-    margin-bottom: 0.75rem !important; /* 從 1rem 縮短到 0.75rem */
+    margin-bottom: 0.5rem !important; /* 從 0.75rem 進一步縮短到 0.5rem */
 }
 
 /* 最後一個欄位不需要底部間距 */
@@ -119,15 +119,20 @@
     color: #374151 !important;
 }
 
+/* 帶有 Tooltip 的標籤樣式增強 */
+::deep .form-label[title] {
+    cursor: help !important;
+}
+
 /* 表單控制項放大 */
 ::deep .form-control,
 ::deep .form-select {
-    padding: 0.5rem 0.75rem !important; /* 縮小內邊距 */
+    padding: 0.4rem 0.6rem !important; /* 從 0.5rem 0.75rem 進一步縮小 */
     border-radius: 8px !important;
     border: 2px solid #e5e7eb !important;
     background-color: white !important;
     transition: all 0.2s ease !important;
-    min-height: 36px !important; /* 縮小最小高度 */
+    min-height: 34px !important; /* 從 36px 縮小到 34px */
     width: 100% !important; /* 確保欄位填滿容器寬度 */
 }
 
@@ -141,9 +146,9 @@
 
 /* TextArea 特別調整 */
 ::deep textarea.form-control {
-    min-height: 80px !important; /* 縮小 TextArea 高度 */
+    min-height: 70px !important; /* 從 80px 縮小到 70px */
     resize: vertical !important;
-    line-height: 1.4 !important; /* 縮小行高 */
+    line-height: 1.3 !important; /* 從 1.4 縮小到 1.3 */
 }
 
 /* Select 下拉箭頭樣式 */
@@ -158,37 +163,38 @@
     font-weight: bold !important;
 }
 
-/* 幫助文字樣式 */
+/* 幫助文字樣式 - 已改為 Tooltip，這裡保留以防其他地方使用 */
 ::deep .form-text,
 ::deep .help-text {
-    font-size: 0.9rem !important;
+    font-size: 0.85rem !important;
     color: #6b7280 !important;
-    margin-top: 0.3rem !important;
-    line-height: 1.4 !important;
+    margin-top: 0.25rem !important;
+    line-height: 1.3 !important;
+    display: none !important; /* 隱藏，因為已改用 Tooltip */
 }
 
 /* ===== 表單區段標題樣式 ===== */
 
 ::deep .section-title {
-    font-size: 1.2rem !important; /* 增大區段標題 */
+    font-size: 1.15rem !important; /* 從 1.2rem 稍微縮小 */
     font-weight: 600 !important;
     color: #1f2937 !important;
-    margin-bottom: 1.25rem !important;
-    padding-bottom: 0.75rem !important;
+    margin-bottom: 1rem !important; /* 從 1.25rem 縮短到 1rem */
+    padding-bottom: 0.5rem !important; /* 從 0.75rem 縮短到 0.5rem */
     border-bottom: 2px solid #e5e7eb !important;
 }
 
 /* Row 和 Column 間距調整 */
 ::deep .row {
-    margin-left: -0.75rem !important;
-    margin-right: -0.75rem !important;
-    margin-bottom: 0.5rem !important; /* 縮短行間距 */
+    margin-left: -0.5rem !important; /* 從 -0.75rem 縮短 */
+    margin-right: -0.5rem !important; /* 從 -0.75rem 縮短 */
+    margin-bottom: 0.25rem !important; /* 從 0.5rem 縮短到 0.25rem */
 }
 
 ::deep .row > [class*="col-"] {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-    margin-bottom: 0.5rem !important; /* 縮短列間距 */
+    padding-left: 0.5rem !important; /* 從 0.75rem 縮短 */
+    padding-right: 0.5rem !important; /* 從 0.75rem 縮短 */
+    margin-bottom: 0.25rem !important; /* 從 0.5rem 縮短到 0.25rem */
 }
 
 /* ===== Modal Footer 樣式 ===== */
@@ -283,7 +289,7 @@
     
     .modal-body {
         padding: 1.5rem 1rem !important;
-        max-height: 60vh !important;
+        max-height: calc(100vh - 180px) !important; /* 調整小螢幕的最大高度 */
     }
     
     .modal-header,

@@ -251,18 +251,26 @@
         if (!string.IsNullOrEmpty(field.Label))
         {
             builder.OpenElement(2, "div");
-            builder.AddAttribute(3, "class", "d-flex align-items-center gap-2 mb-2");
+            builder.AddAttribute(3, "class", "d-flex align-items-center gap-2 mb-1");
             
             builder.OpenElement(4, "label");
             builder.AddAttribute(5, "class", "form-label mb-0");
             builder.AddAttribute(6, "for", field.PropertyName);
-            builder.AddContent(7, field.Label);
+            
+            // 如果有 HelpText，將其作為 title 屬性顯示為 Tooltip
+            if (!string.IsNullOrEmpty(field.HelpText))
+            {
+                builder.AddAttribute(7, "title", field.HelpText);
+                builder.AddAttribute(8, "style", "cursor: help;");
+            }
+            
+            builder.AddContent(9, field.Label);
             
             if (field.IsRequired)
             {
-                builder.OpenElement(8, "span");
-                builder.AddAttribute(9, "class", "text-danger");
-                builder.AddContent(10, " *");
+                builder.OpenElement(10, "span");
+                builder.AddAttribute(11, "class", "text-danger");
+                builder.AddContent(12, " *");
                 builder.CloseElement();
             }
             builder.CloseElement(); // label
@@ -270,7 +278,7 @@
             // 渲染操作按鈕
             if (field.ActionButtons != null && field.ActionButtons.Any())
             {
-                var buttonSequence = 11;
+                var buttonSequence = 13;
                 foreach (var actionButton in field.ActionButtons)
                 {
                     builder.OpenComponent(buttonSequence, typeof(ERPCore2.Components.Shared.Buttons.GenericButtonComponent));
@@ -337,14 +345,17 @@
                 break;
         }
         
-        // 說明文字 - TextAreaWithCharacterCount 會自己處理 helpText 顯示
-        if (!string.IsNullOrEmpty(field.HelpText) && field.FieldType != FormFieldType.TextAreaWithCharacterCount)
-        {
-            builder.OpenElement(20, "div");
-            builder.AddAttribute(21, "class", "form-text");
-            builder.AddContent(22, field.HelpText);
-            builder.CloseElement();
-        }        // 驗證訊息 - 使用簡單的驗證錯誤顯示，不依賴 ValidationMessage 組件
+        // 說明文字已改為 Label 的 Tooltip，因此這裡不再顯示
+        // TextAreaWithCharacterCount 會自己處理 helpText 顯示，所以保留
+        // if (!string.IsNullOrEmpty(field.HelpText) && field.FieldType != FormFieldType.TextAreaWithCharacterCount)
+        // {
+        //     builder.OpenElement(20, "div");
+        //     builder.AddAttribute(21, "class", "form-text");
+        //     builder.AddContent(22, field.HelpText);
+        //     builder.CloseElement();
+        // }
+        
+        // 驗證訊息 - 使用簡單的驗證錯誤顯示，不依賴 ValidationMessage 組件
         if (field.IsRequired && ShowValidationSummary)
         {
             builder.OpenElement(23, "div");
