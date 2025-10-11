@@ -88,6 +88,9 @@
     // ===== 稅率快取 =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
     
+    // ===== 鎖定狀態 =====
+    private bool hasUndeletableDetails = false;
+    
     // ===== Modal 管理器 =====
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
@@ -722,6 +725,98 @@
     }
 
     /// <summary>
+    /// 處理有不可刪除明細的狀態變更
+    /// 當有不可刪除的明細時(已有沖款記錄),鎖定主檔的所有使用者可輸入欄位
+    /// </summary>
+    private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
+    {
+        try
+        {
+            hasUndeletableDetails = hasUndeletable;
+            
+            // 更新欄位的唯讀狀態
+            UpdateFieldsReadOnlyState();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理明細鎖定狀態時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 更新欄位的唯讀狀態
+    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
+    /// - 客戶 (CustomerId) - 同時禁用新增/編輯按鈕
+    /// - 篩選產品 (FilterProductId)
+    /// - 銷售單 (SalesOrderId)
+    /// - 退貨日期 (ReturnDate)
+    /// - 退貨原因 (ReturnReasonId)
+    /// - 備註 (Remarks)
+    /// 
+    /// 不鎖定的欄位（系統自動計算/生成）:
+    /// - 退貨單號 (SalesReturnNumber) - 已經是唯讀
+    /// - 退貨總金額 (TotalReturnAmount) - 已經是唯讀
+    /// - 退貨稅額 (ReturnTaxAmount) - 已經是唯讀
+    /// - 含稅總金額 (TotalReturnAmountWithTax) - 已經是唯讀
+    /// </summary>
+    private void UpdateFieldsReadOnlyState()
+    {
+        // 客戶欄位 - 設為唯讀並清空 ActionButtons
+        var customerField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.CustomerId));
+        if (customerField != null)
+        {
+            customerField.IsReadOnly = hasUndeletableDetails;
+            
+            // 如果有不可刪除的明細，移除操作按鈕；否則恢復操作按鈕
+            if (hasUndeletableDetails)
+            {
+                customerField.ActionButtons = new List<FieldActionButton>();
+            }
+            else
+            {
+                customerField.ActionButtons = GetCustomerActionButtonsAsync().Result;
+            }
+        }
+        
+        // 篩選產品欄位
+        var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        if (filterProductField != null)
+        {
+            filterProductField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 銷售單欄位
+        var salesOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesOrderId));
+        if (salesOrderField != null)
+        {
+            salesOrderField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 退貨日期欄位
+        var returnDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.ReturnDate));
+        if (returnDateField != null)
+        {
+            returnDateField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 退貨原因欄位
+        var returnReasonField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.ReturnReasonId));
+        if (returnReasonField != null)
+        {
+            returnReasonField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 備註欄位
+        var remarksField = formFields.FirstOrDefault(f => f.PropertyName == nameof(BaseEntity.Remarks));
+        if (remarksField != null)
+        {
+            remarksField.IsReadOnly = hasUndeletableDetails;
+        }
+    }
+
+    /// <summary>
     /// 處理欄位值變更事件
     /// </summary>
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
@@ -737,9 +832,13 @@
                         await UpdateSalesOrderOptions(customerId);
                         await UpdateFilterProductOptions(customerId);
                         
-                        // 使用統一 Helper 更新客戶欄位的操作按鈕
-                        await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                            customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                        // 🔑 只有在沒有不可刪除明細時才更新 ActionButtons
+                        if (!hasUndeletableDetails)
+                        {
+                            // 使用統一 Helper 更新客戶欄位的操作按鈕
+                            await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                                customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                        }
                         
                         // 清除現有的銷售單選擇
                         if (editModalComponent?.Entity != null)
@@ -926,6 +1025,7 @@
                             FilterProductId="@FilterProductId"
                             ExistingReturnDetails="@salesReturnDetails"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
+                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                             IsEditMode="@SalesReturnId.HasValue" />
                     }
                     else

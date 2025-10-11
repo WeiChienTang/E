@@ -76,6 +76,11 @@ else
     [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
     [Parameter] public EventCallback<ReturnItem> OnItemRemoved { get; set; }
     
+    /// <summary>
+    /// 狀態通知參數 - 通知父組件是否有不可刪除的明細
+    /// </summary>
+    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
+    
     // ===== 編輯模式參數 =====
     [Parameter] public bool IsEditMode { get; set; } = false;
     
@@ -113,7 +118,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
-        LoadExistingDetailsAsync();
+        await LoadExistingDetailsAsync();
         EnsureOneEmptyRow();
     }
 
@@ -176,6 +181,27 @@ else
         
         reason = string.Empty;
         return true;
+    }
+
+    /// <summary>
+    /// 檢查是否有不可刪除的明細（已有沖款記錄）
+    /// </summary>
+    private bool HasUndeletableDetails()
+    {
+        return ReturnItems.Any(item => 
+            !IsEmptyRow(item) && !CanDeleteItem(item, out _));
+    }
+
+    /// <summary>
+    /// 通知父組件是否有不可刪除的明細
+    /// </summary>
+    private async Task NotifyHasUndeletableDetailsChanged()
+    {
+        if (OnHasUndeletableDetailsChanged.HasDelegate)
+        {
+            var hasUndeletableDetails = HasUndeletableDetails();
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+        }
     }
 
     private async Task FillAllQuantities()
@@ -251,7 +277,7 @@ else
             
             // 廠商變更時清空現有選項並重新載入
             ReturnItems.Clear();
-            LoadExistingDetailsAsync();
+            await LoadExistingDetailsAsync();
             return;
         }
         
@@ -517,11 +543,13 @@ else
         }
     }
 
-    private void LoadExistingDetailsAsync()
+    private async Task LoadExistingDetailsAsync()
     {
         if (ExistingReturnDetails?.Any() != true) 
         {
             EnsureOneEmptyRow();
+            // 通知父組件沒有不可刪除的明細
+            await NotifyHasUndeletableDetailsChanged();
             return;
         }
 
@@ -555,6 +583,9 @@ else
         }
         
         EnsureOneEmptyRow();
+        
+        // 通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
 
     private List<PurchaseReceivingDetail> GetAvailableReceivingDetails()
@@ -754,6 +785,9 @@ else
         {
             await OnReturnItemsChanged.InvokeAsync(ReturnItems);
         }
+
+        // 通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
 
     private PurchaseReturnDetail? ConvertToEntity(ReturnItem item)

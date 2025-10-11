@@ -85,6 +85,9 @@
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
 
+    // ===== 鎖定狀態 =====
+    private bool hasUndeletableDetails = false;
+
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
     {
@@ -418,6 +421,91 @@
     }
 
     /// <summary>
+    /// 處理有不可刪除明細的狀態變更
+    /// 當有不可刪除的明細時(已沖款),鎖定主檔的所有可編輯欄位
+    /// </summary>
+    private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
+    {
+        try
+        {
+            hasUndeletableDetails = hasUndeletable;
+            
+            // 更新欄位的唯讀狀態
+            UpdateFieldsReadOnlyState();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理明細鎖定狀態時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 更新欄位的唯讀狀態
+    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
+    /// - 退回單號 (PurchaseReturnNumber)
+    /// - 篩選廠商 (SupplierId) - 同時禁用新增/編輯按鈕
+    /// - 篩選商品 (FilterProductId)
+    /// - 篩選進貨單 (FilterPurchaseReceivingId)
+    /// - 退回日期 (ReturnDate)
+    /// - 備註 (Remarks)
+    /// </summary>
+    private void UpdateFieldsReadOnlyState()
+    {
+        // 退回單號欄位
+        var returnNumberField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.PurchaseReturnNumber));
+        if (returnNumberField != null)
+        {
+            returnNumberField.IsReadOnly = hasUndeletableDetails;
+        }
+
+        // 廠商欄位 - 設為唯讀並清空 ActionButtons
+        var supplierField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.SupplierId));
+        if (supplierField != null)
+        {
+            supplierField.IsReadOnly = hasUndeletableDetails;
+            
+            if (hasUndeletableDetails)
+            {
+                supplierField.ActionButtons = new List<FieldActionButton>();
+            }
+            else
+            {
+                supplierField.ActionButtons = GetSupplierActionButtonsAsync().GetAwaiter().GetResult();
+            }
+        }
+        
+        // 篩選商品欄位
+        var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        if (filterProductField != null)
+        {
+            filterProductField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 篩選進貨單欄位
+        var filterReceivingField = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseReceivingId");
+        if (filterReceivingField != null)
+        {
+            filterReceivingField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 退回日期欄位
+        var returnDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.ReturnDate));
+        if (returnDateField != null)
+        {
+            returnDateField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 備註欄位
+        var remarksField = formFields.FirstOrDefault(f => f.PropertyName == nameof(BaseEntity.Remarks));
+        if (remarksField != null)
+        {
+            remarksField.IsReadOnly = hasUndeletableDetails;
+        }
+    }
+
+    /// <summary>
     /// 取得商品篩選選項 - 根據選擇的廠商篩選
     /// </summary>
     private async Task<List<SelectOption>> GetFilterProductOptions()
@@ -688,6 +776,17 @@
                 await UpdateFilterProductOptions(supplierId);
                 await UpdateFilterPurchaseReceivingOptions(supplierId);
                 
+                // 🔑 關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                if (!hasUndeletableDetails)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        supplierModalManager, 
+                        formFields, 
+                        nameof(PurchaseReturn.SupplierId), 
+                        fieldChange.Value
+                    );
+                }
+                
                 StateHasChanged();
             }
             
@@ -797,7 +896,8 @@
                             IsEditMode="@(PurchaseReturnId.HasValue)"
                             ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
-                            OnDeletedDetailsChanged="@HandleDeletedDetailsChanged" />
+                            OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged" />
                     }
                     catch (Exception ex)
                     {

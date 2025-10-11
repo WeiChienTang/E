@@ -106,6 +106,11 @@ else
     [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
     [Parameter] public EventCallback<SalesItem> OnItemRemoved { get; set; }
     
+    /// <summary>
+    /// 狀態通知參數 - 通知父組件是否有不可刪除的明細
+    /// </summary>
+    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
+    
     // ===== 欄位映射參數 =====
     [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty;
     [Parameter] public string QuantityPropertyName { get; set; } = "OrderQuantity";
@@ -216,6 +221,9 @@ else
                 await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReturnedQuantitiesAsync), GetType());
             }
         }
+        
+        // 載入退貨數量後，通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
     
     /// <summary>
@@ -312,6 +320,27 @@ else
         
         reason = string.Empty;
         return true;
+    }
+
+    /// <summary>
+    /// 檢查是否有不可刪除的明細（已有退貨或沖款記錄）
+    /// </summary>
+    private bool HasUndeletableDetails()
+    {
+        return SalesItems.Any(item => 
+            !IsEmptyRow(item) && !CanDeleteItem(item, out _));
+    }
+
+    /// <summary>
+    /// 通知父組件是否有不可刪除的明細
+    /// </summary>
+    private async Task NotifyHasUndeletableDetailsChanged()
+    {
+        if (OnHasUndeletableDetailsChanged.HasDelegate)
+        {
+            var hasUndeletableDetails = HasUndeletableDetails();
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+        }
     }
 
     // ===== AutoEmptyRowHelper 相關方法 =====
@@ -496,6 +525,9 @@ else
             await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
             _deletedDetailIds.Clear(); // 清空已通知的刪除ID
         }
+        
+        // 通知是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
 
     private T? GetPropertyValue<T>(object obj, string propertyName)

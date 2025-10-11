@@ -56,6 +56,14 @@
                            OnCustomerSaved="@OnCustomerSavedWrapper"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
+@* 業務員編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -86,6 +94,8 @@
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
     
     // 下拉選單選項（向下相容）
     private List<Customer> customers = new();
@@ -98,6 +108,9 @@
     
     // 稅率快取變數（一次性載入，避免每次計算都查詢資料庫）
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
+    
+    // ===== 鎖定狀態 =====
+    private bool hasUndeletableDetails = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -106,6 +119,7 @@
         {
             // 初始化 Modal 管理器
             InitializeCustomerModalManager();
+            InitializeEmployeeModalManager();
         }
         catch (Exception)
         {
@@ -341,7 +355,8 @@
                     Placeholder = "請選擇業務員",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇負責此訂單的業務員"
+                    HelpText = "選擇負責此訂單的業務員",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
                 },
                 new()
                 {
@@ -531,7 +546,8 @@
     {
         return new Dictionary<string, object>
         {
-            { nameof(SalesOrder.CustomerId), customerModalManager }
+            { nameof(SalesOrder.CustomerId), customerModalManager },
+            { nameof(SalesOrder.EmployeeId), employeeModalManager }
         };
     }
     
@@ -589,6 +605,7 @@
                                                           WarehouseIdPropertyName="WarehouseId"
                                                           RemarksPropertyName="DetailRemarks"
                                                           OnDetailsChanged="@HandleDetailsChanged"
+                                                          OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                                           ItemDisplayName="銷售產品"
                                                           EmptyMessage="尚未新增銷售產品" />
                     }
@@ -650,6 +667,29 @@
             .Build();
     }
     
+    /// <summary>
+    /// 初始化業務員 Modal 管理器
+    /// </summary>
+    private void InitializeEmployeeModalManager()
+    {
+        employeeModalManager = new RelatedEntityManagerBuilder<Employee>(NotificationService, "業務員")
+            .WithPropertyName(nameof(SalesOrder.EmployeeId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(employeeId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.EmployeeId = employeeId;
+                }
+            })
+            .WithCustomPostProcess(async employee => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
@@ -664,6 +704,18 @@
         );
     }
     
+    /// <summary>
+    /// 產生業務員操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            employeeModalManager, 
+            nameof(SalesOrder.EmployeeId)
+        );
+    }
+    
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>
@@ -672,6 +724,14 @@
     private async Task OnCustomerSavedWrapper(Customer savedCustomer)
     {
         await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 包裝業務員儲存事件
+    /// </summary>
+    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
+    {
+        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
     }
     
     /// <summary>
@@ -684,11 +744,25 @@
             // 使用統一 Helper 處理客戶欄位變更
             if (fieldChange.PropertyName == nameof(SalesOrder.CustomerId))
             {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                // 🔑 關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                if (!hasUndeletableDetails)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                }
                 
                 // 客戶變更時，觸發商品管理器重新渲染
                 StateHasChanged();
+            }
+            // 處理業務員欄位變更
+            else if (fieldChange.PropertyName == nameof(SalesOrder.EmployeeId))
+            {
+                // 🔑 關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                if (!hasUndeletableDetails)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                }
             }
         }
         catch (Exception)
@@ -759,6 +833,116 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDetailsChanged), GetType(), 
                 additionalData: "處理銷貨明細變更失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理有不可刪除明細的狀態變更
+    /// 當有不可刪除的明細時(已退貨或已收款),鎖定主檔的所有使用者可輸入欄位
+    /// </summary>
+    private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
+    {
+        try
+        {
+            hasUndeletableDetails = hasUndeletable;
+            
+            // 更新欄位的唯讀狀態
+            UpdateFieldsReadOnlyState();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理明細鎖定狀態時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 更新欄位的唯讀狀態
+    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
+    /// - 銷貨單號 (SalesOrderNumber)
+    /// - 客戶 (CustomerId) - 同時禁用新增/編輯按鈕
+    /// - 業務員 (EmployeeId)
+    /// - 訂單日期 (OrderDate)
+    /// - 預定出貨日期 (ExpectedDeliveryDate)
+    /// - 付款條件 (PaymentTerms)
+    /// - 交貨條件 (DeliveryTerms)
+    /// - 備註 (Remarks)
+    /// </summary>
+    private void UpdateFieldsReadOnlyState()
+    {
+        // 銷貨單號欄位
+        var orderNumberField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.SalesOrderNumber));
+        if (orderNumberField != null)
+        {
+            orderNumberField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 客戶欄位 - 設為唯讀並清空 ActionButtons
+        var customerField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.CustomerId));
+        if (customerField != null)
+        {
+            customerField.IsReadOnly = hasUndeletableDetails;
+            
+            if (hasUndeletableDetails)
+            {
+                customerField.ActionButtons = new List<FieldActionButton>();
+            }
+            else
+            {
+                customerField.ActionButtons = GetCustomerActionButtonsAsync().Result;
+            }
+        }
+        
+        // 業務員欄位 - 設為唯讀並清空 ActionButtons
+        var employeeField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.EmployeeId));
+        if (employeeField != null)
+        {
+            employeeField.IsReadOnly = hasUndeletableDetails;
+            
+            if (hasUndeletableDetails)
+            {
+                employeeField.ActionButtons = new List<FieldActionButton>();
+            }
+            else
+            {
+                employeeField.ActionButtons = GetEmployeeActionButtonsAsync().Result;
+            }
+        }
+        
+        // 訂單日期欄位
+        var orderDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.OrderDate));
+        if (orderDateField != null)
+        {
+            orderDateField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 預定出貨日期欄位
+        var deliveryDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.ExpectedDeliveryDate));
+        if (deliveryDateField != null)
+        {
+            deliveryDateField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 付款條件欄位
+        var paymentTermsField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.PaymentTerms));
+        if (paymentTermsField != null)
+        {
+            paymentTermsField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 交貨條件欄位
+        var deliveryTermsField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.DeliveryTerms));
+        if (deliveryTermsField != null)
+        {
+            deliveryTermsField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 備註欄位
+        var remarksField = formFields.FirstOrDefault(f => f.PropertyName == nameof(BaseEntity.Remarks));
+        if (remarksField != null)
+        {
+            remarksField.IsReadOnly = hasUndeletableDetails;
         }
     }
 

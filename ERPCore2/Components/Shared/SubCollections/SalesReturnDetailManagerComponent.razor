@@ -99,6 +99,12 @@ else
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 狀態通知參數 =====
+    /// <summary>
+    /// 狀態通知參數 - 通知父組件是否有不可刪除的明細
+    /// </summary>
+    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
 
     private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
@@ -125,6 +131,9 @@ else
         await LoadAvailableProductsAsync();
         LoadExistingDetailsAsync();
         EnsureOneEmptyRow();
+        
+        // 🔑 初始化後通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -245,6 +254,27 @@ else
         
         reason = string.Empty;
         return true;
+    }
+    
+    /// <summary>
+    /// 檢查是否有不可刪除的明細（已有沖款記錄）
+    /// </summary>
+    private bool HasUndeletableDetails()
+    {
+        return ReturnItems.Any(item => 
+            !IsEmptyRow(item) && !CanDeleteItem(item, out _));
+    }
+
+    /// <summary>
+    /// 通知父組件是否有不可刪除的明細
+    /// </summary>
+    private async Task NotifyHasUndeletableDetailsChanged()
+    {
+        if (OnHasUndeletableDetailsChanged.HasDelegate)
+        {
+            var hasUndeletableDetails = HasUndeletableDetails();
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+        }
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -769,6 +799,9 @@ else
         {
             await OnReturnItemsChanged.InvokeAsync(ReturnItems);
         }
+        
+        // 🔑 通知父組件是否有不可刪除的明細
+        await NotifyHasUndeletableDetailsChanged();
     }
 
     private SalesReturnDetail? ConvertToEntity(ReturnItem item)
