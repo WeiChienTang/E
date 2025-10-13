@@ -294,8 +294,15 @@
             if (hasProductSetoff)
             {
                 // ===== 情境A：有商品明細（轉沖款） =====
-                // 驗證本期沖銷 = 商品明細的本次沖款 + 本次折讓總和
-                var expectedCurrentSetoff = setoffProductDetails?.Sum(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount) ?? 0;
+                // 驗證本期沖銷 = 商品明細的本次沖款 + 本次折讓總和（考慮退貨為負數）
+                var expectedCurrentSetoff = setoffProductDetails?.Sum(d => 
+                {
+                    var total = d.CurrentSetoffAmount + d.CurrentAllowanceAmount;
+                    // 如果是退貨單據，金額取負值
+                    var isReturn = d.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                                  d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                    return isReturn ? -total : total;
+                }) ?? 0;
                 
                 if (Math.Abs(expectedCurrentSetoff - entity.CurrentSetoffAmount) > 0.01m)
                 {
@@ -305,8 +312,19 @@
                 }
                 
                 // ===== 驗證 Payment + Prepayment 與商品明細的對應關係 =====
-                var expectedReceivedFromProduct = setoffProductDetails?.Sum(d => d.CurrentSetoffAmount) ?? 0;
-                var expectedAllowanceFromProduct = setoffProductDetails?.Sum(d => d.CurrentAllowanceAmount) ?? 0;
+                // 考慮退貨單據為負數
+                var expectedReceivedFromProduct = setoffProductDetails?.Sum(d => 
+                {
+                    var isReturn = d.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                                  d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                    return isReturn ? -d.CurrentSetoffAmount : d.CurrentSetoffAmount;
+                }) ?? 0;
+                var expectedAllowanceFromProduct = setoffProductDetails?.Sum(d => 
+                {
+                    var isReturn = d.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                                  d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                    return isReturn ? -d.CurrentAllowanceAmount : d.CurrentAllowanceAmount;
+                }) ?? 0;
                 
                 // 計算實際的收款金額（考慮預付款項的影響）
                 // - 預付類型：Payment收款 - Prepayment預付 = ProductDetail本次沖款
@@ -346,8 +364,13 @@
                     return false;
                 }
                 
-                // 驗證本期折讓 = 商品明細的本次折讓總和
-                var expectedAllowance = setoffProductDetails?.Sum(d => d.CurrentAllowanceAmount) ?? 0;
+                // 驗證本期折讓 = 商品明細的本次折讓總和（考慮退貨為負數）
+                var expectedAllowance = setoffProductDetails?.Sum(d => 
+                {
+                    var isReturn = d.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                                  d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                    return isReturn ? -d.CurrentAllowanceAmount : d.CurrentAllowanceAmount;
+                }) ?? 0;
                 if (Math.Abs(expectedAllowance - entity.TotalAllowanceAmount) > 0.01m)
                 {
                     await NotificationService.ShowErrorAsync(
@@ -790,17 +813,34 @@
             // 【本期應收】= 被選入的來源明細的原始應收/付總金額
             // 這個值應該從 SetoffProductDetailManagerComponent 取得來源明細的總金額
             // 只在明細被選入時計算，不會因為輸入本次沖款金額而改變
+            // 退貨單據會以負數計算（例如：銷貨600 + 銷貨退回-300 = 300）
             if (setoffProductDetailManager != null)
             {
                 editModalComponent.Entity.TotalSetoffAmount = setoffProductDetailManager.GetSourceTotalAmount();
             }
             
             // 【本期沖銷】= 本次沖款 + 本次折讓的總和
-            editModalComponent.Entity.CurrentSetoffAmount = details.Sum(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
+            // 退貨單據會以負數計算（例如：銷貨沖款100 + 銷貨退回沖款-50 = 50）
+            if (setoffProductDetailManager != null)
+            {
+                editModalComponent.Entity.CurrentSetoffAmount = setoffProductDetailManager.GetCurrentSetoffTotal();
+            }
+            else
+            {
+                editModalComponent.Entity.CurrentSetoffAmount = details.Sum(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
+            }
             
             // 【本期已收】不在此更新，由收款記錄（HandlePaymentsChanged）和預收付款項（HandlePrepaymentsChanged）決定
             // 【本期折讓】= 本次折讓的總額
-            editModalComponent.Entity.TotalAllowanceAmount = details.Sum(d => d.CurrentAllowanceAmount);
+            // 退貨單據會以負數計算
+            if (setoffProductDetailManager != null)
+            {
+                editModalComponent.Entity.TotalAllowanceAmount = setoffProductDetailManager.GetCurrentAllowanceTotal();
+            }
+            else
+            {
+                editModalComponent.Entity.TotalAllowanceAmount = details.Sum(d => d.CurrentAllowanceAmount);
+            }
         }
         
         StateHasChanged();

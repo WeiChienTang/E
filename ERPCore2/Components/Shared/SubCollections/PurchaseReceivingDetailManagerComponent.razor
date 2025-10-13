@@ -1,10 +1,12 @@
 @* 採購入庫明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Models
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject INotificationService NotificationService
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -92,6 +94,14 @@ else
     </div>
 }
 
+<!-- 相關單據查看 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick" />
+
 @code {
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
@@ -149,6 +159,9 @@ else
     // ===== 狀態通知參數 =====
     [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
     
+    // ===== 相關單據開啟事件 =====
+    [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
+    
     // ===== 下拉選項參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
@@ -163,6 +176,12 @@ else
     
     // ===== 退貨數量管理 =====
     private Dictionary<int, int> _returnedQuantities = new(); // Key: PurchaseReceivingDetailId, Value: 已退貨數量
+
+    // ===== 相關單據查看 =====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
 
     // ===== 計算屬性 =====
     private bool CanLoadAllUnreceived => 
@@ -180,9 +199,9 @@ else
     // ===== 退貨數量管理方法 =====
     
     /// <summary>
-    /// 載入所有進貨明細的退貨數量
+    /// 載入所有進貨明細的退貨數量（公開方法，可供父組件呼叫）
     /// </summary>
-    private async Task LoadReturnedQuantitiesAsync()
+    public async Task LoadReturnedQuantitiesAsync()
     {
         _returnedQuantities.Clear();
         
@@ -792,15 +811,26 @@ else
         // 檢查項目是否可以刪除（綜合退貨記錄和沖款記錄檢查）
         var canDelete = CanDeleteItem(item, out _);
         
-        // 只有當項目可以刪除時才顯示刪除按鈕
         if (canDelete)
         {
+            // 可以刪除：顯示刪除按鈕
             <GenericButtonComponent Variant="ButtonVariant.Danger"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
                                    Title="刪除"
                                    OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 不能刪除：顯示查看按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Info"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(item)"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
         }
@@ -821,6 +851,67 @@ else
         var index = ReceivingItems.IndexOf(item);
         await RemoveItemAsync(index);
     }
+
+    /// <summary>
+    /// 顯示相關單據（退貨單和沖款單）
+    /// </summary>
+    private async Task ShowRelatedDocuments(ReceivingItem item)
+    {
+        // 檢查是否有現有的明細實體 ID
+        if (item.ExistingDetailEntity is not PurchaseReceivingDetail detail || detail.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
+            return;
+        }
+
+        // 設定商品名稱
+        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+
+        // 顯示 Modal 並開始載入
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            // 查詢相關單據
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForPurchaseReceivingDetailAsync(detail.Id);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理點擊相關單據的事件
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        // 關閉 RelatedDocumentsModal
+        showRelatedDocumentsModal = false;
+        
+        // 通知父組件開啟對應的 EditModal
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理，顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+                "提示"
+            );
+        }
+    }
+
 
     // ===== 內部方法 =====
     private async Task LoadAvailableProductsAsync()

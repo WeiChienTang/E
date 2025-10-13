@@ -225,16 +225,6 @@ namespace ERPCore2.Services
                 if (entity.SetoffDocumentId <= 0)
                     errors.Add("沖款單為必填");
 
-                // 驗證金額
-                if (entity.ReceivedAmount < 0)
-                    errors.Add("收款金額不可為負數");
-
-                if (entity.AllowanceAmount < 0)
-                    errors.Add("折讓金額不可為負數");
-
-                if (entity.ReceivedAmount == 0 && entity.AllowanceAmount == 0)
-                    errors.Add("收款金額與折讓金額不可同時為零");
-
                 // 驗證支票號碼唯一性
                 if (!string.IsNullOrWhiteSpace(entity.CheckNumber))
                 {

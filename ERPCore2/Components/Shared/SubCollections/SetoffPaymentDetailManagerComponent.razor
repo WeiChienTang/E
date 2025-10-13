@@ -226,7 +226,7 @@
                                class="form-control text-end"
                                value="@(paymentItem.ReceivedAmount == 0 ? "" : paymentItem.ReceivedAmount.ToString("F0"))"
                                @oninput="@(e => OnReceivedAmountInput(paymentItem, e.Value?.ToString()))"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               onkeydown="if(['e','E','+'].includes(event.key)) event.preventDefault();"
                                disabled="@IsReadOnly"
                                placeholder=""
                                step="1"
@@ -248,7 +248,7 @@
                                class="form-control text-end"
                                value="@(paymentItem.AllowanceAmount == 0 ? "" : paymentItem.AllowanceAmount.ToString("F0"))"
                                @oninput="@(e => OnAllowanceAmountInput(paymentItem, e.Value?.ToString()))"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               onkeydown="if(['e','E','+'].includes(event.key)) event.preventDefault();"
                                disabled="@IsReadOnly"
                                placeholder=""
                                step="1"
@@ -353,7 +353,9 @@
                     var paymentItem = (SetoffPaymentItem)item;
                     var subtotal = paymentItem.ReceivedAmount + paymentItem.AllowanceAmount;
                     var displayValue = subtotal == 0 ? "" : subtotal.ToString("N2");
-                    return @<div class="text-end fw-bold text-success">@displayValue</div>;
+                    // 根據正負數決定顏色：正數為綠色，負數為紅色
+                    var cssClass = subtotal >= 0 ? "text-success" : "text-danger";
+                    return @<div class="text-end fw-bold @cssClass">@displayValue</div>;
                 }
             }
         };

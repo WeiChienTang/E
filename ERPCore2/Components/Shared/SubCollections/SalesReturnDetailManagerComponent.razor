@@ -1,11 +1,13 @@
 @* 銷售退貨商品明細管理元件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Models
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject ISystemParameterService SystemParameterService
 @inject IProductService ProductService
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 
@@ -66,6 +68,14 @@ else
     </div>
 }
 
+<!-- 相關單據查看 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick" />
+
 @code {
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
@@ -113,6 +123,12 @@ else
     private int? _previousSelectedSalesOrderId = null;
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
+    
+    // ===== 相關單據查看 =====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
 
     // ===== 計算屬性 =====
     private int? EffectiveCustomerId => CustomerId ?? SelectedCustomerId;
@@ -477,18 +493,29 @@ else
 
     private RenderFragment<ReturnItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 檢查項目是否可以刪除（綜合沖款記錄檢查）
+        // 檢查項目是否可以刪除（綜合退貨記錄和沖款記錄檢查）
         var canDelete = CanDeleteItem(item, out _);
         
-        // 只有當項目可以刪除時才顯示刪除按鈕
         if (canDelete)
         {
+            // 可以刪除：顯示刪除按鈕
             <GenericButtonComponent Variant="ButtonVariant.Danger"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
                                    Title="刪除"
                                    OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 不能刪除：顯示查看按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Info"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(item)"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
         }
@@ -508,6 +535,54 @@ else
         
         var index = ReturnItems.IndexOf(item);
         await RemoveItemAsync(index);
+    }
+
+    /// <summary>
+    /// 顯示相關單據（退貨單和沖款單）
+    /// </summary>
+    private async Task ShowRelatedDocuments(ReturnItem item)
+    {
+        // 檢查是否有現有的明細實體 ID
+        if (item.ExistingDetailEntity is not SalesReturnDetail detail || detail.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
+            return;
+        }
+
+        // 設定商品名稱
+        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+
+        // 顯示 Modal 並開始載入
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            // 查詢相關單據
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForSalesReturnDetailAsync(detail.Id);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理點擊相關單據的事件
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        await NotificationService.ShowInfoAsync(
+            $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+            "提示"
+        );
     }
 
     // ===== 內部方法 =====

@@ -271,17 +271,14 @@ else
             },
             new()
             {
-                Title = "商品名稱",
+                Title = "商品編號/名稱",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
-                    return @<div>
-                        <div class="fw-bold">@setoffItem.Product?.Name</div>
-                        <small class="text-muted">@setoffItem.Product?.Code</small>
-                    </div>;
+                    return @<div>@setoffItem.Product?.Code @setoffItem.Product?.Name</div>;
                 }
             },
             new()
@@ -295,7 +292,9 @@ else
                     var setoffItem = (SetoffProductDetailItem)item;
                     var detail = setoffItem.UnsettledDetail;
                     var cssClass = detail?.IsReturn == true ? "text-danger" : "text-success";
-                    return @<div class="text-end fw-bold @cssClass">@(detail?.TotalAmount.ToString("N2") ?? "0.00")</div>;
+                    var amount = detail?.TotalAmount ?? 0;
+                    var displayAmount = detail?.IsReturn == true ? -amount : amount;
+                    return @<div class="text-end fw-bold @cssClass">@displayAmount.ToString("N2")</div>;
                 }
             },
             new()
@@ -308,8 +307,10 @@ else
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
                     var detail = setoffItem.UnsettledDetail;
-                    var cssClass = detail?.RemainingAmount > 0 ? "text-warning fw-bold" : "text-muted";
-                    return @<div class="text-end @cssClass">@(detail?.RemainingAmount.ToString("N2") ?? "0.00")</div>;
+                    var remainingAmount = detail?.RemainingAmount ?? 0;
+                    var displayAmount = detail?.IsReturn == true ? -remainingAmount : remainingAmount;
+                    var cssClass = remainingAmount > 0 ? "text-warning fw-bold" : "text-muted";
+                    return @<div class="text-end @cssClass">@displayAmount.ToString("N2")</div>;
                 }
             },
             new()
@@ -321,7 +322,9 @@ else
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
-                    var displayValue = setoffItem.CurrentSetoffAmount == 0 ? "" : setoffItem.CurrentSetoffAmount.ToString();
+                    var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
+                    var displayValue = setoffItem.CurrentSetoffAmount == 0 ? "" : 
+                        (isReturn ? -setoffItem.CurrentSetoffAmount : setoffItem.CurrentSetoffAmount).ToString();
                     return @<input type="number"
                                   class="form-control form-control-sm text-end"
                                   min="0"
@@ -345,7 +348,9 @@ else
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
-                    var displayValue = setoffItem.CurrentAllowanceAmount == 0 ? "" : setoffItem.CurrentAllowanceAmount.ToString();
+                    var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
+                    var displayValue = setoffItem.CurrentAllowanceAmount == 0 ? "" : 
+                        (isReturn ? -setoffItem.CurrentAllowanceAmount : setoffItem.CurrentAllowanceAmount).ToString();
                     return @<input type="number"
                                   class="form-control form-control-sm text-end"
                                   min="0"
@@ -368,8 +373,13 @@ else
             {
                 var setoffItem = (SetoffProductDetailItem)item;
                 var subtotal = setoffItem.CurrentSetoffAmount + setoffItem.CurrentAllowanceAmount;
-                var displayValue = subtotal == 0 ? "" : subtotal.ToString("N2");
-                return @<div class="text-end fw-bold text-success">@displayValue</div>;
+                // 如果是退貨單據，小計需要顯示為負數
+                var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
+                var displaySubtotal = isReturn ? -subtotal : subtotal;
+                var displayValue = subtotal == 0 ? "" : displaySubtotal.ToString("N2");
+                // 根據正負數決定顏色：正數為綠色，負數為紅色
+                var cssClass = displaySubtotal >= 0 ? "text-success" : "text-danger";
+                return @<div class="text-end fw-bold @cssClass">@displayValue</div>;
             }
         });
 
@@ -382,7 +392,8 @@ else
     {
         if (decimal.TryParse(value, out var amount))
         {
-            item.CurrentSetoffAmount = amount;
+            // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
+            item.CurrentSetoffAmount = Math.Abs(amount);
             await NotifyDetailsChanged();
         }
         else if (string.IsNullOrWhiteSpace(value))
@@ -397,7 +408,8 @@ else
     {
         if (decimal.TryParse(value, out var amount))
         {
-            item.CurrentAllowanceAmount = amount;
+            // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
+            item.CurrentAllowanceAmount = Math.Abs(amount);
             await NotifyDetailsChanged();
         }
         else if (string.IsNullOrWhiteSpace(value))
@@ -509,6 +521,40 @@ else
     }
     
     /// <summary>
+    /// 取得本期沖銷總額（考慮退貨為負數）
+    /// </summary>
+    public decimal GetCurrentSetoffTotal()
+    {
+        return SetoffItems
+            .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+            .Sum(item =>
+            {
+                var total = item.CurrentSetoffAmount + item.CurrentAllowanceAmount;
+                // 如果是退貨單據，金額取負值
+                var isReturn = item.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                              item.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                return isReturn ? -total : total;
+            });
+    }
+    
+    /// <summary>
+    /// 取得本期折讓總額（考慮退貨為負數）
+    /// </summary>
+    public decimal GetCurrentAllowanceTotal()
+    {
+        return SetoffItems
+            .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+            .Sum(item =>
+            {
+                var total = item.CurrentAllowanceAmount;
+                // 如果是退貨單據，金額取負值
+                var isReturn = item.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                              item.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                return isReturn ? -total : total;
+            });
+    }
+    
+    /// <summary>
     /// 處理移除明細項目
     /// </summary>
     private async Task HandleRemoveItem(SetoffProductDetailItem item)
@@ -534,12 +580,18 @@ else
     
     /// <summary>
     /// 取得當前選中明細的來源總金額（用於計算本期應收）
+    /// 退貨單據會以負數計算
     /// </summary>
     public decimal GetSourceTotalAmount()
     {
         return SetoffItems
             .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
-            .Sum(item => item.SourceTotalAmount);
+            .Sum(item => 
+            {
+                var amount = item.SourceTotalAmount;
+                // 如果是退貨單據，金額取負值
+                return item.UnsettledDetail?.IsReturn == true ? -amount : amount;
+            });
     }
     
     /// <summary>

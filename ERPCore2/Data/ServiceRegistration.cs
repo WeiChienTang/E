@@ -35,6 +35,7 @@ namespace ERPCore2.Data
 
             // Helper 服務
             services.AddScoped<ActionButtonHelper>();
+            services.AddScoped<RelatedDocumentsHelper>();
 
             // 統一地址服務 (推薦使用)
             services.AddScoped<IAddressService, AddressService>();

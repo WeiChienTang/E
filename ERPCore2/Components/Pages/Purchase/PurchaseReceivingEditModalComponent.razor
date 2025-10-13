@@ -10,6 +10,8 @@
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
 @inject ISystemParameterService SystemParameterService
+@inject IPurchaseReturnService PurchaseReturnService
+@inject ISetoffDocumentService SetoffDocumentService
 @inject ActionButtonHelper ActionButtonHelper
 @implements IDisposable
 
@@ -54,6 +56,22 @@
                            OnSupplierSaved="@OnSupplierSavedWrapper"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
+@* 進貨退出編輯 Modal *@
+<PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
+                                 IsVisible="@showPurchaseReturnModal"
+                                 IsVisibleChanged="@((bool visible) => showPurchaseReturnModal = visible)"
+                                 PurchaseReturnId="@selectedPurchaseReturnId"
+                                 OnPurchaseReturnSaved="@HandlePurchaseReturnSaved"
+                                 OnCancel="@(() => showPurchaseReturnModal = false)" />
+
+@* 沖款單編輯 Modal *@
+<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                 IsVisible="@showSetoffDocumentModal"
+                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                 SetoffDocumentId="@selectedSetoffDocumentId"
+                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -86,6 +104,14 @@
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    // ===== 相關單據 Modal =====
+    private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
+    private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
+    private bool showPurchaseReturnModal = false;
+    private bool showSetoffDocumentModal = false;
+    private int? selectedPurchaseReturnId = null;
+    private int? selectedSetoffDocumentId = null;
     
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
@@ -1172,6 +1198,7 @@
                                                                OnDetailsChanged="@HandleReceivingDetailsChanged"
                                                                OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
                                                                OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                                                               OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                                                MainEntityIdPropertyName="PurchaseReceivingId"
                                                                QuantityPropertyName="ReceivedQuantity"
                                                                UnitPricePropertyName="UnitPrice"
@@ -1284,6 +1311,67 @@
     private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
     {
         await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 處理開啟相關單據的事件
+    /// </summary>
+    private async Task HandleOpenRelatedDocument((RelatedDocumentType type, int id) args)
+    {
+        try
+        {
+            if (args.type == RelatedDocumentType.ReturnDocument)
+            {
+                // 開啟進貨退出 Modal
+                selectedPurchaseReturnId = args.id;
+                showPurchaseReturnModal = true;
+            }
+            else if (args.type == RelatedDocumentType.SetoffDocument)
+            {
+                // 開啟沖款單 Modal
+                selectedSetoffDocumentId = args.id;
+                showSetoffDocumentModal = true;
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟單據失敗：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理進貨退出儲存後的事件
+    /// </summary>
+    private async Task HandlePurchaseReturnSaved(PurchaseReturn savedReturn)
+    {
+        // 關閉 Modal
+        showPurchaseReturnModal = false;
+        selectedPurchaseReturnId = null;
+        
+        // 重新載入進貨明細的退貨數量資訊
+        if (purchaseReceivingDetailManager != null)
+        {
+            await purchaseReceivingDetailManager.LoadReturnedQuantitiesAsync();
+        }
+        
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理沖款單儲存後的事件
+    /// </summary>
+    private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
+    {
+        // 關閉 Modal
+        showSetoffDocumentModal = false;
+        selectedSetoffDocumentId = null;
+        
+        // 如果需要，可以重新載入相關資料
+        // 目前沒有特別需要重新載入的資料
+        
+        StateHasChanged();
     }
 
     /// <summary>

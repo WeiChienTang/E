@@ -645,124 +645,132 @@
             builder.AddAttribute(sequence + 11, "minlength", field.MinLength.Value);
         }
         
-        // 輸入事件處理
-        builder.AddAttribute(sequence + 12, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
+        // 🔑 只有在非唯讀和非停用狀態下才綁定互動事件
+        if (!field.IsReadOnly && !field.IsDisabled)
         {
-            var inputValue = args.Value?.ToString() ?? "";
-            autoCompleteDisplayValues[fieldId] = inputValue;
-            _ = HandleAutoCompleteInput(field, inputValue);
-        }));
-        
-        // 焦點事件處理
-        builder.AddAttribute(sequence + 13, "onfocus", EventCallback.Factory.Create(this, () =>
-        {
-            // 清除失去焦點標記
-            blurredFields.Remove(fieldId);
-            
-            var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-            // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋以顯示所有選項
-            if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
+            // 輸入事件處理
+            builder.AddAttribute(sequence + 12, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
             {
+                var inputValue = args.Value?.ToString() ?? "";
+                autoCompleteDisplayValues[fieldId] = inputValue;
                 _ = HandleAutoCompleteInput(field, inputValue);
-            }
-        }));
-          // 失去焦點事件處理
-        builder.AddAttribute(sequence + 14, "onblur", EventCallback.Factory.Create(this, async () =>
-        {
-            // 標記為已失去焦點
-            blurredFields.Add(fieldId);
+            }));
             
-            // 取消正在進行的搜尋
-            if (autoCompleteTimers.ContainsKey(fieldId))
+            // 焦點事件處理
+            builder.AddAttribute(sequence + 13, "onfocus", EventCallback.Factory.Create(this, () =>
             {
-                autoCompleteTimers[fieldId]?.Dispose();
-                autoCompleteTimers[fieldId] = null;
-            }
-            
-            // 清除載入狀態 (重要：因為計時器被取消，finally 塊不會執行)
-            autoCompleteLoading[fieldId] = false;
-            
-            // 嘗試智能匹配
-            await TrySmartMatch(field);
-            
-            // 延遲隱藏下拉選單，讓使用者有時間點擊選項
-            Timer? timer = null;
-            timer = new Timer(_ =>
+                // 清除失去焦點標記
+                blurredFields.Remove(fieldId);
+                
+                var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
+                // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋以顯示所有選項
+                if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
+                {
+                    _ = HandleAutoCompleteInput(field, inputValue);
+                }
+            }));
+              // 失去焦點事件處理
+            builder.AddAttribute(sequence + 14, "onblur", EventCallback.Factory.Create(this, async () =>
             {
-                autoCompleteVisible[fieldId] = false;
-                InvokeAsync(StateHasChanged);
-                timer?.Dispose();
-            }, null, 300, Timeout.Infinite); // 增加延遲時間
-        }));
-        
-        // 鍵盤事件處理
-        builder.AddAttribute(sequence + 15, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
-        {
-            _ = HandleKeyDown(field, args);
-        }));
+                // 標記為已失去焦點
+                blurredFields.Add(fieldId);
+                
+                // 取消正在進行的搜尋
+                if (autoCompleteTimers.ContainsKey(fieldId))
+                {
+                    autoCompleteTimers[fieldId]?.Dispose();
+                    autoCompleteTimers[fieldId] = null;
+                }
+                
+                // 清除載入狀態 (重要：因為計時器被取消，finally 塊不會執行)
+                autoCompleteLoading[fieldId] = false;
+                
+                // 嘗試智能匹配
+                await TrySmartMatch(field);
+                
+                // 延遲隱藏下拉選單，讓使用者有時間點擊選項
+                Timer? timer = null;
+                timer = new Timer(_ =>
+                {
+                    autoCompleteVisible[fieldId] = false;
+                    InvokeAsync(StateHasChanged);
+                    timer?.Dispose();
+                }, null, 300, Timeout.Infinite); // 增加延遲時間
+            }));
+            
+            // 鍵盤事件處理
+            builder.AddAttribute(sequence + 15, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
+            {
+                _ = HandleKeyDown(field, args);
+            }));
+        }
         
         builder.CloseElement(); // input
         
-        // 載入指示器
-        if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
+        // 🔑 只有在非唯讀和非停用狀態下才顯示載入指示器和下拉選項
+        if (!field.IsReadOnly && !field.IsDisabled)
         {
-            builder.OpenElement(sequence + 20, "div");
-            builder.AddAttribute(sequence + 21, "class", "position-absolute");
-            builder.AddAttribute(sequence + 22, "style", "right: 10px; top: 50%; transform: translateY(-50%);");
-            builder.OpenElement(sequence + 23, "span");
-            builder.AddAttribute(sequence + 24, "class", "spinner-border spinner-border-sm");
-            builder.CloseElement();
-            builder.CloseElement();
-        }
-        
-        // 下拉選項
-        if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
-        {
-            var options = autoCompleteOptions[fieldId];
-            if (options.Any())
+            // 載入指示器
+            if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
             {
-                builder.OpenElement(sequence + 30, "div");
-                builder.AddAttribute(sequence + 31, "class", "autocomplete-dropdown position-absolute w-100");
-                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                
-                var optionSequence = sequence + 40;
-                var optionIndex = 0;
-                foreach (var option in options)
+                builder.OpenElement(sequence + 20, "div");
+                builder.AddAttribute(sequence + 21, "class", "position-absolute");
+                builder.AddAttribute(sequence + 22, "style", "right: 10px; top: 50%; transform: translateY(-50%);");
+                builder.OpenElement(sequence + 23, "span");
+                builder.AddAttribute(sequence + 24, "class", "spinner-border spinner-border-sm");
+                builder.CloseElement();
+                builder.CloseElement();
+            }
+            
+            // 下拉選項
+            if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
+            {
+                var options = autoCompleteOptions[fieldId];
+                if (options.Any())
                 {
-                    var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
-                    var cssClass = isHighlighted ? "autocomplete-item highlighted" : "autocomplete-item";
-                    var optionId = $"{fieldId}_option_{optionIndex}";
-                    
-                    builder.OpenElement(optionSequence, "button");
-                    builder.AddAttribute(optionSequence + 1, "type", "button");
-                    builder.AddAttribute(optionSequence + 2, "class", cssClass);
-                    builder.AddAttribute(optionSequence + 3, "id", optionId);
-                    
-                    // 滑鼠移動時更新高亮索引
-                    builder.AddAttribute(optionSequence + 4, "onmousemove", EventCallback.Factory.Create(this, () =>
+                    builder.OpenElement(sequence + 30, "div");
+                    builder.AddAttribute(sequence + 31, "class", "autocomplete-dropdown position-absolute w-100");
+                    builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                
+                    var optionSequence = sequence + 40;
+                    var optionIndex = 0;
+                    foreach (var option in options)
                     {
-                        highlightedOptionIndex[fieldId] = optionIndex;
-                        keyboardNavigationActive[fieldId] = false;
-                        StateHasChanged();
-                    }));
-                      builder.AddAttribute(optionSequence + 5, "onmousedown", EventCallback.Factory.Create(this, async () =>
-                    {
-                        autoCompleteDisplayValues[fieldId] = option.Text;
-                        SetPropertyValue(Model, field.PropertyName, option.Value);
-                        autoCompleteVisible[fieldId] = false;
-                        ResetKeyboardNavigation(fieldId);
+                        var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
+                        var cssClass = isHighlighted ? "autocomplete-item highlighted" : "autocomplete-item";
+                        var optionId = $"{fieldId}_option_{optionIndex}";
                         
-                        // 觸發欄位變更事件
-                        await OnFieldChanged.InvokeAsync((field.PropertyName, option.Value));
+                        builder.OpenElement(optionSequence, "button");
+                        builder.AddAttribute(optionSequence + 1, "type", "button");
+                        builder.AddAttribute(optionSequence + 2, "class", cssClass);
+                        builder.AddAttribute(optionSequence + 3, "id", optionId);
                         
-                        StateHasChanged();
-                    }));
-                    builder.AddContent(optionSequence + 6, option.Text);
-                    builder.CloseElement();
-                    optionSequence += 7;
-                    optionIndex++;
+                        // 滑鼠移動時更新高亮索引
+                        builder.AddAttribute(optionSequence + 4, "onmousemove", EventCallback.Factory.Create(this, () =>
+                        {
+                            highlightedOptionIndex[fieldId] = optionIndex;
+                            keyboardNavigationActive[fieldId] = false;
+                            StateHasChanged();
+                        }));
+                          builder.AddAttribute(optionSequence + 5, "onmousedown", EventCallback.Factory.Create(this, async () =>
+                        {
+                            autoCompleteDisplayValues[fieldId] = option.Text;
+                            SetPropertyValue(Model, field.PropertyName, option.Value);
+                            autoCompleteVisible[fieldId] = false;
+                            ResetKeyboardNavigation(fieldId);
+                            
+                            // 觸發欄位變更事件
+                            await OnFieldChanged.InvokeAsync((field.PropertyName, option.Value));
+                            
+                            StateHasChanged();
+                        }));
+                        builder.AddContent(optionSequence + 6, option.Text);
+                        builder.CloseElement();
+                        optionSequence += 7;
+                        optionIndex++;
+                    }
+                    
+                    builder.CloseElement(); // dropdown-menu
                 }
-                
-                builder.CloseElement(); // dropdown-menu
             }
         }
         
