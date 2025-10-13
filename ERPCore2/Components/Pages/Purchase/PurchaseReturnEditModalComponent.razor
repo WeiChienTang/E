@@ -8,6 +8,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject ISystemParameterService SystemParameterService
+@inject ISetoffDocumentService SetoffDocumentService
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
                           TService="IPurchaseReturnService"
@@ -50,6 +51,14 @@
                            OnSupplierSaved="@OnSupplierSavedWrapper"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
+@* 沖款單編輯 Modal *@
+<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                 IsVisible="@showSetoffDocumentModal"
+                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                 SetoffDocumentId="@selectedSetoffDocumentId"
+                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+
 @code {
     // 參數
     [Parameter] public bool IsVisible { get; set; }
@@ -81,6 +90,11 @@
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    // ===== 相關單據 Modal =====
+    private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
+    private bool showSetoffDocumentModal = false;
+    private int? selectedSetoffDocumentId = null;
     
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
@@ -755,6 +769,48 @@
     }
     
     /// <summary>
+    /// 處理開啟相關單據的事件
+    /// </summary>
+    private async Task HandleOpenRelatedDocument((RelatedDocumentType type, int id) args)
+    {
+        try
+        {
+            if (args.type == RelatedDocumentType.SetoffDocument)
+            {
+                // 開啟沖款單
+                selectedSetoffDocumentId = args.id;
+                showSetoffDocumentModal = true;
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("不支援的單據類型", "提示");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟單據失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理沖款單儲存後的事件
+    /// </summary>
+    private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
+    {
+        try
+        {
+            showSetoffDocumentModal = false;
+            await NotificationService.ShowSuccessAsync("沖款單已更新");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
     /// 處理欄位值變更事件 - 使用統一 Helper
     /// </summary>
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
@@ -897,7 +953,8 @@
                             ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
                             OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
-                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged" />
+                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                            OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
                     }
                     catch (Exception ex)
                     {

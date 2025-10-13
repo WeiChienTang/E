@@ -1,5 +1,7 @@
 @using ERPCore2.Models
 @inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <div class="modal fade @(IsVisible ? "show" : "")" 
      style="display: @(IsVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);" 
@@ -166,6 +168,174 @@
     /// </summary>
     [Parameter] public EventCallback<RelatedDocument> OnDocumentClick { get; set; }
 
+    // ===== ESC 鍵支援 =====
+    private DotNetObjectReference<RelatedDocumentsModalComponent>? _escKeyDotNetRef;
+    private bool _isEscKeyListenerActive = false;
+    private bool _isDisposed = false;
+    private readonly object _escKeyLock = new object();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        
+        // 當 Modal 可見時，設置 ESC 鍵監聽器
+        if (IsVisible)
+        {
+            bool shouldSetup;
+            lock (_escKeyLock)
+            {
+                shouldSetup = !_isEscKeyListenerActive;
+            }
+            
+            if (shouldSetup)
+            {
+                await SetupEscKeyListenerAsync();
+            }
+        }
+        else
+        {
+            // 當 Modal 不可見時，清理 ESC 鍵監聽器
+            bool shouldCleanup;
+            lock (_escKeyLock)
+            {
+                shouldCleanup = _isEscKeyListenerActive;
+            }
+            
+            if (shouldCleanup)
+            {
+                await CleanupEscKeyListenerAsync();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 設置 ESC 鍵監聽器
+    /// </summary>
+    private async Task SetupEscKeyListenerAsync()
+    {
+        try
+        {
+            lock (_escKeyLock)
+            {
+                // 如果已經設置過，不重複設置
+                if (_isEscKeyListenerActive && _escKeyDotNetRef != null)
+                {
+                    return;
+                }
+                
+                _isEscKeyListenerActive = true;
+            }
+            
+            // 創建新的 DotNetObjectReference
+            lock (_escKeyLock)
+            {
+                _escKeyDotNetRef = DotNetObjectReference.Create(this);
+            }
+            
+            await JSRuntime.InvokeVoidAsync("setupEscKeyListener", _escKeyDotNetRef);
+        }
+        catch (Exception ex)
+        {
+            lock (_escKeyLock)
+            {
+                _isEscKeyListenerActive = false;
+            }
+            System.Diagnostics.Debug.WriteLine($"SetupEscKeyListener Error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 清理 ESC 鍵事件監聽器
+    /// </summary>
+    private async Task CleanupEscKeyListenerAsync()
+    {
+        DotNetObjectReference<RelatedDocumentsModalComponent>? refToDispose = null;
+        
+        lock (_escKeyLock)
+        {
+            // 如果已經清理過，不重複清理
+            if (!_isEscKeyListenerActive)
+            {
+                return;
+            }
+            
+            _isEscKeyListenerActive = false;
+            refToDispose = _escKeyDotNetRef;
+            _escKeyDotNetRef = null;
+        }
+        
+        try
+        {
+            // 先調用 JavaScript 清理
+            await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener");
+            
+            // 給 JavaScript 更多時間完成清理
+            await Task.Delay(200);
+            
+            // 在鎖外釋放資源，避免死鎖
+            if (refToDispose != null)
+            {
+                try
+                {
+                    refToDispose.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 對象已被釋放，這是正常的
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"DotNetObjectReference dispose warning: {ex.Message}");
+                }
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Blazor 連接已斷開，這是正常的
+        }
+        catch (TaskCanceledException)
+        {
+            // 任務被取消，這是正常的
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"CleanupEscKeyListener Error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理 ESC 鍵按下事件（由 JavaScript 調用）
+    /// </summary>
+    [JSInvokable]
+    public async Task HandleEscapeKey()
+    {
+        try
+        {
+            // 增加額外的安全檢查
+            if (_isDisposed)
+            {
+                return;
+            }
+            
+            if (IsVisible && !IsLoading)
+            {
+                await Close();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // 忽略已釋放物件的錯誤
+        }
+        catch (InvalidOperationException)
+        {
+            // 忽略無效操作錯誤（通常發生在組件已被釋放時）
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ESC Error: {ex.Message}");
+        }
+    }
+
     private async Task Close()
     {
         IsVisible = false;
@@ -183,6 +353,42 @@
         if (OnDocumentClick.HasDelegate)
         {
             await OnDocumentClick.InvokeAsync(document);
+        }
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            _isDisposed = true;
+            
+            // 清理 ESC 鍵監聽器
+            lock (_escKeyLock)
+            {
+                _isEscKeyListenerActive = false;
+            }
+            
+            // 同步清理 DotNet 對象引用
+            var refToDispose = _escKeyDotNetRef;
+            _escKeyDotNetRef = null;
+            
+            if (refToDispose != null)
+            {
+                try
+                {
+                    refToDispose.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 忽略，對象已被釋放
+                }
+            }
+            
+            // JavaScript 端的清理將由下一個 Modal 打開時處理，或在頁面卸載時自動清理
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Dispose Error: {ex.Message}");
         }
     }
 }

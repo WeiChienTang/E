@@ -13,6 +13,8 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ISalesReturnService SalesReturnService
+@inject ISetoffDocumentService SetoffDocumentService
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -64,6 +66,22 @@
                            OnEmployeeSaved="@OnEmployeeSavedWrapper"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
+@* 銷貨退回編輯 Modal *@
+<SalesReturnEditModalComponent @ref="salesReturnEditModal"
+                              IsVisible="@showSalesReturnModal"
+                              IsVisibleChanged="@((bool visible) => showSalesReturnModal = visible)"
+                              SalesReturnId="@selectedSalesReturnId"
+                              OnSalesReturnSaved="@HandleSalesReturnSaved"
+                              OnCancel="@(() => showSalesReturnModal = false)" />
+
+@* 沖款單編輯 Modal *@
+<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                 IsVisible="@showSetoffDocumentModal"
+                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                 SetoffDocumentId="@selectedSetoffDocumentId"
+                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -96,6 +114,14 @@
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    
+    // ===== 相關單據 Modal =====
+    private SalesReturnEditModalComponent? salesReturnEditModal;
+    private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
+    private bool showSalesReturnModal = false;
+    private bool showSetoffDocumentModal = false;
+    private int? selectedSalesReturnId = null;
+    private int? selectedSetoffDocumentId = null;
     
     // 下拉選單選項（向下相容）
     private List<Customer> customers = new();
@@ -606,6 +632,7 @@
                                                           RemarksPropertyName="DetailRemarks"
                                                           OnDetailsChanged="@HandleDetailsChanged"
                                                           OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                                                          OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                                           ItemDisplayName="銷售產品"
                                                           EmptyMessage="尚未新增銷售產品" />
                     }
@@ -732,6 +759,72 @@
     private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
     {
         await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理開啟相關單據的事件
+    /// </summary>
+    private async Task HandleOpenRelatedDocument((RelatedDocumentType type, int id) args)
+    {
+        try
+        {
+            if (args.type == RelatedDocumentType.ReturnDocument)
+            {
+                // 開啟銷貨退回單
+                selectedSalesReturnId = args.id;
+                showSalesReturnModal = true;
+                StateHasChanged();
+            }
+            else if (args.type == RelatedDocumentType.SetoffDocument)
+            {
+                // 開啟沖款單
+                selectedSetoffDocumentId = args.id;
+                showSetoffDocumentModal = true;
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("不支援的單據類型", "提示");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟單據失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理銷貨退回儲存後的事件
+    /// </summary>
+    private async Task HandleSalesReturnSaved(SalesReturn savedReturn)
+    {
+        try
+        {
+            showSalesReturnModal = false;
+            await NotificationService.ShowSuccessAsync("銷貨退回單已更新");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理銷貨退回儲存事件失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理沖款單儲存後的事件
+    /// </summary>
+    private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
+    {
+        try
+        {
+            showSetoffDocumentModal = false;
+            await NotificationService.ShowSuccessAsync("沖款單已更新");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
+        }
     }
     
     /// <summary>

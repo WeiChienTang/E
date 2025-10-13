@@ -894,10 +894,8 @@ else
     /// </summary>
     private async Task HandleRelatedDocumentClick(RelatedDocument document)
     {
-        // 關閉 RelatedDocumentsModal
-        showRelatedDocumentsModal = false;
-        
-        // 通知父組件開啟對應的 EditModal
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        // 注意：不關閉 RelatedDocumentsModal，讓使用者可以繼續查看列表
         if (OnOpenRelatedDocument.HasDelegate)
         {
             await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));

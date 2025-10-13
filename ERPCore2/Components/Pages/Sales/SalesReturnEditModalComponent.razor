@@ -12,6 +12,7 @@
 @inject IProductService ProductService
 @inject ISystemParameterService SystemParameterService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ISetoffDocumentService SetoffDocumentService
 @implements IDisposable
 
 @using ERPCore2.FieldConfiguration
@@ -56,6 +57,14 @@
                            OnCustomerSaved="@OnCustomerSavedWrapper"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
+@* 沖款單編輯 Modal *@
+<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                 IsVisible="@showSetoffDocumentModal"
+                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                 SetoffDocumentId="@selectedSetoffDocumentId"
+                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -94,6 +103,11 @@
     // ===== Modal 管理器 =====
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    
+    // ===== 相關單據 Modal =====
+    private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
+    private bool showSetoffDocumentModal = false;
+    private int? selectedSetoffDocumentId = null;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -1026,6 +1040,7 @@
                             ExistingReturnDetails="@salesReturnDetails"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
                             OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                            OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                             IsEditMode="@SalesReturnId.HasValue" />
                     }
                     else
@@ -1105,6 +1120,48 @@
     private async Task OnCustomerSavedWrapper(Customer savedCustomer)
     {
         await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理開啟相關單據的事件
+    /// </summary>
+    private async Task HandleOpenRelatedDocument((RelatedDocumentType type, int id) args)
+    {
+        try
+        {
+            if (args.type == RelatedDocumentType.SetoffDocument)
+            {
+                // 開啟沖款單
+                selectedSetoffDocumentId = args.id;
+                showSetoffDocumentModal = true;
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("不支援的單據類型", "提示");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟單據失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理沖款單儲存後的事件
+    /// </summary>
+    private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
+    {
+        try
+        {
+            showSetoffDocumentModal = false;
+            await NotificationService.ShowSuccessAsync("沖款單已更新");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
+        }
     }
 
     /// <summary>

@@ -104,6 +104,9 @@ else
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 相關單據開啟事件 =====
+    [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
 
     private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
@@ -582,10 +585,19 @@ else
     /// </summary>
     private async Task HandleRelatedDocumentClick(RelatedDocument document)
     {
-        await NotificationService.ShowInfoAsync(
-            $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
-            "提示"
-        );
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理，顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+                "提示"
+            );
+        }
     }
 
     // ===== 內部方法 =====

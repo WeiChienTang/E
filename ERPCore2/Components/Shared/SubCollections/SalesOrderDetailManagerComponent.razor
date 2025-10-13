@@ -121,6 +121,9 @@ else
     /// </summary>
     [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
     
+    // ===== 相關單據開啟事件 =====
+    [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
+    
     // ===== 欄位映射參數 =====
     [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty;
     [Parameter] public string QuantityPropertyName { get; set; } = "OrderQuantity";
@@ -968,10 +971,19 @@ else
     /// </summary>
     private async Task HandleRelatedDocumentClick(RelatedDocument document)
     {
-        await NotificationService.ShowInfoAsync(
-            $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
-            "提示"
-        );
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理，顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+                "提示"
+            );
+        }
     }
 
     private List<Product> GetAvailableProducts()
