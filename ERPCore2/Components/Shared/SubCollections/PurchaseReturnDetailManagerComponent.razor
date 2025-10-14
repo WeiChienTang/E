@@ -1,6 +1,5 @@
 @* 採購退回明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
-@using ERPCore2.Models
 @inject IProductService ProductService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
@@ -484,7 +483,7 @@ else
                     @if (hasPaymentRecord)
                     {
                         <div class="position-absolute" style="top: 2px; right: 30px; pointer-events: none;">
-                            <i class="fas fa-lock text-danger" title="@title"></i>
+                            <i title="@title"></i>
                         </div>
                     }
                 </div>;

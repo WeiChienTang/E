@@ -183,5 +183,36 @@ namespace ERPCore2.Helpers
 
             return documents.OrderByDescending(d => d.DocumentDate).ToList();
         }
+
+        /// <summary>
+        /// 取得與採購訂單明細相關的單據（入庫單）
+        /// </summary>
+        public async Task<List<RelatedDocument>> GetRelatedDocumentsForPurchaseOrderDetailAsync(int purchaseOrderDetailId)
+        {
+            var documents = new List<RelatedDocument>();
+
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            // 查詢入庫單
+            var receivingDetails = await context.PurchaseReceivingDetails
+                .Include(d => d.PurchaseReceiving)
+                .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId)
+                .ToListAsync();
+
+            foreach (var detail in receivingDetails)
+            {
+                documents.Add(new RelatedDocument
+                {
+                    DocumentId = detail.PurchaseReceivingId,
+                    DocumentType = RelatedDocumentType.ReceivingDocument,
+                    DocumentNumber = detail.PurchaseReceiving.ReceiptNumber,
+                    DocumentDate = detail.PurchaseReceiving.ReceiptDate,
+                    Quantity = detail.ReceivedQuantity,
+                    Remarks = $"入庫數量: {detail.ReceivedQuantity}, 單價: {detail.UnitPrice:N2}"
+                });
+            }
+
+            return documents.OrderByDescending(d => d.DocumentDate).ToList();
+        }
     }
 }

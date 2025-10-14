@@ -1,8 +1,10 @@
 @* 採購單商品管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Models
 @inject IProductService ProductService
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject INotificationService NotificationService
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -28,8 +30,9 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="@EmptyMessage"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
+                                      ShowBuiltInDeleteButton="false"
                                       ActionsColumnWidth = "60px"
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
                                       OnItemDelete="@HandleItemDelete"/>
         </div>
 
@@ -53,6 +56,14 @@ else
         </div>
     </div>
 }
+
+<!-- 相關單據查看 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
     // ===== 基本參數 =====
@@ -95,12 +106,17 @@ else
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private int? _previousSelectedSupplierId = null;
+    
+    // ===== 相關單據查看 =====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
-        LoadExistingDetailsAsync();
-        EnsureOneEmptyRow();
+        await LoadExistingDetailsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -115,7 +131,7 @@ else
             
             // 如果更換供應商，需要清空現有選項並重新載入
             ProductItems.Clear();
-            LoadExistingDetailsAsync();
+            await LoadExistingDetailsAsync();
             return; // 供應商變更時已經處理完畢，直接返回
         }
         
@@ -312,6 +328,36 @@ else
         return columns;
     }
 
+    private RenderFragment<ProductItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        // 檢查是否已被入庫單使用
+        var hasUsage = item.HasUsageRecordCache ?? false;
+        
+        if (!hasUsage)
+        {
+            // 可以刪除：顯示刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Danger"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 已被使用：顯示查看按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Info"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+    };
+
     private async Task HandleItemDelete(ProductItem item)
     {
         var index = ProductItems.IndexOf(item);
@@ -345,7 +391,7 @@ else
     /// <summary>
     /// 從現有明細資料載入到 ProductItems
     /// </summary>
-    private void LoadExistingDetailsAsync()
+    private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
@@ -374,6 +420,9 @@ else
                         Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
                     ExistingDetailEntity = detail
                 };
+                
+                // 檢查是否已被入庫單使用
+                item.HasUsageRecordCache = await HasUsageRecord(item);
                 
                 ProductItems.Add(item);
             }
@@ -774,6 +823,120 @@ else
         await NotificationService.ShowSuccessAsync("已清空所有商品明細");
     }
 
+    // ===== 相關單據查看方法 =====
+    
+    /// <summary>
+    /// 顯示相關單據（入庫單）
+    /// </summary>
+    private async Task ShowRelatedDocuments(ProductItem item)
+    {
+        Console.WriteLine($"[PurchaseOrderDetailManager] ShowRelatedDocuments 被調用");
+        Console.WriteLine($"[PurchaseOrderDetailManager] Item.SelectedProduct: {item.SelectedProduct?.Name}");
+        Console.WriteLine($"[PurchaseOrderDetailManager] Item.ExistingDetailEntity: {item.ExistingDetailEntity?.GetType().Name}");
+        Console.WriteLine($"[PurchaseOrderDetailManager] Item.ExistingDetailEntity.Id: {(item.ExistingDetailEntity as PurchaseOrderDetail)?.Id}");
+        
+        if (item.ExistingDetailEntity is not PurchaseOrderDetail detail || detail.Id <= 0)
+        {
+            Console.WriteLine($"[PurchaseOrderDetailManager] 項目尚未儲存，無法查看相關單據");
+            await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
+            return;
+        }
+
+        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        Console.WriteLine($"[PurchaseOrderDetailManager] 設定 selectedProductName: {selectedProductName}");
+        
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        Console.WriteLine($"[PurchaseOrderDetailManager] 開啟 Modal, showRelatedDocumentsModal: {showRelatedDocumentsModal}");
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine($"[PurchaseOrderDetailManager] 查詢採購訂單明細 ID: {detail.Id} 的相關入庫單");
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForPurchaseOrderDetailAsync(detail.Id);
+            Console.WriteLine($"[PurchaseOrderDetailManager] 找到 {relatedDocuments?.Count ?? 0} 筆相關入庫單");
+            
+            if (relatedDocuments?.Any() == true)
+            {
+                foreach (var doc in relatedDocuments)
+                {
+                    Console.WriteLine($"  - 入庫單: {doc.DocumentNumber}, 日期: {doc.DocumentDate:yyyy-MM-dd}, 數量: {doc.Quantity}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PurchaseOrderDetailManager] 載入相關單據失敗: {ex.Message}");
+            Console.WriteLine($"[PurchaseOrderDetailManager] StackTrace: {ex.StackTrace}");
+            await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            Console.WriteLine($"[PurchaseOrderDetailManager] isLoadingRelatedDocuments: {isLoadingRelatedDocuments}");
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理點擊相關單據的事件
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        // 目前只顯示提示訊息
+        await NotificationService.ShowInfoAsync(
+            $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+            "提示"
+        );
+        
+        // TODO: 未來可以考慮添加 EventCallback 參數，讓父組件處理開啟 Modal 的邏輯
+    }
+    
+    /// <summary>
+    /// 檢查指定的採購訂單明細項目是否已被入庫單使用
+    /// </summary>
+    private async Task<bool> HasUsageRecord(ProductItem item)
+    {
+        if (item.ExistingDetailEntity is not PurchaseOrderDetail detail || detail.Id <= 0)
+        {
+            Console.WriteLine($"[HasUsageRecord] 項目沒有現有明細或 ID <= 0");
+            return false;
+        }
+
+        try
+        {
+            Console.WriteLine($"[HasUsageRecord] 檢查採購訂單明細 ID: {detail.Id}");
+            var documents = await RelatedDocumentsHelper.GetRelatedDocumentsForPurchaseOrderDetailAsync(detail.Id);
+            var hasUsage = documents?.Any() == true;
+            Console.WriteLine($"[HasUsageRecord] 採購訂單明細 ID: {detail.Id}, 是否被使用: {hasUsage}, 相關單據數: {documents?.Count ?? 0}");
+            return hasUsage;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HasUsageRecord] 檢查失敗: {ex.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// 檢查項目是否可以刪除
+    /// </summary>
+    private bool CanDeleteItem(ProductItem item, out string reason)
+    {
+        // 新項目（未儲存）可以刪除
+        if (item.ExistingDetailEntity == null || item.ExistingDetailEntity.Id <= 0)
+        {
+            reason = string.Empty;
+            return true;
+        }
+        
+        // 檢查是否已有入庫記錄（這個方法是同步的，無法直接呼叫 async 方法）
+        // 因此我們在 CustomActionsTemplate 中會使用不同的策略
+        reason = string.Empty;
+        return true;
+    }
+
     public class ProductItem
     {
         public Product? SelectedProduct { get; set; }
@@ -783,5 +946,8 @@ else
         public string Remarks { get; set; } = string.Empty;
         public bool IsReceivingCompleted { get; set; } = false;
         public TDetailEntity? ExistingDetailEntity { get; set; }
+        
+        // 標記是否已被入庫單使用（避免重複查詢）
+        public bool? HasUsageRecordCache { get; set; } = null;
     }
 }

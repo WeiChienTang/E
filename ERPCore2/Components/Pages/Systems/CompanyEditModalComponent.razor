@@ -226,7 +226,6 @@
                     Label = "公司簡介",
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入公司簡介",
-                    Rows = 3,
                     HelpText = "公司的簡要說明",
                     ContainerCssClass = "col-12"
                 },
@@ -238,7 +237,9 @@
                     IsRequired = true,
                     Options = EntityStatusHelper.GetEntityStatusOptions(),
                     HelpText = "公司的使用狀態"
-                }
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<Company>()
             };
 
             formSections = new Dictionary<string, string>
@@ -255,6 +256,7 @@
                 { nameof(Company.Email), "聯絡資訊" },
                 { nameof(Company.Website), "聯絡資訊" },
                 { nameof(Company.Description), "額外資料" },
+                { nameof(Company.Remarks), "額外資料" }
             };
         }
         catch (Exception)

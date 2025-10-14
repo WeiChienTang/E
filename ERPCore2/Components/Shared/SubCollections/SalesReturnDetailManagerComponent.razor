@@ -1,6 +1,5 @@
 @* 銷售退貨商品明細管理元件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
-@using ERPCore2.Models
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
@@ -8,8 +7,6 @@
 @inject ISystemParameterService SystemParameterService
 @inject IProductService ProductService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
-@using ERPCore2.Helpers
-@using ERPCore2.Data.Entities
 
 @if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
 {
@@ -354,7 +351,7 @@ else
                     @if (hasPaymentRecord)
                     {
                         <div class="position-absolute" style="top: 2px; right: 30px; pointer-events: none;">
-                            <i class="fas fa-lock text-danger" title="@title"></i>
+                            <i title="@title"></i>
                         </div>
                     }
                 </div>;

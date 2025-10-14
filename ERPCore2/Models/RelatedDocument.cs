@@ -13,7 +13,12 @@ namespace ERPCore2.Models
         /// <summary>
         /// 沖款單（應付帳款或應收帳款）
         /// </summary>
-        SetoffDocument
+        SetoffDocument,
+        
+        /// <summary>
+        /// 入庫單（採購進貨）
+        /// </summary>
+        ReceivingDocument
     }
 
     /// <summary>
@@ -59,23 +64,35 @@ namespace ERPCore2.Models
         /// <summary>
         /// 顯示圖示
         /// </summary>
-        public string Icon => DocumentType == RelatedDocumentType.ReturnDocument 
-            ? "bi-arrow-return-left" 
-            : "bi-cash-coin";
+        public string Icon => DocumentType switch
+        {
+            RelatedDocumentType.ReturnDocument => "bi-arrow-return-left",
+            RelatedDocumentType.SetoffDocument => "bi-cash-coin",
+            RelatedDocumentType.ReceivingDocument => "bi-box-seam",
+            _ => "bi-file-text"
+        };
 
         /// <summary>
         /// 顯示顏色
         /// </summary>
-        public string BadgeColor => DocumentType == RelatedDocumentType.ReturnDocument 
-            ? "warning" 
-            : "success";
+        public string BadgeColor => DocumentType switch
+        {
+            RelatedDocumentType.ReturnDocument => "warning",
+            RelatedDocumentType.SetoffDocument => "success",
+            RelatedDocumentType.ReceivingDocument => "info",
+            _ => "secondary"
+        };
 
         /// <summary>
         /// 類型顯示名稱
         /// </summary>
-        public string TypeDisplayName => DocumentType == RelatedDocumentType.ReturnDocument 
-            ? "退貨單" 
-            : "沖款單";
+        public string TypeDisplayName => DocumentType switch
+        {
+            RelatedDocumentType.ReturnDocument => "退貨單",
+            RelatedDocumentType.SetoffDocument => "沖款單",
+            RelatedDocumentType.ReceivingDocument => "入庫單",
+            _ => "未知單據"
+        };
     }
 
     /// <summary>

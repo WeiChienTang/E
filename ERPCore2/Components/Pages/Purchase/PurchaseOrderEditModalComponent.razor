@@ -729,21 +729,18 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
+        // 如果採購單已核准，隱藏所有按鈕（返回空列表）
+        bool isApproved = editModalComponent?.Entity?.IsApproved ?? false;
+        if (isApproved)
+        {
+            return new List<FieldActionButton>();
+        }
+        
         var buttons = await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             supplierModalManager, 
             nameof(PurchaseOrder.SupplierId)
         );
-        
-        // 如果採購單已核准，禁用所有按鈕
-        bool isApproved = editModalComponent?.Entity?.IsApproved ?? false;
-        if (isApproved)
-        {
-            foreach (var button in buttons)
-            {
-                button.IsDisabled = true;
-            }
-        }
         
         return buttons;
     }
