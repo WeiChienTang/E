@@ -43,12 +43,10 @@ else
             <div class="d-flex justify-content-end gap-2">
                 <GenericButtonComponent Text="全部沖款"
                                       Variant="ButtonVariant.Success"
-                                      IconClass="fas fa-check-double"
                                       OnClick="FillAllSetoffAmounts"
                                       IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
                 <GenericButtonComponent Text="沖款清空"
                                       Variant="ButtonVariant.Danger"
-                                      IconClass="fas fa-eraser"
                                       OnClick="ClearAllSetoffAmounts"
                                       IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
             </div>
@@ -266,7 +264,7 @@ else
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
-                    return @<div class="text-start">@setoffItem.UnsettledDetail?.SourceDocumentNumber</div>;
+                    return @<div class="text-start" style="font-size: 0.9rem;">@setoffItem.UnsettledDetail?.SourceDocumentNumber</div>;
                 }
             },
             new()
@@ -278,7 +276,7 @@ else
                 CustomTemplate = item =>
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
-                    return @<div>@setoffItem.Product?.Code @setoffItem.Product?.Name</div>;
+                    return @<div style="font-size: 0.9rem;">@setoffItem.Product?.Code @setoffItem.Product?.Name</div>;
                 }
             },
             new()
@@ -294,7 +292,7 @@ else
                     var cssClass = detail?.IsReturn == true ? "text-danger" : "text-success";
                     var amount = detail?.TotalAmount ?? 0;
                     var displayAmount = detail?.IsReturn == true ? -amount : amount;
-                    return @<div class="text-end fw-bold @cssClass">@displayAmount.ToString("N2")</div>;
+                    return @<div class="text-end fw-bold @cssClass" style="font-size: 0.9rem;">@displayAmount.ToString("N2")</div>;
                 }
             },
             new()
@@ -310,7 +308,7 @@ else
                     var remainingAmount = detail?.RemainingAmount ?? 0;
                     var displayAmount = detail?.IsReturn == true ? -remainingAmount : remainingAmount;
                     var cssClass = remainingAmount > 0 ? "text-warning fw-bold" : "text-muted";
-                    return @<div class="text-end @cssClass">@displayAmount.ToString("N2")</div>;
+                    return @<div class="text-end @cssClass" style="font-size: 0.9rem;">@displayAmount.ToString("N2")</div>;
                 }
             },
             new()
@@ -379,7 +377,7 @@ else
                 var displayValue = subtotal == 0 ? "" : displaySubtotal.ToString("N2");
                 // 根據正負數決定顏色：正數為綠色，負數為紅色
                 var cssClass = displaySubtotal >= 0 ? "text-success" : "text-danger";
-                return @<div class="text-end fw-bold @cssClass">@displayValue</div>;
+                return @<div class="text-end fw-bold @cssClass" style="font-size: 0.9rem;">@displayValue</div>;
             }
         });
 

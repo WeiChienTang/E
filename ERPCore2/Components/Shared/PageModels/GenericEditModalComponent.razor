@@ -21,8 +21,8 @@
 @* Bootstrap Modal *@
 @if (IsVisible)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-        <div class="modal-dialog @GetModalSizeClass()">
+    <div class="modal fade show" tabindex="-1" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; overflow: hidden;">
+        <div class="modal-dialog @GetModalSizeClass()" style="position: relative; margin: 1.5rem auto; max-height: calc(100vh - 3rem);">
             <div class="modal-content">
                 @* Modal Header *@
                 <div class="modal-header">

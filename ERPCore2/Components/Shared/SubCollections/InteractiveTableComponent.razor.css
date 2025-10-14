@@ -1,8 +1,62 @@
 /* InteractiveTableComponent 專用樣式 */
 
+/* ===== 表頭樣式 - 參考 GenericEditModalComponent Header 但保持適當字體大小 ===== */
+
+.interactive-table thead {
+    background: #1F2937 !important;
+    color: white !important;
+    border-radius: 12px 12px 0 0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.interactive-table thead th {
+    background: transparent !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.2) !important; /* 恢復分隔線，使用半透明白色 */
+    border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important; /* 底部邊框稍粗 */
+    border-top: none !important;
+    padding: 0.2rem 0.75rem !important; /* 進一步縮小上下內邊距 */
+    font-weight: 600 !important;
+    font-size: 1rem !important; /* 調整為正常大小，不再過大 */
+    vertical-align: middle !important;
+    transition: all 0.2s ease !important;
+}
+
+/* 移除表頭第一個儲存格的左邊框 */
+.interactive-table thead tr th:first-child {
+    border-top-left-radius: 12px !important;
+    border-left: none !important;
+}
+
+/* 移除表頭最後一個儲存格的右邊框 */
+.interactive-table thead tr th:last-child {
+    border-top-right-radius: 12px !important;
+    border-right: none !important;
+}
+
+/* 表頭圖標樣式 */
+.interactive-table thead th i {
+    color: rgba(255, 255, 255, 0.9) !important;
+    margin-right: 0.5rem;
+}
+
+/* 表頭必填標記樣式 */
+.interactive-table thead th .text-danger {
+    color: rgba(255, 150, 150, 0.95) !important;
+    font-weight: bold !important;
+}
+
 /* 表格基本樣式 */
 .interactive-table tbody tr {
     min-height: 44px; /* 確保行有足夠高度 */
+}
+
+/* 表格儲存格的 padding 設定 */
+.interactive-table tbody td {
+    padding: 0.2rem 0.75rem !important; /* 進一步縮小上下內邊距 */
+    vertical-align: middle; /* 所有儲存格內容垂直置中 */
 }
 
     /* 操作欄位智慧調整樣式 - 手機版也使用自動調整 */
@@ -62,7 +116,7 @@
     white-space: nowrap; /* 防止內容換行 */
     vertical-align: middle !important; /* 垂直置中 */
     text-align: center !important; /* 水平置中 */
-    padding: 0.5rem 0.25rem !important; /* 適當的內邊距 */
+    padding: 0.2rem 0.25rem !important; /* 進一步縮小上下內邊距 */
 }
 
 /* 當操作欄位有明確寬度設定時，尊重該設定 */
@@ -92,6 +146,12 @@
 
 /* 手機版優化 */
 @media (max-width: 767px) {
+    /* 表頭在手機版的樣式調整 */
+    .interactive-table thead th {
+        padding: 0.15rem 0.5rem !important; /* 進一步縮小上下內邊距 */
+        font-size: 0.875rem !important; /* 手機版使用稍小的字體 */
+    }
+    
     /* 表格容器水平滾動設置 */
     .table-responsive {
         overflow-x: auto;
@@ -111,7 +171,7 @@
     /* 表格儲存格在手機版的樣式調整 */
     .table-responsive .table td,
     .table-responsive .table th {
-        padding: 0.5rem 0.75rem;
+        padding: 0.15rem 0.75rem; /* 進一步縮小上下內邊距 */
         white-space: nowrap;
     }
     
@@ -163,7 +223,7 @@
     .table-responsive .table .table-actions-column {
         min-width: 120px !important; /* 增加最小寬度以確保有足夠空間容納按鈕 */
         white-space: nowrap; /* 防止內容換行 */
-        padding: 0.375rem 0.75rem !important; /* 增加左右內邊距提供更多空間 */
+        padding: 0.15rem 0.75rem !important; /* 進一步縮小上下內邊距 */
         vertical-align: middle !important; /* 垂直置中 */
         text-align: center !important; /* 水平置中 */
     }
@@ -277,8 +337,27 @@
 
 /* 確保表格在所有螢幕尺寸下都能正常顯示 */
 .table-responsive {
-    border-radius: 0.375rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden; /* 確保圓角效果正確顯示 */
+}
+
+/* 表格整體容器樣式 */
+.interactive-table-container {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 表格本身的樣式 */
+.interactive-table {
+    margin-bottom: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* 確保 tbody 與 thead 無縫連接 */
+.interactive-table tbody tr:first-child td {
+    border-top: 2px solid #e5e7eb !important;
 }
 
 /* 搜尋下拉選單優化 - 解決容器限制問題 */

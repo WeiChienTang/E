@@ -24,8 +24,8 @@
                 @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
                 @foreach (var section in GetOrderedSections())
                 {
-                    <div class="mb-4">
-                        <h6 class="text-primary border-bottom pb-2 mb-3">@(section.Key)</h6>
+                    <div class="mb-2">
+                        <h6 class="text-primary border-bottom pb-2 mb-2">@(section.Key)</h6>
                         <div class="row g-3">
                             @foreach (var fieldKvp in section)
                             {
@@ -53,7 +53,7 @@
             }              
             @if (ShowFormButtons)
             {
-                <div class="mt-4 d-flex gap-2">
+                <div class="mt-2 d-flex gap-2">
                     <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@SubmitButtonText" 
                                            OnClick="@(async () => await HandleValidSubmit())" IsDisabled="@IsSubmitting" 
                                            IsLoading="@IsSubmitting" IsSubmit="true" />
@@ -242,8 +242,8 @@
 
     private RenderFragment RenderField(FormFieldDefinition field) => builder =>
     {
-        var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
-        
+    var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
+            
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", containerCssClass);
         
@@ -285,21 +285,22 @@
                     builder.AddAttribute(buttonSequence + 1, "Text", actionButton.Text);
                     builder.AddAttribute(buttonSequence + 2, "Variant", GetButtonVariant(actionButton.Variant));
                     builder.AddAttribute(buttonSequence + 3, "Size", GetButtonSize(actionButton.Size));
+                    builder.AddAttribute(buttonSequence + 4, "CssClass", "field-action-button"); // 添加特定 CSS class
                     if (!string.IsNullOrEmpty(actionButton.IconClass))
                     {
-                        builder.AddAttribute(buttonSequence + 4, "IconClass", actionButton.IconClass);
+                        builder.AddAttribute(buttonSequence + 5, "IconClass", actionButton.IconClass);
                     }
                     if (!string.IsNullOrEmpty(actionButton.Title))
                     {
-                        builder.AddAttribute(buttonSequence + 5, "Title", actionButton.Title);
+                        builder.AddAttribute(buttonSequence + 6, "Title", actionButton.Title);
                     }
                     if (actionButton.OnClick != null)
                     {
-                        builder.AddAttribute(buttonSequence + 6, "OnClick", EventCallback.Factory.Create(this, actionButton.OnClick));
+                        builder.AddAttribute(buttonSequence + 7, "OnClick", EventCallback.Factory.Create(this, actionButton.OnClick));
                     }
-                    builder.AddAttribute(buttonSequence + 7, "IsDisabled", actionButton.IsDisabled);
+                    builder.AddAttribute(buttonSequence + 8, "IsDisabled", actionButton.IsDisabled);
                     builder.CloseComponent();
-                    buttonSequence += 8;
+                    buttonSequence += 9;
                 }
             }
             
