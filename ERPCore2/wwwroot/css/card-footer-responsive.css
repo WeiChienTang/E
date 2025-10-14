@@ -1,0 +1,127 @@
+/* ========================================
+   Card Footer 響應式佈局優化
+   適用於所有 SubCollections 組件的 footer 按鈕
+   ======================================== */
+
+/* 手機版優化 (< 768px) */
+@media (max-width: 767px) {
+    /* ===== 基礎佈局調整 ===== */
+    
+    /* 將 justify-content-between 容器改為垂直排列 */
+    .card-footer .d-flex.justify-content-between {
+        flex-direction: column !important;
+        gap: 0.75rem; /* 按鈕群組之間的間距 */
+    }
+    
+    /* 將按鈕群組改為垂直排列，每個按鈕占滿寬度 */
+    .card-footer .d-flex.gap-2 {
+        flex-direction: column !important;
+        gap: 0.5rem !important; /* 按鈕之間的間距 */
+        width: 100%;
+    }
+    
+    /* 將左側單個按鈕容器也改為全寬 */
+    .card-footer .d-flex.justify-content-between > div {
+        width: 100%;
+    }
+    
+    /* ===== 按鈕樣式統一 ===== */
+    
+    /* 所有按鈕在手機版都改為全寬 */
+    .card-footer .btn,
+    .card-footer .dropdown > .btn {
+        width: 100% !important;
+        text-align: center;
+        justify-content: center;
+        min-height: 44px; /* 符合觸控友善標準（建議 44x44px） */
+        font-size: 1rem; /* 確保文字大小適中 */
+        padding: 0.75rem 1rem; /* 增加內邊距以改善觸控體驗 */
+    }
+    
+    /* ===== 下拉選單特殊處理 ===== */
+    
+    /* 統一倉庫等下拉選單按鈕全寬 */
+    .card-footer .dropdown {
+        width: 100%;
+    }
+    
+    /* 下拉選單的觸發按鈕 */
+    .card-footer .dropdown > .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    /* 下拉選單內容也要全寬 */
+    .card-footer .dropdown-menu {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* ===== 按鈕圖標與文字對齊 ===== */
+    
+    /* 確保按鈕內的圖標與文字正確對齊 */
+    .card-footer .btn i {
+        margin-right: 0.5rem;
+    }
+    
+    /* 確保按鈕內容居中 */
+    .card-footer .btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* ===== 優化視覺效果 ===== */
+    
+    /* card-footer 本身的內邊距調整 */
+    .card-footer {
+        padding: 1rem !important;
+    }
+    
+    /* 為按鈕群組添加微妙的分隔 */
+    .card-footer .d-flex.justify-content-between > div:not(:last-child) {
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* 平板版微調 (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    /* 平板版可以保持原有的水平佈局，但稍微增加按鈕間距 */
+    .card-footer .d-flex.gap-2 {
+        gap: 0.5rem !important;
+    }
+    
+    /* 確保按鈕有適當的最小寬度 */
+    .card-footer .btn {
+        min-width: 120px;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* 桌面版 (>= 992px) - 保持原有樣式，不做修改 */
+@media (min-width: 992px) {
+    /* 桌面版使用原有的 Bootstrap 預設樣式 */
+    /* 這裡故意留空，表示不覆蓋任何樣式 */
+}
+
+/* ===== 特殊情況處理 ===== */
+
+/* 如果按鈕文字過長，允許換行（僅手機版） */
+@media (max-width: 767px) {
+    .card-footer .btn {
+        white-space: normal !important;
+        word-wrap: break-word;
+        line-height: 1.4;
+    }
+}
+
+/* 確保在所有尺寸下，disabled 按鈕的樣式一致 */
+.card-footer .btn:disabled,
+.card-footer .btn.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}

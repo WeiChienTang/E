@@ -780,7 +780,11 @@ namespace ERPCore2.Services
                     // 被刪除的明細，數量差異是負的原數量 (撤銷退貨)
                     quantityChanges.Add((detailToDelete, -detailToDelete.ReturnQuantity));
                     
-                    detailToDelete.UpdatedAt = DateTime.UtcNow;
+                    // 實際從資料庫刪除明細（硬刪除）
+                    context.PurchaseReturnDetails.Remove(detailToDelete);
+                    
+                    _logger?.LogInformation("刪除退貨明細 - 明細ID: {DetailId}, 商品ID: {ProductId}, 數量: {Quantity}", 
+                                          detailToDelete.Id, detailToDelete.ProductId, detailToDelete.ReturnQuantity);
                 }
 
                 foreach (var (existing, updated) in updatedDetailsToUpdate)
