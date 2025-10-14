@@ -482,6 +482,12 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 檢查採購單是否可以刪除（基類覆寫方法）
+        /// 檢查邏輯：
+        /// 1. 先執行基類的刪除檢查（外鍵關聯等）
+        /// 2. 檢查所有明細項目是否已有入庫記錄
+        ///    - 檢查欄位：ReceivedQuantity (已進貨數量)
+        ///    - 限制原因：已入庫的採購單不可刪除，以保持庫存資料一致性
+        /// 注意：不再檢查「是否已核准」，改為檢查「是否已入庫」
         /// </summary>
         /// <param name="entity">採購單實體</param>
         /// <returns>刪除檢查結果</returns>
@@ -489,18 +495,52 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 檢查是否已核准 - 已核准的採購單不可刪除
-                if (entity.IsApproved)
+                // 1. 先檢查基類的刪除條件（外鍵關聯等）
+                var baseResult = await base.CanDeleteAsync(entity);
+                if (!baseResult.IsSuccess)
                 {
-                    return ServiceResult.Failure("已核准的採購單無法刪除");
+                    return baseResult;
                 }
+
+                // 2. 載入明細資料（如果尚未載入）
+                using var context = await _contextFactory.CreateDbContextAsync();
                 
+                var loadedEntity = await context.PurchaseOrders
+                    .Include(po => po.PurchaseOrderDetails)
+                        .ThenInclude(pod => pod.Product)
+                    .FirstOrDefaultAsync(po => po.Id == entity.Id);
+
+                if (loadedEntity == null)
+                {
+                    return ServiceResult.Failure("找不到要檢查的採購單");
+                }
+
+                // 如果沒有明細，可以刪除
+                if (loadedEntity.PurchaseOrderDetails == null || !loadedEntity.PurchaseOrderDetails.Any())
+                {
+                    return ServiceResult.Success();
+                }
+
+                // 3. 檢查每個明細項目是否已有入庫記錄
+                foreach (var detail in loadedEntity.PurchaseOrderDetails)
+                {
+                    if (detail.ReceivedQuantity > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此採購單，因為商品「{productName}」已有入庫記錄（已入庫 {detail.ReceivedQuantity} 個）"
+                        );
+                    }
+                }
+
+                // 4. 檢查其他依賴關係
                 var checkResult = await DependencyCheckHelper.CheckPurchaseOrderDependenciesAsync(_contextFactory, entity.Id);
                 if (!checkResult.CanDelete)
                 {
                     return ServiceResult.Failure(checkResult.GetFormattedErrorMessage("採購單"));
                 }
                 
+                // 5. 所有檢查通過，允許刪除
                 return ServiceResult.Success();
             }
             catch (Exception ex)

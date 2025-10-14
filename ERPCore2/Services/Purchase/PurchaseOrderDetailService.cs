@@ -189,6 +189,61 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 檢查採購訂單明細是否可以被刪除
+        /// 檢查邏輯：
+        /// 1. 先執行基類的刪除檢查（外鍵關聯等）
+        /// 2. 檢查明細是否已有入庫記錄
+        ///    - 檢查欄位：ReceivedQuantity (已進貨數量)
+        ///    - 限制原因：已入庫的明細不可刪除，以保持庫存資料一致性
+        /// </summary>
+        /// <param name="entity">要檢查的採購訂單明細實體</param>
+        /// <returns>檢查結果，包含是否可刪除及錯誤訊息</returns>
+        protected override async Task<ServiceResult> CanDeleteAsync(PurchaseOrderDetail entity)
+        {
+            try
+            {
+                // 1. 先檢查基類的刪除條件（外鍵關聯等）
+                var baseResult = await base.CanDeleteAsync(entity);
+                if (!baseResult.IsSuccess)
+                {
+                    return baseResult;
+                }
+
+                // 2. 載入明細資料（如果尚未載入）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var loadedEntity = await context.PurchaseOrderDetails
+                    .Include(pod => pod.Product)
+                    .FirstOrDefaultAsync(pod => pod.Id == entity.Id);
+
+                if (loadedEntity == null)
+                {
+                    return ServiceResult.Failure("找不到要檢查的採購訂單明細");
+                }
+
+                // 3. 檢查是否已有入庫記錄
+                if (loadedEntity.ReceivedQuantity > 0)
+                {
+                    var productName = loadedEntity.Product?.Name ?? "未知商品";
+                    return ServiceResult.Failure(
+                        $"無法刪除此明細，因為商品「{productName}」已有入庫記錄（已入庫 {loadedEntity.ReceivedQuantity} 個）"
+                    );
+                }
+
+                // 4. 所有檢查通過，允許刪除
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(
+                    ex, nameof(CanDeleteAsync), GetType(), _logger,
+                    new { EntityId = entity.Id, ProductId = entity.ProductId }
+                );
+                return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+            }
+        }
+
         #endregion
 
         #region 特定查詢方法

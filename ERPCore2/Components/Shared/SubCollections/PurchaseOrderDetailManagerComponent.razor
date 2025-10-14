@@ -101,10 +101,14 @@ else
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 相關單據開啟事件 =====
+    [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
 
     private List<ProductItem> ProductItems { get; set; } = new List<ProductItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private int? _previousSelectedSupplierId = null;
+    private bool _isInitialized = false; // 新增初始化標記
     
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -114,13 +118,24 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // 初始化時記錄當前供應商ID，避免 OnParametersSetAsync 誤判為變更
+        _previousSelectedSupplierId = SelectedSupplierId;
+        
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
+        
+        _isInitialized = true; // 標記為已初始化
     }
 
     protected override async Task OnParametersSetAsync()
     {
         base.OnParametersSet();
+        
+        // 如果還沒初始化完成，不處理參數變更（避免重複載入）
+        if (!_isInitialized)
+        {
+            return;
+        }
         
         // 檢查供應商是否變更
         if (_previousSelectedSupplierId != SelectedSupplierId)
@@ -829,51 +844,30 @@ else
     /// </summary>
     private async Task ShowRelatedDocuments(ProductItem item)
     {
-        Console.WriteLine($"[PurchaseOrderDetailManager] ShowRelatedDocuments 被調用");
-        Console.WriteLine($"[PurchaseOrderDetailManager] Item.SelectedProduct: {item.SelectedProduct?.Name}");
-        Console.WriteLine($"[PurchaseOrderDetailManager] Item.ExistingDetailEntity: {item.ExistingDetailEntity?.GetType().Name}");
-        Console.WriteLine($"[PurchaseOrderDetailManager] Item.ExistingDetailEntity.Id: {(item.ExistingDetailEntity as PurchaseOrderDetail)?.Id}");
-        
         if (item.ExistingDetailEntity is not PurchaseOrderDetail detail || detail.Id <= 0)
         {
-            Console.WriteLine($"[PurchaseOrderDetailManager] 項目尚未儲存，無法查看相關單據");
             await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
             return;
         }
 
         selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
-        Console.WriteLine($"[PurchaseOrderDetailManager] 設定 selectedProductName: {selectedProductName}");
         
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
         relatedDocuments = null;
-        Console.WriteLine($"[PurchaseOrderDetailManager] 開啟 Modal, showRelatedDocumentsModal: {showRelatedDocumentsModal}");
         StateHasChanged();
 
         try
         {
-            Console.WriteLine($"[PurchaseOrderDetailManager] 查詢採購訂單明細 ID: {detail.Id} 的相關入庫單");
             relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForPurchaseOrderDetailAsync(detail.Id);
-            Console.WriteLine($"[PurchaseOrderDetailManager] 找到 {relatedDocuments?.Count ?? 0} 筆相關入庫單");
-            
-            if (relatedDocuments?.Any() == true)
-            {
-                foreach (var doc in relatedDocuments)
-                {
-                    Console.WriteLine($"  - 入庫單: {doc.DocumentNumber}, 日期: {doc.DocumentDate:yyyy-MM-dd}, 數量: {doc.Quantity}");
-                }
-            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[PurchaseOrderDetailManager] 載入相關單據失敗: {ex.Message}");
-            Console.WriteLine($"[PurchaseOrderDetailManager] StackTrace: {ex.StackTrace}");
             await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
         }
         finally
         {
             isLoadingRelatedDocuments = false;
-            Console.WriteLine($"[PurchaseOrderDetailManager] isLoadingRelatedDocuments: {isLoadingRelatedDocuments}");
             StateHasChanged();
         }
     }
@@ -883,13 +877,20 @@ else
     /// </summary>
     private async Task HandleRelatedDocumentClick(RelatedDocument document)
     {
-        // 目前只顯示提示訊息
-        await NotificationService.ShowInfoAsync(
-            $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
-            "提示"
-        );
-        
-        // TODO: 未來可以考慮添加 EventCallback 參數，讓父組件處理開啟 Modal 的邏輯
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        // 注意：不關閉 RelatedDocumentsModal，讓使用者可以繼續查看列表
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理，顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+                "提示"
+            );
+        }
     }
     
     /// <summary>
@@ -899,21 +900,17 @@ else
     {
         if (item.ExistingDetailEntity is not PurchaseOrderDetail detail || detail.Id <= 0)
         {
-            Console.WriteLine($"[HasUsageRecord] 項目沒有現有明細或 ID <= 0");
             return false;
         }
 
         try
         {
-            Console.WriteLine($"[HasUsageRecord] 檢查採購訂單明細 ID: {detail.Id}");
             var documents = await RelatedDocumentsHelper.GetRelatedDocumentsForPurchaseOrderDetailAsync(detail.Id);
             var hasUsage = documents?.Any() == true;
-            Console.WriteLine($"[HasUsageRecord] 採購訂單明細 ID: {detail.Id}, 是否被使用: {hasUsage}, 相關單據數: {documents?.Count ?? 0}");
             return hasUsage;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[HasUsageRecord] 檢查失敗: {ex.Message}");
             return false;
         }
     }

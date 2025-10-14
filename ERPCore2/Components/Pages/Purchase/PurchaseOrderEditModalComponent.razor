@@ -72,7 +72,13 @@
                            OnSupplierSaved="@OnSupplierSavedWrapper"
                            OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 
-
+@* 進貨單編輯 Modal *@
+<PurchaseReceivingEditModalComponent @ref="purchaseReceivingEditModal"
+                                     IsVisible="@showPurchaseReceivingModal"
+                                     IsVisibleChanged="@((bool visible) => showPurchaseReceivingModal = visible)"
+                                     PurchaseReceivingId="@selectedPurchaseReceivingId"
+                                     OnPurchaseReceivingSaved="@HandlePurchaseReceivingSaved"
+                                     OnCancel="@(() => showPurchaseReceivingModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -100,6 +106,11 @@
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    
+    // ===== 相關單據 Modal =====
+    private PurchaseReceivingEditModalComponent? purchaseReceivingEditModal;
+    private bool showPurchaseReceivingModal = false;
+    private int? selectedPurchaseReceivingId = null;
     
     // 下拉選單選項（向下相容）
     private List<Supplier> suppliers = new();
@@ -662,7 +673,8 @@
                                                    ReceivedQuantityPropertyName="ReceivedQuantity"
                                                    UnitPricePropertyName="UnitPrice"
                                                    RemarksPropertyName="Remarks"
-                                                   IsReadOnly="@(editModalComponent.Entity.IsApproved)" />
+                                                   IsReadOnly="@(editModalComponent.Entity.IsApproved)"
+                                                   OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
                     }
                     else
                     {
@@ -1315,6 +1327,65 @@
         {
             isConvertingToReceiving = false;
             StateHasChanged();
+        }
+    }
+    
+    // ===== 相關單據開啟處理方法 =====
+    
+    /// <summary>
+    /// 處理開啟相關單據的事件
+    /// </summary>
+    private async Task HandleOpenRelatedDocument((RelatedDocumentType type, int id) args)
+    {
+        try
+        {
+            switch (args.type)
+            {
+                case RelatedDocumentType.ReceivingDocument:
+                    // 開啟進貨單 Modal
+                    selectedPurchaseReceivingId = args.id;
+                    showPurchaseReceivingModal = true;
+                    StateHasChanged();
+                    break;
+                    
+                default:
+                    await NotificationService.ShowWarningAsync($"不支援的單據類型：{args.type}");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleOpenRelatedDocument), GetType(), 
+                additionalData: $"開啟相關單據失敗 - Type: {args.type}, Id: {args.id}");
+            await NotificationService.ShowErrorAsync("開啟單據時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 處理進貨單儲存後的事件
+    /// </summary>
+    private async Task HandlePurchaseReceivingSaved(PurchaseReceiving savedReceiving)
+    {
+        try
+        {
+            // 關閉 Modal
+            showPurchaseReceivingModal = false;
+            
+            // 重新載入採購單明細以更新已收貨數量
+            if (PurchaseOrderId.HasValue)
+            {
+                await LoadPurchaseOrderDetails(PurchaseOrderId.Value);
+                
+                // 通知使用者
+                await NotificationService.ShowSuccessAsync($"進貨單 {savedReceiving.ReceiptNumber} 已更新");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReceivingSaved), GetType(), 
+                additionalData: $"處理進貨單儲存事件失敗 - ReceivingId: {savedReceiving?.Id}");
         }
     }
 }
