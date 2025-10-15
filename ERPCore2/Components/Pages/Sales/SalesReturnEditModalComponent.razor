@@ -47,6 +47,8 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          GetStatusMessage="@GetStatusMessage"
+                          FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()" />
 
 @* 客戶編輯 Modal *@
@@ -99,6 +101,7 @@
     
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false;
+    private bool isDetailDataReady = false;
     
     // ===== Modal 管理器 =====
     private CustomerEditModalComponent? customerEditModal;
@@ -184,6 +187,9 @@
     {
         try
         {
+            isDetailDataReady = false;
+            hasUndeletableDetails = false;
+            
             if (SalesReturnId.HasValue)
             {
                 // 編輯模式：載入現有資料
@@ -192,6 +198,15 @@
                 {
                     // 載入對應的退貨明細
                     await LoadSalesReturnDetails(salesReturn.Id);
+                    
+                    // 🔑 關鍵：載入明細相關資料（沖款記錄）
+                    await LoadDetailRelatedDataAsync();
+                    isDetailDataReady = true;
+                    StateHasChanged();
+                }
+                else
+                {
+                    isDetailDataReady = true;
                 }
                 return salesReturn;
             }
@@ -208,6 +223,7 @@
                 
                 // 初始化空的明細列表
                 salesReturnDetails = new List<SalesReturnDetail>();
+                isDetailDataReady = true;
                 
                 return newSalesReturn;
             }
@@ -215,7 +231,48 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入銷售退貨資料時發生錯誤：{ex.Message}");
+            isDetailDataReady = true; // 錯誤也要允許渲染
             return null;
+        }
+    }
+
+    /// <summary>
+    /// 載入明細相關資料（沖款記錄）- 用於判斷是否有不可刪除的明細
+    /// 必須在 DataLoader 中同步執行，確保狀態訊息正確顯示
+    /// </summary>
+    private async Task LoadDetailRelatedDataAsync()
+    {
+        try
+        {
+            if (!salesReturnDetails.Any())
+            {
+                hasUndeletableDetails = false;
+                return;
+            }
+
+            bool hasUndeletable = false;
+            
+            foreach (var detail in salesReturnDetails.Where(d => d.Id > 0))
+            {
+                // 檢查沖款記錄
+                if (detail.TotalPaidAmount > 0)
+                {
+                    hasUndeletable = true;
+                    break;
+                }
+            }
+            
+            hasUndeletableDetails = hasUndeletable;
+            
+            if (hasUndeletableDetails)
+            {
+                UpdateFieldsReadOnlyState();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDetailRelatedDataAsync), GetType());
+            hasUndeletableDetails = false;
         }
     }
 
@@ -831,6 +888,50 @@
     }
 
     /// <summary>
+    /// 取得狀態訊息（頂部徽章）
+    /// 當有不可刪除的明細時，顯示鎖定提示
+    /// </summary>
+    private async Task<(string Message, GenericEditModalComponent<SalesReturn, ISalesReturnService>.BadgeVariant Variant, string IconClass)?> 
+        GetStatusMessage()
+    {
+        try
+        {
+            if (!isDetailDataReady || editModalComponent?.Entity == null)
+                return null;
+            
+            if (hasUndeletableDetails)
+            {
+                return (
+                    "明細有沖款記錄，主檔欄位已鎖定",
+                    GenericEditModalComponent<SalesReturn, ISalesReturnService>.BadgeVariant.Warning,
+                    "fas fa-lock"
+                );
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetStatusMessage), GetType());
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 取得警告訊息（表單頂部）
+    /// 當有不可刪除的明細時，顯示詳細說明
+    /// </summary>
+    private RenderFragment? GetWarningMessage() => __builder =>
+    {
+        @if (isDetailDataReady && hasUndeletableDetails)
+        {
+            <div class="alert alert-warning mb-2 py-2" role="alert">
+                <i class="fas fa-lock me-2"></i>因部分明細有沖款記錄，為保護資料完整性主檔欄位已設唯讀。
+            </div>
+        }
+    };
+
+    /// <summary>
     /// 處理欄位值變更事件
     /// </summary>
     private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
@@ -1026,8 +1127,15 @@
         {
             @if (editModalComponent?.Entity != null)
             {
+                @if (!isDetailDataReady)
+                {
+                    <div class="d-flex justify-content-center align-items-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span class="text-muted">載入明細資料中...</span>
+                    </div>
+                }
                 // 檢查是否有可用的商品和倉庫資料
-                @if (products != null && products.Any() && warehouses != null && warehouses.Any())
+                else if (products != null && products.Any() && warehouses != null && warehouses.Any())
                 {
                     // 檢查是否已選擇客戶
                     @if (editModalComponent.Entity.CustomerId > 0)

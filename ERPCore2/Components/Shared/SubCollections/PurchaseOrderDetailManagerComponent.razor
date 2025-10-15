@@ -46,8 +46,8 @@ else
                                           IsDisabled="@(!CanUseSmartPurchase || IsMainEntityApproved)" />
                 </div>
                 <div class="d-flex gap-2">
-                    <GenericButtonComponent Text="明細全移除"
-                                          Variant="ButtonVariant.Info"
+                    <GenericButtonComponent Text="清除明細"
+                                          Variant="ButtonVariant.Danger"
                                           OnClick="ClearAllDetails"
                                           IsDisabled="@IsMainEntityApproved" />
                 </div>

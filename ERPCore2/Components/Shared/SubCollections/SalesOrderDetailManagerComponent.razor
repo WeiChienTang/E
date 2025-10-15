@@ -52,7 +52,7 @@ else
                     @* 統一倉庫下拉選單 *@
                     <div class="dropdown">
                         <GenericButtonComponent Text="統一倉庫"
-                                              Variant="ButtonVariant.Warning"
+                                              Variant="ButtonVariant.Primary"
                                               IsDisabled="@(SalesItems.Count == 0 || IsReadOnly || !SalesItems.Any(x => !IsEmptyRow(x)))"
                                               AdditionalAttributes="@(new Dictionary<string, object> 
                                               { 
@@ -81,8 +81,8 @@ else
                         </ul>
                     </div>
                     
-                    <GenericButtonComponent Text="明細全移除"
-                                          Variant="ButtonVariant.Info"
+                    <GenericButtonComponent Text="清除明細"
+                                          Variant="ButtonVariant.Danger"
                                           OnClick="ClearAllDetails"
                                           IsDisabled="@IsReadOnly" />
                 </div>

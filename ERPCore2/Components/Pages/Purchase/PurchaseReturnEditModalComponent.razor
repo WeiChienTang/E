@@ -40,6 +40,8 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          GetStatusMessage="@GetStatusMessage"
+                          FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()" />
 
 @* 廠商編輯 Modal *@
@@ -101,6 +103,7 @@
 
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false;
+    private bool isDetailDataReady = false;
 
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
@@ -177,9 +180,13 @@
     {
         try
         {
+            isDetailDataReady = false;
+            hasUndeletableDetails = false;
+            
             if (!PurchaseReturnId.HasValue)
             {
                 purchaseReturnDetails = new List<PurchaseReturnDetail>(); // 清空明細
+                isDetailDataReady = true;
                 
                 try
                 {
@@ -200,6 +207,7 @@
             {                
                 if (PurchaseReturnService == null)
                 {
+                    isDetailDataReady = true;
                     return null;
                 }
                 
@@ -218,6 +226,10 @@
                         purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
                     }
                     
+                    // 🔑 關鍵：載入明細相關資料（沖款記錄）
+                    await LoadDetailRelatedDataAsync();
+                    isDetailDataReady = true;
+                    StateHasChanged();
 
                     // 檢查並設定預設值
                     if (purchaseReturn.ReturnDate == default(DateTime))
@@ -234,6 +246,7 @@
                 else
                 {
                     purchaseReturnDetails = new List<PurchaseReturnDetail>();
+                    isDetailDataReady = true;
                 }
                 
                 return purchaseReturn;
@@ -243,7 +256,48 @@
         {            
             // 確保即使發生錯誤也要初始化明細列表
             purchaseReturnDetails = new List<PurchaseReturnDetail>();
+            isDetailDataReady = true; // 錯誤也要允許渲染
             return null;
+        }
+    }
+
+    /// <summary>
+    /// 載入明細相關資料（沖款記錄）- 用於判斷是否有不可刪除的明細
+    /// 必須在 DataLoader 中同步執行，確保狀態訊息正確顯示
+    /// </summary>
+    private async Task LoadDetailRelatedDataAsync()
+    {
+        try
+        {
+            if (!purchaseReturnDetails.Any())
+            {
+                hasUndeletableDetails = false;
+                return;
+            }
+
+            bool hasUndeletable = false;
+            
+            foreach (var detail in purchaseReturnDetails.Where(d => d.Id > 0))
+            {
+                // 檢查沖款記錄
+                if (detail.TotalReceivedAmount > 0)
+                {
+                    hasUndeletable = true;
+                    break;
+                }
+            }
+            
+            hasUndeletableDetails = hasUndeletable;
+            
+            if (hasUndeletableDetails)
+            {
+                UpdateFieldsReadOnlyState();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDetailRelatedDataAsync), GetType());
+            hasUndeletableDetails = false;
         }
     }
 
@@ -518,6 +572,50 @@
             remarksField.IsReadOnly = hasUndeletableDetails;
         }
     }
+
+    /// <summary>
+    /// 取得狀態訊息（頂部徽章）
+    /// 當有不可刪除的明細時，顯示鎖定提示
+    /// </summary>
+    private async Task<(string Message, GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.BadgeVariant Variant, string IconClass)?> 
+        GetStatusMessage()
+    {
+        try
+        {
+            if (!isDetailDataReady || editModalComponent?.Entity == null)
+                return null;
+            
+            if (hasUndeletableDetails)
+            {
+                return (
+                    "明細有沖款記錄，主檔欄位已鎖定",
+                    GenericEditModalComponent<PurchaseReturn, IPurchaseReturnService>.BadgeVariant.Warning,
+                    "fas fa-lock"
+                );
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetStatusMessage), GetType());
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 取得警告訊息（表單頂部）
+    /// 當有不可刪除的明細時，顯示詳細說明
+    /// </summary>
+    private RenderFragment? GetWarningMessage() => __builder =>
+    {
+        @if (isDetailDataReady && hasUndeletableDetails)
+        {
+            <div class="alert alert-warning mb-2 py-2" role="alert">
+                <i class="fas fa-lock me-2"></i>因部分明細有沖款記錄，為保護資料完整性主檔欄位已設唯讀。
+            </div>
+        }
+    };
 
     /// <summary>
     /// 取得商品篩選選項 - 根據選擇的廠商篩選
@@ -939,8 +1037,14 @@
 
             @if (editModalComponent?.Entity != null)
             {
-
-                @if (editModalComponent.Entity.SupplierId > 0)
+                @if (!isDetailDataReady)
+                {
+                    <div class="d-flex justify-content-center align-items-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span class="text-muted">載入明細資料中...</span>
+                    </div>
+                }
+                else if (editModalComponent.Entity.SupplierId > 0)
                 {
                     try
                     {

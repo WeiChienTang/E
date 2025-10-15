@@ -137,6 +137,16 @@
                     }
                     else
                     {
+                        @* 表單頂部內容（在所有欄位之前） *@
+                        @if (FormHeaderContent != null)
+                        {
+                            <div class="form-header-content">
+                                <CascadingValue Value="@editContext">
+                                    @FormHeaderContent
+                                </CascadingValue>
+                            </div>
+                        }
+
                         @* 基本表單 *@
                         @if (UseGenericForm && FormFields.Any())
                         {
@@ -303,6 +313,7 @@
     [Parameter] public Dictionary<string, int>? AutoCompleteMaxResults { get; set; }
     
     // 自訂內容
+    [Parameter] public RenderFragment? FormHeaderContent { get; set; }  // 表單頂部內容（在欄位之前）
     [Parameter] public RenderFragment? CustomFormContent { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
     

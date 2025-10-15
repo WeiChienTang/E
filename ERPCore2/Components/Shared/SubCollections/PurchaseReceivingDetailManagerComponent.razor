@@ -41,7 +41,7 @@ else
                 <div>
                     @if (CanLoadAllUnreceived)
                     {
-                        <GenericButtonComponent Text="載入所有未入庫"
+                        <GenericButtonComponent Text="載入未入庫"
                                               Variant="ButtonVariant.Info"
                                               OnClick="LoadAllUnreceivedItems" />
                     }
@@ -50,7 +50,7 @@ else
                     @* 統一倉庫下拉選單 *@
                     <div class="dropdown">
                         <GenericButtonComponent Text="統一倉庫"
-                                              Variant="ButtonVariant.Warning"
+                                              Variant="ButtonVariant.Primary"
                                               IsDisabled="@(ReceivingItems.Count == 0 || IsReadOnly || !ReceivingItems.Any(x => !IsEmptyRow(x)))"
                                               AdditionalAttributes="@(new Dictionary<string, object> 
                                               { 
@@ -67,7 +67,7 @@ else
                                         <a class="dropdown-item" href="#" 
                                            @onclick="() => ApplyUnifyWarehouse(warehouse.Id)" 
                                            @onclick:preventDefault="true">
-                                            <i class="fas fa-warehouse me-2"></i>@warehouse.Name
+                                            <i class="me-2"></i>@warehouse.Name
                                         </a>
                                     </li>
                                 }
@@ -79,14 +79,14 @@ else
                         </ul>
                     </div>
                 
-                    <GenericButtonComponent Text="進貨量全填"
-                                          Variant="ButtonVariant.Success"
+                    <GenericButtonComponent Text="進貨全填"
+                                          Variant="ButtonVariant.Primary"
                                           OnClick="FillAllQuantities" />
-                    <GenericButtonComponent Text="進貨量清空"
+                    <GenericButtonComponent Text="進貨清空"
                                           Variant="ButtonVariant.Danger"
                                           OnClick="ClearAllQuantities" />
                     <GenericButtonComponent Text="清除明細"
-                                          Variant="ButtonVariant.Info"
+                                          Variant="ButtonVariant.Danger"
                                           OnClick="ClearAllDetails" />
                 </div>
             </div>
