@@ -184,13 +184,12 @@
                 {
                     PropertyName = nameof(Warehouse.Address),
                     Label = "地址",
-                    FieldType = FormFieldType.TextArea,
+                    FieldType = FormFieldType.Text,
                     Placeholder = "請輸入倉庫地址",
                     IsRequired = false,
                     MaxLength = 200,
-                    Rows = 3,
                     HelpText = "倉庫的詳細地址",
-                    ContainerCssClass = "col-6"
+                    ContainerCssClass = "col-4"
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<Warehouse>()
@@ -200,9 +199,9 @@
             {
                 { nameof(Warehouse.Code), "基本資訊" },
                 { nameof(Warehouse.Name), "基本資訊" },
-                { nameof(Warehouse.ContactPerson), "聯絡資訊" },
-                { nameof(Warehouse.Phone), "聯絡資訊" },
-                { nameof(Warehouse.Address), "聯絡資訊" },
+                { nameof(Warehouse.ContactPerson), "基本資訊" },
+                { nameof(Warehouse.Phone), "基本資訊" },
+                { nameof(Warehouse.Address), "基本資訊" },
                 { nameof(Warehouse.Remarks), "額外資料" }
             };
         }

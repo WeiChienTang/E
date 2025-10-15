@@ -47,7 +47,7 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnReject="@HandlePurchaseOrderReject"
-                          GetApprovalStatus="@GetPurchaseOrderApprovalStatus">
+                          GetStatusMessage="@GetPurchaseOrderStatusMessage">
     @* 暫時隱藏轉單功能 - 設計上還有問題需要調整 *@
     @* <CustomActionButtons>
         只有在編輯模式且採購單已核准時才顯示轉單按鈕
@@ -1158,9 +1158,9 @@
     }
     
     /// <summary>
-    /// 取得採購單審核狀態
+    /// 取得採購單狀態訊息（整合審核狀態和其他訊息）
     /// </summary>
-    private async Task<string?> GetPurchaseOrderApprovalStatus()
+    private async Task<(string Message, GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.BadgeVariant Variant, string IconClass)?> GetPurchaseOrderStatusMessage()
     {
         try
         {
@@ -1169,25 +1169,33 @@
             
             var purchaseOrder = editModalComponent.Entity;
             
+            // 只有已審核通過或已駁回時才顯示訊息
             if (purchaseOrder.IsApproved && purchaseOrder.ApprovedAt.HasValue)
             {
                 var approverName = purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
-                return $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 由 {approverName} 審核通過";
+                return (
+                    $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 由 {approverName} 審核通過",
+                    GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.BadgeVariant.Success,
+                    "fas fa-check-circle"
+                );
             }
             else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
             {
-                return $"已駁回";
+                return (
+                    $"已駁回：{purchaseOrder.RejectReason}",
+                    GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.BadgeVariant.Danger,
+                    "fas fa-times-circle"
+                );
             }
-            else
-            {
-                return "待審核";
-            }
+            
+            // 待審核狀態不顯示訊息
+            return null;
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPurchaseOrderApprovalStatus), GetType(), 
-                additionalData: $"取得採購單審核狀態失敗 - OrderId: {PurchaseOrderId}");
-            return "無法取得審核狀態";
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPurchaseOrderStatusMessage), GetType(), 
+                additionalData: $"取得採購單狀態訊息失敗 - OrderId: {PurchaseOrderId}");
+            return null;
         }
     }
     

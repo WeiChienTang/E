@@ -18,19 +18,18 @@
                           Service="@InventoryTransactionService"
                           EntityName="庫存異動記錄"
                           EntityNamePlural="庫存異動記錄"
-                          ModalTitle="@(InventoryTransactionId.HasValue ? "檢視庫存異動記錄" : "新增庫存異動記錄")"
+                          ModalTitle="檢視庫存異動記錄 (無法修改)"
                           Size="GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           DataLoader="@LoadInventoryTransactionData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          SaveButtonText="@(InventoryTransactionId.HasValue ? "更新" : "儲存")"
-                          SaveFailureMessage="庫存異動記錄儲存失敗"
                           RequiredPermission="InventoryTransaction.Read"
-                          OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          ShowPrintButton="false"                          
+                          ShowSaveButton="false"
+                          ShowPrintButton="false"
+                          CancelButtonText="取消"
                           >
 </GenericEditModalComponent>
 
@@ -58,23 +57,6 @@
         {
             await LoadAdditionalDataAsync();
             InitializeFormFields();
-        }
-    }
-
-    private async Task HandleSaveSuccess()
-    {
-        try
-        {
-            if (editModalComponent?.Entity != null)
-            {
-                await OnInventoryTransactionSaved.InvokeAsync(editModalComponent.Entity);
-            }
-            await CloseModal();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), additionalData: "處理儲存成功事件時發生錯誤");
-            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
         }
     }
 
@@ -332,15 +314,7 @@
                     IsReadOnly = InventoryTransactionId.HasValue
                 },
 
-                // ===== 其他資訊區段 =====
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    IsRequired = false,
-                    IsReadOnly = InventoryTransactionId.HasValue
-                }
+                FormFieldConfigurationHelper.CreateRemarksField<InventoryTransaction>(readOnly:true)
             };
 
             formSections = new Dictionary<string, string>

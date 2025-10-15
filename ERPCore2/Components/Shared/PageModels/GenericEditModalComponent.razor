@@ -46,12 +46,12 @@
                         </div>
                     }
                     
-                    @* 左側：審核狀態顯示 *@
+                    @* 左側：狀態訊息顯示（整合審核和其他所有狀態訊息） *@
                     <div class="@(CustomActionButtons == null ? "flex-grow-1" : "")">
-                        @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0 && !string.IsNullOrEmpty(ApprovalStatusText))
+                        @if (ShouldShowStatusMessage() && !IsLoading && Entity != null && Entity.Id > 0 && !string.IsNullOrEmpty(_cachedStatusMessage))
                         {
-                            <span class="badge bg-info me-2">
-                                <i class="fas fa-info-circle me-1"></i>@ApprovalStatusText
+                            <span class="badge bg-@GetBadgeColorClass(_cachedStatusVariant) me-2 fs-6">
+                                <i class="@_cachedStatusIcon me-1"></i>@_cachedStatusMessage
                             </span>
                         }
                     </div>
@@ -97,11 +97,14 @@
                                                   Variant="ButtonVariant.Secondary" 
                                                   OnClick="HandleCancel" 
                                                   IsDisabled="@IsSubmitting" />
-                            <GenericButtonComponent Text="@SaveButtonText" 
-                                                  Variant="ButtonVariant.Primary" 
-                                                  OnClick="HandleSave" 
-                                                  IsDisabled="@(IsSubmitting || IsLoading)" 
-                                                  IsLoading="@IsSubmitting" />
+                            @if (ShowSaveButton)
+                            {
+                                <GenericButtonComponent Text="@SaveButtonText" 
+                                                      Variant="ButtonVariant.Primary" 
+                                                      OnClick="HandleSave" 
+                                                      IsDisabled="@(IsSubmitting || IsLoading)" 
+                                                      IsLoading="@IsSubmitting" />
+                            }
                         }
                         
                         @* 列印按鈕：無論審核狀態如何都顯示 *@
@@ -278,6 +281,7 @@
     [Parameter] public string SaveButtonText { get; set; } = "儲存";
     [Parameter] public string CancelButtonText { get; set; } = "取消";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
+    [Parameter] public bool ShowSaveButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = false;
     
     // 自訂操作按鈕區域（顯示在頂部按鈕列的最左側）
@@ -328,12 +332,41 @@
     // 訊息設定
     [Parameter] public string LoadingMessage { get; set; } = "載入資料中...";
     
-    // 審核功能參數
+    // ===== 通用狀態訊息參數 =====
+    
+    /// <summary>
+    /// 顯示狀態訊息（可用於審核狀態、警告、提示等任何情境）
+    /// </summary>
+    [Parameter] public string? StatusMessage { get; set; }
+    
+    /// <summary>
+    /// 狀態訊息的徽章顏色變體
+    /// </summary>
+    [Parameter] public BadgeVariant StatusBadgeVariant { get; set; } = BadgeVariant.Info;
+    
+    /// <summary>
+    /// 狀態訊息的圖示類別
+    /// </summary>
+    [Parameter] public string StatusIconClass { get; set; } = "fas fa-info-circle";
+    
+    /// <summary>
+    /// 是否顯示狀態訊息（預設為 false）
+    /// </summary>
+    [Parameter] public bool ShowStatusMessage { get; set; } = false;
+    
+    /// <summary>
+    /// 動態取得狀態訊息的函式（優先於 StatusMessage）
+    /// 用於審核狀態等需要動態計算的情境
+    /// </summary>
+    [Parameter] public Func<Task<(string Message, BadgeVariant Variant, string IconClass)?>>? GetStatusMessage { get; set; }
+    
+    // ===== 審核功能參數（向下相容，整合到狀態訊息系統） =====
+    
     [Parameter] public bool ShowApprovalSection { get; set; } = false;
     [Parameter] public string ApprovalPermission { get; set; } = string.Empty;
     [Parameter] public Func<Task<bool>>? OnApprove { get; set; }
     [Parameter] public Func<Task<bool>>? OnReject { get; set; }
-    [Parameter] public Func<Task<string?>>? GetApprovalStatus { get; set; }
+    // 移除 GetApprovalStatus，改用 GetStatusMessage
     
     // ===== 內部狀態 =====
     
@@ -348,7 +381,11 @@
     // 審核狀態
     private bool IsApproving { get; set; } = false;
     private bool IsRejecting { get; set; } = false;
-    private string? ApprovalStatusText { get; set; }
+    
+    // 狀態訊息快取
+    private string? _cachedStatusMessage;
+    private BadgeVariant _cachedStatusVariant = BadgeVariant.Info;
+    private string _cachedStatusIcon = "fas fa-info-circle";
     
     // AutoComplete 搜尋關鍵字追蹤
     private readonly Dictionary<string, string> _lastSearchTerms = new();
@@ -368,6 +405,23 @@
         Large,
         ExtraLarge,
         Desktop  // 新增桌面尺寸，更大更適合電腦螢幕
+    }
+    
+    // ===== 狀態徽章顏色列舉 =====
+    
+    /// <summary>
+    /// Bootstrap 徽章顏色變體
+    /// </summary>
+    public enum BadgeVariant
+    {
+        Primary,    // 藍色 - 主要
+        Secondary,  // 灰色 - 次要
+        Success,    // 綠色 - 成功
+        Danger,     // 紅色 - 危險/錯誤
+        Warning,    // 黃色 - 警告
+        Info,       // 淺藍色 - 資訊（預設）
+        Light,      // 淺色
+        Dark        // 深色
     }
     
     // ===== 生命週期方法 =====
@@ -633,8 +687,8 @@
                 }
             }
             
-            // 載入審核資料
-            await LoadApprovalData();
+            // 載入狀態訊息資料
+            await LoadStatusMessageData();
         }
         catch (Exception ex)
         {
@@ -650,24 +704,37 @@
     }
     
     /// <summary>
-    /// 載入審核相關資料
+    /// 載入狀態訊息資料（整合審核和其他所有狀態訊息）
     /// </summary>
-    private async Task LoadApprovalData()
+    private async Task LoadStatusMessageData()
     {
         try
         {
-            if (!ShowApprovalSection || Entity == null || Entity.Id <= 0)
+            if (!ShouldShowStatusMessage() || Entity == null || Entity.Id <= 0)
                 return;
 
-            // 載入審核狀態
-            if (GetApprovalStatus != null)
+            // 優先使用動態取得函式
+            if (GetStatusMessage != null)
             {
-                ApprovalStatusText = await GetApprovalStatus();
+                var result = await GetStatusMessage();
+                if (result.HasValue)
+                {
+                    _cachedStatusMessage = result.Value.Message;
+                    _cachedStatusVariant = result.Value.Variant;
+                    _cachedStatusIcon = result.Value.IconClass;
+                }
+            }
+            // 其次使用靜態設定值
+            else if (!string.IsNullOrEmpty(StatusMessage))
+            {
+                _cachedStatusMessage = StatusMessage;
+                _cachedStatusVariant = StatusBadgeVariant;
+                _cachedStatusIcon = StatusIconClass;
             }
         }
         catch (Exception ex)
         {
-            LogError("LoadApprovalData", ex);
+            LogError("LoadStatusMessageData", ex);
             // 不拋出例外，避免影響主要資料載入
         }
     }
@@ -684,7 +751,7 @@
             {
                 Entity = reloadedEntity;
                 editContext = new EditContext(Entity);
-                await LoadApprovalData(); // 重新載入審核狀態
+                await LoadStatusMessageData(); // 重新載入狀態訊息
                 StateHasChanged();
             }
         }
@@ -985,7 +1052,49 @@
         // 重置審核狀態
         IsApproving = false;
         IsRejecting = false;
-        ApprovalStatusText = null;
+        
+        // 重置狀態訊息快取
+        ResetStatusMessage();
+    }
+    
+    // ===== 狀態訊息輔助方法 =====
+    
+    /// <summary>
+    /// 判斷是否應該顯示狀態訊息
+    /// </summary>
+    private bool ShouldShowStatusMessage()
+    {
+        // 明確啟用顯示，或者啟用了審核區域（向下相容）
+        return ShowStatusMessage || ShowApprovalSection;
+    }
+    
+    /// <summary>
+    /// 取得徽章顏色 CSS 類別
+    /// </summary>
+    private string GetBadgeColorClass(BadgeVariant variant)
+    {
+        return variant switch
+        {
+            BadgeVariant.Primary => "primary",
+            BadgeVariant.Secondary => "secondary",
+            BadgeVariant.Success => "success",
+            BadgeVariant.Danger => "danger",
+            BadgeVariant.Warning => "warning",
+            BadgeVariant.Info => "info",
+            BadgeVariant.Light => "light",
+            BadgeVariant.Dark => "dark",
+            _ => "info"
+        };
+    }
+    
+    /// <summary>
+    /// 重置狀態訊息快取
+    /// </summary>
+    private void ResetStatusMessage()
+    {
+        _cachedStatusMessage = null;
+        _cachedStatusVariant = BadgeVariant.Info;
+        _cachedStatusIcon = "fas fa-info-circle";
     }
     
     // ===== 通知方法 =====

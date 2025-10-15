@@ -181,12 +181,20 @@
 /* ===== 表單區段標題樣式 - 超級壓縮 ===== */
 
 ::deep .section-title {
-    font-size: 1rem !important; /* 進一步縮小標題字體 */
+    font-size: 0.9rem !important; /* 進一步縮小標題字體 */
     font-weight: 600 !important;
     color: #1f2937 !important;
     margin-bottom: 0.35rem !important; /* 超級縮短底部間距 */
     padding-bottom: 0.25rem !important; /* 超級縮短內邊距 */
     border-bottom: 1px solid #e5e7eb !important; /* 改為1px邊框，更精簡 */
+}
+
+/* 表單區段 h6 標題樣式 - 縮小字體 */
+::deep h6.text-primary.border-bottom {
+    font-size: 1rem !important; /* 縮小區段標題字體 */
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0.3rem !important;
 }
 
 /* Row 和 Column 間距調整 - 超級壓縮 */
@@ -316,7 +324,7 @@
     /* 表單欄位在小螢幕上調整 */
     ::deep .form-control,
     ::deep .form-select {
-        font-size: 0.85rem !important;
+        font-size: 0.9rem !important;
         padding: 0.4rem 0.6rem !important; /* 進一步縮小小螢幕上的內邊距 */
     }
 }
@@ -404,7 +412,7 @@
     color: #1f2937 !important;
     font-weight: 600 !important;
     margin-bottom: 0.5rem !important; /* 大幅縮短標題底部間距 */
-    font-size: 1rem !important; /* 縮小標題字體 */
+    font-size: 0.9rem !important; /* 縮小標題字體 */
 }
 
 /* ===== 滾動條樣式 ===== */
@@ -455,12 +463,12 @@
 }
 
 .modal-approval-section .approval-status .badge {
-    font-size: 0.85rem !important;
+    font-size: 0.9rem !important;
     padding: 0.5rem 0.75rem !important;
 }
 
 .modal-approval-section .approval-history {
-    font-size: 0.875rem !important;
+    font-size: 0.9rem !important;
     color: #6c757d !important;
     margin-top: 0.5rem !important;
 }

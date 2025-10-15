@@ -19,13 +19,15 @@ namespace ERPCore2.FieldConfiguration
         /// <param name="helpText">說明文字，預設為 "其他需要補充的資訊"</param>
         /// <param name="rows">文字區域列數，預設為 2</param>
         /// <param name="containerCssClass">容器 CSS 類別，預設為 "col-12"</param>
+        /// <param name="readOnly">是否為唯讀欄位，預設為 false</param>
         /// <returns>配置好的 FormFieldDefinition</returns>
         public static FormFieldDefinition CreateRemarksField<TEntity>(
             string label = "備註",
             string placeholder = "請輸入備註",
             string helpText = "其他需要補充的資訊",
             int rows = 1,
-            string containerCssClass = "col-12") where TEntity : BaseEntity
+            string containerCssClass = "col-12",
+            bool readOnly = false) where TEntity : BaseEntity
         {
             // 統一使用 120 字元限制，但保持 500 位元組的資料庫限制
             return new FormFieldDefinition
@@ -38,7 +40,8 @@ namespace ERPCore2.FieldConfiguration
                 MaxLength = 120,      // 統一字元限制
                 MaxBytes = 500,       // 保持資料庫位元組限制
                 HelpText = helpText,
-                ContainerCssClass = containerCssClass
+                ContainerCssClass = containerCssClass,
+                IsReadOnly = readOnly
             };
         }
         /// <summary>
