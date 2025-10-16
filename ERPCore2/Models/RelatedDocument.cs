@@ -47,14 +47,29 @@ namespace ERPCore2.Models
         public DateTime DocumentDate { get; set; }
 
         /// <summary>
-        /// 相關數量（退貨數量）
+        /// 相關數量（退貨數量/入庫數量）
         /// </summary>
         public decimal? Quantity { get; set; }
+
+        /// <summary>
+        /// 單價（入庫單價）
+        /// </summary>
+        public decimal? UnitPrice { get; set; }
 
         /// <summary>
         /// 相關金額（沖款金額）
         /// </summary>
         public decimal? Amount { get; set; }
+
+        /// <summary>
+        /// 本次金額（本次沖款/收款/付款）
+        /// </summary>
+        public decimal? CurrentAmount { get; set; }
+
+        /// <summary>
+        /// 累計金額（累計沖款/收款/付款）
+        /// </summary>
+        public decimal? TotalAmount { get; set; }
 
         /// <summary>
         /// 備註

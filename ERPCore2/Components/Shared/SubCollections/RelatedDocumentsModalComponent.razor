@@ -72,13 +72,22 @@
                                                     @doc.DocumentNumber
                                                 </h6>
                                                 <p class="mb-1 text-muted small">
-                                                    <i class="bi bi-calendar3 me-1"></i>
-                                                    @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                                    <span class="text-nowrap">
+                                                        <i class="bi bi-calendar3 me-1"></i>
+                                                        @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                                    </span>
                                                     @if (doc.Quantity.HasValue)
                                                     {
-                                                        <span class="ms-3">
+                                                        <span class="ms-3 text-nowrap">
                                                             <i class="bi bi-box-seam me-1"></i>
                                                             入庫數量: @doc.Quantity.Value
+                                                        </span>
+                                                    }
+                                                    @if (doc.UnitPrice.HasValue)
+                                                    {
+                                                        <span class="ms-3 text-nowrap">
+                                                            <i class="bi bi-cash me-1"></i>
+                                                            單價: @doc.UnitPrice.Value.ToString("N2")
                                                         </span>
                                                     }
                                                 </p>
@@ -124,11 +133,13 @@
                                                     @doc.DocumentNumber
                                                 </h6>
                                                 <p class="mb-1 text-muted small">
-                                                    <i class="bi bi-calendar3 me-1"></i>
-                                                    @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                                    <span class="text-nowrap">
+                                                        <i class="bi bi-calendar3 me-1"></i>
+                                                        @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                                    </span>
                                                     @if (doc.Quantity.HasValue)
                                                     {
-                                                        <span class="ms-3">
+                                                        <span class="ms-3 text-nowrap">
                                                             <i class="bi bi-box-seam me-1"></i>
                                                             退貨數量: @doc.Quantity.Value
                                                         </span>
@@ -176,13 +187,22 @@
                                                     @doc.DocumentNumber
                                                 </h6>
                                                 <p class="mb-1 text-muted small">
-                                                    <i class="bi bi-calendar3 me-1"></i>
-                                                    @doc.DocumentDate.ToString("yyyy-MM-dd")
-                                                    @if (doc.Amount.HasValue)
+                                                    <span class="text-nowrap">
+                                                        <i class="bi bi-calendar3 me-1"></i>
+                                                        @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                                    </span>
+                                                    @if (doc.CurrentAmount.HasValue)
                                                     {
-                                                        <span class="ms-3">
+                                                        <span class="ms-3 text-nowrap">
                                                             <i class="bi bi-currency-dollar me-1"></i>
-                                                            沖款金額: @doc.Amount.Value.ToString("N2")
+                                                            本次收款: @doc.CurrentAmount.Value.ToString("N2")
+                                                        </span>
+                                                    }
+                                                    @if (doc.TotalAmount.HasValue)
+                                                    {
+                                                        <span class="ms-3 text-nowrap">
+                                                            <i class="bi bi-cash-stack me-1"></i>
+                                                            累計收款: @doc.TotalAmount.Value.ToString("N2")
                                                         </span>
                                                     }
                                                 </p>

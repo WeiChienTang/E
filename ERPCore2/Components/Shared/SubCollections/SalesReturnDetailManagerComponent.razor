@@ -334,26 +334,39 @@ else
                     ? $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改商品選擇" 
                     : "";
                 
+                // 如果是唯讀狀態（含沖款記錄），直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    var displayText = returnItem.SelectedOrderDetail != null 
+                        ? FormatOrderDetailDisplayText(returnItem.SelectedOrderDetail)
+                        : "未選擇";
+                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">@displayText</span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示下拉選單
+                var availableDetails = GetAvailableOrderDetails();
+                
+                // 確保選中的項目在可用列表中（即使被篩選掉也要顯示）
+                if (returnItem.SelectedOrderDetail != null && 
+                    !availableDetails.Any(d => d.Id == returnItem.SelectedOrderDetail.Id))
+                {
+                    availableDetails = availableDetails.Concat(new[] { returnItem.SelectedOrderDetail }).ToList();
+                }
+                
                 return @<div class="position-relative">
                     <select class="form-select form-select-sm" 
                             value="@selectedValue"
-                            disabled="@isFieldReadOnly"
                             title="@title"
                             @onchange="@(async (e) => await OnOrderDetailChanged(returnItem, e.Value))">
                         <option value="">請選擇銷售訂單明細</option>
-                        @foreach (var detail in GetAvailableOrderDetails())
+                        @foreach (var detail in availableDetails)
                         {
                             var displayText = FormatOrderDetailDisplayText(detail);
                             <option value="@detail.Id">@displayText</option>
                         }
                     </select>
-                    
-                    @if (hasPaymentRecord)
-                    {
-                        <div class="position-absolute" style="top: 2px; right: 30px; pointer-events: none;">
-                            <i title="@title"></i>
-                        </div>
-                    }
                 </div>;
             }
         });

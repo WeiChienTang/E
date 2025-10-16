@@ -32,6 +32,9 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
                     .AsQueryable()
                     .OrderBy(srd => srd.SalesReturnId)
                     .ThenBy(srd => srd.Product.Code)
@@ -58,6 +61,9 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
                     .FirstOrDefaultAsync(srd => srd.Id == id);
             }
             catch (Exception ex)
@@ -86,6 +92,10 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
                     .Where(srd => ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.SalesReturnNumber != null && srd.SalesReturn.SalesReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
@@ -157,6 +167,9 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
                     .Where(srd => srd.SalesReturnId == salesReturnId)
                     .OrderBy(srd => srd.Product.Code)
                     .ToListAsync();
@@ -182,6 +195,10 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
                     .Where(srd => srd.ProductId == productId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();
@@ -208,6 +225,9 @@ namespace ERPCore2.Services
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
                     .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .Include(srd => srd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
                     .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();

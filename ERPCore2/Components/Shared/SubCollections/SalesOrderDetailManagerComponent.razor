@@ -650,6 +650,29 @@ else
                     ? string.Join("；", tooltipMessages) + "，無法修改商品選擇"
                     : "";
 
+                // 如果是唯讀狀態，直接顯示格式化的商品名稱
+                if (isFieldReadOnly && salesItem.SelectedProduct != null)
+                {
+                    var displayText = $"[{salesItem.SelectedProduct.Code}] {salesItem.SelectedProduct.Name}";
+                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted small" title="@title">@displayText</span>
+                    </div>;
+                }
+
+                // 取得可用的商品列表
+                var availableProducts = GetAvailableProducts();
+                
+                // 確保當前選中的商品也在列表中（即使它可能已被篩選掉）
+                if (salesItem.SelectedProduct != null && 
+                    !availableProducts.Any(p => p.Id == salesItem.SelectedProduct.Id))
+                {
+                    // 如果當前選中的商品不在可用列表中，建立一個包含它的新列表
+                    availableProducts = new List<Product>(availableProducts) 
+                    { 
+                        salesItem.SelectedProduct 
+                    };
+                }
+
                 return @<div class="position-relative">
                     <select class="form-select form-select-sm" 
                             value="@selectedValue"
@@ -657,7 +680,7 @@ else
                             title="@title"
                             @onchange="@(async (e) => await OnProductChanged(salesItem, e.Value))">
                         <option value="">請選擇商品</option>
-                        @foreach (var product in GetAvailableProducts())
+                        @foreach (var product in availableProducts)
                         {
                             <option value="@product.Id">[@product.Code] @product.Name</option>
                         }

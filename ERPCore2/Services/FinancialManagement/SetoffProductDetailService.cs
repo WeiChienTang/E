@@ -264,6 +264,11 @@ namespace ERPCore2.Services
                     detail.TotalHistoricalAllowanceAmount = historicalAllowance;
                 }
 
+                // 4. 過濾掉應收金額為 0 或未沖款餘額為 0 的明細
+                results = results
+                    .Where(r => r.TotalAmount != 0 && r.RemainingAmount != 0)
+                    .ToList();
+
                 return results.OrderBy(r => r.DocumentDate).ThenBy(r => r.ProductName).ToList();
             }
             catch (Exception ex)
@@ -348,6 +353,11 @@ namespace ERPCore2.Services
                     detail.TotalHistoricalSetoffAmount = historicalSetoff;
                     detail.TotalHistoricalAllowanceAmount = historicalAllowance;
                 }
+
+                // 4. 過濾掉應付金額為 0 或未沖款餘額為 0 的明細
+                results = results
+                    .Where(r => r.TotalAmount != 0 && r.RemainingAmount != 0)
+                    .ToList();
 
                 return results.OrderBy(r => r.DocumentDate).ThenBy(r => r.ProductName).ToList();
             }

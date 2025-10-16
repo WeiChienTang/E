@@ -47,7 +47,7 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnReject="@HandlePurchaseOrderReject"
-                          GetStatusMessage="@GetPurchaseOrderStatusMessage">
+                          FormHeaderContent="@GetWarningMessage()">
     @* 暫時隱藏轉單功能 - 設計上還有問題需要調整 *@
     @* <CustomActionButtons>
         只有在編輯模式且採購單已核准時才顯示轉單按鈕
@@ -1158,97 +1158,18 @@
     }
     
     /// <summary>
-    /// 取得採購單狀態訊息（整合審核狀態和其他訊息）
+    /// 取得警告訊息（顯示在表單欄位上方）
+    /// 當採購單已審核通過時，顯示鎖定警告訊息
     /// </summary>
-    private async Task<(string Message, GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.BadgeVariant Variant, string IconClass)?> GetPurchaseOrderStatusMessage()
+    private RenderFragment? GetWarningMessage() => __builder =>
     {
-        try
+        @if (editModalComponent?.Entity?.IsApproved == true)
         {
-            if (editModalComponent?.Entity == null)
-                return null;
-            
-            var purchaseOrder = editModalComponent.Entity;
-            
-            // 只有已審核通過或已駁回時才顯示訊息
-            if (purchaseOrder.IsApproved && purchaseOrder.ApprovedAt.HasValue)
-            {
-                var approverName = purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
-                return (
-                    $"已於 {purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} 由 {approverName} 審核通過",
-                    GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.BadgeVariant.Success,
-                    "fas fa-check-circle"
-                );
-            }
-            else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
-            {
-                return (
-                    $"已駁回：{purchaseOrder.RejectReason}",
-                    GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.BadgeVariant.Danger,
-                    "fas fa-times-circle"
-                );
-            }
-            
-            // 待審核狀態不顯示訊息
-            return null;
+            <div class="alert alert-warning mb-2 py-2" role="alert">
+                <i class="fas fa-lock me-2"></i>此採購單已審核通過，為保護資料完整性主檔欄位已設唯讀。
+            </div>
         }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPurchaseOrderStatusMessage), GetType(), 
-                additionalData: $"取得採購單狀態訊息失敗 - OrderId: {PurchaseOrderId}");
-            return null;
-        }
-    }
-    
-    /// <summary>
-    /// 取得採購單審核歷史
-    /// </summary>
-    private async Task<List<string>> GetPurchaseOrderApprovalHistory()
-    {
-        try
-        {
-            if (editModalComponent?.Entity == null)
-                return new List<string>();
-            
-            var purchaseOrder = editModalComponent.Entity;
-            var history = new List<string>();
-            
-            // 建立記錄
-            if (purchaseOrder.CreatedAt != default)
-            {
-                history.Add($"{purchaseOrder.CreatedAt:yyyy/MM/dd HH:mm} - {purchaseOrder.CreatedBy ?? "系統"} 建立採購單");
-            }
-            
-            // 最後修改記錄
-            if (purchaseOrder.UpdatedAt.HasValue)
-            {
-                history.Add($"{purchaseOrder.UpdatedAt.Value:yyyy/MM/dd HH:mm} - {purchaseOrder.UpdatedBy ?? "系統"} 修改採購單");
-            }
-            
-            // 審核記錄
-            if (purchaseOrder.ApprovedAt.HasValue)
-            {
-                // 如果有審核人員資訊，則顯示審核人員姓名，否則顯示預設文字
-                var approverName = purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
-                history.Add($"{purchaseOrder.ApprovedAt.Value:yyyy/MM/dd HH:mm} - {approverName} 審核通過");
-            }
-            else if (!string.IsNullOrWhiteSpace(purchaseOrder.RejectReason))
-            {
-                // 駁回記錄 - 使用 UpdatedAt 作為駁回時間
-                var rejectTime = purchaseOrder.UpdatedAt ?? DateTime.Now;
-                // 駁回人員通常記錄在 UpdatedBy 中，或可以從審核人員取得
-                var rejectorName = purchaseOrder.UpdatedBy ?? purchaseOrder.ApprovedByUser?.Name ?? "審核人員";
-                history.Add($"{rejectTime:yyyy/MM/dd HH:mm} - {rejectorName} 駁回採購單：{purchaseOrder.RejectReason}");
-            }
-            
-            return history;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetPurchaseOrderApprovalHistory), GetType(), 
-                additionalData: $"取得採購單審核歷史失敗 - OrderId: {PurchaseOrderId}");
-            return new List<string> { "無法取得審核歷史" };
-        }
-    }
+    };
     
     /// <summary>
     /// 取得當前使用者ID

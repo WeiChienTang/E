@@ -62,7 +62,9 @@ namespace ERPCore2.Helpers
                     DocumentNumber = detail.SetoffDocument.SetoffNumber,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
-                    Remarks = $"本次沖款: {detail.CurrentSetoffAmount:N2}, 累計沖款: {detail.TotalSetoffAmount:N2}"
+                    CurrentAmount = detail.CurrentSetoffAmount,
+                    TotalAmount = detail.TotalSetoffAmount,
+                    Remarks = detail.SetoffDocument.Remarks
                 });
             }
 
@@ -113,7 +115,9 @@ namespace ERPCore2.Helpers
                     DocumentNumber = detail.SetoffDocument.SetoffNumber,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
-                    Remarks = $"本次沖款: {detail.CurrentSetoffAmount:N2}, 累計沖款: {detail.TotalSetoffAmount:N2}"
+                    CurrentAmount = detail.CurrentSetoffAmount,
+                    TotalAmount = detail.TotalSetoffAmount,
+                    Remarks = detail.SetoffDocument.Remarks
                 });
             }
 
@@ -145,7 +149,9 @@ namespace ERPCore2.Helpers
                     DocumentNumber = detail.SetoffDocument.SetoffNumber,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
-                    Remarks = $"本次收款: {detail.CurrentSetoffAmount:N2}, 累計收款: {detail.TotalSetoffAmount:N2}"
+                    CurrentAmount = detail.CurrentSetoffAmount,
+                    TotalAmount = detail.TotalSetoffAmount,
+                    Remarks = detail.SetoffDocument.Remarks
                 });
             }
 
@@ -177,7 +183,9 @@ namespace ERPCore2.Helpers
                     DocumentNumber = detail.SetoffDocument.SetoffNumber,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
-                    Remarks = $"本次付款: {detail.CurrentSetoffAmount:N2}, 累計付款: {detail.TotalSetoffAmount:N2}"
+                    CurrentAmount = detail.CurrentSetoffAmount,
+                    TotalAmount = detail.TotalSetoffAmount,
+                    Remarks = detail.SetoffDocument.Remarks
                 });
             }
 
@@ -208,7 +216,8 @@ namespace ERPCore2.Helpers
                     DocumentNumber = detail.PurchaseReceiving.ReceiptNumber,
                     DocumentDate = detail.PurchaseReceiving.ReceiptDate,
                     Quantity = detail.ReceivedQuantity,
-                    Remarks = $"入庫數量: {detail.ReceivedQuantity}, 單價: {detail.UnitPrice:N2}"
+                    UnitPrice = detail.UnitPrice,
+                    Remarks = detail.PurchaseReceiving.Remarks
                 });
             }
 
