@@ -206,10 +206,20 @@ else
             {
                 var productItem = (ProductItem)item;
                 var selectedValue = productItem.SelectedProduct?.Id.ToString() ?? "";
+                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                
+                // 如果是唯讀狀態，直接顯示商品名稱
+                if (isFieldReadOnly && productItem.SelectedProduct != null)
+                {
+                    var displayText = $"[{productItem.SelectedProduct.Code}] {productItem.SelectedProduct.Name}";
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted small">@displayText</span>
+                    </div>;
+                }
                 
                 return @<select class="form-select form-select-sm" 
                                 value="@selectedValue"
-                                disabled="@IsReadOnly"
+                                disabled="@isFieldReadOnly"
                                 @onchange="@(async (e) => await OnProductChanged(productItem, e.Value))">
                     <option value="">請選擇商品</option>
                     @foreach (var product in GetAvailableProducts())
@@ -232,6 +242,16 @@ else
                 var productItem = (ProductItem)item;
                 var isEmptyRow = IsEmptyRow(productItem);
                 var value = productItem.Quantity > 0 ? productItem.Quantity.ToString() : "";
+                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    var displayText = productItem.Quantity > 0 ? productItem.Quantity.ToString("N0") : "";
+                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted small">@displayText</span>
+                    </div>;
+                }
                 
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
@@ -239,8 +259,7 @@ else
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
-                               step="1" 
-                               readonly="@IsReadOnly" />;
+                               step="1" />;
             }
         });
 
@@ -273,6 +292,16 @@ else
                 var productItem = (ProductItem)item;
                 var isEmptyRow = IsEmptyRow(productItem);
                 var value = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
+                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    var displayText = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
+                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted small">@displayText</span>
+                    </div>;
+                }
                 
                 return @<input type="number" class="form-control form-control-sm" 
                                value="@value"
@@ -280,8 +309,7 @@ else
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder=""
                                step="1"
-                               min="0" 
-                               readonly="@IsReadOnly" />;
+                               min="0" />;
             }
         });
 
@@ -297,6 +325,24 @@ else
                 CustomTemplate = item => 
                 {
                     var productItem = (ProductItem)item;
+                    var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                    
+                    // 如果是唯讀狀態，只顯示狀態
+                    if (isFieldReadOnly)
+                    {
+                        return @<div class="text-center" style="min-height: 31px;">
+                            @if (productItem.IsReceivingCompleted)
+                            {
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i> 已完成
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">未完成</small>
+                            }
+                        </div>;
+                    }
                     
                     return @<div class="text-center">
                         <div class="form-check form-switch d-flex justify-content-center">
@@ -304,8 +350,7 @@ else
                                    type="checkbox" 
                                    checked="@productItem.IsReceivingCompleted"
                                    @onclick="() => OnIsReceivingCompletedChanged(productItem)"
-                                   title="手動標記為完成進貨" 
-                                   disabled="@IsReadOnly" />
+                                   title="手動標記為完成進貨" />
                         </div>
                         @if (productItem.IsReceivingCompleted)
                         {
@@ -330,12 +375,21 @@ else
             {
                 var productItem = (ProductItem)item;
                 var isEmptyRow = IsEmptyRow(productItem);
+                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    var displayText = string.IsNullOrEmpty(productItem.Remarks) ? "無備註" : productItem.Remarks;
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted small">@displayText</span>
+                    </div>;
+                }
                 
                 return @<input type="text" class="form-control form-control-sm" 
                                value="@productItem.Remarks"
                                @oninput="(e) => OnRemarksInput(productItem, e.Value?.ToString())"
-                               placeholder="選填..."
-                               readonly="@IsReadOnly" />;
+                               placeholder="選填..." />;
             }
         });
 
