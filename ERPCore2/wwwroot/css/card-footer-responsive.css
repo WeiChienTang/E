@@ -10,13 +10,13 @@
     /* 將 justify-content-between 容器改為垂直排列 */
     .card-footer .d-flex.justify-content-between {
         flex-direction: column !important;
-        gap: 0.75rem; /* 按鈕群組之間的間距 */
+        gap: 0.15rem; /* 極小的按鈕群組間距 */
     }
     
     /* 將按鈕群組改為垂直排列，每個按鈕占滿寬度 */
     .card-footer .d-flex.gap-2 {
         flex-direction: column !important;
-        gap: 0.5rem !important; /* 按鈕之間的間距 */
+        gap: 0.15rem !important; /* 極小的按鈕間距 */
         width: 100%;
     }
     
@@ -33,9 +33,10 @@
         width: 100% !important;
         text-align: center;
         justify-content: center;
-        min-height: 44px; /* 符合觸控友善標準（建議 44x44px） */
-        font-size: 1rem; /* 確保文字大小適中 */
-        padding: 0.75rem 1rem; /* 增加內邊距以改善觸控體驗 */
+        min-height: auto; /* 移除最小高度限制 */
+        font-size: 0.95rem; /* 稍微減少字體大小 */
+        padding: 0.2rem 0.5rem; /* 完全移除上下 padding，只保留左右 */
+        line-height: 2.2; /* 用 line-height 控制按鈕高度 */
     }
     
     /* ===== 下拉選單特殊處理 ===== */
@@ -77,14 +78,14 @@
     
     /* card-footer 本身的內邊距調整 */
     .card-footer {
-        padding: 1rem !important;
+        padding: 0.35rem 0.5rem !important; /* 極小的上下 padding */
     }
     
     /* 為按鈕群組添加微妙的分隔 */
     .card-footer .d-flex.justify-content-between > div:not(:last-child) {
-        padding-bottom: 0.5rem;
+        padding-bottom: 0.15rem; /* 極小的底部間距 */
         border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        margin-bottom: 0.25rem;
+        margin-bottom: 0; /* 完全移除下邊距 */
     }
 }
 

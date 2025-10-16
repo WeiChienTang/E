@@ -250,13 +250,13 @@
 /* 按鈕尺寸 */
 .btn-sm {
     padding: 0.1rem 0.25rem;
-    font-size: 0.875rem;
+    font-size: 1rem;
     border-radius: calc(var(--radius) * 0.8);
 }
 
 .btn-lg {
     padding: 0.2rem 0.4rem;
-    font-size: 1.125rem;
+    font-size: 1rem;
     border-radius: calc(var(--radius) * 1.2);
 }
 
@@ -333,12 +333,12 @@
 @media (max-width: 575.98px) {
     .btn {
         padding: 0.125rem 0.25rem;
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
     
     .btn-sm {
         padding: 0.08rem 0.2rem;
-        font-size: 0.8rem;
+        font-size: 1rem;
     }
     
     .btn-lg {
@@ -352,7 +352,7 @@
 .table-actions-group .btn i,
 .table-actions-column button i,
 .table-actions-group button i {
-    font-size: 0.8em !important; /* 表格操作按鈕的圖標縮小至80% */
+    font-size: 1rem !important; /* 表格操作按鈕的圖標縮小至80% */
 }
 
 /* 小型按鈕的圖標進一步縮小 */
@@ -360,7 +360,7 @@
 .table-actions-group .btn-sm i,
 .table-actions-column button.btn-sm i,
 .table-actions-group button.btn-sm i {
-    font-size: 0.7em !important; /* 小型表格操作按鈕的圖標縮小至70% */
+    font-size: 1rem !important; /* 小型表格操作按鈕的圖標縮小至70% */
 }
 
 /* 支援所有圖標系統：FontAwesome、Bootstrap Icons 等 */
@@ -368,7 +368,7 @@
 .table-actions-column i[class*="bi-"],
 .table-actions-group i[class*="fa-"],
 .table-actions-group i[class*="bi-"] {
-    font-size: 0.8em !important;
+    font-size: 1rem !important;
 }
 
 /* 手機版進一步優化 */
@@ -381,7 +381,7 @@
     .table-actions-column i[class*="bi-"],
     .table-actions-group i[class*="fa-"],
     .table-actions-group i[class*="bi-"] {
-        font-size: 0.65em !important; /* 手機版表格操作按鈕圖標更小 */
+        font-size: 1rem !important; /* 手機版表格操作按鈕圖標更小 */
     }
 }
 
@@ -408,7 +408,7 @@
     padding: 0.15rem 0.4rem !important;
     border: none !important;
     border-radius: 4px;
-    font-size: 0.75rem;
+    font-size: 1rem;
 }
 
 /* Primary 外框按鈕 - 淡藍色背景 */

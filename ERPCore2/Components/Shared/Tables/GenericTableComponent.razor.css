@@ -106,7 +106,7 @@
 /* 操作欄位內的按鈕樣式 */
 .table-actions-column .btn {
     padding: 0.25rem 0.375rem; /* 緊湊的按鈕內邊距 */
-    font-size: 0.75rem; /* 較小的字體 */
+    font-size: 1rem; /* 較小的字體 */
     line-height: 1.2;
     border-radius: 0.25rem;
     min-width: auto; /* 移除最小寬度限制 */
@@ -221,7 +221,7 @@
     /* 手機版操作欄位內的按鈕樣式優化 */
     .table-actions-column .btn {
         padding: 0.2rem 0.3rem; /* 手機版更小的內邊距 */
-        font-size: 0.7rem; /* 更小的字體 */
+        font-size: 1rem; /* 更小的字體 */
         margin: 0; /* 移除邊距 */
     }
     
@@ -302,7 +302,7 @@
     }
     
     .btn-group .btn {
-        font-size: 0.875rem;
+        font-size: 1rem;
         padding: 0.25rem 0.5rem;
     }
     
@@ -314,14 +314,14 @@
     
     /* 表格標題在極小螢幕的優化 */
     .table thead th {
-        font-size: 0.875rem;
+        font-size: 1rem;
         padding: 0.5rem 0.25rem;
         line-height: 1.2;
     }
     
     /* 表格內容在極小螢幕的優化 */
     .table td {
-        font-size: 0.875rem;
+        font-size: 1rem;
         padding: 0.375rem 0.25rem;
     }
     
@@ -335,7 +335,7 @@
     /* 確保操作按鈕在小螢幕上仍然可用 */
     .table-actions-column .btn {
         padding: 0.125rem 0.2rem; /* 極小螢幕最緊湊的內邊距 */
-        font-size: 0.65rem; /* 極小字體 */
+        font-size: 1rem; /* 極小字體 */
         margin: 0; /* 移除間距節省空間 */
     }
     

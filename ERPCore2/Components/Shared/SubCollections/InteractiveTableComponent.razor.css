@@ -83,7 +83,7 @@
 /* 表格控件樣式 */
 .interactive-table-container .form-control-sm,
 .interactive-table-container .form-select-sm {
-    font-size: 0.875rem;
+    font-size: 1rem;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
 }
@@ -106,7 +106,7 @@
 /* 按鈕在表格中的樣式調整 */
 .interactive-table-container .btn-sm {
     padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
+    font-size: 1rem;
 }
 
 /* 操作欄位基礎樣式設置 - 適用於所有螢幕尺寸 */
@@ -149,7 +149,7 @@
     /* 表頭在手機版的樣式調整 */
     .interactive-table thead th {
         padding: 0.15rem 0.5rem !important; /* 進一步縮小上下內邊距 */
-        font-size: 0.875rem !important; /* 手機版使用稍小的字體 */
+        font-size: 1rem !important; /* 手機版使用稍小的字體 */
     }
     
     /* 表格容器水平滾動設置 */
@@ -184,7 +184,7 @@
     /* 控制項在手機版的樣式調整 */
     .interactive-table-container .form-control-sm,
     .interactive-table-container .form-select-sm {
-        font-size: 0.875rem;
+        font-size: 1rem;
         padding: 0.375rem 0.5rem;
         min-height: 36px; /* 改善觸控體驗 */
         min-width: 120px; /* 確保輸入框有足夠寬度 */
@@ -194,7 +194,7 @@
         min-height: 36px;
         padding: 0.375rem 0.5rem;
         min-width: 60px; /* 確保按鈕有足夠寬度 */
-        font-size: 0.875rem; /* 確保字體大小正常 */
+        font-size: 1rem; /* 確保字體大小正常 */
     }
     
     /* 確保表格內按鈕圖標大小正常 */
@@ -236,7 +236,7 @@
     /* 操作欄位內的按鈕樣式 - 保持彈性尺寸 */
     .table-responsive .table .table-actions-column .btn {
         padding: 0.375rem 0.5rem; /* 按鈕內邊距 */
-        font-size: 0.875rem; /* 按鈕字體大小 */
+        font-size: 1rem; /* 按鈕字體大小 */
         margin: 0 0.125rem; /* 按鈕間距 */
         min-width: 36px; /* 稍微增加按鈕最小寬度以改善觸控體驗 */
         min-height: 36px; /* 稍微增加按鈕最小高度以改善觸控體驗 */
@@ -269,7 +269,7 @@
         padding: 0.5rem;
         background-color: #f8f9fa;
         color: #6c757d;
-        font-size: 0.75rem;
+        font-size: 1rem;
         border-top: 1px solid #dee2e6;
     }
     
@@ -313,7 +313,7 @@
 .interactive-table-container .row-number {
     color: #6c757d;
     font-weight: 500;
-    font-size: 0.875rem;
+    font-size: 1rem;
 }
 
 /* 水平滾動條樣式優化 */
@@ -392,7 +392,7 @@
     .dropdown-menu {
         min-width: 250px !important;
         max-width: calc(100vw - 40px) !important; /* 確保不超出螢幕寬度 */
-        font-size: 0.875rem; /* 手機版稍小的字體 */
+        font-size: 1rem; /* 手機版稍小的字體 */
     }
     
     /* 下拉選項在手機版的觸控優化 */

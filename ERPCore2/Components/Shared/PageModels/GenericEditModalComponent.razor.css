@@ -120,7 +120,7 @@
 ::deep .form-label {
     font-weight: 600 !important;
     color: #374151 !important;
-    font-size: 0.9rem !important; /* 進一步縮小標籤字體 */
+    font-size: 1rem !important; /* 進一步縮小標籤字體 */
     margin-bottom: 0.15rem !important; /* 超級縮短標籤與欄位間距 */
 }
 
@@ -138,7 +138,7 @@
     transition: all 0.2s ease !important;
     min-height: 30px !important; /* 進一步縮小高度 */
     width: 100% !important; /* 確保欄位填滿容器寬度 */
-    font-size: 0.9rem !important; /* 稍微縮小字體 */
+    font-size: 1rem !important; /* 稍微縮小字體 */
 }
 
 ::deep .form-control:focus,
@@ -171,7 +171,7 @@
 /* 幫助文字樣式 - 已改為 Tooltip，這裡保留以防其他地方使用 */
 ::deep .form-text,
 ::deep .help-text {
-    font-size: 0.9rem !important;
+    font-size: 1rem !important;
     color: #6b7280 !important;
     margin-top: 0.25rem !important;
     line-height: 1.3 !important;
@@ -181,7 +181,7 @@
 /* ===== 表單區段標題樣式 - 超級壓縮 ===== */
 
 ::deep .section-title {
-    font-size: 0.9rem !important; /* 進一步縮小標題字體 */
+    font-size: 1rem !important; /* 進一步縮小標題字體 */
     font-weight: 600 !important;
     color: #1f2937 !important;
     margin-bottom: 0.35rem !important; /* 超級縮短底部間距 */
@@ -285,7 +285,7 @@
     }
 }
 
-/* 小螢幕調整 */
+/* 小螢幕調整 - 激進壓縮間距 */
 @media (max-width: 768px) {
     .modal-dialog {
         margin: 0.25rem !important; /* 縮小邊距確保不被切掉 */
@@ -299,13 +299,13 @@
     }
     
     .modal-body {
-        padding: 1.5rem 1rem !important;
+        padding: 0.75rem 0.5rem !important; /* 大幅縮小 padding */
         max-height: calc(100vh - 180px) !important; /* 調整小螢幕的最大高度 */
     }
     
     .modal-header,
     .modal-footer {
-        padding: 0.2rem !important;
+        padding: 0.5rem !important;
     }
     
     /* 手機模式下按鈕調整 - 防止被切掉 */
@@ -316,7 +316,7 @@
     
     .modal-footer .btn {
         padding: 0.5rem 1rem !important;
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
         width: 100% !important; /* 按鈕填滿寬度 */
         margin: 0 !important;
     }
@@ -324,12 +324,57 @@
     /* 表單欄位在小螢幕上調整 */
     ::deep .form-control,
     ::deep .form-select {
-        font-size: 0.9rem !important;
-        padding: 0.4rem 0.6rem !important; /* 進一步縮小小螢幕上的內邊距 */
+        font-size: 1rem !important;
+        padding: 0.35rem 0.5rem !important; /* 進一步縮小小螢幕上的內邊距 */
+    }
+    
+    /* 激進壓縮：表單區段間距 */
+    ::deep .form-section {
+        padding: 0.35rem !important; /* 大幅縮小區段內邊距 */
+        margin-bottom: 0.35rem !important; /* 縮小區段之間的間距 */
+    }
+    
+    /* 激進壓縮：欄位容器間距 */
+    ::deep .row > [class*="col-"] {
+        margin-bottom: 0.25rem !important; /* 欄位之間只留 4px */
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+    }
+    
+    /* 激進壓縮：表單標籤 */
+    ::deep .form-label {
+        margin-bottom: 0.1rem !important; /* 標籤與欄位間距縮到最小 */
+        font-size: 1rem !important; /* 稍微縮小標籤字體 */
+    }
+    
+    /* 激進壓縮：區段標題 */
+    ::deep .section-title,
+    ::deep h6.text-primary.border-bottom {
+        font-size: 1rem !important;
+        margin-bottom: 0.25rem !important;
+        padding-bottom: 0.2rem !important;
+    }
+    
+    /* 激進壓縮：自訂模組 */
+    ::deep .custom-module {
+        margin-bottom: 0.35rem !important;
+        padding: 0.35rem !important;
+    }
+    
+    ::deep .custom-module h6 {
+        margin-bottom: 0.3rem !important;
+        font-size: 1rem !important;
+    }
+    
+    /* 激進壓縮：編輯表單容器 */
+    .edit-form-container,
+    .custom-form-content,
+    .additional-sections {
+        padding: 0 !important;
     }
 }
 
-/* 極小螢幕調整 */
+/* 極小螢幕調整 - 最大化壓縮 */
 @media (max-width: 576px) {
     .modal-dialog {
         margin: 0.125rem !important; /* 極小邊距確保完全貼合螢幕 */
@@ -345,18 +390,18 @@
     }
     
     .modal-body {
-        padding: 1rem 0.75rem !important;
+        padding: 0.5rem 0.4rem !important; /* 更激進的壓縮 */
     }
     
     .modal-header,
     .modal-footer {
-        padding: 0.75rem !important; /* 縮小 header 和 footer 的內邊距 */
+        padding: 0.5rem !important; /* 縮小 header 和 footer 的內邊距 */
     }
     
     /* 確保按鈕在極小螢幕上完全垂直排列 */
     .modal-footer {
         flex-direction: column !important;
-        gap: 0.5rem !important;
+        gap: 0.4rem !important;
         align-items: stretch !important; /* 確保按鈕拉伸填滿 */
     }
     
@@ -367,9 +412,57 @@
         white-space: nowrap !important; /* 防止文字換行 */
     }
     
-    /* 強制表單欄位堆疊 */
+    /* 最大化壓縮：表單區段 */
+    ::deep .form-section {
+        padding: 0.25rem !important; /* 極度縮小 */
+        margin-bottom: 0.25rem !important;
+        border-radius: 4px !important;
+    }
+    
+    /* 最大化壓縮：欄位容器 */
     ::deep .row > [class*="col-"] {
-        margin-bottom: 0.75rem !important;
+        margin-bottom: 0.2rem !important; /* 極小間距，僅 3.2px */
+        padding-left: 0.2rem !important;
+        padding-right: 0.2rem !important;
+    }
+    
+    /* 最大化壓縮：表單標籤 */
+    ::deep .form-label {
+        margin-bottom: 0.05rem !important; /* 幾乎無間距 */
+        font-size: 1rem !important; /* 更小的字體 */
+    }
+    
+    /* 最大化壓縮：表單控制項 */
+    ::deep .form-control,
+    ::deep .form-select {
+        padding: 0.3rem 0.4rem !important;
+        min-height: 28px !important; /* 進一步縮小高度 */
+        font-size: 1rem !important;
+    }
+    
+    /* 最大化壓縮：TextArea */
+    ::deep textarea.form-control {
+        min-height: 50px !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* 最大化壓縮：區段標題 */
+    ::deep .section-title,
+    ::deep h6.text-primary.border-bottom {
+        font-size: 1rem !important;
+        margin-bottom: 0.2rem !important;
+        padding-bottom: 0.15rem !important;
+    }
+    
+    /* 最大化壓縮：自訂模組 */
+    ::deep .custom-module {
+        margin-bottom: 0.25rem !important;
+        padding: 0.25rem !important;
+    }
+    
+    ::deep .custom-module h6 {
+        margin-bottom: 0.2rem !important;
+        font-size: 1rem !important;
     }
 }
 
@@ -412,7 +505,7 @@
     color: #1f2937 !important;
     font-weight: 600 !important;
     margin-bottom: 0.5rem !important; /* 大幅縮短標題底部間距 */
-    font-size: 0.9rem !important; /* 縮小標題字體 */
+    font-size: 1rem !important; /* 縮小標題字體 */
 }
 
 /* ===== 滾動條樣式 ===== */
@@ -463,12 +556,12 @@
 }
 
 .modal-approval-section .approval-status .badge {
-    font-size: 0.9rem !important;
+    font-size: 1rem !important;
     padding: 0.5rem 0.75rem !important;
 }
 
 .modal-approval-section .approval-history {
-    font-size: 0.9rem !important;
+    font-size: 1rem !important;
     color: #6c757d !important;
     margin-top: 0.5rem !important;
 }

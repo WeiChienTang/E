@@ -355,7 +355,7 @@
                     var displayValue = subtotal == 0 ? "" : subtotal.ToString("N2");
                     // 根據正負數決定顏色：正數為綠色，負數為紅色
                     var cssClass = subtotal >= 0 ? "text-success" : "text-danger";
-                    return @<div class="text-end fw-bold @cssClass" style="font-size: 0.9rem;">@displayValue</div>;
+                    return @<div class="text-end fw-bold @cssClass">@displayValue</div>;
                 }
             }
         };
