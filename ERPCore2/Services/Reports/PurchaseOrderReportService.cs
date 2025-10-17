@@ -1,12 +1,13 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Services;
+using ERPCore2.Services.Reports.Common;
 using System.Text;
 
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 採購單報表服務實作 - 新版（使用精確尺寸控制）
+    /// 採購單報表服務實作 - 新版（使用精確尺寸控制與通用分頁框架）
     /// </summary>
     public class PurchaseOrderReportService : IPurchaseOrderReportService
     {
@@ -96,6 +97,31 @@ namespace ERPCore2.Services.Reports
             throw new NotImplementedException("新版報表服務不使用此方法");
         }
 
+        /// <summary>
+        /// 採購單明細包裝類別（實作 IReportDetailItem 介面）
+        /// </summary>
+        private class PurchaseOrderDetailWrapper : IReportDetailItem
+        {
+            public PurchaseOrderDetail Detail { get; }
+
+            public PurchaseOrderDetailWrapper(PurchaseOrderDetail detail)
+            {
+                Detail = detail ?? throw new ArgumentNullException(nameof(detail));
+            }
+
+            public string GetRemarks()
+            {
+                return Detail.Remarks ?? string.Empty;
+            }
+
+            public decimal GetExtraHeightFactor()
+            {
+                // 採購單明細目前無額外高度因素
+                // 未來若有特殊欄位（如圖片、多行規格）可在此加入
+                return 0m;
+            }
+        }
+
         private string GenerateHtmlReport(
             PurchaseOrder purchaseOrder,
             List<PurchaseOrderDetail> orderDetails,
@@ -116,27 +142,36 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
-            html.AppendLine("    <div class='print-container'>");
-            html.AppendLine("        <div class='print-single-layout'>");
-
-            // 公司標頭
-            GenerateHeader(html, purchaseOrder, supplier, company);
-
-            // 採購資訊區塊
-            GenerateInfoSection(html, purchaseOrder, supplier, company);
-
-            // 明細表格
-            GenerateDetailTable(html, orderDetails, productDict);
-
-            // 統計區域
-            GenerateSummarySection(html, purchaseOrder, taxRate);
-
-            // 簽名區域
-            GenerateSignatureSection(html);
-
-            html.AppendLine("        </div>");
-            html.AppendLine("    </div>");
             
+            // 準備明細清單
+            var detailsList = orderDetails ?? new List<PurchaseOrderDetail>();
+            
+            // 使用通用分頁計算器
+            var layout = ReportPageLayout.ContinuousForm(); // 中一刀格式
+            var paginator = new ReportPaginator<PurchaseOrderDetailWrapper>(layout);
+            
+            // 包裝明細項目
+            var wrappedDetails = detailsList
+                .Select(d => new PurchaseOrderDetailWrapper(d))
+                .ToList();
+            
+            // 智能分頁
+            var pages = paginator.SplitIntoPages(wrappedDetails);
+
+            // 生成每一頁
+            int startRowNum = 0;
+            for (int pageNum = 0; pageNum < pages.Count; pageNum++)
+            {
+                var page = pages[pageNum];
+                var pageDetails = page.Items.Select(w => w.Detail).ToList();
+
+                // 生成單頁內容（每個 print-container 會自動分頁）
+                GeneratePage(html, purchaseOrder, pageDetails, supplier, company, 
+                    productDict, taxRate, pageNum + 1, pages.Count, page.IsLastPage, startRowNum);
+                
+                startRowNum += pageDetails.Count;
+            }
+
             // 列印腳本
             html.AppendLine(GetPrintScript());
             
@@ -146,176 +181,105 @@ namespace ERPCore2.Services.Reports
             return html.ToString();
         }
 
-        private void GenerateHeader(StringBuilder html, PurchaseOrder purchaseOrder, Supplier? supplier, Company? company)
+        private void GeneratePage(
+            StringBuilder html,
+            PurchaseOrder purchaseOrder,
+            List<PurchaseOrderDetail> pageDetails,
+            Supplier? supplier,
+            Company? company,
+            Dictionary<int, Product> productDict,
+            decimal taxRate,
+            int currentPage,
+            int totalPages,
+            bool isLastPage,
+            int startRowNum)
         {
-            html.AppendLine("            <div class='print-header'>");
-            html.AppendLine("                <div class='print-company-header'>");
-            
-            // 左側：公司資訊
-            html.AppendLine("                    <div class='print-company-left'>");
-            html.AppendLine($"                        <div class='print-info-row'><strong>統一編號：</strong>{company?.TaxId ?? ""}</div>");
-            html.AppendLine($"                        <div class='print-info-row'><strong>聯絡電話：</strong>{company?.Phone ?? ""}</div>");
-            html.AppendLine($"                        <div class='print-info-row'><strong>傳　　真：</strong>{company?.Fax ?? ""}</div>");
-            html.AppendLine("                    </div>");
-            
-            // 中間：公司名稱與報表標題
-            html.AppendLine("                    <div class='print-company-center'>");
-            html.AppendLine($"                        <div class='print-company-name'>{company?.CompanyName ?? "公司名稱"}</div>");
-            html.AppendLine("                        <div class='print-report-title'>採購單</div>");
-            html.AppendLine("                    </div>");
-            
-            // 右側：頁次
-            html.AppendLine("                    <div class='print-company-right'>");
-            html.AppendLine("                        <div class='print-info-row'>第 1 頁</div>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                </div>");
+            html.AppendLine("    <div class='print-container'>");
+            html.AppendLine("        <div class='print-single-layout'>");
+
+            // 公司標頭（每頁都顯示）
+            GenerateHeader(html, purchaseOrder, supplier, company, currentPage, totalPages);
+
+            // 採購資訊區塊（每頁都顯示）
+            GenerateInfoSection(html, purchaseOrder, supplier, company);
+
+            // 明細表格
+            html.AppendLine("            <div class='print-table-container'>");
+            GenerateDetailTable(html, pageDetails, productDict, startRowNum);
             html.AppendLine("            </div>");
+
+            // 統計區域（只在最後一頁顯示）
+            if (isLastPage)
+            {
+                GenerateSummarySection(html, purchaseOrder, taxRate);
+                // 簽名區域（只在最後一頁顯示）
+                GenerateSignatureSection(html);
+            }
+
+            html.AppendLine("        </div>");
+            html.AppendLine("    </div>");
+        }
+
+        private void GenerateHeader(StringBuilder html, PurchaseOrder purchaseOrder, Supplier? supplier, Company? company, int currentPage, int totalPages)
+        {
+            var headerBuilder = new ReportHeaderBuilder();
+            headerBuilder
+                .SetCompanyInfo(company?.TaxId, company?.Phone, company?.Fax)
+                .SetTitle(company?.CompanyName, "採購單")
+                .SetPageInfo(currentPage, totalPages);
+
+            html.Append(headerBuilder.Build());
         }
 
         private void GenerateInfoSection(StringBuilder html, PurchaseOrder purchaseOrder, Supplier? supplier, Company? company)
         {
-            html.AppendLine("            <div class='print-info-section'>");
-            html.AppendLine("                <div class='print-info-grid'>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>採購單號：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{purchaseOrder.PurchaseOrderNumber}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>採購日期：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{purchaseOrder.OrderDate:yyyy/MM/dd}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>交貨日期：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{purchaseOrder.ExpectedDeliveryDate:yyyy/MM/dd}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>廠商名稱：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{supplier?.CompanyName ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>聯絡人：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{supplier?.ContactPerson ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>統一編號：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{supplier?.TaxNumber ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                </div>");
-            html.AppendLine("                <div class='print-info-grid-2col mt-2'>");
-            
-            html.AppendLine("                    <div class='print-info-item'>");
-            html.AppendLine("                        <span class='print-info-label'>送貨地址：</span>");
-            html.AppendLine($"                        <span class='print-info-value'>{company?.Address ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            
-            html.AppendLine("                </div>");
-            html.AppendLine("            </div>");
+            var infoBuilder = new ReportInfoSectionBuilder();
+            infoBuilder
+                .AddField("採購單號", purchaseOrder.PurchaseOrderNumber)
+                .AddDateField("採購日期", purchaseOrder.OrderDate)
+                .AddDateField("交貨日期", purchaseOrder.ExpectedDeliveryDate)
+                .AddField("廠商名稱", supplier?.CompanyName)
+                .AddField("聯絡人", supplier?.ContactPerson)
+                .AddField("統一編號", supplier?.TaxNumber)
+                .AddField("送貨地址", company?.Address, columnSpan: 3);
+
+            html.Append(infoBuilder.Build());
         }
 
-        private void GenerateDetailTable(StringBuilder html, List<PurchaseOrderDetail> orderDetails, Dictionary<int, Product> productDict)
+        private void GenerateDetailTable(StringBuilder html, List<PurchaseOrderDetail> orderDetails, Dictionary<int, Product> productDict, int startRowNum)
         {
-            html.AppendLine("            <table class='print-table'>");
-            html.AppendLine("                <thead>");
-            html.AppendLine("                    <tr>");
-            html.AppendLine("                        <th style='width: 5%;'>序號</th>");
-            html.AppendLine("                        <th style='width: 30%;'>品名</th>");
-            html.AppendLine("                        <th style='width: 10%;'>數量</th>");
-            html.AppendLine("                        <th style='width: 8%;'>單位</th>");
-            html.AppendLine("                        <th style='width: 12%;'>單價</th>");
-            html.AppendLine("                        <th style='width: 15%;'>小計</th>");
-            html.AppendLine("                        <th style='width: 20%;'>備註</th>");
-            html.AppendLine("                    </tr>");
-            html.AppendLine("                </thead>");
-            html.AppendLine("                <tbody>");
+            var tableBuilder = new ReportTableBuilder<PurchaseOrderDetail>();
+            tableBuilder
+                .AddIndexColumn("序號", "5%", startRowNum)
+                .AddTextColumn("品名", "25%", detail => productDict.GetValueOrDefault(detail.ProductId)?.Name ?? "", "text-left")
+                .AddQuantityColumn("數量", "8%", detail => detail.OrderQuantity)
+                .AddTextColumn("單位", "5%", detail => "個", "text-center")
+                .AddAmountColumn("單價", "12%", detail => detail.UnitPrice)
+                .AddAmountColumn("小計", "15%", detail => detail.SubtotalAmount)
+                .AddTextColumn("備註", "30%", detail => detail.Remarks ?? "", "text-left");
 
-            int rowNum = 1;
-            if (orderDetails != null && orderDetails.Any())
-            {
-                foreach (var detail in orderDetails)
-                {
-                    productDict.TryGetValue(detail.ProductId, out var product);
-                    
-                    html.AppendLine("                    <tr>");
-                    html.AppendLine($"                        <td class='text-center'>{rowNum}</td>");
-                    html.AppendLine($"                        <td class='text-left'>{product?.Name ?? ""}</td>");
-                    html.AppendLine($"                        <td class='text-right'>{detail.OrderQuantity:N0}</td>");
-                    html.AppendLine("                        <td class='text-center'>個</td>");
-                    html.AppendLine($"                        <td class='text-right'>{detail.UnitPrice:N2}</td>");
-                    html.AppendLine($"                        <td class='text-right'>{detail.SubtotalAmount:N2}</td>");
-                    html.AppendLine($"                        <td class='text-left'>{detail.Remarks ?? ""}</td>");
-                    html.AppendLine("                    </tr>");
-                    rowNum++;
-                }
-            }
-
-            // 填充空白行
-            for (int i = rowNum; i <= 8; i++)
-            {
-                html.AppendLine("                    <tr>");
-                html.AppendLine($"                        <td class='text-center'>{i}</td>");
-                html.AppendLine("                        <td>&nbsp;</td>");
-                html.AppendLine("                        <td>&nbsp;</td>");
-                html.AppendLine("                        <td>&nbsp;</td>");
-                html.AppendLine("                        <td>&nbsp;</td>");
-                html.AppendLine("                        <td>&nbsp;</td>");
-                html.AppendLine("                        <td>&nbsp;</td>");
-                html.AppendLine("                    </tr>");
-            }
-
-            html.AppendLine("                </tbody>");
-            html.AppendLine("            </table>");
+            html.Append(tableBuilder.Build(orderDetails, startRowNum));
         }
 
         private void GenerateSummarySection(StringBuilder html, PurchaseOrder purchaseOrder, decimal taxRate)
         {
-            html.AppendLine("            <div class='print-summary'>");
-            html.AppendLine("                <div class='print-summary-left'>");
-            html.AppendLine("                    <div class='print-remarks'>");
-            html.AppendLine("                        <div class='print-remarks-label'>備註：</div>");
-            html.AppendLine($"                        <div class='print-remarks-content'>{purchaseOrder.Remarks ?? ""}</div>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                </div>");
-            html.AppendLine("                <div class='print-summary-right'>");
-            html.AppendLine("                    <div class='print-summary-row'>");
-            html.AppendLine("                        <span class='print-summary-label'>金額小計：</span>");
-            html.AppendLine($"                        <span class='print-summary-value'>{purchaseOrder.TotalAmount:N2}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='print-summary-row'>");
-            html.AppendLine($"                        <span class='print-summary-label'>稅額({taxRate:F2}%)：</span>");
-            html.AppendLine($"                        <span class='print-summary-value'>{purchaseOrder.PurchaseTaxAmount:N2}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='print-summary-row'>");
-            html.AppendLine("                        <span class='print-summary-label'>含稅總計：</span>");
-            html.AppendLine($"                        <span class='print-summary-value font-bold'>{purchaseOrder.PurchaseTotalAmountIncludingTax:N2}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                </div>");
-            html.AppendLine("            </div>");
+            var summaryBuilder = new ReportSummaryBuilder();
+            summaryBuilder
+                .SetRemarks(purchaseOrder.Remarks)
+                .AddAmountItem("金額小計", purchaseOrder.TotalAmount)
+                .AddSummaryItem($"稅額({taxRate:F2}%)", purchaseOrder.PurchaseTaxAmount.ToString("N2"))
+                .AddAmountItem("含稅總計", purchaseOrder.PurchaseTotalAmountIncludingTax);
+
+            html.Append(summaryBuilder.Build());
         }
 
         private void GenerateSignatureSection(StringBuilder html)
         {
-            html.AppendLine("            <div class='print-signature-section'>");
-            html.AppendLine("                <div class='print-signature-item'>");
-            html.AppendLine("                    <div class='print-signature-label'>採購人員</div>");
-            html.AppendLine("                    <div class='print-signature-line'></div>");
-            html.AppendLine("                </div>");
-            html.AppendLine("                <div class='print-signature-item'>");
-            html.AppendLine("                    <div class='print-signature-label'>核准人員</div>");
-            html.AppendLine("                    <div class='print-signature-line'></div>");
-            html.AppendLine("                </div>");
-            html.AppendLine("                <div class='print-signature-item'>");
-            html.AppendLine("                    <div class='print-signature-label'>收貨確認</div>");
-            html.AppendLine("                    <div class='print-signature-line'></div>");
-            html.AppendLine("                </div>");
-            html.AppendLine("            </div>");
+            var signatureBuilder = new ReportSignatureBuilder();
+            signatureBuilder
+                .AddSignatures("採購人員", "核准人員", "收貨確認");
+
+            html.Append(signatureBuilder.Build());
         }
 
         private string GetPrintScript()

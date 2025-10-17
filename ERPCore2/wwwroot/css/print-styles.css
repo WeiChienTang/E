@@ -1,20 +1,27 @@
-/* ========================================
-   通用列印樣式 - 中一刀格式 (215.9mm × 139.7mm)
-   ======================================== */
-
 /* 列印專用設定 - 完全消除瀏覽器邊距 */
 @media print {
     @page {
-        size: 215.9mm 139.7mm;
-        margin: 0mm !important;
+        size: 213.3mm 139.7mm; /* 調整為實際紙張寬度 21.33cm */
+        margin: 2mm 2mm 2mm 2mm !important; /* 設定實際可列印邊距：上2mm 右2mm 下2mm 左2mm（減少左右邊距） */
     }
     
     html, body {
         margin: 0mm !important;
         padding: 0mm !important;
-        width: 215.9mm !important;
-        height: 139.7mm !important;
-        overflow: hidden !important;
+        width: 213.3mm !important;
+        overflow: visible !important;
+    }
+    
+    /* 每個列印容器強制分頁 */
+    .print-container {
+        page-break-after: always;
+        break-after: page;
+    }
+    
+    /* 最後一個容器不分頁 */
+    .print-container:last-child {
+        page-break-after: auto;
+        break-after: auto;
     }
     
     * {
@@ -32,7 +39,7 @@ body {
     font-family: 'Microsoft JhengHei', '微軟正黑體', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    font-size: 12px;
+    font-size: 14px; /* 加大字體從 12px 到 14px */
     line-height: 1.4;
     color: #000;
     background: white;
@@ -40,13 +47,27 @@ body {
 
 /* 主容器 */
 .print-container {
-    width: 215.9mm;
-    height: 139.7mm;
+    width: 209.3mm; /* 增加寬度：213.3mm - 左右各2mm邊距 = 209.3mm */
     margin: 0 auto;
-    padding: 3mm;
+    padding: 2mm;
     box-sizing: border-box;
     position: relative;
     background: white;
+}
+
+/* 螢幕預覽時顯示分隔 */
+@media screen {
+    .print-container {
+        margin-bottom: 5mm;
+        border: 1px solid #ccc;
+    }
+}
+
+/* 列印時的容器高度控制 */
+@media print {
+    .print-container {
+        height: 135.7mm; /* 調整高度：139.7mm - 上下各2mm邊距 = 135.7mm */
+    }
 }
 
 /* 上下分割版面 */
@@ -88,9 +109,16 @@ body {
     flex-direction: column;
 }
 
+/* 明細表格容器 - 自動擴展填充剩餘空間 */
+.print-table-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 /* 頁首區域 */
 .print-header {
-    margin-bottom: 2mm;
+    margin-bottom: 0.5mm;
 }
 
 .print-company-header {
@@ -104,7 +132,7 @@ body {
 
 .print-company-left {
     flex: 1;
-    font-size: 11px;
+    /* 使用統一字體大小 */
 }
 
 .print-company-center {
@@ -118,13 +146,13 @@ body {
 }
 
 .print-company-name {
-    font-size: 18px;
+    font-size: 18px; /* 公司名稱特殊字體大小 */
     font-weight: bold;
     margin-bottom: 1mm;
 }
 
 .print-report-title {
-    font-size: 16px;
+    font-size: 20px; /* 報表標題特殊字體大小 */
     font-weight: bold;
     text-decoration: underline;
 }
@@ -136,32 +164,30 @@ body {
 
 /* 資訊區塊 */
 .print-info-section {
-    border: 1px solid #333;
-    padding: 2mm;
-    margin-bottom: 2mm;
+    margin-bottom: 1mm; /* 縮小底部間距，讓與統計區域更緊密 */
 }
 
 .print-info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2mm;
+    gap: 1mm; /* 縮小間距，讓文字更緊密 */
 }
 
 .print-info-grid-2col {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 2mm;
+    gap: 1mm; /* 縮小間距 */
 }
 
 .print-info-item {
     display: flex;
     align-items: baseline;
+    line-height: 1.2; /* 調整行高，讓上下更緊密 */
 }
 
 .print-info-label {
     font-weight: bold;
     white-space: nowrap;
-    margin-right: 1mm;
 }
 
 .print-info-value {
@@ -172,7 +198,7 @@ body {
 .print-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
+    /* 使用統一字體大小 */
     margin: 2mm 0;
 }
 
@@ -181,17 +207,21 @@ body {
 }
 
 .print-table th {
-    border: 1px solid #333;
-    padding: 1mm;
+    /* 只保留左右邊框 */
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+    padding: 0.5mm 1mm; /* 減少上下間距 */
     text-align: center;
     font-weight: bold;
     vertical-align: middle;
+    line-height: 1.2; /* 縮小行高 */
 }
 
 .print-table td {
-    border: 1px solid #333;
-    padding: 1mm;
+    /* 完全移除邊框 */
+    padding: 0.5mm 1mm; /* 減少上下間距 */
     vertical-align: middle;
+    line-height: 1.2; /* 縮小行高 */
 }
 
 .print-table .text-left {
@@ -209,19 +239,20 @@ body {
 /* 統計區域 */
 .print-summary {
     display: flex;
-    border: 1px solid #333;
-    margin-top: 2mm;
+    /* 完全移除邊框 */
+    margin-top: 0mm; /* 往上移動，與資訊區更緊密 */
 }
 
 .print-summary-left {
     flex: 2;
     padding: 2mm;
-    border-right: 1px solid #333;
+    /* 完全移除邊框 */
 }
 
 .print-summary-right {
     flex: 1;
     padding: 2mm;
+    /* 完全移除邊框 */
 }
 
 .print-summary-row {
@@ -250,7 +281,7 @@ body {
 
 .print-remarks-content {
     min-height: 10mm;
-    border: 1px solid #ccc;
+    /* 完全移除邊框 */
     padding: 1mm;
 }
 
@@ -258,8 +289,8 @@ body {
 .print-footer {
     margin-top: auto;
     padding-top: 2mm;
-    border-top: 1px solid #ddd;
-    font-size: 10px;
+    /* 完全移除邊框 */
+    /* 使用統一字體大小 */
     text-align: center;
     color: #666;
 }
@@ -285,10 +316,6 @@ body {
     border-bottom: 1px solid #333;
     height: 8mm;
     margin-bottom: 1mm;
-}
-
-.print-signature-date {
-    font-size: 10px;
 }
 
 /* 工具樣式 */
