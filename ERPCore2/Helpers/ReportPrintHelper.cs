@@ -272,5 +272,185 @@ namespace ERPCore2.Helpers
 
             return displayName;
         }
+
+        /// <summary>
+        /// 使用隱藏 iframe 執行列印 - 通用方法
+        /// </summary>
+        /// <param name="printUrl">列印 URL (需包含 autoprint=true 參數)</param>
+        /// <param name="jsRuntime">JavaScript 運行時</param>
+        /// <param name="iframeId">iframe 的 ID，預設為 'printFrame'</param>
+        /// <returns>執行結果</returns>
+        public static async Task<bool> ExecutePrintWithHiddenIframeAsync(
+            string printUrl,
+            IJSRuntime jsRuntime,
+            string iframeId = "printFrame")
+        {
+            try
+            {
+                // 確保 URL 包含 autoprint 參數
+                if (!printUrl.Contains("autoprint=true", StringComparison.OrdinalIgnoreCase))
+                {
+                    // 自動添加 autoprint 參數
+                    var separator = printUrl.Contains("?") ? "&" : "?";
+                    printUrl = $"{printUrl}{separator}autoprint=true";
+                }
+
+                // 使用完全隱藏的 iframe 載入報表，報表會自動觸發列印
+                await jsRuntime.InvokeVoidAsync("eval", $@"
+                    (function() {{
+                        // 移除舊的列印 iframe（如果存在）
+                        const oldFrame = document.getElementById('{iframeId}');
+                        if (oldFrame) {{
+                            oldFrame.remove();
+                        }}
+                        
+                        // 建立新的完全隱藏 iframe
+                        const iframe = document.createElement('iframe');
+                        iframe.id = '{iframeId}';
+                        iframe.style.display = 'none';
+                        iframe.style.position = 'absolute';
+                        iframe.style.width = '0';
+                        iframe.style.height = '0';
+                        iframe.style.border = 'none';
+                        iframe.style.visibility = 'hidden';
+                        
+                        // 設定 iframe 來源並加入頁面（不需要 onload，報表自己會處理）
+                        document.body.appendChild(iframe);
+                        iframe.src = '{printUrl}';
+                    }})();
+                ");
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await jsRuntime.InvokeVoidAsync("console.error", $"執行列印時發生錯誤: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 建立通用的報表列印 URL（支援不同單據類型）
+        /// </summary>
+        /// <param name="baseUrl">基礎 URL（通常是 NavigationManager.BaseUri）</param>
+        /// <param name="reportType">報表類型（如 "purchase-order", "purchase-receiving", "sales-order" 等）</param>
+        /// <param name="documentId">單據 ID</param>
+        /// <param name="configuration">列印配置（可選）</param>
+        /// <param name="autoprint">是否自動列印，預設為 true</param>
+        /// <returns>完整的報表 URL</returns>
+        public static string BuildPrintUrl(
+            string baseUrl,
+            string reportType,
+            int documentId,
+            ReportPrintConfiguration? configuration = null,
+            bool autoprint = true)
+        {
+            // 移除尾部的斜線
+            baseUrl = baseUrl.TrimEnd('/');
+            
+            // 建立基礎 URL
+            var url = $"{baseUrl}/api/report/{reportType}/{documentId}";
+            
+            // 添加查詢參數
+            var parameters = new List<string>();
+            
+            if (autoprint)
+            {
+                parameters.Add("autoprint=true");
+            }
+            
+            if (configuration != null)
+            {
+                parameters.Add($"configId={configuration.Id}");
+                parameters.Add($"reportType={Uri.EscapeDataString(configuration.ReportType)}");
+            }
+            
+            // 組合 URL
+            if (parameters.Any())
+            {
+                url += "?" + string.Join("&", parameters);
+            }
+            
+            return url;
+        }
+
+        /// <summary>
+        /// 驗證實體是否已核准（適用於需要核准後才能列印的單據）
+        /// </summary>
+        /// <param name="isApproved">實體的核准狀態</param>
+        /// <param name="entityName">實體名稱（用於錯誤訊息）</param>
+        /// <returns>驗證結果和錯誤訊息</returns>
+        public static (bool IsValid, string ErrorMessage) ValidateApprovalStatus(
+            bool isApproved,
+            string entityName = "單據")
+        {
+            if (!isApproved)
+            {
+                return (false, $"請先核准{entityName}後再進行列印");
+            }
+            
+            return (true, "");
+        }
+
+        /// <summary>
+        /// 驗證實體和ID是否有效（用於列印前檢查）
+        /// </summary>
+        /// <param name="entity">實體物件</param>
+        /// <param name="entityId">實體 ID</param>
+        /// <param name="entityName">實體名稱（用於錯誤訊息）</param>
+        /// <returns>驗證結果和錯誤訊息</returns>
+        public static (bool IsValid, string ErrorMessage) ValidateEntityForPrint(
+            object? entity,
+            int? entityId,
+            string entityName = "單據")
+        {
+            if (entity == null)
+            {
+                return (false, $"請先儲存{entityName}資料後再進行列印");
+            }
+            
+            if (!entityId.HasValue || entityId.Value <= 0)
+            {
+                return (false, $"請先儲存{entityName}後再進行列印");
+            }
+            
+            return (true, "");
+        }
+
+        /// <summary>
+        /// 完整的列印驗證（包含實體、ID、核准狀態）
+        /// </summary>
+        /// <param name="entity">實體物件</param>
+        /// <param name="entityId">實體 ID</param>
+        /// <param name="isApproved">核准狀態</param>
+        /// <param name="entityName">實體名稱（用於錯誤訊息）</param>
+        /// <param name="requireApproval">是否需要核准才能列印，預設為 true</param>
+        /// <returns>驗證結果和錯誤訊息</returns>
+        public static (bool IsValid, string ErrorMessage) ValidateForPrint(
+            object? entity,
+            int? entityId,
+            bool isApproved,
+            string entityName = "單據",
+            bool requireApproval = true)
+        {
+            // 檢查實體和ID
+            var (entityValid, entityError) = ValidateEntityForPrint(entity, entityId, entityName);
+            if (!entityValid)
+            {
+                return (false, entityError);
+            }
+            
+            // 檢查核准狀態（如果需要）
+            if (requireApproval)
+            {
+                var (approvalValid, approvalError) = ValidateApprovalStatus(isApproved, entityName);
+                if (!approvalValid)
+                {
+                    return (false, approvalError);
+                }
+            }
+            
+            return (true, "");
+        }
     }
 }

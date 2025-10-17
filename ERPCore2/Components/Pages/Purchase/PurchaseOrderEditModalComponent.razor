@@ -41,7 +41,7 @@
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
                           CustomModules="@GetCustomModules()"
-                          ShowPrintButton = "false"
+                          ShowPrintButton = "true"
                           OnPrint="@HandlePrint"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
                           ApprovalPermission="PurchaseOrder.Approve"
@@ -136,22 +136,15 @@
     {
         try
         {
-            Console.WriteLine($"[PurchaseOrderEditModalComponent] HandleSaveSuccess 被調用");
             if (OnPurchaseOrderSaved.HasDelegate && editModalComponent?.Entity != null)
             {
-                Console.WriteLine($"[PurchaseOrderEditModalComponent] 準備調用 OnPurchaseOrderSaved 事件");
                 await OnPurchaseOrderSaved.InvokeAsync(editModalComponent.Entity);
-                Console.WriteLine($"[PurchaseOrderEditModalComponent] OnPurchaseOrderSaved 事件調用完成");
             }
-            else
-            {
-                Console.WriteLine($"[PurchaseOrderEditModalComponent] OnPurchaseOrderSaved 事件沒有委派或實體為空");
-            }
+
             await CloseModal();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[PurchaseOrderEditModalComponent] HandleSaveSuccess 發生錯誤: {ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
                 additionalData: "採購單編輯Modal儲存成功處理失敗");
         }
@@ -178,22 +171,18 @@
     {
         try
         {
-            if (editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("請先儲存採購單資料後再進行列印");
-                return;
-            }
+            // 使用通用 Helper 進行完整驗證（實體、ID、核准狀態）
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
+                entity: editModalComponent?.Entity,
+                entityId: PurchaseOrderId,
+                isApproved: editModalComponent?.Entity?.IsApproved ?? false,
+                entityName: "採購單",
+                requireApproval: true
+            );
             
-            if (!PurchaseOrderId.HasValue || PurchaseOrderId <= 0)
+            if (!isValid)
             {
-                await NotificationService.ShowWarningAsync("請先儲存採購單後再進行列印");
-                return;
-            }
-            
-            // 檢查採購單是否已核准
-            if (!editModalComponent.Entity.IsApproved)
-            {
-                await NotificationService.ShowWarningAsync("請先核准採購單後再進行列印");
+                await NotificationService.ShowWarningAsync(errorMessage);
                 return;
             }
             
@@ -229,25 +218,30 @@
                 return;
             }
 
-            // 建立列印 URL
-            var printUrl = ReportPrintHelper.BuildReportUrl(
-                NavigationManager.BaseUri.TrimEnd('/'), 
-                PurchaseOrderId.Value, 
-                printConfig, 
-                "html");
-            printUrl += "/print";
+            // 使用通用 Helper 建立列印 URL
+            var printUrl = ReportPrintHelper.BuildPrintUrl(
+                baseUrl: NavigationManager.BaseUri,
+                reportType: "purchase-order",
+                documentId: PurchaseOrderId.Value,
+                configuration: printConfig,
+                autoprint: true
+            );
 
-            // 執行列印
-            var printSuccess = await ReportPrintHelper.ExecutePrintAsync(printUrl, JSRuntime);
+            // 使用通用 Helper 執行列印（隱藏 iframe 方式）
+            var success = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
+                printUrl: printUrl,
+                jsRuntime: JSRuntime,
+                iframeId: "printFrame"
+            );
             
-            if (printSuccess)
+            if (success)
             {
                 var configName = ReportPrintHelper.GetDisplayName(printConfig);
                 await NotificationService.ShowSuccessAsync($"已使用 {configName} 送出列印");
             }
             else
             {
-                await NotificationService.ShowWarningAsync("列印執行可能失敗，請檢查印表機設定");
+                await NotificationService.ShowErrorAsync("列印執行失敗");
             }
         }
         catch (Exception ex)
@@ -948,8 +942,6 @@
     {
         try
         {
-            Console.WriteLine($"SavePurchaseOrderDetails: 準備儲存 {purchaseOrderDetails.Count} 筆明細");
-            
             // 設定主檔ID
             foreach (var detail in purchaseOrderDetails)
             {
@@ -963,8 +955,6 @@
                 {
                     detail.UpdatedAt = DateTime.Now;
                 }
-                
-                Console.WriteLine($"儲存前明細 - Id: {detail.Id}, ProductId: {detail.ProductId}, OrderQuantity: {detail.OrderQuantity}, UnitPrice: {detail.UnitPrice}");
             }
 
             // 先獲取現有的明細

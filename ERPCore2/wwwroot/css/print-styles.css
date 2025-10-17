@@ -1,0 +1,321 @@
+/* ========================================
+   通用列印樣式 - 中一刀格式 (215.9mm × 139.7mm)
+   ======================================== */
+
+/* 列印專用設定 - 完全消除瀏覽器邊距 */
+@media print {
+    @page {
+        size: 215.9mm 139.7mm;
+        margin: 0mm !important;
+    }
+    
+    html, body {
+        margin: 0mm !important;
+        padding: 0mm !important;
+        width: 215.9mm !important;
+        height: 139.7mm !important;
+        overflow: hidden !important;
+    }
+    
+    * {
+        box-sizing: border-box;
+    }
+    
+    /* 隱藏不需要列印的元素 */
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* 通用樣式（螢幕與列印共用） */
+body {
+    font-family: 'Microsoft JhengHei', '微軟正黑體', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+    background: white;
+}
+
+/* 主容器 */
+.print-container {
+    width: 215.9mm;
+    height: 139.7mm;
+    margin: 0 auto;
+    padding: 3mm;
+    box-sizing: border-box;
+    position: relative;
+    background: white;
+}
+
+/* 上下分割版面 */
+.print-split-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.print-upper-section {
+    height: 50%;
+    padding: 2mm;
+    box-sizing: border-box;
+    border-bottom: 1px dashed #999;
+}
+
+.print-lower-section {
+    height: 50%;
+    padding: 2mm;
+    box-sizing: border-box;
+}
+
+.print-tear-line {
+    height: 1mm;
+    background: repeating-linear-gradient(
+        90deg,
+        #999 0,
+        #999 3mm,
+        transparent 3mm,
+        transparent 6mm
+    );
+}
+
+/* 單一版面 */
+.print-single-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 頁首區域 */
+.print-header {
+    margin-bottom: 2mm;
+}
+
+.print-company-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2mm;
+    padding-bottom: 2mm;
+    border-bottom: 1px solid #333;
+}
+
+.print-company-left {
+    flex: 1;
+    font-size: 11px;
+}
+
+.print-company-center {
+    flex: 1;
+    text-align: center;
+}
+
+.print-company-right {
+    flex: 1;
+    text-align: right;
+}
+
+.print-company-name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 1mm;
+}
+
+.print-report-title {
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.print-info-row {
+    margin-bottom: 1mm;
+    line-height: 1.3;
+}
+
+/* 資訊區塊 */
+.print-info-section {
+    border: 1px solid #333;
+    padding: 2mm;
+    margin-bottom: 2mm;
+}
+
+.print-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2mm;
+}
+
+.print-info-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2mm;
+}
+
+.print-info-item {
+    display: flex;
+    align-items: baseline;
+}
+
+.print-info-label {
+    font-weight: bold;
+    white-space: nowrap;
+    margin-right: 1mm;
+}
+
+.print-info-value {
+    flex: 1;
+}
+
+/* 表格樣式 */
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 2mm 0;
+}
+
+.print-table thead {
+    background-color: #f0f0f0;
+}
+
+.print-table th {
+    border: 1px solid #333;
+    padding: 1mm;
+    text-align: center;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.print-table td {
+    border: 1px solid #333;
+    padding: 1mm;
+    vertical-align: middle;
+}
+
+.print-table .text-left {
+    text-align: left;
+}
+
+.print-table .text-center {
+    text-align: center;
+}
+
+.print-table .text-right {
+    text-align: right;
+}
+
+/* 統計區域 */
+.print-summary {
+    display: flex;
+    border: 1px solid #333;
+    margin-top: 2mm;
+}
+
+.print-summary-left {
+    flex: 2;
+    padding: 2mm;
+    border-right: 1px solid #333;
+}
+
+.print-summary-right {
+    flex: 1;
+    padding: 2mm;
+}
+
+.print-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1mm;
+}
+
+.print-summary-label {
+    font-weight: bold;
+}
+
+.print-summary-value {
+    text-align: right;
+}
+
+/* 備註區域 */
+.print-remarks {
+    margin-bottom: 2mm;
+}
+
+.print-remarks-label {
+    font-weight: bold;
+    margin-bottom: 1mm;
+}
+
+.print-remarks-content {
+    min-height: 10mm;
+    border: 1px solid #ccc;
+    padding: 1mm;
+}
+
+/* 頁尾 */
+.print-footer {
+    margin-top: auto;
+    padding-top: 2mm;
+    border-top: 1px solid #ddd;
+    font-size: 10px;
+    text-align: center;
+    color: #666;
+}
+
+/* 簽名區域 */
+.print-signature-section {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 3mm;
+}
+
+.print-signature-item {
+    text-align: center;
+    min-width: 30mm;
+}
+
+.print-signature-label {
+    font-weight: bold;
+    margin-bottom: 1mm;
+}
+
+.print-signature-line {
+    border-bottom: 1px solid #333;
+    height: 8mm;
+    margin-bottom: 1mm;
+}
+
+.print-signature-date {
+    font-size: 10px;
+}
+
+/* 工具樣式 */
+.font-bold {
+    font-weight: bold;
+}
+
+.text-underline {
+    text-decoration: underline;
+}
+
+.mb-1 {
+    margin-bottom: 1mm;
+}
+
+.mb-2 {
+    margin-bottom: 2mm;
+}
+
+.mt-2 {
+    margin-top: 2mm;
+}
+
+.p-1 {
+    padding: 1mm;
+}
+
+.p-2 {
+    padding: 2mm;
+}

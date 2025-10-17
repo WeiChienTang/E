@@ -1,107 +1,38 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Services;
+using System.Text;
 
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 採購單報表服務實作
+    /// 採購單報表服務實作 - 新版（使用精確尺寸控制）
     /// </summary>
     public class PurchaseOrderReportService : IPurchaseOrderReportService
     {
-        private readonly IReportService _reportService;
         private readonly IPurchaseOrderService _purchaseOrderService;
         private readonly ISupplierService _supplierService;
         private readonly IProductService _productService;
         private readonly ICompanyService _companyService;
+        private readonly ISystemParameterService _systemParameterService;
 
         public PurchaseOrderReportService(
-            IReportService reportService,
             IPurchaseOrderService purchaseOrderService,
             ISupplierService supplierService,
             IProductService productService,
-            ICompanyService companyService)
+            ICompanyService companyService,
+            ISystemParameterService systemParameterService)
         {
-            _reportService = reportService;
             _purchaseOrderService = purchaseOrderService;
             _supplierService = supplierService;
             _productService = productService;
             _companyService = companyService;
+            _systemParameterService = systemParameterService;
         }
 
         public async Task<string> GeneratePurchaseOrderReportAsync(int purchaseOrderId, ReportFormat format = ReportFormat.Html)
         {
-            try
-            {
-                // 載入採購單資料
-                var purchaseOrder = await _purchaseOrderService.GetByIdAsync(purchaseOrderId);
-                if (purchaseOrder == null)
-                {
-                    throw new ArgumentException($"找不到採購單 ID: {purchaseOrderId}");
-                }
-
-                // 載入採購單明細
-                var orderDetails = await _purchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
-
-                // 載入相關資料
-                Supplier? supplier = null;
-                if (purchaseOrder.SupplierId > 0)
-                {
-                    supplier = await _supplierService.GetByIdAsync(purchaseOrder.SupplierId);
-                }
-
-                // 載入公司資料
-                Company? company = null;
-                if (purchaseOrder.CompanyId > 0)
-                {
-                    company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId);
-                }
-
-                // 載入商品資料並建立字典以便快速查詢
-                var allProducts = await _productService.GetAllAsync();
-                var productDict = allProducts.ToDictionary(p => p.Id, p => p);
-
-                // 計算稅額和總計
-                var taxAmount = purchaseOrder.TotalAmount * 0.05m;
-                var grandTotal = purchaseOrder.TotalAmount + taxAmount;
-                
-                // 建立報表資料
-                var reportData = new ReportData<PurchaseOrder, PurchaseOrderDetail>
-                {
-                    MainEntity = purchaseOrder,
-                    DetailEntities = orderDetails,
-                    AdditionalData = new Dictionary<string, object>
-                    {
-                        { "SupplierName", supplier?.CompanyName ?? "未指定" },
-                        { "SupplierContactPerson", supplier?.ContactPerson ?? "" },
-                        { "CompanyName", company?.CompanyName ?? "未指定" },
-                        { "CompanyAddress", company?.Address ?? "" },
-                        { "CompanyPhone", company?.Phone ?? "" },
-                        { "CompanyTaxId", company?.TaxId ?? "" },
-                        { "CompanyFax", company?.Fax ?? "" },
-                        { "ProductDict", productDict },
-                        { "ApprovalPerson", purchaseOrder.ApprovedByUser?.Name ?? purchaseOrder.CreatedBy ?? "" },
-                        { "PurchasingPerson", purchaseOrder.PurchasePersonnel ?? purchaseOrder.CreatedBy ?? "" },
-                        { "TaxAmount", taxAmount }, // 稅額 = 金額 * 5%
-                        { "GrandTotal", grandTotal } // 總計 = 金額 + 稅額
-                    }
-                };
-
-                // 取得報表配置
-                var configuration = GetPurchaseOrderReportConfiguration(company);
-
-                // 根據格式生成報表
-                return format switch
-                {
-                    ReportFormat.Html => await _reportService.GenerateHtmlReportAsync(configuration, reportData),
-                    ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
-                    _ => throw new ArgumentException($"不支援的報表格式: {format}")
-                };
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"生成採購單報表時發生錯誤: {ex.Message}", ex);
-            }
+            return await GeneratePurchaseOrderReportAsync(purchaseOrderId, format, null);
         }
 
         public async Task<string> GeneratePurchaseOrderReportAsync(
@@ -111,70 +42,44 @@ namespace ERPCore2.Services.Reports
         {
             try
             {
-                // 載入採購單資料
+                // 載入資料
                 var purchaseOrder = await _purchaseOrderService.GetByIdAsync(purchaseOrderId);
                 if (purchaseOrder == null)
                 {
                     throw new ArgumentException($"找不到採購單 ID: {purchaseOrderId}");
                 }
 
-                // 載入採購單明細
                 var orderDetails = await _purchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
-
-                // 載入相關資料
+                
                 Supplier? supplier = null;
                 if (purchaseOrder.SupplierId > 0)
                 {
                     supplier = await _supplierService.GetByIdAsync(purchaseOrder.SupplierId);
                 }
 
-                // 載入公司資料
                 Company? company = null;
                 if (purchaseOrder.CompanyId > 0)
                 {
                     company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId);
                 }
 
-                // 載入商品資料並建立字典以便快速查詢
                 var allProducts = await _productService.GetAllAsync();
                 var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
-                // 計算稅額和總計
-                var taxAmount = purchaseOrder.TotalAmount * 0.05m;
-                var grandTotal = purchaseOrder.TotalAmount + taxAmount;
-                
-                // 建立報表資料
-                var reportData = new ReportData<PurchaseOrder, PurchaseOrderDetail>
+                decimal taxRate = 5.0m;
+                try
                 {
-                    MainEntity = purchaseOrder,
-                    DetailEntities = orderDetails,
-                    AdditionalData = new Dictionary<string, object>
-                    {
-                        { "SupplierName", supplier?.CompanyName ?? "未指定" },
-                        { "SupplierContactPerson", supplier?.ContactPerson ?? "" },
-                        { "CompanyName", company?.CompanyName ?? "未指定" },
-                        { "CompanyAddress", company?.Address ?? "" },
-                        { "CompanyPhone", company?.Phone ?? "" },
-                        { "CompanyTaxId", company?.TaxId ?? "" },
-                        { "CompanyFax", company?.Fax ?? "" },
-                        { "ProductDict", productDict },
-                        { "ApprovalPerson", purchaseOrder.ApprovedByUser?.Name ?? purchaseOrder.CreatedBy ?? "" },
-                        { "PurchasingPerson", purchaseOrder.PurchasePersonnel ?? purchaseOrder.CreatedBy ?? "" },
-                        { "TaxAmount", taxAmount }, // 稅額 = 金額 * 5%
-                        { "GrandTotal", grandTotal }, // 總計 = 金額 + 稅額
-                        { "PrinterConfiguration", reportPrintConfig?.PrinterConfiguration as object ?? new object() },
-                        { "PaperSetting", reportPrintConfig?.PaperSetting as object ?? new object() },
-                        { "ReportPrintConfig", reportPrintConfig as object ?? new object() }
-                    }
-                };
-
-                // 取得報表配置（可能會根據列印配置調整）
-                var configuration = GetPurchaseOrderReportConfiguration(company);
+                    taxRate = await _systemParameterService.GetTaxRateAsync();
+                }
+                catch
+                {
+                    // 使用預設稅率
+                }
 
                 // 根據格式生成報表
                 return format switch
                 {
-                    ReportFormat.Html => await _reportService.GenerateHtmlReportAsync(configuration, reportData),
+                    ReportFormat.Html => GenerateHtmlReport(purchaseOrder, orderDetails, supplier, company, productDict, taxRate),
                     ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
                     _ => throw new ArgumentException($"不支援的報表格式: {format}")
                 };
@@ -187,201 +92,254 @@ namespace ERPCore2.Services.Reports
 
         public ReportConfiguration GetPurchaseOrderReportConfiguration(Company? company = null)
         {
-            return new ReportConfiguration
+            // 保留相容性，但新版不再使用此方法
+            throw new NotImplementedException("新版報表服務不使用此方法");
+        }
+
+        private string GenerateHtmlReport(
+            PurchaseOrder purchaseOrder,
+            List<PurchaseOrderDetail> orderDetails,
+            Supplier? supplier,
+            Company? company,
+            Dictionary<int, Product> productDict,
+            decimal taxRate)
+        {
+            var html = new StringBuilder();
+
+            // HTML 文件開始
+            html.AppendLine("<!DOCTYPE html>");
+            html.AppendLine("<html lang='zh-TW'>");
+            html.AppendLine("<head>");
+            html.AppendLine("    <meta charset='UTF-8'>");
+            html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+            html.AppendLine($"    <title>採購單 - {purchaseOrder.PurchaseOrderNumber}</title>");
+            html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
+            html.AppendLine("</head>");
+            html.AppendLine("<body>");
+            html.AppendLine("    <div class='print-container'>");
+            html.AppendLine("        <div class='print-single-layout'>");
+
+            // 公司標頭
+            GenerateHeader(html, purchaseOrder, supplier, company);
+
+            // 採購資訊區塊
+            GenerateInfoSection(html, purchaseOrder, supplier, company);
+
+            // 明細表格
+            GenerateDetailTable(html, orderDetails, productDict);
+
+            // 統計區域
+            GenerateSummarySection(html, purchaseOrder, taxRate);
+
+            // 簽名區域
+            GenerateSignatureSection(html);
+
+            html.AppendLine("        </div>");
+            html.AppendLine("    </div>");
+            
+            // 列印腳本
+            html.AppendLine(GetPrintScript());
+            
+            html.AppendLine("</body>");
+            html.AppendLine("</html>");
+
+            return html.ToString();
+        }
+
+        private void GenerateHeader(StringBuilder html, PurchaseOrder purchaseOrder, Supplier? supplier, Company? company)
+        {
+            html.AppendLine("            <div class='print-header'>");
+            html.AppendLine("                <div class='print-company-header'>");
+            
+            // 左側：公司資訊
+            html.AppendLine("                    <div class='print-company-left'>");
+            html.AppendLine($"                        <div class='print-info-row'><strong>統一編號：</strong>{company?.TaxId ?? ""}</div>");
+            html.AppendLine($"                        <div class='print-info-row'><strong>聯絡電話：</strong>{company?.Phone ?? ""}</div>");
+            html.AppendLine($"                        <div class='print-info-row'><strong>傳　　真：</strong>{company?.Fax ?? ""}</div>");
+            html.AppendLine("                    </div>");
+            
+            // 中間：公司名稱與報表標題
+            html.AppendLine("                    <div class='print-company-center'>");
+            html.AppendLine($"                        <div class='print-company-name'>{company?.CompanyName ?? "公司名稱"}</div>");
+            html.AppendLine("                        <div class='print-report-title'>採購單</div>");
+            html.AppendLine("                    </div>");
+            
+            // 右側：頁次
+            html.AppendLine("                    <div class='print-company-right'>");
+            html.AppendLine("                        <div class='print-info-row'>第 1 頁</div>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                </div>");
+            html.AppendLine("            </div>");
+        }
+
+        private void GenerateInfoSection(StringBuilder html, PurchaseOrder purchaseOrder, Supplier? supplier, Company? company)
+        {
+            html.AppendLine("            <div class='print-info-section'>");
+            html.AppendLine("                <div class='print-info-grid'>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>採購單號：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{purchaseOrder.PurchaseOrderNumber}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>採購日期：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{purchaseOrder.OrderDate:yyyy/MM/dd}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>交貨日期：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{purchaseOrder.ExpectedDeliveryDate:yyyy/MM/dd}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>廠商名稱：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{supplier?.CompanyName ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>聯絡人：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{supplier?.ContactPerson ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>統一編號：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{supplier?.TaxNumber ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                </div>");
+            html.AppendLine("                <div class='print-info-grid-2col mt-2'>");
+            
+            html.AppendLine("                    <div class='print-info-item'>");
+            html.AppendLine("                        <span class='print-info-label'>送貨地址：</span>");
+            html.AppendLine($"                        <span class='print-info-value'>{company?.Address ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            
+            html.AppendLine("                </div>");
+            html.AppendLine("            </div>");
+        }
+
+        private void GenerateDetailTable(StringBuilder html, List<PurchaseOrderDetail> orderDetails, Dictionary<int, Product> productDict)
+        {
+            html.AppendLine("            <table class='print-table'>");
+            html.AppendLine("                <thead>");
+            html.AppendLine("                    <tr>");
+            html.AppendLine("                        <th style='width: 5%;'>序號</th>");
+            html.AppendLine("                        <th style='width: 30%;'>品名</th>");
+            html.AppendLine("                        <th style='width: 10%;'>數量</th>");
+            html.AppendLine("                        <th style='width: 8%;'>單位</th>");
+            html.AppendLine("                        <th style='width: 12%;'>單價</th>");
+            html.AppendLine("                        <th style='width: 15%;'>小計</th>");
+            html.AppendLine("                        <th style='width: 20%;'>備註</th>");
+            html.AppendLine("                    </tr>");
+            html.AppendLine("                </thead>");
+            html.AppendLine("                <tbody>");
+
+            int rowNum = 1;
+            if (orderDetails != null && orderDetails.Any())
             {
-                Title = "採購單",
-                CompanyName = company?.CompanyName ?? "貴公司名稱", // 使用實際公司名稱
-                Orientation = PageOrientation.Portrait,
-                PageSize = PageSize.ContinuousForm,
-                
-                // 頁首區段
-                HeaderSections = new List<ReportHeaderSection>
+                foreach (var detail in orderDetails)
                 {
-                    new ReportHeaderSection
-                    {
-                        Title = "",
-                        Order = 1,
-                        FieldsPerRow = 3,
-                        HasBorder = true, // 添加外框
-                        Fields = new List<ReportField>
-                        {
-                            new ReportField
-                            {
-                                Label = "採購單號",
-                                PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
-                            },
-                            new ReportField
-                            {
-                                Label = "採購日期",
-                                PropertyName = nameof(PurchaseOrder.OrderDate),
-                                Format = "yyyy/MM/dd"
-                            },
-                            new ReportField
-                            {
-                                Label = "交貨日期",
-                                PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
-                                Format = "yyyy/MM/dd"
-                            },
-                            new ReportField
-                            {
-                                Label = "廠商名稱",
-                                PropertyName = "SupplierName",
-                            },
-                            new ReportField
-                            {
-                                Label = "聯　絡　人",
-                                PropertyName = "SupplierContactPerson",
-                            },
-                            new ReportField
-                            {
-                                Label = "連絡電話",
-                                PropertyName = "SupplierPhone"
-                            },
-                            new ReportField
-                            {
-                                Label = "送貨地址",
-                                PropertyName = "CompanyAddress",
-                            },
-                        }
-                    },
-                },
-                
-                // 明細表格欄位
-                Columns = new List<ReportColumnDefinition>
-                {
-                    new ReportColumnDefinition
-                    {
-                        Header = "序號",
-                        PropertyName = "",
-                        Width = "4%",
-                        Alignment = TextAlignment.Center,
-                        Order = 1
-                        // 序號會在渲染時動態生成
-                    },
-                    new ReportColumnDefinition
-                    {
-                        Header = "品名",
-                        PropertyName = nameof(PurchaseOrderDetail.ProductId),
-                        Width = "20%",
-                        Alignment = TextAlignment.Left,
-                        Order = 2
-                        // 商品名稱會透過 ProductDict 在渲染時解析
-                    },
-                    new ReportColumnDefinition
-                    {
-                        Header = "數量",
-                        PropertyName = nameof(PurchaseOrderDetail.OrderQuantity),
-                        Width = "5%",
-                        Alignment = TextAlignment.Right,
-                        Format = "N0",
-                        Order = 3
-                    },
-                    new ReportColumnDefinition
-                    {
-                        Header = "單位",
-                        PropertyName = "Unit",
-                        Width = "4%",
-                        Alignment = TextAlignment.Center,
-                        Order = 4,
-                        ValueGenerator = (detail) => "個" // 暫時固定值，未來可擴展
-                    },
-                    new ReportColumnDefinition
-                    {
-                        Header = "單價",
-                        PropertyName = nameof(PurchaseOrderDetail.UnitPrice),
-                        Width = "10%",
-                        Alignment = TextAlignment.Right,
-                        Format = "N2",
-                        Order = 5
-                    },
-                    new ReportColumnDefinition
-                    {
-                        Header = "小計",
-                        PropertyName = nameof(PurchaseOrderDetail.SubtotalAmount),
-                        Width = "10%",
-                        Alignment = TextAlignment.Right,
-                        Format = "N2",
-                        Order = 6
-                    },
-                    new ReportColumnDefinition
-                    {
-                        Header = "備註",
-                        PropertyName = nameof(PurchaseOrderDetail.Remarks),
-                        Width = "20%",
-                        Alignment = TextAlignment.Left,
-                        Order = 7
-                    }
-                },
-                
-                // 頁尾區段
-                FooterSections = new List<ReportFooterSection>
-                {
-                    new ReportFooterSection
-                    {
-                        Title = "",
-                        Order = 1,
-                        FieldsPerRow = 6, // 所有欄位在一個區段中
-                        IsStatisticsSection = true, // 啟用統計區段樣式和特殊佈局
-                        Fields = new List<ReportField>
-                        {
-                            new ReportField
-                            {
-                                Label = "備註",
-                                PropertyName = nameof(PurchaseOrder.Remarks),
-                                Value = "" // 備註內容，會顯示在左側
-                            },
-                            new ReportField
-                            {
-                                Label = "金額",
-                                PropertyName = nameof(PurchaseOrder.TotalAmount),
-                                Format = "N2",
-                                IsBold = true
-                            },
-                            new ReportField
-                            {
-                                Label = "稅額(5%)",
-                                PropertyName = "TaxAmount",
-                                Format = "N2",
-                                IsBold = true
-                            },
-                            new ReportField
-                            {
-                                Label = "總計",
-                                PropertyName = "GrandTotal", // 金額+稅額的總和
-                                Format = "N2",
-                                IsBold = true
-                            }
-                        }
-                    },
-                    new ReportFooterSection
-                    {
-                        Title = "",
-                        Order = 2,
-                        FieldsPerRow = 3,
-                        TopMargin = 5, // 增加頂部間距
-                        Fields = new List<ReportField>
-                        {
-                            new ReportField
-                            {
-                                Label = "審核",
-                                PropertyName = "ApprovalPerson",
-                                Value = "" // 審核人員資訊
-                            },                            
-                            new ReportField
-                            {
-                                Label = "採購",
-                                PropertyName = "PurchasingPerson",
-                                Value = "" // 採購人員資訊
-                            },
-                            new ReportField
-                            {
-                                Label = "廠商簽回",
-                                Value = "" // 空白欄位給廠商填寫
-                            }
-                        }
-                    }
+                    productDict.TryGetValue(detail.ProductId, out var product);
+                    
+                    html.AppendLine("                    <tr>");
+                    html.AppendLine($"                        <td class='text-center'>{rowNum}</td>");
+                    html.AppendLine($"                        <td class='text-left'>{product?.Name ?? ""}</td>");
+                    html.AppendLine($"                        <td class='text-right'>{detail.OrderQuantity:N0}</td>");
+                    html.AppendLine("                        <td class='text-center'>個</td>");
+                    html.AppendLine($"                        <td class='text-right'>{detail.UnitPrice:N2}</td>");
+                    html.AppendLine($"                        <td class='text-right'>{detail.SubtotalAmount:N2}</td>");
+                    html.AppendLine($"                        <td class='text-left'>{detail.Remarks ?? ""}</td>");
+                    html.AppendLine("                    </tr>");
+                    rowNum++;
                 }
-            };
+            }
+
+            // 填充空白行
+            for (int i = rowNum; i <= 8; i++)
+            {
+                html.AppendLine("                    <tr>");
+                html.AppendLine($"                        <td class='text-center'>{i}</td>");
+                html.AppendLine("                        <td>&nbsp;</td>");
+                html.AppendLine("                        <td>&nbsp;</td>");
+                html.AppendLine("                        <td>&nbsp;</td>");
+                html.AppendLine("                        <td>&nbsp;</td>");
+                html.AppendLine("                        <td>&nbsp;</td>");
+                html.AppendLine("                        <td>&nbsp;</td>");
+                html.AppendLine("                    </tr>");
+            }
+
+            html.AppendLine("                </tbody>");
+            html.AppendLine("            </table>");
+        }
+
+        private void GenerateSummarySection(StringBuilder html, PurchaseOrder purchaseOrder, decimal taxRate)
+        {
+            html.AppendLine("            <div class='print-summary'>");
+            html.AppendLine("                <div class='print-summary-left'>");
+            html.AppendLine("                    <div class='print-remarks'>");
+            html.AppendLine("                        <div class='print-remarks-label'>備註：</div>");
+            html.AppendLine($"                        <div class='print-remarks-content'>{purchaseOrder.Remarks ?? ""}</div>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                </div>");
+            html.AppendLine("                <div class='print-summary-right'>");
+            html.AppendLine("                    <div class='print-summary-row'>");
+            html.AppendLine("                        <span class='print-summary-label'>金額小計：</span>");
+            html.AppendLine($"                        <span class='print-summary-value'>{purchaseOrder.TotalAmount:N2}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                    <div class='print-summary-row'>");
+            html.AppendLine($"                        <span class='print-summary-label'>稅額({taxRate:F2}%)：</span>");
+            html.AppendLine($"                        <span class='print-summary-value'>{purchaseOrder.PurchaseTaxAmount:N2}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                    <div class='print-summary-row'>");
+            html.AppendLine("                        <span class='print-summary-label'>含稅總計：</span>");
+            html.AppendLine($"                        <span class='print-summary-value font-bold'>{purchaseOrder.PurchaseTotalAmountIncludingTax:N2}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                </div>");
+            html.AppendLine("            </div>");
+        }
+
+        private void GenerateSignatureSection(StringBuilder html)
+        {
+            html.AppendLine("            <div class='print-signature-section'>");
+            html.AppendLine("                <div class='print-signature-item'>");
+            html.AppendLine("                    <div class='print-signature-label'>採購人員</div>");
+            html.AppendLine("                    <div class='print-signature-line'></div>");
+            html.AppendLine("                </div>");
+            html.AppendLine("                <div class='print-signature-item'>");
+            html.AppendLine("                    <div class='print-signature-label'>核准人員</div>");
+            html.AppendLine("                    <div class='print-signature-line'></div>");
+            html.AppendLine("                </div>");
+            html.AppendLine("                <div class='print-signature-item'>");
+            html.AppendLine("                    <div class='print-signature-label'>收貨確認</div>");
+            html.AppendLine("                    <div class='print-signature-line'></div>");
+            html.AppendLine("                </div>");
+            html.AppendLine("            </div>");
+        }
+
+        private string GetPrintScript()
+        {
+            return @"
+    <script>
+        window.addEventListener('load', function() {
+            // 檢查是否需要自動列印
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('autoprint') === 'true') {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            }
+        });
+        
+        // Ctrl+P 優化列印
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+    </script>";
         }
     }
 }
