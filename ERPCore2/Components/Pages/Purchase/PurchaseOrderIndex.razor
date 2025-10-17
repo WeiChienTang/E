@@ -19,6 +19,8 @@
                           FilterApplier="@ApplyPurchaseOrderFilters"
                           GetEntityDisplayName="@(order => order.PurchaseOrderNumber)"
                           RequiredPermission="PurchaseOrder.Read"
+                          ShowBatchPrintButton="true"
+                          OnBatchPrintClick="@HandleBatchPrintAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
@@ -161,5 +163,20 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseOrderFilters), GetType());
+    }
+
+    // 多筆列印處理方法（目前尚未實作）
+    private async Task HandleBatchPrintAsync()
+    {
+        try
+        {
+            // TODO: 實作多筆列印功能
+            await NotificationService.ShowInfoAsync("多筆列印功能尚未實作");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintAsync), GetType(), additionalData: "多筆列印失敗");
+            await NotificationService.ShowErrorAsync("多筆列印失敗");
+        }
     }
 }

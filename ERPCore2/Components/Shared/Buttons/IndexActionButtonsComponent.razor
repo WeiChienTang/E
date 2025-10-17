@@ -34,6 +34,14 @@
                                CssClass="index-action-btn index-export-pdf-btn" IconClass="@ExportPdfButtonIconClass" />
     }
 
+    @if (ShowBatchPrintButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Info" Text="@BatchPrintButtonText" 
+                               OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="@BatchPrintButtonTitle"
+                               CssClass="index-action-btn index-batch-print-btn" IconClass="@BatchPrintButtonIconClass" />
+    }
+
     @* 允許添加自訂按鈕 *@
     @CustomButtons
 </div>
@@ -75,6 +83,15 @@
     [Parameter] public bool LoadingOnExportPdf { get; set; } = false;
     [Parameter] public EventCallback OnExportPdfClick { get; set; }
 
+    // 多筆列印按鈕相關參數
+    [Parameter] public bool ShowBatchPrintButton { get; set; } = false;
+    [Parameter] public string BatchPrintButtonText { get; set; } = "多筆列印";
+    [Parameter] public string BatchPrintButtonTitle { get; set; } = "";
+    [Parameter] public string BatchPrintButtonIconClass { get; set; } = "fas fa-print";
+    [Parameter] public bool IsBatchPrintDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnBatchPrint { get; set; } = false;
+    [Parameter] public EventCallback OnBatchPrintClick { get; set; }
+
     // 通用狀態參數
     [Parameter] public bool IsLoading { get; set; } = false;
     
@@ -102,6 +119,11 @@
         if (string.IsNullOrEmpty(ExportPdfButtonTitle))
         {
             ExportPdfButtonTitle = ExportPdfButtonText;
+        }
+        
+        if (string.IsNullOrEmpty(BatchPrintButtonTitle))
+        {
+            BatchPrintButtonTitle = BatchPrintButtonText;
         }
         
         base.OnParametersSet();
@@ -136,6 +158,14 @@
         if (OnExportPdfClick.HasDelegate && !IsLoading && !IsExportPdfDisabled)
         {
             await OnExportPdfClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBatchPrintClick()
+    {
+        if (OnBatchPrintClick.HasDelegate && !IsLoading && !IsBatchPrintDisabled)
+        {
+            await OnBatchPrintClick.InvokeAsync();
         }
     }
 }

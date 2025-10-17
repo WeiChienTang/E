@@ -47,6 +47,8 @@
                 OnExportExcelClick="@HandleExportExcelClick"
                 ShowExportPdfButton="@ShowExportPdfButton"
                 OnExportPdfClick="@HandleExportPdfClick"
+                ShowBatchPrintButton="@ShowBatchPrintButton"
+                OnBatchPrintClick="@HandleBatchPrintClick"
                 IsLoading="@IsLoading"
                 LoadingOnRefresh="true" />
         }
@@ -162,6 +164,10 @@
     [Parameter] public bool ShowExportPdfButton { get; set; } = false;
     [Parameter] public EventCallback OnExportExcelClick { get; set; }
     [Parameter] public EventCallback OnExportPdfClick { get; set; }
+    
+    // 多筆列印功能控制
+    [Parameter] public bool ShowBatchPrintButton { get; set; } = false;
+    [Parameter] public EventCallback OnBatchPrintClick { get; set; }
     
     // 麵包屑導航
     [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
@@ -292,6 +298,14 @@
         if (OnExportPdfClick.HasDelegate)
         {
             await OnExportPdfClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBatchPrintClick()
+    {
+        if (OnBatchPrintClick.HasDelegate)
+        {
+            await OnBatchPrintClick.InvokeAsync();
         }
     }
       // 公開方法供外部調用
