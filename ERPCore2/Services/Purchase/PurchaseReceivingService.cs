@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
+using ERPCore2.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -1264,6 +1265,89 @@ namespace ERPCore2.Services
                     SupplierId = supplierId 
                 });
                 return new List<PurchaseReceivingDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 根據批次列印條件查詢進貨單
+        /// </summary>
+        public async Task<List<PurchaseReceiving>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 建立基礎查詢（包含必要的關聯資料）
+                IQueryable<PurchaseReceiving> query = context.PurchaseReceivings
+                    .Include(pr => pr.Supplier)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Warehouse)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.WarehouseLocation)
+                    .AsQueryable();
+
+                // 日期範圍篩選
+                if (criteria.StartDate.HasValue)
+                {
+                    query = query.Where(pr => pr.ReceiptDate >= criteria.StartDate.Value.Date);
+                }
+                if (criteria.EndDate.HasValue)
+                {
+                    // 包含整天（到當天 23:59:59）
+                    var endDate = criteria.EndDate.Value.Date.AddDays(1);
+                    query = query.Where(pr => pr.ReceiptDate < endDate);
+                }
+
+                // 廠商篩選（RelatedEntityIds 對應廠商ID列表）
+                if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
+                {
+                    query = query.Where(pr => criteria.RelatedEntityIds.Contains(pr.SupplierId));
+                }
+
+                // 單據編號關鍵字搜尋
+                if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
+                {
+                    query = query.Where(pr => pr.ReceiptNumber.Contains(criteria.DocumentNumberKeyword));
+                }
+
+                // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
+                // 這樣列印時同一廠商的進貨單會集中在一起
+                query = criteria.SortDirection == Models.SortDirection.Ascending
+                    ? query.OrderBy(pr => pr.Supplier.CompanyName)
+                           .ThenBy(pr => pr.ReceiptDate)
+                           .ThenBy(pr => pr.ReceiptNumber)
+                    : query.OrderBy(pr => pr.Supplier.CompanyName)
+                           .ThenByDescending(pr => pr.ReceiptDate)
+                           .ThenBy(pr => pr.ReceiptNumber);
+
+                // 限制最大筆數
+                if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
+                {
+                    query = query.Take(criteria.MaxResults.Value);
+                }
+
+                // 執行查詢
+                var results = await query.ToListAsync();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByBatchCriteriaAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByBatchCriteriaAsync),
+                    ServiceType = GetType().Name,
+                    Criteria = new
+                    {
+                        criteria.StartDate,
+                        criteria.EndDate,
+                        criteria.RelatedEntityIds,
+                        criteria.DocumentNumberKeyword
+                    }
+                });
+                return new List<PurchaseReceiving>();
             }
         }
 

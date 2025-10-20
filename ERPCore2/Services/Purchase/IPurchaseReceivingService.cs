@@ -1,5 +1,6 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Models;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -75,5 +76,12 @@ namespace ERPCore2.Services
         /// <param name="supplierId">廠商ID</param>
         /// <returns>可退貨的進貨明細清單</returns>
         Task<List<PurchaseReceivingDetail>> GetReturnableDetailsBySupplierAsync(int supplierId);
+
+        /// <summary>
+        /// 根據批次列印條件查詢進貨單
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的進貨單列表</returns>
+        Task<List<PurchaseReceiving>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
     }
 }

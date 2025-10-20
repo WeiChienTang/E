@@ -13,7 +13,10 @@
 @inject IPurchaseReturnService PurchaseReturnService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject ISetoffDocumentService SetoffDocumentService
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
@@ -48,7 +51,9 @@
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetPurchaseReceivingStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()" />
+                          CustomModules="@GetCustomModules()"
+                          ShowPrintButton="true"
+                          OnPrint="@HandlePrint" />
 
 @* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"
@@ -188,6 +193,95 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理列印事件
+    /// </summary>
+    private async Task HandlePrint()
+    {
+        try
+        {
+            // 使用通用 Helper 進行完整驗證（實體、ID）
+            // 進貨單不需要核准即可列印
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
+                entity: editModalComponent?.Entity,
+                entityId: PurchaseReceivingId,
+                isApproved: true, // 進貨單不需要核准狀態
+                entityName: "進貨單",
+                requireApproval: false // 不需要核准
+            );
+            
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync(errorMessage);
+                return;
+            }
+            
+            // 直接執行列印，使用預設設定
+            await HandleDirectPrint(null);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
+                additionalData: $"進貨單列印處理失敗 - ID: {PurchaseReceivingId}");
+            await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
+    /// </summary>
+    private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
+    {
+        try
+        {
+            if (!PurchaseReceivingId.HasValue)
+            {
+                await NotificationService.ShowWarningAsync("無法列印：進貨單ID不存在");
+                return;
+            }
+
+            // 驗證列印配置
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(printConfig);
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync($"列印配置無效：{errorMessage}");
+                return;
+            }
+
+            // 使用通用 Helper 建立列印 URL
+            var printUrl = ReportPrintHelper.BuildPrintUrl(
+                baseUrl: NavigationManager.BaseUri,
+                reportType: "purchase-receiving",
+                documentId: PurchaseReceivingId.Value,
+                configuration: printConfig,
+                autoprint: true
+            );
+
+            // 使用通用 Helper 執行列印（隱藏 iframe 方式）
+            var success = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
+                printUrl: printUrl,
+                jsRuntime: JSRuntime,
+                iframeId: "printFrame"
+            );
+            
+            if (success)
+            {
+                var configName = ReportPrintHelper.GetDisplayName(printConfig);
+                await NotificationService.ShowSuccessAsync($"已使用 {configName} 送出列印");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync("列印執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
+                additionalData: $"進貨單直接列印失敗 - ID: {PurchaseReceivingId}, Config: {printConfig?.ReportName}");
+            await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
         }
     }
 
