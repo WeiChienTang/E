@@ -20,41 +20,21 @@ namespace ERPCore2.Services.Reports.Common
 
         /// <summary>
         /// 估算單筆明細的高度（mm）
+        /// 固定行高模式：所有明細項目都使用相同的固定高度
         /// </summary>
         /// <param name="item">明細項目</param>
         /// <returns>此項目需要的高度（mm）</returns>
         public decimal EstimateItemHeight(T item)
         {
-            if (item == null)
-                return _layout.RowBaseHeight;
-
-            var remarks = item.GetRemarks();
-
-            // 如果沒有備註，返回基本高度 + 額外高度因素
-            if (string.IsNullOrEmpty(remarks))
-                return _layout.RowBaseHeight + item.GetExtraHeightFactor();
-
-            // 計算備註需要的行數
-            int totalChars = remarks.Length;
-            int lines = (int)Math.Ceiling((double)totalChars / _layout.RemarkCharsPerLine);
-
-            if (lines <= 1)
-            {
-                // 單行備註：使用基本高度
-                return _layout.RowBaseHeight + item.GetExtraHeightFactor();
-            }
-
-            // 多行備註：基本高度 + 額外行數 × 行高 + 特殊高度因素
-            return _layout.RowBaseHeight
-                + (lines - 1) * _layout.RemarkExtraLineHeight
-                + item.GetExtraHeightFactor();
+            // 固定行高模式：所有項目統一高度，不再考慮備註長度
+            return _layout.RowBaseHeight;
         }
 
         /// <summary>
         /// 將明細清單分割成多頁
-        /// 智能計算每頁應包含的明細數量，確保：
-        /// 1. 每頁不超過可用高度
-        /// 2. 最後一頁預留統計和簽名空間
+        /// 固定行高模式：
+        /// 1. 非最後一頁：使用較大的可用空間（不含統計和簽名）
+        /// 2. 最後一頁：預留統計和簽名空間
         /// 3. 明細序號連續不跳號
         /// </summary>
         /// <param name="allDetails">所有明細項目</param>
@@ -73,37 +53,30 @@ namespace ERPCore2.Services.Reports.Common
             var pages = new List<ReportPage<T>>();
             var currentPageItems = new List<T>();
             decimal currentPageDetailsHeight = 0m;
-            decimal availableHeight = _layout.GetAvailableDetailsHeight();
 
             for (int i = 0; i < allDetails.Count; i++)
             {
                 var item = allDetails[i];
-                decimal itemHeight = EstimateItemHeight(item);
+                decimal itemHeight = EstimateItemHeight(item); // 固定行高：8mm
                 bool isLastItem = (i == allDetails.Count - 1);
 
                 // 計算加入此項後的明細總高度
                 decimal heightAfterAdd = currentPageDetailsHeight + itemHeight;
 
-                // 檢查是否需要分頁（統一邏輯）
+                // 檢查是否需要分頁
                 bool needsNewPage = false;
                 
                 if (isLastItem)
                 {
                     // 最後一筆：檢查是否能放在當前頁（需包含統計和簽名）
-                    decimal totalRequiredHeight = _layout.HeaderHeight
-                        + _layout.InfoSectionHeight
-                        + _layout.TableHeaderHeight
-                        + heightAfterAdd
-                        + _layout.SummaryHeight
-                        + _layout.SignatureHeight
-                        + _layout.SafetyMargin;
-
-                    needsNewPage = (totalRequiredHeight > _layout.PageHeight && currentPageItems.Count > 0);
+                    decimal availableHeightForLastPage = _layout.GetAvailableDetailsHeightForLastPage();
+                    needsNewPage = (heightAfterAdd > availableHeightForLastPage && currentPageItems.Count > 0);
                 }
                 else
                 {
-                    // 非最後一筆：檢查是否超過可用明細高度
-                    needsNewPage = (heightAfterAdd > availableHeight && currentPageItems.Count > 0);
+                    // 非最後一筆：使用較大的可用空間（不含統計和簽名）
+                    decimal availableHeightForNonLastPage = _layout.GetAvailableDetailsHeightForNonLastPage();
+                    needsNewPage = (heightAfterAdd > availableHeightForNonLastPage && currentPageItems.Count > 0);
                 }
 
                 if (needsNewPage)
