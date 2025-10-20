@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
+using ERPCore2.Models;
 using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -429,6 +430,121 @@ namespace ERPCore2.Services
                     EndDate = endDate
                 });
                 return new SalesReturnStatistics();
+            }
+        }
+
+        /// <summary>
+        /// 根據批次列印條件查詢銷貨退回單（支援多條件組合篩選）
+        /// 設計理念：靈活組合日期、客戶、狀態等多種篩選條件，適用於批次列印場景
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的銷貨退回單列表（包含完整關聯資料）</returns>
+        public async Task<List<SalesReturn>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 基本查詢 - 載入所有需要的關聯資料
+                var query = context.SalesReturns
+                    .Include(sr => sr.Customer)
+                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.Employee)
+                    .Include(sr => sr.ReturnReason)
+                    .Include(sr => sr.SalesReturnDetails.AsQueryable())
+                        .ThenInclude(srd => srd.Product)
+                    .AsQueryable();
+
+                // 篩選條件 1: 日期範圍（退回日期）
+                if (criteria.StartDate.HasValue)
+                {
+                    query = query.Where(sr => sr.ReturnDate >= criteria.StartDate.Value);
+                }
+                if (criteria.EndDate.HasValue)
+                {
+                    // 結束日期包含當天 23:59:59
+                    var endDateInclusive = criteria.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+                    query = query.Where(sr => sr.ReturnDate <= endDateInclusive);
+                }
+
+                // 篩選條件 2: 客戶ID列表（RelatedEntityIds 在銷貨退回單中代表客戶ID）
+                if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
+                {
+                    query = query.Where(sr => criteria.RelatedEntityIds.Contains(sr.CustomerId));
+                }
+
+                // 篩選條件 3: 倉庫ID（透過明細關聯的銷貨訂單明細）
+                if (criteria.WarehouseId.HasValue)
+                {
+                    query = query.Where(sr => sr.SalesReturnDetails.Any(srd => 
+                        srd.SalesOrderDetail != null && 
+                        srd.SalesOrderDetail.WarehouseId == criteria.WarehouseId.Value));
+                }
+
+                // 篩選條件 4: 狀態列表（Status 欄位，銷貨退回單使用 EntityStatus）
+                if (criteria.Statuses != null && criteria.Statuses.Any())
+                {
+                    // 將字串狀態轉換為 EntityStatus 枚舉
+                    var statusEnums = criteria.Statuses
+                        .Select(s => Enum.TryParse<EntityStatus>(s, true, out var status) ? status : (EntityStatus?)null)
+                        .Where(s => s.HasValue)
+                        .Select(s => s!.Value)
+                        .ToList();
+
+                    if (statusEnums.Any())
+                    {
+                        query = query.Where(sr => statusEnums.Contains(sr.Status));
+                    }
+                }
+
+                // 篩選條件 5: 單據編號關鍵字搜尋
+                if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
+                {
+                    query = query.Where(sr => sr.SalesReturnNumber.Contains(criteria.DocumentNumberKeyword));
+                }
+
+                // 篩選條件 6: 是否包含已刪除的單據
+                if (!criteria.IncludeCancelled)
+                {
+                    query = query.Where(sr => sr.Status != EntityStatus.Deleted);
+                }
+
+                // 排序（按退回日期降序，再按單號）
+                query = query
+                    .OrderByDescending(sr => sr.ReturnDate)
+                    .ThenByDescending(sr => sr.SalesReturnNumber);
+
+                // 限制結果數量（避免一次載入過多資料）
+                if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
+                {
+                    query = query.Take(criteria.MaxResults.Value);
+                }
+
+                // 執行查詢
+                var results = await query.ToListAsync();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByBatchCriteriaAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByBatchCriteriaAsync),
+                    ServiceType = GetType().Name,
+                    Criteria = new
+                    {
+                        criteria.StartDate,
+                        criteria.EndDate,
+                        criteria.RelatedEntityIds,
+                        criteria.CompanyId,
+                        criteria.WarehouseId,
+                        criteria.Statuses,
+                        criteria.DocumentNumberKeyword,
+                        criteria.IncludeCancelled,
+                        criteria.MaxResults
+                    }
+                });
+                return new List<SalesReturn>();
             }
         }
 

@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -681,6 +682,105 @@ namespace ERPCore2.Services
                     Id = id 
                 });
                 return ServiceResult.Failure("永久刪除銷貨訂單過程發生錯誤");
+            }
+        }
+
+        #endregion
+
+        #region 批次列印查詢
+
+        /// <summary>
+        /// 根據批次列印條件查詢銷貨訂單（批次列印專用）
+        /// 設計理念：靈活組合日期、客戶、狀態等多種篩選條件，適用於批次列印場景
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的銷貨訂單列表（包含完整關聯資料）</returns>
+        public async Task<List<SalesOrder>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 建立基礎查詢（包含必要關聯資料）
+                IQueryable<SalesOrder> query = context.SalesOrders
+                    .Include(so => so.Customer)
+                    .Include(so => so.Employee)
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Product)
+                    .AsQueryable();
+
+                // 日期範圍篩選
+                if (criteria.StartDate.HasValue)
+                {
+                    query = query.Where(so => so.OrderDate >= criteria.StartDate.Value.Date);
+                }
+                if (criteria.EndDate.HasValue)
+                {
+                    var endDate = criteria.EndDate.Value.Date.AddDays(1);
+                    query = query.Where(so => so.OrderDate < endDate);
+                }
+
+                // 關聯實體篩選（客戶）
+                if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
+                {
+                    query = query.Where(so => criteria.RelatedEntityIds.Contains(so.CustomerId));
+                }
+
+                // 公司篩選（如果需要）
+                if (criteria.CompanyId.HasValue)
+                {
+                    // 銷貨訂單可能沒有 CompanyId，視實際需求調整
+                    // query = query.Where(so => so.CompanyId == criteria.CompanyId.Value);
+                }
+
+                // 單據編號關鍵字搜尋
+                if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
+                {
+                    query = query.Where(so => so.SalesOrderNumber.Contains(criteria.DocumentNumberKeyword));
+                }
+
+                // 是否包含已取消的單據
+                if (!criteria.IncludeCancelled)
+                {
+                    // 銷貨訂單可能沒有取消狀態欄位，視實際需求調整
+                    // query = query.Where(so => !so.IsCancelled);
+                }
+
+                // 排序：先按客戶分組，同客戶內再按日期和單據編號排序
+                query = criteria.SortDirection == Models.SortDirection.Ascending
+                    ? query.OrderBy(so => so.Customer.CompanyName)
+                           .ThenBy(so => so.OrderDate)
+                           .ThenBy(so => so.SalesOrderNumber)
+                    : query.OrderBy(so => so.Customer.CompanyName)
+                           .ThenByDescending(so => so.OrderDate)
+                           .ThenBy(so => so.SalesOrderNumber);
+
+                // 限制最大筆數
+                if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
+                {
+                    query = query.Take(criteria.MaxResults.Value);
+                }
+
+                // 執行查詢
+                var results = await query.ToListAsync();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByBatchCriteriaAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByBatchCriteriaAsync),
+                    ServiceType = GetType().Name,
+                    Criteria = new
+                    {
+                        criteria.StartDate,
+                        criteria.EndDate,
+                        RelatedEntityCount = criteria.RelatedEntityIds?.Count ?? 0,
+                        criteria.MaxResults
+                    }
+                });
+                return new List<SalesOrder>();
             }
         }
 

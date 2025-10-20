@@ -308,7 +308,12 @@ namespace ERPCore2.Services.Reports
 
         /// <summary>
         /// 批次生成銷貨退回單報表（支援多條件篩選）
+        /// 設計理念：根據篩選條件查詢多筆銷貨退回單，逐一生成報表後合併為單一 HTML，每個單據自動分頁
         /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <param name="format">輸出格式（目前僅支援 HTML）</param>
+        /// <param name="reportPrintConfig">報表列印配置（可選）</param>
+        /// <returns>合併後的報表 HTML（包含所有符合條件的銷貨退回單）</returns>
         public async Task<string> GenerateBatchReportAsync(
             BatchPrintCriteria criteria,
             ReportFormat format = ReportFormat.Html,
@@ -323,9 +328,20 @@ namespace ERPCore2.Services.Reports
                     throw new ArgumentException($"批次列印條件驗證失敗：{validation.GetAllErrors()}");
                 }
 
-                // TODO: 等待 ISalesReturnService 實作 GetByBatchCriteriaAsync 方法
-                // 暫時返回提示訊息
-                return GenerateNotImplementedPage();
+                // 根據條件查詢銷貨退回單
+                var salesReturns = await _salesReturnService.GetByBatchCriteriaAsync(criteria);
+
+                if (salesReturns == null || !salesReturns.Any())
+                {
+                    return GenerateEmptyResultPage(criteria);
+                }
+
+                // 根據格式生成批次報表
+                return format switch
+                {
+                    ReportFormat.Html => await GenerateBatchHtmlReportAsync(salesReturns, reportPrintConfig, criteria),
+                    _ => throw new ArgumentException($"不支援的報表格式: {format}")
+                };
             }
             catch (Exception ex)
             {
@@ -334,23 +350,156 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 生成未實作提示頁面
+        /// 生成批次 HTML 報表（合併多個銷貨退回單）
         /// </summary>
-        private string GenerateNotImplementedPage()
+        private async Task<string> GenerateBatchHtmlReportAsync(
+            List<SalesReturn> salesReturns,
+            ReportPrintConfiguration? reportPrintConfig,
+            BatchPrintCriteria criteria)
         {
-            return @"
+            var html = new StringBuilder();
+
+            // HTML 文件開始（只需一次）
+            html.AppendLine("<!DOCTYPE html>");
+            html.AppendLine("<html lang='zh-TW'>");
+            html.AppendLine("<head>");
+            html.AppendLine("    <meta charset='UTF-8'>");
+            html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+            html.AppendLine($"    <title>銷貨退回單批次列印 ({salesReturns.Count} 筆)</title>");
+            html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
+            html.AppendLine("</head>");
+            html.AppendLine("<body>");
+
+            // 載入共用資料（避免每個報表都重複載入）
+            var allProducts = await _productService.GetAllAsync();
+            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+
+            var allWarehouses = await _warehouseService.GetAllAsync();
+            var warehouseDict = allWarehouses.ToDictionary(w => w.Id, w => w);
+
+            var allLocations = await _warehouseLocationService.GetAllAsync();
+            var locationDict = allLocations.ToDictionary(l => l.Id, l => l);
+
+            decimal taxRate = 5.0m;
+            try
+            {
+                taxRate = await _systemParameterService.GetTaxRateAsync();
+            }
+            catch
+            {
+                // 使用預設稅率
+            }
+
+            // 逐一生成每張銷貨退回單報表
+            for (int i = 0; i < salesReturns.Count; i++)
+            {
+                var salesReturn = salesReturns[i];
+                var returnDetails = salesReturn.SalesReturnDetails?.ToList() ?? new List<SalesReturnDetail>();
+
+                Customer? customer = null;
+                if (salesReturn.CustomerId > 0)
+                {
+                    customer = await _customerService.GetByIdAsync(salesReturn.CustomerId);
+                }
+
+                Employee? employee = null;
+                if (salesReturn.EmployeeId.HasValue && salesReturn.EmployeeId.Value > 0)
+                {
+                    employee = await _employeeService.GetByIdAsync(salesReturn.EmployeeId.Value);
+                }
+
+                Company? company = await _companyService.GetPrimaryCompanyAsync();
+
+                // 生成單筆報表（嵌入批次報表中）
+                GenerateSingleReportInBatch(html, salesReturn, returnDetails, customer, employee, company, 
+                    productDict, warehouseDict, locationDict, taxRate, i + 1, salesReturns.Count);
+            }
+
+            // 列印腳本
+            html.AppendLine(GetPrintScript());
+
+            html.AppendLine("</body>");
+            html.AppendLine("</html>");
+
+            return html.ToString();
+        }
+
+        /// <summary>
+        /// 在批次報表中生成單一銷貨退回單（使用現有的分頁邏輯）
+        /// </summary>
+        private void GenerateSingleReportInBatch(
+            StringBuilder html,
+            SalesReturn salesReturn,
+            List<SalesReturnDetail> returnDetails,
+            Customer? customer,
+            Employee? employee,
+            Company? company,
+            Dictionary<int, Product> productDict,
+            Dictionary<int, Warehouse> warehouseDict,
+            Dictionary<int, WarehouseLocation> locationDict,
+            decimal taxRate,
+            int currentDoc,
+            int totalDocs)
+        {
+            // 使用通用分頁計算器
+            var layout = ReportPageLayout.ContinuousForm();
+            var paginator = new ReportPaginator<SalesReturnDetailWrapper>(layout);
+
+            var wrappedDetails = returnDetails
+                .Select(d => new SalesReturnDetailWrapper(d))
+                .ToList();
+
+            var pages = paginator.SplitIntoPages(wrappedDetails);
+
+            // 生成每一頁
+            int startRowNum = 0;
+            for (int pageNum = 0; pageNum < pages.Count; pageNum++)
+            {
+                var page = pages[pageNum];
+                var pageDetails = page.Items.Select(w => w.Detail).ToList();
+
+                GeneratePage(html, salesReturn, pageDetails, customer, employee, company, 
+                    productDict, warehouseDict, locationDict, taxRate, pageNum + 1, pages.Count, page.IsLastPage, startRowNum);
+
+                startRowNum += pageDetails.Count;
+            }
+        }
+
+        /// <summary>
+        /// 生成批次列印資訊頁（顯示篩選條件摘要）
+        /// </summary>
+        private string GenerateBatchPrintInfoPage(List<SalesReturn> salesReturns, BatchPrintCriteria criteria)
+        {
+            var info = new StringBuilder();
+            info.AppendLine("    <div class='batch-info-page' style='page-break-after: always; padding: 40px;'>");
+            info.AppendLine("        <h1 style='text-align: center; margin-bottom: 30px;'>銷貨退回單批次列印</h1>");
+            info.AppendLine("        <div style='font-size: 14px; line-height: 2;'>");
+            info.AppendLine($"            <p><strong>列印時間：</strong>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>");
+            info.AppendLine($"            <p><strong>列印筆數：</strong>{salesReturns.Count} 筆</p>");
+            info.AppendLine($"            <p><strong>篩選條件：</strong>{criteria.GetSummary()}</p>");
+            info.AppendLine("        </div>");
+            info.AppendLine("    </div>");
+            return info.ToString();
+        }
+
+        /// <summary>
+        /// 生成空結果提示頁面
+        /// </summary>
+        private string GenerateEmptyResultPage(BatchPrintCriteria criteria)
+        {
+            return $@"
 <!DOCTYPE html>
 <html lang='zh-TW'>
 <head>
     <meta charset='UTF-8'>
-    <title>功能開發中</title>
+    <title>查無資料</title>
     <link href='/css/print-styles.css' rel='stylesheet' />
 </head>
 <body>
     <div style='text-align: center; padding: 50px;'>
-        <h1>批次列印功能開發中</h1>
-        <p>此功能需要 ISalesReturnService 實作 GetByBatchCriteriaAsync 方法</p>
-        <p>目前僅支援單筆銷貨退回單列印</p>
+        <h1>查無符合條件的銷貨退回單</h1>
+        <p>篩選條件：{criteria.GetSummary()}</p>
+        <p>請調整篩選條件後重試</p>
     </div>
 </body>
 </html>";

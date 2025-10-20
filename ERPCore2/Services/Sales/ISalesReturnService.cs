@@ -1,5 +1,6 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Models;
 using ERPCore2.Services;
 
 // 使用別名來避免命名衝突
@@ -82,6 +83,14 @@ namespace ERPCore2.Services
         /// <param name="endDate">結束日期（選填）</param>
         /// <returns>統計資訊</returns>
         Task<SalesReturnStatistics> GetStatisticsAsync(int? customerId = null, DateTime? startDate = null, DateTime? endDate = null);
+
+        /// <summary>
+        /// 根據批次列印條件查詢銷貨退回單（支援多條件組合篩選）
+        /// 設計理念：靈活組合日期、客戶、狀態等多種篩選條件，適用於批次列印場景
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的銷貨退回單列表（包含完整關聯資料）</returns>
+        Task<List<SalesReturn>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
     }
 
     /// <summary>

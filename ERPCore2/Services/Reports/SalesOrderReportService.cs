@@ -315,9 +315,22 @@ namespace ERPCore2.Services.Reports
                     throw new ArgumentException($"批次列印條件驗證失敗：{validation.GetAllErrors()}");
                 }
 
-                // TODO: 等待 ISalesOrderService 實作 GetByBatchCriteriaAsync 方法
-                // 暫時返回提示訊息
-                return GenerateNotImplementedPage();
+                // 根據條件查詢銷貨單
+                var salesOrders = await _salesOrderService.GetByBatchCriteriaAsync(criteria);
+
+                if (salesOrders == null || !salesOrders.Any())
+                {
+                    // 返回空結果提示頁面
+                    return GenerateEmptyResultPage(criteria);
+                }
+
+                // 根據格式生成報表
+                return format switch
+                {
+                    ReportFormat.Html => await GenerateBatchHtmlReportAsync(salesOrders, reportPrintConfig, criteria),
+                    ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
+                    _ => throw new ArgumentException($"不支援的報表格式: {format}")
+                };
             }
             catch (Exception ex)
             {
@@ -326,23 +339,23 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 生成未實作提示頁面
+        /// 生成空結果提示頁面
         /// </summary>
-        private string GenerateNotImplementedPage()
+        private string GenerateEmptyResultPage(BatchPrintCriteria criteria)
         {
-            return @"
+            return $@"
 <!DOCTYPE html>
 <html lang='zh-TW'>
 <head>
     <meta charset='UTF-8'>
-    <title>功能開發中</title>
+    <title>批次列印 - 無符合條件的資料</title>
     <link href='/css/print-styles.css' rel='stylesheet' />
 </head>
 <body>
     <div style='text-align: center; padding: 50px;'>
-        <h1>批次列印功能開發中</h1>
-        <p>此功能需要 ISalesOrderService 實作 GetByBatchCriteriaAsync 方法</p>
-        <p>目前僅支援單筆銷貨單列印</p>
+        <h1>無符合條件的銷貨單</h1>
+        <p>篩選條件：{criteria.GetSummary()}</p>
+        <p>請調整篩選條件後重新查詢。</p>
     </div>
 </body>
 </html>";
@@ -502,29 +515,6 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("    </div>");
             
             return html.ToString();
-        }
-
-        /// <summary>
-        /// 生成空結果提示頁面
-        /// </summary>
-        private string GenerateEmptyResultPage(BatchPrintCriteria criteria)
-        {
-            return $@"
-<!DOCTYPE html>
-<html lang='zh-TW'>
-<head>
-    <meta charset='UTF-8'>
-    <title>批次列印 - 無符合條件的資料</title>
-    <link href='/css/print-styles.css' rel='stylesheet' />
-</head>
-<body>
-    <div style='text-align: center; padding: 50px;'>
-        <h1>無符合條件的銷貨單</h1>
-        <p>篩選條件：{criteria.GetSummary()}</p>
-        <p>請調整篩選條件後重新查詢。</p>
-    </div>
-</body>
-</html>";
         }
 
         private string GetPrintScript()

@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -39,5 +40,12 @@ namespace ERPCore2.Services
         /// <param name="salesOrderDetails">銷貨訂單明細清單</param>
         /// <returns>驗證結果，包含庫存不足的詳細訊息</returns>
         Task<ServiceResult> ValidateWarehouseInventoryStockAsync(List<SalesOrderDetail> salesOrderDetails);
+
+        /// <summary>
+        /// 根據批次列印條件查詢銷貨訂單（批次列印專用）
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的銷貨訂單列表</returns>
+        Task<List<SalesOrder>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
     }
 }
