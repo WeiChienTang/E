@@ -1,0 +1,488 @@
+@typeparam TItem
+@using System.Reflection
+@using ERPCore2.Components.Shared.Buttons
+
+@if (ShowCard)
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="card-title mb-0">
+                @if (!string.IsNullOrEmpty(IconClass))
+                {
+                    <i class="@IconClass me-2"></i>
+                }
+                @Label
+                <span class="badge bg-secondary ms-2">@SelectedItems.Count / @Items.Count</span>
+            </h6>
+            <div class="btn-group btn-group-sm">
+                <GenericButtonComponent Text="全選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                                      OnClick="SelectAll" Title="全選" />
+                <GenericButtonComponent Text="清空" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                                      OnClick="ClearAll" Title="清空" />
+                <GenericButtonComponent Text="反選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                                      OnClick="InvertSelection" Title="反選" />
+            </div>
+        </div>
+        <div class="card-body">
+            @RenderContent()
+        </div>
+    </div>
+}
+else
+{
+    <div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">
+                @if (!string.IsNullOrEmpty(IconClass))
+                {
+                    <i class="@IconClass me-2"></i>
+                }
+                @Label
+                <span class="badge bg-secondary ms-2">@SelectedItems.Count / @Items.Count</span>
+            </h6>
+            <div class="btn-group btn-group-sm">
+                <GenericButtonComponent Text="全選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                                      OnClick="SelectAll" Title="全選" />
+                <GenericButtonComponent Text="清空" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                                       OnClick="ClearAll" Title="清空" />
+                <GenericButtonComponent Text="反選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                                      OnClick="InvertSelection" Title="反選" />
+            </div>
+        </div>
+        @RenderContent()
+    </div>
+}
+
+<style>
+    .bg-light-primary {
+        background-color: #e7f1ff !important;
+    }
+    
+    .list-group-item:hover {
+        background-color: #e9ecef !important;
+    }
+    
+    .bg-light-primary:hover {
+        background-color: #d0e4ff !important;
+    }
+</style>
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>可選擇的項目清單</summary>
+    [Parameter, EditorRequired] 
+    public List<TItem> Items { get; set; } = new();
+    
+    /// <summary>已選擇的項目清單（雙向綁定）</summary>
+    [Parameter] 
+    public List<TItem> SelectedItems { get; set; } = new();
+    
+    /// <summary>已選擇項目變更事件</summary>
+    [Parameter] 
+    public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+    
+    /// <summary>顯示文字的屬性名稱</summary>
+    [Parameter, EditorRequired] 
+    public string DisplayProperty { get; set; } = string.Empty;
+    
+    /// <summary>值的屬性名稱（用於比較和去重）</summary>
+    [Parameter] 
+    public string ValueProperty { get; set; } = "Id";
+    
+    /// <summary>標籤文字</summary>
+    [Parameter] 
+    public string Label { get; set; } = "項目";
+    
+    /// <summary>搜尋框提示文字</summary>
+    [Parameter] 
+    public string Placeholder { get; set; } = "請輸入關鍵字搜尋...";
+    
+    /// <summary>未選擇時的提示訊息</summary>
+    [Parameter] 
+    public string EmptyMessage { get; set; } = "尚未選擇項目";
+    
+    /// <summary>列表高度</summary>
+    [Parameter] 
+    public string ListHeight { get; set; } = "400px";
+    
+    /// <summary>標籤和項目前的圖示 CSS 類別</summary>
+    [Parameter] 
+    public string IconClass { get; set; } = string.Empty;
+    
+    /// <summary>是否顯示 Card 外層（預設 true）</summary>
+    [Parameter]
+    public bool ShowCard { get; set; } = true;
+
+    // ===== 內部狀態 =====
+    private string searchTerm = string.Empty;
+    private string selectedSearchTerm = string.Empty;
+
+    // ===== 計算屬性 =====
+    
+    /// <summary>可選項目（排除已選擇的）</summary>
+    private List<TItem> AvailableItems
+    {
+        get
+        {
+            if (Items == null) return new List<TItem>();
+            
+            var available = Items.Where(item => 
+                !SelectedItems.Any(selected => AreItemsEqual(item, selected))
+            );
+            
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return available.ToList();
+            
+            return available.Where(item =>
+                GetDisplayValue(item).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+    }
+    
+    /// <summary>已選項目（經過搜尋篩選）</summary>
+    private List<TItem> FilteredSelectedItems
+    {
+        get
+        {
+            if (SelectedItems == null) return new List<TItem>();
+            
+            if (string.IsNullOrWhiteSpace(selectedSearchTerm))
+                return SelectedItems;
+            
+            return SelectedItems.Where(item =>
+                GetDisplayValue(item).Contains(selectedSearchTerm, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+    }
+
+    // ===== 渲染方法 =====
+    
+    /// <summary>渲染主要內容（左右兩欄）</summary>
+    private RenderFragment RenderContent() => builder =>
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "row g-3");
+        
+        // 左欄：可選項目
+        builder.OpenElement(2, "div");
+        builder.AddAttribute(3, "class", "col-md-6");
+        
+        builder.OpenElement(4, "div");
+        builder.AddAttribute(5, "class", "mb-2");
+        
+        builder.OpenElement(6, "label");
+        builder.AddAttribute(7, "class", "form-label fw-bold");
+        builder.OpenElement(8, "i");
+        builder.AddAttribute(9, "class", "bi bi-list-ul me-1");
+        builder.CloseElement(); // i
+        builder.AddContent(10, "可選項目");
+        builder.CloseElement(); // label
+        
+        builder.OpenElement(11, "input");
+        builder.AddAttribute(12, "type", "text");
+        builder.AddAttribute(13, "class", "form-control form-control-sm");
+        builder.AddAttribute(14, "placeholder", Placeholder);
+        builder.AddAttribute(15, "value", searchTerm);
+        builder.AddAttribute(16, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => searchTerm = e.Value?.ToString() ?? string.Empty));
+        builder.CloseElement(); // input
+        
+        builder.CloseElement(); // div mb-2
+        
+        builder.OpenElement(17, "div");
+        builder.AddAttribute(18, "class", "border rounded");
+        builder.AddAttribute(19, "style", $"height: {ListHeight}; overflow-y: auto; background-color: #f8f9fa;");
+        
+        if (AvailableItems.Any())
+        {
+            builder.OpenElement(20, "div");
+            builder.AddAttribute(21, "class", "list-group list-group-flush");
+            
+            foreach (var item in AvailableItems)
+            {
+                var currentItem = item;
+                builder.OpenElement(22, "div");
+                builder.AddAttribute(23, "class", "list-group-item list-group-item-action d-flex align-items-center py-2 px-3");
+                builder.AddAttribute(24, "style", "cursor: pointer; user-select: none;");
+                builder.AddAttribute(25, "onclick", EventCallback.Factory.Create(this, () => AddItem(currentItem)));
+                
+                builder.OpenElement(26, "span");
+                builder.AddAttribute(27, "class", "flex-grow-1");
+                
+                if (!string.IsNullOrEmpty(IconClass))
+                {
+                    builder.OpenElement(28, "i");
+                    builder.AddAttribute(29, "class", $"{IconClass} me-2 text-muted");
+                    builder.CloseElement(); // i
+                }
+                
+                builder.AddContent(30, GetDisplayValue(currentItem));
+                builder.CloseElement(); // span
+                
+                builder.OpenElement(31, "button");
+                builder.AddAttribute(32, "type", "button");
+                builder.AddAttribute(33, "class", "btn btn-sm btn-outline-primary py-0 px-2");
+                builder.AddAttribute(34, "onclick", EventCallback.Factory.Create(this, () => AddItem(currentItem)));
+                builder.AddAttribute(35, "title", "加入");
+                builder.OpenElement(36, "i");
+                builder.AddAttribute(37, "class", "bi bi-chevron-right");
+                builder.CloseElement(); // i
+                builder.CloseElement(); // button
+                
+                builder.CloseElement(); // div
+            }
+            
+            builder.CloseElement(); // div list-group
+        }
+        else
+        {
+            builder.OpenElement(42, "div");
+            builder.AddAttribute(43, "class", "text-center text-muted py-5");
+            
+            builder.OpenElement(44, "i");
+            builder.AddAttribute(45, "class", "bi bi-inbox fs-1 d-block mb-2");
+            builder.CloseElement(); // i
+            
+            builder.OpenElement(46, "span");
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                builder.AddContent(47, "所有項目已選擇");
+            }
+            else
+            {
+                builder.AddContent(48, $"找不到符合「{searchTerm}」的項目");
+            }
+            builder.CloseElement(); // span
+            
+            builder.CloseElement(); // div text-center
+        }
+        
+        builder.CloseElement(); // div border rounded
+        
+        if (!string.IsNullOrWhiteSpace(searchTerm) && AvailableItems.Any())
+        {
+            builder.OpenElement(49, "small");
+            builder.AddAttribute(50, "class", "text-muted mt-1 d-block");
+            builder.OpenElement(51, "i");
+            builder.AddAttribute(52, "class", "bi bi-funnel");
+            builder.CloseElement(); // i
+            builder.AddContent(53, $" 顯示 {AvailableItems.Count} 筆結果");
+            builder.CloseElement(); // small
+        }
+        
+        builder.CloseElement(); // div col-md-6 (左欄)
+        
+        // 右欄：已選項目
+        builder.OpenElement(54, "div");
+        builder.AddAttribute(55, "class", "col-md-6");
+        
+        builder.OpenElement(56, "div");
+        builder.AddAttribute(57, "class", "mb-2");
+        
+        builder.OpenElement(58, "label");
+        builder.AddAttribute(59, "class", "form-label fw-bold");
+        builder.OpenElement(60, "i");
+        builder.AddAttribute(61, "class", "bi bi-check-circle me-1");
+        builder.CloseElement(); // i
+        builder.AddContent(62, "已選項目");
+        builder.CloseElement(); // label
+        
+        builder.OpenElement(63, "input");
+        builder.AddAttribute(64, "type", "text");
+        builder.AddAttribute(65, "class", "form-control form-control-sm");
+        builder.AddAttribute(66, "placeholder", "搜尋已選項目...");
+        builder.AddAttribute(67, "value", selectedSearchTerm);
+        builder.AddAttribute(68, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => selectedSearchTerm = e.Value?.ToString() ?? string.Empty));
+        builder.CloseElement(); // input
+        
+        builder.CloseElement(); // div mb-2
+        
+        builder.OpenElement(69, "div");
+        builder.AddAttribute(70, "class", "border rounded");
+        builder.AddAttribute(71, "style", $"height: {ListHeight}; overflow-y: auto; background-color: #f8f9fa;");
+        
+        if (FilteredSelectedItems.Any())
+        {
+            builder.OpenElement(72, "div");
+            builder.AddAttribute(73, "class", "list-group list-group-flush");
+            
+            foreach (var item in FilteredSelectedItems)
+            {
+                var currentItem = item;
+                builder.OpenElement(74, "div");
+                builder.AddAttribute(75, "class", "list-group-item list-group-item-action d-flex align-items-center py-2 px-3 bg-light-primary");
+                builder.AddAttribute(76, "style", "cursor: pointer; user-select: none;");
+                builder.AddAttribute(77, "onclick", EventCallback.Factory.Create(this, () => RemoveItem(currentItem)));
+                
+                builder.OpenElement(78, "span");
+                builder.AddAttribute(79, "class", "flex-grow-1");
+                
+                if (!string.IsNullOrEmpty(IconClass))
+                {
+                    builder.OpenElement(80, "i");
+                    builder.AddAttribute(81, "class", $"{IconClass} me-2 text-primary");
+                    builder.CloseElement(); // i
+                }
+                
+                builder.AddContent(82, GetDisplayValue(currentItem));
+                builder.CloseElement(); // span
+                
+                builder.OpenElement(83, "button");
+                builder.AddAttribute(84, "type", "button");
+                builder.AddAttribute(85, "class", "btn btn-sm btn-outline-danger py-0 px-2");
+                builder.AddAttribute(86, "onclick", EventCallback.Factory.Create(this, () => RemoveItem(currentItem)));
+                builder.AddAttribute(87, "title", "移除");
+                builder.OpenElement(88, "i");
+                builder.AddAttribute(89, "class", "bi bi-chevron-left");
+                builder.CloseElement(); // i
+                builder.CloseElement(); // button
+                
+                builder.CloseElement(); // div
+            }
+            
+            builder.CloseElement(); // div list-group
+        }
+        else
+        {
+            builder.OpenElement(94, "div");
+            builder.AddAttribute(95, "class", "text-center text-muted py-5");
+            
+            builder.OpenElement(96, "i");
+            builder.AddAttribute(97, "class", "bi bi-inbox fs-1 d-block mb-2");
+            builder.CloseElement(); // i
+            
+            builder.OpenElement(98, "span");
+            if (string.IsNullOrWhiteSpace(selectedSearchTerm))
+            {
+                builder.AddContent(99, EmptyMessage);
+            }
+            else
+            {
+                builder.AddContent(100, $"找不到符合「{selectedSearchTerm}」的已選項目");
+            }
+            builder.CloseElement(); // span
+            
+            builder.CloseElement(); // div text-center
+        }
+        
+        builder.CloseElement(); // div border rounded
+        
+        if (!string.IsNullOrWhiteSpace(selectedSearchTerm) && FilteredSelectedItems.Any())
+        {
+            builder.OpenElement(101, "small");
+            builder.AddAttribute(102, "class", "text-muted mt-1 d-block");
+            builder.OpenElement(103, "i");
+            builder.AddAttribute(104, "class", "bi bi-funnel");
+            builder.CloseElement(); // i
+            builder.AddContent(105, $" 顯示 {FilteredSelectedItems.Count} 筆結果");
+            builder.CloseElement(); // small
+        }
+        
+        builder.CloseElement(); // div col-md-6 (右欄)
+        
+        builder.CloseElement(); // div row g-3
+    };
+
+    // ===== 核心方法 =====
+    
+    /// <summary>取得項目的顯示值</summary>
+    private string GetDisplayValue(TItem item)
+    {
+        if (item == null) return string.Empty;
+        
+        try
+        {
+            var property = typeof(TItem).GetProperty(DisplayProperty);
+            return property?.GetValue(item)?.ToString() ?? item.ToString() ?? string.Empty;
+        }
+        catch
+        {
+            return item.ToString() ?? string.Empty;
+        }
+    }
+
+    /// <summary>取得項目的值（用於比較）</summary>
+    private object? GetItemValue(TItem item)
+    {
+        if (item == null) return null;
+        
+        try
+        {
+            var property = typeof(TItem).GetProperty(ValueProperty);
+            return property?.GetValue(item) ?? item;
+        }
+        catch
+        {
+            return item;
+        }
+    }
+
+    /// <summary>檢查兩個項目是否相同</summary>
+    private bool AreItemsEqual(TItem item1, TItem item2)
+    {
+        if (item1 == null && item2 == null) return true;
+        if (item1 == null || item2 == null) return false;
+        
+        return Equals(GetItemValue(item1), GetItemValue(item2));
+    }
+
+    /// <summary>新增項目到已選清單</summary>
+    private async Task AddItem(TItem item)
+    {
+        if (item == null || SelectedItems.Any(s => AreItemsEqual(s, item))) 
+            return;
+        
+        SelectedItems.Add(item);
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+
+    /// <summary>從已選清單移除項目</summary>
+    private async Task RemoveItem(TItem item)
+    {
+        if (item == null) return;
+        
+        var itemToRemove = SelectedItems.FirstOrDefault(s => AreItemsEqual(s, item));
+        if (itemToRemove != null)
+        {
+            SelectedItems.Remove(itemToRemove);
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>全選</summary>
+    private async Task SelectAll()
+    {
+        foreach (var item in Items)
+        {
+            if (!SelectedItems.Any(s => AreItemsEqual(s, item)))
+            {
+                SelectedItems.Add(item);
+            }
+        }
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+
+    /// <summary>清空已選</summary>
+    private async Task ClearAll()
+    {
+        SelectedItems.Clear();
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+
+    /// <summary>反向選擇</summary>
+    private async Task InvertSelection()
+    {
+        var newSelection = Items.Where(item => 
+            !SelectedItems.Any(s => AreItemsEqual(s, item))
+        ).ToList();
+        
+        SelectedItems.Clear();
+        SelectedItems.AddRange(newSelection);
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+}

@@ -56,6 +56,18 @@ namespace ERPCore2.Services.Reports
             ReportPrintConfiguration? reportPrintConfig);
         
         /// <summary>
+        /// 批次生成採購單報表（支援多條件篩選）
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <param name="format">輸出格式（預設 HTML）</param>
+        /// <param name="reportPrintConfig">報表列印配置（可選）</param>
+        /// <returns>合併後的報表內容（所有採購單在同一個 HTML，自動分頁）</returns>
+        Task<string> GenerateBatchReportAsync(
+            BatchPrintCriteria criteria,
+            ReportFormat format = ReportFormat.Html,
+            ReportPrintConfiguration? reportPrintConfig = null);
+        
+        /// <summary>
         /// 取得採購單報表配置
         /// </summary>
         /// <param name="company">公司資訊</param>

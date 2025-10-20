@@ -1,0 +1,126 @@
+@* 
+    統一的篩選區塊容器組件
+    用於批次列印或其他需要多個篩選條件的場景
+    提供一致的樣式、結構和間距
+*@
+
+<div class="filter-section @CssClass">
+    @* 區塊標題（選填）*@
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="filter-section-header">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass me-2"></i>
+            }
+            <span class="filter-section-title">@Title</span>
+            @if (!string.IsNullOrEmpty(Badge))
+            {
+                <span class="badge bg-secondary ms-2">@Badge</span>
+            }
+            @if (HeaderActions != null)
+            {
+                <div class="ms-auto">
+                    @HeaderActions
+                </div>
+            }
+        </div>
+    }
+    
+    @* 區塊內容 *@
+    <div class="filter-section-body">
+        @ChildContent
+    </div>
+</div>
+
+<style>
+    .filter-section {
+        margin-bottom: 1.5rem;
+        padding: 1.25rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .filter-section:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-color: #ced4da;
+    }
+
+    .filter-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .filter-section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .filter-section-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #495057;
+        line-height: 1.5;
+    }
+
+    .filter-section-body {
+        /* 內容區域，由子組件決定佈局 */
+    }
+
+    /* 緊湊模式 */
+    .filter-section.compact {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-section.compact .filter-section-header {
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .filter-section.compact .filter-section-title {
+        font-size: 0.9rem;
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// 區塊標題（選填）
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// 標題前的圖示 CSS 類別（選填）
+    /// </summary>
+    [Parameter]
+    public string? IconClass { get; set; }
+
+    /// <summary>
+    /// 標題後的徽章文字（選填，例如：顯示已選數量）
+    /// </summary>
+    [Parameter]
+    public string? Badge { get; set; }
+
+    /// <summary>
+    /// 額外的 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string CssClass { get; set; } = "";
+
+    /// <summary>
+    /// 標題區域的額外操作按鈕（選填）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? HeaderActions { get; set; }
+
+    /// <summary>
+    /// 區塊內容
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

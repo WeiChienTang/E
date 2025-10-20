@@ -37,7 +37,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "單號",
                             FilterPlaceholder = "輸入採購單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseOrder.PurchaseOrderNumber), po => po.PurchaseOrderNumber)
                         }
@@ -52,7 +51,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入公司名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Company.CompanyName", po => po.Company.CompanyName)
                         }
@@ -63,11 +61,10 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Supplier.CompanyName", // 表格顯示用
                             FilterPropertyName = "Supplier.CompanyName", // 篩選器也使用公司名稱
-                            DisplayName = "供應商",
+                            DisplayName = "廠商",
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入供應商名稱搜尋",
+                            FilterPlaceholder = "輸入廠商名稱搜尋",
                             TableOrder = 3,
-                            FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Supplier.CompanyName", po => po.Supplier != null ? po.Supplier.CompanyName : null, allowNull: true)
                         }
@@ -81,7 +78,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 4,
-                            FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.OrderDate), po => po.OrderDate)
                         }
@@ -95,7 +91,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 5,
-                            FilterOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.ExpectedDeliveryDate), po => po.ExpectedDeliveryDate)
                         }

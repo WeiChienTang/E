@@ -2,6 +2,13 @@
 @using ERPCore2.Components.Shared.Buttons
 
 <div class="d-flex gap-2">
+    @if (ShowBatchPrintButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Info" Text="@BatchPrintButtonText" 
+                               OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="@BatchPrintButtonTitle"
+                               CssClass="index-action-btn index-batch-print-btn" IconClass="@BatchPrintButtonIconClass" />
+    }
     @if (ShowAddButton)
     {
         <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@AddButtonText" 
@@ -32,14 +39,6 @@
                                OnClick="HandleExportPdfClick" IsDisabled="@(IsLoading || IsExportPdfDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="@ExportPdfButtonTitle"
                                CssClass="index-action-btn index-export-pdf-btn" IconClass="@ExportPdfButtonIconClass" />
-    }
-
-    @if (ShowBatchPrintButton)
-    {
-        <GenericButtonComponent Variant="ButtonVariant.Info" Text="@BatchPrintButtonText" 
-                               OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="@BatchPrintButtonTitle"
-                               CssClass="index-action-btn index-batch-print-btn" IconClass="@BatchPrintButtonIconClass" />
     }
 
     @* 允許添加自訂按鈕 *@

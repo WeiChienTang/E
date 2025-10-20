@@ -1,0 +1,280 @@
+@* 
+    日期範圍篩選元件
+    用於批次列印或其他需要日期範圍篩選的場景
+    提供起始日期和結束日期的輸入
+*@
+@using ERPCore2.Components.Shared.Buttons
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">
+                    @if (!string.IsNullOrEmpty(StartDateIconClass))
+                    {
+                        <i class="@StartDateIconClass me-1"></i>
+                    }
+                    @StartDateLabel
+                </label>
+                <input type="date" 
+                       class="form-control @StartDateCssClass" 
+                       @bind="StartDate"
+                       @bind:after="OnStartDateChanged"
+                       max="@MaxStartDate"
+                       min="@MinStartDate"
+                       placeholder="@StartDatePlaceholder" />
+                @if (!string.IsNullOrEmpty(StartDateHelpText))
+                {
+                    <small class="form-text text-muted">@StartDateHelpText</small>
+                }
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">
+                    @if (!string.IsNullOrEmpty(EndDateIconClass))
+                    {
+                        <i class="@EndDateIconClass me-1"></i>
+                    }
+                    @EndDateLabel
+                </label>
+                <input type="date" 
+                       class="form-control @EndDateCssClass" 
+                       @bind="EndDate"
+                       @bind:after="OnEndDateChanged"
+                       max="@MaxEndDate"
+                       min="@MinEndDate"
+                       placeholder="@EndDatePlaceholder" />
+                @if (!string.IsNullOrEmpty(EndDateHelpText))
+                {
+                    <small class="form-text text-muted">@EndDateHelpText</small>
+                }
+            </div>
+        </div>
+    </div>
+    
+    @if (ShowQuickSelectors)
+    {
+        <div class="col-md-4 text-end">
+            <label class="form-label d-block">快速選擇：</label>
+            <div class="btn-group btn-group-sm" role="group">
+                <GenericButtonComponent Text="今日" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetToday" />
+                <GenericButtonComponent Text="本週" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetThisWeek" />
+                <GenericButtonComponent Text="本月" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetThisMonth" />
+                <GenericButtonComponent Text="上月" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetLastMonth" />
+                <GenericButtonComponent Text="今年" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetThisYear" />
+                <GenericButtonComponent Text="清空" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="ClearDates" />
+            </div>
+        </div>
+    }
+</div>
+
+@if (ShowValidationMessage && !string.IsNullOrEmpty(ValidationMessage))
+{
+    <div class="alert alert-warning mt-2 py-2 px-3 mb-0">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        @ValidationMessage
+    </div>
+}
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>起始日期（雙向綁定）</summary>
+    [Parameter]
+    public DateTime? StartDate { get; set; }
+    
+    /// <summary>起始日期變更事件</summary>
+    [Parameter]
+    public EventCallback<DateTime?> StartDateChanged { get; set; }
+    
+    /// <summary>結束日期（雙向綁定）</summary>
+    [Parameter]
+    public DateTime? EndDate { get; set; }
+    
+    /// <summary>結束日期變更事件</summary>
+    [Parameter]
+    public EventCallback<DateTime?> EndDateChanged { get; set; }
+    
+    /// <summary>起始日期標籤文字</summary>
+    [Parameter]
+    public string StartDateLabel { get; set; } = "起始日期";
+    
+    /// <summary>結束日期標籤文字</summary>
+    [Parameter]
+    public string EndDateLabel { get; set; } = "結束日期";
+    
+    /// <summary>起始日期圖示 CSS 類別</summary>
+    [Parameter]
+    public string? StartDateIconClass { get; set; }
+    
+    /// <summary>結束日期圖示 CSS 類別</summary>
+    [Parameter]
+    public string? EndDateIconClass { get; set; }
+    
+    /// <summary>起始日期提示文字</summary>
+    [Parameter]
+    public string StartDatePlaceholder { get; set; } = "";
+    
+    /// <summary>結束日期提示文字</summary>
+    [Parameter]
+    public string EndDatePlaceholder { get; set; } = "";
+    
+    /// <summary>起始日期說明文字</summary>
+    [Parameter]
+    public string? StartDateHelpText { get; set; }
+    
+    /// <summary>結束日期說明文字</summary>
+    [Parameter]
+    public string? EndDateHelpText { get; set; }
+    
+    /// <summary>起始日期額外 CSS 類別</summary>
+    [Parameter]
+    public string StartDateCssClass { get; set; } = "";
+    
+    /// <summary>結束日期額外 CSS 類別</summary>
+    [Parameter]
+    public string EndDateCssClass { get; set; } = "";
+    
+    /// <summary>起始日期最小值</summary>
+    [Parameter]
+    public string? MinStartDate { get; set; }
+    
+    /// <summary>起始日期最大值</summary>
+    [Parameter]
+    public string? MaxStartDate { get; set; }
+    
+    /// <summary>結束日期最小值</summary>
+    [Parameter]
+    public string? MinEndDate { get; set; }
+    
+    /// <summary>結束日期最大值</summary>
+    [Parameter]
+    public string? MaxEndDate { get; set; }
+    
+    /// <summary>是否顯示快速選擇器</summary>
+    [Parameter]
+    public bool ShowQuickSelectors { get; set; } = true;
+    
+    /// <summary>是否自動驗證（起始日期不能大於結束日期）</summary>
+    [Parameter]
+    public bool AutoValidate { get; set; } = true;
+    
+    /// <summary>是否顯示驗證訊息</summary>
+    [Parameter]
+    public bool ShowValidationMessage { get; set; } = true;
+    
+    /// <summary>自訂驗證訊息</summary>
+    [Parameter]
+    public string? CustomValidationMessage { get; set; }
+    
+    // ===== 內部狀態 =====
+    private string? ValidationMessage { get; set; }
+    
+    // ===== 生命週期方法 =====
+    
+    protected override void OnParametersSet()
+    {
+        ValidateDateRange();
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task OnStartDateChanged()
+    {
+        ValidateDateRange();
+        await StartDateChanged.InvokeAsync(StartDate);
+    }
+    
+    private async Task OnEndDateChanged()
+    {
+        ValidateDateRange();
+        await EndDateChanged.InvokeAsync(EndDate);
+    }
+    
+    // ===== 驗證方法 =====
+    
+    private void ValidateDateRange()
+    {
+        if (!AutoValidate)
+        {
+            ValidationMessage = null;
+            return;
+        }
+        
+        if (!string.IsNullOrEmpty(CustomValidationMessage))
+        {
+            ValidationMessage = CustomValidationMessage;
+            return;
+        }
+        
+        if (StartDate.HasValue && EndDate.HasValue && StartDate.Value > EndDate.Value)
+        {
+            ValidationMessage = "起始日期不能大於結束日期";
+        }
+        else
+        {
+            ValidationMessage = null;
+        }
+    }
+    
+    // ===== 快速選擇方法 =====
+    
+    private async Task SetToday()
+    {
+        var today = DateTime.Today;
+        StartDate = today;
+        EndDate = today;
+        await NotifyDateChanges();
+    }
+    
+    private async Task SetThisWeek()
+    {
+        var today = DateTime.Today;
+        var dayOfWeek = (int)today.DayOfWeek;
+        var startOfWeek = today.AddDays(-(dayOfWeek == 0 ? 6 : dayOfWeek - 1)); // 週一為起始
+        var endOfWeek = startOfWeek.AddDays(6);
+        
+        StartDate = startOfWeek;
+        EndDate = endOfWeek;
+        await NotifyDateChanges();
+    }
+    
+    private async Task SetThisMonth()
+    {
+        var today = DateTime.Today;
+        StartDate = new DateTime(today.Year, today.Month, 1);
+        EndDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+        await NotifyDateChanges();
+    }
+    
+    private async Task SetLastMonth()
+    {
+        var today = DateTime.Today;
+        var lastMonth = today.AddMonths(-1);
+        StartDate = new DateTime(lastMonth.Year, lastMonth.Month, 1);
+        EndDate = new DateTime(lastMonth.Year, lastMonth.Month, DateTime.DaysInMonth(lastMonth.Year, lastMonth.Month));
+        await NotifyDateChanges();
+    }
+    
+    private async Task SetThisYear()
+    {
+        var today = DateTime.Today;
+        StartDate = new DateTime(today.Year, 1, 1);
+        EndDate = new DateTime(today.Year, 12, 31);
+        await NotifyDateChanges();
+    }
+    
+    private async Task ClearDates()
+    {
+        StartDate = null;
+        EndDate = null;
+        await NotifyDateChanges();
+    }
+    
+    private async Task NotifyDateChanges()
+    {
+        ValidateDateRange();
+        await StartDateChanged.InvokeAsync(StartDate);
+        await EndDateChanged.InvokeAsync(EndDate);
+        StateHasChanged();
+    }
+}

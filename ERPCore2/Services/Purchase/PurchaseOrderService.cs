@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
+using ERPCore2.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -242,6 +243,136 @@ namespace ERPCore2.Services
                     PurchaseOrderNumber = purchaseOrderNumber 
                 });
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 根據批次列印條件查詢採購單（支援多條件組合篩選）
+        /// 設計理念：靈活組合日期、廠商、狀態等多種篩選條件，適用於批次列印場景
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的採購單列表（包含完整關聯資料）</returns>
+        public async Task<List<PurchaseOrder>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 建立基礎查詢（包含必要的關聯資料）
+                IQueryable<PurchaseOrder> query = context.PurchaseOrders
+                    .Include(po => po.Company)
+                    .Include(po => po.Supplier)
+                    .Include(po => po.Warehouse)
+                    .Include(po => po.ApprovedByUser)
+                    .AsQueryable();
+
+                // 日期範圍篩選
+                if (criteria.StartDate.HasValue)
+                {
+                    query = query.Where(po => po.OrderDate >= criteria.StartDate.Value.Date);
+                }
+                if (criteria.EndDate.HasValue)
+                {
+                    // 包含整天（到當天 23:59:59）
+                    var endDate = criteria.EndDate.Value.Date.AddDays(1);
+                    query = query.Where(po => po.OrderDate < endDate);
+                }
+
+                // 廠商篩選（RelatedEntityIds 對應廠商ID列表）
+                if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
+                {
+                    query = query.Where(po => criteria.RelatedEntityIds.Contains(po.SupplierId));
+                }
+
+                // 公司篩選
+                if (criteria.CompanyId.HasValue)
+                {
+                    query = query.Where(po => po.CompanyId == criteria.CompanyId.Value);
+                }
+
+                // 倉庫篩選
+                if (criteria.WarehouseId.HasValue)
+                {
+                    query = query.Where(po => po.WarehouseId == criteria.WarehouseId.Value);
+                }
+
+                // 狀態篩選（採購單使用 IsApproved 等布林值來表示狀態）
+                if (criteria.Statuses != null && criteria.Statuses.Any())
+                {
+                    // 支援的狀態：Pending（待審核）、Approved（已審核）、Rejected（已駁回）
+                    foreach (var status in criteria.Statuses)
+                    {
+                        switch (status.ToLower())
+                        {
+                            case "pending":
+                            case "待審核":
+                                query = query.Where(po => !po.IsApproved && string.IsNullOrEmpty(po.RejectReason));
+                                break;
+                            case "approved":
+                            case "已審核":
+                                query = query.Where(po => po.IsApproved);
+                                break;
+                            case "rejected":
+                            case "已駁回":
+                                query = query.Where(po => !string.IsNullOrEmpty(po.RejectReason));
+                                break;
+                        }
+                    }
+                }
+
+                // 單據編號關鍵字搜尋
+                if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
+                {
+                    query = query.Where(po => po.PurchaseOrderNumber.Contains(criteria.DocumentNumberKeyword));
+                }
+
+                // 是否包含已駁回的單據（預設不包含）
+                if (!criteria.IncludeCancelled)
+                {
+                    query = query.Where(po => string.IsNullOrEmpty(po.RejectReason));
+                }
+
+                // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
+                // 這樣列印時同一廠商的採購單會集中在一起
+                query = criteria.SortDirection == SortDirection.Ascending
+                    ? query.OrderBy(po => po.Supplier.CompanyName)
+                           .ThenBy(po => po.OrderDate)
+                           .ThenBy(po => po.PurchaseOrderNumber)
+                    : query.OrderBy(po => po.Supplier.CompanyName)
+                           .ThenByDescending(po => po.OrderDate)
+                           .ThenBy(po => po.PurchaseOrderNumber);
+
+                // 限制最大筆數
+                if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
+                {
+                    query = query.Take(criteria.MaxResults.Value);
+                }
+
+                // 執行查詢
+                var results = await query.ToListAsync();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByBatchCriteriaAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByBatchCriteriaAsync),
+                    ServiceType = GetType().Name,
+                    Criteria = new
+                    {
+                        criteria.StartDate,
+                        criteria.EndDate,
+                        SupplierCount = criteria.RelatedEntityIds?.Count ?? 0,
+                        criteria.CompanyId,
+                        criteria.WarehouseId,
+                        StatusCount = criteria.Statuses?.Count ?? 0,
+                        criteria.DocumentNumberKeyword,
+                        criteria.MaxResults,
+                        criteria.IncludeCancelled
+                    }
+                });
+                return new List<PurchaseOrder>();
             }
         }
 

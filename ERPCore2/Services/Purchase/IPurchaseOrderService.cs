@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Models;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -12,6 +13,13 @@ namespace ERPCore2.Services
         Task<List<PurchaseOrder>> GetBySupplierIdAsync(int supplierId);
         Task<List<PurchaseOrder>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<PurchaseOrder?> GetByNumberAsync(string purchaseOrderNumber);
+        
+        /// <summary>
+        /// 根據批次列印條件查詢採購單（批次列印專用）
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的採購單列表</returns>
+        Task<List<PurchaseOrder>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
         
         // 訂單操作
         Task<ServiceResult> SubmitOrderAsync(int orderId);

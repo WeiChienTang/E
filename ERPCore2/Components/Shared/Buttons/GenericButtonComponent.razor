@@ -1,7 +1,7 @@
 @* 統一按鈕組件 - 取代所有HTML button標籤的主要共享組件 *@
 @using ERPCore2.Components.Shared.Buttons
 
-<button class="btn @GetButtonClass()" 
+<button class="@GetFullButtonClass()" 
         type="@(IsSubmit ? "submit" : Type)"
         title="@(string.IsNullOrEmpty(Title) ? Text : Title)"
         disabled="@IsDisabled"
@@ -107,69 +107,81 @@
         {
             // 在生產環境中，這裡應該使用適當的日誌記錄
         }
-    }    private string GetButtonClass()
+    }
+    
+    /// <summary>
+    /// 取得完整的按鈕 CSS 類別，處理特殊情況（如 btn-close）
+    /// </summary>
+    private string GetFullButtonClass()
     {
         var classes = new List<string>();
         
-        // 基礎按鈕樣式，根據Variant參數決定顏色
-        switch (Variant)
+        // 特殊處理：如果 CssClass 包含 "btn-close"，則不添加 "btn" 和其他變體類別
+        if (!string.IsNullOrEmpty(CssClass) && CssClass.Contains("btn-close"))
         {
-            case ButtonVariant.Primary:
-                classes.Add("btn-primary");
-                break;
-            case ButtonVariant.Secondary:
-                classes.Add("btn-secondary");
-                break;
-            case ButtonVariant.Success:
-                classes.Add("btn-success");
-                break;
-            case ButtonVariant.Warning:
-                classes.Add("btn-warning");
-                break;
-            case ButtonVariant.Danger:
-                classes.Add("btn-danger");
-                break;
-            case ButtonVariant.Info:
-                classes.Add("btn-info");
-                break;
-            case ButtonVariant.OutlinePrimary:
-                classes.Add("btn-outline-primary");
-                break;
-            case ButtonVariant.OutlineSecondary:
-                classes.Add("btn-outline-secondary");
-                break;
-            case ButtonVariant.OutlineSuccess:
-                classes.Add("btn-outline-success");
-                break;
-            case ButtonVariant.OutlineWarning:
-                classes.Add("btn-outline-warning");
-                break;
-            case ButtonVariant.OutlineDanger:
-                classes.Add("btn-outline-danger");
-                break;
-            case ButtonVariant.OutlineInfo:
-                classes.Add("btn-outline-info");
-                break;
+            // btn-close 是獨立的按鈕樣式，不需要其他類別
+            classes.Add("btn-close");
+            // 添加白色變體（用於深色背景）
+            classes.Add("btn-close-white");
+            return string.Join(" ", classes);
         }
         
-        // 按鈕尺寸
-        switch (Size)
+        // 一般按鈕需要基礎 btn 類別
+        classes.Add("btn");
+        
+        // 添加變體樣式
+        classes.Add(GetVariantClass());
+        
+        // 添加尺寸樣式
+        var sizeClass = GetSizeClass();
+        if (!string.IsNullOrEmpty(sizeClass))
         {
-            case ButtonSize.Small:
-                classes.Add("btn-sm");
-                break;
-            case ButtonSize.Large:
-                classes.Add("btn-lg");
-                break;
-            // Normal 尺寸不需要額外的CSS類別
+            classes.Add(sizeClass);
         }
         
-        // 自定義CSS類別
-        if (!string.IsNullOrEmpty(CssClass))
+        // 添加自定義 CSS 類別（排除 btn-close，因為已在上面處理）
+        if (!string.IsNullOrEmpty(CssClass) && !CssClass.Contains("btn-close"))
         {
             classes.Add(CssClass);
         }
         
         return string.Join(" ", classes);
+    }
+    
+    /// <summary>
+    /// 取得按鈕變體的 CSS 類別
+    /// </summary>
+    private string GetVariantClass()
+    {
+        return Variant switch
+        {
+            ButtonVariant.Primary => "btn-primary",
+            ButtonVariant.Secondary => "btn-secondary",
+            ButtonVariant.Success => "btn-success",
+            ButtonVariant.Warning => "btn-warning",
+            ButtonVariant.Danger => "btn-danger",
+            ButtonVariant.Info => "btn-info",
+            ButtonVariant.OutlinePrimary => "btn-outline-primary",
+            ButtonVariant.OutlineSecondary => "btn-outline-secondary",
+            ButtonVariant.OutlineSuccess => "btn-outline-success",
+            ButtonVariant.OutlineWarning => "btn-outline-warning",
+            ButtonVariant.OutlineDanger => "btn-outline-danger",
+            ButtonVariant.OutlineInfo => "btn-outline-info",
+            _ => "btn-primary"
+        };
+    }
+    
+    /// <summary>
+    /// 取得按鈕尺寸的 CSS 類別
+    /// </summary>
+    private string GetSizeClass()
+    {
+        return Size switch
+        {
+            ButtonSize.Small => "btn-sm",
+            ButtonSize.Large => "btn-lg",
+            ButtonSize.Normal => string.Empty,
+            _ => string.Empty
+        };
     }
 }
