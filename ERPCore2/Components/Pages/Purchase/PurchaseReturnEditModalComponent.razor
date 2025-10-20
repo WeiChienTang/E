@@ -1,5 +1,6 @@
 @* 進貨退出編輯模態組件 *@
 @using Microsoft.AspNetCore.Components.Rendering
+@using ERPCore2.Services.Reports
 @inject IPurchaseReturnService PurchaseReturnService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject ISupplierService SupplierService
@@ -9,6 +10,10 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject ISystemParameterService SystemParameterService
 @inject ISetoffDocumentService SetoffDocumentService
+@inject IPurchaseReturnReportService PurchaseReturnReportService
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
                           TService="IPurchaseReturnService"
@@ -42,7 +47,9 @@
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
-                          CustomModules="@GetCustomModules()" />
+                          CustomModules="@GetCustomModules()"
+                          ShowPrintButton="true"
+                          OnPrint="@HandlePrint" />
 
 @* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"
@@ -167,6 +174,87 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandlePrint()
+    {
+        try
+        {
+            // 使用通用 Helper 進行完整驗證（實體、ID、必要資料）
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
+                editModalComponent?.Entity,
+                PurchaseReturnId,
+                isApproved: false, // 進貨退出單不需要核准即可列印
+                entityName: "進貨退出單",
+                requireApproval: false
+            );
+            
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync(errorMessage);
+                return;
+            }
+            
+            // 直接執行列印，使用預設設定
+            await HandleDirectPrint(null);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"列印進貨退出單時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
+    /// </summary>
+    private async Task HandleDirectPrint(Data.Entities.ReportPrintConfiguration? printConfig)
+    {
+        try
+        {
+            if (!PurchaseReturnId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法列印：進貨退出單 ID 不存在");
+                return;
+            }
+
+            // 驗證列印配置
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(printConfig);
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync(errorMessage);
+                return;
+            }
+
+            // 使用通用 Helper 建立列印 URL（新版路由）
+            var printUrl = ReportPrintHelper.BuildPrintUrl(
+                baseUrl: NavigationManager.BaseUri,
+                reportType: "purchase-report/return",
+                documentId: PurchaseReturnId.Value,
+                configuration: printConfig,
+                autoprint: true
+            );
+
+            // 使用通用 Helper 執行列印（隱藏 iframe 方式）
+            var success = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
+                printUrl,
+                JSRuntime
+            );
+            
+            if (success)
+            {
+                await NotificationService.ShowSuccessAsync("列印指令已發送");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync("列印執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
+                additionalData: $"進貨退出單直接列印失敗 - ID: {PurchaseReturnId}, Config: {printConfig?.ReportName}");
+            await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
         }
     }
 

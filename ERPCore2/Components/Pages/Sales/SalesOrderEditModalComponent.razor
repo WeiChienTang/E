@@ -16,6 +16,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ISalesReturnService SalesReturnService
 @inject ISetoffDocumentService SetoffDocumentService
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -48,7 +49,8 @@
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
-                          ShowPrintButton="false"
+                          ShowPrintButton="true"
+                          OnPrint="@HandlePrint"
                           >
 
 </GenericEditModalComponent>
@@ -1155,6 +1157,80 @@
             </div>
         }
     };
+
+    /// <summary>
+    /// 處理列印事件
+    /// </summary>
+    private async Task HandlePrint()
+    {
+        try
+        {
+            // 使用通用 Helper 進行完整驗證（實體、ID）
+            // 銷貨單不需要核准即可列印
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
+                entity: editModalComponent?.Entity,
+                entityId: SalesOrderId,
+                isApproved: true, // 不需要核准狀態檢查
+                entityName: "銷貨單",
+                requireApproval: false // 銷貨單不需要核准即可列印
+            );
+            
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync(errorMessage);
+                return;
+            }
+            
+            // 直接執行列印，使用預設設定
+            await HandleDirectPrint(null);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
+                additionalData: $"銷貨單列印處理失敗 - ID: {SalesOrderId}");
+            await NotificationService.ShowErrorAsync("列印失敗，請稍後再試");
+        }
+    }
+
+    /// <summary>
+    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
+    /// </summary>
+    private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
+    {
+        try
+        {
+            // 建立列印 URL - 使用新的路由格式 /api/sales-report/order/{id}
+            var printUrl = ReportPrintHelper.BuildPrintUrl(
+                baseUrl: NavigationManager.BaseUri,
+                reportType: "sales-report/order",
+                documentId: SalesOrderId!.Value,
+                configuration: printConfig,
+                autoprint: true
+            );
+
+            // 使用隱藏 iframe 列印（不阻擋主視窗操作）
+            var printSuccess = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
+                printUrl: printUrl,
+                jsRuntime: JSRuntime,
+                iframeId: "salesOrderPrintFrame"
+            );
+
+            if (printSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("列印指令已送出");
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("列印指令送出失敗，請稍後再試");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
+                additionalData: $"銷貨單直接列印失敗 - ID: {SalesOrderId}");
+            await NotificationService.ShowErrorAsync($"執行列印時發生錯誤：{ex.Message}");
+        }
+    }
 
     /// <summary>
     /// 包裝方法 - 提供給 GenericEditModalComponent 使用的儲存處理器

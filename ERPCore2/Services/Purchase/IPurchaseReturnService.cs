@@ -1,5 +1,6 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Models;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -12,6 +13,7 @@ namespace ERPCore2.Services
         // 查詢方法
         Task<List<PurchaseReturn>> GetBySupplierIdAsync(int supplierId);
         Task<List<PurchaseReturn>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<List<PurchaseReturn>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
 
         Task<List<PurchaseReturn>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
         Task<PurchaseReturn?> GetWithDetailsAsync(int id);

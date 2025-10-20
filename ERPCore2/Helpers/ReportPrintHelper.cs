@@ -186,13 +186,15 @@ namespace ERPCore2.Helpers
         /// <param name="configuration">列印配置</param>
         /// <param name="format">報表格式</param>
         /// <returns>完整的報表 URL</returns>
+        [Obsolete("請使用 BuildPrintUrl 方法，並傳入正確的 reportType 參數。例如：BuildPrintUrl(baseUrl, \"purchase-report/order\", reportId, configuration)")]
         public static string BuildReportUrl(
             string baseUrl, 
             int reportId, 
             ReportPrintConfiguration? configuration = null, 
             string format = "html")
         {
-            var url = $"{baseUrl}/api/report/purchase-order/{reportId}?format={format}";
+            // ⚠️ 此方法已棄用，請使用新的路由格式
+            var url = $"{baseUrl}/api/purchase-report/order/{reportId}?format={format}";
             
             if (configuration != null)
             {
@@ -348,8 +350,10 @@ namespace ERPCore2.Helpers
             // 移除尾部的斜線
             baseUrl = baseUrl.TrimEnd('/');
             
-            // 建立基礎 URL
-            var url = $"{baseUrl}/api/report/{reportType}/{documentId}";
+            // 建立基礎 URL - 使用新的路由格式
+            // 新格式：/api/{domain}-report/{type}/{id}
+            // 範例：/api/purchase-report/order/123
+            var url = $"{baseUrl}/api/{reportType}/{documentId}";
             
             // 添加查詢參數
             var parameters = new List<string>();

@@ -251,10 +251,10 @@
                 return;
             }
 
-            // 使用通用 Helper 建立列印 URL
+            // 使用通用 Helper 建立列印 URL（新版路由）
             var printUrl = ReportPrintHelper.BuildPrintUrl(
                 baseUrl: NavigationManager.BaseUri,
-                reportType: "purchase-receiving",
+                reportType: "purchase-report/receiving",
                 documentId: PurchaseReceivingId.Value,
                 configuration: printConfig,
                 autoprint: true

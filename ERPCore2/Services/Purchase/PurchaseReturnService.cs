@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
+using ERPCore2.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -174,6 +175,90 @@ namespace ERPCore2.Services
                     Method = nameof(GetByPurchaseReceivingIdAsync),
                     ServiceType = GetType().Name,
                     PurchaseReceivingId = purchaseReceivingId
+                });
+                return new List<PurchaseReturn>();
+            }
+        }
+
+        /// <summary>
+        /// 根據批次列印條件查詢進貨退出單（支援多條件組合篩選）
+        /// 設計理念：靈活組合日期、廠商、狀態等多種篩選條件，適用於批次列印場景
+        /// </summary>
+        /// <param name="criteria">批次列印篩選條件</param>
+        /// <returns>符合條件的進貨退出單列表（包含完整關聯資料）</returns>
+        public async Task<List<PurchaseReturn>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 建立基礎查詢（包含必要的關聯資料）
+                IQueryable<PurchaseReturn> query = context.PurchaseReturns
+                    .Include(pr => pr.Supplier)
+                    .Include(pr => pr.PurchaseReceiving)
+                    .Include(pr => pr.PurchaseReturnDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .AsQueryable();
+
+                // 日期範圍篩選
+                if (criteria.StartDate.HasValue)
+                {
+                    query = query.Where(pr => pr.ReturnDate >= criteria.StartDate.Value.Date);
+                }
+                if (criteria.EndDate.HasValue)
+                {
+                    // 包含整天（到當天 23:59:59）
+                    var endDate = criteria.EndDate.Value.Date.AddDays(1);
+                    query = query.Where(pr => pr.ReturnDate < endDate);
+                }
+
+                // 廠商篩選（RelatedEntityIds 對應廠商ID列表）
+                if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
+                {
+                    query = query.Where(pr => criteria.RelatedEntityIds.Contains(pr.SupplierId));
+                }
+
+                // 單據編號關鍵字搜尋
+                if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
+                {
+                    query = query.Where(pr => pr.PurchaseReturnNumber.Contains(criteria.DocumentNumberKeyword));
+                }
+
+                // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
+                // 這樣列印時同一廠商的退貨單會集中在一起
+                query = criteria.SortDirection == Models.SortDirection.Ascending
+                    ? query.OrderBy(pr => pr.Supplier.CompanyName)
+                           .ThenBy(pr => pr.ReturnDate)
+                           .ThenBy(pr => pr.PurchaseReturnNumber)
+                    : query.OrderBy(pr => pr.Supplier.CompanyName)
+                           .ThenByDescending(pr => pr.ReturnDate)
+                           .ThenBy(pr => pr.PurchaseReturnNumber);
+
+                // 限制最大筆數
+                if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
+                {
+                    query = query.Take(criteria.MaxResults.Value);
+                }
+
+                // 執行查詢
+                var results = await query.ToListAsync();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByBatchCriteriaAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByBatchCriteriaAsync),
+                    ServiceType = GetType().Name,
+                    Criteria = new
+                    {
+                        criteria.StartDate,
+                        criteria.EndDate,
+                        SupplierCount = criteria.RelatedEntityIds?.Count ?? 0,
+                        criteria.DocumentNumberKeyword,
+                        criteria.MaxResults
+                    }
                 });
                 return new List<PurchaseReturn>();
             }

@@ -249,8 +249,8 @@
             // 序列化條件為 JSON
             var jsonPayload = System.Text.Json.JsonSerializer.Serialize(criteria);
 
-            // 開啟新視窗顯示批次報表
-            var apiUrl = "/api/report/purchase-order/batch?autoprint=true";
+            // 開啟新視窗顯示批次報表（使用新路由）
+            var apiUrl = "/api/purchase-report/order/batch?autoprint=true";
             await JSRuntime.InvokeVoidAsync("openBatchPrintWindow", apiUrl, jsonPayload);
 
             // 顯示成功訊息

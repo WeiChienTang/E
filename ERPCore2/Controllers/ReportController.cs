@@ -7,10 +7,18 @@ using ERPCore2.Data.Entities;
 namespace ERPCore2.Controllers
 {
     /// <summary>
-    /// 報表 API 控制器 - 提供各種單據的列印報表
+    /// 報表 API 控制器（舊版，保留相容性）
+    /// ⚠️ 已棄用：此控制器僅保留作為向後相容
+    /// 新的報表端點已遷移至 Controllers/Reports/ 目錄下的專門控制器
+    /// - 採購報表：PurchaseReportController (api/purchase-report)
+    /// - 銷售報表：SalesReportController (api/sales-report)
+    /// - 庫存報表：InventoryReportController (api/inventory-report)
+    /// 
+    /// 建議前端逐步遷移至新路由，舊路由將在未來版本移除
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Obsolete("此控制器已棄用，請使用新的專門報表控制器 (Controllers/Reports/)")]
     public class ReportController : ControllerBase
     {
         private readonly IPurchaseOrderReportService _purchaseOrderReportService;

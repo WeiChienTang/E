@@ -153,10 +153,16 @@ namespace ERPCore2.Data
             
             // 報表服務
             services.AddScoped<IReportService, ReportService>();
-            // 使用新版採購單報表服務（V2 - 精確尺寸控制）
+            // 使用採購單報表服務
             services.AddScoped<IPurchaseOrderReportService, PurchaseOrderReportService>();
             // 進貨單（入庫單）報表服務
             services.AddScoped<IPurchaseReceivingReportService, PurchaseReceivingReportService>();
+            // 進貨退出單報表服務
+            services.AddScoped<IPurchaseReturnReportService, PurchaseReturnReportService>();
+            // 銷貨單報表服務
+            services.AddScoped<ISalesOrderReportService, SalesOrderReportService>();
+            // 銷貨退回單報表服務
+            services.AddScoped<ISalesReturnReportService, SalesReturnReportService>();
         }
 
         /// <summary>
