@@ -7,9 +7,9 @@
                           TService="IRoleService"
                           Service="@RoleService"
                           EntityBasePath="/roles"
-                          PageTitle="角色設定"
-                          PageSubtitle="管理系統角色與權限設定"
-                          EntityName="角色"
+                          PageTitle="身分設定"
+                          PageSubtitle="管理系統身分與權限設定"
+                          EntityName="身分"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -21,7 +21,7 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
-@* 角色編輯 Modal *@
+@* 身分編輯 Modal *@
 <RoleEditModalComponent IsVisible="@showEditModal"
                         IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                         RoleId="@editingRoleId"
@@ -70,8 +70,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化角色頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化角色頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化身分頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化身分頁面失敗");
         }
     }
 
@@ -83,7 +83,7 @@
             {
                 new("首頁", "/"),
                 new("員工管理", "#"),
-                new("角色設定")
+                new("身分設定")
             };
         }
         catch (Exception ex)
@@ -95,7 +95,7 @@
         }
     }
 
-    // 載入角色資料
+    // 載入身分資料
     private async Task<List<Role>> LoadRolesAsync()
     {
         try
@@ -105,8 +105,8 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType(), additionalData: "載入角色資料失敗");
-            await NotificationService.ShowErrorAsync("載入角色資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType(), additionalData: "載入身分資料失敗");
+            await NotificationService.ShowErrorAsync("載入身分資料失敗");
             // 設定安全的預設值
             return new List<Role>();
         }

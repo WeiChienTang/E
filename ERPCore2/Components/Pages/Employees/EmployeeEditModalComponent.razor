@@ -127,20 +127,7 @@
             
             await LoadAdditionalDataAsync();
             
-            // 根據是否為編輯模式來決定初始的系統使用者狀態
-            bool initialIsSystemUser = false; // 新增模式預設為非系統使用者
-            
-            if (EmployeeId.HasValue)
-            {
-                // 編輯模式：先取得現有員工資料來確定系統使用者狀態
-                var existingEmployee = await EmployeeService.GetByIdAsync(EmployeeId.Value);
-                if (existingEmployee != null)
-                {
-                    initialIsSystemUser = existingEmployee.IsSystemUser;
-                }
-            }
-            
-            await InitializeFormFieldsAsync(initialIsSystemUser);
+            await InitializeFormFieldsAsync();
         }
         catch (Exception)
         {
@@ -153,19 +140,7 @@
         // 當 EmployeeId 參數變更時，重新初始化表單欄位
         if (formFields != null) // 只有在已經初始化過的情況下才重新設定
         {
-            bool initialIsSystemUser = false; // 新增模式預設為非系統使用者
-            
-            if (EmployeeId.HasValue)
-            {
-                // 編輯模式：先取得現有員工資料來確定系統使用者狀態
-                var existingEmployee = await EmployeeService.GetByIdAsync(EmployeeId.Value);
-                if (existingEmployee != null)
-                {
-                    initialIsSystemUser = existingEmployee.IsSystemUser;
-                }
-            }
-            
-            await InitializeFormFieldsAsync(initialIsSystemUser);
+            await InitializeFormFieldsAsync();
         }
         
         await base.OnParametersSetAsync();
@@ -190,7 +165,7 @@
             .WithCustomPostProcess(async department => 
             {
                 // 員工特定的後處理邏輯
-                await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -214,7 +189,7 @@
             .WithCustomPostProcess(async position => 
             {
                 // 員工特定的後處理邏輯
-                await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -238,7 +213,7 @@
             .WithCustomPostProcess(async role => 
             {
                 // 員工特定的後處理邏輯
-                await InitializeFormFieldsAsync(editModalComponent?.Entity?.IsSystemUser ?? false);
+                await InitializeFormFieldsAsync();
             })
             .Build();
     }
@@ -294,33 +269,10 @@
         }
     }
 
-    private async Task InitializeFormFieldsAsync(bool isSystemUser = false)
+    private async Task InitializeFormFieldsAsync()
     {
         try
         {
-            // 準備角色選項
-            var roleOptions = availableRoles.Select(r => new SelectOption
-            {
-                Text = r.Name,
-                Value = r.Id.ToString()
-            }).ToList();
-
-            // 根據系統使用者狀態選擇預設角色
-            Role? defaultRole;
-            if (isSystemUser)
-            {
-                // 系統使用者：選擇辦公室員工角色
-                defaultRole = availableRoles.FirstOrDefault(r => 
-                    r.Name.Contains("Employee") && r.Name.Contains("系統使用者"));
-            }
-            else
-            {
-                // 非系統使用者：選擇員工角色（一般員工）
-                defaultRole = availableRoles.FirstOrDefault(r => 
-                    r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
-            }
-            var defaultRoleValue = defaultRole?.Id.ToString();
-
             formFields = new List<FormFieldDefinition>
             {
                 // 基本資訊區段
@@ -351,49 +303,34 @@
             
             if (hasAccountPasswordPermission)
             {
-                // 帳號資訊區段 - 僅有權限的使用者可見
                 formFields.AddRange(new List<FormFieldDefinition>
                 {
-                    new()
-                    {
-                        PropertyName = nameof(Employee.IsSystemUser),
-                        Label = "系統使用者",
-                        FieldType = FormFieldType.Checkbox,
-                        DefaultValue = isSystemUser ? "true" : "false",
-                        HelpText = "是否允許此員工登入系統（需要權限才能設定）"
-                    },
                     new()
                     {
                         PropertyName = nameof(Employee.Account),
                         Label = "登入帳號",
                         FieldType = FormFieldType.Text,
-                        Placeholder = isSystemUser ? "請輸入登入帳號" : "僅系統使用者可設定",
-                        IsRequired = isSystemUser,
-                        IsDisabled = !isSystemUser, // 非系統使用者時停用
+                        Placeholder = "請輸入登入帳號",
                         MaxLength = 50,
-                        HelpText = isSystemUser ? "系統登入帳號" : "僅系統使用者需要設定登入帳號"
+                        HelpText = "輸入帳號即可登入系統，留空表示此員工無法登入"
                     },
                     new()
                     {
                         PropertyName = nameof(Employee.Password),
                         Label = "登入密碼",
                         FieldType = FormFieldType.Password,
-                        Placeholder = isSystemUser ? "請輸入登入密碼" : "僅系統使用者可設定",
-                        IsRequired = isSystemUser && !EmployeeId.HasValue, // 新增時必填，編輯時選填
-                        IsDisabled = !isSystemUser, // 非系統使用者時停用
+                        Placeholder = "請輸入登入密碼",
                         MaxLength = 100,
-                        HelpText = isSystemUser ? "系統登入密碼" : "僅系統使用者需要設定登入密碼"
+                        HelpText = "系統登入密碼（編輯時留空表示不變更）",
                     },
                     new()
                     {
                         PropertyName = nameof(Employee.RoleId),
-                        Label = "系統角色",
+                        Label = "身分",
                         FieldType = FormFieldType.AutoComplete,
-                        Placeholder = isSystemUser ? "請輸入或選擇系統角色" : "僅系統使用者可選擇",
+                        Placeholder = "請輸入或選擇身分",
                         MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
-                        IsRequired = isSystemUser,
-                        IsDisabled = !isSystemUser, // 非系統使用者時停用
-                        HelpText = isSystemUser ? "輸入角色名稱進行搜尋，或直接選擇員工在系統中的權限角色" : "僅系統使用者可以選擇系統角色",
+                        HelpText = "設定此員工在系統中的權限角色（有帳號才需要設定）",
                         ActionButtons = await GetRoleActionButtonsAsync()
                     }
                 });
@@ -439,7 +376,6 @@
             // 只有有權限的使用者才加入帳號相關區段
             if (hasAccountPasswordPermission)
             {
-                formSections.Add(nameof(Employee.IsSystemUser), "帳號資訊");
                 formSections.Add(nameof(Employee.Account), "帳號資訊");
                 formSections.Add(nameof(Employee.Password), "帳號資訊");
                 formSections.Add(nameof(Employee.RoleId), "帳號資訊");                
@@ -487,9 +423,7 @@
                 nameof(Employee.RoleId),
                 searchTerm => new Dictionary<string, object?>
                 {
-                    ["RoleName"] = searchTerm,
-                    // 可以根據搜尋詞智能推測角色類型
-                    ["Status"] = 1 // EntityStatus.Active
+                    ["Name"] = searchTerm
                 }
             }
         };
@@ -517,7 +451,7 @@
         {
             { nameof(Employee.DepartmentId), "Name" },
             { nameof(Employee.EmployeePositionId), "Name" },
-            { nameof(Employee.RoleId), "RoleName" }
+            { nameof(Employee.RoleId), "Name" }
         };
     }
 
@@ -547,56 +481,6 @@
         };
     }
 
-    private async Task UpdateFormFieldsForSystemUserAsync(bool isSystemUser)
-    {
-        try
-        {
-            // 檢查使用者是否擁有權限來變更系統使用者設定
-            var hasAccountPasswordPermission = await CheckCurrentUserPermissionAsync("EmployeeEdit_Account_Password.Read");
-            if (!hasAccountPasswordPermission)
-            {
-                return; // 無權限的使用者無法進行系統使用者相關的設定變更
-            }
-            
-            // 重新初始化表單欄位
-            await InitializeFormFieldsAsync(isSystemUser);
-            
-            // 如果有編輯組件的參考，通知更新
-            if (editModalComponent?.Entity != null)
-            {
-                // 根據系統使用者狀態自動設定角色
-                Role? targetRole;
-                if (isSystemUser)
-                {
-                    // 系統使用者：選擇辦公室員工角色
-                    targetRole = availableRoles.FirstOrDefault(r => 
-                        r.Name.Contains("Employee") && r.Name.Contains("系統使用者"));
-                }
-                else
-                {
-                    // 非系統使用者：選擇員工角色，並清空帳號密碼
-                    targetRole = availableRoles.FirstOrDefault(r => 
-                        r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
-                    
-                    // 清空帳號和密碼欄位，設為 null
-                    editModalComponent.Entity.Account = null;
-                    editModalComponent.Entity.Password = null;
-                }
-                
-                if (targetRole != null)
-                {
-                    editModalComponent.Entity.RoleId = targetRole.Id;
-                }
-                
-                StateHasChanged();
-            }
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新表單欄位時發生錯誤");
-        }
-    }
-
     private async Task<Employee?> LoadEmployeeData()
     {
         try
@@ -607,7 +491,7 @@
                 employeeContacts = new List<Contact>();
                 employeeAddresses = new List<Address>();
                 
-                // 找出預設的系統角色 (Employee-非系統使用者)
+                // 找出預設的身分 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
                     r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
                 
@@ -619,9 +503,6 @@
                     RoleId = defaultRole?.Id,
                     Status = EntityStatus.Active
                 };
-                
-                // 根據預設的系統使用者狀態初始化表單欄位
-                await InitializeFormFieldsAsync(newEmployee.IsSystemUser);
                 
                 return newEmployee;
             }
@@ -646,9 +527,6 @@
             employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, EmployeeId.Value);
             
             employeeAddresses = await AddressService.GetEmployeeAddressesAsync(EmployeeId.Value);
-            
-            // 根據員工的系統使用者狀態重新初始化表單欄位
-            await InitializeFormFieldsAsync(employee.IsSystemUser);
             
             return employee;
         }
@@ -679,12 +557,16 @@
     {
         try
         {
-            // 處理非系統使用者的帳號和密碼 - 設為 null 以避免資料庫索引問題
-            if (!entity.IsSystemUser)
+            // 🎯 簡化邏輯：根據是否有帳號自動設定 IsSystemUser
+            bool hasAccount = !string.IsNullOrWhiteSpace(entity.Account);
+            entity.IsSystemUser = hasAccount;
+            
+            // 如果沒有帳號，清空相關欄位
+            if (!hasAccount)
             {
                 entity.Account = null;
                 entity.Password = null;
-                entity.RoleId = null; // 非系統使用者不需要系統角色
+                entity.RoleId = null; // 非系統使用者不需要身分
             }
 
             // 基本驗證 - 使用通知服務
@@ -708,41 +590,34 @@
                 return false;
             }
 
-            // 檢查帳號是否重複（無論是否為系統使用者，只要有設定帳號就檢查）
-            if (!string.IsNullOrWhiteSpace(entity.Account))
+            // 如果有設定帳號，進行帳號相關驗證
+            if (hasAccount)
             {
-                var accountExistsResult = await EmployeeService.IsAccountExistsAsync(entity.Account, EmployeeId);
+                // 檢查帳號是否重複
+                var accountExistsResult = await EmployeeService.IsAccountExistsAsync(entity.Account!, EmployeeId);
                 if (accountExistsResult.IsSuccess && accountExistsResult.Data)
                 {
                     await NotificationService.ShowErrorAsync($"帳號 '{entity.Account}' 已存在，請使用其他帳號");
                     return false;
                 }
-            }
 
-            // 系統使用者特殊驗證
-            if (entity.IsSystemUser)
-            {
-                if (string.IsNullOrWhiteSpace(entity.Account))
-                {
-                    await NotificationService.ShowErrorAsync("系統使用者必須設定登入帳號");
-                    return false;
-                }
-
+                // 新增時密碼必填
                 if (string.IsNullOrWhiteSpace(entity.Password) && !EmployeeId.HasValue)
                 {
-                    await NotificationService.ShowErrorAsync("新增系統使用者必須設定登入密碼");
+                    await NotificationService.ShowErrorAsync("新增員工時，若設定帳號則密碼為必填");
                     return false;
                 }
 
+                // 身分必填
                 if (!entity.RoleId.HasValue)
                 {
-                    await NotificationService.ShowErrorAsync("系統使用者必須指派系統角色");
+                    await NotificationService.ShowErrorAsync("設定帳號時必須指派身分");
                     return false;
                 }
             }
 
             // 處理密碼雜湊 - 只有在新增或密碼有變更時才雜湊
-            if (entity.IsSystemUser && !string.IsNullOrWhiteSpace(entity.Password))
+            if (hasAccount && !string.IsNullOrWhiteSpace(entity.Password))
             {
                 // 檢查是否為新密碼（新增模式或密碼欄位被修改）
                 bool isNewPassword = false;
@@ -873,26 +748,6 @@
     {
         try
         {
-            // 監聽 IsSystemUser 欄位變更 - 檢查權限
-            if (fieldChange.PropertyName == nameof(Employee.IsSystemUser) && fieldChange.Value is bool isSystemUser)
-            {
-                var hasAccountPasswordPermission = await CheckCurrentUserPermissionAsync("EmployeeEdit_Account_Password.Read");
-                if (hasAccountPasswordPermission)
-                {
-                    await UpdateFormFieldsForSystemUserAsync(isSystemUser);
-                    
-                    // 當系統使用者狀態變更時，也要更新角色按鈕的狀態
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        roleModalManager, formFields, nameof(Employee.RoleId), editModalComponent?.Entity?.RoleId);
-                }
-                else
-                {
-                    // 無權限的使用者無法變更系統使用者設定，顯示警告並回復原值
-                    _ = NotificationService.ShowWarningAsync("您沒有權限變更系統使用者設定");
-                    // 這裡可以考慮重置該欄位的值
-                }
-            }
-            
             // 使用統一 Helper 處理部門欄位變更
             if (fieldChange.PropertyName == nameof(Employee.DepartmentId))
             {
@@ -969,36 +824,14 @@
     }
 
     /// <summary>
-    /// 使用統一 Helper 產生角色操作按鈕 - 包含特殊的 IsSystemUser 邏輯
+    /// 使用統一 Helper 產生角色操作按鈕
     /// </summary>
     private async Task<List<FieldActionButton>> GetRoleActionButtonsAsync()
     {
-        return await ActionButtonHelper.GenerateFieldActionButtonsWithCustomLogicAsync(
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             roleModalManager, 
-            nameof(Employee.RoleId),
-            (buttons, employee) =>
-            {
-                var isSystemUser = employee?.IsSystemUser ?? false;
-                
-                // 根據系統使用者狀態設定按鈕的啟用/停用狀態
-                foreach (var button in buttons)
-                {
-                    button.IsDisabled = !isSystemUser; // 非系統使用者時停用按鈕
-                    
-                    // 更新按鈕標題，讓使用者知道為什麼按鈕被停用
-                    if (!isSystemUser)
-                    {
-                        button.Title = "僅系統使用者可以管理系統角色";
-                    }
-                    else
-                    {
-                        // 系統使用者時使用原本的標題
-                        var currentRoleId = employee?.RoleId;
-                        button.Title = currentRoleId.HasValue ? "編輯選擇的角色" : "新增角色";
-                    }
-                }
-            }
+            nameof(Employee.RoleId)
         );
     }
 
@@ -1117,15 +950,8 @@
     private RenderFragment? GetAdditionalSections()
     {
         return @<div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-gradient bg-light border-0">
-                        <h6 class="mb-0 d-flex align-items-center">
-                            <i class="fas fa-phone text-success me-2"></i>
-                            員工聯絡方式管理
-                        </h6>
-                    </div>
-                    <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
                         <ContactManagerComponent TContactEntity="Contact"
                                                TParentEntity="Employee"
                                                Items="@employeeContacts"
@@ -1138,18 +964,8 @@
                                                SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Employee; c.OwnerId = parentId; })"
                                                ItemsChanged="@OnEmployeeContactsChanged"
                                                OnDeletedDetailsChanged="@HandleDeletedEmployeeContactsChanged" />
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-gradient bg-light border-0">
-                        <h6 class="mb-0 d-flex align-items-center">
-                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
-                            員工地址資料管理
-                        </h6>
-                    </div>
-                    <div class="card-body">
+                <div class="col-md-6">
                         <AddressManagerComponent TAddressEntity="Address"
                                                TParentEntity="Employee"
                                                Items="@employeeAddresses"
@@ -1162,7 +978,6 @@
                                                SetParentId="@((a, parentId) => SetEmployeeIdForAddress(a, parentId))"
                                                ItemsChanged="@OnEmployeeAddressesChanged"
                                                OnDeletedDetailsChanged="@HandleDeletedEmployeeAddressesChanged" />
-                    </div>
                 </div>
             </div>
         </div>;

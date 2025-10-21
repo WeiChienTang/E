@@ -89,7 +89,6 @@
     private List<Supplier> selectedSuppliers = new();
     private DateTime? batchPrintStartDate = null;
     private DateTime? batchPrintEndDate = null;
-    private string batchPrintStatus = "";
     
     // Modal 處理器
     private ModalHandler<PurchaseOrder, GenericIndexPageComponent<PurchaseOrder, IPurchaseOrderService>> modalHandler = default!;
@@ -263,7 +262,6 @@
             selectedSuppliers.Clear();
             batchPrintStartDate = null;
             batchPrintEndDate = null;
-            batchPrintStatus = "";
         }
         catch (Exception ex)
         {
@@ -283,7 +281,6 @@
             selectedSuppliers.Clear();
             batchPrintStartDate = null;
             batchPrintEndDate = null;
-            batchPrintStatus = "";
             
             await Task.CompletedTask;
         }

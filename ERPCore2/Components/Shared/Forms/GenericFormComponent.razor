@@ -11,6 +11,10 @@
 @implements IDisposable
 
     <div class="@GetFormBodyCssClass()">
+        @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
+        <input type="text" style="display:none" autocomplete="off" />
+        <input type="password" style="display:none" autocomplete="new-password" />
+        
         <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" @ref="editForm">
             <DataAnnotationsValidator />
             
@@ -372,23 +376,31 @@
         builder.AddAttribute(sequence + 1, "type", GetInputType(field.FieldType));
         builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
         builder.AddAttribute(sequence + 3, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 4, "placeholder", field.Placeholder);
-        builder.AddAttribute(sequence + 5, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 6, "disabled", field.IsDisabled);
+        builder.AddAttribute(sequence + 4, "name", field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8)); // 隨機 name 避免瀏覽器記憶
+        builder.AddAttribute(sequence + 5, "placeholder", field.Placeholder);
+        builder.AddAttribute(sequence + 6, "readonly", field.IsReadOnly);
+        builder.AddAttribute(sequence + 7, "disabled", field.IsDisabled);
+        
+        // 添加 autocomplete 屬性支援 - 使用多重策略防止自動填入
+        var autocompleteValue = !string.IsNullOrEmpty(field.AutoCompleteAttribute) 
+            ? field.AutoCompleteAttribute 
+            : (field.FieldType == FormFieldType.Password ? "new-password" : "off");
+        builder.AddAttribute(sequence + 8, "autocomplete", autocompleteValue);
+        
         if (field.IsRequired)
         {
-            builder.AddAttribute(sequence + 7, "required", true);
+            builder.AddAttribute(sequence + 9, "required", true);
         }
         if (field.MaxLength.HasValue)
         {
-            builder.AddAttribute(sequence + 8, "maxlength", field.MaxLength.Value);
+            builder.AddAttribute(sequence + 10, "maxlength", field.MaxLength.Value);
         }
         if (field.MinLength.HasValue)
         {
-            builder.AddAttribute(sequence + 9, "minlength", field.MinLength.Value);
+            builder.AddAttribute(sequence + 11, "minlength", field.MinLength.Value);
         }
-        builder.AddAttribute(sequence + 10, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 11, "onchange", EventCallback.Factory.CreateBinder(this, 
+        builder.AddAttribute(sequence + 12, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 13, "oninput", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
             GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
         builder.CloseElement();

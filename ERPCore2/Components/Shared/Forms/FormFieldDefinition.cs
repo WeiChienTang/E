@@ -141,6 +141,12 @@ public class FormFieldDefinition
     /// 標籤旁邊的操作按鈕
     /// </summary>
     public List<FieldActionButton>? ActionButtons { get; set; }
+    
+    /// <summary>
+    /// HTML autocomplete 屬性 (用於控制瀏覽器自動填入行為)
+    /// 常用值: "off"(關閉), "on"(開啟), "new-password"(新密碼), "current-password"(目前密碼) 等
+    /// </summary>
+    public string? AutoCompleteAttribute { get; set; }
 }
 
 /// <summary>
