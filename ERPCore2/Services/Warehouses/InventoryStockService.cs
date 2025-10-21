@@ -42,11 +42,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
                     .AsQueryable()
                     .OrderBy(i => i.Product!.Code)
-                    .ThenBy(i => i.Warehouse!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -66,10 +67,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
-                    .Include(i => i.InventoryTransactions.AsQueryable())
-                    .Include(i => i.InventoryReservations.AsQueryable())
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
+                    .Include(i => i.InventoryTransactions)
+                    .Include(i => i.InventoryReservations)
                     .FirstOrDefaultAsync(i => i.Id == id);
             }
             catch (Exception ex)
@@ -95,12 +98,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
-                    .Where(i => ((i.Product!.Code != null && i.Product.Code.ToLower().Contains(term)) ||
-                         (i.Product!.Name != null && i.Product.Name.ToLower().Contains(term)) ||
-                         (i.Warehouse!.Code != null && i.Warehouse.Code.ToLower().Contains(term)) ||
-                         (i.Warehouse!.Name != null && i.Warehouse.Name.ToLower().Contains(term))))
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
+                    .Where(i => (i.Product!.Code != null && i.Product.Code.ToLower().Contains(term)) ||
+                         (i.Product!.Name != null && i.Product.Name.ToLower().Contains(term)))
                     .OrderBy(i => i.Product!.Code)
                     .ToListAsync();
             }
@@ -124,25 +127,29 @@ namespace ERPCore2.Services
                 if (entity.ProductId <= 0)
                     errors.Add("必須選擇商品");
 
-                if (entity.CurrentStock < 0)
-                    errors.Add("庫存數量不能為負數");
+                // 新結構：驗證明細（如果有）
+                if (entity.InventoryStockDetails != null && entity.InventoryStockDetails.Any())
+                {
+                    foreach (var detail in entity.InventoryStockDetails)
+                    {
+                        if (detail.CurrentStock < 0)
+                            errors.Add($"倉庫 {detail.WarehouseId} 的庫存數量不能為負數");
 
-                if (entity.ReservedStock < 0)
-                    errors.Add("預留數量不能為負數");
+                        if (detail.ReservedStock < 0)
+                            errors.Add($"倉庫 {detail.WarehouseId} 的預留數量不能為負數");
 
-                if (entity.ReservedStock > entity.CurrentStock)
-                    errors.Add("預留數量不能大於現有庫存");
+                        if (detail.ReservedStock > detail.CurrentStock)
+                            errors.Add($"倉庫 {detail.WarehouseId} 的預留數量不能大於現有庫存");
+                    }
+                }
 
-                // 檢查是否已存在相同的庫存記錄
+                // 檢查是否已存在相同的庫存記錄（一個商品只能有一筆主檔）
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var existing = await context.InventoryStocks
-                    .FirstOrDefaultAsync(i => i.ProductId == entity.ProductId && 
-                                            i.WarehouseId == entity.WarehouseId &&
-                                            i.WarehouseLocationId == entity.WarehouseLocationId &&
-                                            i.Id != entity.Id);
+                    .FirstOrDefaultAsync(i => i.ProductId == entity.ProductId && i.Id != entity.Id);
 
                 if (existing != null)
-                    errors.Add("該商品在此倉庫位置已有庫存記錄");
+                    errors.Add("該商品已有庫存主檔記錄");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -155,11 +162,251 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ProductId = entity.ProductId,
-                    WarehouseId = entity.WarehouseId 
+                    ProductId = entity.ProductId
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
+        }
+
+        #endregion
+
+        #region 覆寫 Create/Update 方法以處理明細
+
+        /// <summary>
+        /// 覆寫 CreateAsync 以處理庫存明細的新增
+        /// </summary>
+        public override async Task<ServiceResult<InventoryStock>> CreateAsync(InventoryStock entity)
+        {
+            try
+            {
+                // 驗證實體
+                var validationResult = await ValidateAsync(entity);
+                if (!validationResult.IsSuccess)
+                {
+                    return ServiceResult<InventoryStock>.Failure(validationResult.ErrorMessage);
+                }
+
+                // 檢查明細中是否有重複的倉庫+庫位組合
+                var duplicateCheck = CheckDuplicateWarehouseLocations(entity.InventoryStockDetails?.ToList() ?? new List<InventoryStockDetail>());
+                if (!duplicateCheck.IsSuccess)
+                {
+                    return ServiceResult<InventoryStock>.Failure(duplicateCheck.ErrorMessage);
+                }
+
+                // 設定建立資訊
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.UpdatedAt = DateTime.UtcNow;
+                
+                if (entity.Status == default)
+                {
+                    entity.Status = EntityStatus.Active;
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 1. 先新增主檔（不包含明細）
+                    var detailsToAdd = entity.InventoryStockDetails?.ToList() ?? new List<InventoryStockDetail>();
+                    entity.InventoryStockDetails = new List<InventoryStockDetail>();
+                    
+                    context.InventoryStocks.Add(entity);
+                    await context.SaveChangesAsync(); // 儲存以取得主檔 ID
+
+                    // 2. 新增明細並設定外鍵
+                    if (detailsToAdd.Any())
+                    {
+                        foreach (var detail in detailsToAdd)
+                        {
+                            detail.InventoryStockId = entity.Id;
+                            detail.CreatedAt = DateTime.UtcNow;
+                            detail.UpdatedAt = DateTime.UtcNow;
+                            detail.Status = EntityStatus.Active;
+                            
+                            context.InventoryStockDetails.Add(detail);
+                        }
+                        
+                        await context.SaveChangesAsync();
+                        entity.InventoryStockDetails = detailsToAdd;
+                    }
+
+                    await transaction.CommitAsync();
+                    return ServiceResult<InventoryStock>.Success(entity);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger, new {
+                    Method = nameof(CreateAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = entity.ProductId,
+                    DetailsCount = entity.InventoryStockDetails?.Count ?? 0
+                });
+                return ServiceResult<InventoryStock>.Failure($"建立庫存資料時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 覆寫 UpdateAsync 以處理庫存明細的更新
+        /// </summary>
+        public override async Task<ServiceResult<InventoryStock>> UpdateAsync(InventoryStock entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 檢查實體是否存在
+                var existingEntity = await context.InventoryStocks
+                    .Include(i => i.InventoryStockDetails)
+                    .FirstOrDefaultAsync(x => x.Id == entity.Id);
+                    
+                if (existingEntity == null)
+                {
+                    return ServiceResult<InventoryStock>.Failure("找不到要更新的資料");
+                }
+
+                // 驗證實體
+                var validationResult = await ValidateAsync(entity);
+                if (!validationResult.IsSuccess)
+                {
+                    return ServiceResult<InventoryStock>.Failure(validationResult.ErrorMessage);
+                }
+
+                // 檢查明細中是否有重複的倉庫+庫位組合
+                var duplicateCheck = CheckDuplicateWarehouseLocations(entity.InventoryStockDetails?.ToList() ?? new List<InventoryStockDetail>());
+                if (!duplicateCheck.IsSuccess)
+                {
+                    return ServiceResult<InventoryStock>.Failure(duplicateCheck.ErrorMessage);
+                }
+
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 更新主檔資訊
+                    entity.UpdatedAt = DateTime.UtcNow;
+                    entity.CreatedAt = existingEntity.CreatedAt;
+                    entity.CreatedBy = existingEntity.CreatedBy;
+                    
+                    context.Entry(existingEntity).CurrentValues.SetValues(entity);
+
+                    // 處理明細的增刪改
+                    var existingDetails = existingEntity.InventoryStockDetails?.ToList() ?? new List<InventoryStockDetail>();
+                    var newDetails = entity.InventoryStockDetails?.ToList() ?? new List<InventoryStockDetail>();
+
+                    // 刪除不存在於新明細中的舊明細
+                    foreach (var existingDetail in existingDetails)
+                    {
+                        var isStillPresent = newDetails.Any(d => d.Id == existingDetail.Id && existingDetail.Id > 0);
+                        if (!isStillPresent)
+                        {
+                            context.InventoryStockDetails.Remove(existingDetail);
+                        }
+                    }
+
+                    // 更新或新增明細
+                    foreach (var newDetail in newDetails)
+                    {
+                        if (newDetail.Id > 0)
+                        {
+                            // 更新現有明細
+                            var existingDetail = existingDetails.FirstOrDefault(d => d.Id == newDetail.Id);
+                            if (existingDetail != null)
+                            {
+                                newDetail.UpdatedAt = DateTime.UtcNow;
+                                newDetail.CreatedAt = existingDetail.CreatedAt;
+                                newDetail.CreatedBy = existingDetail.CreatedBy;
+                                newDetail.InventoryStockId = entity.Id;
+                                
+                                context.Entry(existingDetail).CurrentValues.SetValues(newDetail);
+                            }
+                        }
+                        else
+                        {
+                            // 新增明細
+                            newDetail.InventoryStockId = entity.Id;
+                            newDetail.CreatedAt = DateTime.UtcNow;
+                            newDetail.UpdatedAt = DateTime.UtcNow;
+                            newDetail.Status = EntityStatus.Active;
+                            
+                            context.InventoryStockDetails.Add(newDetail);
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return ServiceResult<InventoryStock>.Success(entity);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, new {
+                    Method = nameof(UpdateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    ProductId = entity.ProductId,
+                    DetailsCount = entity.InventoryStockDetails?.Count ?? 0
+                });
+                return ServiceResult<InventoryStock>.Failure($"更新庫存資料時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 檢查明細中是否有重複的倉庫+庫位組合
+        /// </summary>
+        private ServiceResult CheckDuplicateWarehouseLocations(List<InventoryStockDetail> details)
+        {
+            if (details == null || !details.Any())
+            {
+                return ServiceResult.Success();
+            }
+
+            // 找出重複的倉庫+庫位組合
+            var duplicates = details
+                .GroupBy(d => new { d.WarehouseId, d.WarehouseLocationId })
+                .Where(g => g.Count() > 1)
+                .Select(g => new
+                {
+                    g.Key.WarehouseId,
+                    g.Key.WarehouseLocationId,
+                    Count = g.Count(),
+                    Details = g.ToList()
+                })
+                .ToList();
+
+            if (duplicates.Any())
+            {
+                var errorMessages = new List<string>();
+                errorMessages.Add("發現重複的倉庫與庫位組合：");
+                
+                foreach (var dup in duplicates)
+                {
+                    var locationInfo = dup.WarehouseLocationId.HasValue 
+                        ? $"倉庫ID {dup.WarehouseId}，庫位ID {dup.WarehouseLocationId}" 
+                        : $"倉庫ID {dup.WarehouseId}（無指定庫位）";
+                    errorMessages.Add($"- {locationInfo}（共 {dup.Count} 筆）");
+                }
+                
+                errorMessages.Add(""); // 空行
+                errorMessages.Add("❌ 無法儲存重複的倉庫與庫位組合");
+                errorMessages.Add("💡 請修改為不同的倉庫或庫位，或使用合併功能");
+                
+                return ServiceResult.Failure(string.Join("\n", errorMessages));
+            }
+
+            return ServiceResult.Success();
         }
 
         #endregion
@@ -173,10 +420,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
                     .Where(i => i.ProductId == productId)
-                    .OrderBy(i => i.Warehouse!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -197,8 +445,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.WarehouseLocation)
-                    .Where(i => i.WarehouseId == warehouseId)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
+                    .Where(i => i.InventoryStockDetails.Any(d => d.WarehouseId == warehouseId))
                     .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -218,13 +469,17 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                // 現在改為查詢主檔，然後透過明細篩選
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
-                    .FirstOrDefaultAsync(i => i.ProductId == productId && 
-                                            i.WarehouseId == warehouseId &&
-                                            i.WarehouseLocationId == locationId);
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
+                    .Where(i => i.ProductId == productId &&
+                               i.InventoryStockDetails.Any(d => d.WarehouseId == warehouseId &&
+                                                               (locationId == null || d.WarehouseLocationId == locationId)))
+                    .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
@@ -244,13 +499,21 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.InventoryStocks
+                var query = context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
-                    .FirstOrDefaultAsync(i => i.ProductId == productId && 
-                                            i.WarehouseId == warehouseId &&
-                                            i.WarehouseLocationId == locationId);
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
+                    .Where(i => i.ProductId == productId);
+
+                if (warehouseId.HasValue)
+                {
+                    query = query.Where(i => i.InventoryStockDetails.Any(d => d.WarehouseId == warehouseId.Value &&
+                                                                              (locationId == null || d.WarehouseLocationId == locationId)));
+                }
+
+                return await query.FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
@@ -272,9 +535,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
-                    .Include(i => i.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
                     .Where(i => i.MinStockLevel.HasValue && 
-                              i.CurrentStock <= i.MinStockLevel.Value)
+                              i.TotalCurrentStock <= i.MinStockLevel.Value)
                     .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -293,7 +559,14 @@ namespace ERPCore2.Services
             try
             {
                 var stock = await GetByProductWarehouseAsync(productId, warehouseId, locationId);
-                return stock?.AvailableStock ?? 0;
+                if (stock == null) return 0;
+
+                // 計算指定倉庫和位置的可用庫存
+                var detail = stock.InventoryStockDetails?
+                    .FirstOrDefault(d => d.WarehouseId == warehouseId && 
+                                        (locationId == null || d.WarehouseLocationId == locationId));
+                
+                return detail?.AvailableStock ?? 0;
             }
             catch (Exception ex)
             {
@@ -320,14 +593,18 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 取得該商品在指定倉庫內所有位置的庫存記錄
-                var stocks = await context.InventoryStocks
-                    .Where(i => i.ProductId == productId && 
-                               i.WarehouseId == warehouseId)
-                    .ToListAsync();
+                // 取得該商品的庫存主檔
+                var stock = await context.InventoryStocks
+                    .Include(i => i.InventoryStockDetails)
+                    .Where(i => i.ProductId == productId)
+                    .FirstOrDefaultAsync();
                 
-                // 在記憶體中計算總可用庫存 (CurrentStock - ReservedStock)
-                var totalAvailableStock = stocks.Sum(i => i.AvailableStock);
+                if (stock == null) return 0;
+
+                // 計算指定倉庫內所有位置的總可用庫存
+                var totalAvailableStock = stock.InventoryStockDetails?
+                    .Where(d => d.WarehouseId == warehouseId)
+                    .Sum(d => d.AvailableStock) ?? 0;
                     
                 return totalAvailableStock;
             }
@@ -449,8 +726,10 @@ namespace ERPCore2.Services
         #region 庫存異動方法
 
         /// <summary>
-        /// 精確回滾庫存到原始記錄（基於 InventoryStockId）
+        /// 精確回滾庫存到原始記錄（基於 InventoryStockDetailId）
+        /// 注意：此方法已過時，現在使用 InventoryStockDetailId 而非 InventoryStockId
         /// </summary>
+        [Obsolete("請使用 RevertStockToOriginalDetailAsync，傳入 InventoryStockDetailId")]
         public async Task<ServiceResult> RevertStockToOriginalAsync(
             int inventoryStockId, 
             int quantity, 
@@ -468,39 +747,41 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 直接根據 InventoryStockId 找到原記錄
-                    var originalStock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.Id == inventoryStockId);
+                    // 注意：此方法已過時，但為了向後兼容，將 inventoryStockId 視為 inventoryStockDetailId
+                    var originalDetail = await context.InventoryStockDetails
+                        .Include(d => d.InventoryStock)
+                        .FirstOrDefaultAsync(d => d.Id == inventoryStockId);
 
-                    if (originalStock == null)
+                    if (originalDetail == null)
                     {
-                        Console.WriteLine($"[RevertStockToOriginalAsync] 找不到原始庫存記錄 ID: {inventoryStockId}，將使用 AddStockAsync 創建新記錄");
-                        return ServiceResult.Failure($"ORIGINAL_NOT_FOUND:{inventoryStockId}"); // 特殊錯誤碼，讓調用方知道需要使用 AddStockAsync
+                        Console.WriteLine($"[RevertStockToOriginalAsync] 找不到原始庫存明細記錄 ID: {inventoryStockId}");
+                        return ServiceResult.Failure($"ORIGINAL_NOT_FOUND:{inventoryStockId}");
                     }
 
-                    var stockBefore = originalStock.CurrentStock;
-                    originalStock.CurrentStock += quantity; // 回滾是增加庫存
-                    originalStock.LastTransactionDate = DateTime.Now;
+                    var stockBefore = originalDetail.CurrentStock;
+                    originalDetail.CurrentStock += quantity; // 回滾是增加庫存
+                    originalDetail.LastTransactionDate = DateTime.Now;
 
-                    Console.WriteLine($"[RevertStockToOriginalAsync] 精確回滾: StockId={inventoryStockId}, 產品={originalStock.ProductId}, " +
-                                    $"倉庫={originalStock.WarehouseId}, 位置={originalStock.WarehouseLocationId}, " +
-                                    $"批號={originalStock.BatchNumber}, 數量={quantity}, 回滾前={stockBefore}, 回滾後={originalStock.CurrentStock}");
+                    Console.WriteLine($"[RevertStockToOriginalAsync] 精確回滾: DetailId={inventoryStockId}, 產品={originalDetail.InventoryStock?.ProductId}, " +
+                                    $"倉庫={originalDetail.WarehouseId}, 位置={originalDetail.WarehouseLocationId}, " +
+                                    $"批號={originalDetail.BatchNumber}, 數量={quantity}, 回滾前={stockBefore}, 回滾後={originalDetail.CurrentStock}");
 
                     // 建立回滾交易記錄
                     var inventoryTransaction = new InventoryTransaction
                     {
-                        ProductId = originalStock.ProductId,
-                        WarehouseId = originalStock.WarehouseId ?? 0,
-                        WarehouseLocationId = originalStock.WarehouseLocationId,
+                        ProductId = originalDetail.InventoryStock?.ProductId ?? 0,
+                        WarehouseId = originalDetail.WarehouseId,
+                        WarehouseLocationId = originalDetail.WarehouseLocationId,
                         TransactionType = transactionType,
                         TransactionNumber = transactionNumber,
                         TransactionDate = DateTime.Now,
                         Quantity = quantity, // 正數表示入庫（回滾）
-                        UnitCost = originalStock.AverageCost,
+                        UnitCost = originalDetail.AverageCost,
                         StockBefore = stockBefore,
-                        StockAfter = originalStock.CurrentStock,
+                        StockAfter = originalDetail.CurrentStock,
                         Remarks = remarks,
-                        InventoryStockId = originalStock.Id,
+                        InventoryStockId = originalDetail.InventoryStockId,
+                        InventoryStockDetailId = originalDetail.Id,
                         Status = EntityStatus.Active
                     };
 
@@ -546,59 +827,79 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 查詢現有庫存記錄：只根據商品+倉庫+庫位，忽略批號
+                    // 1. 取得或建立庫存主檔（依商品）
                     var stock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.ProductId == productId && 
-                                                 i.WarehouseId == warehouseId &&
-                                                 i.WarehouseLocationId == locationId);
+                        .Include(s => s.InventoryStockDetails)
+                        .FirstOrDefaultAsync(i => i.ProductId == productId);
                     
                     if (stock == null)
                     {
-                        // 創建新的庫存記錄
+                        // 建立新的庫存主檔
                         stock = new InventoryStock
                         {
                             ProductId = productId,
+                            MinStockLevel = 0,
+                            MaxStockLevel = 0,
+                            Status = EntityStatus.Active
+                        };
+                        await context.InventoryStocks.AddAsync(stock);
+                        await context.SaveChangesAsync(); // 儲存以取得 Id
+                    }
+
+                    // 2. 取得或建立庫存明細（依倉庫+庫位）
+                    var detail = stock.InventoryStockDetails?
+                        .FirstOrDefault(d => d.WarehouseId == warehouseId && 
+                                            d.WarehouseLocationId == locationId);
+                    
+                    if (detail == null)
+                    {
+                        detail = new InventoryStockDetail
+                        {
+                            InventoryStockId = stock.Id,
                             WarehouseId = warehouseId,
                             WarehouseLocationId = locationId,
                             CurrentStock = 0,
                             ReservedStock = 0,
-                            BatchNumber = batchNumber, // 設定為第一個批號
+                            InTransitStock = 0,
+                            BatchNumber = batchNumber,
                             BatchDate = batchDate ?? DateTime.Now,
                             ExpiryDate = expiryDate,
+                            LastTransactionDate = DateTime.Now,
                             Status = EntityStatus.Active
                         };
-                        await context.InventoryStocks.AddAsync(stock);
+                        await context.InventoryStockDetails.AddAsync(detail);
                         await context.SaveChangesAsync();
                     }
 
-                    var stockBefore = stock.CurrentStock;
-                    stock.CurrentStock += quantity;
-                    stock.LastTransactionDate = DateTime.Now;
+                    // 3. 更新庫存數量
+                    var stockBefore = detail.CurrentStock;
+                    detail.CurrentStock += quantity;
+                    detail.LastTransactionDate = DateTime.Now;
 
-                    // 更新為最新的批次資訊（如果提供）
+                    // 更新批次資訊（如果提供）
                     if (!string.IsNullOrEmpty(batchNumber))
-                        stock.BatchNumber = batchNumber;
+                        detail.BatchNumber = batchNumber;
                     if (batchDate.HasValue)
-                        stock.BatchDate = batchDate.Value;
+                        detail.BatchDate = batchDate.Value;
                     if (expiryDate.HasValue)
-                        stock.ExpiryDate = expiryDate.Value;
+                        detail.ExpiryDate = expiryDate.Value;
 
-                    // 更新平均成本
+                    // 4. 更新平均成本
                     if (unitCost.HasValue && unitCost.Value > 0)
                     {
-                        if (stock.AverageCost.HasValue && stockBefore > 0)
+                        if (detail.AverageCost.HasValue && stockBefore > 0)
                         {
-                            var totalCostBefore = stock.AverageCost.Value * stockBefore;
+                            var totalCostBefore = detail.AverageCost.Value * stockBefore;
                             var newTotalCost = totalCostBefore + (unitCost.Value * quantity);
-                            stock.AverageCost = newTotalCost / stock.CurrentStock;
+                            detail.AverageCost = newTotalCost / detail.CurrentStock;
                         }
                         else
                         {
-                            stock.AverageCost = unitCost.Value;
+                            detail.AverageCost = unitCost.Value;
                         }
                     }
 
-                    // 建立交易記錄，保存詳細的批號信息
+                    // 5. 建立交易記錄
                     var inventoryTransaction = new InventoryTransaction
                     {
                         ProductId = productId,
@@ -610,10 +911,11 @@ namespace ERPCore2.Services
                         Quantity = quantity,
                         UnitCost = unitCost,
                         StockBefore = stockBefore,
-                        StockAfter = stock.CurrentStock,
+                        StockAfter = detail.CurrentStock,
                         Remarks = remarks,
                         InventoryStockId = stock.Id,
-                        TransactionBatchNumber = batchNumber,  // 保存實際的交易批號
+                        InventoryStockDetailId = detail.Id,
+                        TransactionBatchNumber = batchNumber,
                         TransactionBatchDate = batchDate,
                         TransactionExpiryDate = expiryDate,
                         Status = EntityStatus.Active
@@ -658,30 +960,36 @@ namespace ERPCore2.Services
                 if (quantity <= 0)
                     return ServiceResult.Failure("數量必須大於0");
 
-                var stock = await GetByProductWarehouseAsync(productId, warehouseId, locationId);
-                if (stock == null)
-                    return ServiceResult.Failure("找不到庫存記錄");
-
-                if (stock.AvailableStock < quantity)
-                    return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{stock.AvailableStock}");
-
                 using var context = await _contextFactory.CreateDbContextAsync();
                 using var transaction = await context.Database.BeginTransactionAsync();
 
                 try
                 {
-                    // 重新取得庫存記錄以確保資料一致性
-                    var contextStock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.Id == stock.Id);
+                    // 1. 取得庫存主檔
+                    var stock = await context.InventoryStocks
+                        .Include(s => s.InventoryStockDetails)
+                        .FirstOrDefaultAsync(i => i.ProductId == productId);
                     
-                    if (contextStock == null)
+                    if (stock == null)
                         return ServiceResult.Failure("找不到庫存記錄");
 
-                    var stockBefore = contextStock.CurrentStock;
-                    contextStock.CurrentStock -= quantity;
-                    contextStock.LastTransactionDate = DateTime.Now;
+                    // 2. 取得指定倉庫/庫位的明細
+                    var detail = stock.InventoryStockDetails?
+                        .FirstOrDefault(d => d.WarehouseId == warehouseId && 
+                                            (locationId == null || d.WarehouseLocationId == locationId));
+                    
+                    if (detail == null)
+                        return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
 
-                    // 建立交易記錄
+                    if (detail.AvailableStock < quantity)
+                        return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{detail.AvailableStock}");
+
+                    // 3. 更新庫存數量
+                    var stockBefore = detail.CurrentStock;
+                    detail.CurrentStock -= quantity;
+                    detail.LastTransactionDate = DateTime.Now;
+
+                    // 4. 建立交易記錄
                     var inventoryTransaction = new InventoryTransaction
                     {
                         ProductId = productId,
@@ -691,11 +999,12 @@ namespace ERPCore2.Services
                         TransactionNumber = transactionNumber,
                         TransactionDate = DateTime.Now,
                         Quantity = -quantity, // 負數表示出庫
-                        UnitCost = contextStock.AverageCost,
+                        UnitCost = detail.AverageCost,
                         StockBefore = stockBefore,
-                        StockAfter = contextStock.CurrentStock,
+                        StockAfter = detail.CurrentStock,
                         Remarks = remarks,
-                        InventoryStockId = contextStock.Id,
+                        InventoryStockId = stock.Id,
+                        InventoryStockDetailId = detail.Id,
                         Status = EntityStatus.Active
                     };
 
@@ -755,11 +1064,16 @@ namespace ERPCore2.Services
                         return reduceResult;
                     }
 
-                    // 增加到目標倉庫
+                    // 取得來源倉庫的平均成本
                     var fromStock = await GetByProductWarehouseAsync(productId, fromWarehouseId, fromLocationId);
+                    var fromDetail = fromStock?.InventoryStockDetails?
+                        .FirstOrDefault(d => d.WarehouseId == fromWarehouseId && 
+                                            (fromLocationId == null || d.WarehouseLocationId == fromLocationId));
+                    
+                    // 增加到目標倉庫
                     var addResult = await AddStockAsync(productId, toWarehouseId, quantity,
                         InventoryTransactionTypeEnum.Transfer, transactionNumber, 
-                        fromStock?.AverageCost, toLocationId, remarks);
+                        fromDetail?.AverageCost, toLocationId, remarks);
 
                     if (!addResult.IsSuccess)
                     {
@@ -799,11 +1113,25 @@ namespace ERPCore2.Services
                 if (newQuantity < 0)
                     return ServiceResult.Failure("調整後數量不能為負數");
 
-                var stock = await GetByProductWarehouseAsync(productId, warehouseId, locationId);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 取得庫存主檔
+                var stock = await context.InventoryStocks
+                    .Include(s => s.InventoryStockDetails)
+                    .FirstOrDefaultAsync(i => i.ProductId == productId);
+                
                 if (stock == null)
                     return ServiceResult.Failure("找不到庫存記錄");
 
-                var difference = newQuantity - stock.CurrentStock;
+                // 取得指定倉庫/庫位的明細
+                var detail = stock.InventoryStockDetails?
+                    .FirstOrDefault(d => d.WarehouseId == warehouseId && 
+                                        (locationId == null || d.WarehouseLocationId == locationId));
+                
+                if (detail == null)
+                    return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
+
+                var difference = newQuantity - detail.CurrentStock;
                 if (difference == 0)
                     return ServiceResult.Success();
 
@@ -844,9 +1172,9 @@ namespace ERPCore2.Services
             try
             {
                 // 取得該商品在指定倉庫的所有批號庫存，按批次日期排序 (FIFO)
-                var batchStocks = await GetBatchStocksByProductAndWarehouseAsync(productId, warehouseId, locationId);
+                var batchDetails = await GetBatchDetailsByProductAndWarehouseAsync(productId, warehouseId, locationId);
                 
-                var totalAvailable = batchStocks.Sum(b => b.AvailableStock);
+                var totalAvailable = batchDetails.Sum(b => b.AvailableStock);
                 if (totalAvailable < quantity)
                     return ServiceResult.Failure($"庫存不足，可用：{totalAvailable}，需要：{quantity}");
 
@@ -854,23 +1182,23 @@ namespace ERPCore2.Services
                 var reductionDetails = new List<BatchReductionDetail>();
 
                 // 按批次日期順序扣減 (FIFO)
-                foreach (var batch in batchStocks.OrderBy(b => b.BatchDate).ThenBy(b => b.Id))
+                foreach (var detail in batchDetails.OrderBy(d => d.BatchDate).ThenBy(d => d.Id))
                 {
                     if (remainingQuantity <= 0) break;
                     
-                    var availableFromThisBatch = batch.AvailableStock;
-                    if (availableFromThisBatch <= 0) continue;
+                    var availableFromThis = detail.AvailableStock;
+                    if (availableFromThis <= 0) continue;
                     
-                    var reduceFromThisBatch = Math.Min(availableFromThisBatch, remainingQuantity);
+                    var reduceFromThis = Math.Min(availableFromThis, remainingQuantity);
                     
                     reductionDetails.Add(new BatchReductionDetail 
                     {
-                        BatchId = batch.Id,
-                        BatchNumber = batch.BatchNumber,
-                        ReduceQuantity = reduceFromThisBatch
+                        BatchId = detail.Id,
+                        BatchNumber = detail.BatchNumber,
+                        ReduceQuantity = reduceFromThis
                     });
                     
-                    remainingQuantity -= reduceFromThisBatch;
+                    remainingQuantity -= reduceFromThis;
                 }
 
                 // 執行實際扣減
@@ -904,35 +1232,50 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得商品在指定倉庫的批號庫存清單
+        /// 取得商品在指定倉庫的批號明細清單（新版：使用 InventoryStockDetail）
         /// </summary>
-        private async Task<List<InventoryStock>> GetBatchStocksByProductAndWarehouseAsync(
+        private async Task<List<InventoryStockDetail>> GetBatchDetailsByProductAndWarehouseAsync(
             int productId, int warehouseId, int? locationId = null)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             
-            var query = context.InventoryStocks
-                .Where(i => i.ProductId == productId && 
-                           i.WarehouseId == warehouseId &&
-                           i.CurrentStock > 0);
+            var stock = await context.InventoryStocks
+                .Include(s => s.InventoryStockDetails)
+                .FirstOrDefaultAsync(s => s.ProductId == productId);
+            
+            if (stock == null) return new List<InventoryStockDetail>();
+
+            var query = stock.InventoryStockDetails
+                .Where(d => d.WarehouseId == warehouseId && d.CurrentStock > 0);
             
             // 如果指定了位置，才篩選特定位置；否則查詢整個倉庫
             if (locationId.HasValue)
             {
-                query = query.Where(i => i.WarehouseLocationId == locationId.Value);
+                query = query.Where(d => d.WarehouseLocationId == locationId.Value);
             }
             
-            return await query
-                .OrderBy(i => i.BatchDate)  // FIFO 排序
-                .ThenBy(i => i.Id)         // 相同日期按ID排序
-                .ToListAsync();
+            return query
+                .OrderBy(d => d.BatchDate)  // FIFO 排序
+                .ThenBy(d => d.Id)         // 相同日期按ID排序
+                .ToList();
         }
 
         /// <summary>
-        /// 從特定批號扣減庫存
+        /// 取得商品在指定倉庫的批號庫存清單（舊版：保留向後兼容）
+        /// </summary>
+        [Obsolete("請使用 GetBatchDetailsByProductAndWarehouseAsync")]
+        private Task<List<InventoryStock>> GetBatchStocksByProductAndWarehouseAsync(
+            int productId, int warehouseId, int? locationId = null)
+        {
+            // 此方法已過時，返回空列表
+            return Task.FromResult(new List<InventoryStock>());
+        }
+
+        /// <summary>
+        /// 從特定批號扣減庫存（新版：使用 InventoryStockDetailId）
         /// </summary>
         private async Task<ServiceResult> ReduceStockFromSpecificBatchAsync(
-            int batchStockId, int quantity, 
+            int batchDetailId, int quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             string? remarks = null, int? salesOrderDetailId = null)
         {
@@ -943,34 +1286,36 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    var stock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.Id == batchStockId);
+                    var detail = await context.InventoryStockDetails
+                        .Include(d => d.InventoryStock)
+                        .FirstOrDefaultAsync(d => d.Id == batchDetailId);
                     
-                    if (stock == null)
+                    if (detail == null)
                         return ServiceResult.Failure("找不到批號庫存記錄");
 
-                    if (stock.AvailableStock < quantity)
-                        return ServiceResult.Failure($"批號 {stock.BatchNumber} 可用庫存不足");
+                    if (detail.AvailableStock < quantity)
+                        return ServiceResult.Failure($"批號 {detail.BatchNumber} 可用庫存不足");
 
-                    var stockBefore = stock.CurrentStock;
-                    stock.CurrentStock -= quantity;
-                    stock.LastTransactionDate = DateTime.Now;
+                    var stockBefore = detail.CurrentStock;
+                    detail.CurrentStock -= quantity;
+                    detail.LastTransactionDate = DateTime.Now;
 
                     // 建立交易記錄
                     var inventoryTransaction = new InventoryTransaction
                     {
-                        ProductId = stock.ProductId,
-                        WarehouseId = stock.WarehouseId ?? 0,
-                        WarehouseLocationId = stock.WarehouseLocationId,
+                        ProductId = detail.InventoryStock?.ProductId ?? 0,
+                        WarehouseId = detail.WarehouseId,
+                        WarehouseLocationId = detail.WarehouseLocationId,
                         TransactionType = transactionType,
                         TransactionNumber = transactionNumber,
                         TransactionDate = DateTime.Now,
                         Quantity = -quantity, // 負數表示出庫
-                        UnitCost = stock.AverageCost,
+                        UnitCost = detail.AverageCost,
                         StockBefore = stockBefore,
-                        StockAfter = stock.CurrentStock,
-                        Remarks = $"{remarks} (批號: {stock.BatchNumber})" + (salesOrderDetailId.HasValue ? $" (銷貨明細ID: {salesOrderDetailId})" : ""),
-                        InventoryStockId = stock.Id,
+                        StockAfter = detail.CurrentStock,
+                        Remarks = $"{remarks} (批號: {detail.BatchNumber})" + (salesOrderDetailId.HasValue ? $" (銷貨明細ID: {salesOrderDetailId})" : ""),
+                        InventoryStockId = detail.InventoryStockId,
+                        InventoryStockDetailId = detail.Id,
                         Status = EntityStatus.Active
                     };
 
@@ -991,7 +1336,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ReduceStockFromSpecificBatchAsync), GetType(), _logger, new {
                     Method = nameof(ReduceStockFromSpecificBatchAsync),
                     ServiceType = GetType().Name,
-                    BatchStockId = batchStockId,
+                    BatchDetailId = batchDetailId,
                     Quantity = quantity,
                     TransactionType = transactionType,
                     TransactionNumber = transactionNumber
@@ -1014,14 +1359,18 @@ namespace ERPCore2.Services
                         .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.Product)
                         .ThenInclude(p => p.Unit)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
                     .AsQueryable();
 
-                // 篩選條件
-                if (warehouseId.HasValue)
+                // 篩選條件（透過明細篩選）
+                if (warehouseId.HasValue || locationId.HasValue)
                 {
-                    query = query.Where(i => i.WarehouseId == warehouseId.Value);
+                    query = query.Where(i => i.InventoryStockDetails.Any(d =>
+                        (!warehouseId.HasValue || d.WarehouseId == warehouseId.Value) &&
+                        (!locationId.HasValue || d.WarehouseLocationId == locationId.Value)));
                 }
 
                 if (categoryId.HasValue)
@@ -1029,14 +1378,8 @@ namespace ERPCore2.Services
                     query = query.Where(i => i.Product.ProductCategoryId == categoryId.Value);
                 }
 
-                if (locationId.HasValue)
-                {
-                    query = query.Where(i => i.WarehouseLocationId == locationId.Value);
-                }
-
                 return await query
-                    .OrderBy(i => i.Warehouse!.Name)
-                    .ThenBy(i => i.Product!.Code)
+                    .OrderBy(i => i.Product!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -1068,11 +1411,13 @@ namespace ERPCore2.Services
                         .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.Product)
                         .ThenInclude(p => p.Unit)
-                    .Include(i => i.Warehouse)
-                    .Include(i => i.WarehouseLocation)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.Warehouse)
+                    .Include(i => i.InventoryStockDetails)
+                        .ThenInclude(d => d.WarehouseLocation)
                     .Where(i => i.MinStockLevel.HasValue && 
-                               i.CurrentStock <= i.MinStockLevel.Value)
-                    .OrderBy(i => i.CurrentStock)
+                               i.TotalCurrentStock <= i.MinStockLevel.Value)
+                    .OrderBy(i => i.TotalCurrentStock)
                     .ThenBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -1099,59 +1444,59 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var stats = new Dictionary<string, object>();
 
-                // 總商品數量
-                var totalProducts = await context.InventoryStocks
-                    .AsQueryable()
-                    .Select(i => i.ProductId)
-                    .Distinct()
-                    .CountAsync();
+                // 載入所有庫存資料到記憶體進行統計（因為使用計算屬性）
+                var allStocks = await context.InventoryStocks
+                    .Include(i => i.InventoryStockDetails)
+                    .ToListAsync();
 
-                // 總庫存價值
-                var totalInventoryValue = await context.InventoryStocks
-                    .Where(i => i.AverageCost.HasValue)
-                    .SumAsync(i => i.CurrentStock * (i.AverageCost ?? 0));
+                // 總商品數量
+                var totalProducts = allStocks.Select(i => i.ProductId).Distinct().Count();
+
+                // 總庫存價值（使用明細計算）
+                var totalInventoryValue = allStocks
+                    .SelectMany(s => s.InventoryStockDetails ?? Enumerable.Empty<InventoryStockDetail>())
+                    .Where(d => d.AverageCost.HasValue)
+                    .Sum(d => d.CurrentStock * (d.AverageCost ?? 0));
 
                 // 低庫存商品數量
-                var lowStockCount = await context.InventoryStocks
-                    .Where(i => i.MinStockLevel.HasValue &&
-                               i.CurrentStock <= i.MinStockLevel.Value)
-                    .CountAsync();
+                var lowStockCount = allStocks
+                    .Where(i => i.MinStockLevel.HasValue && i.TotalCurrentStock <= i.MinStockLevel.Value)
+                    .Count();
 
                 // 零庫存商品數量
-                var zeroStockCount = await context.InventoryStocks
-                    .Where(i => i.CurrentStock == 0)
-                    .CountAsync();
+                var zeroStockCount = allStocks
+                    .Where(i => i.TotalCurrentStock == 0)
+                    .Count();
 
                 // 倉庫數量
-                var warehouseCount = await context.Warehouses
-                    .AsQueryable()
-                    .CountAsync();
+                var warehouseCount = await context.Warehouses.CountAsync();
 
-                // 新增：未設定警戒線的商品數量（MinStockLevel 或 MaxStockLevel 任一為 null 或 <= 0）
-                var noWarningLevelCount = await context.InventoryStocks
+                // 未設定警戒線的商品數量
+                var noWarningLevelCount = allStocks
                     .Where(i => (!i.MinStockLevel.HasValue || i.MinStockLevel.Value <= 0 ||
                                 !i.MaxStockLevel.HasValue || i.MaxStockLevel.Value <= 0))
-                    .CountAsync();
+                    .Count();
 
-                // 新增：超過最高警戒線的商品數量（庫存過多）
-                var overStockCount = await context.InventoryStocks
+                // 超過最高警戒線的商品數量
+                var overStockCount = allStocks
                     .Where(i => i.MaxStockLevel.HasValue &&
                                i.MaxStockLevel.Value > 0 &&
-                               i.CurrentStock > i.MaxStockLevel.Value)
-                    .CountAsync();
+                               i.TotalCurrentStock > i.MaxStockLevel.Value)
+                    .Count();
 
-                // 新增：呆滯庫存數量（30天沒有異動）
-                var staleStockCount = await context.InventoryStocks
-                    .Where(i => (!i.LastTransactionDate.HasValue ||
-                                i.LastTransactionDate.Value <= DateTime.Now.AddDays(-30)))
-                    .CountAsync();
+                // 呆滯庫存數量（30天沒有異動）- 從明細判斷
+                var staleStockCount = allStocks
+                    .Where(i => i.InventoryStockDetails != null &&
+                               i.InventoryStockDetails.All(d => !d.LastTransactionDate.HasValue ||
+                                                               d.LastTransactionDate.Value <= DateTime.Now.AddDays(-30)))
+                    .Count();
 
-                // 新增：預留庫存過高的商品數量（預留庫存佔總庫存比例 > 50%）
-                var highReservedStockCount = await context.InventoryStocks
-                    .Where(i => i.CurrentStock > 0 &&
-                               i.ReservedStock > 0 &&
-                               (decimal)i.ReservedStock / i.CurrentStock > 0.5m)
-                    .CountAsync();
+                // 預留庫存過高的商品數量（預留庫存佔總庫存比例 > 50%）
+                var highReservedStockCount = allStocks
+                    .Where(i => i.TotalCurrentStock > 0 &&
+                               i.TotalReservedStock > 0 &&
+                               (decimal)i.TotalReservedStock / i.TotalCurrentStock > 0.5m)
+                    .Count();
 
                 // 確保數據類型一致性
                 stats.Add("TotalProducts", totalProducts);
@@ -1207,15 +1552,22 @@ namespace ERPCore2.Services
                 try
                 {
                     var stock = await context.InventoryStocks
-                        .FirstOrDefaultAsync(i => i.ProductId == productId && 
-                                                 i.WarehouseId == warehouseId &&
-                                                 i.WarehouseLocationId == locationId);
+                        .Include(i => i.InventoryStockDetails)
+                        .FirstOrDefaultAsync(i => i.ProductId == productId);
                     
                     if (stock == null)
                         return ServiceResult.Failure("找不到庫存記錄");
 
+                    // 找到或建立對應的明細記錄
+                    var detail = stock.InventoryStockDetails
+                        .FirstOrDefault(d => d.WarehouseId == warehouseId && 
+                                           d.WarehouseLocationId == locationId);
+                    
+                    if (detail == null)
+                        return ServiceResult.Failure("找不到指定倉庫位置的庫存明細");
+
                     // 增加預留數量
-                    stock.ReservedStock += quantity;
+                    detail.ReservedStock += quantity;
 
                     // 建立預留記錄
                     var reservationNumber = $"RSV{DateTime.Now:yyyyMMddHHmmss}";
@@ -1234,6 +1586,7 @@ namespace ERPCore2.Services
                         ReferenceNumber = referenceNumber,
                         ReservationRemarks = remarks,
                         InventoryStockId = stock.Id,
+                        InventoryStockDetailId = detail.Id,
                         Status = EntityStatus.Active
                     };
 
@@ -1271,6 +1624,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var reservation = await context.InventoryReservations
                     .Include(r => r.InventoryStock)
+                    .Include(r => r.InventoryStockDetail)
                     .FirstOrDefaultAsync(r => r.Id == reservationId);
 
                 if (reservation == null)
@@ -1297,9 +1651,9 @@ namespace ERPCore2.Services
                         reservation.ReservationStatus = InventoryReservationStatus.PartiallyReleased;
 
                     // 減少庫存預留數量
-                    if (reservation.InventoryStock != null)
+                    if (reservation.InventoryStockDetail != null)
                     {
-                        reservation.InventoryStock.ReservedStock -= toRelease;
+                        reservation.InventoryStockDetail.ReservedStock -= toRelease;
                     }
 
                     await context.SaveChangesAsync();
@@ -1409,8 +1763,8 @@ namespace ERPCore2.Services
                     if (stock == null)
                         return ServiceResult.Failure("找不到庫存記錄");
 
-                    if (stock.AvailableStock < quantity)
-                        return ServiceResult.Failure($"可用庫存不足，目前可用：{stock.AvailableStock}，需要：{quantity}");
+                    if (stock.TotalAvailableStock < quantity)
+                        return ServiceResult.Failure($"可用庫存不足，目前可用：{stock.TotalAvailableStock}，需要：{quantity}");
                 }
 
                 return ServiceResult.Success();
@@ -1443,9 +1797,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查是否還有庫存數量
-                if (entity.CurrentStock > 0 || entity.ReservedStock > 0)
+                if (entity.TotalCurrentStock > 0 || entity.TotalReservedStock > 0)
                 {
-                    return ServiceResult.Failure($"無法刪除此庫存記錄，目前庫存：{entity.CurrentStock}，預留庫存：{entity.ReservedStock}");
+                    return ServiceResult.Failure($"無法刪除此庫存記錄，目前庫存：{entity.TotalCurrentStock}，預留庫存：{entity.TotalReservedStock}");
                 }
 
                 // 檢查是否有相關的交易記錄，如果有則先軟刪除相關記錄
@@ -1490,9 +1844,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
                     EntityId = entity.Id,
-                    ProductId = entity.ProductId,
-                    WarehouseId = entity.WarehouseId,
-                    WarehouseLocationId = entity.WarehouseLocationId
+                    ProductId = entity.ProductId
                 });
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }

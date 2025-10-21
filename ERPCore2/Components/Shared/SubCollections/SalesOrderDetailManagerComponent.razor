@@ -6,6 +6,7 @@
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject IInventoryStockService InventoryStockService
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -437,7 +438,7 @@ else
         return Task.CompletedTask;
     }
 
-    private void LoadExistingDetailsAsync()
+    private async void LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
@@ -498,6 +499,9 @@ else
                 SalesItems.Add(salesItem);
             }
         }
+        
+        // 載入所有項目的庫存量
+        await LoadAllStockQuantitiesAsync();
         
         EnsureOneEmptyRow();
     }
@@ -748,7 +752,46 @@ else
                     }
                 }
         });
-
+        
+        // 庫存量欄位 (只讀顯示，不儲存到資料庫)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "庫存量", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            HideOnMobile = true,
+            CustomTemplate = item => 
+            {
+                var salesItem = (SalesItem)item;
+                
+                // 只有當選擇了商品和倉庫時才顯示庫存量
+                if (salesItem.SelectedProduct == null || salesItem.SelectedWarehouse == null)
+                {
+                    return @<span class="text-muted small">-</span>;
+                }
+                
+                // 顯示庫存量（有可能尚未載入）
+                if (salesItem.CurrentStockQuantity.HasValue)
+                {
+                    var stockQty = salesItem.CurrentStockQuantity.Value;
+                    var textColor = stockQty <= 0 ? "text-danger" : 
+                                   stockQty < 10 ? "text-warning" : "text-success";
+                    
+                    return @<span class="@textColor small fw-bold" title="即時可用庫存">
+                        @stockQty.ToString("N0")
+                    </span>;
+                }
+                else
+                {
+                    // 載入中
+                    return @<span class="text-muted small">
+                        <i class="bi bi-hourglass-split"></i>
+                    </span>;
+                }
+            }
+        });
+        
         // 訂單數量欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
@@ -1068,6 +1111,11 @@ else
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
         /// <summary>
+        /// 即時庫存量（不儲存到資料庫）
+        /// </summary>
+        public int? CurrentStockQuantity { get; set; }
+        
+        /// <summary>
         /// 計算小計
         /// </summary>
         public void CalculateSubtotal()
@@ -1111,11 +1159,18 @@ else
         if (string.IsNullOrEmpty(productIdStr))
         {
             item.SelectedProduct = null;
+            item.CurrentStockQuantity = null; // 清空庫存量
         }
         else if (int.TryParse(productIdStr, out var productId))
         {
             var product = GetAvailableProducts().FirstOrDefault(p => p.Id == productId);
             item.SelectedProduct = product;
+            
+            // 如果已經選擇了倉庫，則載入庫存量
+            if (item.SelectedWarehouse != null)
+            {
+                await LoadStockQuantityAsync(item);
+            }
         }
         
         // 處理自動空行邏輯
@@ -1246,10 +1301,14 @@ else
         if (string.IsNullOrEmpty(warehouseIdStr) || !int.TryParse(warehouseIdStr, out var warehouseId))
         {
             item.SelectedWarehouse = null;
+            item.CurrentStockQuantity = null; // 清空庫存量
         }
         else
         {
             item.SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == warehouseId);
+            
+            // 載入庫存量
+            await LoadStockQuantityAsync(item);
         }
         
         AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
@@ -1320,6 +1379,57 @@ else
     // ===== 業務邏輯方法 =====
     
     /// <summary>
+    /// 載入指定項目的庫存量
+    /// </summary>
+    private async Task LoadStockQuantityAsync(SalesItem item)
+    {
+        try
+        {
+            // 檢查是否有選擇商品和倉庫
+            if (item.SelectedProduct == null || item.SelectedWarehouse == null)
+            {
+                item.CurrentStockQuantity = null;
+                return;
+            }
+            
+            // 查詢庫存量
+            var stockQuantity = await InventoryStockService.GetTotalAvailableStockByWarehouseAsync(
+                item.SelectedProduct.Id, 
+                item.SelectedWarehouse.Id
+            );
+            
+            item.CurrentStockQuantity = stockQuantity;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadStockQuantityAsync), GetType());
+            item.CurrentStockQuantity = null;
+        }
+    }
+    
+    /// <summary>
+    /// 載入所有明細項目的庫存量
+    /// </summary>
+    private async Task LoadAllStockQuantitiesAsync()
+    {
+        var tasks = new List<Task>();
+        
+        foreach (var item in SalesItems.Where(x => !IsEmptyRow(x)))
+        {
+            if (item.SelectedProduct != null && item.SelectedWarehouse != null)
+            {
+                tasks.Add(LoadStockQuantityAsync(item));
+            }
+        }
+        
+        if (tasks.Any())
+        {
+            await Task.WhenAll(tasks);
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
     /// 統一設定所有明細項目的倉庫（只處理未鎖定的明細）
     /// </summary>
     private async Task ApplyUnifyWarehouse(int warehouseId)
@@ -1361,6 +1471,9 @@ else
             {
                 item.SelectedWarehouse = selectedWarehouse;
             }
+            
+            // 批量載入庫存量
+            await LoadAllStockQuantitiesAsync();
 
             // 通知父組件資料已變更
             await NotifyDetailsChanged();
@@ -1505,6 +1618,9 @@ else
                 salesItem.CalculateSubtotal();
                 SalesItems.Add(salesItem);
             }
+            
+            // 載入所有項目的庫存量
+            await LoadAllStockQuantitiesAsync();
 
             // 確保有空行
             EnsureOneEmptyRow();

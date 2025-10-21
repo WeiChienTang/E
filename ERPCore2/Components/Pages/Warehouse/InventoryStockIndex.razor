@@ -12,7 +12,7 @@
 <GenericIndexPageComponent TEntity="InventoryStock" 
                         TService="IInventoryStockService"
                         Service="@InventoryStockService"
-                        EntityBasePath="/inventory-stocks"                          
+                        EntityBasePath="/inventoryStocks"                          
                         PageTitle="庫存查詢"
                         PageSubtitle="管理商品庫存與倉庫位置"
                         DataLoader="@LoadDataAsync"
@@ -21,7 +21,7 @@
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="庫存"
-                        GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)} - {GetWarehouseLocationName(stock.WarehouseLocationId)}")"
+                        GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId)}")"
                         RequiredPermission="InventoryStock.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -192,7 +192,7 @@
         if (fieldConfiguration == null)
         {
             // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(s => s.ProductId).ThenBy(s => s.WarehouseLocationId);
+            return query.OrderBy(s => s.ProductId);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyInventoryStockFilters), GetType());
@@ -357,4 +357,7 @@
             return warehouseLocationId.HasValue ? $"位置-{warehouseLocationId}" : "未指定";
         }
     }
+
+    // 注意：InventoryStock 已改為主檔結構，不再直接包含倉庫和庫位資訊
+    // 如需查看各倉庫的庫存明細，請使用 InventoryStockDetails 導航屬性
 }

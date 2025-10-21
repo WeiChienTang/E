@@ -284,7 +284,7 @@ namespace ERPCore2.Helpers
                 var result = new DependencyCheckResult { CanDelete = true };
                 
                 // 檢查庫存
-                var inventoryCount = await context.InventoryStocks
+                var inventoryCount = await context.InventoryStockDetails
                     .CountAsync(i => i.WarehouseId == warehouseId);
                     
                 if (inventoryCount > 0)

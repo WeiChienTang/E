@@ -70,10 +70,15 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(InventoryStock))]
         public int? InventoryStockId { get; set; }
         
+        [Display(Name = "庫存明細")]
+        [ForeignKey(nameof(InventoryStockDetail))]
+        public int? InventoryStockDetailId { get; set; }
+        
         // Navigation Properties
         public Product Product { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
         public InventoryStock? InventoryStock { get; set; }
+        public InventoryStockDetail? InventoryStockDetail { get; set; }
     }
 }

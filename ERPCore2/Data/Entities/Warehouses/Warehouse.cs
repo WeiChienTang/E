@@ -28,5 +28,6 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         public ICollection<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
+        public ICollection<InventoryStockDetail> InventoryStockDetails { get; set; } = new List<InventoryStockDetail>();
     }
 }

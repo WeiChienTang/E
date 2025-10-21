@@ -272,8 +272,9 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 獲取庫存數量
-                var stockQuery = context.InventoryStocks
-                    .Where(s => s.ProductId == productId && 
+                var stockQuery = context.InventoryStockDetails
+                    .Include(d => d.InventoryStock)
+                    .Where(s => s.InventoryStock.ProductId == productId && 
                                s.WarehouseId == warehouseId);
 
                 if (locationId.HasValue)

@@ -1,0 +1,843 @@
+@* 庫存明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.Buttons
+
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IInventoryStockDetailService InventoryStockDetailService
+@inject INotificationService NotificationService
+
+@typeparam TMainEntity where TMainEntity : BaseEntity
+@typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <InteractiveTableComponent TItem="StockDetailItem" 
+                                      Items="@StockDetailItems"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      ShowHeader="true"
+                                      ShowActions="false"
+                                      ShowBuiltInActions="true"
+                                      ShowBuiltInDeleteButton="false"
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
+                                      IsReadOnly="@IsReadOnly"
+                                      OnItemDelete="@HandleItemDelete"
+                                      CssClass="mb-0" />
+        </div>
+    </div>
+
+
+@code {
+    // ===== 基本參數 =====
+    [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
+    [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
+    [Parameter] public EventCallback<List<StockDetailItem>> OnStockDetailItemsChanged { get; set; }
+    
+    // ===== 庫存主檔ID參數 =====
+    [Parameter] public int? SelectedInventoryStockId { get; set; }
+    
+    // ===== 泛型參數 =====
+    [Parameter] public TMainEntity? MainEntity { get; set; }
+    [Parameter] public List<TDetailEntity> ExistingDetails { get; set; } = new List<TDetailEntity>();
+    [Parameter] public EventCallback<List<TDetailEntity>> OnDetailsChanged { get; set; }
+    
+    // ===== 欄位映射參數 =====
+    [Parameter] public string MainEntityIdPropertyName { get; set; } = "InventoryStockId";
+    [Parameter] public string CurrentStockPropertyName { get; set; } = "CurrentStock";
+    [Parameter] public string ReservedStockPropertyName { get; set; } = "ReservedStock";
+    [Parameter] public string InTransitStockPropertyName { get; set; } = "InTransitStock";
+    [Parameter] public string AverageCostPropertyName { get; set; } = "AverageCost";
+    [Parameter] public string BatchNumberPropertyName { get; set; } = "BatchNumber";
+    [Parameter] public string BatchDatePropertyName { get; set; } = "BatchDate";
+    [Parameter] public string ExpiryDatePropertyName { get; set; } = "ExpiryDate";
+    [Parameter] public string WarehouseIdPropertyName { get; set; } = "WarehouseId";
+    [Parameter] public string WarehouseLocationIdPropertyName { get; set; } = "WarehouseLocationId";
+    
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "庫存明細";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "boxes";
+    [Parameter] public string ItemDisplayName { get; set; } = "明細";
+    [Parameter] public string EmptyIcon { get; set; } = "box-open";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增庫存明細";
+    
+    // ===== 顯示控制參數 =====
+    [Parameter] public bool ShowBatchTracking { get; set; } = true;
+    [Parameter] public bool ShowAverageCost { get; set; } = true;
+    
+    // ===== 唯讀模式參數 =====
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+
+    private List<StockDetailItem> StockDetailItems { get; set; } = new List<StockDetailItem>();
+    private int? _previousSelectedInventoryStockId = null;
+    private bool _isInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _previousSelectedInventoryStockId = SelectedInventoryStockId;
+        await LoadExistingDetailsAsync();
+        _isInitialized = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        base.OnParametersSet();
+        
+        if (!_isInitialized)
+        {
+            return;
+        }
+        
+        // 檢查庫存主檔是否變更（包含從null到null的新增模式切換）
+        if (_previousSelectedInventoryStockId != SelectedInventoryStockId)
+        {
+            _previousSelectedInventoryStockId = SelectedInventoryStockId;
+            StockDetailItems.Clear();
+            await LoadExistingDetailsAsync();
+            return;
+        }
+        
+        // 特殊處理：當都是新增模式(null)但ExistingDetails已清空時，也要重置明細
+        if (!SelectedInventoryStockId.HasValue && 
+            (ExistingDetails == null || !ExistingDetails.Any()) && 
+            StockDetailItems.Any(item => !IsEmptyRow(item)))
+        {
+            StockDetailItems.Clear();
+            await LoadExistingDetailsAsync();
+            return;
+        }
+        
+        EnsureOneEmptyRow();
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    private bool IsEmptyRow(StockDetailItem item)
+    {
+        return !item.SelectedWarehouseId.HasValue || item.SelectedWarehouseId.Value <= 0;
+    }
+    
+    private StockDetailItem CreateEmptyItem()
+    {
+        return new StockDetailItem();
+    }
+    
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.EnsureOneEmptyRow(
+            StockDetailItems, 
+            IsEmptyRow, 
+            CreateEmptyItem
+        );
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 倉庫選擇欄位
+        columns.Add(new() 
+        { 
+            Title = "倉庫", 
+            PropertyName = "SelectedWarehouseId",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "150px",
+            CustomTemplate = item => 
+            {
+                var stockItem = (StockDetailItem)item;
+                var selectedValue = stockItem.SelectedWarehouseId?.ToString() ?? "";
+                
+                return @<select class="form-select form-select-sm"
+                                value="@selectedValue"
+                                @onchange="@(e => OnWarehouseChanged(stockItem, e.Value))"
+                                disabled="@IsReadOnly">
+                    <option value="">-- 選擇倉庫 --</option>
+                    @foreach (var warehouse in Warehouses)
+                    {
+                        <option value="@warehouse.Id">@warehouse.Name</option>
+                    }
+                </select>;
+            }
+        });
+        
+        // 庫位選擇欄位
+        columns.Add(new() 
+        { 
+            Title = "庫位", 
+            PropertyName = "SelectedWarehouseLocationId",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "150px",
+            CustomTemplate = item => 
+            {
+                var stockItem = (StockDetailItem)item;
+                var selectedValue = stockItem.SelectedWarehouseLocationId?.ToString() ?? "";
+                var isDisabled = IsReadOnly || !stockItem.SelectedWarehouseId.HasValue;
+                
+                return @<select class="form-select form-select-sm"
+                                value="@selectedValue"
+                                @onchange="@(e => OnWarehouseLocationChanged(stockItem, e.Value))"
+                                disabled="@isDisabled">
+                    <option value="">-- 選擇庫位(選填) --</option>
+                    @foreach (var location in GetAvailableLocations(stockItem.SelectedWarehouseId))
+                    {
+                        <option value="@location.Id">@location.Name</option>
+                    }
+                </select>;
+            }
+        });
+
+        // 現有庫存欄位
+        columns.Add(new() 
+        { 
+            Title = "現有庫存", 
+            PropertyName = "CurrentStock",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item => 
+            {
+                var stockItem = (StockDetailItem)item;
+                var value = stockItem.CurrentStock > 0 ? stockItem.CurrentStock.ToString() : "";
+                
+                return @<input type="number"
+                               class="form-control form-control-sm text-end"
+                               value="@value"
+                               @oninput="@(e => OnCurrentStockInput(stockItem, e.Value?.ToString()))"
+                               readonly="@IsReadOnly"
+                               min="0" />;
+            }
+        });
+
+        // 平均成本欄位（條件顯示）
+        if (ShowAverageCost)
+        {
+            columns.Add(new() 
+            { 
+                Title = "平均成本", 
+                PropertyName = "AverageCost",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item => 
+                {
+                    var stockItem = (StockDetailItem)item;
+                    var value = stockItem.AverageCost?.ToString() ?? "";
+                    
+                    return @<input type="number"
+                                   class="form-control form-control-sm text-end"
+                                   value="@value"
+                                   @oninput="@(e => OnAverageCostInput(stockItem, e.Value?.ToString()))"
+                                   readonly="@IsReadOnly"
+                                   step="0.01"
+                                   min="0" />;
+                }
+            });
+        }
+
+        return columns;
+    }
+
+    private RenderFragment<StockDetailItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Danger"
+                               Icon="bi bi-trash text-white"
+                               Size="ButtonSize.Large"
+                               OnClick="@(() => HandleItemDelete(item))"
+                               Title="刪除"
+                               IsDisabled="@(IsReadOnly || !CanDeleteItem(item, out _))" />
+    };
+
+    private async Task HandleItemDelete(StockDetailItem item)
+    {
+        var index = StockDetailItems.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    // ===== 內部方法 =====
+
+    private async Task LoadExistingDetailsAsync()
+    {
+        if (ExistingDetails?.Any() != true) 
+        {
+            EnsureOneEmptyRow();
+            return;
+        }
+
+        StockDetailItems.Clear();
+        
+        foreach (var detail in ExistingDetails)
+        {
+            var warehouseId = GetPropertyValue<int>(detail, WarehouseIdPropertyName);
+            var warehouseLocationId = GetPropertyValue<int?>(detail, WarehouseLocationIdPropertyName);
+            
+            var item = new StockDetailItem
+            {
+                SelectedWarehouseId = warehouseId,
+                SelectedWarehouseLocationId = warehouseLocationId,
+                CurrentStock = GetPropertyValue<int>(detail, CurrentStockPropertyName),
+                ReservedStock = GetPropertyValue<int>(detail, ReservedStockPropertyName),
+                InTransitStock = GetPropertyValue<int>(detail, InTransitStockPropertyName),
+                AverageCost = GetPropertyValue<decimal?>(detail, AverageCostPropertyName),
+                BatchNumber = GetPropertyValue<string>(detail, BatchNumberPropertyName),
+                BatchDate = GetPropertyValue<DateTime?>(detail, BatchDatePropertyName),
+                ExpiryDate = GetPropertyValue<DateTime?>(detail, ExpiryDatePropertyName),
+                ExistingDetailEntity = detail
+            };
+            
+            StockDetailItems.Add(item);
+        }
+        
+        EnsureOneEmptyRow();
+        await Task.CompletedTask;
+    }
+
+    private List<TDetailEntity> ConvertToDetailEntities()
+    {
+        var details = new List<TDetailEntity>();
+        
+        foreach (var item in StockDetailItems.Where(x => !IsEmptyRow(x)))
+        {
+            TDetailEntity detail;
+            
+            if (item.ExistingDetailEntity != null)
+            {
+                detail = item.ExistingDetailEntity;
+            }
+            else
+            {
+                detail = new TDetailEntity();
+                
+                if (MainEntity != null)
+                {
+                    var mainEntityIdProperty = typeof(TDetailEntity).GetProperty(MainEntityIdPropertyName);
+                    if (mainEntityIdProperty != null && mainEntityIdProperty.CanWrite)
+                    {
+                        mainEntityIdProperty.SetValue(detail, SelectedInventoryStockId);
+                    }
+                }
+            }
+            
+            SetPropertyValue(detail, WarehouseIdPropertyName, item.SelectedWarehouseId);
+            SetPropertyValue(detail, WarehouseLocationIdPropertyName, item.SelectedWarehouseLocationId);
+            SetPropertyValue(detail, CurrentStockPropertyName, item.CurrentStock);
+            SetPropertyValue(detail, ReservedStockPropertyName, item.ReservedStock);
+            SetPropertyValue(detail, InTransitStockPropertyName, item.InTransitStock);
+            SetPropertyValue(detail, AverageCostPropertyName, item.AverageCost);
+            SetPropertyValue(detail, BatchNumberPropertyName, item.BatchNumber);
+            SetPropertyValue(detail, BatchDatePropertyName, item.BatchDate);
+            SetPropertyValue(detail, ExpiryDatePropertyName, item.ExpiryDate);
+            
+            details.Add(detail);
+        }
+        
+        return details;
+    }
+
+    private async Task NotifyDetailsChanged()
+    {
+        var details = ConvertToDetailEntities();
+        await OnDetailsChanged.InvokeAsync(details);
+    }
+
+    private T? GetPropertyValue<T>(object obj, string propertyName)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        if (property == null) return default(T);
+        
+        var value = property.GetValue(obj);
+        if (value == null) return default(T);
+        
+        if (typeof(T) == typeof(object)) return (T)value;
+        
+        // 處理可空型別的轉換
+        var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+        
+        // 如果值的型別與目標型別相同或可直接轉換
+        if (targetType.IsAssignableFrom(value.GetType()))
+        {
+            return (T)value;
+        }
+        
+        try
+        {
+            return (T)Convert.ChangeType(value, targetType);
+        }
+        catch
+        {
+            return default(T);
+        }
+    }
+
+    private void SetPropertyValue(object obj, string propertyName, object? value)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        if (property != null && property.CanWrite)
+        {
+            if (value != null && property.PropertyType != value.GetType())
+            {
+                var targetType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                try
+                {
+                    value = Convert.ChangeType(value, targetType);
+                }
+                catch
+                {
+                    value = null;
+                }
+            }
+            property.SetValue(obj, value);
+        }
+    }
+
+    // ===== 欄位變更事件處理 =====
+
+    private async Task OnWarehouseChanged(StockDetailItem item, object? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        var warehouseIdStr = value?.ToString();
+        if (string.IsNullOrEmpty(warehouseIdStr))
+        {
+            item.SelectedWarehouseId = null;
+            item.SelectedWarehouseLocationId = null;
+        }
+        else if (int.TryParse(warehouseIdStr, out var warehouseId))
+        {
+            item.SelectedWarehouseId = warehouseId;
+            item.SelectedWarehouseLocationId = null;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnWarehouseLocationChanged(StockDetailItem item, object? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        var locationIdStr = value?.ToString();
+        if (string.IsNullOrEmpty(locationIdStr))
+        {
+            item.SelectedWarehouseLocationId = null;
+        }
+        else if (int.TryParse(locationIdStr, out var locationId))
+        {
+            item.SelectedWarehouseLocationId = locationId;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnCurrentStockInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.CurrentStock = 0;
+        }
+        else if (int.TryParse(value, out var stock))
+        {
+            item.CurrentStock = stock;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnReservedStockInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.ReservedStock = 0;
+        }
+        else if (int.TryParse(value, out var stock))
+        {
+            item.ReservedStock = stock;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnInTransitStockInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.InTransitStock = 0;
+        }
+        else if (int.TryParse(value, out var stock))
+        {
+            item.InTransitStock = stock;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnAverageCostInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.AverageCost = null;
+        }
+        else if (decimal.TryParse(value, out var cost))
+        {
+            item.AverageCost = cost;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnBatchNumberInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        item.BatchNumber = value ?? string.Empty;
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnBatchDateChanged(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.BatchDate = null;
+        }
+        else if (DateTime.TryParse(value, out var date))
+        {
+            item.BatchDate = date;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnExpiryDateChanged(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.ExpiryDate = null;
+        }
+        else if (DateTime.TryParse(value, out var date))
+        {
+            item.ExpiryDate = date;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    public async Task RemoveItemAsync(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= StockDetailItems.Count) return;
+        
+        var removedItem = StockDetailItems[index];
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleItemRemove(
+            StockDetailItems, removedItem, IsEmptyRow, CreateEmptyItem);
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private List<WarehouseLocation> GetAvailableLocations(int? warehouseId)
+    {
+        if (!warehouseId.HasValue || warehouseId.Value <= 0)
+        {
+            return new List<WarehouseLocation>();
+        }
+        
+        return WarehouseLocations.Where(l => l.WarehouseId == warehouseId.Value).ToList();
+    }
+
+    private int GetValidItemCount()
+    {
+        return StockDetailItems.Count(item => !IsEmptyRow(item));
+    }
+
+    private int GetTotalCurrentStock()
+    {
+        return StockDetailItems
+            .Where(item => !IsEmptyRow(item))
+            .Sum(item => item.CurrentStock);
+    }
+
+    private int GetTotalAvailableStock()
+    {
+        return StockDetailItems
+            .Where(item => !IsEmptyRow(item))
+            .Sum(item => item.CurrentStock - item.ReservedStock);
+    }
+
+    private int GetTotalInTransitStock()
+    {
+        return StockDetailItems
+            .Where(item => !IsEmptyRow(item))
+            .Sum(item => item.InTransitStock);
+    }
+
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        if (!AutoEmptyRowHelper.ForAny<StockDetailItem>.HasSufficientItems(StockDetailItems, IsEmptyRow, 1))
+        {
+            errors.Add("至少需要一筆庫存明細");
+        }
+        else
+        {
+            var nonEmptyItems = AutoEmptyRowHelper.ForAny<StockDetailItem>.GetNonEmptyItems(StockDetailItems, IsEmptyRow);
+            
+            // 檢查是否有重複的倉庫+庫位組合
+            var duplicates = nonEmptyItems
+                .GroupBy(item => new { item.SelectedWarehouseId, item.SelectedWarehouseLocationId })
+                .Where(g => g.Count() > 1)
+                .ToList();
+                
+            if (duplicates.Any())
+            {
+                errors.Add("存在重複的倉庫與庫位組合，請確認後再試");
+            }
+            
+            // 檢查預留庫存是否超過現有庫存
+            var invalidReserved = nonEmptyItems
+                .Where(item => item.ReservedStock > item.CurrentStock)
+                .ToList();
+                
+            if (invalidReserved.Any())
+            {
+                errors.Add("預留庫存不可超過現有庫存");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
+    }
+
+    private bool CanDeleteItem(StockDetailItem item, out string reason)
+    {
+        if (item.ExistingDetailEntity == null || item.ExistingDetailEntity.Id <= 0)
+        {
+            reason = string.Empty;
+            return true;
+        }
+        
+        reason = string.Empty;
+        return true;
+    }
+
+    private async Task ClearAllDetails()
+    {
+        StockDetailItems.Clear();
+        EnsureOneEmptyRow();
+        
+        await OnStockDetailItemsChanged.InvokeAsync(StockDetailItems);
+        await NotifyDetailsChanged();
+        
+        await NotificationService.ShowSuccessAsync("已清空所有庫存明細");
+    }
+
+    /// <summary>
+    /// 檢查是否有重複的倉庫+庫位組合
+    /// </summary>
+    public (bool HasDuplicates, List<string> DuplicateInfo) CheckForDuplicates()
+    {
+        var nonEmptyItems = StockDetailItems.Where(item => !IsEmptyRow(item)).ToList();
+        
+        var duplicates = nonEmptyItems
+            .GroupBy(item => new { item.SelectedWarehouseId, item.SelectedWarehouseLocationId })
+            .Where(g => g.Count() > 1)
+            .Select(g => new
+            {
+                g.Key.SelectedWarehouseId,
+                g.Key.SelectedWarehouseLocationId,
+                Count = g.Count(),
+                Items = g.ToList()
+            })
+            .ToList();
+
+        if (!duplicates.Any())
+        {
+            return (false, new List<string>());
+        }
+
+        var duplicateInfo = new List<string>();
+        foreach (var dup in duplicates)
+        {
+            var warehouseName = Warehouses.FirstOrDefault(w => w.Id == dup.SelectedWarehouseId)?.Name ?? $"倉庫ID {dup.SelectedWarehouseId}";
+            var locationName = dup.SelectedWarehouseLocationId.HasValue
+                ? WarehouseLocations.FirstOrDefault(l => l.Id == dup.SelectedWarehouseLocationId)?.Name ?? $"庫位ID {dup.SelectedWarehouseLocationId}"
+                : "（無指定庫位）";
+            
+            duplicateInfo.Add($"{warehouseName} - {locationName}（共 {dup.Count} 筆）");
+        }
+
+        return (true, duplicateInfo);
+    }
+
+    /// <summary>
+    /// 合併重複的倉庫+庫位組合
+    /// </summary>
+    public async Task<bool> MergeDuplicatesAsync()
+    {
+        try
+        {
+            var nonEmptyItems = StockDetailItems.Where(item => !IsEmptyRow(item)).ToList();
+            
+            // 找出所有重複的組合
+            var groupedItems = nonEmptyItems
+                .GroupBy(item => new { item.SelectedWarehouseId, item.SelectedWarehouseLocationId })
+                .ToList();
+
+            var mergedItems = new List<StockDetailItem>();
+            var hasMerged = false;
+
+            foreach (var group in groupedItems)
+            {
+                if (group.Count() > 1)
+                {
+                    // 有重複，需要合併
+                    hasMerged = true;
+                    
+                    var firstItem = group.First();
+                    var mergedItem = new StockDetailItem
+                    {
+                        SelectedWarehouseId = firstItem.SelectedWarehouseId,
+                        SelectedWarehouseLocationId = firstItem.SelectedWarehouseLocationId,
+                        CurrentStock = group.Sum(i => i.CurrentStock),
+                        ReservedStock = group.Sum(i => i.ReservedStock),
+                        InTransitStock = group.Sum(i => i.InTransitStock),
+                        // 平均成本：加權平均
+                        AverageCost = CalculateWeightedAverageCost(group.ToList()),
+                        // 批號：合併（如果有多個不同的批號）
+                        BatchNumber = MergeBatchNumbers(group.Select(i => i.BatchNumber).ToList()),
+                        // 日期：取最早的
+                        BatchDate = group.Where(i => i.BatchDate.HasValue).OrderBy(i => i.BatchDate).FirstOrDefault()?.BatchDate,
+                        ExpiryDate = group.Where(i => i.ExpiryDate.HasValue).OrderBy(i => i.ExpiryDate).FirstOrDefault()?.ExpiryDate,
+                        // 保留第一個的 ExistingDetailEntity（如果有的話）
+                        ExistingDetailEntity = firstItem.ExistingDetailEntity
+                    };
+                    
+                    mergedItems.Add(mergedItem);
+                }
+                else
+                {
+                    // 沒有重複，直接加入
+                    mergedItems.Add(group.First());
+                }
+            }
+
+            if (hasMerged)
+            {
+                StockDetailItems.Clear();
+                StockDetailItems.AddRange(mergedItems);
+                EnsureOneEmptyRow();
+                
+                await NotifyDetailsChanged();
+                StateHasChanged();
+                
+                await NotificationService.ShowSuccessAsync("已成功合併重複的倉庫與庫位");
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"合併明細時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 計算加權平均成本
+    /// </summary>
+    private decimal? CalculateWeightedAverageCost(List<StockDetailItem> items)
+    {
+        var itemsWithCost = items.Where(i => i.AverageCost.HasValue && i.AverageCost.Value > 0).ToList();
+        if (!itemsWithCost.Any()) return null;
+        
+        var totalCost = itemsWithCost.Sum(i => i.AverageCost!.Value * i.CurrentStock);
+        var totalStock = itemsWithCost.Sum(i => i.CurrentStock);
+        
+        return totalStock > 0 ? totalCost / totalStock : null;
+    }
+
+    /// <summary>
+    /// 合併批號（如果有多個不同批號）
+    /// </summary>
+    private string? MergeBatchNumbers(List<string?> batchNumbers)
+    {
+        var validBatchNumbers = batchNumbers
+            .Where(b => !string.IsNullOrWhiteSpace(b))
+            .Distinct()
+            .ToList();
+        
+        if (!validBatchNumbers.Any()) return null;
+        if (validBatchNumbers.Count == 1) return validBatchNumbers[0];
+        
+        // 多個批號，用逗號連接
+        return string.Join(", ", validBatchNumbers);
+    }
+
+    public class StockDetailItem
+    {
+        public int? SelectedWarehouseId { get; set; }
+        public int? SelectedWarehouseLocationId { get; set; }
+        public int CurrentStock { get; set; } = 0;
+        public int ReservedStock { get; set; } = 0;
+        public int InTransitStock { get; set; } = 0;
+        public decimal? AverageCost { get; set; }
+        public string? BatchNumber { get; set; }
+        public DateTime? BatchDate { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public TDetailEntity? ExistingDetailEntity { get; set; }
+    }
+}

@@ -425,19 +425,6 @@
             // 1. 預收/預付（Amount > 0 且 UsedAmount = 0）→ 使用 SetoffPrepaymentService 驗證
             // 2. 轉沖款（UsedAmount > 0 且非預收/預付類型）→ 使用 SetoffPrepaymentUsageService 驗證
             
-            // ===== DEBUG：輸出 setoffPrepayments 內容 =====
-            Console.WriteLine("\n========================================");
-            Console.WriteLine($"[ValidateBeforeSave] setoffPrepayments 總數: {setoffPrepayments?.Count ?? 0}");
-            if (setoffPrepayments?.Any() == true)
-            {
-                for (int i = 0; i < setoffPrepayments.Count; i++)
-                {
-                    var p = setoffPrepayments[i];
-                    Console.WriteLine($"  [{i}] Id={p.Id}, SourceCode={p.SourceDocumentCode}, Amount={p.Amount}, UsedAmount={p.UsedAmount}, PrepaymentTypeId={p.PrepaymentTypeId}");
-                }
-            }
-            Console.WriteLine("========================================\n");
-            
             // 取得所有預收付類型，用於判斷是否為轉沖款類型
             var prepaymentTypesForValidation = await PrepaymentTypeService.GetAllAsync();
             
@@ -459,36 +446,20 @@
                 })
                 .ToList() ?? new List<SetoffPrepayment>();
             
-            Console.WriteLine($"[ValidateBeforeSave] 過濾後的 prepaymentRecords（預收/預付主記錄）數量: {prepaymentRecords.Count}");
-            for (int i = 0; i < prepaymentRecords.Count; i++)
-            {
-                var p = prepaymentRecords[i];
-                Console.WriteLine($"  [{i}] Id={p.Id}, SourceCode={p.SourceDocumentCode}, Amount={p.Amount}");
-            }
-            
             if (prepaymentRecords.Any())
             {
-                Console.WriteLine($"\n[ValidateBeforeSave] 開始驗證 {prepaymentRecords.Count} 筆預收/預付記錄...\n");
-                
                 for (int i = 0; i < prepaymentRecords.Count; i++)
                 {
                     var prepayment = prepaymentRecords[i];
-                    Console.WriteLine($"[ValidateBeforeSave] 驗證第 {i + 1}/{prepaymentRecords.Count} 筆...");
                     
                     // 呼叫 SetoffPrepaymentService 層的驗證方法
                     var validationResult = await SetoffPrepaymentService.ValidateAsync(prepayment);
                     if (!validationResult.IsSuccess)
                     {
-                        Console.WriteLine($"[ValidateBeforeSave] ❌ 驗證失敗: {validationResult.ErrorMessage}");
                         await NotificationService.ShowErrorAsync($"預收付款項驗證失敗：{validationResult.ErrorMessage}");
                         return false;
                     }
-                    Console.WriteLine($"[ValidateBeforeSave] ✅ 驗證通過");
                 }
-            }
-            else
-            {
-                Console.WriteLine("[ValidateBeforeSave] 沒有預收/預付主記錄需要驗證");
             }
             
             // 驗證轉沖款使用記錄
@@ -657,8 +628,6 @@
                 // 取得所有預收付類型資訊，用於判斷是否為轉沖款類型
                 var allPrepaymentTypes = await PrepaymentTypeService.GetAllAsync();
                 
-                Console.WriteLine($"\n[HandleSaveSuccess] 開始處理預收付款項儲存，總數: {setoffPrepayments.Count}");
-                
                 // === 處理預收/預付主記錄（排除轉沖款類型）===
                 var prepaymentRecords = setoffPrepayments
                     .Where(p => 
@@ -676,13 +645,6 @@
                         return true;  // 預收/預付類型
                     })
                     .ToList();
-                
-                Console.WriteLine($"[HandleSaveSuccess] 預收/預付主記錄數量: {prepaymentRecords.Count}");
-                for (int i = 0; i < prepaymentRecords.Count; i++)
-                {
-                    var p = prepaymentRecords[i];
-                    Console.WriteLine($"  [{i}] Id={p.Id}, SourceCode={p.SourceDocumentCode}, Amount={p.Amount}");
-                }
                 
                 // 取得現有的預收付款項主記錄
                 var existingPrepayments = await SetoffPrepaymentService.GetBySetoffDocumentIdAsync(entity.Id);
@@ -740,13 +702,6 @@
                         return false;
                     })
                     .ToList();
-                
-                Console.WriteLine($"[HandleSaveSuccess] 轉沖款使用記錄數量: {usageRecords.Count}");
-                for (int i = 0; i < usageRecords.Count; i++)
-                {
-                    var u = usageRecords[i];
-                    Console.WriteLine($"  [{i}] SourceCode={u.SourceDocumentCode}, UsedAmount={u.UsedAmount}");
-                }
                 
                 // 取得現有的使用記錄
                 var existingUsages = await SetoffPrepaymentUsageService.GetBySetoffDocumentIdAsync(entity.Id);
@@ -1024,14 +979,7 @@
                 setoffPrepayments = new List<SetoffPrepayment>();
                 
                 // 1. 載入預收/預付主記錄（Amount > 0）
-                Console.WriteLine($"[LoadSetoffDocumentData] 準備載入預收/預付主記錄，SetoffDocumentId={SetoffDocumentId.Value}");
                 var prepaymentRecords = await SetoffPrepaymentService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
-                Console.WriteLine($"[LoadSetoffDocumentData] 載入了 {prepaymentRecords.Count} 筆預收/預付主記錄");
-                for (int i = 0; i < prepaymentRecords.Count; i++)
-                {
-                    var rec = prepaymentRecords[i];
-                    Console.WriteLine($"  [{i}] Id={rec.Id}, SourceCode={rec.SourceDocumentCode}, Amount={rec.Amount}, UsedAmount={rec.UsedAmount}");
-                }
                 setoffPrepayments.AddRange(prepaymentRecords);
                 
                 // 2. 載入轉沖款使用記錄（UsedAmount > 0），轉換為 SetoffPrepayment 格式供前端顯示

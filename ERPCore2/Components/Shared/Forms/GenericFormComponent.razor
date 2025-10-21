@@ -425,11 +425,15 @@
             builder.AddAttribute(sequence + 9, "max", field.Max.Value);
         if (field.Step.HasValue)
             builder.AddAttribute(sequence + 10, "step", field.Step.Value);
+        
+        // 對於可空數字欄位，當值為 null 時顯示空字串而不是 0
+        var propertyValue = GetPropertyValue(Model, field.PropertyName);
+        var displayValue = propertyValue?.ToString() ?? "";
             
-        builder.AddAttribute(sequence + 11, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
+        builder.AddAttribute(sequence + 11, "value", displayValue);
         builder.AddAttribute(sequence + 12, "onchange", EventCallback.Factory.CreateBinder(this, 
             value => SetPropertyValue(Model, field.PropertyName, value), 
-            GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
+            displayValue));
         builder.CloseElement();
     }
 
@@ -1172,6 +1176,23 @@
         if (value == null)
             return null;
 
+        // 處理空字串：對於可空型別，空字串應該轉換為 null
+        if (value is string stringValue && string.IsNullOrWhiteSpace(stringValue))
+        {
+            // 如果是可空型別，返回 null
+            if (Nullable.GetUnderlyingType(targetType) != null)
+            {
+                return null;
+            }
+            // 如果不是可空型別但允許空字串（如 string 本身），保留空字串
+            if (targetType == typeof(string))
+            {
+                return stringValue;
+            }
+            // 其他非可空型別，嘗試使用預設值或 null
+            return null;
+        }
+
         if (targetType.IsAssignableFrom(value.GetType()))
             return value;
 
@@ -1182,14 +1203,14 @@
             // 特別處理枚舉類型
             if (underlyingType.IsEnum)
             {
-                if (value is string stringValue)
+                if (value is string enumStringValue)
                 {
                     // 嘗試轉換字串為枚舉（支援數字字串和名稱字串）
-                    if (int.TryParse(stringValue, out var intValue))
+                    if (int.TryParse(enumStringValue, out var intValue))
                     {
                         return Enum.ToObject(underlyingType, intValue);
                     }
-                    return Enum.Parse(underlyingType, stringValue, true);
+                    return Enum.Parse(underlyingType, enumStringValue, true);
                 }
                 else if (value is int intValue)
                 {

@@ -2,6 +2,7 @@ using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
+using Microsoft.AspNetCore.Components;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -42,7 +43,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "商品",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 200px;",
                             Options = _products.Select(p => new SelectOption 
                             { 
@@ -62,7 +62,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入商品代碼搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => {
                                 var filterValue = model.GetFilterValue("ProductCode")?.ToString();
@@ -78,67 +77,13 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(InventoryStock.WarehouseId),
+                        nameof(InventoryStock.TotalCurrentStock),
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Warehouse.Name", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryStock.WarehouseId), // 篩選器用
-                            DisplayName = "倉庫",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 3,
-                            FilterOrder = 3,
-                            HeaderStyle = "width: 150px;",
-                            Options = _warehouses.Select(w => new SelectOption 
-                            { 
-                                Text = w.Name, 
-                                Value = w.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(InventoryStock.WarehouseId), s => s.WarehouseId)
-                        }
-                    },
-                    {
-                        nameof(InventoryStock.WarehouseLocationId),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = "WarehouseLocation.Name", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryStock.WarehouseLocationId), // 篩選器用
-                            DisplayName = "庫位",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 4,
-                            FilterOrder = 4,
-                            HeaderStyle = "width: 120px;",
-                            Options = _warehouseLocations.Select(wl => new SelectOption 
-                            { 
-                                Text = $"{wl.Code} - {wl.Name}", 
-                                Value = wl.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(InventoryStock.WarehouseLocationId), s => s.WarehouseLocationId)
-                        }
-                    },
-                    {
-                        nameof(InventoryStock.CurrentStock),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.CurrentStock),
+                            PropertyName = nameof(InventoryStock.TotalCurrentStock),
                             DisplayName = "現有庫存",
-                            FilterType = SearchFilterType.NumberRange,
-                            TableOrder = 5,
-                            FilterOrder = 5,
-                            HeaderStyle = "width: 100px; text-align: right;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(InventoryStock.CurrentStock), s => s.CurrentStock.ToString())
-                        }
-                    },
-                    {
-                        nameof(InventoryStock.AvailableStock),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.AvailableStock),
-                            DisplayName = "可用庫存",
-                            TableOrder = 7,
-                            FilterOrder = 0, // 不在篩選器中顯示
+                            FilterType = SearchFilterType.Text,
+                            TableOrder = 3,
                             HeaderStyle = "width: 100px; text-align: right;",
                             ShowInFilter = false
                         }
@@ -150,8 +95,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(InventoryStock.MinStockLevel),
                             DisplayName = "最低量",
                             FilterType = SearchFilterType.NumberRange,
-                            TableOrder = 9,
-                            FilterOrder = 6,
+                            TableOrder = 5,
                             HeaderStyle = "width: 100px; text-align: right;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(InventoryStock.MinStockLevel), s => s.MinStockLevel.ToString(), allowNull: true)
@@ -164,41 +108,34 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(InventoryStock.MaxStockLevel),
                             DisplayName = "最高量",
                             FilterType = SearchFilterType.NumberRange,
-                            TableOrder = 10,
-                            FilterOrder = 7,
+                            TableOrder = 6,
                             HeaderStyle = "width: 100px; text-align: right;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(InventoryStock.MaxStockLevel), s => s.MaxStockLevel.ToString(), allowNull: true)
                         }
                     },
                     {
-                        nameof(InventoryStock.AverageCost),
+                        nameof(InventoryStock.WeightedAverageCost),
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = nameof(InventoryStock.AverageCost),
+                            PropertyName = nameof(InventoryStock.WeightedAverageCost),
                             DisplayName = "平均成本",
-                            FilterType = SearchFilterType.NumberRange,
-                            TableOrder = 11,
-                            FilterOrder = 8,
+                            FilterType = SearchFilterType.Text,
+                            TableOrder = 7,
                             HeaderStyle = "width: 120px; text-align: right;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(InventoryStock.AverageCost), s => s.AverageCost.ToString(), allowNull: true)
+                            ShowInFilter = false,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is InventoryStock stock)
+                                {
+                                    var value = stock.WeightedAverageCost.HasValue 
+                                        ? stock.WeightedAverageCost.Value.ToString("N2") 
+                                        : "-";
+                                    builder.AddContent(0, value);
+                                }
+                            })
                         }
                     },
-                    {
-                        nameof(InventoryStock.LastTransactionDate),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.LastTransactionDate),
-                            DisplayName = "最後交易日期",
-                            FilterType = SearchFilterType.DateRange,
-                            TableOrder = 12,
-                            FilterOrder = 9,
-                            HeaderStyle = "width: 130px;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
-                                model, query, nameof(InventoryStock.LastTransactionDate), s => s.LastTransactionDate)
-                        }
-                    }
                 };
             }
             catch (Exception ex)
@@ -234,11 +171,8 @@ namespace ERPCore2.FieldConfiguration
 
         protected override Func<IQueryable<InventoryStock>, IOrderedQueryable<InventoryStock>> GetDefaultSort()
         {
-            // 使用外鍵進行排序，避免導航屬性的 null reference 問題
-            return query => query
-                .OrderBy(s => s.ProductId)
-                .ThenBy(s => s.WarehouseId)
-                .ThenBy(s => s.WarehouseLocationId ?? 0); // null 值排在前面
+            // 按產品ID排序
+            return query => query.OrderBy(s => s.ProductId);
         }
     }
 }

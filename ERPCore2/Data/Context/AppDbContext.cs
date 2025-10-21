@@ -44,6 +44,7 @@ namespace ERPCore2.Data.Context
       public DbSet<Warehouse> Warehouses { get; set; }
       public DbSet<WarehouseLocation> WarehouseLocations { get; set; }
       public DbSet<InventoryStock> InventoryStocks { get; set; }
+      public DbSet<InventoryStockDetail> InventoryStockDetails { get; set; }
       public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
       public DbSet<InventoryReservation> InventoryReservations { get; set; }
       public DbSet<StockTaking> StockTakings { get; set; }
@@ -263,6 +264,70 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(wl => wl.Warehouse)
                         .WithMany(w => w.WarehouseLocations)
                         .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<InventoryStock>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 商品關聯
+                        entity.HasOne(invStock => invStock.Product)
+                        .WithMany()
+                        .HasForeignKey(invStock => invStock.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 庫存明細關聯
+                        entity.HasMany(invStock => invStock.InventoryStockDetails)
+                        .WithOne(isd => isd.InventoryStock)
+                        .HasForeignKey(isd => isd.InventoryStockId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<InventoryStockDetail>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 庫存主檔關聯
+                        entity.HasOne(isd => isd.InventoryStock)
+                        .WithMany(invStock => invStock.InventoryStockDetails)
+                        .HasForeignKey(isd => isd.InventoryStockId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        // 倉庫關聯
+                        entity.HasOne(isd => isd.Warehouse)
+                        .WithMany(w => w.InventoryStockDetails)
+                        .HasForeignKey(isd => isd.WarehouseId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        // 倉庫位置關聯
+                        entity.HasOne(isd => isd.WarehouseLocation)
+                        .WithMany()
+                        .HasForeignKey(isd => isd.WarehouseLocationId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.AverageCost)
+                        .HasPrecision(18, 4);
+                  });
+
+                  // 庫存交易記錄關聯
+                  modelBuilder.Entity<InventoryTransaction>(entity =>
+                  {
+                        // 庫存明細關聯
+                        entity.HasOne(it => it.InventoryStockDetail)
+                        .WithMany(isd => isd.InventoryTransactions)
+                        .HasForeignKey(it => it.InventoryStockDetailId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 庫存預留關聯
+                  modelBuilder.Entity<InventoryReservation>(entity =>
+                  {
+                        // 庫存明細關聯
+                        entity.HasOne(ir => ir.InventoryStockDetail)
+                        .WithMany(isd => isd.InventoryReservations)
+                        .HasForeignKey(ir => ir.InventoryStockDetailId)
+                        .OnDelete(DeleteBehavior.SetNull);
                   });
 
                   modelBuilder.Entity<UnitConversion>(entity =>

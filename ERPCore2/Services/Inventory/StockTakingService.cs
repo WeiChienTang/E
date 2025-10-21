@@ -207,7 +207,7 @@ namespace ERPCore2.Services
                     var takingDetails = stockItems.Select(item => new StockTakingDetail
                     {
                         StockTakingId = stockTaking.Id,
-                        ProductId = item.ProductId,
+                        ProductId = item.InventoryStock.ProductId,
                         WarehouseLocationId = item.WarehouseLocationId,
                         SystemStock = item.CurrentStock,
                         UnitCost = item.AverageCost,
@@ -819,11 +819,12 @@ namespace ERPCore2.Services
             return $"ST{date}001";
         }
 
-        private async Task<List<InventoryStock>> GetStockItemsForTakingAsync(AppDbContext context, int warehouseId, 
+        private async Task<List<InventoryStockDetail>> GetStockItemsForTakingAsync(AppDbContext context, int warehouseId, 
             int? warehouseLocationId, StockTakingTypeEnum takingType, List<int>? specificProductIds)
         {
-            var query = context.InventoryStocks
-                .Include(i => i.Product)
+            var query = context.InventoryStockDetails
+                .Include(i => i.InventoryStock)
+                .ThenInclude(s => s.Product)
                 .Where(i => i.WarehouseId == warehouseId);
 
             // 依盤點類型篩選
@@ -836,7 +837,7 @@ namespace ERPCore2.Services
 
                 case StockTakingTypeEnum.Specific:
                     if (specificProductIds != null && specificProductIds.Any())
-                        query = query.Where(i => specificProductIds.Contains(i.ProductId));
+                        query = query.Where(i => specificProductIds.Contains(i.InventoryStock.ProductId));
                     break;
 
                 case StockTakingTypeEnum.Cycle:
