@@ -272,7 +272,7 @@ namespace ERPCore2.Data.Context
                         
                         // 商品關聯
                         entity.HasOne(invStock => invStock.Product)
-                        .WithMany()
+                        .WithMany(p => p.InventoryStocks)
                         .HasForeignKey(invStock => invStock.ProductId)
                         .OnDelete(DeleteBehavior.Restrict);
 
