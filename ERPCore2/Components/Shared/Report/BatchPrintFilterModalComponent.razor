@@ -35,15 +35,14 @@
             <div class="modal-footer border-bottom border-top-0 d-flex align-items-center">
                 @* 按鈕組靠右對齊 *@
                 <div class="d-flex gap-2 ms-auto">
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                                          Text="@ConfirmButtonText" 
+                                          OnClick="HandleConfirm"
+                                          Title="確認並執行列印" />
                     <GenericButtonComponent Variant="ButtonVariant.Danger" 
                                           Text="@CancelButtonText" 
                                           OnClick="HandleCancel"
                                           Title="取消並關閉" />
-                    <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                                          Text="@ConfirmButtonText" 
-                                          IconClass="bi bi-printer me-2"
-                                          OnClick="HandleConfirm"
-                                          Title="確認並執行列印" />
                 </div>
             </div>
 
