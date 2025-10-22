@@ -1,4 +1,5 @@
 @* 進貨編輯模態組件 *@
+@using ERPCore2.Components.Shared.Buttons
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseOrderService PurchaseOrderService
@@ -52,6 +53,7 @@
                           GetStatusMessage="@GetPurchaseReceivingStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
+                          CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           OnPrint="@HandlePrint" />
 
@@ -87,6 +89,10 @@
     [Parameter] public int? PurchaseReceivingId { get; set; }
     [Parameter] public EventCallback<PurchaseReceiving> OnPurchaseReceivingSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    
+    // ===== 預填參數（用於從採購單轉單） =====
+    [Parameter] public int? PrefilledSupplierId { get; set; }
+    [Parameter] public int? PrefilledPurchaseOrderId { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>? editModalComponent;
@@ -111,6 +117,7 @@
     
     // ===== 明細載入狀態 =====
     private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入（包括退貨數量）
+    private bool shouldAutoLoadUnreceived = false;  // 標記是否需要自動載入未入庫商品
     
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
@@ -149,6 +156,20 @@
             {
                 await LoadAdditionalDataAsync();
                 await InitializeFormFieldsAsync();
+                
+                // 如果有預填廠商，在表單欄位初始化後再次更新選項
+                if (PrefilledSupplierId.HasValue && PrefilledSupplierId.Value > 0)
+                {
+                    await UpdatePurchaseOrderOptions(PrefilledSupplierId.Value);
+                    await UpdateFilterProductOptions(PrefilledSupplierId.Value);
+                    StateHasChanged(); // 強制更新 UI
+                }
+            }
+            else
+            {
+                // 🔑 Modal 關閉時重置自動載入相關標記
+                // 這樣下次開啟時就能重新觸發自動載入
+                shouldAutoLoadUnreceived = false;
             }
         }
         catch (Exception ex)
@@ -286,6 +307,88 @@
     }
 
     /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? GetCustomActionButtons() => __builder =>
+    {
+        @* 轉庫退出按鈕 - 只在進貨單已儲存時顯示 *@
+        @if (editModalComponent?.Entity != null && 
+            PurchaseReceivingId.HasValue)
+        {
+            <GenericButtonComponent Text="轉進貨退出" 
+                                  Variant="ButtonVariant.Warning" 
+                                  OnClick="HandleCreateReturnFromReceiving" />
+        }
+    };
+
+    /// <summary>
+    /// 從進貨單轉庫退出
+    /// </summary>
+    private async Task HandleCreateReturnFromReceiving()
+    {
+        try
+        {
+            // 1. 驗證進貨單資料
+            if (!PurchaseReceivingId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉庫退出：進貨單資料不存在");
+                return;
+            }
+            
+            // 2. 驗證廠商資料
+            if (editModalComponent.Entity.SupplierId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("進貨單缺少廠商資訊，無法轉庫退出");
+                return;
+            }
+            
+            // 3. 檢查是否有明細
+            if (!purchaseReceivingDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("進貨單沒有明細資料，無法轉庫退出");
+                return;
+            }
+            
+            // 4. 檢查是否有可退回的明細（已入庫數量 > 已退貨數量）
+            bool hasReturnableDetails = false;
+            foreach (var detail in purchaseReceivingDetails)
+            {
+                var returnedQty = await PurchaseReturnDetailService.GetReturnedQuantityByReceivingDetailAsync(detail.Id);
+                if (detail.ReceivedQuantity > returnedQty)
+                {
+                    hasReturnableDetails = true;
+                    break;
+                }
+            }
+            
+            if (!hasReturnableDetails)
+            {
+                await NotificationService.ShowWarningAsync("進貨單所有明細皆已完成退貨，無需再轉庫退出");
+                return;
+            }
+            
+            // 5. 呼叫進貨退出組件的公開方法
+            if (purchaseReturnEditModal != null)
+            {
+                await purchaseReturnEditModal.ShowAddModalWithPrefilledReceiving(
+                    editModalComponent.Entity.SupplierId,
+                    PurchaseReceivingId.Value
+                );
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("進貨退出組件未初始化，請重新整理頁面");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromReceiving), GetType(), 
+                additionalData: $"轉庫退出失敗 - ReceivingId: {PurchaseReceivingId}");
+            await NotificationService.ShowErrorAsync("轉庫退出時發生錯誤");
+        }
+    }
+
+    /// <summary>
     /// 取得進貨單狀態訊息（顯示鎖定狀態）
     /// </summary>
     private async Task<(string Message, GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>.BadgeVariant Variant, string IconClass)?> GetPurchaseReceivingStatusMessage()
@@ -336,7 +439,7 @@
     {
         try
         {
-            // 🔑 重置明細資料準備狀態
+            // 重置明細資料準備狀態
             isDetailDataReady = false;
             hasUndeletableDetails = false;
             
@@ -346,8 +449,13 @@
                 var newReceiving = new PurchaseReceiving
                 {
                     ReceiptNumber = await GenerateReceiptNumberAsync(),
-                    ReceiptDate = DateTime.Now
+                    ReceiptDate = DateTime.Now,
+                    SupplierId = PrefilledSupplierId ?? 0,
+                    PurchaseOrderId = PrefilledPurchaseOrderId
                 };
+                
+                // ✅ 移除此處的更新呼叫，因為 OnParametersSetAsync 已經處理
+                // 避免重複觸發 UpdatePurchaseOrderOptions 和 UpdateFilterProductOptions
                 
                 // 清空明細
                 purchaseReceivingDetails.Clear();
@@ -549,7 +657,7 @@
                     options.AddRange(filteredPurchaseOrders.Select(po => new SelectOption
                     {
                         Value = po.Id.ToString(),
-                        Text = $"{po.PurchaseOrderNumber} - {po.Supplier?.CompanyName ?? "未知廠商"}"
+                        Text = po.PurchaseOrderNumber
                     }));
                 }
                 // 如果沒有選擇廠商或選擇了無效的廠商，只顯示"請選擇..."選項
@@ -1389,7 +1497,7 @@
         {
             @if (editModalComponent?.Entity != null)
             {
-                // 🔑 關鍵改變：等待明細資料完全準備好（包括退貨數量等）後才渲染
+                // 關鍵改變：等待明細資料完全準備好（包括退貨數量等）後才渲染
                 @if (!isDetailDataReady)
                 {
                     <div class="d-flex justify-content-center align-items-center py-4">
@@ -1565,6 +1673,63 @@
         // 目前沒有特別需要重新載入的資料
         
         StateHasChanged();
+    }
+
+    // ===== 公開方法（供外部組件調用） =====
+    
+    /// <summary>
+    /// 組件渲染完成後的回調
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        // 自動載入邏輯已移至 ShowAddModalWithPrefilledOrder 方法中
+    }
+    
+    /// <summary>
+    /// 開啟新增進貨單 Modal 並預填採購單資訊（公開方法供外部調用）
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledOrder(int supplierId, int purchaseOrderId)
+    {
+        try
+        {
+            // 設定為新增模式
+            PurchaseReceivingId = null;
+            
+            // 設定預填值
+            PrefilledSupplierId = supplierId;
+            PrefilledPurchaseOrderId = purchaseOrderId;
+            
+            // 重置自動載入相關標記
+            shouldAutoLoadUnreceived = true;
+            
+            // 觸發 Modal 顯示
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+            
+            // 增加延遲時間以確保子組件完全就緒
+            await Task.Delay(500);
+            
+            // 檢查子組件是否已就緒並執行自動載入
+            if (purchaseReceivingDetailManager != null && shouldAutoLoadUnreceived)
+            {
+                shouldAutoLoadUnreceived = false;
+                
+                await InvokeAsync(async () =>
+                {
+                    await purchaseReceivingDetailManager.LoadAllUnreceivedItems();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledOrder), GetType(), 
+                additionalData: $"開啟預填進貨單Modal失敗 - SupplierId: {supplierId}, OrderId: {purchaseOrderId}");
+            await NotificationService.ShowErrorAsync("開啟進貨單時發生錯誤");
+        }
     }
 
     /// <summary>

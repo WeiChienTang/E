@@ -18,6 +18,8 @@
 @inject ISetoffDocumentService SetoffDocumentService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 
+@using ERPCore2.Components.Shared.Buttons
+
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
                           @ref="editModalComponent"
@@ -49,6 +51,7 @@
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
+                          CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           OnPrint="@HandlePrint"
                           >
@@ -127,7 +130,6 @@
     private bool showSetoffDocumentModal = false;
     private int? selectedSalesReturnId = null;
     private int? selectedSetoffDocumentId = null;
-    
     // 下拉選單選項（向下相容）
     private List<Customer> customers = new();
     private List<Company> companies = new();
@@ -869,23 +871,6 @@
     }
     
     /// <summary>
-    /// 處理銷貨退回儲存後的事件
-    /// </summary>
-    private async Task HandleSalesReturnSaved(SalesReturn savedReturn)
-    {
-        try
-        {
-            showSalesReturnModal = false;
-            await NotificationService.ShowSuccessAsync("銷貨退回單已更新");
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"處理銷貨退回儲存事件失敗：{ex.Message}");
-        }
-    }
-    
-    /// <summary>
     /// 處理沖款單儲存後的事件
     /// </summary>
     private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
@@ -1157,6 +1142,118 @@
             </div>
         }
     };
+
+    /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? GetCustomActionButtons() => __builder =>
+    {
+        @* 轉銷售退貨單按鈕 - 只在銷貨訂單已儲存時顯示 *@
+        @if (editModalComponent?.Entity != null && 
+            SalesOrderId.HasValue)
+        {
+            <GenericButtonComponent Text="轉銷貨退回" 
+                                  Variant="ButtonVariant.Warning" 
+                                  OnClick="HandleCreateReturnFromOrder" />
+        }
+    };
+
+    /// <summary>
+    /// 從銷貨訂單轉銷售退貨單
+    /// </summary>
+    private async Task HandleCreateReturnFromOrder()
+    {
+        try
+        {
+            // 1. 驗證銷貨訂單資料
+            if (!SalesOrderId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉銷售退貨單：銷貨訂單資料不存在");
+                return;
+            }
+            
+            // 2. 驗證客戶資料
+            if (editModalComponent.Entity.CustomerId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單缺少客戶資訊，無法轉銷售退貨單");
+                return;
+            }
+            
+            // 3. 檢查是否有明細資料
+            if (!salesOrderDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單沒有明細資料，無法轉銷售退貨單");
+                return;
+            }
+            
+            // 4. 檢查是否有可退貨的明細
+            // 注意：SalesOrderDetail 目前沒有 ReturnedQuantity 欄位
+            // 暫時允許所有有明細的訂單都可以轉退貨單
+            // 未來如果需要更精確的驗證，需要在 SalesOrderDetail 加入 ReturnedQuantity 欄位
+            // var hasReturnableDetails = salesOrderDetails.Any(detail => 
+            //     detail.ReturnedQuantity < detail.OrderQuantity
+            // );
+            // 
+            // if (!hasReturnableDetails)
+            // {
+            //     await NotificationService.ShowWarningAsync("銷貨訂單所有明細皆已完成退貨，無需再轉銷售退貨單");
+            //     return;
+            // }
+            
+            // 5. 呼叫銷售退貨單組件的公開方法
+            if (salesReturnEditModal != null)
+            {
+                await salesReturnEditModal.ShowAddModalWithPrefilledOrder(
+                    editModalComponent.Entity.CustomerId,
+                    SalesOrderId.Value
+                );
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("銷售退貨單組件未初始化，請重新整理頁面");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromOrder), GetType(), 
+                additionalData: $"轉銷售退貨單失敗 - OrderId: {SalesOrderId}");
+            await NotificationService.ShowErrorAsync("轉銷售退貨單時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 處理銷售退貨單儲存後的事件
+    /// </summary>
+    private async Task HandleSalesReturnSaved(SalesReturn savedReturn)
+    {
+        try
+        {
+            // 關閉 Modal
+            showSalesReturnModal = false;
+            selectedSalesReturnId = null;
+            
+            // 重新載入銷貨訂單明細以更新已退貨數量
+            if (SalesOrderId.HasValue)
+            {
+                await LoadSalesOrderDetails(SalesOrderId.Value);
+                
+                // 重新計算總金額和稅額
+                if (editModalComponent?.Entity != null)
+                {
+                    await HandleDetailsChanged(salesOrderDetails);
+                }
+                
+                await NotificationService.ShowSuccessAsync($"銷售退貨單 {savedReturn.SalesReturnNumber} 已更新");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesReturnSaved), GetType(), 
+                additionalData: $"處理銷售退貨單儲存事件失敗 - ReturnId: {savedReturn?.Id}");
+        }
+    }
 
     /// <summary>
     /// 處理列印事件

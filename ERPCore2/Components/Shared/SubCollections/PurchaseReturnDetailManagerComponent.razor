@@ -135,13 +135,13 @@ else
     /// 規則：
     /// 1. 必須選擇廠商
     /// 2. 必須有可載入的進貨明細
-    /// 3. 不可在編輯模式下使用（避免覆蓋現有資料）
+    /// 3. 編輯模式（有現有明細）時隱藏（避免覆蓋現有資料）
     /// </summary>
     private bool CanLoadAllReturnable => 
         EffectiveSupplierId.HasValue && 
         EffectiveSupplierId.Value > 0 && 
         GetAvailableReceivingDetails().Any() &&
-        !IsEditMode; // 編輯模式下隱藏此按鈕
+        !(ExistingReturnDetails?.Any() == true); // 編輯模式（有現有明細）時隱藏
     
     /// <summary>
     /// 檢查是否有被鎖定的明細（有沖款記錄的明細）
@@ -905,7 +905,10 @@ else
         await NotifyDetailsChanged();
     }
 
-    private async Task LoadAllReturnableItems()
+    /// <summary>
+    /// 載入所有可退回商品的主要方法（公開方法，供父組件調用）
+    /// </summary>
+    public async Task LoadAllReturnableItems()
     {
         try
         {

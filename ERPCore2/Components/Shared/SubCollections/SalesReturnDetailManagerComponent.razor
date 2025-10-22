@@ -727,16 +727,15 @@ else
     /// </summary>
     private string FormatOrderDetailDisplayText(SalesOrderDetail detail)
     {
-        if (detail?.Product == null || detail.SalesOrder == null) return "";
+        if (detail?.Product == null) return "";
         
         var product = detail.Product;
-        var orderNumber = detail.SalesOrder.SalesOrderNumber ?? "N/A";
         
         var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
             ? $"{product.Code} - {product.Name}"
             : product.Name ?? product.Code ?? "未知商品";
         
-        return $"[{orderNumber}] {productDisplay}";
+        return productDisplay;
     }
 
     // ===== 訂單明細選擇事件處理 =====
@@ -819,7 +818,10 @@ else
         await NotifyDetailsChanged();
     }
 
-    private async Task LoadAllReturnableItems()
+    /// <summary>
+    /// 載入所有可退貨商品的主要方法（公開方法，供父組件調用）
+    /// </summary>
+    public async Task LoadAllReturnableItems()
     {
         try
         {

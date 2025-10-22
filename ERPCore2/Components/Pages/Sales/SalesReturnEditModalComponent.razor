@@ -80,6 +80,10 @@
     [Parameter] public EventCallback<SalesReturn> OnSalesReturnSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
+    // ===== 預填參數（用於從銷貨訂單轉單） =====
+    [Parameter] public int? PrefilledCustomerId { get; set; }
+    [Parameter] public int? PrefilledSalesOrderId { get; set; }
+
     // ===== 內部狀態 =====
     private GenericEditModalComponent<SalesReturn, ISalesReturnService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
@@ -100,6 +104,9 @@
     private int? filterProductId = null;
     private int? FilterProductId => filterProductId;
     private int? FilterSalesOrderId = null;
+    
+    // ===== 明細載入狀態 =====
+    private bool shouldAutoLoadReturnable = false;  // 標記是否需要自動載入可退貨商品
     
     // ===== 稅率快取 =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
@@ -140,11 +147,73 @@
             {
                 await LoadAdditionalDataAsync();
                 await InitializeFormFieldsAsync();
+                
+                // 再次觸發選項更新（在表單欄位初始化後）
+                // 當從銷貨訂單轉單時，確保銷售單選項正確篩選
+                if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
+                {
+                    await UpdateSalesOrderOptions(PrefilledCustomerId.Value);
+                    await UpdateFilterProductOptions(PrefilledCustomerId.Value);
+                    StateHasChanged(); // 強制UI更新
+                }
+            }
+            else
+            {
+                // 🔑 Modal 關閉時重置自動載入相關標記
+                shouldAutoLoadReturnable = false;
             }
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 開啟新增銷售退貨單 Modal 並預填銷貨訂單資訊（公開方法供外部調用）
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledOrder(int customerId, int salesOrderId)
+    {
+        try
+        {
+            // 設定為新增模式
+            SalesReturnId = null;
+            
+            // 設定預填值
+            PrefilledCustomerId = customerId;
+            PrefilledSalesOrderId = salesOrderId;
+            
+            // 重置自動載入相關標記
+            shouldAutoLoadReturnable = true;
+            
+            // 觸發 Modal 顯示
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+            
+            // 🔑 等待 Modal 和子組件完全渲染後再觸發自動載入
+            // 增加延遲時間以確保子組件完全就緒（500ms 為經驗值，可應對大多數情況）
+            await Task.Delay(500);
+            
+            // 檢查子組件是否已就緒並執行自動載入
+            if (salesReturnDetailManager != null && shouldAutoLoadReturnable)
+            {
+                shouldAutoLoadReturnable = false;
+                
+                await InvokeAsync(async () =>
+                {
+                    // 調用子組件的公開方法載入可退貨商品
+                    await salesReturnDetailManager.LoadAllReturnableItems();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledOrder), GetType(), 
+                additionalData: $"開啟預填銷售退貨單Modal失敗 - CustomerId: {customerId}, OrderId: {salesOrderId}");
+            await NotificationService.ShowErrorAsync("開啟銷售退貨單時發生錯誤");
         }
     }
 
@@ -299,6 +368,19 @@
                     TotalReturnAmount = 0,
                     ReturnReasonId = null // 預設為 null，選擇性填寫
                 };
+                
+                // 🔑 使用預填參數（從銷貨訂單轉單時）
+                if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
+                {
+                    newSalesReturn.CustomerId = PrefilledCustomerId.Value;
+                }
+                
+                if (PrefilledSalesOrderId.HasValue && PrefilledSalesOrderId.Value > 0)
+                {
+                    newSalesReturn.SalesOrderId = PrefilledSalesOrderId.Value;
+                    // 設定篩選條件，讓明細管理器只顯示這張銷貨訂單的可退貨商品
+                    FilterSalesOrderId = PrefilledSalesOrderId.Value;
+                }
                 
                 // 初始化空的明細列表
                 salesReturnDetails = new List<SalesReturnDetail>();
@@ -524,7 +606,7 @@
             {
                 salesOrderField.Options = filteredSalesOrders.Select(so => new SelectOption
                 {
-                    Text = $"{so.SalesOrderNumber} - {so.Customer?.CompanyName ?? ""}",
+                    Text = so.SalesOrderNumber,
                     Value = so.Id.ToString()
                 }).ToList();
                 
@@ -604,9 +686,10 @@
                 new()
                 {
                     PropertyName = nameof(SalesReturn.SalesOrderId),
-                    Label = "銷售單",
+                    Label = "篩選銷售單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
+                    Options = new List<SelectOption>(), // 初始化空選項，稍後由 UpdateSalesOrderOptions 更新
                     HelpText = "可選擇特定銷售單進行篩選，或留空使用多銷售單模式"
                 },
                 new()

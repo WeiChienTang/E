@@ -107,12 +107,10 @@
                             }
                         }
                         
-                        @* 列印按鈕：無論審核狀態如何都顯示 *@
                         @if (ShowPrintButton)
                         {
                             <GenericButtonComponent Text="@PrintButtonText" 
                                                   Variant="ButtonVariant.Info" 
-                                                  IconClass="fas fa-print"
                                                   OnClick="HandlePrint" 
                                                   IsDisabled="@(IsSubmitting || IsLoading)" />
                         }

@@ -1,4 +1,5 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Components.Shared.Buttons
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -47,7 +48,8 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnReject="@HandlePurchaseOrderReject"
-                          FormHeaderContent="@GetWarningMessage()">
+                          FormHeaderContent="@GetWarningMessage()"
+                          CustomActionButtons="@GetCustomActionButtons()">
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -1146,6 +1148,22 @@
     };
     
     /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? GetCustomActionButtons() => __builder =>
+    {
+        @* 轉進貨單按鈕 - 只在採購單已儲存且已核准時顯示 *@
+        @if (editModalComponent?.Entity != null && 
+            PurchaseOrderId.HasValue && 
+            editModalComponent.Entity.IsApproved)
+        {
+            <GenericButtonComponent Text="轉進貨" 
+                                  Variant="ButtonVariant.Success" 
+                                  OnClick="HandleCreateReceivingFromOrder" />
+        }
+    };
+    
+    /// <summary>
     /// 取得當前使用者ID
     /// </summary>
     private async Task<int?> GetCurrentUserIdAsync()
@@ -1213,6 +1231,7 @@
         {
             // 關閉 Modal
             showPurchaseReceivingModal = false;
+            selectedPurchaseReceivingId = null;
             
             // 重新載入採購單明細以更新已收貨數量
             if (PurchaseOrderId.HasValue)
@@ -1229,6 +1248,71 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReceivingSaved), GetType(), 
                 additionalData: $"處理進貨單儲存事件失敗 - ReceivingId: {savedReceiving?.Id}");
+        }
+    }
+    
+    /// <summary>
+    /// 從採購單轉進貨單
+    /// </summary>
+    private async Task HandleCreateReceivingFromOrder()
+    {
+        try
+        {
+            if (!PurchaseOrderId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉進貨單：採購單資料不存在");
+                return;
+            }
+            
+            if (!editModalComponent.Entity.IsApproved)
+            {
+                await NotificationService.ShowWarningAsync("只有已核准的採購單才能轉進貨單");
+                return;
+            }
+            
+            // 檢查是否有廠商資料
+            if (editModalComponent.Entity.SupplierId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("採購單缺少廠商資訊，無法轉進貨單");
+                return;
+            }
+            
+            // 🔑 檢查是否還有未完成的明細（還需要入庫的商品）
+            if (!purchaseOrderDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("採購單沒有明細資料，無法轉進貨單");
+                return;
+            }
+            
+            // 檢查是否所有明細都已完成進貨
+            var hasIncompleteDetails = purchaseOrderDetails.Any(detail => 
+                detail.ReceivedQuantity < detail.OrderQuantity
+            );
+            
+            if (!hasIncompleteDetails)
+            {
+                await NotificationService.ShowWarningAsync("採購單所有明細皆已完成進貨，無需再轉進貨單");
+                return;
+            }
+            
+            // 使用公開方法開啟進貨單 Modal（新增模式，但預填廠商和採購單資訊）
+            if (purchaseReceivingEditModal != null)
+            {
+                await purchaseReceivingEditModal.ShowAddModalWithPrefilledOrder(
+                    editModalComponent.Entity.SupplierId,
+                    PurchaseOrderId.Value
+                );
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("進貨單組件未初始化，請重新整理頁面");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReceivingFromOrder), GetType(), 
+                additionalData: $"轉進貨單失敗 - OrderId: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync("轉進貨單時發生錯誤");
         }
     }
 }

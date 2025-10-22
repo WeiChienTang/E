@@ -1781,9 +1781,9 @@ else
     }
 
     /// <summary>
-    /// 載入所有未入庫商品的主要方法
+    /// 載入所有未入庫商品的主要方法（公開方法，供父組件調用）
     /// </summary>
-    private async Task LoadAllUnreceivedItems()
+    public async Task LoadAllUnreceivedItems()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
         {
