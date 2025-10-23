@@ -29,6 +29,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "最後交易日期")]
         public DateTime? LastTransactionDate { get; set; }
         
+        // === 庫存警戒線設定 ===
+        [Display(Name = "最低庫存警戒線")]
+        public int? MinStockLevel { get; set; }
+        
+        [Display(Name = "最高庫存警戒線")]
+        public int? MaxStockLevel { get; set; }
+        
         // === 批號追蹤欄位 ===
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]

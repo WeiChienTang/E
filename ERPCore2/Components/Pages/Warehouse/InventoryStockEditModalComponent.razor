@@ -340,25 +340,6 @@
                     ActionButtons = await GetProductActionButtonsAsync()
                 },
                 
-                // 庫存警戒線區段
-                new()
-                {
-                    PropertyName = nameof(InventoryStock.MinStockLevel),
-                    Label = "最低庫存量",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入最低庫存量（選填）",
-                    IsRequired = false,
-                    HelpText = "當庫存低於此數量時會發出警告",
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryStock.MaxStockLevel),
-                    Label = "最高庫存量",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入最高庫存量（選填）",
-                    IsRequired = false,
-                    HelpText = "建議的最大庫存數量",
-                },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(InventoryStock.TotalCurrentStock),
@@ -375,8 +356,6 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(InventoryStock.ProductId), "基本資訊" },             
-                { nameof(InventoryStock.MinStockLevel), "基本資訊" },
-                { nameof(InventoryStock.MaxStockLevel), "基本資訊" },
                 { nameof(InventoryStock.TotalCurrentStock), "基本資訊" },
                 { nameof(InventoryStock.Remarks), "額外資料" }
             };

@@ -27,13 +27,6 @@ namespace ERPCore2.Data.Entities
         [NotMapped]
         public int TotalInTransitStock => InventoryStockDetails?.Sum(d => d.InTransitStock) ?? 0;
         
-        // === 主檔級別的設定欄位 ===
-        [Display(Name = "最低庫存警戒線")]
-        public int? MinStockLevel { get; set; }
-        
-        [Display(Name = "最高庫存警戒線")]
-        public int? MaxStockLevel { get; set; }
-        
         [Display(Name = "加權平均成本")]
         [Column(TypeName = "decimal(18,4)")]
         [NotMapped]

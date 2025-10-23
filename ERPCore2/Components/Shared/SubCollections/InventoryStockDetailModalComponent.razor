@@ -49,6 +49,8 @@
     [Parameter] public string ReservedStockPropertyName { get; set; } = "ReservedStock";
     [Parameter] public string InTransitStockPropertyName { get; set; } = "InTransitStock";
     [Parameter] public string AverageCostPropertyName { get; set; } = "AverageCost";
+    [Parameter] public string MinStockLevelPropertyName { get; set; } = "MinStockLevel";
+    [Parameter] public string MaxStockLevelPropertyName { get; set; } = "MaxStockLevel";
     [Parameter] public string BatchNumberPropertyName { get; set; } = "BatchNumber";
     [Parameter] public string BatchDatePropertyName { get; set; } = "BatchDate";
     [Parameter] public string ExpiryDatePropertyName { get; set; } = "ExpiryDate";
@@ -235,17 +237,61 @@
             });
         }
 
+        // 最低庫存警戒線欄位
+        columns.Add(new() 
+        { 
+            Title = "最低警戒線", 
+            PropertyName = "MinStockLevel",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item => 
+            {
+                var stockItem = (StockDetailItem)item;
+                var value = stockItem.MinStockLevel?.ToString() ?? "";
+                
+                return @<input type="number"
+                               class="form-control form-control-sm text-end"
+                               value="@value"
+                               @oninput="@(e => OnMinStockLevelInput(stockItem, e.Value?.ToString()))"
+                               readonly="@IsReadOnly"
+                               min="0" />;
+            }
+        });
+
+        // 最高庫存警戒線欄位
+        columns.Add(new() 
+        { 
+            Title = "最高警戒線", 
+            PropertyName = "MaxStockLevel",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item => 
+            {
+                var stockItem = (StockDetailItem)item;
+                var value = stockItem.MaxStockLevel?.ToString() ?? "";
+                
+                return @<input type="number"
+                               class="form-control form-control-sm text-end"
+                               value="@value"
+                               @oninput="@(e => OnMaxStockLevelInput(stockItem, e.Value?.ToString()))"
+                               readonly="@IsReadOnly"
+                               min="0" />;
+            }
+        });
+
         return columns;
     }
 
     private RenderFragment<StockDetailItem> GetCustomActionsTemplate => item => __builder =>
     {
         <GenericButtonComponent Variant="ButtonVariant.Danger"
-                               Icon="bi bi-trash text-white"
+                               IconClass="bi bi-trash text-white"
                                Size="ButtonSize.Large"
                                OnClick="@(() => HandleItemDelete(item))"
                                Title="刪除"
-                               IsDisabled="@(IsReadOnly || !CanDeleteItem(item, out _))" />
+                               IsDisabled="@(IsReadOnly || !CanDeleteItem(item, out _))"
+                               StopPropagation="true"
+                               CssClass="btn-square" />
     };
 
     private async Task HandleItemDelete(StockDetailItem item)
@@ -279,6 +325,8 @@
                 ReservedStock = GetPropertyValue<int>(detail, ReservedStockPropertyName),
                 InTransitStock = GetPropertyValue<int>(detail, InTransitStockPropertyName),
                 AverageCost = GetPropertyValue<decimal?>(detail, AverageCostPropertyName),
+                MinStockLevel = GetPropertyValue<int?>(detail, MinStockLevelPropertyName),
+                MaxStockLevel = GetPropertyValue<int?>(detail, MaxStockLevelPropertyName),
                 BatchNumber = GetPropertyValue<string>(detail, BatchNumberPropertyName),
                 BatchDate = GetPropertyValue<DateTime?>(detail, BatchDatePropertyName),
                 ExpiryDate = GetPropertyValue<DateTime?>(detail, ExpiryDatePropertyName),
@@ -324,6 +372,8 @@
             SetPropertyValue(detail, ReservedStockPropertyName, item.ReservedStock);
             SetPropertyValue(detail, InTransitStockPropertyName, item.InTransitStock);
             SetPropertyValue(detail, AverageCostPropertyName, item.AverageCost);
+            SetPropertyValue(detail, MinStockLevelPropertyName, item.MinStockLevel);
+            SetPropertyValue(detail, MaxStockLevelPropertyName, item.MaxStockLevel);
             SetPropertyValue(detail, BatchNumberPropertyName, item.BatchNumber);
             SetPropertyValue(detail, BatchDatePropertyName, item.BatchDate);
             SetPropertyValue(detail, ExpiryDatePropertyName, item.ExpiryDate);
@@ -507,6 +557,46 @@
         else if (decimal.TryParse(value, out var cost))
         {
             item.AverageCost = cost;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnMinStockLevelInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.MinStockLevel = null;
+        }
+        else if (int.TryParse(value, out var level))
+        {
+            item.MinStockLevel = level;
+        }
+        
+        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
+            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnMaxStockLevelInput(StockDetailItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.MaxStockLevel = null;
+        }
+        else if (int.TryParse(value, out var level))
+        {
+            item.MaxStockLevel = level;
         }
         
         AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
@@ -835,6 +925,8 @@
         public int ReservedStock { get; set; } = 0;
         public int InTransitStock { get; set; } = 0;
         public decimal? AverageCost { get; set; }
+        public int? MinStockLevel { get; set; }
+        public int? MaxStockLevel { get; set; }
         public string? BatchNumber { get; set; }
         public DateTime? BatchDate { get; set; }
         public DateTime? ExpiryDate { get; set; }

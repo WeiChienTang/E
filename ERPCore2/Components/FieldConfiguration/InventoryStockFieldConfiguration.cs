@@ -89,32 +89,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(InventoryStock.MinStockLevel),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.MinStockLevel),
-                            DisplayName = "最低量",
-                            FilterType = SearchFilterType.NumberRange,
-                            TableOrder = 5,
-                            HeaderStyle = "width: 100px; text-align: right;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(InventoryStock.MinStockLevel), s => s.MinStockLevel.ToString(), allowNull: true)
-                        }
-                    },
-                    {
-                        nameof(InventoryStock.MaxStockLevel),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = nameof(InventoryStock.MaxStockLevel),
-                            DisplayName = "最高量",
-                            FilterType = SearchFilterType.NumberRange,
-                            TableOrder = 6,
-                            HeaderStyle = "width: 100px; text-align: right;",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(InventoryStock.MaxStockLevel), s => s.MaxStockLevel.ToString(), allowNull: true)
-                        }
-                    },
-                    {
                         nameof(InventoryStock.WeightedAverageCost),
                         new FieldDefinition<InventoryStock>
                         {

@@ -63,6 +63,12 @@ namespace ERPCore2.Services
         Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, int quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null, int? salesOrderDetailId = null);
+        
+        // 警戒線管理
+        Task<List<InventoryStockDetail>> GetStockDetailsWithoutAlertAsync();
+        Task<ServiceResult> BatchUpdateStockLevelAlertsAsync(List<(int detailId, int? minLevel, int? maxLevel)> updates);
+        Task<List<InventoryStockDetail>> GetLowStockDetailsAsync();
+        Task<List<InventoryStockDetail>> GetOverStockDetailsAsync();
     }
 }
 

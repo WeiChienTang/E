@@ -6,6 +6,7 @@
 @inject INotificationService NotificationService
 
 @using ERPCore2.Models
+@using ERPCore2.Components.Shared.Warehouse
 
 @rendermode InteractiveServer
 
@@ -37,6 +38,16 @@
                                  OnInventoryStockSaved="@OnInventoryStockSavedHandler"
                                  OnCancel="@modalHandler.OnModalCancelAsync" />
 
+@* 庫存警戒線設定 Modal *@
+<StockLevelAlertModalComponent IsVisible="@showStockLevelAlertModal"
+                              IsVisibleChanged="@((bool visible) => showStockLevelAlertModal = visible)"
+                              OnSaved="@OnStockLevelAlertSaved" />
+
+@* 庫存警戒檢視 Modal *@
+<StockAlertViewModalComponent IsVisible="@showStockAlertViewModal"
+                             IsVisibleChanged="@((bool visible) => showStockAlertViewModal = visible)"
+                             AlertType="@currentAlertType" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<InventoryStock, IInventoryStockService> indexComponent = default!;
@@ -44,6 +55,9 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingInventoryStockId = null;
+    private bool showStockLevelAlertModal = false;
+    private bool showStockAlertViewModal = false;
+    private StockAlertViewModalComponent.StockAlertType currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
     
     // Modal 處理器
     private ModalHandler<InventoryStock, GenericIndexPageComponent<InventoryStock, IInventoryStockService>> modalHandler = default!;
@@ -215,16 +229,7 @@
                     DataKey = "TotalInventoryValue",
                     BorderColor = "success",
                     TextColor = "success",
-                    IsCurrency = true,
-                    OnClick = EventCallback.Factory.Create(this, HandleTotalValueClick)
-                },
-                new()
-                {
-                    Title = "低庫存警戒",
-                    DataKey = "LowStockCount",
-                    BorderColor = "warning",
-                    TextColor = "warning",
-                    OnClick = EventCallback.Factory.Create(this, HandleLowStockClick)
+                    IsCurrency = true
                 },
                 new()
                 {
@@ -236,7 +241,15 @@
                 },
                 new()
                 {
-                    Title = "庫存過多",
+                    Title = "低庫存警戒",
+                    DataKey = "LowStockCount",
+                    BorderColor = "warning",
+                    TextColor = "warning",
+                    OnClick = EventCallback.Factory.Create(this, HandleLowStockClick)
+                },
+                new()
+                {
+                    Title = "庫存過多警戒",
                     DataKey = "OverStockCount",
                     BorderColor = "info",
                     TextColor = "info",
@@ -272,26 +285,13 @@
     }
     
     
-    private async Task HandleTotalValueClick()
-    {
-        try
-        {
-            // 可以導航到庫存價值報表或顯示詳細資訊
-            await NotificationService.ShowInfoAsync("庫存總價值詳細資訊功能開發中...");
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTotalValueClick), GetType());
-        }
-    }
-    
     private async Task HandleLowStockClick()
     {
         try
         {
-            // 篩選顯示低庫存商品
-            // 這裡需要透過篩選器來實現，暫時顯示訊息
-            await NotificationService.ShowWarningAsync("低庫存商品篩選功能開發中...");
+            currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
+            showStockAlertViewModal = true;
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -303,7 +303,8 @@
     {
         try
         {
-            await NotificationService.ShowInfoAsync("發現尚未設定警戒線的商品。建議您為這些商品設定最低和最高庫存警戒線，以便更好地管理庫存。");
+            showStockLevelAlertModal = true;
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -311,11 +312,32 @@
         }
     }
     
+    /// <summary>
+    /// 處理警戒線設定儲存後的刷新
+    /// </summary>
+    private async Task OnStockLevelAlertSaved()
+    {
+        try
+        {
+            // 刷新統計資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnStockLevelAlertSaved), GetType());
+        }
+    }
+    
     private async Task HandleOverStockClick()
     {
         try
         {
-            await NotificationService.ShowWarningAsync("發現庫存超過最高警戒線的商品。這可能導致資金積壓，建議檢查是否需要調整採購策略。");
+            currentAlertType = StockAlertViewModalComponent.StockAlertType.OverStock;
+            showStockAlertViewModal = true;
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {

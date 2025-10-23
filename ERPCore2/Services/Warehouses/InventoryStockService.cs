@@ -539,8 +539,9 @@ namespace ERPCore2.Services
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.WarehouseLocation)
-                    .Where(i => i.MinStockLevel.HasValue && 
-                              i.TotalCurrentStock <= i.MinStockLevel.Value)
+                    .Where(i => i.InventoryStockDetails.Any(d => 
+                              d.MinStockLevel.HasValue && 
+                              d.CurrentStock <= d.MinStockLevel.Value))
                     .OrderBy(i => i.Product.Code)
                     .ToListAsync();
             }
@@ -838,8 +839,6 @@ namespace ERPCore2.Services
                         stock = new InventoryStock
                         {
                             ProductId = productId,
-                            MinStockLevel = 0,
-                            MaxStockLevel = 0,
                             Status = EntityStatus.Active
                         };
                         await context.InventoryStocks.AddAsync(stock);
@@ -1415,8 +1414,9 @@ namespace ERPCore2.Services
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.WarehouseLocation)
-                    .Where(i => i.MinStockLevel.HasValue && 
-                               i.TotalCurrentStock <= i.MinStockLevel.Value)
+                    .Where(i => i.InventoryStockDetails.Any(d => 
+                               d.MinStockLevel.HasValue && 
+                               d.CurrentStock <= d.MinStockLevel.Value))
                     .OrderBy(i => i.TotalCurrentStock)
                     .ThenBy(i => i.Product.Code)
                     .ToListAsync();
@@ -1458,10 +1458,10 @@ namespace ERPCore2.Services
                     .Where(d => d.AverageCost.HasValue)
                     .Sum(d => d.CurrentStock * (d.AverageCost ?? 0));
 
-                // 低庫存商品數量
+                // 低庫存警戒：計算有多少筆庫位明細低於最低警戒線
                 var lowStockCount = allStocks
-                    .Where(i => i.MinStockLevel.HasValue && i.TotalCurrentStock <= i.MinStockLevel.Value)
-                    .Count();
+                    .SelectMany(i => i.InventoryStockDetails ?? Enumerable.Empty<InventoryStockDetail>())
+                    .Count(d => d.MinStockLevel.HasValue && d.CurrentStock <= d.MinStockLevel.Value);
 
                 // 零庫存商品數量
                 var zeroStockCount = allStocks
@@ -1471,18 +1471,18 @@ namespace ERPCore2.Services
                 // 倉庫數量
                 var warehouseCount = await context.Warehouses.CountAsync();
 
-                // 未設定警戒線的商品數量
+                // 未設警戒線：計算有多少筆庫位明細未設定任何警戒線
                 var noWarningLevelCount = allStocks
-                    .Where(i => (!i.MinStockLevel.HasValue || i.MinStockLevel.Value <= 0 ||
-                                !i.MaxStockLevel.HasValue || i.MaxStockLevel.Value <= 0))
-                    .Count();
+                    .SelectMany(i => i.InventoryStockDetails ?? Enumerable.Empty<InventoryStockDetail>())
+                    .Count(d => (!d.MinStockLevel.HasValue || d.MinStockLevel.Value == 0) &&
+                               (!d.MaxStockLevel.HasValue || d.MaxStockLevel.Value == 0));
 
-                // 超過最高警戒線的商品數量
+                // 庫存過多警戒：計算有多少筆庫位明細超過最高警戒線
                 var overStockCount = allStocks
-                    .Where(i => i.MaxStockLevel.HasValue &&
-                               i.MaxStockLevel.Value > 0 &&
-                               i.TotalCurrentStock > i.MaxStockLevel.Value)
-                    .Count();
+                    .SelectMany(i => i.InventoryStockDetails ?? Enumerable.Empty<InventoryStockDetail>())
+                    .Count(d => d.MaxStockLevel.HasValue &&
+                               d.MaxStockLevel.Value > 0 &&
+                               d.CurrentStock > d.MaxStockLevel.Value);
 
                 // 呆滯庫存數量（30天沒有異動）- 從明細判斷
                 var staleStockCount = allStocks
@@ -1847,6 +1847,178 @@ namespace ERPCore2.Services
                     ProductId = entity.ProductId
                 });
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
+            }
+        }
+
+        #endregion
+
+        #region 警戒線管理方法
+
+        /// <summary>
+        /// 取得所有未設定警戒線的庫存明細
+        /// </summary>
+        public async Task<List<InventoryStockDetail>> GetStockDetailsWithoutAlertAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.InventoryStockDetails
+                    .Include(d => d.InventoryStock)
+                        .ThenInclude(s => s.Product)
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.WarehouseLocation)
+                    .Where(d => (!d.MinStockLevel.HasValue || d.MinStockLevel.Value == 0) &&
+                               (!d.MaxStockLevel.HasValue || d.MaxStockLevel.Value == 0))
+                    .OrderBy(d => d.InventoryStock.Product.Name)
+                    .ThenBy(d => d.Warehouse.Name)
+                    .ThenBy(d => d.WarehouseLocation!.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetStockDetailsWithoutAlertAsync), GetType(), _logger);
+                return new List<InventoryStockDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 批次更新庫存明細的警戒線設定
+        /// </summary>
+        public async Task<ServiceResult> BatchUpdateStockLevelAlertsAsync(List<(int detailId, int? minLevel, int? maxLevel)> updates)
+        {
+            try
+            {
+                if (updates == null || !updates.Any())
+                {
+                    return ServiceResult.Failure("沒有需要更新的資料");
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 取得所有需要更新的明細
+                var detailIds = updates.Select(u => u.detailId).ToList();
+                var details = await context.InventoryStockDetails
+                    .Where(d => detailIds.Contains(d.Id))
+                    .ToListAsync();
+
+                if (!details.Any())
+                {
+                    return ServiceResult.Failure("找不到需要更新的庫存明細");
+                }
+
+                // 驗證並更新警戒線設定
+                var errors = new List<string>();
+                var updatedCount = 0;
+
+                foreach (var update in updates)
+                {
+                    var detail = details.FirstOrDefault(d => d.Id == update.detailId);
+                    if (detail == null)
+                    {
+                        errors.Add($"找不到ID為 {update.detailId} 的庫存明細");
+                        continue;
+                    }
+
+                    // 驗證警戒線設定
+                    if (update.minLevel.HasValue && update.minLevel.Value < 0)
+                    {
+                        errors.Add($"明細 {detail.Id} 的最低警戒線不能為負數");
+                        continue;
+                    }
+
+                    if (update.maxLevel.HasValue && update.maxLevel.Value < 0)
+                    {
+                        errors.Add($"明細 {detail.Id} 的最高警戒線不能為負數");
+                        continue;
+                    }
+
+                    if (update.minLevel.HasValue && update.maxLevel.HasValue && 
+                        update.minLevel.Value > update.maxLevel.Value)
+                    {
+                        errors.Add($"明細 {detail.Id} 的最低警戒線不能大於最高警戒線");
+                        continue;
+                    }
+
+                    // 更新警戒線
+                    detail.MinStockLevel = update.minLevel;
+                    detail.MaxStockLevel = update.maxLevel;
+                    detail.UpdatedAt = DateTime.UtcNow;
+                    updatedCount++;
+                }
+
+                if (errors.Any())
+                {
+                    return ServiceResult.Failure($"部分更新失敗：{string.Join(", ", errors)}");
+                }
+
+                // 儲存變更
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdateStockLevelAlertsAsync), GetType(), _logger);
+                return ServiceResult.Failure("批次更新警戒線設定時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 取得所有低庫存的庫存明細（當前庫存低於最低警戒線）
+        /// </summary>
+        public async Task<List<InventoryStockDetail>> GetLowStockDetailsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.InventoryStockDetails
+                    .Include(d => d.InventoryStock)
+                        .ThenInclude(s => s.Product)
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.WarehouseLocation)
+                    .Where(d => d.MinStockLevel.HasValue && 
+                               d.MinStockLevel.Value > 0 && 
+                               d.CurrentStock < d.MinStockLevel.Value)
+                    .OrderBy(d => d.InventoryStock.Product.Name)
+                    .ThenBy(d => d.Warehouse.Name)
+                    .ThenBy(d => d.WarehouseLocation!.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLowStockDetailsAsync), GetType(), _logger);
+                return new List<InventoryStockDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 取得所有庫存過多的庫存明細（當前庫存高於最高警戒線）
+        /// </summary>
+        public async Task<List<InventoryStockDetail>> GetOverStockDetailsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.InventoryStockDetails
+                    .Include(d => d.InventoryStock)
+                        .ThenInclude(s => s.Product)
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.WarehouseLocation)
+                    .Where(d => d.MaxStockLevel.HasValue && 
+                               d.MaxStockLevel.Value > 0 && 
+                               d.CurrentStock > d.MaxStockLevel.Value)
+                    .OrderBy(d => d.InventoryStock.Product.Name)
+                    .ThenBy(d => d.Warehouse.Name)
+                    .ThenBy(d => d.WarehouseLocation!.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOverStockDetailsAsync), GetType(), _logger);
+                return new List<InventoryStockDetail>();
             }
         }
 
