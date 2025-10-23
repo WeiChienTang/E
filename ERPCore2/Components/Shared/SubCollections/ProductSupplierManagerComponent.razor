@@ -147,6 +147,7 @@
                     return @<select class="form-select form-select-sm" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
+                                    title="選擇供應此產品的廠商"
                                     @onchange="@(async (e) => await OnSupplierChanged((productSupplier, e.Value)))">
                         <option value="">請選擇廠商</option>
                         @foreach (var option in Options)
@@ -173,6 +174,7 @@
                                    class="form-control form-control-sm" 
                                    value="@value"
                                    placeholder="請輸入代碼"
+                                   title="輸入廠商對此產品的商品代碼或料號"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -195,6 +197,7 @@
                                    value="@value"
                                    min="0"
                                    step="1"
+                                   title="輸入廠商對此產品的報價金額"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -216,6 +219,7 @@
                                    class="form-control form-control-sm" 
                                    value="@value"
                                    min="0"
+                                   title="輸入廠商的交貨時間（以天為單位）"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnLeadTimeChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -237,6 +241,7 @@
                                    class="form-control form-control-sm" 
                                    value="@value"
                                    min="0"
+                                   title="輸入廠商要求的最小訂購數量"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnMinOrderQuantityChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -258,6 +263,7 @@
                     return @<select class="form-select form-select-sm" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
+                                    title="選擇廠商供應此產品的計量單位"
                                     @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
                         <option value="">請選擇單位</option>
                         @foreach (var unit in UnitOptions)
