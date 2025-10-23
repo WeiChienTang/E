@@ -1,0 +1,99 @@
+/* 標籤頁樣式優化 */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+    background-color: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: #0d6efd;
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom-color: #0d6efd;
+    color: #0d6efd;
+    background-color: transparent;
+    font-weight: 600;
+}
+
+.nav-tabs .nav-link i {
+    font-size: 0.9rem;
+}
+
+/* Tab 內容區域 */
+.tab-content {
+    padding: 1.5rem 0;
+}
+
+/* 卡片頭部優化 */
+.card-header {
+    padding: 0;
+}
+
+.card-header-tabs {
+    margin-bottom: -1px;
+}
+
+/* 表單區域優化 */
+.form-label {
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* 按鈕群組 */
+.d-flex.gap-2 {
+    gap: 0.5rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .nav-tabs .nav-link i {
+        display: none;
+    }
+    
+    .tab-content {
+        padding: 1rem 0;
+    }
+}
+
+/* Alert 樣式優化 */
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-info {
+    border-left-color: #0dcaf0;
+}
+
+/* 卡片陰影 */
+.card.shadow-sm {
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.075) !important;
+}
+
+/* 資訊區域 */
+.card-footer {
+    font-size: 0.875rem;
+}
+
+.card-footer strong {
+    font-weight: 600;
+}

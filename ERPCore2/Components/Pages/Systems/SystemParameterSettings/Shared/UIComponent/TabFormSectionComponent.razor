@@ -1,0 +1,62 @@
+@* Tab 表單區段元件 - 用於組織相關的表單欄位 *@
+
+<div class="mb-4 @CssClass">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="mb-3">
+            <h6 class="text-primary border-bottom pb-2 mb-3">
+                @if (!string.IsNullOrEmpty(IconClass))
+                {
+                    <i class="@IconClass me-2"></i>
+                }
+                @Title
+            </h6>
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <p class="text-muted small mb-0">@Description</p>
+            }
+        </div>
+    }
+    
+    <div class="@ContentCssClass">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// 區段標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 區段說明文字
+    /// </summary>
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 標題圖示 CSS 類別 (Font Awesome)
+    /// </summary>
+    [Parameter]
+    public string IconClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 區段容器的 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 內容區域的 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string ContentCssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 區段內容（通常包含多個 TabFormFieldComponent）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

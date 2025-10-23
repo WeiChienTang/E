@@ -1,0 +1,86 @@
+@* Tab 表單欄位統一元件 - 提供一致的欄位布局和樣式 *@
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="row mb-4">
+    <div class="@LabelColumnCssClass">
+        <label class="form-label @(IsRequired ? "fw-bold" : "")">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass me-1"></i>
+            }
+            @Label
+            @if (IsRequired)
+            {
+                <span class="text-danger ms-1">*</span>
+            }
+        </label>
+    </div>
+    <div class="@InputColumnCssClass">
+        @* 輸入控制項區域 *@
+        @ChildContent
+
+        @* 幫助文字 *@
+        @if (!string.IsNullOrEmpty(HelpText))
+        {
+            <div class="form-text">
+                @HelpText
+            </div>
+        }
+
+        @* 驗證訊息區域 (由父層傳入) *@
+        @if (ValidationContent != null)
+        {
+            @ValidationContent
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// 欄位標籤文字
+    /// </summary>
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 圖示 CSS 類別 (Font Awesome)
+    /// </summary>
+    [Parameter]
+    public string IconClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 是否為必填欄位
+    /// </summary>
+    [Parameter]
+    public bool IsRequired { get; set; } = false;
+
+    /// <summary>
+    /// 幫助文字說明
+    /// </summary>
+    [Parameter]
+    public string HelpText { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 標籤欄位的 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string LabelColumnCssClass { get; set; } = "col-sm-3";
+
+    /// <summary>
+    /// 輸入欄位的 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string InputColumnCssClass { get; set; } = "col-sm-9";
+
+    /// <summary>
+    /// 輸入控制項內容（InputNumber, InputText, InputSelect 等）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// 驗證訊息內容（ValidationMessage）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ValidationContent { get; set; }
+}

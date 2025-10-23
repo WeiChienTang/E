@@ -1,0 +1,249 @@
+@* 
+    Tab 表單範本 - 標準開發參考
+    
+    使用此範本創建新的 Tab 頁面，確保 UI 一致性
+    
+    使用方式：
+    1. 複製此檔案並重新命名（例如：NewFeatureTab.razor）
+    2. 修改 using 引用
+    3. 根據需求定義 Model 和 Parameters
+    4. 使用 TabFormSectionComponent 組織區段
+    5. 使用 TabFormFieldComponent 添加欄位
+*@
+
+@using Microsoft.AspNetCore.Components.Forms
+@using ERPCore2.Data.Entities
+@using ERPCore2.Components.Pages.Systems.SystemParameterSettings.Shared.UIComponent
+
+<EditForm Model="@Model" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger mb-3" />
+
+    <div class="row">
+        <div class="col-lg-8">
+            
+            @* ========== 區段範例 1：基本資訊 ========== *@
+            <TabFormSectionComponent Title="基本資訊" 
+                                    IconClass="fas fa-info-circle"
+                                    Description="設定基本資訊和參數">
+                
+                @* 文字輸入欄位範例 *@
+                <TabFormFieldComponent Label="名稱" 
+                                      IconClass="fas fa-tag"
+                                      IsRequired="true"
+                                      HelpText="請輸入名稱（必填）">
+                    <ChildContent>
+                        <InputText @bind-Value="Model.Name" 
+                                 class="form-control" 
+                                 placeholder="請輸入名稱"
+                                 maxlength="100" />
+                    </ChildContent>
+                    <ValidationContent>
+                        <ValidationMessage For="@(() => Model.Name)" class="text-danger" />
+                    </ValidationContent>
+                </TabFormFieldComponent>
+
+                @* 數字輸入欄位範例 *@
+                <TabFormFieldComponent Label="數量" 
+                                      IconClass="fas fa-hashtag"
+                                      IsRequired="true"
+                                      HelpText="請輸入數量，範圍 1-999">
+                    <ChildContent>
+                        <InputNumber @bind-Value="Model.Quantity" 
+                                   class="form-control" 
+                                   placeholder="請輸入數量"
+                                   min="1"
+                                   max="999" />
+                    </ChildContent>
+                    <ValidationContent>
+                        <ValidationMessage For="@(() => Model.Quantity)" class="text-danger" />
+                    </ValidationContent>
+                </TabFormFieldComponent>
+
+                @* 帶單位的輸入欄位範例 *@
+                <TabFormFieldComponent Label="價格" 
+                                      IconClass="fas fa-dollar-sign"
+                                      HelpText="請輸入價格">
+                    <ChildContent>
+                        <div class="input-group">
+                            <span class="input-group-text">NT$</span>
+                            <InputNumber @bind-Value="Model.Price" 
+                                       class="form-control" 
+                                       placeholder="0.00"
+                                       step="0.01"
+                                       min="0" />
+                        </div>
+                    </ChildContent>
+                    <ValidationContent>
+                        <ValidationMessage For="@(() => Model.Price)" class="text-danger" />
+                    </ValidationContent>
+                </TabFormFieldComponent>
+
+                @* 下拉選單範例 *@
+                <TabFormFieldComponent Label="類型" 
+                                      IconClass="fas fa-list"
+                                      IsRequired="true"
+                                      HelpText="請選擇類型">
+                    <ChildContent>
+                        <InputSelect @bind-Value="Model.Type" class="form-select">
+                            <option value="">-- 請選擇 --</option>
+                            <option value="Type1">類型一</option>
+                            <option value="Type2">類型二</option>
+                            <option value="Type3">類型三</option>
+                        </InputSelect>
+                    </ChildContent>
+                    <ValidationContent>
+                        <ValidationMessage For="@(() => Model.Type)" class="text-danger" />
+                    </ValidationContent>
+                </TabFormFieldComponent>
+
+                @* 核取方塊範例 *@
+                <TabFormFieldComponent Label="啟用狀態" 
+                                      IconClass="fas fa-toggle-on">
+                    <ChildContent>
+                        <div class="form-check form-switch">
+                            <InputCheckbox @bind-Value="Model.IsActive" 
+                                         class="form-check-input" 
+                                         id="isActiveSwitch" />
+                            <label class="form-check-label" for="isActiveSwitch">
+                                @(Model.IsActive ? "已啟用" : "未啟用")
+                            </label>
+                        </div>
+                    </ChildContent>
+                </TabFormFieldComponent>
+
+                @* 日期選擇範例 *@
+                <TabFormFieldComponent Label="開始日期" 
+                                      IconClass="fas fa-calendar"
+                                      HelpText="選擇開始日期">
+                    <ChildContent>
+                        <InputDate @bind-Value="Model.StartDate" 
+                                 class="form-control" 
+                                 Type="InputDateType.Date" />
+                    </ChildContent>
+                    <ValidationContent>
+                        <ValidationMessage For="@(() => Model.StartDate)" class="text-danger" />
+                    </ValidationContent>
+                </TabFormFieldComponent>
+
+                @* 多行文字輸入範例 *@
+                <TabFormFieldComponent Label="備註" 
+                                      IconClass="fas fa-comment"
+                                      HelpText="可選填備註資訊">
+                    <ChildContent>
+                        <InputTextArea @bind-Value="Model.Remarks" 
+                                     class="form-control" 
+                                     placeholder="請輸入備註"
+                                     rows="4"
+                                     maxlength="500" />
+                    </ChildContent>
+                </TabFormFieldComponent>
+
+            </TabFormSectionComponent>
+
+            @* ========== 區段範例 2：進階設定（可選） ========== *@
+            <TabFormSectionComponent Title="進階設定" 
+                                    IconClass="fas fa-cogs"
+                                    Description="選填的進階功能設定">
+                
+                @* 自訂欄位寬度範例 *@
+                <TabFormFieldComponent Label="自訂欄位" 
+                                      LabelColumnCssClass="col-sm-4"
+                                      InputColumnCssClass="col-sm-8"
+                                      HelpText="此欄位使用自訂寬度">
+                    <ChildContent>
+                        <InputText @bind-Value="Model.CustomField" 
+                                 class="form-control" />
+                    </ChildContent>
+                </TabFormFieldComponent>
+
+            </TabFormSectionComponent>
+
+            @* ========== 按鈕區域 ========== *@
+            <div class="row">
+                <div class="col-sm-9 offset-sm-3">
+                    <div class="d-flex gap-2">
+                        <button type="submit" 
+                              class="btn btn-primary" 
+                              disabled="@IsSaving">
+                            @if (IsSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <span>儲存中...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-save me-2"></i>
+                                <span>儲存設定</span>
+                            }
+                        </button>
+                        
+                        <button type="button" 
+                              class="btn btn-secondary" 
+                              @onclick="HandleReload"
+                              disabled="@IsSaving">
+                            <i class="fas fa-undo me-2"></i>
+                            重新載入
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    /// <summary>
+    /// 資料模型（請替換為實際的 Entity）
+    /// </summary>
+    [Parameter]
+    public ExampleModel Model { get; set; } = new();
+
+    /// <summary>
+    /// 儲存事件回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    /// <summary>
+    /// 重新載入事件回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnReload { get; set; }
+
+    /// <summary>
+    /// 是否正在儲存
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; } = false;
+
+    /// <summary>
+    /// 處理表單提交
+    /// </summary>
+    private async Task HandleSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    /// <summary>
+    /// 處理重新載入
+    /// </summary>
+    private async Task HandleReload()
+    {
+        await OnReload.InvokeAsync();
+    }
+
+    // ========== 範例用的模型類別 ==========
+    // 實際開發時，請使用專案中的 Entity 類別
+    public class ExampleModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal Price { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+        public DateTime StartDate { get; set; } = DateTime.Now;
+        public string Remarks { get; set; } = string.Empty;
+        public string CustomField { get; set; } = string.Empty;
+    }
+}

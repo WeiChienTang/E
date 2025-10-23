@@ -1,0 +1,261 @@
+@page "/system-parameters"
+@rendermode InteractiveServer
+@inject ISystemParameterService SystemParameterService
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Components.Forms
+@using ERPCore2.Components.Pages.Systems.SystemParameterSettings.Shared.UIComponent
+@using ERPCore2.Components.Pages.Systems.SystemParameterSettings.Shared.Tabs
+
+<PagePermissionCheck RequiredPermission="SystemParameter.Read">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                @* 頁面標題 *@
+                <GenericHeaderComponent 
+                    Title="系統參數設定"
+                    Subtitle="管理系統全域參數與基本設定"
+                    IconClass="fas fa-cogs"
+                    BreadcrumbItems="@breadcrumbItems" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    @* 標籤頁導航 *@
+                    <SystemParameterTabHeader 
+                        Tabs="@tabDefinitions"
+                        ActiveTab="@activeTab"
+                        ActiveTabChanged="@OnTabChanged" />
+
+                    <div class="card-body">
+                        @* Tab 內容區域 *@
+                        <div class="tab-content">
+                            @* 系統基本設定 *@
+                            @if (activeTab == "basic")
+                            {
+                                <SystemParameterTabContainer IsLoading="@isLoading" 
+                                                            ErrorMessage="@errorMessage"
+                                                            ShowFooter="true"
+                                                            Entity="@systemParameter">
+                                    <BasicSettingsTab Model="@systemParameter" 
+                                                    OnSave="@HandleSaveAsync"
+                                                    OnReload="@ReloadData"
+                                                    IsSaving="@isSaving" />
+                                </SystemParameterTabContainer>
+                            }
+
+                            @* 外觀設定 *@
+                            @if (activeTab == "appearance")
+                            {
+                                <SystemParameterTabContainer IsLoading="@false">
+                                    <AppearanceSettingsTab />
+                                </SystemParameterTabContainer>
+                            }
+
+                            @* 訂單設定 *@
+                            @if (activeTab == "order")
+                            {
+                                <SystemParameterTabContainer IsLoading="@false">
+                                    <OrderSettingsTab />
+                                </SystemParameterTabContainer>
+                            }
+
+                            @* 列印設定 *@
+                            @if (activeTab == "print")
+                            {
+                                <SystemParameterTabContainer IsLoading="@false">
+                                    <PrintSettingsTab />
+                                </SystemParameterTabContainer>
+                            }
+
+                            @* 公司資訊 *@
+                            @if (activeTab == "company")
+                            {
+                                <SystemParameterTabContainer IsLoading="@false">
+                                    <CompanyInfoTab />
+                                </SystemParameterTabContainer>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</PagePermissionCheck>
+
+@code {
+    // ===== 狀態變數 =====
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private SystemParameter systemParameter = new();
+    private string activeTab = "basic"; // 當前啟用的標籤頁
+
+    // ===== 麵包屑導航 =====
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    // ===== 標籤頁定義 =====
+    private List<SystemParameterTabHeader.TabDefinition> tabDefinitions = new()
+    {
+        new("basic", "系統基本設定", ""),
+        new("appearance", "外觀設定", ""),
+        new("order", "訂單設定", ""),
+        new("print", "列印設定", ""),
+        new("company", "公司資訊", "")
+    };
+
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            InitializeBreadcrumbs();
+            await LoadSystemParameterAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"初始化系統參數頁面失敗：{ex.Message}";
+            await NotificationService.ShowErrorAsync("初始化系統參數頁面失敗");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 初始化方法 =====
+    
+    private void InitializeBreadcrumbs()
+    {
+        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        {
+            new("首頁", "/"),
+            new("系統管理", "#"),
+            new("系統參數設定")
+        };
+    }
+
+    // ===== 標籤切換方法 =====
+    
+    private void OnTabChanged(string tabName)
+    {
+        activeTab = tabName;
+        StateHasChanged();
+    }
+    
+    private void SwitchTab(string tabName)
+    {
+        activeTab = tabName;
+        StateHasChanged();
+    }
+    
+    // ===== 資料載入方法 =====
+    
+    private async Task LoadSystemParameterAsync()
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            
+            // 嘗試載入現有的系統參數
+            var existingParameter = await SystemParameterService.GetSystemParameterAsync();
+            
+            if (existingParameter != null)
+            {
+                systemParameter = existingParameter;
+            }
+            else
+            {
+                // 如果沒有現有參數，創建新的預設值
+                systemParameter = new SystemParameter
+                {
+                    TaxRate = 5.00m, // 預設 5% 稅率
+                    Remarks = "系統預設稅率設定"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入系統參數時發生錯誤：{ex.Message}";
+            await NotificationService.ShowErrorAsync("載入系統參數失敗");
+            
+            // 使用預設值
+            systemParameter = new SystemParameter 
+            { 
+                TaxRate = 5.00m,
+                Remarks = "系統預設稅率設定"
+            };
+        }
+    }
+
+    // ===== 事件處理方法 =====
+    
+    private async Task HandleSaveAsync()
+    {
+        if (isSaving) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            ServiceResult<SystemParameter> result;
+            
+            if (systemParameter.Id > 0)
+            {
+                // 更新現有參數
+                result = await SystemParameterService.UpdateAsync(systemParameter);
+            }
+            else
+            {
+                // 創建新參數
+                result = await SystemParameterService.CreateAsync(systemParameter);
+            }
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("系統參數已成功儲存！");
+                
+                // 更新當前實體
+                if (result.Data != null)
+                {
+                    systemParameter = result.Data;
+                }
+            }
+            else
+            {
+                var errorMsg = !string.IsNullOrEmpty(result.ErrorMessage) 
+                    ? result.ErrorMessage 
+                    : "儲存失敗";
+                await NotificationService.ShowErrorAsync($"儲存系統參數失敗：{errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存系統參數時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task ReloadData()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        await LoadSystemParameterAsync();
+        
+        isLoading = false;
+        StateHasChanged();
+        
+        await NotificationService.ShowSuccessAsync("資料已重新載入");
+    }
+}
