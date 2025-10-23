@@ -175,6 +175,7 @@
             new()
             {
                 Title = "付款方式",
+                Tooltip = "選擇本次收付款的方式（現金、匯款、支票等）",
                 PropertyName = nameof(SetoffPaymentItem.PaymentMethodId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
@@ -215,6 +216,7 @@
             new()
             {
                 Title = receivedAmountLabel,
+                Tooltip = SetoffType == SetoffType.AccountsReceivable ? "本次實際收到的款項金額" : "本次實際支付的款項金額",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -237,6 +239,7 @@
             new()
             {
                 Title = "折讓金額",
+                Tooltip = "本次給予的折讓金額（不計入實際收付款）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -262,6 +265,7 @@
             new()
             {
                 Title = "銀行別",
+                Tooltip = "選擇收付款的銀行帳戶",
                 PropertyName = nameof(SetoffPaymentItem.BankId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
@@ -302,6 +306,7 @@
             new()
             {
                 Title = "支票號碼",
+                Tooltip = "若付款方式為支票，請輸入支票號碼",
                 PropertyName = nameof(SetoffPaymentItem.CheckNumber),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "150px",
@@ -326,6 +331,7 @@
             new()
             {
                 Title = "到期日",
+                Tooltip = "若付款方式為支票，請選擇支票到期日",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -345,6 +351,7 @@
             new()
             {
                 Title = "小計",
+                Tooltip = "收款金額 + 折讓金額的總計",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",

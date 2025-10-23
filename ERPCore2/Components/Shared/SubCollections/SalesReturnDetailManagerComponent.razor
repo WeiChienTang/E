@@ -142,13 +142,13 @@ else
     /// 規則：
     /// 1. 必須選擇客戶
     /// 2. 必須有可載入的銷售訂單明細
-    /// 3. 不可在編輯模式下使用（避免覆蓋現有資料）
+    /// 3. 編輯模式下隱藏此按鈕（避免覆蓋現有資料）
     /// </summary>
     private bool CanLoadAllReturnable => 
         EffectiveCustomerId.HasValue && 
         EffectiveCustomerId.Value > 0 && 
         GetAvailableOrderDetails().Any() &&
-        !IsEditMode; // 編輯模式下隱藏此按鈕
+        !(ExistingReturnDetails?.Any() == true); // 編輯模式（有現有明細）時隱藏
     
     /// <summary>
     /// 檢查是否有被鎖定的明細（有沖款記錄的明細）
@@ -322,6 +322,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "300px",
+            Tooltip = "選擇要退貨的銷售商品。已有沖款記錄的商品將無法變更",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -378,6 +379,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "當初銷售時的原始數量（唯讀）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -395,6 +397,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "要退回的商品數量。已有沖款記錄的商品將無法修改數量",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -443,6 +446,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "商品的原始銷售單價（唯讀）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -461,6 +465,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
+            Tooltip = "當初銷售時給予的折扣百分比（唯讀）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -479,6 +484,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "退貨金額小計（退貨數量 × 單價 × (1 - 折扣%)）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -496,6 +502,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
+            Tooltip = "選填。可記錄退貨相關的備註資訊（如退貨原因等）",
             CustomTemplate = item =>
             {
                 var returnItem = (ReturnItem)item;
@@ -892,9 +899,8 @@ else
 
     private async Task NotifyDetailsChanged()
     {
-        // 轉換為 SalesReturnDetail 實體（包含所有非空行的明細，即使 ReturnQuantity 為 0）
-        // 這樣父組件才能正確計算總金額和稅額
-        var details = ReturnItems.Where(item => !IsEmptyRow(item))
+        // 轉換為 SalesReturnDetail 實體（只包含有退貨數量的明細）
+        var details = ReturnItems.Where(item => !IsEmptyRow(item) && item.ReturnQuantity > 0)
                                  .Select(item => ConvertToEntity(item))
                                  .Where(entity => entity != null)
                                  .ToList();

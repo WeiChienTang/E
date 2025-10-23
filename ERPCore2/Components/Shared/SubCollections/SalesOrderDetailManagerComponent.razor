@@ -630,6 +630,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "250px",
+            Tooltip = "選擇要銷售的商品。已有退貨或沖款記錄的商品將無法變更",
             CustomTemplate = item =>
             {
                 var salesItem = (SalesItem)item;
@@ -708,6 +709,7 @@ else
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
                 HideOnMobile = true,
+                Tooltip = "選擇出貨的倉庫位置。已有退貨或沖款記錄的商品將無法變更",
                 CustomTemplate = item => 
                 {
                     var salesItem = (SalesItem)item;
@@ -761,6 +763,7 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
             HideOnMobile = true,
+            Tooltip = "選擇倉庫後顯示該商品的即時可用庫存量（唯讀）",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -799,6 +802,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "銷售的商品數量。已退貨或已收款的商品將無法修改數量",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -848,6 +852,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "商品的銷售單價。已退貨或已收款的商品將無法修改價格",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -897,6 +902,7 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
             HideOnMobile = true,
+            Tooltip = "折扣百分比（0-100%）。已退貨或已收款的商品將無法修改折扣",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -949,6 +955,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "訂單金額小計（數量 × 單價 × (1 - 折扣%)）",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -967,6 +974,7 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
             HideOnMobile = true,
+            Tooltip = "選填。可記錄銷貨相關的備註資訊",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;

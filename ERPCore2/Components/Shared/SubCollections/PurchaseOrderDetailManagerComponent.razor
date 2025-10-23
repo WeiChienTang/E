@@ -202,6 +202,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
+            Tooltip = "選擇要採購的商品。訂單核准後將無法變更",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -237,6 +238,7 @@ else
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "採購的商品數量。訂單核准後將無法修改",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -270,6 +272,7 @@ else
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "已入庫的累計數量（唯讀）",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -287,6 +290,7 @@ else
             PropertyName = "Price",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "商品的採購單價。訂單核准後將無法修改",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
@@ -322,6 +326,7 @@ else
                 PropertyName = "IsReceivingCompleted",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "100px",
+                Tooltip = "手動標記此商品已完成所有進貨作業（即使數量未完全入庫）",
                 CustomTemplate = item => 
                 {
                     var productItem = (ProductItem)item;
@@ -371,6 +376,7 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = ShowIsReceivingCompleted ? "150px" : "200px",
             HideOnMobile = true,
+            Tooltip = "選填。可記錄採購相關的備註資訊",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;

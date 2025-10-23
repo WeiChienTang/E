@@ -15,12 +15,10 @@
                 <span class="badge bg-secondary ms-2">@SelectedItems.Count / @Items.Count</span>
             </h6>
             <div class="btn-group btn-group-sm">
-                <GenericButtonComponent Text="全選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                <GenericButtonComponent Text="全選" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
                                       OnClick="SelectAll" Title="全選" />
-                <GenericButtonComponent Text="清空" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                <GenericButtonComponent Text="清空" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
                                       OnClick="ClearAll" Title="清空" />
-                <GenericButtonComponent Text="反選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
-                                      OnClick="InvertSelection" Title="反選" />
             </div>
         </div>
         <div class="card-body">
@@ -41,12 +39,10 @@ else
                 <span class="badge bg-secondary ms-2">@SelectedItems.Count / @Items.Count</span>
             </h6>
             <div class="btn-group btn-group-sm">
-                <GenericButtonComponent Text="全選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                <GenericButtonComponent Text="全選" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
                                       OnClick="SelectAll" Title="全選" />
-                <GenericButtonComponent Text="清空" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
+                <GenericButtonComponent Text="清空" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
                                        OnClick="ClearAll" Title="清空" />
-                <GenericButtonComponent Text="反選" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" 
-                                      OnClick="InvertSelection" Title="反選" />
             </div>
         </div>
         @RenderContent()
@@ -469,19 +465,6 @@ else
     private async Task ClearAll()
     {
         SelectedItems.Clear();
-        await SelectedItemsChanged.InvokeAsync(SelectedItems);
-        StateHasChanged();
-    }
-
-    /// <summary>反向選擇</summary>
-    private async Task InvertSelection()
-    {
-        var newSelection = Items.Where(item => 
-            !SelectedItems.Any(s => AreItemsEqual(s, item))
-        ).ToList();
-        
-        SelectedItems.Clear();
-        SelectedItems.AddRange(newSelection);
         await SelectedItemsChanged.InvokeAsync(SelectedItems);
         StateHasChanged();
     }

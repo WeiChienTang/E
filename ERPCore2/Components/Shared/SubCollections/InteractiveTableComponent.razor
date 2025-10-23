@@ -17,9 +17,16 @@
                     }
                     @foreach (var column in ColumnDefinitions)
                     {
+                        var headerStyle = GetColumnWidthStyle(column);
+                        if (!string.IsNullOrEmpty(column.Tooltip))
+                        {
+                            headerStyle = (headerStyle ?? "") + (string.IsNullOrEmpty(headerStyle) ? "" : " ") + "cursor: help;";
+                        }
+                        
                         <th scope="col" 
                             class="@column.HeaderCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")" 
-                            style="@(GetColumnWidthStyle(column))">
+                            style="@headerStyle"
+                            title="@column.Tooltip">
                             @if (!string.IsNullOrEmpty(column.IconClass))
                             {
                                 <i class="@column.IconClass me-1"></i>

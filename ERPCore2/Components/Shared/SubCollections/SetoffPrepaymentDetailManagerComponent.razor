@@ -339,6 +339,7 @@
             new()
             {
                 Title = "預收付類型",
+                Tooltip = "選擇預收款、預付款或轉沖款類型",
                 PropertyName = nameof(SetoffPrepaymentItem.PrepaymentTypeId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
@@ -393,6 +394,7 @@
             new()
             {
                 Title = "來源單號",
+                Tooltip = "選擇要使用的預收付款項來源單據（僅轉沖款類型需選擇）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "250px",
@@ -456,6 +458,7 @@
             new()
             {
                 Title = "總金額",
+                Tooltip = "來源預收付款項的原始總金額（僅轉沖款類型顯示）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
@@ -486,6 +489,7 @@
             new()
             {
                 Title = "可用餘額",
+                Tooltip = "該預收付款項尚未使用的可用餘額（僅轉沖款類型顯示）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
@@ -510,6 +514,7 @@
             new()
             {
                 Title = "金額",
+                Tooltip = "預收/預付類型：輸入本次收付金額；轉沖款類型：輸入本次使用金額",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",

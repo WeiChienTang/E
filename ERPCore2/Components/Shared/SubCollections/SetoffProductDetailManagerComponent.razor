@@ -258,6 +258,7 @@ else
             new()
             {
                 Title = "來源單號",
+                Tooltip = "原始銷售或進貨單據的單號",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -270,6 +271,7 @@ else
             new()
             {
                 Title = "商品編號/名稱",
+                Tooltip = "顯示商品的編號與名稱",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
@@ -282,6 +284,7 @@ else
             new()
             {
                 Title = "應收/付金額",
+                Tooltip = "來源單據的原始應收或應付金額（退貨單顯示為負數）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -298,6 +301,7 @@ else
             new()
             {
                 Title = "未沖款餘額",
+                Tooltip = "尚未沖銷的餘額金額（已扣除之前沖銷金額）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -314,6 +318,7 @@ else
             new()
             {
                 Title = "本次沖款",
+                Tooltip = "本次要沖銷的金額（不可超過未沖款餘額）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = ShowAllowance ? "150px" : "200px",
@@ -340,6 +345,7 @@ else
             columns.Add(new InteractiveColumnDefinition
             {
                 Title = "本次折讓",
+                Tooltip = "本次給予的折讓金額（不計入實際收付款）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -364,6 +370,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "小計",
+            Tooltip = "本次沖款 + 本次折讓的總計金額",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",

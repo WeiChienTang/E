@@ -454,6 +454,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "300px",
+            Tooltip = "選擇要退回的進貨商品。已有沖款記錄的商品將無法變更",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -520,6 +521,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "當初進貨時的原始數量（唯讀）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -537,6 +539,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "要退回給供應商的商品數量。已收款的商品將無法修改數量",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -577,6 +580,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
+            Tooltip = "商品的原始進貨單價（唯讀）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -594,6 +598,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
+            Tooltip = "退回金額小計（退回數量 × 單價）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
@@ -612,6 +617,7 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
             HideOnMobile = true,
+            Tooltip = "選填。可記錄退貨相關的備註資訊（如退貨原因等）",
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;

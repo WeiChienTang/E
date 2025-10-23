@@ -655,6 +655,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "300px",
+            Tooltip = "選擇要入庫的採購商品。已有退貨或沖款記錄的商品將無法變更",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -730,6 +731,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
+            Tooltip = "原始採購單上的訂購數量（唯讀）",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -747,6 +749,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
+            Tooltip = "實際入庫的數量。已退貨或已沖款的商品將無法修改數量",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -803,6 +806,7 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
+            Tooltip = "商品的採購單價（唯讀）",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
@@ -822,6 +826,7 @@ else
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
+                Tooltip = "選擇入庫的倉庫位置。已有退貨或沖款記錄的商品將無法變更",
                 CustomTemplate = item => 
                 {
                     var receivingItem = (ReceivingItem)item;
@@ -875,6 +880,7 @@ else
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
+                Tooltip = "選擇倉庫內的具體儲存位置。需先選擇倉庫",
                 CustomTemplate = item => 
                 {
                     var receivingItem = (ReceivingItem)item;
@@ -934,6 +940,7 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
             HideOnMobile = true,
+            Tooltip = "選填。可記錄入庫相關的備註資訊",
             CustomTemplate = item => 
             {
                 var receivingItem = (ReceivingItem)item;
