@@ -303,7 +303,7 @@ else
             new()
             {
                 Title = "未沖款餘額",
-                Tooltip = "尚未沖銷的餘額金額（已扣除之前沖銷金額）",
+                Tooltip = "尚未沖銷的餘額金額（編輯模式下會動態調整）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
@@ -311,9 +311,24 @@ else
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
                     var detail = setoffItem.UnsettledDetail;
-                    var remainingAmount = detail?.RemainingAmount ?? 0;
-                    var displayAmount = detail?.IsReturn == true ? -remainingAmount : remainingAmount;
-                    var cssClass = remainingAmount > 0 ? "text-warning fw-bold" : "text-muted";
+                    var baseRemainingAmount = detail?.RemainingAmount ?? 0;
+                    
+                    // 編輯模式下，動態計算未沖款餘額
+                    // 未沖款餘額 = 原始餘額 + 原有的本次沖款/折讓 - 現在的本次沖款/折讓
+                    decimal adjustedRemainingAmount = baseRemainingAmount;
+                    if (IsEditMode() && setoffItem.ExistingDetail != null)
+                    {
+                        var originalSetoff = setoffItem.ExistingDetail.CurrentSetoffAmount;
+                        var originalAllowance = setoffItem.ExistingDetail.CurrentAllowanceAmount;
+                        var currentSetoff = setoffItem.CurrentSetoffAmount;
+                        var currentAllowance = setoffItem.CurrentAllowanceAmount;
+                        
+                        adjustedRemainingAmount = baseRemainingAmount + (originalSetoff + originalAllowance) - (currentSetoff + currentAllowance);
+                    }
+                    
+                    var displayAmount = detail?.IsReturn == true ? -adjustedRemainingAmount : adjustedRemainingAmount;
+                    var cssClass = adjustedRemainingAmount > 0 ? "text-warning fw-bold" : 
+                                   adjustedRemainingAmount < 0 ? "text-danger fw-bold" : "text-muted";
                     return @<div class="text-end @cssClass">@displayAmount.ToString("N2")</div>;
                 }
             },
@@ -457,11 +472,30 @@ else
             
             foreach (var item in SetoffItems)
             {
-                if (item.UnsettledDetail != null && item.UnsettledDetail.RemainingAmount > 0)
+                if (item.UnsettledDetail != null)
                 {
-                    // 將本次沖款設定為未沖款餘額
-                    item.CurrentSetoffAmount = item.UnsettledDetail.RemainingAmount;
-                    filledCount++;
+                    var baseRemainingAmount = item.UnsettledDetail.RemainingAmount;
+                    
+                    // 編輯模式下，計算動態調整後的未沖款餘額
+                    decimal adjustedRemainingAmount = baseRemainingAmount;
+                    if (IsEditMode() && item.ExistingDetail != null)
+                    {
+                        var originalSetoff = item.ExistingDetail.CurrentSetoffAmount;
+                        var originalAllowance = item.ExistingDetail.CurrentAllowanceAmount;
+                        var currentSetoff = item.CurrentSetoffAmount;
+                        var currentAllowance = item.CurrentAllowanceAmount;
+                        
+                        adjustedRemainingAmount = baseRemainingAmount + (originalSetoff + originalAllowance) - (currentSetoff + currentAllowance);
+                    }
+                    
+                    // 只有當調整後的餘額大於0時才填入
+                    if (adjustedRemainingAmount > 0)
+                    {
+                        // 將本次沖款設定為調整後的未沖款餘額
+                        item.CurrentSetoffAmount = adjustedRemainingAmount;
+                        item.CurrentAllowanceAmount = 0; // 清空折讓
+                        filledCount++;
+                    }
                 }
             }
 

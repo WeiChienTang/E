@@ -623,7 +623,8 @@ namespace ERPCore2.Services
                         detail.SourceDetailId,
                         detail.SourceDetailType,
                         detail.CurrentSetoffAmount,
-                        detail.CurrentAllowanceAmount);
+                        detail.CurrentAllowanceAmount,
+                        detail.Id > 0 ? detail.Id : null); // 編輯模式時傳入明細ID以排除原本的沖銷金額
 
                     if (!validation.IsSuccess)
                         return validation;
