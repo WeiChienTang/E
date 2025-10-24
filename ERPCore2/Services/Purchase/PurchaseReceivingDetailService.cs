@@ -395,8 +395,9 @@ namespace ERPCore2.Services
                     {
                         foreach (var detail in details)
                         {
-                            // 驗證必要欄位：只檢查產品和倉庫是否已選擇
-                            if (detail.ProductId <= 0 || detail.WarehouseId <= 0)
+                            // 驗證必要欄位：檢查產品、倉庫和入庫數量
+                            // 注意：空白的入庫數量會被前端轉換為 0，這裡會被過濾掉
+                            if (detail.ProductId <= 0 || detail.WarehouseId <= 0 || detail.ReceivedQuantity <= 0)
                                 continue;
 
                             detail.PurchaseReceivingId = purchaseReceivingId;

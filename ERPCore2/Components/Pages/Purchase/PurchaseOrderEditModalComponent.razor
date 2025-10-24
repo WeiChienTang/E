@@ -110,6 +110,9 @@
     
     // 系統參數 - 稅率快取（避免重複查詢資料庫）
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
+    
+    // ===== 鎖定狀態 =====
+    private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有進貨記錄）
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -129,6 +132,12 @@
     {
         if (IsVisible)
         {
+            // 打開時,如果是新增模式,重置鎖定狀態
+            if (!PurchaseOrderId.HasValue)
+            {
+                hasUndeletableDetails = false;
+            }
+            
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
@@ -295,6 +304,9 @@
                 // 清空明細
                 purchaseOrderDetails.Clear();
                 
+                // 🔑 新增模式時,重置鎖定狀態為 false
+                hasUndeletableDetails = false;
+                
                 return newOrder;
             }
 
@@ -394,8 +406,8 @@
     {
         try
         {
-            // 檢查採購單是否已核准，如果已核准則設為唯讀
-            bool isApproved = editModalComponent?.Entity?.IsApproved ?? false;
+            // 🔑 不再使用 IsApproved 鎖定，改用 hasUndeletableDetails
+            // 只有當明細有「下一步動作」時才鎖定
             
             formFields = new List<FormFieldDefinition>
             {
@@ -408,7 +420,7 @@
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "採購單的唯一編號，新增時系統會自動產生，也可手動修改",
-                    IsReadOnly = isApproved
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new()
                 {
@@ -420,7 +432,7 @@
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetSupplierActionButtonsAsync(),
-                    IsReadOnly = isApproved
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new()
                 {
@@ -431,7 +443,7 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次採購的公司",
-                    IsReadOnly = isApproved
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new()
                 {
@@ -440,7 +452,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "採購單建立日期",
-                    IsReadOnly = isApproved
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new()
                 {
@@ -449,7 +461,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "預計廠商交貨的日期",
-                    IsReadOnly = isApproved
+                    IsReadOnly = hasUndeletableDetails
                 },
                 new FormFieldDefinition()
                 {
@@ -489,7 +501,7 @@
                     MaxLength = 50,
                     HelpText = "其他需要記錄的駁回原因",
                     ContainerCssClass = "col-6",
-                    IsReadOnly = isApproved
+                    IsReadOnly = false // 駁回原因不需鎖定
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<PurchaseOrder>(containerCssClass:"col-6"),
@@ -667,7 +679,9 @@
                                                    ReceivedQuantityPropertyName="ReceivedQuantity"
                                                    UnitPricePropertyName="UnitPrice"
                                                    RemarksPropertyName="Remarks"
-                                                   IsReadOnly="@(editModalComponent.Entity.IsApproved)"
+                                                   IsReadOnly="false"
+                                                   IsApproved="@(editModalComponent.Entity.IsApproved)"
+                                                   OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                                    OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
                     }
                     else
@@ -735,9 +749,8 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
-        // 如果採購單已核准，隱藏所有按鈕（返回空列表）
-        bool isApproved = editModalComponent?.Entity?.IsApproved ?? false;
-        if (isApproved)
+        // 🔑 改用 hasUndeletableDetails 判斷，而非 IsApproved
+        if (hasUndeletableDetails)
         {
             return new List<FieldActionButton>();
         }
@@ -749,6 +762,64 @@
         );
         
         return buttons;
+    }
+    
+    /// <summary>
+    /// 更新欄位的唯讀狀態 - 根據是否有不可刪除的明細
+    /// </summary>
+    private async void UpdateFieldsReadOnlyState()
+    {
+        // 廠商欄位
+        var supplierField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseOrder.SupplierId));
+        if (supplierField != null)
+        {
+            supplierField.IsReadOnly = hasUndeletableDetails;
+            
+            // 如果有不可刪除的明細，移除操作按鈕；否則恢復操作按鈕
+            if (hasUndeletableDetails)
+            {
+                supplierField.ActionButtons = new List<FieldActionButton>();
+            }
+            else
+            {
+                supplierField.ActionButtons = await GetSupplierActionButtonsAsync();
+            }
+        }
+        
+        // 公司欄位
+        var companyField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseOrder.CompanyId));
+        if (companyField != null)
+        {
+            companyField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 採購單號欄位
+        var orderNumberField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseOrder.PurchaseOrderNumber));
+        if (orderNumberField != null)
+        {
+            orderNumberField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 採購日欄位
+        var orderDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseOrder.OrderDate));
+        if (orderDateField != null)
+        {
+            orderDateField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 交貨日欄位
+        var deliveryDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseOrder.ExpectedDeliveryDate));
+        if (deliveryDateField != null)
+        {
+            deliveryDateField.IsReadOnly = hasUndeletableDetails;
+        }
+        
+        // 重新初始化表單欄位以強制更新 UI
+        await InvokeAsync(async () =>
+        {
+            await InitializeFormFieldsAsync();
+            StateHasChanged();
+        });
     }
     
     // ===== Modal 事件包裝器方法 =====
@@ -791,6 +862,27 @@
     // ===== 採購明細管理方法 =====
     
     /// <summary>
+    /// 處理有不可刪除明細的狀態變更
+    /// 當明細動態變化時（新增進貨、刪除進貨記錄等），這個方法會被調用
+    /// </summary>
+    private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
+    {
+        try
+        {
+            hasUndeletableDetails = hasUndeletable;
+            
+            // 更新欄位的唯讀狀態
+            UpdateFieldsReadOnlyState();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理明細鎖定狀態時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
     /// 載入採購單明細
     /// </summary>
     private async Task LoadPurchaseOrderDetails(int purchaseOrderId)
@@ -805,6 +897,10 @@
             {
                 purchaseOrderDetails = new List<PurchaseOrderDetail>();
             }
+            
+            // 🔑 載入明細後,檢查是否有不可刪除的明細(有進貨記錄)
+            var hasReceiving = purchaseOrderDetails.Any(d => d.ReceivedQuantity > 0);
+            await HandleHasUndeletableDetailsChanged(hasReceiving);
         }
         catch (Exception ex)
         {
@@ -1149,14 +1245,14 @@
     
     /// <summary>
     /// 取得警告訊息（顯示在表單欄位上方）
-    /// 當採購單已審核通過時，顯示鎖定警告訊息
+    /// 當採購單明細有進貨記錄時，顯示鎖定警告訊息
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-        @if (editModalComponent?.Entity?.IsApproved == true)
+        @if (hasUndeletableDetails)
         {
             <div class="alert alert-warning mb-2 py-2" role="alert">
-                <i class="fas fa-lock me-2"></i>此採購單已審核通過，為保護資料完整性主檔欄位已設唯讀。
+                <i class="fas fa-lock me-2"></i>因部分明細已有進貨記錄，為保護資料完整性主檔欄位已設唯讀。
             </div>
         }
     };

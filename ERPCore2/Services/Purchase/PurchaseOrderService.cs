@@ -53,9 +53,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
                     // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
-                    .AsQueryable()
-                    .OrderByDescending(po => po.OrderDate)
-                    .ThenBy(po => po.PurchaseOrderNumber)
+                    // 不在此處排序 - 排序由 FieldConfiguration 層統一處理
                     .ToListAsync();
             }
             catch (Exception ex)

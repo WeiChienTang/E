@@ -117,6 +117,34 @@ namespace ERPCore2.Helpers
         }
         
         /// <summary>
+        /// 取得當前使用者的員工ID
+        /// </summary>
+        /// <param name="authenticationStateProvider">身份驗證狀態提供者</param>
+        /// <returns>員工ID，如果無法取得則返回 null</returns>
+        public static async Task<int?> GetCurrentEmployeeIdAsync(AuthenticationStateProvider authenticationStateProvider)
+        {
+            try
+            {
+                var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState?.User;
+
+                if (user?.Identity?.IsAuthenticated != true)
+                    return null;
+
+                // 從 Claims 中取得使用者 ID
+                var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(employeeIdClaim, out int employeeId))
+                    return employeeId;
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        
+        /// <summary>
         /// 檢查當前使用者是否為管理員
         /// </summary>
         /// <param name="authenticationStateProvider">身份驗證狀態提供者</param>

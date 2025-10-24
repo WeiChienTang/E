@@ -4,6 +4,7 @@
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -43,13 +44,12 @@ else
                                           Variant="ButtonVariant.Primary"
                                           Icon="fas fa-magic"
                                           OnClick="SmartPurchaseOrder"
-                                          IsDisabled="@(!CanUseSmartPurchase || IsMainEntityApproved)" />
+                                          IsDisabled="@(!CanUseSmartPurchase)" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Danger"
-                                          OnClick="ClearAllDetails"
-                                          IsDisabled="@IsMainEntityApproved" />
+                                          OnClick="ClearAllDetails" />
                 </div>
             </div>
         </div>
@@ -96,6 +96,12 @@ else
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 核准狀態參數 =====
+    [Parameter] public bool IsApproved { get; set; } = false;
+    
+    // ===== 不可刪除明細狀態變更事件 =====
+    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
@@ -197,19 +203,21 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
-            Tooltip = "選擇要採購的商品。訂單核准後將無法變更",
+            Tooltip = "選擇要採購的商品。已有進貨記錄的商品將無法變更",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
                 var selectedValue = productItem.SelectedProduct?.Id.ToString() ?? "";
-                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                var hasReceiving = productItem.ReceivedQuantity > 0;
+                var isFieldReadOnly = IsReadOnly || hasReceiving;
                 
                 // 如果是唯讀狀態，直接顯示商品名稱
                 if (isFieldReadOnly && productItem.SelectedProduct != null)
                 {
                     var displayText = $"[{productItem.SelectedProduct.Code}] {productItem.SelectedProduct.Name}";
+                    var title = hasReceiving ? "此商品已有進貨記錄，無法修改商品選擇" : "";
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
@@ -233,20 +241,22 @@ else
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "採購的商品數量。訂單核准後將無法修改",
+            Tooltip = "採購的商品數量。已有進貨記錄的商品將無法修改數量",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
                 var isEmptyRow = IsEmptyRow(productItem);
                 var value = productItem.Quantity > 0 ? productItem.Quantity.ToString() : "";
-                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                var hasReceiving = productItem.ReceivedQuantity > 0;
+                var isFieldReadOnly = IsReadOnly || hasReceiving;
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (isFieldReadOnly)
                 {
                     var displayText = productItem.Quantity > 0 ? productItem.Quantity.ToString("N0") : "";
+                    var title = hasReceiving ? "此商品已有進貨記錄，無法修改數量" : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
@@ -285,20 +295,22 @@ else
             PropertyName = "Price",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "商品的採購單價。訂單核准後將無法修改",
+            Tooltip = "商品的採購單價。已有進貨記錄的商品將無法修改單價",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
                 var isEmptyRow = IsEmptyRow(productItem);
                 var value = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
-                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                var hasReceiving = productItem.ReceivedQuantity > 0;
+                var isFieldReadOnly = IsReadOnly || hasReceiving;
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (isFieldReadOnly)
                 {
                     var displayText = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
+                    var title = hasReceiving ? "此商品已有進貨記錄，無法修改單價" : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
@@ -312,17 +324,28 @@ else
             }
         });
 
+        // 只有在已核准的狀態下才顯示「完成進貨」欄位
+        if (IsApproved)
+        {
             columns.Add(new() 
             { 
                 Title = "完成進貨", 
                 PropertyName = "IsReceivingCompleted",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "100px",
-                Tooltip = "手動標記此商品已完成所有進貨作業（即使數量未完全入庫）",
+                Width = "120px",
+                Tooltip = "手動標記此商品已完成所有進貨作業（即使數量未完全入庫）\n核准後仍可修改此狀態",
                 CustomTemplate = item => 
                 {
                     var productItem = (ProductItem)item;
-                    var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                    
+                    // 「完成進貨」是執行狀態，不受核准鎖定影響
+                    var isFieldReadOnly = IsReadOnly;
+                    
+                    // 檢查是否已經完全進貨（入庫 >= 採購）
+                    var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity;
+                    
+                    // 如果已完全進貨，只能勾選完成，不能取消
+                    var canToggle = !isFullyReceived || !productItem.IsReceivingCompleted;
                     
                     // 如果是唯讀狀態，只顯示狀態
                     if (isFieldReadOnly)
@@ -346,8 +369,9 @@ else
                             <input class="form-check-input" 
                                    type="checkbox" 
                                    checked="@productItem.IsReceivingCompleted"
+                                   disabled="@(!canToggle)"
                                    @onclick="() => OnIsReceivingCompletedChanged(productItem)"
-                                   title="手動標記為完成進貨" />
+                                   title="@(canToggle ? "標記為完成進貨" : "已完全進貨，無法取消")" />
                         </div>
                         @if (productItem.IsReceivingCompleted)
                         {
@@ -358,9 +382,10 @@ else
                     </div>;
                 }
             });
+        }
         
 
-        // 備註欄位
+        // 備註欄位 - 核准後仍可編輯（用於記錄執行狀況）
         columns.Add(new() 
         { 
             Title = "備註", 
@@ -368,12 +393,13 @@ else
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
             HideOnMobile = true,
-            Tooltip = "選填。可記錄採購相關的備註資訊",
+            Tooltip = "選填。可記錄採購相關的備註資訊（核准後仍可編輯）",
             CustomTemplate = item => 
             {
                 var productItem = (ProductItem)item;
                 var isEmptyRow = IsEmptyRow(productItem);
-                var isFieldReadOnly = IsReadOnly || IsMainEntityApproved;
+                // 🔑 備註欄位只受 IsReadOnly 影響，核准後仍可編輯
+                var isFieldReadOnly = IsReadOnly;
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (isFieldReadOnly)
@@ -484,6 +510,8 @@ else
                     Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
                     IsReceivingCompleted = !string.IsNullOrEmpty(IsReceivingCompletedPropertyName) ? 
                         Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
+                    CompletedByEmployeeId = GetPropertyValue<int?>(detail, "CompletedByEmployeeId"),
+                    CompletedAt = GetPropertyValue<DateTime?>(detail, "CompletedAt"),
                     ExistingDetailEntity = detail
                 };
                 
@@ -537,6 +565,10 @@ else
                 SetPropertyValue(detail, IsReceivingCompletedPropertyName, item.IsReceivingCompleted);
             }
             
+            // 儲存完成進貨的追蹤資料
+            SetPropertyValue(detail, "CompletedByEmployeeId", item.CompletedByEmployeeId);
+            SetPropertyValue(detail, "CompletedAt", item.CompletedAt);
+            
             details.Add(detail);
         }
         
@@ -550,6 +582,10 @@ else
     {
         var details = ConvertToDetailEntities();
         await OnDetailsChanged.InvokeAsync(details);
+        
+        // 檢查是否有不可刪除的明細(已有進貨記錄)
+        bool hasUndeletableDetails = ProductItems.Any(p => p.ReceivedQuantity > 0);
+        await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
     }
 
     /// <summary>
@@ -673,7 +709,36 @@ else
     {
         var wasEmpty = IsEmptyRow(item);
         
-        item.IsReceivingCompleted = !item.IsReceivingCompleted;
+        // 檢查是否已經完全進貨
+        var isFullyReceived = item.ReceivedQuantity >= item.Quantity;
+        
+        // 如果已完全進貨且已標記完成，不允許取消
+        if (isFullyReceived && item.IsReceivingCompleted)
+        {
+            await NotificationService.ShowWarningAsync("此商品已全數入庫，無法取消完成狀態");
+            return;
+        }
+        
+        // 切換狀態
+        var newValue = !item.IsReceivingCompleted;
+        item.IsReceivingCompleted = newValue;
+        
+        // 記錄操作者和時間（只在標記為完成時記錄）
+        if (newValue)
+        {
+            var currentUserId = await GetCurrentUserIdAsync();
+            if (currentUserId.HasValue)
+            {
+                item.CompletedByEmployeeId = currentUserId.Value;
+                item.CompletedAt = DateTime.Now;
+            }
+        }
+        else
+        {
+            // 取消完成時清除記錄
+            item.CompletedByEmployeeId = null;
+            item.CompletedAt = null;
+        }
         
         AutoEmptyRowHelper.ForAny<ProductItem>.HandleInputChange(
             ProductItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
@@ -723,15 +788,6 @@ else
         {
             errors.Add("至少需要一個商品");
         }
-        else
-        {
-            var nonEmptyItems = AutoEmptyRowHelper.ForAny<ProductItem>.GetNonEmptyItems(ProductItems, IsEmptyRow);
-            var productIds = nonEmptyItems.Select(item => item.SelectedProduct?.Id).Where(id => id.HasValue).ToList();
-            if (productIds.Count != productIds.Distinct().Count())
-            {
-                errors.Add("存在重複的商品");
-            }
-        }
           
         if (errors.Any())
         {
@@ -752,20 +808,7 @@ else
         SelectedSupplierId.HasValue && 
         SelectedSupplierId.Value > 0;
     
-    /// <summary>
-    /// 計算屬性：檢查主實體是否已核准（針對採購訂單）
-    /// </summary>
-    private bool IsMainEntityApproved
-    {
-        get
-        {
-            if (MainEntity is PurchaseOrder purchaseOrder)
-            {
-                return purchaseOrder.IsApproved;
-            }
-            return false;
-        }
-    }
+
 
     /// <summary>
     /// 智能下單主要方法
@@ -984,6 +1027,14 @@ else
         reason = string.Empty;
         return true;
     }
+    
+    /// <summary>
+    /// 取得當前使用者ID
+    /// </summary>
+    private async Task<int?> GetCurrentUserIdAsync()
+    {
+        return await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+    }
 
     public class ProductItem
     {
@@ -993,6 +1044,8 @@ else
         public decimal Price { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public bool IsReceivingCompleted { get; set; } = false;
+        public int? CompletedByEmployeeId { get; set; }
+        public DateTime? CompletedAt { get; set; }
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
         // 標記是否已被入庫單使用（避免重複查詢）

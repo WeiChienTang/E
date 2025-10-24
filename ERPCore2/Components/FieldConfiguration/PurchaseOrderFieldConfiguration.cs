@@ -179,12 +179,11 @@ namespace ERPCore2.FieldConfiguration
         }
 
         /// <summary>
-        /// 採購單預設排序：依採購日期降序，然後依 ID 降序
+        /// 採購單預設排序：依 ID 降序（最新建立的在最上面）
         /// </summary>
         protected override Func<IQueryable<PurchaseOrder>, IQueryable<PurchaseOrder>> GetDefaultSort()
         {
-            return q => q.OrderByDescending(po => po.OrderDate)
-                        .ThenByDescending(po => po.Id);
+            return q => q.OrderByDescending(po => po.Id);
         }
     }
 }

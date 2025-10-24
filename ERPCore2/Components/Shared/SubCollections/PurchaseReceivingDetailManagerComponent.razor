@@ -1200,7 +1200,10 @@ else
     {
         var details = new List<TDetailEntity>();
         
-        foreach (var item in ReceivingItems.Where(x => !IsEmptyRow(x) && (x.SelectedPurchaseDetail != null || x.SelectedProduct != null)))
+        // 只處理非空行、有選擇商品且入庫數量大於 0 的項目
+        foreach (var item in ReceivingItems.Where(x => !IsEmptyRow(x) && 
+                                                        (x.SelectedPurchaseDetail != null || x.SelectedProduct != null) &&
+                                                        x.ReceivedQuantity > 0))
         {
             TDetailEntity detail;
             

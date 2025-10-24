@@ -41,6 +41,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "已完成")]
         public bool IsReceivingCompleted { get; set; } = false;
 
+        [Display(Name = "標記完成者")]
+        [ForeignKey(nameof(CompletedByEmployee))]
+        public int? CompletedByEmployeeId { get; set; }
+
+        [Display(Name = "標記完成時間")]
+        public DateTime? CompletedAt { get; set; }
+
         [Required(ErrorMessage = "單價為必填")]
         [Display(Name = "單價")]
         [Column(TypeName = "decimal(18,4)")]
@@ -60,6 +67,7 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
         public Product Product { get; set; } = null!;
+        public Employee? CompletedByEmployee { get; set; }
         public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }
 }
