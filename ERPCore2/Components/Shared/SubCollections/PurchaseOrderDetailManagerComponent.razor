@@ -345,24 +345,7 @@ else
                     var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity;
                     
                     // 如果已完全進貨，只能勾選完成，不能取消
-                    var canToggle = !isFullyReceived || !productItem.IsReceivingCompleted;
-                    
-                    // 如果是唯讀狀態，只顯示狀態
-                    if (isFieldReadOnly)
-                    {
-                        return @<div class="text-center" style="min-height: 31px;">
-                            @if (productItem.IsReceivingCompleted)
-                            {
-                                <small class="text-success">
-                                    <i class="fas fa-check-circle"></i> 已完成
-                                </small>
-                            }
-                            else
-                            {
-                                <small class="text-muted">未完成</small>
-                            }
-                        </div>;
-                    }
+                    var canToggle = !isFullyReceived || !productItem.IsReceivingCompleted;                    
                     
                     return @<div class="text-center">
                         <div class="form-check form-switch d-flex justify-content-center">
@@ -373,12 +356,6 @@ else
                                    @onclick="() => OnIsReceivingCompletedChanged(productItem)"
                                    title="@(canToggle ? "標記為完成進貨" : "已完全進貨，無法取消")" />
                         </div>
-                        @if (productItem.IsReceivingCompleted)
-                        {
-                            <small class="text-success">
-                                <i class="fas fa-check-circle"></i> 已完成
-                            </small>
-                        }
                     </div>;
                 }
             });
