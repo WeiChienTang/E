@@ -682,7 +682,7 @@ else
                 {
                     var displayText = FormatPurchaseDetailDisplayText(receivingItem.SelectedPurchaseDetail);
                     return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
@@ -737,7 +737,7 @@ else
                 var receivingItem = (ReceivingItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="small">@receivingItem.OrderQuantity.ToString("N0")</span>
+                    <span>@receivingItem.OrderQuantity.ToString("N0")</span>
                 </div>;
             }
         });
@@ -777,7 +777,7 @@ else
                 if (isFieldReadOnly)
                 {
                     return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
+                        <span class="text-muted" title="@title">
                             @(receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString("N0") : "0")
                         </span>
                     </div>;
@@ -812,7 +812,7 @@ else
                 var receivingItem = (ReceivingItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="small">@receivingItem.UnitPrice.ToString("F0")</span>
+                    <span>@receivingItem.UnitPrice.ToString("F0")</span>
                 </div>;
             }
         });
@@ -853,7 +853,7 @@ else
                 {
                     var displayText = receivingItem.SelectedWarehouse?.Name ?? "未選擇倉庫";
                     return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                            <span class="text-muted small" title="@title">@displayText</span>
+                            <span class="text-muted" title="@title">@displayText</span>
                         </div>;
                 }                    // 可編輯狀態，顯示下拉選單
                     return @<div class="position-relative">
@@ -912,7 +912,7 @@ else
                     {
                         var displayText = receivingItem.SelectedWarehouseLocation?.Name ?? "未選擇庫位";
                         return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                            <span class="text-muted small" title="@title">@displayText</span>
+                            <span class="text-muted" title="@title">@displayText</span>
                         </div>;
                     }
                     

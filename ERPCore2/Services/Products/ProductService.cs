@@ -88,7 +88,8 @@ namespace ERPCore2.Services
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
                     .Where(p => ((p.Name != null && p.Name.Contains(searchTerm)) ||
-                                (p.Code != null && p.Code.Contains(searchTerm))))
+                                (p.Code != null && p.Code.Contains(searchTerm)) ||
+                                (p.Barcode != null && p.Barcode.Contains(searchTerm))))
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }
@@ -123,6 +124,11 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("商品名稱為必填欄位");
+                }
+
+                if (string.IsNullOrWhiteSpace(entity.Barcode))
+                {
+                    errors.Add("條碼編號為必填欄位");
                 }
                 
                 if (!entity.ProductCategoryId.HasValue || entity.ProductCategoryId <= 0)

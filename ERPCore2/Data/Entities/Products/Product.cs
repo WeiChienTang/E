@@ -16,6 +16,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "商品名稱")]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(50, ErrorMessage = "條碼編號不可超過50個字元")]
+        [Display(Name = "條碼編號")]
+        public string? Barcode { get; set; }
+
         // Foreign Keys
         [Display(Name = "單位")]
         [ForeignKey(nameof(Unit))]

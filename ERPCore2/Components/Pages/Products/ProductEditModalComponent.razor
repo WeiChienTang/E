@@ -315,6 +315,17 @@
                 MaxLength = 100,
                 HelpText = "產品的完整名稱"
             },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Product.Barcode),
+                Label = "條碼編號",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入條碼編號",
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "產品的條碼編號",
+                ActionButtons = GetBarcodeActionButtons()
+            },
             new()
             {
                 PropertyName = nameof(Product.ProductCategoryId),
@@ -356,6 +367,7 @@
         {
             { nameof(Product.Code), "基本資訊" },
             { nameof(Product.Name), "基本資訊" },
+            { nameof(Product.Barcode), "基本資訊" },
             { nameof(Product.ProductCategoryId), "基本資訊" },
             { nameof(Product.SizeId), "基本資訊" },
             { nameof(Product.UnitId), "基本資訊" },
@@ -732,6 +744,50 @@
             sizeModalManager, 
             nameof(Product.SizeId)
         );
+    }
+
+    /// <summary>
+    /// 產生條碼編號操作按鈕 - 同產品編號
+    /// </summary>
+    private List<FieldActionButton> GetBarcodeActionButtons()
+    {
+        return new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "同產編",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將產品編號複製到條碼編號",
+                OnClick = async () => await CopyCodeToBarcode(),
+                IsDisabled = false
+            }
+        };
+    }
+
+    /// <summary>
+    /// 將產品編號複製到條碼編號欄位
+    /// </summary>
+    private async Task CopyCodeToBarcode()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                // 複製產品編號到條碼編號
+                editModalComponent.Entity.Barcode = editModalComponent.Entity.Code;
+                
+                // 通知 UI 更新
+                StateHasChanged();
+                
+                // 顯示成功訊息
+                await NotificationService.ShowSuccessAsync("已將產品編號複製到條碼編號");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製產品編號時發生錯誤：{ex.Message}");
+        }
     }
 
     // ===== Modal 事件包裝器方法 =====

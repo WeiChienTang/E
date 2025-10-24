@@ -84,12 +84,7 @@ else
     [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice";
     [Parameter] public string RemarksPropertyName { get; set; } = "Remarks";
     [Parameter] public string? UnitIdPropertyName { get; set; }
-    [Parameter] public string? IsReceivingCompletedPropertyName { get; set; }
-
-    
-    // ===== 顯示控制參數 =====
-    [Parameter] public bool ShowIsReceivingCompleted { get; set; } = false;
-    
+    [Parameter] public string? IsReceivingCompletedPropertyName { get; set; }    
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "商品資訊";
@@ -214,7 +209,7 @@ else
                 {
                     var displayText = $"[{productItem.SelectedProduct.Code}] {productItem.SelectedProduct.Name}";
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small">@displayText</span>
+                        <span class="text-muted">@displayText</span>
                     </div>;
                 }
                 
@@ -251,7 +246,7 @@ else
                 {
                     var displayText = productItem.Quantity > 0 ? productItem.Quantity.ToString("N0") : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small">@displayText</span>
+                        <span class="text-muted">@displayText</span>
                     </div>;
                 }
                 
@@ -303,7 +298,7 @@ else
                 {
                     var displayText = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small">@displayText</span>
+                        <span class="text-muted">@displayText</span>
                     </div>;
                 }
                 
@@ -317,9 +312,6 @@ else
             }
         });
 
-        // 完成進貨欄位 (條件顯示)
-        if (ShowIsReceivingCompleted)
-        {
             columns.Add(new() 
             { 
                 Title = "完成進貨", 
@@ -366,7 +358,7 @@ else
                     </div>;
                 }
             });
-        }
+        
 
         // 備註欄位
         columns.Add(new() 
@@ -374,7 +366,7 @@ else
             Title = "備註", 
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
-            Width = ShowIsReceivingCompleted ? "150px" : "200px",
+            Width = "150px",
             HideOnMobile = true,
             Tooltip = "選填。可記錄採購相關的備註資訊",
             CustomTemplate = item => 
@@ -388,7 +380,7 @@ else
                 {
                     var displayText = string.IsNullOrEmpty(productItem.Remarks) ? "無備註" : productItem.Remarks;
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small">@displayText</span>
+                        <span class="text-muted">@displayText</span>
                     </div>;
                 }
                 

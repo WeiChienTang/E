@@ -62,6 +62,18 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
+                        nameof(Product.Barcode),
+                        new FieldDefinition<Product>
+                        {
+                            PropertyName = nameof(Product.Barcode),
+                            DisplayName = "條碼編號",
+                            FilterPlaceholder = "輸入條碼編號搜尋",
+                            TableOrder = 3,
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, nameof(Product.Barcode), p => p.Barcode)
+                        }
+                    },
+                    {
                         nameof(Product.SizeId),
                         new FieldDefinition<Product>
                         {
@@ -69,7 +81,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPropertyName = nameof(Product.SizeId), // 篩選器用
                             DisplayName = "尺寸",
                             FilterType = SearchFilterType.Select,
-                            TableOrder = 3,
+                            TableOrder = 4,
                             Options = _sizes.Select(s => new SelectOption 
                             { 
                                 Text = s.Name, 
@@ -87,7 +99,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPropertyName = nameof(Product.ProductCategoryId), // 篩選器用
                             DisplayName = "產品分類",
                             FilterType = SearchFilterType.Select,
-                            TableOrder = 4,
+                            TableOrder = 5,
                             Options = _productCategories.Select(pc => new SelectOption 
                             { 
                                 Text = pc.Name, 
@@ -105,7 +117,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPropertyName = nameof(Product.UnitId), // 篩選器用
                             DisplayName = "單位",
                             FilterType = SearchFilterType.Select,
-                            TableOrder = 5,
+                            TableOrder = 6,
                             Options = _units.Select(u => new SelectOption 
                             { 
                                 Text = u.Name, 

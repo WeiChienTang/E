@@ -660,7 +660,7 @@ else
                 {
                     var displayText = $"[{salesItem.SelectedProduct.Code}] {salesItem.SelectedProduct.Name}";
                     return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
 
@@ -734,7 +734,7 @@ else
                     if (isFieldReadOnly && salesItem.SelectedWarehouse != null)
                     {
                         // 唯讀模式：顯示純文字
-                        return @<span class="text-muted small" title="@title">
+                        return @<span class="text-muted" title="@title">
                             @salesItem.SelectedWarehouse.Name
                         </span>;
                     }
@@ -771,7 +771,7 @@ else
                 // 只有當選擇了商品和倉庫時才顯示庫存量
                 if (salesItem.SelectedProduct == null || salesItem.SelectedWarehouse == null)
                 {
-                    return @<span class="text-muted small">-</span>;
+                    return @<span class="text-muted">-</span>;
                 }
                 
                 // 顯示庫存量（有可能尚未載入）
@@ -781,14 +781,14 @@ else
                     var textColor = stockQty <= 0 ? "text-danger" : 
                                    stockQty < 10 ? "text-warning" : "text-success";
                     
-                    return @<span class="@textColor small fw-bold" title="即時可用庫存">
+                    return @<span class="@textColor fw-bold" title="即時可用庫存">
                         @stockQty.ToString("N0")
                     </span>;
                 }
                 else
                 {
                     // 載入中
-                    return @<span class="text-muted small">
+                    return @<span class="text-muted">
                         <i class="bi bi-hourglass-split"></i>
                     </span>;
                 }
@@ -828,7 +828,7 @@ else
                 if (isFieldReadOnly)
                 {
                     return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
+                        <span class="text-muted" title="@title">
                             @(salesItem.OrderQuantity > 0 ? salesItem.OrderQuantity.ToString("N0") : "0")
                         </span>
                     </div>;
@@ -877,7 +877,7 @@ else
                 if (isFieldReadOnly)
                 {
                     return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
+                        <span class="text-muted" title="@title">
                             @(salesItem.UnitPrice > 0 ? salesItem.UnitPrice.ToString("N0") : "0")
                         </span>
                     </div>;
@@ -927,7 +927,7 @@ else
                 if (isFieldReadOnly)
                 {
                     return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
+                        <span class="text-muted" title="@title">
                             @(salesItem.DiscountPercentage > 0 ? $"{salesItem.DiscountPercentage:N0}%" : "0%")
                         </span>
                     </div>;

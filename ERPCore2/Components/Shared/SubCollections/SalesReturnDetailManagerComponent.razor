@@ -342,7 +342,7 @@ else
                         ? FormatOrderDetailDisplayText(returnItem.SelectedOrderDetail)
                         : "未選擇";
                     return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
@@ -415,7 +415,7 @@ else
                 if (isFieldReadOnly)
                 {
                     return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted small" title="@title">
+                        <span class="text-muted" title="@title">
                             @(returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString("N0") : "0")
                         </span>
                     </div>;
