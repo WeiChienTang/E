@@ -1,0 +1,38 @@
+/* StockAlertViewModalComponent 專用樣式 */
+
+/* ===== Modal Header 樣式 ===== */
+
+.modal-header {
+    padding: 0.5rem 1.5rem !important;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.modal-title {
+    font-weight: 600 !important;
+    font-size: 1.25rem !important;
+    margin: 0 !important;
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 平板裝置 */
+@media (max-width: 768px) {
+    .modal-header {
+        padding: 0.5rem !important;
+    }
+    
+    .modal-title {
+        font-size: 1.1rem !important;
+    }
+}
+
+/* 手機裝置 */
+@media (max-width: 576px) {
+    .modal-header {
+        padding: 0.5rem !important;
+    }
+    
+    .modal-title {
+        font-size: 1rem !important;
+    }
+}

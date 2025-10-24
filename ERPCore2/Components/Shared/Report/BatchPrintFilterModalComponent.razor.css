@@ -16,7 +16,7 @@
 .batch-print-modal-header {
     background-color: #1F2937 !important;
     border-bottom: 1px solid #374151 !important;
-    padding: 1rem 1.5rem !important;
+    padding: 0.5rem 1.5rem !important;
 }
 
 /* Modal 標題文字 - 白色 */
@@ -49,7 +49,7 @@
     background-color: #F9FAFB;
     border-bottom: 1px solid #E5E7EB;
     border-top: none !important;
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1rem;
 }
 
 /* ===== Modal Body 樣式 ===== */
@@ -65,7 +65,7 @@
 /* 平板裝置 */
 @media (max-width: 768px) {
     .batch-print-modal-header {
-        padding: 0.875rem 1rem !important;
+        padding: 0.5rem !important;
     }
     
     .batch-print-modal-header .modal-title {
@@ -73,14 +73,14 @@
     }
     
     .batch-print-modal-header + .modal-footer {
-        padding: 0.625rem 1rem;
+        padding: 0.5rem 1rem;
     }
 }
 
 /* 手機裝置 */
 @media (max-width: 576px) {
     .batch-print-modal-header {
-        padding: 0.75rem !important;
+        padding: 0.5rem !important;
     }
     
     .batch-print-modal-header .modal-title {

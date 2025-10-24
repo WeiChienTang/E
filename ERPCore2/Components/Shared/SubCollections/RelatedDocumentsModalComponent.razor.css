@@ -6,7 +6,7 @@
     background: #1F2937 !important;
     color: white !important;
     border-radius: 12px 12px 0 0 !important;
-    padding: 1.25rem 1.5rem !important;
+    padding: 0.5rem 1.5rem !important;
     border-bottom: none !important;
 }
 
@@ -151,7 +151,7 @@
 
 @media (max-width: 768px) {
     .modal-header {
-        padding: 1rem !important;
+        padding: 0.5rem !important;
     }
     
     .modal-title {
@@ -177,7 +177,7 @@
 
 @media (max-width: 576px) {
     .modal-header {
-        padding: 0.75rem !important;
+        padding: 0.5rem !important;
     }
     
     .modal-title {
