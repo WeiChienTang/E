@@ -15,7 +15,10 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "分類名稱為必填")]
         [MaxLength(50, ErrorMessage = "分類名稱不可超過50個字元")]
         [Display(Name = "分類名稱")]
-        public string Name { get; set; } = string.Empty;        
+        public string Name { get; set; } = string.Empty;
+
+        [Display(Name = "可販售")]
+        public bool IsSaleable { get; set; } = false;
         
         // Navigation Properties
         public ICollection<Product> Products { get; set; } = new List<Product>();

@@ -59,39 +59,53 @@ namespace ERPCore2.Data
         /// <returns>種子器集合</returns>
         private static IEnumerable<IDataSeeder> GetAllSeeders()
         {
+            bool isTest = true;
+
+            if (isTest)
+            {
+                return new List<IDataSeeder>
+                {
+                    new CompanySeeder(),            // 公司資料 - 基礎資料，優先執行
+                    new SystemParameterSeeder(),    // 系統參數 - 系統基礎設定
+                    new PermissionSeeder(),
+                    new RoleSeeder(),
+                    new RolePermissionSeeder(),
+                    new ContactTypeSeeder(),        // 聯絡類型
+                    new AddressTypeSeeder(),        // 地址類型  
+                    new PaymentMethodSeeder(),      // 付款方式
+                    new PrepaymentTypeSeeder(),     // 預收付款項類型
+                    new BankSeeder(),               // 銀行別
+                    new CustomerTypeSeeder(),       // 客戶類型
+                    new SupplierTypeSeeder(),       // 廠商類型
+                    new PaperSettingSeeder(),       // 紙張設定
+                    new PrinterConfigurationSeeder(), // 印表機配置
+                    new EmployeeSeeder(),
+                    new EmployeePositionSeeder(),
+                    new DepartmentSeeder(),
+                    new ColorSeeder(),
+                    new MaterialSeeder(),
+                    new ProductCategorySeeder(),    // 產品類別 - 必須在 ProductSeeder 之前
+                    new UnitSeeder(),
+                    new UnitConversionSeeder(),     // 單位轉換關係 - 必須在 UnitSeeder 之後
+                    new SizeSeeder(),
+                    new WarehouseSeeder(),
+                    new CustomerSeeder(),           // 依賴 CustomerTypes
+                    new SupplierSeeder(),           // 依賴 SupplierTypes
+                    new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
+                    new InventorySeeder(),
+                    new WeatherSeeder(),
+                    new SalesReturnReasonSeeder(),  // 銷貨退貨原因
+                    new CurrencySeeder(),           // 貨幣資料
+                };
+            }
+
             return new List<IDataSeeder>
             {
-                new CompanySeeder(),            // 公司資料 - 基礎資料，優先執行
-                new SystemParameterSeeder(),    // 系統參數 - 系統基礎設定
-                new PermissionSeeder(),
+                new SystemParameterSeeder(),    
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
-                new ContactTypeSeeder(),        // 聯絡類型
-                new AddressTypeSeeder(),        // 地址類型  
-                new PaymentMethodSeeder(),      // 付款方式
-                new PrepaymentTypeSeeder(),     // 預收付款項類型
-                new BankSeeder(),               // 銀行別
-                new CustomerTypeSeeder(),       // 客戶類型
-                new SupplierTypeSeeder(),       // 廠商類型
-                new PaperSettingSeeder(),       // 紙張設定
-                new PrinterConfigurationSeeder(), // 印表機配置
-                new EmployeeSeeder(),
+                new PaymentMethodSeeder(),
                 new EmployeePositionSeeder(),
-                new DepartmentSeeder(),
-                new ColorSeeder(),
-                new MaterialSeeder(),
-                new ProductCategorySeeder(),    // 產品類別 - 必須在 ProductSeeder 之前
-                new UnitSeeder(),
-                new UnitConversionSeeder(),     // 單位轉換關係 - 必須在 UnitSeeder 之後
-                new SizeSeeder(),
-                new WarehouseSeeder(),
-                new CustomerSeeder(),           // 依賴 CustomerTypes
-                new SupplierSeeder(),           // 依賴 SupplierTypes
-                new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
-                new InventorySeeder(),
-                new WeatherSeeder(),
-                new SalesReturnReasonSeeder(),  // 銷貨退貨原因
-                new CurrencySeeder(),           // 貨幣資料
             };
         }
     }

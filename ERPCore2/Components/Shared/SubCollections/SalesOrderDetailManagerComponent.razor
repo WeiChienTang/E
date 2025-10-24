@@ -419,10 +419,10 @@ else
         {
             if (SelectedCustomerId.HasValue && SelectedCustomerId.Value > 0)
             {
-                // 只顯示產品類別為"成品"的商品 (PC003)
+                // 只顯示產品類別標記為可販售的商品
                 AvailableProducts = Products
                     .Where(p => p.ProductCategory != null && 
-                               p.ProductCategory.Code == "PC001")
+                               p.ProductCategory.IsSaleable)
                     .ToList();
             }
             else

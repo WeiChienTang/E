@@ -96,6 +96,7 @@
             AllowanceAmount = 0,
             CheckNumber = null,
             DueDate = null,
+            Remarks = null,
             ExistingPayment = null
         };
     }
@@ -153,6 +154,7 @@
                 AllowanceAmount = payment.AllowanceAmount,
                 CheckNumber = payment.CheckNumber,
                 DueDate = payment.DueDate,
+                Remarks = payment.Remarks,
                 ExistingPayment = payment
             }).ToList();
         }
@@ -364,6 +366,31 @@
                     var cssClass = subtotal >= 0 ? "text-success" : "text-danger";
                     return @<div class="text-end fw-bold @cssClass">@displayValue</div>;
                 }
+            },
+            new()
+            {
+                Title = "備註",
+                Tooltip = "備註說明",
+                PropertyName = nameof(SetoffPaymentItem.Remarks),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "200px",
+                IsRequired = false,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, args =>
+                {
+                    var (itemObj, value) = args;
+                    var item = (SetoffPaymentItem)itemObj;
+                    var wasEmpty = IsEmptyRow(item);
+                    
+                    item.Remarks = value;
+                    
+                    // 使用 AutoEmptyRowHelper 處理自動空行
+                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
+                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
+                    
+                    // 備註變更時也需要通知父組件，以便正確追蹤變更
+                    _ = NotifyPaymentsChanged();
+                    StateHasChanged();
+                })
             }
         };
 
@@ -465,6 +492,7 @@
                 AllowanceAmount = item.AllowanceAmount,
                 CheckNumber = item.CheckNumber,
                 DueDate = item.DueDate,
+                Remarks = item.Remarks,
                 // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
                 SetoffDocument = null!,
                 Bank = null,
@@ -509,5 +537,6 @@
         public string? CheckNumber { get; set; }
         public DateTime? DueDate { get; set; }
         public SetoffPayment? ExistingPayment { get; set; }
+        // Remarks 繼承自 BaseEntity
     }
 }

@@ -2,6 +2,8 @@ using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
+using Microsoft.AspNetCore.Components;
+using ERPCore2.Data.Enums;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -31,7 +33,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "分類代碼",
                             FilterPlaceholder = "輸入分類代碼搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ProductCategory.Code), pc => pc.Code, allowNull: true)
@@ -45,9 +46,42 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "分類名稱",
                             FilterPlaceholder = "輸入分類名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ProductCategory.Name), pc => pc.Name)
+                        }
+                    },
+                    {
+                        nameof(ProductCategory.IsSaleable),
+                        new FieldDefinition<ProductCategory>
+                        {
+                            PropertyName = nameof(ProductCategory.IsSaleable),
+                            DisplayName = "可販售",
+                            TableOrder = 3,
+                            FilterFunction = (model, query) =>
+                            {
+                                var filterValue = model.GetFilterValue(nameof(ProductCategory.IsSaleable))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(filterValue) && bool.TryParse(filterValue, out var isSaleable))
+                                {
+                                    query = query.Where(pc => pc.IsSaleable == isSaleable);
+                                }
+                                return query;
+                            },
+                            CustomTemplate = (context) =>
+                            {
+                                var category = context as ProductCategory;
+                                if (category == null) 
+                                {
+                                    return builder => { };
+                                }
+                                
+                                return builder =>
+                                {
+                                    builder.OpenComponent<ERPCore2.Components.Shared.Badges.StatusBadgeComponent>(0);
+                                    builder.AddAttribute(1, "Status", category.IsSaleable ? EntityStatus.Active : EntityStatus.Inactive);
+                                    builder.AddAttribute(2, "CustomText", category.IsSaleable ? "可販售" : "不販售");
+                                    builder.CloseComponent();
+                                };
+                            }
                         }
                     }
                 };

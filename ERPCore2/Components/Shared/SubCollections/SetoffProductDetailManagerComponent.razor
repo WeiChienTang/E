@@ -169,6 +169,7 @@ else
                     Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
                     CurrentSetoffAmount = detail.CurrentSetoffAmount,
                     CurrentAllowanceAmount = detail.CurrentAllowanceAmount,
+                    Remarks = detail.Remarks,
                     ExistingDetail = detail,
                     UnsettledDetail = unsettledDetail, // 保留未結清明細資訊以顯示來源單號等資料
                     NeedsSourceDetailLoad = unsettledDetail == null // 標記需要額外載入來源明細
@@ -192,6 +193,7 @@ else
                     Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
                     CurrentSetoffAmount = 0, // 預設為0
                     CurrentAllowanceAmount = 0, // 預設為0
+                    Remarks = null,
                     ExistingDetail = null,
                     UnsettledDetail = detail, // 保留未結清明細資訊
                     NeedsSourceDetailLoad = false
@@ -388,6 +390,23 @@ else
             }
         });
 
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "備註",
+            Tooltip = "備註說明",
+            PropertyName = nameof(SetoffProductDetailItem.Remarks),
+            ColumnType = InteractiveColumnType.Input,
+            Width = "200px",
+            IsRequired = false,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (itemObj, value) = args;
+                var item = (SetoffProductDetailItem)itemObj;
+                item.Remarks = value;
+                await NotifyDetailsChanged();
+            })
+        });
+
         return columns;
     }
 
@@ -508,7 +527,11 @@ else
     private async Task NotifyDetailsChanged()
     {
         var details = SetoffItems
-            .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0) // 只傳遞有輸入金額的項目
+            .Where(item => 
+                item.CurrentSetoffAmount > 0 || 
+                item.CurrentAllowanceAmount > 0 || 
+                !string.IsNullOrWhiteSpace(item.Remarks) || // 包含有備註的項目
+                item.ExistingDetail != null) // 編輯模式下包含所有已存在的明細
             .Select(item => new SetoffProductDetail
             {
                 Id = item.ExistingDetail?.Id ?? 0,
@@ -519,7 +542,8 @@ else
                 CurrentSetoffAmount = item.CurrentSetoffAmount,
                 CurrentAllowanceAmount = item.CurrentAllowanceAmount,
                 TotalSetoffAmount = item.ExistingDetail?.TotalSetoffAmount ?? 0,
-                TotalAllowanceAmount = item.ExistingDetail?.TotalAllowanceAmount ?? 0
+                TotalAllowanceAmount = item.ExistingDetail?.TotalAllowanceAmount ?? 0,
+                Remarks = item.Remarks
             }).ToList();
 
         await OnDetailsChanged.InvokeAsync(details);
@@ -616,6 +640,7 @@ else
         public Product? Product { get; set; }
         public decimal CurrentSetoffAmount { get; set; }
         public decimal CurrentAllowanceAmount { get; set; }
+        public string? Remarks { get; set; }
         public SetoffProductDetail? ExistingDetail { get; set; }
         public UnsettledDetailDto? UnsettledDetail { get; set; } // 保留未結清明細資訊
         public bool NeedsSourceDetailLoad { get; set; } // 標記是否需要額外載入來源明細（針對已結清的明細）

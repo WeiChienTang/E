@@ -671,6 +671,7 @@ namespace ERPCore2.Services
                         existingEntity.CurrentAllowanceAmount = detail.CurrentAllowanceAmount;
                         existingEntity.TotalSetoffAmount += setoffDiff;
                         existingEntity.TotalAllowanceAmount += allowanceDiff;
+                        existingEntity.Remarks = detail.Remarks;
                         existingEntity.UpdatedAt = DateTime.UtcNow;
                     }
                 }

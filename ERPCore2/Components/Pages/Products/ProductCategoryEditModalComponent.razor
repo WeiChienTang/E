@@ -152,6 +152,14 @@
                 MaxLength = 50,
                 HelpText = "商品分類的名稱，用於區分不同的商品類型"
             },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(ProductCategory.IsSaleable),
+                Label = "是否販售",
+                FieldType = FormFieldType.Checkbox,
+                IsRequired = false,
+                HelpText = "指示此商品分類下的商品是否可供銷售"
+            },
 
             FormFieldConfigurationHelper.CreateRemarksField<ProductCategory>()
         };
@@ -160,6 +168,7 @@
         {            
             { nameof(ProductCategory.Code), "基本資訊" },
             { nameof(ProductCategory.Name), "基本資訊" },
+            { nameof(ProductCategory.IsSaleable), "基本資訊" },
             { nameof(ProductCategory.Remarks), "額外資訊" }
         };
     }

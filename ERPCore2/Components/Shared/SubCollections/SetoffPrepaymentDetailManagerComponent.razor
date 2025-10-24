@@ -137,6 +137,7 @@
             SourceDocumentCode = string.Empty,
             Amount = 0,
             UsedAmount = 0,
+            Remarks = null,
             ExistingPrepayment = null
         };
     }
@@ -307,6 +308,7 @@
                     SourceDocumentCode = prepayment.SourceDocumentCode,
                     Amount = prepayment.Amount,
                     UsedAmount = prepayment.UsedAmount,
+                    Remarks = prepayment.Remarks,
                     ExistingPrepayment = prepayment
                 };
                 
@@ -343,7 +345,6 @@
                 PropertyName = nameof(SetoffPrepaymentItem.PrepaymentTypeId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
-                IsRequired = true,
                 Options = new List<InteractiveSelectOption> 
                 { 
                     new InteractiveSelectOption { Value = 0, Text = "請選擇類型.." } 
@@ -543,6 +544,31 @@
                                    placeholder=""
                                    @oninput="@(e => OnAmountInput(prepaymentItem, e.Value?.ToString()))" />;
                 }
+            },
+            new()
+            {
+                Title = "備註",
+                Tooltip = "備註說明",
+                PropertyName = nameof(SetoffPrepaymentItem.Remarks),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "200px",
+                IsRequired = false,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+                {
+                    var (itemObj, value) = args;
+                    var item = (SetoffPrepaymentItem)itemObj;
+                    var wasEmpty = IsEmptyRow(item);
+                    
+                    item.Remarks = value;
+                    
+                    // 使用 AutoEmptyRowHelper 處理自動空行
+                    AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
+                        PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, null, SetoffDocumentId ?? 0);
+                    
+                    // 備註變更時也需要通知父組件，以便正確追蹤變更
+                    await NotifyPrepaymentsChanged();
+                    StateHasChanged();
+                })
             }
         };
 
@@ -703,6 +729,7 @@
                         UsedAmount = item.UsedAmount,  // 只記錄使用金額
                         CustomerId = sourcePrepayment.CustomerId,
                         SupplierId = sourcePrepayment.SupplierId,
+                        Remarks = item.Remarks,
                         // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
                         PrepaymentType = null!,
                         Customer = null,
@@ -724,6 +751,7 @@
                         UsedAmount = 0,  // UsedAmount 為 0
                         CustomerId = CustomerId,
                         SupplierId = SupplierId,
+                        Remarks = item.Remarks,
                         // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
                         PrepaymentType = null!,
                         Customer = null,
@@ -824,5 +852,6 @@
         public decimal Amount { get; set; }
         public decimal UsedAmount { get; set; }
         public SetoffPrepayment? ExistingPrepayment { get; set; }
+        // Remarks 繼承自 BaseEntity
     }
 }
