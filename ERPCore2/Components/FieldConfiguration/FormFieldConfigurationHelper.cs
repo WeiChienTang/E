@@ -29,7 +29,7 @@ namespace ERPCore2.FieldConfiguration
             string containerCssClass = "col-12",
             bool readOnly = false) where TEntity : BaseEntity
         {
-            // 統一使用 120 字元限制，但保持 500 位元組的資料庫限制
+            // 統一使用 100 字元限制，但保持 500 位元組的資料庫限制
             return new FormFieldDefinition
             {
                 PropertyName = nameof(BaseEntity.Remarks),
@@ -37,7 +37,7 @@ namespace ERPCore2.FieldConfiguration
                 FieldType = FormFieldType.TextAreaWithCharacterCount,
                 Placeholder = placeholder,
                 Rows = rows,
-                MaxLength = 120,      // 統一字元限制
+                MaxLength = 100,      // 統一字元限制
                 MaxBytes = 500,       // 保持資料庫位元組限制
                 HelpText = helpText,
                 ContainerCssClass = containerCssClass,

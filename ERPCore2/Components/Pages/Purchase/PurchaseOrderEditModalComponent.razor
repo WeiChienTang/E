@@ -479,7 +479,20 @@
                     IsReadOnly = true // 含稅總金額欄位始終為唯讀
                 },
 
-                FormFieldConfigurationHelper.CreateRemarksField<PurchaseOrder>(),
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.RejectReason),
+                    Label = "駁回原因",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入駁回原因",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "其他需要記錄的駁回原因",
+                    ContainerCssClass = "col-6",
+                    IsReadOnly = isApproved
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseOrder>(containerCssClass:"col-6"),
             };
 
             formSections = new Dictionary<string, string>
@@ -492,6 +505,7 @@
                 { nameof(PurchaseOrder.TotalAmount), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseOrder.PurchaseTaxAmount), "金額資訊(系統自動計算)" },
                 { nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax), "金額資訊(系統自動計算)" },
+                { nameof(PurchaseOrder.RejectReason), "額外資訊" },
                 { nameof(PurchaseOrder.Remarks), "額外資訊" }
             };
         }
