@@ -47,6 +47,20 @@
                                 </SystemParameterTabContainer>
                             }
 
+                            @* 審核流程設定 *@
+                            @if (activeTab == "approval")
+                            {
+                                <SystemParameterTabContainer IsLoading="@isLoading" 
+                                                            ErrorMessage="@errorMessage"
+                                                            ShowFooter="true"
+                                                            Entity="@systemParameter">
+                                    <ApprovalSettingsTab Model="@systemParameter" 
+                                                        OnSave="@HandleSaveAsync"
+                                                        OnReload="@ReloadData"
+                                                        IsSaving="@isSaving" />
+                                </SystemParameterTabContainer>
+                            }
+
                             @* 外觀設定 *@
                             @if (activeTab == "appearance")
                             {
@@ -101,6 +115,7 @@
     private List<SystemParameterTabHeader.TabDefinition> tabDefinitions = new()
     {
         new("basic", "系統基本設定", ""),
+        new("approval", "審核流程設定", ""),
         new("appearance", "外觀設定", ""),
         new("order", "訂單設定", ""),
         new("print", "列印設定", ""),

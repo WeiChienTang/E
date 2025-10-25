@@ -47,7 +47,13 @@ namespace ERPCore2.Services
         Task<ServiceResult> DeleteOrderDetailAsync(int detailId);
         
         // 進貨相關查詢
-        Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted);
+        /// <summary>
+        /// 獲取廠商的可進貨採購明細（含審核過濾）
+        /// </summary>
+        /// <param name="supplierId">廠商ID</param>
+        /// <param name="includeCompleted">是否包含已完成的明細</param>
+        /// <param name="checkApproval">是否檢查審核狀態（true=只載入已審核，false=不檢查審核）</param>
+        Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted, bool checkApproval = true);
         Task<List<PurchaseOrder>> GetIncompleteOrdersBySupplierAsync(int supplierId);
         
         // 稅額計算

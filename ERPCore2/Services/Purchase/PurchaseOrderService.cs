@@ -956,9 +956,12 @@ namespace ERPCore2.Services
         #region 進貨相關查詢
 
         /// <summary>
-        /// 獲取廠商的進貨明細
+        /// 獲取廠商的進貨明細（含審核過濾）
         /// </summary>
-        public async Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted)
+        /// <param name="supplierId">廠商ID</param>
+        /// <param name="includeCompleted">是否包含已完成的明細</param>
+        /// <param name="checkApproval">是否檢查審核狀態（true=只載入已審核，false=不檢查審核）</param>
+        public async Task<List<PurchaseOrderDetail>> GetReceivingDetailsBySupplierAsync(int supplierId, bool includeCompleted, bool checkApproval = true)
         {
             try
             {
@@ -970,8 +973,13 @@ namespace ERPCore2.Services
                     .Include(pod => pod.PurchaseOrder)
                         .ThenInclude(po => po.Warehouse)
                     .Include(pod => pod.Product)
-                    .Where(pod => pod.PurchaseOrder.SupplierId == supplierId
-                                && pod.PurchaseOrder.IsApproved);
+                    .Where(pod => pod.PurchaseOrder.SupplierId == supplierId);
+
+                // 根據參數決定是否檢查審核狀態
+                if (checkApproval)
+                {
+                    query = query.Where(pod => pod.PurchaseOrder.IsApproved);
+                }
 
                 if (!includeCompleted)
                 {
@@ -987,7 +995,8 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReceivingDetailsBySupplierAsync), GetType(), _logger, new { 
                     SupplierId = supplierId,
-                    IncludeCompleted = includeCompleted 
+                    IncludeCompleted = includeCompleted,
+                    CheckApproval = checkApproval
                 });
                 return new List<PurchaseOrderDetail>();
             }

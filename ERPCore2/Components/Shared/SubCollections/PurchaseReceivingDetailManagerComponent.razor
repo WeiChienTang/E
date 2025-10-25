@@ -110,6 +110,9 @@ else
     // ===== 供應商過濾參數 =====
     [Parameter] public int? SelectedSupplierId { get; set; }
     
+    // ===== 審核控制參數 =====
+    [Parameter] public bool IsApprovalEnabled { get; set; } = true; // 是否啟用採購單審核（從系統參數載入）
+    
     // ===== 篩選參數 =====
     [Parameter] public int? SelectedPurchaseOrderId { get; set; }
     [Parameter] public int? FilterProductId { get; set; }
@@ -1078,8 +1081,11 @@ else
             if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
             {
                 // 載入該廠商未完成進貨的採購明細
+                // 根據審核開關決定是否只載入已審核的採購單
                 AvailablePurchaseDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
-                    SelectedSupplierId.Value, includeCompleted: false);
+                    SelectedSupplierId.Value, 
+                    includeCompleted: false,
+                    checkApproval: IsApprovalEnabled); // 傳遞審核開關
                 
                 // 從採購明細中提取商品清單（向下相容）
                 AvailableProducts = AvailablePurchaseDetails

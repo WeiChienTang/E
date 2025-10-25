@@ -1,5 +1,6 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Helpers
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -24,7 +25,7 @@
                           ModalTitle="@(PurchaseOrderId.HasValue ? "編輯採購單" : "新增採購單")"
                           Size="GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
                           AutoCompletePrefillers="@GetAutoCompletePrefillers()"
                           AutoCompleteCollections="@GetAutoCompleteCollections()"
@@ -48,8 +49,8 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnReject="@HandlePurchaseOrderReject"
-                          FormHeaderContent="@GetWarningMessage()"
-                          CustomActionButtons="@GetCustomActionButtons()">
+                          FormHeaderContent="@WarningMessage"
+                          CustomActionButtons="@CustomActionButtons">
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -94,7 +95,7 @@
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
-    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    private RelatedEntityModalManager<Supplier> supplierModalManager;
     
     // ===== 相關單據 Modal =====
     private PurchaseReceivingEditModalComponent? purchaseReceivingEditModal;
@@ -111,14 +112,28 @@
     // 系統參數 - 稅率快取（避免重複查詢資料庫）
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
     
+    // ===== 審核開關狀態 =====
+    private bool isApprovalEnabled = true; // 是否啟用審核功能（從系統參數載入）
+    
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有進貨記錄）
+
+    // ===== 建構函數 =====
+    public PurchaseOrderEditModalComponent()
+    {
+        // 提前初始化 supplierModalManager 以避免 NullReferenceException
+        // 實際配置會在 OnInitializedAsync 中完成
+        supplierModalManager = new RelatedEntityModalManager<Supplier>();
+    }
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // 載入審核開關設定（優先執行，影響後續邏輯）
+            isApprovalEnabled = await SystemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+            
             // 初始化 Modal 管理器
             InitializeSupplierModalManager();
         }
@@ -183,12 +198,13 @@
         try
         {
             // 使用通用 Helper 進行完整驗證（實體、ID、核准狀態）
+            // 根據系統參數決定是否需要審核才能列印
             var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
                 entity: editModalComponent?.Entity,
                 entityId: PurchaseOrderId,
                 isApproved: editModalComponent?.Entity?.IsApproved ?? false,
                 entityName: "採購單",
-                requireApproval: true
+                requireApproval: isApprovalEnabled  // 使用系統參數而非固定值
             );
             
             if (!isValid)
@@ -304,7 +320,7 @@
                 // 清空明細
                 purchaseOrderDetails.Clear();
                 
-                // 🔑 新增模式時,重置鎖定狀態為 false
+                //  新增模式時,重置鎖定狀態為 false
                 hasUndeletableDetails = false;
                 
                 return newOrder;
@@ -371,7 +387,7 @@
             // 載入商品資料
             availableProducts = await ProductService.GetAllAsync();
             
-            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             try
             {
                 currentTaxRate = await SystemParameterService.GetTaxRateAsync();
@@ -406,8 +422,12 @@
     {
         try
         {
-            // 🔑 不再使用 IsApproved 鎖定，改用 hasUndeletableDetails
-            // 只有當明細有「下一步動作」時才鎖定
+            // 使用 ApprovalConfigHelper 統一判斷是否鎖定欄位
+            var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
+                isApprovalEnabled,
+                editModalComponent?.Entity?.IsApproved ?? false,
+                hasUndeletableDetails
+            );
             
             formFields = new List<FormFieldDefinition>
             {
@@ -420,7 +440,7 @@
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "採購單的唯一編號，新增時系統會自動產生，也可手動修改",
-                    IsReadOnly = hasUndeletableDetails
+                    IsReadOnly = shouldLock
                 },
                 new()
                 {
@@ -432,7 +452,7 @@
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetSupplierActionButtonsAsync(),
-                    IsReadOnly = hasUndeletableDetails
+                    IsReadOnly = shouldLock
                 },
                 new()
                 {
@@ -443,7 +463,7 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "選擇進行此次採購的公司",
-                    IsReadOnly = hasUndeletableDetails
+                    IsReadOnly = shouldLock
                 },
                 new()
                 {
@@ -452,7 +472,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "採購單建立日期",
-                    IsReadOnly = hasUndeletableDetails
+                    IsReadOnly = shouldLock
                 },
                 new()
                 {
@@ -461,7 +481,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "預計廠商交貨的日期",
-                    IsReadOnly = hasUndeletableDetails
+                    IsReadOnly = shouldLock
                 },
                 new FormFieldDefinition()
                 {
@@ -749,8 +769,14 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()
     {
-        // 🔑 改用 hasUndeletableDetails 判斷，而非 IsApproved
-        if (hasUndeletableDetails)
+        // 使用 ApprovalConfigHelper 統一判斷是否鎖定
+        var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
+            isApprovalEnabled,
+            editModalComponent?.Entity?.IsApproved ?? false,
+            hasUndeletableDetails
+        );
+        
+        if (shouldLock)
         {
             return new List<FieldActionButton>();
         }
@@ -898,7 +924,7 @@
                 purchaseOrderDetails = new List<PurchaseOrderDetail>();
             }
             
-            // 🔑 載入明細後,檢查是否有不可刪除的明細(有進貨記錄)
+            //  載入明細後,檢查是否有不可刪除的明細(有進貨記錄)
             var hasReceiving = purchaseOrderDetails.Any(d => d.ReceivedQuantity > 0);
             await HandleHasUndeletableDetailsChanged(hasReceiving);
         }
@@ -1002,10 +1028,11 @@
                 return false;
             }
 
-            // 檢查採購單是否已核准，已核准則不能修改（除非是審核前儲存）
-            if (purchaseOrder.IsApproved && !isPreApprovalSave)
+            // 使用 ApprovalConfigHelper 檢查是否可以儲存
+            if (!ApprovalConfigHelper.CanSaveWhenApproved(isApprovalEnabled, purchaseOrder.IsApproved, isPreApprovalSave))
             {
-                await NotificationService.ShowWarningAsync("採購單已核准，無法修改");
+                var warningMsg = ApprovalConfigHelper.GetApprovalWarningMessage(isApprovalEnabled, purchaseOrder.IsApproved, "採購單");
+                await NotificationService.ShowWarningAsync(warningMsg ?? "採購單已核准，無法修改");
                 return false;
             }
 
@@ -1111,8 +1138,10 @@
     /// </summary>
     private bool ShouldShowApprovalSection()
     {
-        // 只有編輯現有採購單時才顯示審核區域
-        return PurchaseOrderId.HasValue && PurchaseOrderId.Value > 0;
+        // 新邏輯：只有在啟用審核 + 編輯現有單據時才顯示
+        return isApprovalEnabled && 
+               PurchaseOrderId.HasValue && 
+               PurchaseOrderId.Value > 0;
     }
     
     /// <summary>
@@ -1244,34 +1273,90 @@
     }
     
     /// <summary>
-    /// 取得警告訊息（顯示在表單欄位上方）
+    /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
     /// 當採購單明細有進貨記錄時，顯示鎖定警告訊息
     /// </summary>
-    private RenderFragment? GetWarningMessage() => __builder =>
+    private RenderFragment? WarningMessage
     {
-        @if (hasUndeletableDetails)
+        get
         {
-            <div class="alert alert-warning mb-2 py-2" role="alert">
-                <i class="fas fa-lock me-2"></i>因部分明細已有進貨記錄，為保護資料完整性主檔欄位已設唯讀。
-            </div>
+            // 先計算警告訊息（避免在 RenderFragment 中出錯）
+            string? approvalWarning = null;
+            
+            try
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    approvalWarning = ApprovalConfigHelper.GetApprovalWarningMessage(
+                        isApprovalEnabled,
+                        editModalComponent.Entity.IsApproved,
+                        "採購單"
+                    );
+                }
+            }
+            catch
+            {
+                // 如果出錯，就不顯示警告
+                approvalWarning = null;
+            }
+            
+            return __builder =>
+            {
+                @if (!string.IsNullOrEmpty(approvalWarning))
+                {
+                    <div class="alert alert-warning mb-2 py-2" role="alert">
+                        <i class="fas fa-lock me-2"></i>@approvalWarning
+                    </div>
+                }
+                else if (hasUndeletableDetails)
+                {
+                    <div class="alert alert-warning mb-2 py-2" role="alert">
+                        <i class="fas fa-lock me-2"></i>因部分明細已有進貨記錄，為保護資料完整性主檔欄位已設唯讀。
+                    </div>
+                }
+            };
         }
-    };
+    }
     
     /// <summary>
-    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
     /// </summary>
-    private RenderFragment? GetCustomActionButtons() => __builder =>
+    private RenderFragment? CustomActionButtons
     {
-        @* 轉進貨單按鈕 - 只在採購單已儲存且已核准時顯示 *@
-        @if (editModalComponent?.Entity != null && 
-            PurchaseOrderId.HasValue && 
-            editModalComponent.Entity.IsApproved)
+        get
         {
-            <GenericButtonComponent Text="轉進貨" 
-                                  Variant="ButtonVariant.Success" 
-                                  OnClick="HandleCreateReceivingFromOrder" />
+            // 先計算是否可以顯示按鈕（避免在 RenderFragment 中出錯）
+            bool shouldShowButton = false;
+            
+            try
+            {
+                if (editModalComponent?.Entity != null && 
+                    PurchaseOrderId.HasValue && 
+                    PurchaseOrderId.Value > 0)
+                {
+                    var isApproved = editModalComponent.Entity.IsApproved;
+                    shouldShowButton = ApprovalConfigHelper.CanPerformActionRequiringApproval(
+                        isApprovalEnabled, 
+                        isApproved);
+                }
+            }
+            catch
+            {
+                shouldShowButton = false;
+            }
+            
+            return __builder =>
+            {
+                @* 轉進貨單按鈕 - 只在採購單已儲存且符合轉單條件時顯示 *@
+                @if (shouldShowButton)
+                {
+                    <GenericButtonComponent Text="轉進貨" 
+                                          Variant="ButtonVariant.Success" 
+                                          OnClick="HandleCreateReceivingFromOrder" />
+                }
+            };
         }
-    };
+    }
     
     /// <summary>
     /// 取得當前使用者ID
@@ -1374,7 +1459,8 @@
                 return;
             }
             
-            if (!editModalComponent.Entity.IsApproved)
+            // 使用 ApprovalConfigHelper 檢查是否可以執行轉單動作
+            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
             {
                 await NotificationService.ShowWarningAsync("只有已核准的採購單才能轉進貨單");
                 return;
@@ -1386,8 +1472,8 @@
                 await NotificationService.ShowWarningAsync("採購單缺少廠商資訊，無法轉進貨單");
                 return;
             }
-            
-            // 🔑 檢查是否還有未完成的明細（還需要入庫的商品）
+
+            // 檢查是否還有未完成的明細（還需要入庫的商品）
             if (!purchaseOrderDetails.Any())
             {
                 await NotificationService.ShowWarningAsync("採購單沒有明細資料，無法轉進貨單");

@@ -12,10 +12,28 @@ namespace ERPCore2.Services
     /// </summary>
     public class SystemParameterService : GenericManagementService<SystemParameter>, ISystemParameterService
     {
+        // ===== 審核配置快取 =====
+        private SystemParameter? _cachedParameter;
+        private DateTime _cacheExpiration = DateTime.MinValue;
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
+
         public SystemParameterService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<SystemParameter>> logger) : base(contextFactory, logger)
         {
+        }
+
+        /// <summary>
+        /// 覆寫更新方法，自動清除審核配置快取
+        /// </summary>
+        public override async Task<ServiceResult<SystemParameter>> UpdateAsync(SystemParameter entity)
+        {
+            var result = await base.UpdateAsync(entity);
+            if (result.IsSuccess)
+            {
+                ClearApprovalConfigCache();
+            }
+            return result;
         }
 
         public override async Task<List<SystemParameter>> SearchAsync(string searchTerm)
@@ -163,5 +181,98 @@ namespace ERPCore2.Services
                 return null;
             }
         }
+
+        // ===== 審核流程開關查詢方法 =====
+
+        /// <summary>
+        /// 取得系統參數（帶快取）
+        /// </summary>
+        private async Task<SystemParameter?> GetCachedSystemParameterAsync()
+        {
+            if (_cachedParameter == null || DateTime.Now > _cacheExpiration)
+            {
+                _cachedParameter = await GetSystemParameterAsync();
+                _cacheExpiration = DateTime.Now.Add(_cacheDuration);
+            }
+            return _cachedParameter;
+        }
+
+        /// <summary>
+        /// 清除審核配置快取（當系統參數更新時使用）
+        /// </summary>
+        public void ClearApprovalConfigCache()
+        {
+            _cachedParameter = null;
+            _cacheExpiration = DateTime.MinValue;
+        }
+
+        /// <summary>
+        /// 統一的審核開關查詢
+        /// </summary>
+        public async Task<bool> IsApprovalEnabledAsync(ApprovalType approvalType)
+        {
+            try
+            {
+                var parameter = await GetCachedSystemParameterAsync();
+                if (parameter == null) return false; // 安全預設：找不到參數時不啟用審核
+
+                return approvalType switch
+                {
+                    ApprovalType.PurchaseOrder => parameter.EnablePurchaseOrderApproval,
+                    ApprovalType.PurchaseReceiving => parameter.EnablePurchaseReceivingApproval,
+                    ApprovalType.PurchaseReturn => parameter.EnablePurchaseReturnApproval,
+                    ApprovalType.SalesOrder => parameter.EnableSalesOrderApproval,
+                    ApprovalType.SalesReturn => parameter.EnableSalesReturnApproval,
+                    ApprovalType.InventoryTransfer => parameter.EnableInventoryTransferApproval,
+                    _ => false
+                };
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsApprovalEnabledAsync), GetType(), _logger, new
+                {
+                    Method = nameof(IsApprovalEnabledAsync),
+                    ServiceType = GetType().Name,
+                    ApprovalType = approvalType
+                });
+                return false; // 發生錯誤時預設不啟用審核
+            }
+        }
+
+        /// <summary>
+        /// 檢查採購單是否需要審核
+        /// </summary>
+        public async Task<bool> IsPurchaseOrderApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.PurchaseOrder);
+
+        /// <summary>
+        /// 檢查進貨單是否需要審核
+        /// </summary>
+        public async Task<bool> IsPurchaseReceivingApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.PurchaseReceiving);
+
+        /// <summary>
+        /// 檢查進貨退回是否需要審核
+        /// </summary>
+        public async Task<bool> IsPurchaseReturnApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.PurchaseReturn);
+
+        /// <summary>
+        /// 檢查銷貨單是否需要審核
+        /// </summary>
+        public async Task<bool> IsSalesOrderApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.SalesOrder);
+
+        /// <summary>
+        /// 檢查銷貨退回是否需要審核
+        /// </summary>
+        public async Task<bool> IsSalesReturnApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.SalesReturn);
+
+        /// <summary>
+        /// 檢查庫存調撥是否需要審核
+        /// </summary>
+        public async Task<bool> IsInventoryTransferApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.InventoryTransfer);
     }
 }

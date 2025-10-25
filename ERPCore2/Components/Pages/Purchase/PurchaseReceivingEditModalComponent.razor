@@ -121,7 +121,7 @@
     
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
-    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    private RelatedEntityModalManager<Supplier> supplierModalManager;
     
     // ===== 相關單據 Modal =====
     private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
@@ -133,12 +133,26 @@
     
     // ===== 系統參數 - 稅率快取（避免重複查詢資料庫） =====
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
+    
+    // ===== 審核開關狀態 =====
+    private bool isApprovalEnabled = true; // 是否啟用採購單審核功能（從系統參數載入）
+
+    // ===== 建構函數 =====
+    public PurchaseReceivingEditModalComponent()
+    {
+        // 提前初始化 supplierModalManager 以避免 NullReferenceException
+        // 實際配置會在 OnInitializedAsync 中完成
+        supplierModalManager = new RelatedEntityModalManager<Supplier>();
+    }
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // 載入審核開關設定（優先執行，影響後續邏輯）
+            isApprovalEnabled = await SystemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+            
             // 初始化 Modal 管理器
             InitializeSupplierModalManager();
         }
@@ -1517,6 +1531,7 @@
                                                                SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                                SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
                                                                FilterProductId="@filterProductId"
+                                                               IsApprovalEnabled="@isApprovalEnabled"
                                                                MainEntity="@editModalComponent.Entity"
                                                                ExistingDetails="@purchaseReceivingDetails"
                                                                OnDetailsChanged="@HandleReceivingDetailsChanged"
