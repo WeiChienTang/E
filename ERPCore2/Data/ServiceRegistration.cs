@@ -90,6 +90,8 @@ namespace ERPCore2.Data
             services.AddScoped<IInventoryTransactionService, InventoryTransactionService>();
             services.AddScoped<IInventoryReservationService, InventoryReservationService>();
             services.AddScoped<IStockTakingService, StockTakingService>();
+            services.AddScoped<IMaterialIssueService, MaterialIssueService>();
+            services.AddScoped<IMaterialIssueDetailService, MaterialIssueDetailService>();
 
             // 採購相關服務
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();

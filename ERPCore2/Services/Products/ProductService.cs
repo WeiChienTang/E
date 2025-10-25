@@ -170,6 +170,25 @@ namespace ERPCore2.Services
             }
         }
 
+        public async Task<Product?> GetByBarcodeAsync(string barcode)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            try
+            {
+                return await context.Products
+                    .Include(p => p.ProductCategory)
+                    .Include(p => p.Unit)
+                    .Include(p => p.Size)
+                    .FirstOrDefaultAsync(p => p.Barcode == barcode);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByBarcodeAsync), GetType(), _logger, new { Barcode = barcode });
+                throw;
+            }
+        }
+
         public async Task<bool> IsProductCodeExistsAsync(string productCode, int? excludeId = null)
         {
             using var context = await _contextFactory.CreateDbContextAsync();

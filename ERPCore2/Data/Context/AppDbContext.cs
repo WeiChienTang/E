@@ -49,6 +49,8 @@ namespace ERPCore2.Data.Context
       public DbSet<InventoryReservation> InventoryReservations { get; set; }
       public DbSet<StockTaking> StockTakings { get; set; }
       public DbSet<StockTakingDetail> StockTakingDetails { get; set; }
+      public DbSet<MaterialIssue> MaterialIssues { get; set; }
+      public DbSet<MaterialIssueDetail> MaterialIssueDetails { get; set; }
       public DbSet<Unit> Units { get; set; }
       public DbSet<UnitConversion> UnitConversions { get; set; }
       public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }

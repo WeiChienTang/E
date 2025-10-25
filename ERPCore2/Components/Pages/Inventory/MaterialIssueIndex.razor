@@ -1,0 +1,192 @@
+@page "/materialIssues"
+@inject IMaterialIssueService MaterialIssueService
+@inject IEmployeeService EmployeeService
+@inject IDepartmentService DepartmentService
+@inject INotificationService NotificationService
+
+@using ERPCore2.Models
+@using ERPCore2.FieldConfiguration
+@using ERPCore2.Components.Shared
+@using ERPCore2.Helpers
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="MaterialIssue" 
+                        TService="IMaterialIssueService"
+                        Service="@MaterialIssueService"
+                        EntityBasePath="/materialIssues"                          
+                        PageTitle="領貨管理"
+                        PageSubtitle="管理商品領貨單與領貨記錄"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyMaterialIssueFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="領貨單"
+                        GetEntityDisplayName="@(issue => issue.Code ?? "未命名")"
+                        RequiredPermission="MaterialIssue.Read"
+                        OnAddClick="@HandleAddClick"
+                        OnRowClick="@HandleEditClick"
+                        @ref="indexComponent"/>
+
+@* 領貨單編輯 Modal *@
+<MaterialIssueEditModalComponent IsVisible="@showEditModal"
+                                IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                MaterialIssueId="@editingMaterialIssueId"
+                                OnMaterialIssueSaved="@modalHandler.OnEntitySavedAsync"
+                                OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<MaterialIssue, IMaterialIssueService> indexComponent = default!;
+    
+    // 欄位配置
+    private MaterialIssueFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 相關資料
+    private List<Employee> employees = new();
+    private List<Department> departments = new();
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingMaterialIssueId = null;
+    
+    // Modal 處理器
+    private ModalHandler<MaterialIssue, GenericIndexPageComponent<MaterialIssue, IMaterialIssueService>> modalHandler = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<MaterialIssue, GenericIndexPageComponent<MaterialIssue, IMaterialIssueService>>(
+                id => editingMaterialIssueId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+            await LoadRelatedDataAsync();
+            
+            // 建立欄位配置（傳遞所需參數）
+            fieldConfiguration = new MaterialIssueFieldConfiguration(employees, departments, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化領貨頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化領貨頁面失敗");
+        }
+    }
+
+    // ===== 初始化方法 =====
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("庫存管理", "#"),
+                new("領貨管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    private async Task LoadRelatedDataAsync()
+    {
+        try
+        {
+            // 載入相關資料
+            employees = await EmployeeService.GetAllAsync();
+            departments = await DepartmentService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRelatedDataAsync), GetType(), additionalData: "載入相關資料失敗");
+            await NotificationService.ShowErrorAsync("載入相關資料失敗");
+            // 設定安全的預設值
+            employees = new List<Employee>();
+            departments = new List<Department>();
+        }
+    }
+
+    private async Task<List<MaterialIssue>> LoadDataAsync()
+    {
+        try
+        {
+            return await MaterialIssueService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入領貨資料失敗");
+            await NotificationService.ShowErrorAsync("載入領貨資料失敗");
+            // 設定安全的預設值
+            return new List<MaterialIssue>();
+        }
+    }
+
+    // ===== 篩選方法 =====
+
+    private IQueryable<MaterialIssue> ApplyMaterialIssueFilters(SearchFilterModel searchModel, IQueryable<MaterialIssue> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(mi => mi.IssueDate)
+                       .ThenByDescending(mi => mi.Code);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyMaterialIssueFilters), GetType());
+    }
+
+    // ===== 事件處理方法 =====
+
+    private async Task HandleAddClick()
+    {
+        try
+        {
+            await modalHandler.ShowAddModalAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddClick), GetType(), additionalData: "處理新增領貨單事件失敗");
+            await NotificationService.ShowErrorAsync("處理新增領貨單事件失敗");
+        }
+    }
+
+    private async Task HandleEditClick(MaterialIssue materialIssue)
+    {
+        try
+        {
+            await modalHandler.ShowEditModalAsync(materialIssue);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEditClick), GetType(), 
+                additionalData: $"處理編輯領貨單事件失敗 - ID: {materialIssue?.Id}");
+            await NotificationService.ShowErrorAsync("處理編輯領貨單事件失敗");
+        }
+    }
+}

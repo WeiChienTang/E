@@ -583,6 +583,46 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 取得商品在指定倉庫和位置的庫存明細（含詳細資訊）
+        /// </summary>
+        /// <param name="productId">商品ID</param>
+        /// <param name="warehouseId">倉庫ID</param>
+        /// <param name="locationId">庫位ID（可選）</param>
+        /// <returns>庫存明細</returns>
+        public async Task<InventoryStockDetail?> GetStockDetailAsync(int productId, int warehouseId, int? locationId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var query = context.InventoryStockDetails
+                    .Include(d => d.InventoryStock)
+                        .ThenInclude(s => s.Product)
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.WarehouseLocation)
+                    .Where(d => d.InventoryStock.ProductId == productId && d.WarehouseId == warehouseId);
+                
+                if (locationId.HasValue)
+                {
+                    query = query.Where(d => d.WarehouseLocationId == locationId.Value);
+                }
+                
+                return await query.FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetStockDetailAsync), GetType(), _logger, new { 
+                    Method = nameof(GetStockDetailAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    LocationId = locationId 
+                });
+                return null;
+            }
+        }
+
+        /// <summary>
         /// 取得商品在指定倉庫內所有位置的總可用庫存
         /// </summary>
         /// <param name="productId">商品ID</param>

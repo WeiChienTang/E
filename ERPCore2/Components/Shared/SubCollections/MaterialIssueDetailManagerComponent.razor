@@ -1,0 +1,651 @@
+@* 領貨明細管理組件 - 使用條碼掃描和 InteractiveTableComponent *@
+
+@inject IProductService ProductService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IInventoryStockService InventoryStockService
+@inject INotificationService NotificationService
+
+@using ERPCore2.Data.Entities
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Shared.Buttons
+
+<div class="material-issue-detail-manager">
+    <!-- 條碼掃描區 -->
+    <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-upc-scan me-2"></i>條碼掃描
+                    </label>
+                    <input type="text" 
+                           class="form-control form-control-lg" 
+                           placeholder="請掃描或輸入商品條碼..."
+                           @bind="barcodeInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleBarcodeKeyDown"
+                           @ref="barcodeInputElement"
+                           disabled="@IsReadOnly" />
+                    <small class="text-muted">掃描條碼後按 Enter 自動新增商品</small>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary btn-lg w-100" 
+                            @onclick="HandleBarcodeScanned"
+                            disabled="@IsReadOnly">
+                        <i class="bi bi-plus-circle me-2"></i>手動新增
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 明細表格 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2"></i>領貨明細
+                </h5>
+                <span class="badge bg-primary">@DetailItems.Count 項</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (DetailItems.Any())
+            {
+                <InteractiveTableComponent TItem="DetailItem"
+                                         Items="@DetailItems"
+                                         ColumnDefinitions="@GetColumnDefinitions()"
+                                         IsReadOnly="@IsReadOnly"
+                                         ShowRowNumbers="true"
+                                         EmptyMessage="@EmptyMessage"
+                                         ShowBuiltInActions="true"
+                                         ShowBuiltInDeleteButton="true"
+                                         DeleteButtonIcon="bi bi-trash text-white"
+                                         ActionsColumnWidth="80px"
+                                         OnItemDelete="@HandleItemDelete" />
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                    <p class="mb-0">@EmptyMessage</p>
+                </div>
+            }
+        </div>
+        
+        <!-- 統計摘要 -->
+        <div class="card-footer bg-light">
+            <div class="row text-center">
+                <div class="col-4">
+                    <small class="text-muted d-block">總品項</small>
+                    <strong class="fs-5">@DetailItems.Count</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted d-block">總數量</small>
+                    <strong class="fs-5 text-success">@TotalQuantity</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted d-block">無效項目</small>
+                    <strong class="fs-5 @(InvalidItemCount > 0 ? "text-danger" : "text-muted")">@InvalidItemCount</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public List<MaterialIssueDetail> Details { get; set; } = new();
+    [Parameter] public EventCallback<List<MaterialIssueDetail>> DetailsChanged { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public string EmptyMessage { get; set; } = "請使用條碼掃描或手動新增商品";
+
+    // ===== 私有欄位 =====
+    private ElementReference barcodeInputElement;
+    private string barcodeInput = string.Empty;
+    
+    private List<Product> allProducts = new();
+    private List<Warehouse> allWarehouses = new();
+    private List<WarehouseLocation> allLocations = new();
+    
+    private List<DetailItem> DetailItems = new();
+
+    // ===== 計算屬性 =====
+    private int TotalQuantity => DetailItems.Sum(item => item.IssueQuantity);
+    private int InvalidItemCount => DetailItems.Count(item => !IsValidItem(item));
+
+    // ===== 內部 Item 類別 =====
+    private class DetailItem
+    {
+        public int? ProductId { get; set; }
+        public Product? SelectedProduct { get; set; }
+        public int? WarehouseId { get; set; }
+        public int? WarehouseLocationId { get; set; }
+        public int IssueQuantity { get; set; }
+        public decimal UnitCost { get; set; }
+        public int? AvailableStock { get; set; }
+        
+        // SearchableSelect 支援屬性
+        public string ProductSearchValue { get; set; } = string.Empty;
+        public List<Product> FilteredProducts { get; set; } = new();
+        public bool ShowProductDropdown { get; set; }
+        public int ProductSelectedIndex { get; set; } = -1;
+    }
+
+    // ===== 生命週期方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadRelatedDataAsync();
+            await LoadExistingDetailsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), 
+                additionalData: "初始化領貨明細管理器失敗");
+            await NotificationService.ShowErrorAsync("初始化明細管理器失敗");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await barcodeInputElement.FocusAsync();
+            }
+            catch
+            {
+                // 忽略 Focus 失敗
+            }
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    private async Task LoadRelatedDataAsync()
+    {
+        try
+        {
+            allProducts = await ProductService.GetAllAsync();
+            allWarehouses = await WarehouseService.GetAllAsync();
+            allLocations = await WarehouseLocationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRelatedDataAsync), GetType(), 
+                additionalData: "載入相關資料失敗");
+            await NotificationService.ShowErrorAsync("載入相關資料失敗");
+            
+            allProducts = new List<Product>();
+            allWarehouses = new List<Warehouse>();
+            allLocations = new List<WarehouseLocation>();
+        }
+    }
+
+    private async Task LoadExistingDetailsAsync()
+    {
+        try
+        {
+            DetailItems.Clear();
+            
+            foreach (var detail in Details)
+            {
+                var product = allProducts.FirstOrDefault(p => p.Id == detail.ProductId);
+                
+                var item = new DetailItem
+                {
+                    ProductId = detail.ProductId,
+                    SelectedProduct = product,
+                    WarehouseId = detail.WarehouseId,
+                    WarehouseLocationId = detail.WarehouseLocationId,
+                    IssueQuantity = detail.IssueQuantity,
+                    UnitCost = detail.UnitCost ?? 0m,
+                    ProductSearchValue = product != null ? $"[{product.Code}] {product.Name}" : ""
+                };
+
+                // 載入可用庫存
+                if (item.ProductId.HasValue && item.WarehouseId.HasValue && item.WarehouseLocationId.HasValue)
+                {
+                    await UpdateAvailableStock(item);
+                }
+
+                DetailItems.Add(item);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadExistingDetailsAsync), GetType(), 
+                additionalData: "載入現有明細失敗");
+            DetailItems = new List<DetailItem>();
+        }
+    }
+
+    // ===== InteractiveTableComponent 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 商品欄位 - 使用 SearchableSelect
+        columns.Add(new()
+        {
+            Title = "商品",
+            PropertyName = "ProductSearchValue",
+            ColumnType = InteractiveColumnType.SearchableSelect,
+            Width = "250px",
+            Tooltip = "搜尋並選擇商品",
+            Placeholder = "請輸入商品編號或名稱",
+            IsRequired = true,
+            SearchValuePropertyName = nameof(DetailItem.ProductSearchValue),
+            FilteredItemsPropertyName = nameof(DetailItem.FilteredProducts),
+            ShowDropdownPropertyName = nameof(DetailItem.ShowProductDropdown),
+            SelectedIndexPropertyName = nameof(DetailItem.ProductSelectedIndex),
+            ItemDisplayFormatter = (item) =>
+            {
+                var product = (Product)item;
+                return $"[{product.Code}] {product.Name}";
+            },
+            OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
+            {
+                var (item, searchValue) = tuple;
+                OnProductSearchChanged((DetailItem)item, searchValue);
+            }),
+            OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
+            {
+                var (item, selectedItem) = tuple;
+                await OnProductSelected((DetailItem)item, (Product?)selectedItem);
+            }),
+            OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                var detailItem = (DetailItem)item;
+                detailItem.FilteredProducts = allProducts.Take(20).ToList();
+                detailItem.ShowProductDropdown = true;
+                detailItem.ProductSelectedIndex = -1;
+            }),
+            OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                Task.Delay(200).ContinueWith(_ =>
+                {
+                    var detailItem = (DetailItem)item;
+                    detailItem.ShowProductDropdown = false;
+                    InvokeAsync(StateHasChanged);
+                });
+            }),
+            EnableKeyboardNavigation = true,
+            GetDropdownItems = (item) => ((DetailItem)item).FilteredProducts,
+            GetShowDropdown = (item) => ((DetailItem)item).ShowProductDropdown,
+            GetSelectedIndex = (item) => ((DetailItem)item).ProductSelectedIndex,
+            SetSelectedIndex = (item, index) => ((DetailItem)item).ProductSelectedIndex = index,
+            SetShowDropdown = (item, show) => ((DetailItem)item).ShowProductDropdown = show
+        });
+
+        // 倉庫欄位
+        columns.Add(new()
+        {
+            Title = "倉庫",
+            PropertyName = "WarehouseId",
+            ColumnType = InteractiveColumnType.Select,
+            Width = "150px",
+            Tooltip = "選擇倉庫",
+            Placeholder = "請選擇",
+            IsRequired = true,
+            Options = allWarehouses.Select(w => new InteractiveSelectOption
+            {
+                Value = w.Id,
+                Text = w.Name ?? ""
+            }).ToList(),
+            OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
+            {
+                var (item, value) = tuple;
+                await OnWarehouseChanged((DetailItem)item, value);
+            })
+        });
+
+        // 儲位欄位
+        columns.Add(new()
+        {
+            Title = "儲位",
+            PropertyName = "WarehouseLocationId",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "150px",
+            Tooltip = "選擇儲位",
+            CustomTemplate = item =>
+            {
+                var detailItem = (DetailItem)item;
+                var locations = detailItem.WarehouseId.HasValue
+                    ? allLocations.Where(l => l.WarehouseId == detailItem.WarehouseId.Value).ToList()
+                    : new List<WarehouseLocation>();
+                var selectedValue = detailItem.WarehouseLocationId?.ToString() ?? "";
+                var isDisabled = IsReadOnly || !detailItem.WarehouseId.HasValue;
+
+                return @<select class="form-select form-select-sm"
+                                value="@selectedValue"
+                                disabled="@isDisabled"
+                                @onchange="@(async (e) => await OnLocationChanged(detailItem, e.Value))">
+                    <option value="">請選擇</option>
+                    @foreach (var location in locations)
+                    {
+                        <option value="@location.Id">@location.Name</option>
+                    }
+                </select>;
+            }
+        });
+
+        // 可用庫存欄位
+        columns.Add(new()
+        {
+            Title = "可用庫存",
+            PropertyName = "AvailableStock",
+            ColumnType = InteractiveColumnType.Display,
+            Width = "100px",
+            Tooltip = "當前可用庫存數量",
+            DisplayFormatter = (value) =>
+            {
+                if (value == null) return "<span class='badge bg-secondary'>-</span>";
+                var qty = (int)value;
+                var badgeClass = qty == 0 ? "bg-danger" : qty < 10 ? "bg-warning" : "bg-success";
+                return $"<span class='badge {badgeClass}'>{qty}</span>";
+            }
+        });
+
+        // 領貨數量欄位
+        columns.Add(new()
+        {
+            Title = "領貨數量",
+            PropertyName = "IssueQuantity",
+            ColumnType = InteractiveColumnType.Number,
+            Width = "120px",
+            Tooltip = "輸入領貨數量",
+            MinValue = 0,
+            Step = 1,
+            IsRequired = true,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
+            {
+                var (item, value) = tuple;
+                var detailItem = (DetailItem)item;
+                if (int.TryParse(value, out int quantity))
+                {
+                    detailItem.IssueQuantity = quantity;
+                }
+                StateHasChanged();
+            })
+        });
+
+        // 單位成本欄位
+        columns.Add(new()
+        {
+            Title = "單位成本",
+            PropertyName = "UnitCost",
+            ColumnType = InteractiveColumnType.Number,
+            Width = "120px",
+            Tooltip = "商品單位成本",
+            MinValue = 0,
+            Step = 0.01m,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
+            {
+                var (item, value) = tuple;
+                var detailItem = (DetailItem)item;
+                if (decimal.TryParse(value, out decimal cost))
+                {
+                    detailItem.UnitCost = cost;
+                }
+                StateHasChanged();
+            })
+        });
+
+        // 狀態欄位
+        columns.Add(new()
+        {
+            Title = "狀態",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Display,
+            Width = "80px",
+            DisplayFormatter = (value) =>
+            {
+                var detailItem = DetailItems.FirstOrDefault(d => d == value);
+                if (detailItem == null) return "";
+                
+                if (IsValidItem(detailItem))
+                {
+                    return "<span class='badge bg-success'>有效</span>";
+                }
+                else
+                {
+                    var errorMsg = GetValidationMessage(detailItem);
+                    return $"<span class='badge bg-danger' title='{errorMsg}'>無效</span>";
+                }
+            }
+        });
+
+        return columns;
+    }
+
+    // ===== 事件處理方法 =====
+
+    private async Task HandleBarcodeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await HandleBarcodeScanned();
+        }
+    }
+
+    private async Task HandleBarcodeScanned()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(barcodeInput))
+            {
+                await NotificationService.ShowWarningAsync("請輸入條碼");
+                return;
+            }
+
+            var product = await ProductService.GetByBarcodeAsync(barcodeInput.Trim());
+            
+            if (product == null)
+            {
+                await NotificationService.ShowWarningAsync($"找不到條碼 {barcodeInput} 的商品");
+                barcodeInput = string.Empty;
+                return;
+            }
+
+            // 檢查是否已存在
+            if (DetailItems.Any(item => item.ProductId == product.Id))
+            {
+                await NotificationService.ShowWarningAsync($"商品 {product.Name} 已存在明細中");
+                barcodeInput = string.Empty;
+                return;
+            }
+
+            // 建立新明細項目
+            var newItem = new DetailItem
+            {
+                ProductId = product.Id,
+                SelectedProduct = product,
+                ProductSearchValue = $"[{product.Code}] {product.Name}",
+                IssueQuantity = 1,
+                UnitCost = 0m // Product 實體中沒有 Cost 屬性,預設為 0
+            };
+
+            DetailItems.Add(newItem);
+            await SyncToDetails();
+            await NotificationService.ShowSuccessAsync($"已新增商品: {product.Name}");
+            
+            barcodeInput = string.Empty;
+            await barcodeInputElement.FocusAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBarcodeScanned), GetType(), 
+                additionalData: $"處理條碼掃描失敗 - 條碼: {barcodeInput}");
+            await NotificationService.ShowErrorAsync("處理條碼掃描失敗");
+            barcodeInput = string.Empty;
+        }
+    }
+
+    private void OnProductSearchChanged(DetailItem item, string? searchValue)
+    {
+        item.ProductSearchValue = searchValue ?? "";
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            item.FilteredProducts = allProducts.Take(20).ToList();
+        }
+        else
+        {
+            var search = searchValue.ToLower();
+            item.FilteredProducts = allProducts
+                .Where(p => (p.Code?.ToLower().Contains(search) ?? false) || 
+                           (p.Name?.ToLower().Contains(search) ?? false) ||
+                           (p.Barcode?.ToLower().Contains(search) ?? false))
+                .Take(20)
+                .ToList();
+        }
+        
+        item.ShowProductDropdown = true;
+        item.ProductSelectedIndex = -1;
+    }
+
+    private async Task OnProductSelected(DetailItem item, Product? product)
+    {
+        if (product == null) return;
+
+        item.ProductId = product.Id;
+        item.SelectedProduct = product;
+        item.ProductSearchValue = $"[{product.Code}] {product.Name}";
+        item.ShowProductDropdown = false;
+        item.UnitCost = 0m; // Product 實體中沒有 Cost 屬性,預設為 0
+        
+        // 重置倉庫和儲位
+        item.WarehouseId = null;
+        item.WarehouseLocationId = null;
+        item.AvailableStock = null;
+        
+        await SyncToDetails();
+        StateHasChanged();
+    }
+
+    private async Task OnWarehouseChanged(DetailItem item, object? value)
+    {
+        item.WarehouseId = value != null && int.TryParse(value.ToString(), out int warehouseId) ? warehouseId : null;
+        item.WarehouseLocationId = null;
+        item.AvailableStock = null;
+        
+        await SyncToDetails();
+        StateHasChanged();
+    }
+
+    private async Task OnLocationChanged(DetailItem item, object? value)
+    {
+        item.WarehouseLocationId = value != null && int.TryParse(value.ToString(), out int locationId) ? locationId : null;
+        
+        if (item.ProductId.HasValue && item.WarehouseId.HasValue && item.WarehouseLocationId.HasValue)
+        {
+            await UpdateAvailableStock(item);
+        }
+        else
+        {
+            item.AvailableStock = null;
+        }
+        
+        await SyncToDetails();
+        StateHasChanged();
+    }
+
+    private async Task HandleItemDelete(DetailItem item)
+    {
+        try
+        {
+            DetailItems.Remove(item);
+            await SyncToDetails();
+            await NotificationService.ShowSuccessAsync("已刪除明細");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleItemDelete), GetType(), 
+                additionalData: "刪除明細失敗");
+            await NotificationService.ShowErrorAsync("刪除明細失敗");
+        }
+    }
+
+    // ===== 輔助方法 =====
+
+    private async Task UpdateAvailableStock(DetailItem item)
+    {
+        try
+        {
+            if (!item.ProductId.HasValue || !item.WarehouseId.HasValue || !item.WarehouseLocationId.HasValue)
+            {
+                item.AvailableStock = null;
+                return;
+            }
+
+            var stockDetail = await InventoryStockService.GetStockDetailAsync(
+                item.ProductId.Value,
+                item.WarehouseId.Value,
+                item.WarehouseLocationId.Value
+            );
+
+                        item.AvailableStock = stockDetail?.AvailableStock ?? 0;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateAvailableStock), GetType(), 
+                additionalData: $"更新可用庫存失敗 - ProductId: {item.ProductId}");
+            item.AvailableStock = null;
+        }
+    }
+
+    private bool IsValidItem(DetailItem item)
+    {
+        if (item.ProductId == null || item.WarehouseId == null || item.WarehouseLocationId == null)
+            return false;
+        
+        if (item.IssueQuantity <= 0)
+            return false;
+        
+        if (item.AvailableStock.HasValue && item.IssueQuantity > item.AvailableStock.Value)
+            return false;
+        
+        return true;
+    }
+
+    private string GetValidationMessage(DetailItem item)
+    {
+        if (item.ProductId == null) return "請選擇商品";
+        if (item.WarehouseId == null) return "請選擇倉庫";
+        if (item.WarehouseLocationId == null) return "請選擇儲位";
+        if (item.IssueQuantity <= 0) return "數量必須大於 0";
+        if (item.AvailableStock.HasValue && item.IssueQuantity > item.AvailableStock.Value)
+            return $"超過可用庫存 ({item.AvailableStock})";
+        return "";
+    }
+
+    private async Task SyncToDetails()
+    {
+        Details.Clear();
+        
+        foreach (var item in DetailItems)
+        {
+            if (item.ProductId.HasValue && item.WarehouseId.HasValue)
+            {
+                Details.Add(new MaterialIssueDetail
+                {
+                    ProductId = item.ProductId.Value,
+                    WarehouseId = item.WarehouseId.Value,
+                    WarehouseLocationId = item.WarehouseLocationId,
+                    IssueQuantity = item.IssueQuantity,
+                    UnitCost = item.UnitCost
+                });
+            }
+        }
+        
+        await DetailsChanged.InvokeAsync(Details);
+    }
+}
+

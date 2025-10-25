@@ -15,6 +15,11 @@ namespace ERPCore2.Services
         Task<Product?> GetByProductCodeAsync(string productCode);
         
         /// <summary>
+        /// 根據條碼取得商品
+        /// </summary>
+        Task<Product?> GetByBarcodeAsync(string barcode);
+        
+        /// <summary>
         /// 檢查商品代碼是否存在
         /// </summary>
         Task<bool> IsProductCodeExistsAsync(string productCode, int? excludeId = null);
