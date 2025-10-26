@@ -16,7 +16,7 @@
     <div class="card mb-3 border-0 shadow-sm">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-8">
+                <div class="col-md-12">
                     <label class="form-label fw-bold">
                         <i class="bi bi-upc-scan me-2"></i>條碼掃描
                     </label>
@@ -30,27 +30,12 @@
                            disabled="@IsReadOnly" />
                     <small class="text-muted">掃描條碼後按 Enter 自動新增商品</small>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-lg w-100" 
-                            @onclick="HandleBarcodeScanned"
-                            disabled="@IsReadOnly">
-                        <i class="bi bi-plus-circle me-2"></i>手動新增
-                    </button>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- 明細表格 -->
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-table me-2"></i>領貨明細
-                </h5>
-                <span class="badge bg-primary">@DetailItems.Count 項</span>
-            </div>
-        </div>
         <div class="card-body p-0">
             @if (DetailItems.Any())
             {
@@ -86,10 +71,6 @@
                     <small class="text-muted d-block">總數量</small>
                     <strong class="fs-5 text-success">@TotalQuantity</strong>
                 </div>
-                <div class="col-4">
-                    <small class="text-muted d-block">無效項目</small>
-                    <strong class="fs-5 @(InvalidItemCount > 0 ? "text-danger" : "text-muted")">@InvalidItemCount</strong>
-                </div>
             </div>
         </div>
     </div>
@@ -114,7 +95,6 @@
 
     // ===== 計算屬性 =====
     private int TotalQuantity => DetailItems.Sum(item => item.IssueQuantity);
-    private int InvalidItemCount => DetailItems.Count(item => !IsValidItem(item));
 
     // ===== 內部 Item 類別 =====
     private class DetailItem
@@ -309,11 +289,11 @@
         // 儲位欄位
         columns.Add(new()
         {
-            Title = "儲位",
+            Title = "庫位",
             PropertyName = "WarehouseLocationId",
             ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
-            Tooltip = "選擇儲位",
+            Tooltip = "選擇庫位",
             CustomTemplate = item =>
             {
                 var detailItem = (DetailItem)item;
@@ -374,52 +354,6 @@
                 }
                 StateHasChanged();
             })
-        });
-
-        // 單位成本欄位
-        columns.Add(new()
-        {
-            Title = "單位成本",
-            PropertyName = "UnitCost",
-            ColumnType = InteractiveColumnType.Number,
-            Width = "120px",
-            Tooltip = "商品單位成本",
-            MinValue = 0,
-            Step = 0.01m,
-            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
-            {
-                var (item, value) = tuple;
-                var detailItem = (DetailItem)item;
-                if (decimal.TryParse(value, out decimal cost))
-                {
-                    detailItem.UnitCost = cost;
-                }
-                StateHasChanged();
-            })
-        });
-
-        // 狀態欄位
-        columns.Add(new()
-        {
-            Title = "狀態",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Display,
-            Width = "80px",
-            DisplayFormatter = (value) =>
-            {
-                var detailItem = DetailItems.FirstOrDefault(d => d == value);
-                if (detailItem == null) return "";
-                
-                if (IsValidItem(detailItem))
-                {
-                    return "<span class='badge bg-success'>有效</span>";
-                }
-                else
-                {
-                    var errorMsg = GetValidationMessage(detailItem);
-                    return $"<span class='badge bg-danger' title='{errorMsg}'>無效</span>";
-                }
-            }
         });
 
         return columns;
@@ -599,31 +533,6 @@
                 additionalData: $"更新可用庫存失敗 - ProductId: {item.ProductId}");
             item.AvailableStock = null;
         }
-    }
-
-    private bool IsValidItem(DetailItem item)
-    {
-        if (item.ProductId == null || item.WarehouseId == null || item.WarehouseLocationId == null)
-            return false;
-        
-        if (item.IssueQuantity <= 0)
-            return false;
-        
-        if (item.AvailableStock.HasValue && item.IssueQuantity > item.AvailableStock.Value)
-            return false;
-        
-        return true;
-    }
-
-    private string GetValidationMessage(DetailItem item)
-    {
-        if (item.ProductId == null) return "請選擇商品";
-        if (item.WarehouseId == null) return "請選擇倉庫";
-        if (item.WarehouseLocationId == null) return "請選擇儲位";
-        if (item.IssueQuantity <= 0) return "數量必須大於 0";
-        if (item.AvailableStock.HasValue && item.IssueQuantity > item.AvailableStock.Value)
-            return $"超過可用庫存 ({item.AvailableStock})";
-        return "";
     }
 
     private async Task SyncToDetails()

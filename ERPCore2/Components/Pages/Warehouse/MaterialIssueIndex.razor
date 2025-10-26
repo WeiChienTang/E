@@ -15,21 +15,21 @@
                         TService="IMaterialIssueService"
                         Service="@MaterialIssueService"
                         EntityBasePath="/materialIssues"                          
-                        PageTitle="領貨管理"
-                        PageSubtitle="管理商品領貨單與領貨記錄"
+                        PageTitle="領料管理"
+                        PageSubtitle="管理商品領料單與領料記錄"
                         DataLoader="@LoadDataAsync"
                         FilterApplier="@ApplyMaterialIssueFilters"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="領貨單"
+                        EntityName="領料單"
                         GetEntityDisplayName="@(issue => issue.Code ?? "未命名")"
                         RequiredPermission="MaterialIssue.Read"
                         OnAddClick="@HandleAddClick"
                         OnRowClick="@HandleEditClick"
                         @ref="indexComponent"/>
 
-@* 領貨單編輯 Modal *@
+@* 領料單編輯 Modal *@
 <MaterialIssueEditModalComponent IsVisible="@showEditModal"
                                 IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                 MaterialIssueId="@editingMaterialIssueId"
@@ -83,8 +83,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化領貨頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化領貨頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化領料頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化領料頁面失敗");
         }
     }
 
@@ -98,7 +98,7 @@
             {
                 new("首頁", "/"),
                 new("庫存管理", "#"),
-                new("領貨管理")
+                new("領料管理")
             };
         }
         catch (Exception ex)
@@ -139,8 +139,8 @@
         catch (Exception ex)
         {
             // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入領貨資料失敗");
-            await NotificationService.ShowErrorAsync("載入領貨資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入領料資料失敗");
+            await NotificationService.ShowErrorAsync("載入領料資料失敗");
             // 設定安全的預設值
             return new List<MaterialIssue>();
         }
@@ -171,8 +171,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddClick), GetType(), additionalData: "處理新增領貨單事件失敗");
-            await NotificationService.ShowErrorAsync("處理新增領貨單事件失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddClick), GetType(), additionalData: "處理新增領料單事件失敗");
+            await NotificationService.ShowErrorAsync("處理新增領料單事件失敗");
         }
     }
 
@@ -185,8 +185,8 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEditClick), GetType(), 
-                additionalData: $"處理編輯領貨單事件失敗 - ID: {materialIssue?.Id}");
-            await NotificationService.ShowErrorAsync("處理編輯領貨單事件失敗");
+                additionalData: $"處理編輯領料單事件失敗 - ID: {materialIssue?.Id}");
+            await NotificationService.ShowErrorAsync("處理編輯領料單事件失敗");
         }
     }
 }

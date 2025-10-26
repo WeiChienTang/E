@@ -1,4 +1,4 @@
-@* 領貨單編輯組件 *@
+@* 領料單編輯組件 *@
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Helpers
@@ -19,9 +19,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           Id="@MaterialIssueId"
                           Service="@MaterialIssueService"
-                          EntityName="領貨單"
-                          EntityNamePlural="領貨單"
-                          ModalTitle="@(MaterialIssueId.HasValue ? "編輯領貨單" : "新增領貨單")"
+                          EntityName="領料單"
+                          EntityNamePlural="領料單"
+                          ModalTitle="@(MaterialIssueId.HasValue ? "編輯領料單" : "新增領料單")"
                           Size="GenericEditModalComponent<MaterialIssue, IMaterialIssueService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -32,8 +32,8 @@
                           DataLoader="@LoadMaterialIssueData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveMaterialIssueWrapper"
-                          SaveSuccessMessage="@(MaterialIssueId.HasValue ? "領貨單更新成功" : "領貨單新增成功")"
-                          SaveFailureMessage="領貨單儲存失敗"
+                          SaveSuccessMessage="@(MaterialIssueId.HasValue ? "領料單更新成功" : "領料單新增成功")"
+                          SaveFailureMessage="領料單儲存失敗"
                           RequiredPermission="MaterialIssue.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
@@ -59,7 +59,7 @@
     private List<Employee> availableEmployees = new();
     private List<Department> availableDepartments = new();
     
-    // 領貨明細
+    // 領料明細
     private List<MaterialIssueDetail> materialIssueDetails = new();
     private MaterialIssueDetailManagerComponent? detailManagerComponent;
     
@@ -93,7 +93,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "領貨單編輯Modal儲存成功處理失敗");
+                additionalData: "領料單編輯Modal儲存成功處理失敗");
         }
     }
 
@@ -109,7 +109,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
-                additionalData: "領貨單編輯Modal取消處理失敗");
+                additionalData: "領料單編輯Modal取消處理失敗");
         }
     }
 
@@ -137,7 +137,16 @@
         {
             if (!MaterialIssueId.HasValue)
             {
-                return null;
+                // 新增模式：建立新的領料單實體並生成單號
+                var newMaterialIssue = new MaterialIssue
+                {
+                    Code = await GenerateMaterialIssueCodeAsync(),
+                    IssueDate = DateTime.Today,
+                    Status = EntityStatus.Active,
+                    MaterialIssueDetails = new List<MaterialIssueDetail>()
+                };
+                
+                return newMaterialIssue;
             }
 
             var materialIssue = await MaterialIssueService.GetWithDetailsAsync(MaterialIssueId.Value);
@@ -153,8 +162,8 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadMaterialIssueData), GetType(), 
-                additionalData: $"載入領貨單資料失敗 - ID: {MaterialIssueId}");
-            await NotificationService.ShowErrorAsync("載入領貨單資料失敗");
+                additionalData: $"載入領料單資料失敗 - ID: {MaterialIssueId}");
+            await NotificationService.ShowErrorAsync("載入領料單資料失敗");
             return null;
         }
     }
@@ -191,7 +200,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), 
-                additionalData: "載入領貨單相關資料失敗");
+                additionalData: "載入領料單相關資料失敗");
             await NotificationService.ShowErrorAsync("載入相關資料失敗");
             
             // 設定安全的預設值
@@ -211,20 +220,20 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(MaterialIssue.Code),
-                    Label = "領貨單號",
+                    Label = "領料單號",
                     FieldType = FormFieldType.Text,
                     IsReadOnly = true,
                     Placeholder = "系統自動產生",
-                    HelpText = "系統自動產生的唯一領貨單號"
+                    HelpText = "系統自動產生的唯一領料單號"
                 },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(MaterialIssue.IssueDate),
-                    Label = "領貨日期",
+                    Label = "領料日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     DefaultValue = DateTime.Today,
-                    HelpText = "請選擇領貨的日期"
+                    HelpText = "請選擇領料的日期"
                 },
                 new FormFieldDefinition()
                 {
@@ -256,7 +265,7 @@
                 { nameof(MaterialIssue.IssueDate), "基本資訊" },
                 { nameof(MaterialIssue.EmployeeId), "基本資訊" },
                 { nameof(MaterialIssue.DepartmentId), "基本資訊" },
-                { nameof(MaterialIssue.Remarks), "基本資訊" }
+                { nameof(MaterialIssue.Remarks), "額外資料" }
             };
         }
         catch (Exception ex)
@@ -342,14 +351,14 @@
         {
             if (materialIssue == null)
             {
-                await NotificationService.ShowErrorAsync("沒有要儲存的領貨單資料");
+                await NotificationService.ShowErrorAsync("沒有要儲存的領料單資料");
                 return false;
             }
 
             // 設定明細
             materialIssue.MaterialIssueDetails = materialIssueDetails;
 
-            // 儲存領貨單
+            // 儲存領料單
             ServiceResult<MaterialIssue> result;
             if (materialIssue.Id > 0)
             {
@@ -362,7 +371,7 @@
 
             if (!result.IsSuccess || result.Data == null)
             {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存領貨單失敗");
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存領料單失敗");
                 return false;
             }
 
@@ -371,7 +380,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveMaterialIssueWrapper), GetType(), 
-                additionalData: $"儲存領貨單失敗 - ID: {materialIssue?.Id}");
+                additionalData: $"儲存領料單失敗 - ID: {materialIssue?.Id}");
             await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
             return false;
         }
@@ -386,7 +395,7 @@
             // 驗證至少有一筆明細
             if (!materialIssueDetails.Any())
             {
-                await NotificationService.ShowErrorAsync("請至少新增一筆領貨明細");
+                await NotificationService.ShowErrorAsync("請至少新增一筆領料明細");
                 return false;
             }
 
@@ -408,7 +417,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateMaterialIssueDetailsAsync), GetType(), 
-                additionalData: "驗證領貨明細失敗");
+                additionalData: "驗證領料明細失敗");
             await NotificationService.ShowErrorAsync("驗證明細資料時發生錯誤");
             return false;
         }
@@ -428,5 +437,19 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnFieldValueChanged), GetType(), 
                 additionalData: $"處理欄位變更失敗 - Property: {fieldChange.PropertyName}");
         }
+    }
+
+    // ===== 輔助方法 =====
+
+    /// <summary>
+    /// 生成領料單號
+    /// </summary>
+    private async Task<string> GenerateMaterialIssueCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            MaterialIssueService,
+            "MI",
+            (service, code, excludeId) => service.IsIssueNumberExistsAsync(code, excludeId)
+        );
     }
 }
