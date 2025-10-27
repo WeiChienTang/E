@@ -795,6 +795,33 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.SetoffDocumentId);
                   });
 
+                  // 預收付款項使用記錄配置
+                  modelBuilder.Entity<SetoffPrepaymentUsage>(entity =>
+                  {
+                        entity.HasKey(pu => pu.Id);
+
+                        // 沖款單關聯 - 使用 Restrict 避免循環刪除
+                        entity.HasOne(pu => pu.SetoffDocument)
+                              .WithMany(sd => sd.PrepaymentUsages)
+                              .HasForeignKey(pu => pu.SetoffDocumentId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 預收付款項關聯 - 使用 Cascade
+                        entity.HasOne(pu => pu.SetoffPrepayment)
+                              .WithMany(p => p.UsageRecords)
+                              .HasForeignKey(pu => pu.SetoffPrepaymentId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.UsedAmount)
+                              .HasPrecision(18, 2);
+
+                        // 設定索引
+                        entity.HasIndex(e => e.SetoffPrepaymentId);
+                        entity.HasIndex(e => e.SetoffDocumentId);
+                        entity.HasIndex(e => e.UsageDate);
+                  });
+
                   // 紙張設定相關
                   modelBuilder.Entity<PaperSetting>(entity =>
                   {

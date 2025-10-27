@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251023013442_MoveStockLevelLimitsToDetail")]
-    partial class MoveStockLevelLimitsToDetail
+    [Migration("20251027064236_初始化")]
+    partial class 初始化
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1534,6 +1534,127 @@ namespace ERPCore2.Migrations
                     b.ToTable("Materials");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("IssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
+                    b.HasIndex("IssueDate");
+
+                    b.HasIndex("DepartmentId", "IssueDate");
+
+                    b.HasIndex("EmployeeId", "IssueDate");
+
+                    b.ToTable("MaterialIssues");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssueDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("IssueQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaterialIssueId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("UnitCost")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WarehouseLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("WarehouseLocationId");
+
+                    b.HasIndex("MaterialIssueId", "ProductId");
+
+                    b.ToTable("MaterialIssueDetails");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.PaperSetting", b =>
                 {
                     b.Property<int>("Id")
@@ -1898,6 +2019,10 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1975,6 +2100,9 @@ namespace ERPCore2.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsSaleable")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -2254,6 +2382,12 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CompletedByEmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2303,6 +2437,8 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompletedByEmployeeId");
 
                     b.HasIndex("ProductId");
 
@@ -2905,6 +3041,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("WarehouseLocationId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
@@ -2912,6 +3051,8 @@ namespace ERPCore2.Migrations
                     b.HasIndex("UnitId");
 
                     b.HasIndex("WarehouseId");
+
+                    b.HasIndex("WarehouseLocationId");
 
                     b.HasIndex("SalesOrderId", "ProductId");
 
@@ -3397,6 +3538,7 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("UsedAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -3915,6 +4057,24 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("EnableInventoryTransferApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnablePurchaseOrderApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnablePurchaseReceivingApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnablePurchaseReturnApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnableSalesOrderApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnableSalesReturnApproval")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -4432,6 +4592,54 @@ namespace ERPCore2.Migrations
                     b.Navigation("WarehouseLocation");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssue", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssueDetail", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.MaterialIssue", "MaterialIssue")
+                        .WithMany("MaterialIssueDetails")
+                        .HasForeignKey("MaterialIssueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("WarehouseLocationId");
+
+                    b.Navigation("MaterialIssue");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Warehouse");
+
+                    b.Navigation("WarehouseLocation");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.PriceHistory", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
@@ -4560,6 +4768,10 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrderDetail", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "CompletedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("CompletedByEmployeeId");
+
                     b.HasOne("ERPCore2.Data.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -4571,6 +4783,8 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CompletedByEmployee");
 
                     b.Navigation("Product");
 
@@ -4779,6 +4993,10 @@ namespace ERPCore2.Migrations
                         .WithMany()
                         .HasForeignKey("WarehouseId");
 
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("WarehouseLocationId");
+
                     b.Navigation("Product");
 
                     b.Navigation("SalesOrder");
@@ -4786,6 +5004,8 @@ namespace ERPCore2.Migrations
                     b.Navigation("Unit");
 
                     b.Navigation("Warehouse");
+
+                    b.Navigation("WarehouseLocation");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesReturn", b =>
@@ -4923,7 +5143,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.SetoffDocument", "SetoffDocument")
                         .WithMany("PrepaymentUsages")
                         .HasForeignKey("SetoffDocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ERPCore2.Data.Entities.SetoffPrepayment", "SetoffPrepayment")
@@ -5112,6 +5332,11 @@ namespace ERPCore2.Migrations
                     b.Navigation("InventoryReservations");
 
                     b.Navigation("InventoryTransactions");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.MaterialIssue", b =>
+                {
+                    b.Navigation("MaterialIssueDetails");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Permission", b =>

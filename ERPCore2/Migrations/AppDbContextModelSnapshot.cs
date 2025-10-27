@@ -3535,6 +3535,7 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("UsedAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -5139,7 +5140,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.SetoffDocument", "SetoffDocument")
                         .WithMany("PrepaymentUsages")
                         .HasForeignKey("SetoffDocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ERPCore2.Data.Entities.SetoffPrepayment", "SetoffPrepayment")
