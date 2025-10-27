@@ -55,10 +55,15 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Warehouse))]
         public int? WarehouseId { get; set; }
 
+        [Display(Name = "倉庫位置")]
+        [ForeignKey(nameof(WarehouseLocation))]
+        public int? WarehouseLocationId { get; set; }
+
         // Navigation Properties
         public SalesOrder SalesOrder { get; set; } = null!;
         public Product Product { get; set; } = null!;
         public Unit? Unit { get; set; }
         public Warehouse? Warehouse { get; set; }
+        public WarehouseLocation? WarehouseLocation { get; set; }
     }
 }

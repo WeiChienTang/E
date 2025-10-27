@@ -5,21 +5,42 @@
 @using ERPCore2.Components.Shared.Auth
 @using ERPCore2.Data.Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 
 <div class="nav-menu-container">
     <div class="top-row ps-3 navbar navbar-dark">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            <a class="navbar-brand" href="">美莊磚業</a>
             <AuthorizeView>
                 <Authorized>
                     <div class="d-flex align-items-center auth-section">
-                        <span class="text-white me-2 user-welcome d-none d-sm-inline">歡迎，@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name)</span>
-                        <a href="/auth/signout" class="btn btn-sm btn-outline-light logout-btn">登出</a>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-light text-decoration-none dropdown-toggle d-flex align-items-center gap-2 fs-6" 
+                                    type="button" 
+                                    id="userMenuDropdown"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    style="border: none;">
+                                <i class="bi bi-person-circle fs-5"></i>
+                                <span>@(context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? context.User.Identity?.Name ?? "使用者")</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenuDropdown">
+                                <li><a class="dropdown-item" href="#" @onclick="ShowUnderConstructionMessage" @onclick:preventDefault="true">
+                                    <i class="bi bi-person"></i> 個人資料
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/auth/signout">
+                                    <i class="bi bi-box-arrow-right"></i> 登出
+                                </a></li>
+                            </ul>
+                        </div>
                     </div>
                 </Authorized>
                 <NotAuthorized>
                     <div class="d-flex align-items-center auth-section">
-                        <a href="/auth/login" class="btn btn-sm btn-outline-light login-btn">登入</a>
+                        <a href="/auth/login" class="btn btn-link text-light text-decoration-none d-flex align-items-center gap-2 fs-6" style="border: none;">
+                            <i class="bi bi-box-arrow-in-right fs-5"></i>
+                            <span>登入</span>
+                        </a>
                     </div>
                 </NotAuthorized>
             </AuthorizeView>
@@ -27,6 +48,7 @@
     </div>
 
     <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    
 
     <div class="nav-scrollable">    
         <nav class="nav flex-column">
@@ -61,3 +83,10 @@
         </nav>
     </div>
 </div>
+
+@code {
+    private async Task ShowUnderConstructionMessage()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "此功能還在設計中");
+    }
+}
