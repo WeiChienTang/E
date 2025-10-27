@@ -48,7 +48,7 @@
   background-color: var(--primary-blue-alt);
   color: var(--primary-white);
   border-bottom: 1px solid var(--primary-blue-alt);
-  padding: 1rem 1.25rem;
+  padding: 0.5rem 1.25rem;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
