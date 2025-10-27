@@ -129,9 +129,6 @@ builder.Services.AddRazorComponents(options =>
 // 加入控制器支援（僅用於認證）
 builder.Services.AddControllers();
 
-// 註冊更新服務
-builder.Services.AddScoped<ERPCore2.Services.IUpdateService, ERPCore2.Services.UpdateService>();
-
 // 加入 Blazor Server 的認證狀態提供者
 builder.Services.AddCascadingAuthenticationState();
 

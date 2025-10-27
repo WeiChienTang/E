@@ -443,16 +443,6 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "財務交易紀錄",
-                        Description = "查看財務交易記錄",
-                        Route = "/financialTransactions",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "財務管理",
-                        RequiredPermission = "FinancialTransaction.Read",
-                        SearchKeywords = new List<string> { "財務交易", "交易記錄", "transaction" }
-                    },
-                    new NavigationItem
-                    {
                         Name = "應付帳款",
                         Description = "管理應付帳款沖銷",
                         Route = "/accountsPayableSetoff",
@@ -496,16 +486,6 @@ public static class NavigationConfig
                         Category = "系統管理",
                         RequiredPermission = "SystemParameter.Read",
                         SearchKeywords = new List<string> { "系統參數", "參數設定", "parameter", "config" }
-                    },
-                    new NavigationItem
-                    {
-                        Name = "更新紀錄",
-                        Description = "查看系統更新記錄",
-                        Route = "/updates",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "系統管理",
-                        RequiredPermission = "SystemControl.Read",
-                        SearchKeywords = new List<string> { "更新紀錄", "版本記錄", "update log", "changelog" }
                     },
                     new NavigationItem
                     {
