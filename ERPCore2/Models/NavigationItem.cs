@@ -36,6 +36,11 @@ public class NavigationItem
     public string? RequiredPermission { get; set; }
     
     /// <summary>
+    /// 選單識別鍵（用於權限收集）
+    /// </summary>
+    public string? MenuKey { get; set; }
+    
+    /// <summary>
     /// 搜尋關鍵字（包含同義詞等）
     /// </summary>
     public List<string> SearchKeywords { get; set; } = new();

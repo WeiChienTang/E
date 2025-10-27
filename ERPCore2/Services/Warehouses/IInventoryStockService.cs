@@ -70,6 +70,9 @@ namespace ERPCore2.Services
         Task<ServiceResult> BatchUpdateStockLevelAlertsAsync(List<(int detailId, int? minLevel, int? maxLevel)> updates);
         Task<List<InventoryStockDetail>> GetLowStockDetailsAsync();
         Task<List<InventoryStockDetail>> GetOverStockDetailsAsync();
+        
+        // 取得商品的可用倉庫位置清單
+        Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByProductAsync(int productId);
     }
 }
 

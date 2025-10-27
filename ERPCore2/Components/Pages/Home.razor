@@ -1,13 +1,113 @@
 @page "/"
-@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using ERPCore2.Components.Shared.Warehouse
+@using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Data.Enums
 @attribute [Authorize]
 @inject INavigationSearchService NavigationSearchService
+@inject IInventoryStockService InventoryStockService
+@inject INotificationService NotificationService
+@inject IPermissionService PermissionService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>美莊磚業 - 系統首頁</PageTitle>
 
 <div class="container-fluid">
+
+    @* 庫存狀態總覽區域 *@
+    @if (hasInventoryPermission)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card section-card">
+                    <div class="card-header section-header-warning">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            庫存狀態總覽
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (isLoadingInventoryStats)
+                        {
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">載入中...</span>
+                                </div>
+                                <span class="ms-2 text-muted">載入庫存統計中...</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                @* 低庫存警戒卡片 *@
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-warning inventory-alert-card @(lowStockCount > 0 ? "alert-active" : "")"
+                                         @onclick="@HandleLowStockClick"
+                                         style="cursor: pointer;">
+                                        <div class="card-body d-flex align-items-center py-3">
+                                            <i class="bi bi-exclamation-triangle-fill text-warning fs-3 me-3"></i>
+                                            <StatusBadgeComponent Status="EntityStatus.Active" 
+                                                                 CustomText="低庫存警戒" 
+                                                                 CssClass="bg-warning text-dark me-2"
+                                                                 Size="StatusBadgeComponent.BadgeSize.Large"
+                                                                 UseCustomColor="true" />
+                                            <span class="fs-4 fw-bold text-warning ms-auto">@lowStockCount</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @* 庫存過多警戒卡片 *@
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-info inventory-alert-card @(overStockCount > 0 ? "alert-active" : "")"
+                                         @onclick="@HandleOverStockClick"
+                                         style="cursor: pointer;">
+                                        <div class="card-body d-flex align-items-center py-3">
+                                            <i class="bi bi-inbox-fill text-info fs-3 me-3"></i>
+                                            <StatusBadgeComponent Status="EntityStatus.Active" 
+                                                                 CustomText="庫存過多警戒" 
+                                                                 CssClass="bg-info me-2"
+                                                                 Size="StatusBadgeComponent.BadgeSize.Large"
+                                                                 UseCustomColor="true" />
+                                            <span class="fs-4 fw-bold text-info ms-auto">@overStockCount</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @* 未設警戒線卡片 *@
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-secondary inventory-alert-card @(noWarningLevelCount > 0 ? "alert-active" : "")"
+                                         @onclick="@HandleNoWarningLevelClick"
+                                         style="cursor: pointer;">
+                                        <div class="card-body d-flex align-items-center py-3">
+                                            <i class="bi bi-gear-fill text-secondary fs-3 me-3"></i>
+                                            <StatusBadgeComponent Status="EntityStatus.Inactive" 
+                                                                 CustomText="未設警戒線" 
+                                                                 CssClass="bg-secondary me-2"
+                                                                 Size="StatusBadgeComponent.BadgeSize.Large"
+                                                                 UseCustomColor="true" />
+                                            <span class="fs-4 fw-bold text-secondary ms-auto">@noWarningLevelCount</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* 提示訊息 *@
+                            @if (lowStockCount == 0 && overStockCount == 0 && noWarningLevelCount == 0)
+                            {
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    <strong>太棒了！</strong> 所有庫存狀態正常，且已設定警戒線。
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     @* 功能搜尋區域 *@
     <div class="row mb-4">
@@ -20,15 +120,13 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @* 搜尋篩選區域 *@
-                    <GenericSearchFilterComponent TModel="SearchFilterModel"
-                                                 FilterDefinitions="@filterDefinitions"
-                                                 FilterModel="@searchModel"
-                                                 OnSearch="HandleSearch"
-                                                 OnFilterChanged="HandleFilterChanged"
-                                                 AutoSearch="true"
-                                                 ShowSearchButton="false"
-                                                 SearchDelayMs="300" />
+                    @* 簡化的搜尋輸入框 *@
+                    <input type="text" 
+                           class="form-control form-control" 
+                           placeholder="輸入功能名稱或關鍵字搜尋..."
+                           @bind="searchTerm"
+                           @bind:event="oninput"
+                           @bind:after="OnSearchTermChanged" />
 
                     @* 搜尋結果 *@
                     @if (searchResults.Any())
@@ -64,65 +162,95 @@
         </div>
     </div>
 
-    @* 系統更新通知區域 *@
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="alert alert-info d-flex align-items-center" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                <div class="flex-grow-1">
-                    <strong>系統更新</strong> - 查看最新的系統功能與改進
-                </div>
-                <a href="/updates" class="btn btn-outline-primary btn-sm">
-                    <i class="bi-arrow-up-circle me-1"></i>
-                    查看更新
-                </a>
-            </div>
-        </div>
-    </div>
+
 
 </div>
+
+@* 庫存警戒檢視 Modal *@
+<StockAlertViewModalComponent IsVisible="@showStockAlertViewModal"
+                             IsVisibleChanged="@((bool visible) => showStockAlertViewModal = visible)"
+                             AlertType="@currentAlertType" />
+
+@* 庫存警戒線設定 Modal *@
+<StockLevelAlertModalComponent IsVisible="@showStockLevelAlertModal"
+                              IsVisibleChanged="@((bool visible) => showStockLevelAlertModal = visible)"
+                              OnSaved="@OnStockLevelAlertSaved" />
 
 
 
 @code {
+    // ===== 搜尋相關 =====
     // 搜尋結果
     private List<NavigationItem> searchResults = new();
     
-    // 搜尋相關
-    private SearchFilterModel searchModel = new();
-    private List<SearchFilterDefinition> filterDefinitions = new();
+    // 搜尋字串
+    private string searchTerm = "";
     private bool hasSearched = false;
+    
+    // 防抖計時器
+    private System.Threading.Timer? _searchDebounceTimer;
+    private const int SearchDelayMs = 300;
 
-    protected override void OnInitialized()
+    // ===== 庫存狀態相關 =====
+    // 權限控制
+    private bool hasInventoryPermission = false;
+    
+    // Modal 相關狀態
+    private bool showStockAlertViewModal = false;
+    private bool showStockLevelAlertModal = false;
+    private StockAlertViewModalComponent.StockAlertType currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
+    
+    // 統計資料
+    private bool isLoadingInventoryStats = false;
+    private int lowStockCount = 0;
+    private int overStockCount = 0;
+    private int noWarningLevelCount = 0;
+
+    protected override async Task OnInitializedAsync()
     {
-        InitializeFilters();
+        // 取得當前使用者的 EmployeeId
+        var currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+        
+        if (currentEmployeeId.HasValue)
+        {
+            // 檢查庫存查詢權限
+            var permissionResult = await PermissionService.HasPermissionAsync(currentEmployeeId.Value, "InventoryStock.Read");
+            hasInventoryPermission = permissionResult.IsSuccess && permissionResult.Data;
+            
+            // 如果有權限，則載入庫存統計
+            if (hasInventoryPermission)
+            {
+                await LoadInventoryStatsAsync();
+            }
+        }
     }
 
-    private void InitializeFilters()
+    // ===== 搜尋相關方法 =====
+
+    /// <summary>
+    /// 當搜尋字串改變時觸發（帶防抖）
+    /// </summary>
+    private void OnSearchTermChanged()
     {
-        // 建立篩選定義
-        filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-            .AddText("SearchTerm", "", "輸入功能名稱或關鍵字搜尋...")
-            .Build();
+        // 取消之前的計時器
+        _searchDebounceTimer?.Dispose();
+        
+        // 設置新的計時器
+        _searchDebounceTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(async () =>
+            {
+                await PerformSearch();
+                StateHasChanged();
+            });
+        }, null, SearchDelayMs, Timeout.Infinite);
     }
 
-    private async Task HandleSearch(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        await PerformSearch();
-    }
-
-    private async Task HandleFilterChanged(SearchFilterModel filterModel)
-    {
-        searchModel = filterModel;
-        // 使用自動搜尋功能
-        await PerformSearch();
-    }
-
+    /// <summary>
+    /// 執行搜尋
+    /// </summary>
     private async Task PerformSearch()
     {
-        var searchTerm = searchModel.GetFilterValue("SearchTerm")?.ToString();
-        
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
             searchResults.Clear();
@@ -136,7 +264,133 @@
             hasSearched = true;
         }
         
-        StateHasChanged();
         await Task.CompletedTask;
+    }
+
+    // ===== 庫存統計相關方法 =====
+
+    /// <summary>
+    /// 載入庫存統計資料
+    /// </summary>
+    private async Task LoadInventoryStatsAsync()
+    {
+        try
+        {
+            isLoadingInventoryStats = true;
+            StateHasChanged();
+
+            var stats = await InventoryStockService.GetInventoryStatisticsAsync();
+            
+            // 提取統計數據
+            lowStockCount = Convert.ToInt32(stats.GetValueOrDefault("LowStockCount", 0));
+            overStockCount = Convert.ToInt32(stats.GetValueOrDefault("OverStockCount", 0));
+            noWarningLevelCount = Convert.ToInt32(stats.GetValueOrDefault("NoWarningLevelCount", 0));
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadInventoryStatsAsync), GetType(), additionalData: "載入庫存統計失敗");
+            await NotificationService.ShowErrorAsync("載入庫存統計失敗");
+            // 設定安全的預設值
+            lowStockCount = 0;
+            overStockCount = 0;
+            noWarningLevelCount = 0;
+        }
+        finally
+        {
+            isLoadingInventoryStats = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理低庫存卡片點擊
+    /// </summary>
+    private async Task HandleLowStockClick()
+    {
+        try
+        {
+            if (lowStockCount > 0)
+            {
+                currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
+                showStockAlertViewModal = true;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleLowStockClick), GetType());
+            await NotificationService.ShowErrorAsync("開啟低庫存警戒清單失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理庫存過多卡片點擊
+    /// </summary>
+    private async Task HandleOverStockClick()
+    {
+        try
+        {
+            if (overStockCount > 0)
+            {
+                currentAlertType = StockAlertViewModalComponent.StockAlertType.OverStock;
+                showStockAlertViewModal = true;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleOverStockClick), GetType());
+            await NotificationService.ShowErrorAsync("開啟庫存過多警戒清單失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理未設警戒線卡片點擊
+    /// </summary>
+    private async Task HandleNoWarningLevelClick()
+    {
+        try
+        {
+            if (noWarningLevelCount > 0)
+            {
+                showStockLevelAlertModal = true;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleNoWarningLevelClick), GetType());
+            await NotificationService.ShowErrorAsync("開啟警戒線設定視窗失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理警戒線設定儲存後的刷新
+    /// </summary>
+    private async Task OnStockLevelAlertSaved()
+    {
+        try
+        {
+            // 重新載入統計資料
+            await LoadInventoryStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnStockLevelAlertSaved), GetType());
+        }
+    }
+
+    // ===== 資源清理 =====
+
+    public void Dispose()
+    {
+        try
+        {
+            _searchDebounceTimer?.Dispose();
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
     }
 }

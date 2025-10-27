@@ -15,23 +15,29 @@
     [Parameter] public string IconClass { get; set; } = string.Empty;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public BadgeSize Size { get; set; } = BadgeSize.Normal;
+    [Parameter] public bool UseCustomColor { get; set; } = false;
 
     private string GetBadgeClass()
     {
         var classes = new List<string>();
         
-        // 根據狀態設定顏色（遵循設計規範）
-        classes.Add(Status switch
+        // 只在不使用自訂顏色時才根據狀態設定顏色
+        if (!UseCustomColor)
         {
-            EntityStatus.Active => "bg-success",
-            EntityStatus.Inactive => "bg-danger",
-            EntityStatus.Deleted => "bg-danger",
-            _ => "bg-danger" // 預設為危險色（停用狀態）
-        });
+            classes.Add(Status switch
+            {
+                EntityStatus.Active => "bg-success",
+                EntityStatus.Inactive => "bg-danger",
+                EntityStatus.Deleted => "bg-danger",
+                _ => "bg-danger" // 預設為危險色（停用狀態）
+            });
+        }
         
         // 大小設定
         if (Size == BadgeSize.Small)
             classes.Add("badge-sm");
+        else if (Size == BadgeSize.Large)
+            classes.Add("badge-lg");
         
         return string.Join(" ", classes);
     }
@@ -53,6 +59,7 @@
     public enum BadgeSize
     {
         Small,
-        Normal    
+        Normal,
+        Large
     }
 }

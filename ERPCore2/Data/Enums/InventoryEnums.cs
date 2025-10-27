@@ -35,7 +35,10 @@ namespace ERPCore2.Data.Enums
         ProductionCompletion = 9,
         
         [Description("報廢")]
-        Scrap = 10
+        Scrap = 10,
+        
+        [Description("領料")]
+        MaterialIssue = 11
     }
 
     /// <summary>

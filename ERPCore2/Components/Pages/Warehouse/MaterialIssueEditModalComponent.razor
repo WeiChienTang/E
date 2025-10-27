@@ -74,6 +74,9 @@
     {
         if (IsVisible)
         {
+            // 每次開啟 Modal 時都重置明細資料
+            materialIssueDetails = new List<MaterialIssueDetail>();
+            
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
@@ -135,6 +138,9 @@
     {
         try
         {
+            // 先清空明細資料，避免顯示上一次的資料
+            materialIssueDetails = new List<MaterialIssueDetail>();
+            
             if (!MaterialIssueId.HasValue)
             {
                 // 新增模式：建立新的領料單實體並生成單號

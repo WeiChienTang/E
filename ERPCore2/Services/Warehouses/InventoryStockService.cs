@@ -2062,6 +2062,33 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得商品的可用倉庫位置清單（只顯示有庫存的倉庫和庫位）
+        /// </summary>
+        public async Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByProductAsync(int productId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                return await context.InventoryStockDetails
+                    .Include(d => d.InventoryStock)
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.WarehouseLocation)
+                    .Where(d => d.InventoryStock.ProductId == productId && d.CurrentStock > 0)
+                    .OrderBy(d => d.Warehouse.Name)
+                    .ThenBy(d => d.WarehouseLocation!.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableWarehouseLocationsByProductAsync), GetType(), _logger, new {
+                    ProductId = productId
+                });
+                return new List<InventoryStockDetail>();
+            }
+        }
+
         #endregion
     }
 }

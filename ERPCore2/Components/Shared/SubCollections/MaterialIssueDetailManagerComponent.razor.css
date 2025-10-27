@@ -1,0 +1,95 @@
+/* 條碼輸入框包裝器 - 模仿 Google 搜尋欄的設計 */
+.barcode-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* 輸入框樣式 - 右側留空間給按鈕 */
+.barcode-input-wrapper input.form-control {
+    padding-right: 55px !important; /* 為圓形按鈕留出空間 */
+    border-radius: 0.5rem; /* 圓角設計 */
+    border: 2px solid #dee2e6;
+    transition: all 0.2s ease-in-out;
+}
+
+/* 輸入框 Focus 狀態 */
+.barcode-input-wrapper input.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    padding-right: 55px !important; /* 保持右側空間 */
+}
+
+/* 按鈕定位在輸入框內部右側 */
+.barcode-input-wrapper ::deep .barcode-add-btn {
+    position: absolute !important;
+    right: 8px !important; /* 距離右邊緣 8px */
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 10;
+    
+    /* 移除背景和邊框 */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    
+    /* 調整圖示樣式 */
+    padding: 0.5rem !important; /* 圓形按鈕效果 */
+    font-size: 1.5rem !important; /* 圖示大小 */
+    color: #0d6efd !important; /* 主色調 */
+    
+    border-radius: 50% !important; /* 圓形按鈕 */
+    width: 40px !important;
+    height: 40px !important;
+    
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 !important;
+}
+
+/* 按鈕 Hover 效果 */
+.barcode-input-wrapper ::deep .barcode-add-btn:hover:not(:disabled) {
+    background: rgba(13, 110, 253, 0.1) !important; /* 淡藍色背景 */
+    color: #0a58ca !important; /* 深藍色圖示 */
+    transform: translateY(-50%) scale(1.1) !important; /* 放大效果 */
+}
+
+/* 按鈕 Active 效果 */
+.barcode-input-wrapper ::deep .barcode-add-btn:active:not(:disabled) {
+    background: rgba(13, 110, 253, 0.2) !important;
+    transform: translateY(-50%) scale(1.05) !important;
+}
+
+/* 禁用狀態的按鈕 */
+.barcode-input-wrapper ::deep .barcode-add-btn:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    color: #6c757d !important;
+    background: transparent !important;
+}
+
+.barcode-input-wrapper ::deep .barcode-add-btn:disabled:hover {
+    transform: translateY(-50%) !important; /* 禁用時不放大 */
+}
+
+/* 禁用狀態的輸入框 */
+.barcode-input-wrapper input.form-control:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+/* 響應式設計 - 小螢幕調整 */
+@media (max-width: 576px) {
+    .barcode-input-wrapper input.form-control {
+        padding-right: 50px !important;
+    }
+    
+    .barcode-input-wrapper ::deep .barcode-add-btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.3rem !important;
+    }
+}

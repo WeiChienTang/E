@@ -3,6 +3,7 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.NavMenus
 @using ERPCore2.Components.Shared.Auth
+@using ERPCore2.Data.Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="nav-menu-container">
@@ -28,124 +29,35 @@
     <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
     <div class="nav-scrollable">    
-    <nav class="nav flex-column">
-
-        <!-- 首頁 -->
-        <NavMenuItem Text="首頁" IconClass="bi bi-house-door-fill-nav-menu" Url="/" />    
-
-        <!-- 員工管理下拉選單 -->
-        <NavMenuItem Text="員工管理" IconClass="bi bi-person-badge-fill" MenuKey="employee_management" >
-            <DropdownItems>
-                <NavDropdownItem Text="員工維護" Url="/employees" RequiredPermission="Employee.Read" ParentMenuKey="employee_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="部門" Url="/departments" RequiredPermission="Department.Read" ParentMenuKey="employee_management"/>
-                <NavDropdownItem Text="職位" Url="/employee-positions" RequiredPermission="EmployeePosition.Read" ParentMenuKey="employee_management"/>   
-                <NavDropdownItem Text="身分權限" Url="/employees/role-permission-management" RequiredPermission="Role.Read" ParentMenuKey="employee_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="身分" Url="/roles" RequiredPermission="Role.Read" ParentMenuKey="employee_management"/>       
-                <NavDropdownItem Text="權限" Url="/permissions" RequiredPermission="Permission.Read" ParentMenuKey="employee_management"/>     
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 廠商管理下拉選單 -->
-        <NavMenuItem Text="廠商管理" IconClass="bi bi-building-gear" MenuKey="supplier_management">
-            <DropdownItems>
-                <NavDropdownItem Text="廠商維護" Url="/suppliers" RequiredPermission="Supplier.Read" ParentMenuKey="supplier_management" IconClass="bi bi-caret-right-fill" />
-                <NavDropdownItem Text="類型" Url="/supplier-types" RequiredPermission="SupplierType.Read" ParentMenuKey="supplier_management"/>
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 客戶管理下拉選單 -->
-        <NavMenuItem Text="客戶管理" IconClass="bi bi-people-fill" MenuKey="customer_management">
-            <DropdownItems>
-                <NavDropdownItem Text="客戶維護" Url="/customers" RequiredPermission="Customer.Read" ParentMenuKey="customer_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="類型" Url="/customer-types" RequiredPermission="CustomerType.Read" ParentMenuKey="customer_management"/>               
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 產品管理下拉選單 -->
-        <NavMenuItem Text="產品管理" IconClass="bi bi-box-seam-fill" MenuKey="product_management">
-            <DropdownItems>
-                <NavDropdownItem Text="產品維護" Url="/products" RequiredPermission="Product.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/>
-                @* <NavDropdownItem Text="產品定價" Url="/product-pricing" RequiredPermission="ProductPricing.Read" ParentMenuKey="product_management" IconClass="bi bi-caret-right-fill"/> *@
-                <NavDropdownItem Text="類型" Url="/product-categories" RequiredPermission="ProductCategory.Read" ParentMenuKey="product_management"/> 
-                <NavDropdownItem Text="單位" Url="/units" RequiredPermission="Unit.Read" ParentMenuKey="product_management"/>
-                <NavDropdownItem Text="尺寸" Url="/sizes" RequiredPermission="Size.Read" ParentMenuKey="product_management" />                                                                                        
-            </DropdownItems>
-        </NavMenuItem>      
-
-        <!-- 庫存管理下拉選單 -->
-        <NavMenuItem Text="庫存管理" IconClass="bi-boxes nav-menu-bi" MenuKey="inventory_management">
-            <DropdownItems>
-                <NavDropdownItem Text="庫存查詢" Url="/inventoryStocks" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="倉庫" Url="/warehouses" RequiredPermission="Warehouse.Read" ParentMenuKey="inventory_management"/>
-                <NavDropdownItem Text="倉庫內位置" Url="/warehouseLocations" RequiredPermission="WarehouseLocation.Read" ParentMenuKey="inventory_management"/>
-                <NavDropdownItem Text="庫存異動記錄" Url="/inventoryTransactions" RequiredPermission="InventoryTransaction.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="領料" Url="/materialIssues" RequiredPermission="MaterialIssue.Read" ParentMenuKey="inventory_management" IconClass="bi bi-caret-right-fill"/>
-                @* <NavDropdownItem Text="庫存查詢" Url="/inventory/stock" RequiredPermission="InventoryStock.Read" ParentMenuKey="inventory_management" />
-                <NavDropdownItem Text="庫存預留" Url="/inventory/reservations" RequiredPermission="InventoryReservation.Read" ParentMenuKey="inventory_management" />                
-                <NavDropdownItem Text="庫存盤點" Url="/inventory/stock-taking" RequiredPermission="StockTaking.Read" ParentMenuKey="inventory_management" />
-                
-                <NavDropdownItem Text="庫存異動類型" Url="/inventory-transaction-types" RequiredPermission="InventoryTransactionType.Read" ParentMenuKey="inventory_management" /> *@
-            </DropdownItems>
-        </NavMenuItem>    
-
-        <!-- 採購管理下拉選單 -->
-        <NavMenuItem Text="採購管理" IconClass="bi bi-truck" MenuKey="purchase_management">
-            <DropdownItems>
-                <NavDropdownItem Text="採購單維護" Url="/purchase/orders" RequiredPermission="PurchaseOrder.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="進貨" Url="/purchase/receiving" RequiredPermission="PurchaseReceiving.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="進貨退出" Url="/purchase/returns" RequiredPermission="PurchaseReturn.Read" ParentMenuKey="purchase_management" IconClass="bi bi-caret-right-fill"/>
-            </DropdownItems>
-        </NavMenuItem>     
-        
-        <!-- 銷貨管理下拉選單 -->
-        <NavMenuItem Text="銷貨管理" IconClass="bi bi-cart-fill" MenuKey="sales_management">
-            <DropdownItems>
-                <NavDropdownItem Text="銷貨" Url="/salesOrders" RequiredPermission="SalesOrder.Read" ParentMenuKey="sales_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="銷貨退回" Url="/salesReturns" RequiredPermission="SalesReturn.Read" ParentMenuKey="sales_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="銷貨退回原因" Url="/salesReturnReasons" RequiredPermission="SalesReturnReason.Read" ParentMenuKey="sales_management"/>
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 財務管理下拉選單 -->
-        <NavMenuItem Text="財務管理" IconClass="bi bi-journal-text" MenuKey="financial_management">
-            <DropdownItems>
-                <NavDropdownItem Text="應收帳款" Url="/accountsReceivableSetoff" RequiredPermission="SetoffDocument.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="付款方式" Url="/paymentMethods" RequiredPermission="PaymentMethod.Read" ParentMenuKey="financial_management"/>
-                <NavDropdownItem Text="銀行" Url="/banks" RequiredPermission="Bank.Read" ParentMenuKey="financial_management"/>
-                <NavDropdownItem Text="貨幣" Url="/currencies" RequiredPermission="Currency.Read" ParentMenuKey="financial_management"/>
-                <NavDropdownItem Text="財務交易紀錄" Url="/financialTransactions" RequiredPermission="FinancialTransaction.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="應付帳款" Url="/accountsPayableSetoff" RequiredPermission="SetoffDocument.Read" ParentMenuKey="financial_management" IconClass="bi bi-caret-right-fill"/>
-                @* <NavDropdownItem Text="應收帳款" Url="/accountsReceivable" RequiredPermission="AccountsReceivable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="應付帳款" Url="/accountsPayable" RequiredPermission="AccountsPayable.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/> *@
-                @* <NavDropdownItem Text="收款單" Url="/receipts" RequiredPermission="Receipt.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="付款單" Url="/payments" RequiredPermission="Payment.Read" ParentMenuKey="accounting_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="會計科目" Url="/chartOfAccounts" RequiredPermission="ChartOfAccount.Read" ParentMenuKey="accounting_management"/>
-                <NavDropdownItem Text="稅率設定" Url="/taxRates" RequiredPermission="TaxRate.Read" ParentMenuKey="accounting_management"/> *@
-                
-            </DropdownItems>
-        </NavMenuItem>
-
-        <!-- 製程管理下拉選單 -->
-        @* <NavMenuItem Text="製程管理" IconClass="bi bi-list-nested" MenuKey="process_management">
-            <DropdownItems>
-                <NavDropdownItem Text="顏色" Url="/colors" RequiredPermission="Color.Read" ParentMenuKey="process_management" /> 
-                <NavDropdownItem Text="天氣" Url="/weather" RequiredPermission="Weather.Read" ParentMenuKey="process_management" />   
-                <NavDropdownItem Text="材質" Url="/materials" RequiredPermission="Material.Read" ParentMenuKey="process_management" />   
-            </DropdownItems>
-        </NavMenuItem> *@
-
-        <!-- 系統管理下拉選單 -->
-        <NavMenuItem Text="系統管理" IconClass="bi bi-gear-fill" MenuKey="system_management">
-            <DropdownItems>
-                <NavDropdownItem Text="公司維護" Url="/companies" RequiredPermission="Company.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="系統參數" Url="/system-parameters" RequiredPermission="SystemParameter.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="更新紀錄" Url="/updates" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="錯誤記錄" Url="/error-logs" RequiredPermission="SystemControl.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="紙張設定" Url="/paper-settings" RequiredPermission="PaperSetting.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="印表機設定" Url="/printerCconfigurations" RequiredPermission="PrinterSetting.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-                <NavDropdownItem Text="報表設定" Url="/reportPrintConfigurations" RequiredPermission="ReportPrintConfiguration.Read" ParentMenuKey="system_management" IconClass="bi bi-caret-right-fill"/>
-            </DropdownItems>
-        </NavMenuItem>
-    </nav>
-</div>
+        <nav class="nav flex-column">
+            @foreach (var menuItem in NavigationConfig.GetMenuGroups())
+            {
+                @if (menuItem.IsParent && menuItem.Children.Any())
+                {
+                    <!-- 有子選單的項目 -->
+                    <NavMenuItem Text="@menuItem.Name" 
+                                IconClass="@menuItem.IconClass" 
+                                MenuKey="@menuItem.MenuKey">
+                        <DropdownItems>
+                            @foreach (var child in menuItem.Children)
+                            {
+                                <NavDropdownItem Text="@child.Name" 
+                                               Url="@child.Route" 
+                                               RequiredPermission="@child.RequiredPermission" 
+                                               ParentMenuKey="@menuItem.MenuKey" 
+                                               IconClass="@child.IconClass" />
+                            }
+                        </DropdownItems>
+                    </NavMenuItem>
+                }
+                else
+                {
+                    <!-- 單一連結項目 -->
+                    <NavMenuItem Text="@menuItem.Name" 
+                                IconClass="@menuItem.IconClass" 
+                                Url="@menuItem.Route" />
+                }
+            }
+        </nav>
+    </div>
 </div>
