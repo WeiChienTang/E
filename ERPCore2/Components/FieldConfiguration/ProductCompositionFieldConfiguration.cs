@@ -78,15 +78,15 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ProductComposition.Name),
+                        nameof(ProductComposition.Specification),
                         new FieldDefinition<ProductComposition>
                         {
-                            PropertyName = nameof(ProductComposition.Name),
-                            DisplayName = "配方名稱",
-                            FilterPlaceholder = "輸入配方名稱搜尋",
+                            PropertyName = nameof(ProductComposition.Specification),
+                            DisplayName = "規格",
+                            FilterPlaceholder = "輸入規格搜尋",
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductComposition.Name), pc => pc.Name)
+                                model, query, nameof(ProductComposition.Specification), pc => pc.Specification)
                         }
                     },
                     {

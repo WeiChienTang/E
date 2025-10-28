@@ -41,7 +41,6 @@ namespace ERPCore2.Services
                     .Include(pcd => pcd.ComponentProduct)
                     .Include(pcd => pcd.Unit)
                     .OrderBy(pcd => pcd.ProductCompositionId)
-                    .ThenBy(pcd => pcd.Sequence)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -96,13 +95,11 @@ namespace ERPCore2.Services
                     var lowerSearchTerm = searchTerm.ToLower();
                     query = query.Where(pcd =>
                         pcd.ComponentProduct.Name.ToLower().Contains(lowerSearchTerm) ||
-                        (pcd.ComponentProduct.Code != null && pcd.ComponentProduct.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        (pcd.PositionDescription != null && pcd.PositionDescription.ToLower().Contains(lowerSearchTerm)));
+                        (pcd.ComponentProduct.Code != null && pcd.ComponentProduct.Code.ToLower().Contains(lowerSearchTerm)));
                 }
 
                 return await query
                     .OrderBy(pcd => pcd.ProductCompositionId)
-                    .ThenBy(pcd => pcd.Sequence)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -132,23 +129,6 @@ namespace ERPCore2.Services
 
                 if (entity.Quantity <= 0)
                     errors.Add("所需數量必須大於 0");
-
-                if (entity.Sequence < 0)
-                    errors.Add("順序號不能為負數");
-
-                // 損耗率驗證
-                if (entity.LossRate.HasValue && (entity.LossRate.Value < 0 || entity.LossRate.Value > 100))
-                    errors.Add("損耗率必須在 0-100 之間");
-
-                // 數量範圍驗證
-                if (entity.MinQuantity.HasValue && entity.MinQuantity.Value < 0)
-                    errors.Add("最小數量不能為負數");
-
-                if (entity.MaxQuantity.HasValue && entity.MaxQuantity.Value < 0)
-                    errors.Add("最大數量不能為負數");
-
-                if (entity.MinQuantity.HasValue && entity.MaxQuantity.HasValue && entity.MinQuantity.Value > entity.MaxQuantity.Value)
-                    errors.Add("最小數量不能大於最大數量");
 
                 // 組件重複驗證
                 if (await IsComponentExistsInCompositionAsync(entity.ProductCompositionId, entity.ComponentProductId, entity.Id == 0 ? null : entity.Id))
@@ -192,7 +172,6 @@ namespace ERPCore2.Services
                     .Include(pcd => pcd.ComponentProduct)
                     .Include(pcd => pcd.Unit)
                     .Where(pcd => pcd.ProductCompositionId == compositionId)
-                    .OrderBy(pcd => pcd.Sequence)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -234,37 +213,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> UpdateSequenceBatchAsync(List<int> detailIds)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                
-                for (int i = 0; i < detailIds.Count; i++)
-                {
-                    var detail = await context.ProductCompositionDetails.FindAsync(detailIds[i]);
-                    if (detail != null)
-                    {
-                        detail.Sequence = i + 1;
-                        detail.UpdatedAt = DateTime.UtcNow;
-                    }
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSequenceBatchAsync), GetType(), _logger, new
-                {
-                    Method = nameof(UpdateSequenceBatchAsync),
-                    ServiceType = GetType().Name,
-                    DetailCount = detailIds.Count
-                });
-                return ServiceResult.Failure($"更新順序時發生錯誤: {ex.Message}");
-            }
-        }
-
         public async Task<decimal> CalculateActualQuantityAsync(int detailId, decimal productionQuantity)
         {
             try
@@ -279,12 +227,6 @@ namespace ERPCore2.Services
 
                 // 計算實際用料（直接使用組件數量乘以生產數量）
                 var actualQuantity = detail.Quantity * productionQuantity;
-
-                // 考慮損耗率
-                if (detail.LossRate.HasValue && detail.LossRate.Value > 0)
-                {
-                    actualQuantity = actualQuantity * (1 + detail.LossRate.Value / 100);
-                }
 
                 return actualQuantity;
             }
@@ -313,7 +255,7 @@ namespace ERPCore2.Services
                     .Select(pcd => pcd.ProductComposition)
                     .Distinct()
                     .OrderBy(pc => pc.ParentProductId)
-                    .ThenBy(pc => pc.Name)
+                    .ThenBy(pc => pc.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

@@ -1,7 +1,13 @@
 @* 可重用的產品合成編輯組件 - 可在任何頁面中嵌入 *@
 @inject IProductCompositionService ProductCompositionService
+@inject IProductCompositionDetailService ProductCompositionDetailService
 @inject IProductService ProductService
+@inject IProductCategoryService ProductCategoryService
+@inject IUnitService UnitService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
 
 <GenericEditModalComponent TEntity="ProductComposition" 
                           TService="IProductCompositionService"
@@ -17,14 +23,41 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCompositionData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          UseGenericSave="true"
+                          SaveHandler="@SaveCompositionWithDetails"
                           SaveSuccessMessage="@(CompositionId.HasValue ? "產品合成表更新成功" : "產品合成表新增成功")"
                           SaveFailureMessage="產品合成表儲存失敗"
                           RequiredPermission="ProductComposition.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel" />
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()" />
+
+@* 商品編輯 Modal *@
+<ProductEditModalComponent @ref="productEditModal"
+                          IsVisible="@productModalManager.IsModalVisible"
+                          IsVisibleChanged="@productModalManager.HandleModalVisibilityChangedAsync"
+                          ProductId="@productModalManager.SelectedEntityId"
+                          OnProductSaved="@OnProductSavedWrapper"
+                          OnCancel="@productModalManager.HandleModalCancelAsync" />
+
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 參數 =====
@@ -37,17 +70,47 @@
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<ProductComposition, IProductCompositionService>? editModalComponent;
+    private ProductCompositionDetailManagerComponent? detailManager;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Product> availableProducts = new();
+    private List<Product> saleableProducts = new(); // 可販售分類的產品（用於商品選擇）
+    private List<Unit> availableUnits = new();
+    private List<Customer> availableCustomers = new();
+    private List<Employee> availableEmployees = new();
+    private List<ProductCompositionDetail> compositionDetails = new();
+    private bool isDetailDataReady = false;
+    
+    // ===== Modal 管理器 =====
+    private ProductEditModalComponent? productEditModal;
+    private RelatedEntityModalManager<Product> productModalManager = default!;
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
 
     // ===== 生命週期 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeProductModalManager();
+            InitializeCustomerModalManager();
+            InitializeEmployeeModalManager();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化產品合成表編輯組件時發生錯誤");
+        }
+    }
+    
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
         {
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
     }
 
@@ -101,13 +164,79 @@
     {
         try
         {
-            // 載入可選擇的產品列表
+            isDetailDataReady = false;
+            
+            // 載入所有產品列表（用於材料選擇）
             availableProducts = await ProductService.GetAllAsync();
+            
+            // 載入可販售分類的產品列表（用於商品選擇）
+            var allCategories = await ProductCategoryService.GetAllAsync();
+            var saleableCategoryIds = allCategories
+                .Where(c => c.IsSaleable)
+                .Select(c => c.Id)
+                .ToHashSet();
+            
+            saleableProducts = availableProducts
+                .Where(p => p.ProductCategoryId.HasValue && saleableCategoryIds.Contains(p.ProductCategoryId.Value))
+                .ToList();
+            
+            // 載入可選擇的單位列表
+            availableUnits = await UnitService.GetAllAsync();
+            
+            // 載入客戶列表
+            availableCustomers = await CustomerService.GetAllAsync();
+            
+            // 載入員工列表
+            availableEmployees = await EmployeeService.GetAllAsync();
+            
+            // 如果是編輯模式，載入現有的明細資料
+            if (CompositionId.HasValue && CompositionId.Value > 0)
+            {
+                await LoadCompositionDetailsAsync();
+            }
+            else
+            {
+                compositionDetails = new List<ProductCompositionDetail>();
+            }
+            
+            isDetailDataReady = true;
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
             availableProducts = new List<Product>();
+            saleableProducts = new List<Product>();
+            availableUnits = new List<Unit>();
+            availableCustomers = new List<Customer>();
+            availableEmployees = new List<Employee>();
+            compositionDetails = new List<ProductCompositionDetail>();
+            isDetailDataReady = true;
+        }
+    }
+    
+    /// <summary>
+    /// 載入產品合成明細資料
+    /// </summary>
+    private async Task LoadCompositionDetailsAsync()
+    {
+        try
+        {
+            if (!CompositionId.HasValue || CompositionId.Value <= 0)
+            {
+                compositionDetails = new List<ProductCompositionDetail>();
+                return;
+            }
+            
+            // 從資料庫載入明細
+            var allDetails = await ProductCompositionDetailService.GetAllAsync();
+            compositionDetails = allDetails
+                .Where(d => d.ProductCompositionId == CompositionId.Value)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品合成明細時發生錯誤：{ex.Message}");
+            compositionDetails = new List<ProductCompositionDetail>();
         }
     }
 
@@ -120,7 +249,6 @@
                 // 新增模式：建立新的產品合成表實體並生成代碼
                 var newComposition = new ProductComposition
                 {
-                    Name = string.Empty,
                     Code = await GenerateCompositionCodeAsync(),
                     CompositionType = CompositionType.Standard,
                     Status = EntityStatus.Active
@@ -172,7 +300,6 @@
             return new ProductComposition
             {
                 Code = "ERROR",
-                Name = "ERROR",
                 Status = EntityStatus.Active,
                 CompositionType = CompositionType.Standard
             };
@@ -180,16 +307,20 @@
     }
 
     // ===== 表單初始化 =====
-    private void InitializeFormFields()
+    private async Task InitializeFormFieldsAsync()
     {
         try
         {
-            // 準備產品選項
-            var productOptions = availableProducts.Select(p => new SelectOption
+            // 準備產品選項（只包含可販售分類的產品）
+            var productOptions = new List<SelectOption>
+            {
+                new SelectOption { Text = "請選擇", Value = "" }
+            };
+            productOptions.AddRange(saleableProducts.Select(p => new SelectOption
             {
                 Text = $"{p.Code} - {p.Name}".Trim(),
                 Value = p.Id.ToString()
-            }).ToList();
+            }));
 
             // 準備配方類型選項
             var compositionTypeOptions = Enum.GetValues<CompositionType>()
@@ -198,6 +329,22 @@
                     Text = GetCompositionTypeDisplayName(ct),
                     Value = ((int)ct).ToString()
                 }).ToList();
+
+            // 準備客戶選項
+            var customerOptions = new List<SelectOption>();
+            customerOptions.AddRange(availableCustomers.Select(c => new SelectOption
+            {
+                Text = $"{c.Code} - {c.CompanyName}".Trim(),
+                Value = c.Id.ToString()
+            }));
+
+            // 準備員工選項
+            var employeeOptions = new List<SelectOption>();
+            employeeOptions.AddRange(availableEmployees.Select(e => new SelectOption
+            {
+                Text = !string.IsNullOrEmpty(e.Name) ? $"{e.Code} - {e.Name}".Trim() : e.Code ?? $"員工{e.Id}",
+                Value = e.Id.ToString()
+            }));
 
             formFields = new List<FormFieldDefinition>
             {
@@ -214,21 +361,13 @@
                 new()
                 {
                     PropertyName = nameof(ProductComposition.ParentProductId),
-                    Label = "成品",
+                    Label = "商品",
                     FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇成品",
+                    Placeholder = "請選擇商品",
                     Options = productOptions,
                     IsRequired = true,
-                    HelpText = "選擇此配方要生產的成品"
-                },
-                new()
-                {
-                    PropertyName = nameof(ProductComposition.Name),
-                    Label = "配方名稱",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入配方名稱",
-                    IsRequired = true,
-                    HelpText = "配方的正式名稱，將顯示在系統各處"
+                    HelpText = "選擇此配方要生產的商品（僅顯示可販售分類的產品）",
+                    ActionButtons = await GetProductActionButtonsAsync()
                 },
                 new()
                 {
@@ -240,16 +379,50 @@
                     IsRequired = true,
                     HelpText = "選擇配方的類型（標準、替代、簡化或客製）"
                 },
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇客戶",
+                    Options = customerOptions,
+                    IsRequired = false,
+                    HelpText = "選擇此配方的客戶（選填）",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.CreatedByEmployeeId),
+                    Label = "製單人員",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇製單人員",
+                    Options = employeeOptions,
+                    IsRequired = false,
+                    HelpText = "選擇建立此配方的員工（選填）",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.Specification),
+                    Label = "規格",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入規格",
+                    IsRequired = false,
+                    HelpText = "產品合成表的規格說明",
+                    ContainerCssClass = "col-6"
+                },
 
-                FormFieldConfigurationHelper.CreateRemarksField<ProductComposition>()
+                FormFieldConfigurationHelper.CreateRemarksField<ProductComposition>(containerCssClass:"col-6")
             };
 
             formSections = new Dictionary<string, string>
             {
                 { nameof(ProductComposition.Code), "基本資訊" },
                 { nameof(ProductComposition.ParentProductId), "基本資訊" },
-                { nameof(ProductComposition.Name), "基本資訊" },
                 { nameof(ProductComposition.CompositionType), "基本資訊" },
+                { nameof(ProductComposition.CustomerId), "基本資訊" },
+                { nameof(ProductComposition.CreatedByEmployeeId), "基本資訊" },
+                { nameof(ProductComposition.Specification), "額外資料" },
                 { nameof(ProductComposition.Remarks), "額外資料" }
             };
         }
@@ -289,6 +462,213 @@
             _ => "未知"
         };
     }
+    
+    // ===== 自訂模組 =====
+    private List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule> GetCustomModules()
+    {
+        if (editModalComponent == null)
+        {
+            return new List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule>
+        {
+            new GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule
+            {
+                Order = 1,
+                IsVisible = true,
+                Content = CreateDetailManagerContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            @if (editModalComponent?.Entity != null)
+            {
+                @if (!isDetailDataReady)
+                {
+                    <div class="d-flex justify-content-center align-items-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span class="text-muted">載入明細資料中...</span>
+                    </div>
+                }
+                else if (availableProducts != null && availableProducts.Any() && availableUnits != null && availableUnits.Any())
+                {
+                    // 檢查是否已選擇商品
+                    @if (editModalComponent.Entity.ParentProductId > 0)
+                    {
+                        <ProductCompositionDetailManagerComponent @ref="detailManager"
+                                                                 Items="@compositionDetails"
+                                                                 AvailableProducts="@availableProducts"
+                                                                 AvailableUnits="@availableUnits"
+                                                                 ParentEntityId="@(CompositionId ?? 0)"
+                                                                 IsReadOnly="false"
+                                                                 ItemsChanged="@HandleDetailsChanged"
+                                                                 EmptyMessage="尚未新增材料" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            請先選擇商品後再進行材料清單管理
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning text-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        無可用的產品或單位資料，請聯繫系統管理員
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
+    
+    // ===== 明細變更處理 =====
+    private async Task HandleDetailsChanged(List<ProductCompositionDetail> details)
+    {
+        compositionDetails = details;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+    
+    // ===== 自訂儲存邏輯 =====
+    
+    /// <summary>
+    /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// </summary>
+    private async Task<bool> SaveCompositionWithDetails(ProductComposition composition)
+    {
+        try
+        {
+            if (composition == null)
+            {
+                await NotificationService.ShowErrorAsync("沒有要儲存的產品合成表資料");
+                return false;
+            }
+            
+            // 驗證明細資料
+            if (detailManager != null)
+            {
+                var isValid = await detailManager.ValidateAsync();
+                if (!isValid)
+                {
+                    return false;
+                }
+            }
+            
+            // 開始儲存流程
+            ProductComposition? savedComposition = null;
+            
+            if (CompositionId.HasValue && CompositionId.Value > 0)
+            {
+                // 更新模式
+                var updateResult = await ProductCompositionService.UpdateAsync(composition);
+                if (updateResult.IsSuccess)
+                {
+                    savedComposition = updateResult.Data;
+                }
+                else
+                {
+                    await NotificationService.ShowErrorAsync($"更新產品合成表主檔失敗：{updateResult.ErrorMessage}");
+                    return false;
+                }
+            }
+            else
+            {
+                // 新增模式
+                var createResult = await ProductCompositionService.CreateAsync(composition);
+                if (createResult.IsSuccess && createResult.Data != null)
+                {
+                    savedComposition = createResult.Data;
+                    CompositionId = savedComposition.Id;
+                }
+                else
+                {
+                    await NotificationService.ShowErrorAsync($"新增產品合成表主檔失敗：{createResult.ErrorMessage}");
+                    return false;
+                }
+            }
+            
+            if (savedComposition == null)
+            {
+                await NotificationService.ShowErrorAsync("儲存產品合成表主檔失敗");
+                return false;
+            }
+            
+            // 儲存明細
+            if (detailManager != null)
+            {
+                var validDetails = detailManager.GetNonEmptyItems();
+                
+                // 設定主檔ID
+                foreach (var detail in validDetails)
+                {
+                    detail.ProductCompositionId = savedComposition.Id;
+                }
+                
+                // 刪除已標記刪除的明細
+                var deletedIds = detailManager.GetDeletedDetailIds();
+                foreach (var deletedId in deletedIds)
+                {
+                    var deleteResult = await ProductCompositionDetailService.DeleteAsync(deletedId);
+                    if (!deleteResult.IsSuccess)
+                    {
+                        await NotificationService.ShowWarningAsync($"刪除明細失敗：{deleteResult.ErrorMessage}");
+                    }
+                }
+                
+                // 儲存或更新明細
+                foreach (var detail in validDetails)
+                {
+                    if (detail.Id > 0)
+                    {
+                        var updateResult = await ProductCompositionDetailService.UpdateAsync(detail);
+                        if (!updateResult.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync($"更新明細失敗：{updateResult.ErrorMessage}");
+                        }
+                    }
+                    else
+                    {
+                        var createResult = await ProductCompositionDetailService.CreateAsync(detail);
+                        if (!createResult.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync($"新增明細失敗：{createResult.ErrorMessage}");
+                        }
+                    }
+                }
+            }
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存產品合成表時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
 
     // ===== 公開方法 (供父組件調用) =====
 
@@ -313,6 +693,203 @@
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+    
+    // ===== Modal 管理器配置方法 =====
+    
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(ProductComposition.ParentProductId), productModalManager },
+            { nameof(ProductComposition.CustomerId), customerModalManager },
+            { nameof(ProductComposition.CreatedByEmployeeId), employeeModalManager }
+        };
+    }
+    
+    // ===== Modal 管理器初始化方法 =====
+    
+    /// <summary>
+    /// 初始化商品 Modal 管理器
+    /// </summary>
+    private void InitializeProductModalManager()
+    {
+        productModalManager = new RelatedEntityManagerBuilder<Product>(NotificationService, "商品")
+            .WithPropertyName(nameof(ProductComposition.ParentProductId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(productId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.ParentProductId = productId;
+                }
+            })
+            .WithCustomPostProcess(async product => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
+    /// <summary>
+    /// 初始化客戶 Modal 管理器
+    /// </summary>
+    private void InitializeCustomerModalManager()
+    {
+        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
+            .WithPropertyName(nameof(ProductComposition.CustomerId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(customerId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.CustomerId = customerId;
+                }
+            })
+            .WithCustomPostProcess(async customer => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
+    /// <summary>
+    /// 初始化員工 Modal 管理器
+    /// </summary>
+    private void InitializeEmployeeModalManager()
+    {
+        employeeModalManager = new RelatedEntityManagerBuilder<Employee>(NotificationService, "製單人員")
+            .WithPropertyName(nameof(ProductComposition.CreatedByEmployeeId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(employeeId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.CreatedByEmployeeId = employeeId;
+                }
+            })
+            .WithCustomPostProcess(async employee => 
+            {
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+    
+    // ===== ActionButton 產生方法 =====
+    
+    /// <summary>
+    /// 產生商品操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetProductActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            productModalManager, 
+            nameof(ProductComposition.ParentProductId)
+        );
+    }
+    
+    /// <summary>
+    /// 產生客戶操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            customerModalManager, 
+            nameof(ProductComposition.CustomerId)
+        );
+    }
+    
+    /// <summary>
+    /// 產生製單人員操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            employeeModalManager, 
+            nameof(ProductComposition.CreatedByEmployeeId)
+        );
+    }
+    
+    // ===== Modal 事件包裝器方法 =====
+    
+    /// <summary>
+    /// 包裝商品儲存事件
+    /// </summary>
+    private async Task OnProductSavedWrapper(Product savedProduct)
+    {
+        await productModalManager.HandleEntitySavedAsync(savedProduct, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 包裝客戶儲存事件
+    /// </summary>
+    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
+    {
+        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 包裝員工儲存事件
+    /// </summary>
+    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
+    {
+        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理欄位值變更事件 - 使用統一 Helper
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用統一 Helper 處理商品欄位變更
+            if (fieldChange.PropertyName == nameof(ProductComposition.ParentProductId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    productModalManager, 
+                    formFields, 
+                    nameof(ProductComposition.ParentProductId), 
+                    fieldChange.Value
+                );
+                
+                // 商品變更時，觸發明細管理器重新渲染
+                StateHasChanged();
+            }
+            // 處理客戶欄位變更
+            else if (fieldChange.PropertyName == nameof(ProductComposition.CustomerId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    customerModalManager, 
+                    formFields, 
+                    nameof(ProductComposition.CustomerId), 
+                    fieldChange.Value
+                );
+            }
+            // 處理製單人員欄位變更
+            else if (fieldChange.PropertyName == nameof(ProductComposition.CreatedByEmployeeId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    employeeModalManager, 
+                    formFields, 
+                    nameof(ProductComposition.CreatedByEmployeeId), 
+                    fieldChange.Value
+                );
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
     }
 }

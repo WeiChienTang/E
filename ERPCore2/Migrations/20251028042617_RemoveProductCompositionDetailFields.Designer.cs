@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251028042617_RemoveProductCompositionDetailFields")]
+    partial class RemoveProductCompositionDetailFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2151,11 +2154,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int?>("CreatedByEmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CustomerId")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("ParentProductId")
                         .HasColumnType("int");
@@ -2163,10 +2165,6 @@ namespace ERPCore2.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Specification")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -2179,10 +2177,6 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedByEmployeeId");
-
-                    b.HasIndex("CustomerId");
 
                     b.HasIndex("ParentProductId");
 
@@ -4811,23 +4805,11 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductComposition", b =>
                 {
-                    b.HasOne("ERPCore2.Data.Entities.Employee", "CreatedByEmployee")
-                        .WithMany()
-                        .HasForeignKey("CreatedByEmployeeId");
-
-                    b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId");
-
                     b.HasOne("ERPCore2.Data.Entities.Product", "ParentProduct")
                         .WithMany("ProductCompositions")
                         .HasForeignKey("ParentProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("CreatedByEmployee");
-
-                    b.Navigation("Customer");
 
                     b.Navigation("ParentProduct");
                 });

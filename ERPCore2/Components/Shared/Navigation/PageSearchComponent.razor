@@ -1,0 +1,160 @@
+@using ERPCore2.Models
+@inject INavigationSearchService NavigationSearchService
+@rendermode InteractiveServer
+@implements IDisposable
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card section-card">
+            @if (ShowCardHeader)
+            {
+                <div class="card-header section-header-primary">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-search me-2"></i>
+                        @Title
+                    </h5>
+                </div>
+            }
+            <div class="card-body">
+                @* 簡化的搜尋輸入框 *@
+                <input type="text" 
+                       class="form-control form-control" 
+                       placeholder="@Placeholder"
+                       @bind="searchTerm"
+                       @bind:event="oninput"
+                       @bind:after="OnSearchTermChanged" />
+
+                @* 搜尋結果 *@
+                @if (searchResults.Any())
+                {
+                    <div class="search-results-section mt-4">
+                        <h6 class="mb-3">
+                            <i class="bi bi-grid-fill me-2"></i>
+                            搜尋結果 (共 @searchResults.Count 個功能)
+                        </h6>
+                        <div class="row">
+                            @foreach (var item in searchResults)
+                            {
+                                <div class="col-lg-4 col-md-6 mb-3">
+                                    <div class="search-result-card">
+                                        <NavigationCard Item="@item" 
+                                                      ShowRoute="true" 
+                                                      ShowActionButton="false" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (hasSearched)
+                {
+                    <div class="search-empty-state mt-4 text-center">
+                        <i class="bi bi-search-heart fs-1 d-block mb-3"></i>
+                        <p>沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// 搜尋區塊標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "頁面搜尋";
+
+    /// <summary>
+    /// 搜尋框 Placeholder 文字
+    /// </summary>
+    [Parameter]
+    public string Placeholder { get; set; } = "輸入功能名稱或關鍵字搜尋...";
+
+    /// <summary>
+    /// 是否顯示卡片標題
+    /// </summary>
+    [Parameter]
+    public bool ShowCardHeader { get; set; } = true;
+
+    /// <summary>
+    /// 額外的 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string CssClass { get; set; } = "";
+
+    /// <summary>
+    /// 搜尋延遲時間（毫秒）- 防抖功能
+    /// </summary>
+    [Parameter]
+    public int SearchDelayMs { get; set; } = 300;
+
+    // ===== 私有欄位 =====
+    
+    // 搜尋結果
+    private List<NavigationItem> searchResults = new();
+    
+    // 搜尋字串
+    private string searchTerm = "";
+    private bool hasSearched = false;
+    
+    // 防抖計時器
+    private System.Threading.Timer? _searchDebounceTimer;
+
+    // ===== 方法 =====
+
+    /// <summary>
+    /// 當搜尋字串改變時觸發（帶防抖）
+    /// </summary>
+    private void OnSearchTermChanged()
+    {
+        // 取消之前的計時器
+        _searchDebounceTimer?.Dispose();
+        
+        // 設置新的計時器
+        _searchDebounceTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(async () =>
+            {
+                await PerformSearch();
+                StateHasChanged();
+            });
+        }, null, SearchDelayMs, Timeout.Infinite);
+    }
+
+    /// <summary>
+    /// 執行搜尋
+    /// </summary>
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            searchResults.Clear();
+            hasSearched = false;
+        }
+        else
+        {
+            searchResults = NavigationSearchService.SearchNavigationItems(searchTerm)
+                .Where(item => !item.IsParent && !string.IsNullOrEmpty(item.Route) && item.Route != "#")
+                .ToList();
+            hasSearched = true;
+        }
+        
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 資源清理
+    /// </summary>
+    public void Dispose()
+    {
+        try
+        {
+            _searchDebounceTimer?.Dispose();
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
+    }
+}

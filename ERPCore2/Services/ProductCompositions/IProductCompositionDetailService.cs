@@ -24,14 +24,7 @@ namespace ERPCore2.Services
         Task<bool> IsComponentExistsInCompositionAsync(int compositionId, int componentProductId, int? excludeId = null);
 
         /// <summary>
-        /// 批次更新明細順序
-        /// </summary>
-        /// <param name="detailIds">明細 ID 列表（按新順序排列）</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> UpdateSequenceBatchAsync(List<int> detailIds);
-
-        /// <summary>
-        /// 計算明細的實際用料（考慮損耗率）
+        /// 計算明細的實際用料
         /// </summary>
         /// <param name="detailId">明細 ID</param>
         /// <param name="productionQuantity">生產數量</param>

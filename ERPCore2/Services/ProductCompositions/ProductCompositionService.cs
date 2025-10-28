@@ -37,10 +37,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCompositions
                     .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.Customer)
+                    .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.ComponentProduct)
                     .OrderBy(pc => pc.ParentProductId)
-                    .ThenBy(pc => pc.Name)
+                    .ThenBy(pc => pc.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -61,6 +63,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCompositions
                     .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.Customer)
+                    .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.ComponentProduct)
                     .Include(pc => pc.CompositionDetails)
@@ -86,6 +90,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.ProductCompositions
                     .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.Customer)
+                    .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.ComponentProduct)
                     .AsQueryable();
@@ -94,14 +100,15 @@ namespace ERPCore2.Services
                 {
                     var lowerSearchTerm = searchTerm.ToLower();
                     query = query.Where(pc =>
-                        pc.Name.ToLower().Contains(lowerSearchTerm) ||
                         (pc.Code != null && pc.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        pc.ParentProduct.Name.ToLower().Contains(lowerSearchTerm));
+                        pc.ParentProduct.Name.ToLower().Contains(lowerSearchTerm) ||
+                        (pc.Specification != null && pc.Specification.ToLower().Contains(lowerSearchTerm)) ||
+                        (pc.Customer != null && pc.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)));
                 }
 
                 return await query
                     .OrderBy(pc => pc.ParentProductId)
-                    .ThenBy(pc => pc.Name)
+                    .ThenBy(pc => pc.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -126,9 +133,6 @@ namespace ERPCore2.Services
                 if (entity.ParentProductId <= 0)
                     errors.Add("請選擇成品");
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
-                    errors.Add("合成表名稱為必填");
-
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 
@@ -141,7 +145,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    EntityName = entity.Name
+                    ParentProductId = entity.ParentProductId
                 });
                 return ServiceResult.Failure($"驗證產品合成表時發生錯誤: {ex.Message}");
             }
@@ -158,10 +162,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductCompositions
                     .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.Customer)
+                    .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.ComponentProduct)
                     .Where(pc => pc.ParentProductId == productId)
-                    .OrderBy(pc => pc.Name)
+                    .OrderBy(pc => pc.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -194,11 +200,6 @@ namespace ERPCore2.Services
                     if (detail.ComponentCost.HasValue)
                     {
                         var quantity = detail.Quantity;
-                        // 考慮損耗率
-                        if (detail.LossRate.HasValue && detail.LossRate.Value > 0)
-                        {
-                            quantity = quantity * (1 + detail.LossRate.Value / 100);
-                        }
                         totalCost += detail.ComponentCost.Value * quantity;
                     }
                 }
@@ -264,7 +265,8 @@ namespace ERPCore2.Services
                 return new
                 {
                     id = composition.Id,
-                    name = composition.Name,
+                    code = composition.Code,
+                    specification = composition.Specification,
                     productId = composition.ParentProductId,
                     productName = composition.ParentProduct?.Name,
                     isCircular = true,
@@ -279,7 +281,7 @@ namespace ERPCore2.Services
             // 如果未達最大層級，展開子組件
             if (currentLevel < maxLevel)
             {
-                foreach (var detail in composition.CompositionDetails.OrderBy(d => d.Sequence))
+                foreach (var detail in composition.CompositionDetails)
                 {
                     // 檢查組件是否也有 BOM（取第一個配方）
                     var childComposition = await context.ProductCompositions
@@ -306,12 +308,8 @@ namespace ERPCore2.Services
                             detail = new
                             {
                                 id = detail.Id,
-                                sequence = detail.Sequence,
                                 quantity = detail.Quantity,
-                                unitName = detail.Unit?.Name,
-                                lossRate = detail.LossRate,
-                                isOptional = detail.IsOptional,
-                                isKeyComponent = detail.IsKeyComponent
+                                unitName = detail.Unit?.Name
                             },
                             composition = childNode
                         });
@@ -324,12 +322,8 @@ namespace ERPCore2.Services
                             detail = new
                             {
                                 id = detail.Id,
-                                sequence = detail.Sequence,
                                 quantity = detail.Quantity,
-                                unitName = detail.Unit?.Name,
-                                lossRate = detail.LossRate,
-                                isOptional = detail.IsOptional,
-                                isKeyComponent = detail.IsKeyComponent
+                                unitName = detail.Unit?.Name
                             },
                             component = new
                             {
@@ -346,7 +340,12 @@ namespace ERPCore2.Services
             return new
             {
                 id = composition.Id,
-                name = composition.Name,
+                code = composition.Code,
+                specification = composition.Specification,
+                customerId = composition.CustomerId,
+                customerName = composition.Customer?.CompanyName,
+                createdByEmployeeId = composition.CreatedByEmployeeId,
+                createdByEmployeeName = composition.CreatedByEmployee?.Name,
                 productId = composition.ParentProductId,
                 productName = composition.ParentProduct?.Name,
                 level = currentLevel,

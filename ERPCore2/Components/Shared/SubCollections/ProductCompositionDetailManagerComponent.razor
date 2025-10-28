@@ -1,0 +1,426 @@
+@* 產品合成明細管理組件 - 管理配方的材料清單 - 使用 InteractiveTableComponent 統一UI *@
+
+@inject INotificationService NotificationService
+@inject IProductService ProductService
+@inject IUnitService UnitService
+@using ERPCore2.Helpers
+@using ERPCore2.Data.Entities
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent TItem="ProductCompositionDetail" 
+                                  Items="@Items"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  IsReadOnly="@IsReadOnly"
+                                  ShowRowNumbers="true"
+                                  EmptyMessage="@EmptyMessage"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="true"
+                                  OnItemDelete="@HandleItemDelete" />
+    </div>
+</div>
+
+@code {
+    // ===== 私有欄位 =====
+    private readonly HashSet<int> _deletedDetailIds = new HashSet<int>();
+
+    // ===== 基本參數 =====
+    [Parameter] public List<ProductCompositionDetail> Items { get; set; } = new();
+    [Parameter] public List<Product> AvailableProducts { get; set; } = new(); // 可選擇的產品清單
+    [Parameter] public List<Unit> AvailableUnits { get; set; } = new(); // 可選擇的單位清單
+    [Parameter] public int ParentEntityId { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "材料清單";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "box-seam";
+    [Parameter] public string ItemDisplayName { get; set; } = "材料";
+    [Parameter] public string EmptyIcon { get; set; } = "box-seam-x";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增材料";
+    
+    // ===== 事件參數 =====
+    [Parameter] public EventCallback<List<ProductCompositionDetail>> ItemsChanged { get; set; }
+    [Parameter] public EventCallback<ProductCompositionDetail> ItemAdded { get; set; }
+    [Parameter] public EventCallback<ProductCompositionDetail> ItemRemoved { get; set; }
+    [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        base.OnParametersSet();
+        
+        // 載入可用的產品和單位清單
+        await LoadAvailableDataAsync();
+        
+        // 總是確保有一行空行可以輸入
+        EnsureOneEmptyRow();
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAvailableDataAsync()
+    {
+        try
+        {
+            if (!AvailableProducts.Any())
+            {
+                AvailableProducts = await ProductService.GetAllAsync();
+            }
+            
+            if (!AvailableUnits.Any())
+            {
+                AvailableUnits = await UnitService.GetAllAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    
+    /// <summary>
+    /// 檢查是否為空行
+    /// 業務邏輯：只要選擇了材料產品，就算是有效的一行，不再是空行
+    /// </summary>
+    private bool IsEmptyRow(ProductCompositionDetail item)
+    {
+        // 檢查材料產品ID是否為空（null 或 0 都算空）
+        var isEmpty = item.ComponentProductId <= 0;
+        
+        // 只要材料產品有值（大於0），就不是空行
+        // 材料產品是核心欄位，其他欄位可以後續填寫
+        return isEmpty;
+    }
+    
+    /// <summary>
+    /// 創建空的明細項目
+    /// </summary>
+    private ProductCompositionDetail CreateEmptyItem()
+    {
+        var newItem = new ProductCompositionDetail
+        {
+            ProductCompositionId = ParentEntityId,
+            ComponentProductId = 0,
+            Quantity = 0,
+            UnitId = null
+        };
+        return newItem;
+    }
+    
+    /// <summary>
+    /// 確保有一行空行
+    /// </summary>
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.For<ProductCompositionDetail>.EnsureOneEmptyRow(
+            Items, 
+            IsEmptyRow, 
+            CreateEmptyItem, 
+            (item, parentId) => item.ProductCompositionId = parentId,
+            ParentEntityId
+        );
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 材料產品選擇欄位
+            new() 
+            { 
+                Title = "材料名稱", 
+                Tooltip = "選擇配方所需的材料或半成品",
+                PropertyName = nameof(ProductCompositionDetail.ComponentProductId),
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => 
+                {
+                    var detail = (ProductCompositionDetail)item;
+                    var selectedValue = detail.ComponentProductId > 0 ? detail.ComponentProductId.ToString() : "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="@(async (e) => await OnProductChanged((detail, e.Value)))">
+                        <option value="">請選擇材料</option>
+                        @foreach (var product in AvailableProducts)
+                        {
+                            <option value="@product.Id">@GetProductDisplayText(product)</option>
+                        }
+                    </select>;
+                }
+            },
+            
+            // 所需數量 - 數字輸入
+            new() 
+            { 
+                Title = "所需數量", 
+                Tooltip = "輸入此材料所需的數量",
+                PropertyName = nameof(ProductCompositionDetail.Quantity),
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => 
+                {
+                    var detail = (ProductCompositionDetail)item;
+                    var value = detail.Quantity > 0 ? detail.Quantity.ToString("0.####") : "";
+                    
+                    return @<input type="number" 
+                                   class="form-control form-control-sm text-end" 
+                                   value="@value"
+                                   min="0"
+                                   placeholder="請輸入數量"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnQuantityChanged((detail, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 單位選擇欄位
+            new() 
+            { 
+                Title = "單位", 
+                Tooltip = "選擇材料的計量單位",
+                PropertyName = nameof(ProductCompositionDetail.UnitId),
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => 
+                {
+                    var detail = (ProductCompositionDetail)item;
+                    var selectedValue = detail.UnitId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    @onchange="@(async (e) => await OnUnitChanged((detail, e.Value)))">
+                        <option value="">請選擇單位</option>
+                        @foreach (var unit in AvailableUnits)
+                        {
+                            <option value="@unit.Id">@unit.Name</option>
+                        }
+                    </select>;
+                }
+            },
+            
+            // 組件成本 - 唯讀顯示
+            new() 
+            { 
+                Title = "組件成本", 
+                Tooltip = "此材料的成本金額（自動計算）",
+                PropertyName = nameof(ProductCompositionDetail.ComponentCost),
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => 
+                {
+                    var detail = (ProductCompositionDetail)item;
+                    var cost = detail.ComponentCost ?? 0;
+                    var formattedCost = cost > 0 ? $"${cost:N2}" : "-";
+                    
+                    return @<div class="text-end px-2">@formattedCost</div>;
+                }
+            }
+        };
+    }
+
+    private async Task HandleItemDelete(ProductCompositionDetail item)
+    {
+        var index = Items.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    // ===== 內部方法 =====
+
+    private string GetProductDisplayText(Product product)
+    {
+        if (!string.IsNullOrWhiteSpace(product.Code))
+        {
+            return $"{product.Code} - {product.Name}";
+        }
+        return product.Name;
+    }
+
+    // ===== InteractiveTableComponent 事件處理 =====
+    private async Task OnProductChanged((object item, object? value) args)
+    {
+        var detail = (ProductCompositionDetail)args.item;
+        var wasEmpty = IsEmptyRow(detail);
+    
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
+        {
+            // 檢查是否已存在相同材料
+            var existingProductIds = Items.Where(i => i != detail && !IsEmptyRow(i)).Select(i => i.ComponentProductId);
+            if (existingProductIds.Any(id => id == productId))
+            {
+                await NotificationService.ShowErrorAsync("此材料已存在，請選擇其他材料");
+                detail.ComponentProductId = 0;
+            }
+            else
+            {
+                detail.ComponentProductId = productId;
+                
+                // 自動設定該產品的預設單位
+                var selectedProduct = AvailableProducts.FirstOrDefault(p => p.Id == productId);
+                if (selectedProduct != null && selectedProduct.UnitId.HasValue)
+                {
+                    detail.UnitId = selectedProduct.UnitId;
+                }
+                
+                // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+                AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
+                    Items, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, 
+                    (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
+                
+                await ItemsChanged.InvokeAsync(Items);
+            }
+        }
+        else
+        {
+            detail.ComponentProductId = 0;
+            await ItemsChanged.InvokeAsync(Items);
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnQuantityChanged((object item, string? value) args)
+    {
+        var detail = (ProductCompositionDetail)args.item;
+        var wasEmpty = IsEmptyRow(detail);
+        
+        if (!string.IsNullOrWhiteSpace(args.value) && decimal.TryParse(args.value, out var quantity))
+        {
+            detail.Quantity = quantity;
+        }
+        else
+        {
+            detail.Quantity = 0;
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
+            Items, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, 
+            (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+
+    private async Task OnUnitChanged((object item, object? value) args)
+    {
+        var detail = (ProductCompositionDetail)args.item;
+        var wasEmpty = IsEmptyRow(detail);
+        
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var unitId) && unitId > 0)
+        {
+            detail.UnitId = unitId;
+        }
+        else
+        {
+            detail.UnitId = null;
+        }
+        
+        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
+        AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
+            Items, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, 
+            (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
+        
+        await ItemsChanged.InvokeAsync(Items);
+        StateHasChanged();
+    }
+    
+    public async Task RemoveItemAsync(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= Items.Count) return;
+        
+        var removedItem = Items[index];
+        if (removedItem == null) return;
+        
+        // 記錄要刪除的資料庫實體ID
+        if (removedItem.Id > 0)
+        {
+            _deletedDetailIds.Add(removedItem.Id);
+        }
+        
+        // 使用 Helper 處理移除，自動確保空行
+        AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleItemRemove(
+            Items, removedItem, IsEmptyRow, CreateEmptyItem, 
+            (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
+        
+        await ItemRemoved.InvokeAsync(removedItem);
+        await ItemsChanged.InvokeAsync(Items);
+        
+        // 通知已刪除的明細ID
+        await NotifyDeletedDetailsChanged();
+        
+        StateHasChanged();
+    }
+    
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        // 使用 Helper 檢查是否有足夠的非空項目
+        if (!AutoEmptyRowHelper.For<ProductCompositionDetail>.HasSufficientItems(Items, IsEmptyRow, 1))
+        {
+            errors.Add("至少需要一個材料");
+        }
+        else
+        {
+            // 取得非空的項目進行檢查
+            var nonEmptyItems = AutoEmptyRowHelper.For<ProductCompositionDetail>.GetNonEmptyItems(Items, IsEmptyRow);
+            
+            // 檢查重複材料
+            var productIds = nonEmptyItems.Select(item => item.ComponentProductId).ToList();
+            if (productIds.Count != productIds.Distinct().Count())
+            {
+                errors.Add("存在重複的材料");
+            }
+            
+            // 檢查數量是否有效
+            var invalidQuantities = nonEmptyItems.Where(item => item.Quantity <= 0).ToList();
+            if (invalidQuantities.Any())
+            {
+                errors.Add("所有材料的數量必須大於 0");
+            }
+            
+            // 檢查是否選擇了單位
+            var missingUnits = nonEmptyItems.Where(item => !item.UnitId.HasValue || item.UnitId.Value <= 0).ToList();
+            if (missingUnits.Any())
+            {
+                errors.Add("所有材料都必須選擇單位");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// 通知已刪除的明細ID
+    /// </summary>
+    private async Task NotifyDeletedDetailsChanged()
+    {
+        if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
+        {
+            await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
+            _deletedDetailIds.Clear(); // 清空已通知的刪除ID
+        }
+    }
+    
+    /// <summary>
+    /// 取得非空的明細項目（供父組件使用）
+    /// </summary>
+    public List<ProductCompositionDetail> GetNonEmptyItems()
+    {
+        return AutoEmptyRowHelper.For<ProductCompositionDetail>.GetNonEmptyItems(Items, IsEmptyRow);
+    }
+    
+    /// <summary>
+    /// 取得已刪除的明細ID清單（供父組件使用）
+    /// </summary>
+    public List<int> GetDeletedDetailIds()
+    {
+        return _deletedDetailIds.ToList();
+    }
+}

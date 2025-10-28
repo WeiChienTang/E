@@ -2,9 +2,9 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using ERPCore2.Components.Shared.Warehouse
 @using ERPCore2.Components.Shared.Badges
+@using ERPCore2.Components.Shared.Navigation
 @using ERPCore2.Data.Enums
 @attribute [Authorize]
-@inject INavigationSearchService NavigationSearchService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
 @inject IPermissionService PermissionService
@@ -110,59 +110,7 @@
     }
 
     @* 功能搜尋區域 *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card section-card">
-                <div class="card-header section-header-primary">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-search me-2"></i>
-                        頁面搜尋
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @* 簡化的搜尋輸入框 *@
-                    <input type="text" 
-                           class="form-control form-control" 
-                           placeholder="輸入功能名稱或關鍵字搜尋..."
-                           @bind="searchTerm"
-                           @bind:event="oninput"
-                           @bind:after="OnSearchTermChanged" />
-
-                    @* 搜尋結果 *@
-                    @if (searchResults.Any())
-                    {
-                        <div class="search-results-section mt-4">
-                            <h6 class="mb-3">
-                                <i class="bi bi-grid-fill me-2"></i>
-                                搜尋結果 (共 @searchResults.Count 個功能)
-                            </h6>
-                            <div class="row">
-                                @foreach (var item in searchResults)
-                                {
-                                    <div class="col-lg-4 col-md-6 mb-3">
-                                        <div class="search-result-card">
-                                            <NavigationCard Item="@item" 
-                                                          ShowRoute="true" 
-                                                          ShowActionButton="false" />
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                    else if (hasSearched)
-                    {
-                        <div class="search-empty-state mt-4 text-center">
-                            <i class="bi bi-search-heart fs-1 d-block mb-3"></i>
-                            <p>沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-
+    <PageSearchComponent />
 
 </div>
 
@@ -179,18 +127,6 @@
 
 
 @code {
-    // ===== 搜尋相關 =====
-    // 搜尋結果
-    private List<NavigationItem> searchResults = new();
-    
-    // 搜尋字串
-    private string searchTerm = "";
-    private bool hasSearched = false;
-    
-    // 防抖計時器
-    private System.Threading.Timer? _searchDebounceTimer;
-    private const int SearchDelayMs = 300;
-
     // ===== 庫存狀態相關 =====
     // 權限控制
     private bool hasInventoryPermission = false;
@@ -223,48 +159,6 @@
                 await LoadInventoryStatsAsync();
             }
         }
-    }
-
-    // ===== 搜尋相關方法 =====
-
-    /// <summary>
-    /// 當搜尋字串改變時觸發（帶防抖）
-    /// </summary>
-    private void OnSearchTermChanged()
-    {
-        // 取消之前的計時器
-        _searchDebounceTimer?.Dispose();
-        
-        // 設置新的計時器
-        _searchDebounceTimer = new System.Threading.Timer(_ =>
-        {
-            InvokeAsync(async () =>
-            {
-                await PerformSearch();
-                StateHasChanged();
-            });
-        }, null, SearchDelayMs, Timeout.Infinite);
-    }
-
-    /// <summary>
-    /// 執行搜尋
-    /// </summary>
-    private async Task PerformSearch()
-    {
-        if (string.IsNullOrWhiteSpace(searchTerm))
-        {
-            searchResults.Clear();
-            hasSearched = false;
-        }
-        else
-        {
-            searchResults = NavigationSearchService.SearchNavigationItems(searchTerm)
-                .Where(item => !item.IsParent && !string.IsNullOrEmpty(item.Route) && item.Route != "#")
-                .ToList();
-            hasSearched = true;
-        }
-        
-        await Task.CompletedTask;
     }
 
     // ===== 庫存統計相關方法 =====
@@ -384,13 +278,6 @@
 
     public void Dispose()
     {
-        try
-        {
-            _searchDebounceTimer?.Dispose();
-        }
-        catch
-        {
-            // 忽略清理過程中的錯誤
-        }
+        // 目前沒有需要清理的資源
     }
 }

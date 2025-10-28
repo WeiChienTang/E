@@ -17,7 +17,7 @@
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="產品合成表"
-                        GetEntityDisplayName="@(comp => comp.Name)"
+                        GetEntityDisplayName="@(comp => comp.Code ?? $"合成表{comp.Id}")"
                         RequiredPermission="ProductComposition.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -144,7 +144,7 @@
         if (fieldConfiguration == null)
         {
             // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(pc => pc.ParentProductId).ThenBy(pc => pc.Name);
+            return query.OrderBy(pc => pc.ParentProductId).ThenBy(pc => pc.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCompositionFilters), GetType());

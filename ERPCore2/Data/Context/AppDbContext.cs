@@ -937,12 +937,6 @@ namespace ERPCore2.Data.Context
                         // decimal 屬性設定
                         entity.Property(e => e.Quantity)
                               .HasPrecision(18, 4);
-                        entity.Property(e => e.LossRate)
-                              .HasPrecision(5, 2);
-                        entity.Property(e => e.MinQuantity)
-                              .HasPrecision(18, 4);
-                        entity.Property(e => e.MaxQuantity)
-                              .HasPrecision(18, 4);
                         entity.Property(e => e.ComponentCost)
                               .HasPrecision(18, 2);
                   });
