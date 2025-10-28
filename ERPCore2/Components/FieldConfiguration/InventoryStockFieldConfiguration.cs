@@ -14,17 +14,20 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<Product> _products;
         private readonly List<Warehouse> _warehouses;
         private readonly List<WarehouseLocation> _warehouseLocations;
+        private readonly List<ProductCategory> _productCategories;
         private readonly INotificationService? _notificationService;
 
         public InventoryStockFieldConfiguration(
             List<Product> products, 
             List<Warehouse> warehouses, 
             List<WarehouseLocation> warehouseLocations,
+            List<ProductCategory> productCategories,
             INotificationService? notificationService = null)
         {
             _products = products;
             _warehouses = warehouses;
             _warehouseLocations = warehouseLocations;
+            _productCategories = productCategories;
             _notificationService = notificationService;
         }
 
@@ -44,10 +47,10 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Select,
                             TableOrder = 1,
                             HeaderStyle = "width: 200px;",
-                            Options = _products.Select(p => new SelectOption 
-                            { 
-                                Text = $"{p.Code} - {p.Name}", 
-                                Value = p.Id.ToString() 
+                            Options = _products.Select(p => new SelectOption
+                            {
+                                Text = $"{p.Code} - {p.Name}",
+                                Value = p.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(InventoryStock.ProductId), s => s.ProductId)
@@ -68,9 +71,35 @@ namespace ERPCore2.FieldConfiguration
                                 if (!string.IsNullOrWhiteSpace(filterValue))
                                 {
                                     // 使用安全的方式查詢，避免導航屬性的 null reference
-                                    query = query.Where(s => s.Product != null && 
-                                                           s.Product.Code != null && 
+                                    query = query.Where(s => s.Product != null &&
+                                                           s.Product.Code != null &&
                                                            s.Product.Code.Contains(filterValue));
+                                }
+                                return query;
+                            }
+                        }
+                    },
+                    {
+                        "ProductCategoryId",
+                        new FieldDefinition<InventoryStock>
+                        {
+                            PropertyName = "Product.ProductCategory.Name",
+                            FilterPropertyName = "Product.ProductCategoryId",
+                            DisplayName = "商品類型",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 3,
+                            HeaderStyle = "width: 150px;",
+                            Options = _productCategories.Select(pc => new SelectOption
+                            {
+                                Text = pc.Name,
+                                Value = pc.Id.ToString()
+                            }).ToList(),
+                            FilterFunction = (model, query) => {
+                                var filterValue = model.GetFilterValue("ProductCategoryId")?.ToString();
+                                if (!string.IsNullOrWhiteSpace(filterValue) && int.TryParse(filterValue, out int categoryId))
+                                {
+                                    query = query.Where(s => s.Product != null && 
+                                                           s.Product.ProductCategoryId == categoryId);
                                 }
                                 return query;
                             }
@@ -83,7 +112,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(InventoryStock.TotalCurrentStock),
                             DisplayName = "現有庫存",
                             FilterType = SearchFilterType.Text,
-                            TableOrder = 3,
+                            TableOrder = 4,
                             HeaderStyle = "width: 100px; text-align: right;",
                             ShowInFilter = false
                         }
@@ -95,15 +124,15 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(InventoryStock.WeightedAverageCost),
                             DisplayName = "平均成本",
                             FilterType = SearchFilterType.Text,
-                            TableOrder = 7,
+                            TableOrder = 8,
                             HeaderStyle = "width: 120px; text-align: right;",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is InventoryStock stock)
                                 {
-                                    var value = stock.WeightedAverageCost.HasValue 
-                                        ? stock.WeightedAverageCost.Value.ToString("N2") 
+                                    var value = stock.WeightedAverageCost.HasValue
+                                        ? stock.WeightedAverageCost.Value.ToString("N2")
                                         : "-";
                                     builder.AddContent(0, value);
                                 }

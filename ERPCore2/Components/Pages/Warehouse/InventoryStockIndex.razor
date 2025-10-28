@@ -1,6 +1,7 @@
 @page "/inventoryStocks"
 @inject IInventoryStockService InventoryStockService
 @inject IProductService ProductService
+@inject IProductCategoryService ProductCategoryService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
@@ -72,6 +73,7 @@
     
     // 相關資料
     private List<Product> products = new();
+    private List<ProductCategory> productCategories = new();
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
     
@@ -94,7 +96,7 @@
             await LoadRelatedDataAsync();
             
             // 建立欄位配置（傳遞所需參數）
-            fieldConfiguration = new InventoryStockFieldConfiguration(products, warehouses, warehouseLocations, NotificationService);
+            fieldConfiguration = new InventoryStockFieldConfiguration(products, warehouses, warehouseLocations, productCategories, NotificationService);
             
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
@@ -140,6 +142,7 @@
         {
             // 載入相關資料
             products = await ProductService.GetAllAsync();
+            productCategories = await ProductCategoryService.GetAllAsync();
             warehouses = await WarehouseService.GetAllAsync();
             warehouseLocations = await WarehouseLocationService.GetAllAsync();
         }
@@ -149,6 +152,7 @@
             await NotificationService.ShowErrorAsync("載入相關資料失敗");
             // 設定安全的預設值
             products = new List<Product>();
+            productCategories = new List<ProductCategory>();
             warehouses = new List<Warehouse>();
             warehouseLocations = new List<WarehouseLocation>();
         }

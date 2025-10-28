@@ -1,0 +1,343 @@
+@* 可重用的生產排程編輯組件 - 可在任何頁面中嵌入 *@
+@inject IProductionScheduleService ProductionScheduleService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="ProductionSchedule" 
+                          TService="IProductionScheduleService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@ProductionScheduleId"
+                          Service="@ProductionScheduleService"
+                          EntityName="生產排程"
+                          EntityNamePlural="生產排程"
+                          ModalTitle="@(ProductionScheduleId.HasValue ? "編輯生產排程" : "新增生產排程")"
+                          Size="GenericEditModalComponent<ProductionSchedule, IProductionScheduleService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadProductionScheduleData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(ProductionScheduleId.HasValue ? "生產排程更新成功" : "生產排程新增成功")"
+                          SaveFailureMessage="生產排程儲存失敗"
+                          RequiredPermission="ProductionSchedule.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? ProductionScheduleId { get; set; }
+    [Parameter] public EventCallback<ProductionSchedule> OnProductionScheduleSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<ProductionSchedule, IProductionScheduleService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Customer> availableCustomers = new();
+    private List<Employee> availableEmployees = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道排程已儲存
+            if (OnProductionScheduleSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnProductionScheduleSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入客戶列表
+            availableCustomers = await CustomerService.GetAllAsync();
+            
+            // 載入員工列表
+            availableEmployees = await EmployeeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入相關資料時發生錯誤：{ex.Message}");
+            availableCustomers = new List<Customer>();
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<ProductionSchedule?> LoadProductionScheduleData()
+    {
+        try
+        {
+            if (!ProductionScheduleId.HasValue) 
+            {
+                // 新增模式：建立新的排程實體並生成代碼
+                var newSchedule = new ProductionSchedule
+                {
+                    ScheduleNumber = await GenerateScheduleNumberAsync(),
+                    ScheduleDate = DateTime.Today,
+                    Code = await GenerateScheduleCodeAsync(),
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(ProductionSchedule).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newSchedule, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newSchedule;
+            }
+
+            var schedule = await ProductionScheduleService.GetByIdAsync(ProductionScheduleId.Value);            
+            
+            if (schedule == null)
+            {
+                // 如果找不到排程，建立新的預設排程
+                return new ProductionSchedule
+                {
+                    ScheduleDate = DateTime.Today,
+                    Status = EntityStatus.Active
+                };
+            }
+            return schedule;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入生產排程資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new ProductionSchedule
+            {
+                Code = "ERROR",
+                ScheduleNumber = "ERROR",
+                ScheduleDate = DateTime.Today,
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 準備客戶選項
+            var customerOptions = availableCustomers.Select(c => new SelectOption
+            {
+                Text = c.CompanyName,
+                Value = c.Id.ToString()
+            }).ToList();
+
+            // 準備員工選項
+            var employeeOptions = availableEmployees.Select(e => new SelectOption
+            {
+                Text = $"{e.Code} - {e.Name}".Trim(),
+                Value = e.Id.ToString()
+            }).ToList();
+
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.Code),
+                    Label = "排程代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入排程代碼",
+                    IsRequired = true,
+                    HelpText = "排程的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.ScheduleNumber),
+                    Label = "排程單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入排程單號",
+                    IsRequired = true,
+                    HelpText = "排程單號，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.ScheduleDate),
+                    Label = "排程日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "排程建立日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇客戶",
+                    Options = customerOptions,
+                    HelpText = "選擇此排程關聯的客戶（可選）"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.CreatedByEmployeeId),
+                    Label = "製單人員",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇製單人員",
+                    Options = employeeOptions,
+                    HelpText = "選擇負責製作此排程的員工"
+                },
+                
+                // 來源資訊區段
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.SourceDocumentType),
+                    Label = "來源單據類型",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入來源單據類型",
+                    HelpText = "此排程來源的單據類型（如：銷售訂單、手動建立等）"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductionSchedule.SourceDocumentId),
+                    Label = "來源單據ID",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入來源單據ID",
+                    HelpText = "來源單據的ID編號"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<ProductionSchedule>()
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(ProductionSchedule.Code), "基本資訊" },
+                { nameof(ProductionSchedule.ScheduleNumber), "基本資訊" },
+                { nameof(ProductionSchedule.ScheduleDate), "基本資訊" },
+                { nameof(ProductionSchedule.CustomerId), "基本資訊" },
+                { nameof(ProductionSchedule.CreatedByEmployeeId), "基本資訊" },
+                { nameof(ProductionSchedule.SourceDocumentType), "來源資訊" },
+                { nameof(ProductionSchedule.SourceDocumentId), "來源資訊" },
+                { nameof(ProductionSchedule.Remarks), "額外資料" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateScheduleNumberAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            ProductionScheduleService,
+            "PS",
+            (service, code, excludeId) => service.IsScheduleNumberExistsAsync(code, excludeId)
+        );
+    }
+
+    private async Task<string> GenerateScheduleCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            ProductionScheduleService,
+            "PS",
+            (service, code, excludeId) => service.IsScheduleNumberExistsAsync(code, excludeId)
+        );
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增生產排程 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        ProductionScheduleId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯生產排程 Modal
+    /// </summary>
+    public async Task ShowEditModal(int scheduleId)
+    {
+        ProductionScheduleId = scheduleId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

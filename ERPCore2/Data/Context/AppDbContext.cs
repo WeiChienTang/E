@@ -92,6 +92,10 @@ namespace ERPCore2.Data.Context
       public DbSet<ProductComposition> ProductCompositions { get; set; }
       public DbSet<ProductCompositionDetail> ProductCompositionDetails { get; set; }
       
+      // Production Schedule
+      public DbSet<ProductionSchedule> ProductionSchedules { get; set; }
+      public DbSet<ProductionScheduleDetail> ProductionScheduleDetails { get; set; }
+      
       // System Logs
       public DbSet<ErrorLog> ErrorLogs { get; set; }
       public DbSet<DeletedRecord> DeletedRecords { get; set; }
@@ -939,6 +943,73 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(18, 4);
                         entity.Property(e => e.ComponentCost)
                               .HasPrecision(18, 2);
+                  });
+
+                  // Production Schedule Management
+                  modelBuilder.Entity<ProductionSchedule>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(ps => ps.CreatedByEmployee)
+                              .WithMany()
+                              .HasForeignKey(ps => ps.CreatedByEmployeeId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(ps => ps.Customer)
+                              .WithMany()
+                              .HasForeignKey(ps => ps.CustomerId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasMany(ps => ps.ScheduleDetails)
+                              .WithOne(psd => psd.ProductionSchedule)
+                              .HasForeignKey(psd => psd.ProductionScheduleId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 設定索引
+                        entity.HasIndex(e => e.ScheduleNumber)
+                              .IsUnique();
+                        entity.HasIndex(e => e.ScheduleDate);
+                  });
+
+                  modelBuilder.Entity<ProductionScheduleDetail>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(psd => psd.ProductionSchedule)
+                              .WithMany(ps => ps.ScheduleDetails)
+                              .HasForeignKey(psd => psd.ProductionScheduleId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(psd => psd.ComponentProduct)
+                              .WithMany()
+                              .HasForeignKey(psd => psd.ComponentProductId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(psd => psd.ProductCompositionDetail)
+                              .WithMany()
+                              .HasForeignKey(psd => psd.ProductCompositionDetailId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(psd => psd.Warehouse)
+                              .WithMany()
+                              .HasForeignKey(psd => psd.WarehouseId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.RequiredQuantity)
+                              .HasPrecision(18, 4);
+                        entity.Property(e => e.EstimatedUnitCost)
+                              .HasPrecision(18, 2);
+                        entity.Property(e => e.ActualUnitCost)
+                              .HasPrecision(18, 2);
+                        entity.Property(e => e.TotalCost)
+                              .HasPrecision(18, 2);
+
+                        // 設定索引
+                        entity.HasIndex(e => new { e.ProductionScheduleId, e.ComponentProductId });
+                        entity.HasIndex(e => e.ComponentProductId);
                   });
             }
     }

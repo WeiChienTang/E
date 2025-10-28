@@ -1,0 +1,170 @@
+@page "/production-schedules"
+@inject IProductionScheduleService ProductionScheduleService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@using ERPCore2.FieldConfiguration
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="ProductionSchedule" 
+                        TService="IProductionScheduleService"
+                        Service="@ProductionScheduleService"
+                        EntityBasePath="/production-schedules"                          
+                        PageTitle="生產排程管理"
+                        PageSubtitle="管理生產排程計劃與執行"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyProductionScheduleFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="生產排程"
+                        GetEntityDisplayName="@(schedule => schedule.ScheduleNumber)"
+                        RequiredPermission="ProductionSchedule.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent"/>
+
+@* 生產排程編輯 Modal *@
+<ProductionScheduleEditModalComponent IsVisible="@showEditModal"
+                                     IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                     ProductionScheduleId="@editingScheduleId"
+                                     OnProductionScheduleSaved="@modalHandler.OnEntitySavedAsync"
+                                     OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<ProductionSchedule, IProductionScheduleService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingScheduleId = null;
+    
+    // Modal 處理器
+    private ModalHandler<ProductionSchedule, GenericIndexPageComponent<ProductionSchedule, IProductionScheduleService>> modalHandler = default!;
+    
+    // 欄位配置
+    private ProductionScheduleFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 相關資料
+    private List<Customer> customers = new();
+    private List<Employee> employees = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<ProductionSchedule, GenericIndexPageComponent<ProductionSchedule, IProductionScheduleService>>(
+                id => editingScheduleId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadCustomersAsync();
+            await LoadEmployeesAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new ProductionScheduleFieldConfiguration(customers, employees, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化生產排程頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化生產排程頁面失敗");
+        }
+    }
+
+    // ===== 原有的初始化方法 =====
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("生產管理", "#"),
+                new("生產排程管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入生產排程資料
+    private async Task<List<ProductionSchedule>> LoadDataAsync()
+    {
+        try
+        {
+            return await ProductionScheduleService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入生產排程資料失敗");
+            await NotificationService.ShowErrorAsync("載入生產排程資料失敗");
+            // 設定安全的預設值
+            return new List<ProductionSchedule>();
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            // 設定安全的預設值
+            customers = new List<Customer>();
+        }
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            employees = await EmployeeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
+            await NotificationService.ShowErrorAsync("載入員工資料失敗");
+            // 設定安全的預設值
+            employees = new List<Employee>();
+        }
+    }
+
+    private IQueryable<ProductionSchedule> ApplyProductionScheduleFilters(SearchFilterModel searchModel, IQueryable<ProductionSchedule> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(ps => ps.ScheduleDate).ThenByDescending(ps => ps.Id);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductionScheduleFilters), GetType());
+    }
+}

@@ -26,10 +26,10 @@ public static class NavigationConfig
                 SearchKeywords = new List<string> { "首頁", "主頁", "主畫面", "home", "dashboard", "總覽" }
             },
 
-            // ==================== 員工管理 ====================
+            // ==================== 人力資源管理 ====================
             new NavigationItem
             {
-                Name = "員工管理",
+                Name = "人力資源管理",
                 Description = "員工相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-person-badge-fill",
@@ -236,6 +236,16 @@ public static class NavigationConfig
                         Category = "產品管理",
                         RequiredPermission = "ProductComposition.Read",
                         SearchKeywords = new List<string> { "物料清單", "BOM", "物料清單", "Bill of Materials" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "生產排程管理",
+                        Description = "管理生產排程的詳細資料",
+                        Route = "/production-schedules",
+                        IconClass = "",
+                        Category = "產品管理",
+                        RequiredPermission = "ProductionSchedule.Read",
+                        SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" }
                     }
                 }
             },

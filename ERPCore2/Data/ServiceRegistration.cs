@@ -117,6 +117,10 @@ namespace ERPCore2.Data
             // 產品合成（BOM）服務
             services.AddScoped<IProductCompositionService, ProductCompositionService>();
             services.AddScoped<IProductCompositionDetailService, ProductCompositionDetailService>();
+            
+            // 生產排程服務
+            services.AddScoped<IProductionScheduleService, ProductionScheduleService>();
+            services.AddScoped<IProductionScheduleDetailService, ProductionScheduleDetailService>();
 
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();

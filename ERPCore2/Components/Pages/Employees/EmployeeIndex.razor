@@ -10,7 +10,7 @@
                         TService="IEmployeeService"
                         Service="@EmployeeService"
                         EntityBasePath="/employees"                          
-                        PageTitle="員工維護"
+                        PageTitle="員工"
                         PageSubtitle="管理員工資料與權限設定"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
@@ -95,7 +95,7 @@
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
             {
                 new("首頁", "/"),
-                new("員工維護")
+                new("員工")
             };
         }
         catch (Exception ex)
