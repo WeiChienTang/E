@@ -1,4 +1,9 @@
+@using ERPCore2.Components.Shared.Navigation
+@using Microsoft.JSInterop
 @inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+@implements IAsyncDisposable
 
 <div class="page">    
     <div class="sidebar">
@@ -11,3 +16,86 @@
         </article>
     </main>
 </div>
+
+@* 全域頁面搜尋 Modal *@
+<PageSearchModalComponent @ref="pageSearchModal" 
+                         IsVisible="@showPageSearch"
+                         IsVisibleChanged="@((bool visible) => showPageSearch = visible)" />
+
+@code {
+    // 頁面搜尋 Modal 參考
+    private PageSearchModalComponent? pageSearchModal;
+    private bool showPageSearch = false;
+    
+    // JavaScript 互操作
+    private DotNetObjectReference<MainLayout>? dotNetReference;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // 建立 .NET 物件參考
+                dotNetReference = DotNetObjectReference.Create(this);
+                
+                // 載入 keyboard-shortcuts.js 並初始化
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    if (!window.KeyboardShortcuts) {
+                        var script = document.createElement('script');
+                        script.src = '/js/keyboard-shortcuts.js';
+                        document.head.appendChild(script);
+                    }
+                ");
+                
+                // 等待腳本載入
+                await Task.Delay(100);
+                
+                // 初始化快捷鍵監聽
+                await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.initialize", dotNetReference);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MainLayout] 初始化快捷鍵失敗: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// JavaScript 呼叫此方法以開啟頁面搜尋 Modal
+    /// </summary>
+    [JSInvokable]
+    public async Task OpenPageSearch()
+    {
+        try
+        {
+            if (pageSearchModal != null)
+            {
+                await pageSearchModal.Open();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainLayout] 開啟頁面搜尋失敗: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 清理資源
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            // 清理 JavaScript 快捷鍵監聽器
+            await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.dispose");
+
+            // 清理 .NET 物件參考
+            dotNetReference?.Dispose();
+        }
+        catch
+        {
+            // 忽略清理錯誤
+        }
+    }
+}

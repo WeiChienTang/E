@@ -1,0 +1,229 @@
+/* ===================================================
+   頁面搜尋 Modal 樣式
+   用於全域快捷鍵 (Alt + S) 啟動的頁面搜尋功能
+   =================================================== */
+
+/* Modal 容器 */
+.page-search-modal {
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal 標題區域 */
+.page-search-modal .modal-header {
+    background-color: #1F2937;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.page-search-modal .modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.page-search-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+.page-search-modal .modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+/* 快捷鍵提示 */
+.page-search-modal kbd {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    font-family: monospace;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 搜尋輸入框區域 */
+.search-input-wrapper {
+    position: relative;
+}
+
+.search-input-wrapper .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 1.2rem;
+    pointer-events: none;
+}
+
+.search-input-wrapper .form-control {
+    padding-left: 3rem;
+    padding-right: 3rem;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.search-input-wrapper .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+.search-input-wrapper .clear-button {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    padding: 0.25rem 0.5rem;
+    text-decoration: none;
+}
+
+.search-input-wrapper .clear-button:hover {
+    color: #dc3545;
+}
+
+/* 搜尋結果容器 */
+.search-results-container {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 捲軸樣式美化 */
+.search-results-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.search-results-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 搜尋結果標題 */
+.search-results-header {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* 搜尋結果列表 */
+.search-results-list {
+    margin-top: 0.5rem;
+}
+
+/* 搜尋結果項目 */
+.search-result-item {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.search-result-item:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateX(4px);
+}
+
+.search-result-item.selected {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: translateX(4px);
+}
+
+.search-result-item.selected .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.search-result-item.selected i {
+    color: white !important;
+}
+
+.search-result-item .result-title {
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+/* 空狀態樣式 */
+.search-empty-state {
+    padding: 2rem 1rem;
+}
+
+.search-empty-state i {
+    opacity: 0.5;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .page-search-modal .modal-dialog {
+        max-width: 95%;
+        margin: 1rem auto;
+    }
+
+    .search-results-container {
+        max-height: 300px;
+    }
+
+    .page-search-modal .modal-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .page-search-modal .modal-header .ms-auto {
+        margin-left: 0 !important;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* Modal 動畫增強 */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: none;
+}
+
+/* 鍵盤導航視覺回饋 */
+.search-result-item:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* 提高可訪問性 */
+.search-result-item[aria-selected="true"] {
+    background-color: #667eea;
+    color: white;
+}
