@@ -88,6 +88,10 @@ namespace ERPCore2.Data.Context
       public DbSet<Color> Colors { get; set; }
       public DbSet<Size> Sizes { get; set; }
       
+      // Product Composition (BOM)
+      public DbSet<ProductComposition> ProductCompositions { get; set; }
+      public DbSet<ProductCompositionDetail> ProductCompositionDetails { get; set; }
+      
       // System Logs
       public DbSet<ErrorLog> ErrorLogs { get; set; }
       public DbSet<DeletedRecord> DeletedRecords { get; set; }
@@ -891,6 +895,56 @@ namespace ERPCore2.Data.Context
                         entity.Property(e => e.ExchangeRate).HasPrecision(18, 6);
 
                         entity.HasIndex(e => e.Code).IsUnique();
+                  });
+
+                  // Product Composition (BOM) Management
+                  modelBuilder.Entity<ProductComposition>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(pc => pc.ParentProduct)
+                              .WithMany(p => p.ProductCompositions)
+                              .HasForeignKey(pc => pc.ParentProductId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasMany(pc => pc.CompositionDetails)
+                              .WithOne(pcd => pcd.ProductComposition)
+                              .HasForeignKey(pcd => pcd.ProductCompositionId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<ProductCompositionDetail>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(pcd => pcd.ProductComposition)
+                              .WithMany(pc => pc.CompositionDetails)
+                              .HasForeignKey(pcd => pcd.ProductCompositionId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(pcd => pcd.ComponentProduct)
+                              .WithMany(p => p.ComponentInCompositions)
+                              .HasForeignKey(pcd => pcd.ComponentProductId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(pcd => pcd.Unit)
+                              .WithMany()
+                              .HasForeignKey(pcd => pcd.UnitId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.Quantity)
+                              .HasPrecision(18, 4);
+                        entity.Property(e => e.LossRate)
+                              .HasPrecision(5, 2);
+                        entity.Property(e => e.MinQuantity)
+                              .HasPrecision(18, 4);
+                        entity.Property(e => e.MaxQuantity)
+                              .HasPrecision(18, 4);
+                        entity.Property(e => e.ComponentCost)
+                              .HasPrecision(18, 2);
                   });
             }
     }

@@ -226,6 +226,16 @@ public static class NavigationConfig
                         Category = "產品管理",
                         RequiredPermission = "Size.Read",
                         SearchKeywords = new List<string> { "尺寸", "規格", "size" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "物料清單",
+                        Description = "管理產品的配方和組件結構",
+                        Route = "/product-compositions",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "產品管理",
+                        RequiredPermission = "ProductComposition.Read",
+                        SearchKeywords = new List<string> { "物料清單", "BOM", "物料清單", "Bill of Materials" }
                     }
                 }
             },

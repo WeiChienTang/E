@@ -1,0 +1,359 @@
+using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace ERPCore2.Services
+{
+    /// <summary>
+    /// 產品合成服務實作 - 繼承 GenericManagementService
+    /// </summary>
+    public class ProductCompositionService : GenericManagementService<ProductComposition>, IProductCompositionService
+    {
+        /// <summary>
+        /// 完整建構子 - 使用 ILogger
+        /// </summary>
+        public ProductCompositionService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<ProductComposition>> logger) : base(contextFactory, logger)
+        {
+        }
+
+        /// <summary>
+        /// 簡易建構子 - 不使用 ILogger
+        /// </summary>
+        public ProductCompositionService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        {
+        }
+
+        #region 覆寫基底方法
+
+        public override async Task<List<ProductComposition>> GetAllAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCompositions
+                    .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.ComponentProduct)
+                    .OrderBy(pc => pc.ParentProductId)
+                    .ThenBy(pc => pc.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAllAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetAllAsync),
+                    ServiceType = GetType().Name
+                });
+                return new List<ProductComposition>();
+            }
+        }
+
+        public override async Task<ProductComposition?> GetByIdAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCompositions
+                    .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.ComponentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.Unit)
+                    .FirstOrDefaultAsync(pc => pc.Id == id);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByIdAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                return null;
+            }
+        }
+
+        public override async Task<List<ProductComposition>> SearchAsync(string searchTerm)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.ProductCompositions
+                    .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.ComponentProduct)
+                    .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var lowerSearchTerm = searchTerm.ToLower();
+                    query = query.Where(pc =>
+                        pc.Name.ToLower().Contains(lowerSearchTerm) ||
+                        (pc.Code != null && pc.Code.ToLower().Contains(lowerSearchTerm)) ||
+                        pc.ParentProduct.Name.ToLower().Contains(lowerSearchTerm));
+                }
+
+                return await query
+                    .OrderBy(pc => pc.ParentProductId)
+                    .ThenBy(pc => pc.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchAsync), GetType(), _logger, new
+                {
+                    Method = nameof(SearchAsync),
+                    ServiceType = GetType().Name,
+                    SearchTerm = searchTerm
+                });
+                return new List<ProductComposition>();
+            }
+        }
+
+        public override async Task<ServiceResult> ValidateAsync(ProductComposition entity)
+        {
+            try
+            {
+                var errors = new List<string>();
+
+                // 基本驗證
+                if (entity.ParentProductId <= 0)
+                    errors.Add("請選擇成品");
+
+                if (string.IsNullOrWhiteSpace(entity.Name))
+                    errors.Add("合成表名稱為必填");
+
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new
+                {
+                    Method = nameof(ValidateAsync),
+                    ServiceType = GetType().Name,
+                    EntityId = entity.Id,
+                    EntityName = entity.Name
+                });
+                return ServiceResult.Failure($"驗證產品合成表時發生錯誤: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region IProductCompositionService 實作
+
+        public async Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCompositions
+                    .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.ComponentProduct)
+                    .Where(pc => pc.ParentProductId == productId)
+                    .OrderBy(pc => pc.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCompositionsByProductIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetCompositionsByProductIdAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId
+                });
+                return new List<ProductComposition>();
+            }
+        }
+
+        public async Task<decimal> CalculateTotalCostAsync(int compositionId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var composition = await context.ProductCompositions
+                    .Include(pc => pc.CompositionDetails)
+                    .FirstOrDefaultAsync(pc => pc.Id == compositionId);
+
+                if (composition == null)
+                    return 0;
+
+                decimal totalCost = 0;
+                foreach (var detail in composition.CompositionDetails)
+                {
+                    if (detail.ComponentCost.HasValue)
+                    {
+                        var quantity = detail.Quantity;
+                        // 考慮損耗率
+                        if (detail.LossRate.HasValue && detail.LossRate.Value > 0)
+                        {
+                            quantity = quantity * (1 + detail.LossRate.Value / 100);
+                        }
+                        totalCost += detail.ComponentCost.Value * quantity;
+                    }
+                }
+
+                return totalCost;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CalculateTotalCostAsync), GetType(), _logger, new
+                {
+                    Method = nameof(CalculateTotalCostAsync),
+                    ServiceType = GetType().Name,
+                    CompositionId = compositionId
+                });
+                return 0;
+            }
+        }
+
+        public async Task<object> GetBomTreeAsync(int compositionId, int maxLevel = 10)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var composition = await context.ProductCompositions
+                    .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.ComponentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.Unit)
+                    .FirstOrDefaultAsync(pc => pc.Id == compositionId);
+
+                if (composition == null)
+                    return new { };
+
+                return await BuildBomTreeNodeAsync(context, composition, 0, maxLevel, new HashSet<int>());
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBomTreeAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetBomTreeAsync),
+                    ServiceType = GetType().Name,
+                    CompositionId = compositionId,
+                    MaxLevel = maxLevel
+                });
+                return new { };
+            }
+        }
+
+        /// <summary>
+        /// 遞迴建立 BOM 樹狀節點（防止循環參考）
+        /// </summary>
+        private async Task<object> BuildBomTreeNodeAsync(
+            AppDbContext context,
+            ProductComposition composition,
+            int currentLevel,
+            int maxLevel,
+            HashSet<int> processedCompositions)
+        {
+            // 防止循環參考
+            if (processedCompositions.Contains(composition.Id))
+            {
+                return new
+                {
+                    id = composition.Id,
+                    name = composition.Name,
+                    productId = composition.ParentProductId,
+                    productName = composition.ParentProduct?.Name,
+                    isCircular = true,
+                    children = new List<object>()
+                };
+            }
+
+            processedCompositions.Add(composition.Id);
+
+            var children = new List<object>();
+
+            // 如果未達最大層級，展開子組件
+            if (currentLevel < maxLevel)
+            {
+                foreach (var detail in composition.CompositionDetails.OrderBy(d => d.Sequence))
+                {
+                    // 檢查組件是否也有 BOM（取第一個配方）
+                    var childComposition = await context.ProductCompositions
+                        .Include(pc => pc.ParentProduct)
+                        .Include(pc => pc.CompositionDetails)
+                            .ThenInclude(pcd => pcd.ComponentProduct)
+                        .Include(pc => pc.CompositionDetails)
+                            .ThenInclude(pcd => pcd.Unit)
+                        .Where(pc => pc.ParentProductId == detail.ComponentProductId)
+                        .FirstOrDefaultAsync();
+
+                    if (childComposition != null)
+                    {
+                        // 遞迴建立子節點
+                        var childNode = await BuildBomTreeNodeAsync(
+                            context,
+                            childComposition,
+                            currentLevel + 1,
+                            maxLevel,
+                            new HashSet<int>(processedCompositions));
+
+                        children.Add(new
+                        {
+                            detail = new
+                            {
+                                id = detail.Id,
+                                sequence = detail.Sequence,
+                                quantity = detail.Quantity,
+                                unitName = detail.Unit?.Name,
+                                lossRate = detail.LossRate,
+                                isOptional = detail.IsOptional,
+                                isKeyComponent = detail.IsKeyComponent
+                            },
+                            composition = childNode
+                        });
+                    }
+                    else
+                    {
+                        // 葉節點（無子 BOM）
+                        children.Add(new
+                        {
+                            detail = new
+                            {
+                                id = detail.Id,
+                                sequence = detail.Sequence,
+                                quantity = detail.Quantity,
+                                unitName = detail.Unit?.Name,
+                                lossRate = detail.LossRate,
+                                isOptional = detail.IsOptional,
+                                isKeyComponent = detail.IsKeyComponent
+                            },
+                            component = new
+                            {
+                                id = detail.ComponentProduct.Id,
+                                code = detail.ComponentProduct.Code,
+                                name = detail.ComponentProduct.Name,
+                                isLeaf = true
+                            }
+                        });
+                    }
+                }
+            }
+
+            return new
+            {
+                id = composition.Id,
+                name = composition.Name,
+                productId = composition.ParentProductId,
+                productName = composition.ParentProduct?.Name,
+                level = currentLevel,
+                children
+            };
+        }
+
+        #endregion
+    }
+}

@@ -106,48 +106,6 @@ namespace ERPCore2.FieldConfiguration
                             ShowInFilter = false, // 通常不會用金額篩選
                         }
                     },
-                    {
-                        nameof(PurchaseOrder.IsApproved),
-                        new FieldDefinition<PurchaseOrder>
-                        {
-                            PropertyName = nameof(PurchaseOrder.IsApproved),
-                            DisplayName = "是否核准",
-                            ShowInFilter = false,
-                            TableOrder = 7,
-                            HeaderStyle = "width: 90px;",
-                            CustomTemplate = item => builder =>
-                            {
-                                var purchaseOrder = (PurchaseOrder)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", "badge text-white");
-                                builder.AddAttribute(2, "style", purchaseOrder.IsApproved ? "background-color: #28a745;" : "background-color: #dc3545;");
-                                builder.AddContent(3, purchaseOrder.IsApproved ? "已核准" : "未核准");
-                                builder.CloseElement();
-                            }
-                        }
-                    },
-                    {
-                        nameof(PurchaseOrder.RejectReason),
-                        new FieldDefinition<PurchaseOrder>
-                        {
-                            PropertyName = nameof(PurchaseOrder.RejectReason),
-                            DisplayName = "駁回原因",
-                            ColumnType = ColumnDataType.Text,
-                            TableOrder = 8,
-                            ShowInFilter = false,
-                        }
-                    },
-                    {
-                        nameof(PurchaseOrder.ApprovedBy),
-                        new FieldDefinition<PurchaseOrder>
-                        {
-                            PropertyName = "ApprovedByUser.Name", // 顯示審核人員的名稱
-                            DisplayName = "審核人",
-                            ColumnType = ColumnDataType.Text,
-                            TableOrder = 9,
-                            ShowInFilter = false,
-                        }
-                    }
                 };
             }
             catch (Exception ex)

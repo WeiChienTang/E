@@ -29,20 +29,23 @@ namespace ERPCore2.Services
         /// </summary>
         private readonly IPurchaseOrderDetailService? _purchaseOrderDetailService;
 
-        /// <summary>
-        /// 採購退貨明細服務 - 用於檢查進貨明細是否有退貨記錄
-        /// </summary>
-        private readonly IPurchaseReturnDetailService? _purchaseReturnDetailService;
+    /// <summary>
+    /// 採購退貨明細服務 - 用於檢查進貨明細是否有退貨記錄
+    /// </summary>
+    private readonly IPurchaseReturnDetailService? _purchaseReturnDetailService;
 
-        /// <summary>
-        /// 簡易建構子 - 適用於測試環境或最小依賴場景
-        /// </summary>
-        /// <param name="contextFactory">資料庫上下文工廠</param>
-        public PurchaseReceivingService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
-        {
-        }
+    /// <summary>
+    /// 系統參數服務 - 用於檢查是否啟用採購單審核
+    /// </summary>
+    private readonly ISystemParameterService? _systemParameterService;
 
-        /// <summary>
+    /// <summary>
+    /// 簡易建構子 - 適用於測試環境或最小依賴場景
+    /// </summary>
+    /// <param name="contextFactory">資料庫上下文工廠</param>
+    public PurchaseReceivingService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+    {
+    }        /// <summary>
         /// 標準建構子 - 包含日誌記錄功能，適用於一般生產環境
         /// </summary>
         /// <param name="contextFactory">資料庫上下文工廠</param>
@@ -63,18 +66,21 @@ namespace ERPCore2.Services
         /// <param name="detailService">進貨明細服務</param>
         /// <param name="purchaseOrderDetailService">採購訂單明細服務</param>
         /// <param name="purchaseReturnDetailService">採購退貨明細服務</param>
+        /// <param name="systemParameterService">系統參數服務</param>
         public PurchaseReceivingService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReceiving>> logger,
             IInventoryStockService inventoryStockService,
             IPurchaseReceivingDetailService detailService,
             IPurchaseOrderDetailService purchaseOrderDetailService,
-            IPurchaseReturnDetailService purchaseReturnDetailService) : base(contextFactory, logger)
+            IPurchaseReturnDetailService purchaseReturnDetailService,
+            ISystemParameterService systemParameterService) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
             _purchaseOrderDetailService = purchaseOrderDetailService;
             _purchaseReturnDetailService = purchaseReturnDetailService;
+            _systemParameterService = systemParameterService;
         }
 
         #region 覆寫基本方法
@@ -259,7 +265,15 @@ namespace ERPCore2.Services
                     if (purchaseOrder == null)
                         return ServiceResult.Failure("指定的採購訂單不存在");
                     
-                    if (!purchaseOrder.IsApproved)
+                    // 檢查是否啟用採購單審核
+                    var isApprovalEnabled = false;
+                    if (_systemParameterService != null)
+                    {
+                        isApprovalEnabled = await _systemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+                    }
+                    
+                    // 只有在啟用審核時才檢查核准狀態
+                    if (isApprovalEnabled && !purchaseOrder.IsApproved)
                         return ServiceResult.Failure("只有已核准的採購訂單才能進行進貨作業");
                 }
 

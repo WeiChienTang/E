@@ -1,0 +1,318 @@
+@* 可重用的產品合成編輯組件 - 可在任何頁面中嵌入 *@
+@inject IProductCompositionService ProductCompositionService
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="ProductComposition" 
+                          TService="IProductCompositionService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@CompositionId"
+                          Service="@ProductCompositionService"
+                          EntityName="產品合成表"
+                          EntityNamePlural="產品合成表"
+                          ModalTitle="@(CompositionId.HasValue ? "編輯產品合成表" : "新增產品合成表")"
+                          Size="GenericEditModalComponent<ProductComposition, IProductCompositionService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadCompositionData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CompositionId.HasValue ? "產品合成表更新成功" : "產品合成表新增成功")"
+                          SaveFailureMessage="產品合成表儲存失敗"
+                          RequiredPermission="ProductComposition.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CompositionId { get; set; }
+    [Parameter] public EventCallback<ProductComposition> OnCompositionSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<ProductComposition, IProductCompositionService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Product> availableProducts = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            InitializeFormFields();
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道產品合成表已儲存
+            if (OnCompositionSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnCompositionSaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入可選擇的產品列表
+            availableProducts = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
+            availableProducts = new List<Product>();
+        }
+    }
+
+    private async Task<ProductComposition?> LoadCompositionData()
+    {
+        try
+        {
+            if (!CompositionId.HasValue) 
+            {
+                // 新增模式：建立新的產品合成表實體並生成代碼
+                var newComposition = new ProductComposition
+                {
+                    Name = string.Empty,
+                    Code = await GenerateCompositionCodeAsync(),
+                    CompositionType = CompositionType.Standard,
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                if (PrefilledValues != null)
+                {
+                    foreach (var kvp in PrefilledValues)
+                    {
+                        var property = typeof(ProductComposition).GetProperty(kvp.Key);
+                        if (property != null && property.CanWrite && kvp.Value != null)
+                        {
+                            try
+                            {
+                                // 轉換值的類型
+                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
+                                property.SetValue(newComposition, convertedValue);
+                            }
+                            catch (Exception)
+                            {
+                                // 忽略轉換失敗的值
+                            }
+                        }
+                    }
+                }
+                
+                return newComposition;
+            }
+
+            var composition = await ProductCompositionService.GetByIdAsync(CompositionId.Value);            
+            
+            if (composition == null)
+            {
+                // 如果找不到產品合成表，建立新的預設實體
+                return new ProductComposition
+                {
+                    Status = EntityStatus.Active,
+                    CompositionType = CompositionType.Standard
+                };
+            }
+            return composition;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品合成表資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new ProductComposition
+            {
+                Code = "ERROR",
+                Name = "ERROR",
+                Status = EntityStatus.Active,
+                CompositionType = CompositionType.Standard
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            // 準備產品選項
+            var productOptions = availableProducts.Select(p => new SelectOption
+            {
+                Text = $"{p.Code} - {p.Name}".Trim(),
+                Value = p.Id.ToString()
+            }).ToList();
+
+            // 準備配方類型選項
+            var compositionTypeOptions = Enum.GetValues<CompositionType>()
+                .Select(ct => new SelectOption
+                {
+                    Text = GetCompositionTypeDisplayName(ct),
+                    Value = ((int)ct).ToString()
+                }).ToList();
+
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.Code),
+                    Label = "配方代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入配方代碼",
+                    IsRequired = false,
+                    HelpText = "配方的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.ParentProductId),
+                    Label = "成品",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇成品",
+                    Options = productOptions,
+                    IsRequired = true,
+                    HelpText = "選擇此配方要生產的成品"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.Name),
+                    Label = "配方名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入配方名稱",
+                    IsRequired = true,
+                    HelpText = "配方的正式名稱，將顯示在系統各處"
+                },
+                new()
+                {
+                    PropertyName = nameof(ProductComposition.CompositionType),
+                    Label = "配方類型",
+                    FieldType = FormFieldType.Select,
+                    Placeholder = "請選擇配方類型",
+                    Options = compositionTypeOptions,
+                    IsRequired = true,
+                    HelpText = "選擇配方的類型（標準、替代、簡化或客製）"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<ProductComposition>()
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(ProductComposition.Code), "基本資訊" },
+                { nameof(ProductComposition.ParentProductId), "基本資訊" },
+                { nameof(ProductComposition.Name), "基本資訊" },
+                { nameof(ProductComposition.CompositionType), "基本資訊" },
+                { nameof(ProductComposition.Remarks), "額外資料" }
+            };
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 輔助方法 =====
+    private async Task<string> GenerateCompositionCodeAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            ProductCompositionService,
+            "BOM",
+            async (service, code, excludeId) => 
+            {
+                var compositions = await service.GetAllAsync();
+                return compositions.Any(c => c.Code == code && (!excludeId.HasValue || c.Id != excludeId.Value));
+            }
+        );
+    }
+
+    private static string GetCompositionTypeDisplayName(CompositionType type)
+    {
+        return type switch
+        {
+            CompositionType.Standard => "標準配方",
+            CompositionType.Alternative => "替代配方",
+            CompositionType.Simplified => "簡化配方",
+            CompositionType.Custom => "客製配方",
+            _ => "未知"
+        };
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增產品合成表 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        CompositionId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯產品合成表 Modal
+    /// </summary>
+    public async Task ShowEditModal(int compositionId)
+    {
+        CompositionId = compositionId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

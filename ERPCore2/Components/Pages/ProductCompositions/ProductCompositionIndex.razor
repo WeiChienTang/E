@@ -1,0 +1,152 @@
+@page "/product-compositions"
+@inject IProductCompositionService ProductCompositionService
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="ProductComposition" 
+                        TService="IProductCompositionService"
+                        Service="@ProductCompositionService"
+                        EntityBasePath="/product-compositions"                          
+                        PageTitle="物料清單"
+                        PageSubtitle="管理產品配方與組件"
+                        DataLoader="@LoadDataAsync"
+                        FilterApplier="@ApplyCompositionFilters"
+                        BreadcrumbItems="@breadcrumbItems"
+                        FilterDefinitions="@filterDefinitions"
+                        ColumnDefinitions="@columnDefinitions"
+                        EntityName="產品合成表"
+                        GetEntityDisplayName="@(comp => comp.Name)"
+                        RequiredPermission="ProductComposition.Read"
+                        OnAddClick="@modalHandler.ShowAddModalAsync"
+                        OnRowClick="@modalHandler.ShowEditModalAsync"
+                        @ref="indexComponent"/>
+
+@* 產品合成表編輯 Modal *@
+<ProductCompositionEditModalComponent IsVisible="@showEditModal"
+                                     IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                     CompositionId="@editingCompositionId"
+                                     OnCompositionSaved="@modalHandler.OnEntitySavedAsync"
+                                     OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<ProductComposition, IProductCompositionService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingCompositionId = null;
+    
+    // Modal 處理器
+    private ModalHandler<ProductComposition, GenericIndexPageComponent<ProductComposition, IProductCompositionService>> modalHandler = default!;
+    
+    // 欄位配置
+    private ProductCompositionFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    
+    // 相關資料
+    private List<Product> products = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<ProductComposition, GenericIndexPageComponent<ProductComposition, IProductCompositionService>>(
+                id => editingCompositionId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadProductsAsync();
+            
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new ProductCompositionFieldConfiguration(products, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化產品合成表頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化產品合成表頁面失敗");
+        }
+    }
+
+    // ===== 原有的初始化方法 =====
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("生產管理", "#"),
+                new("物料清單")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入產品合成表資料
+    private async Task<List<ProductComposition>> LoadDataAsync()
+    {
+        try
+        {
+            return await ProductCompositionService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入產品合成表資料失敗");
+            await NotificationService.ShowErrorAsync("載入產品合成表資料失敗");
+            // 設定安全的預設值
+            return new List<ProductComposition>();
+        }
+    }
+
+    // 載入產品資料（用於篩選器）
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入產品資料失敗");
+            await NotificationService.ShowErrorAsync("載入產品資料失敗");
+            // 設定安全的預設值
+            products = new List<Product>();
+        }
+    }
+
+    private IQueryable<ProductComposition> ApplyCompositionFilters(SearchFilterModel searchModel, IQueryable<ProductComposition> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderBy(pc => pc.ParentProductId).ThenBy(pc => pc.Name);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyCompositionFilters), GetType());
+    }
+}
