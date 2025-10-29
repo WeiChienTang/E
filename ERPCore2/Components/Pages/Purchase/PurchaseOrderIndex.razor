@@ -1,7 +1,6 @@
 @page "/purchase/orders"
 @using ERPCore2.Components.Shared.Report
 @using ERPCore2.Components.Shared.Buttons
-@using ERPCore2.Components.Shared.Approval
 @using ERPCore2.Models
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
@@ -29,41 +28,35 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent">
     <CustomActionButtons>
-        @* 批次審核按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Warning" 
-                               Text="批次審核" 
-                               OnClick="@HandleBatchApprovalAsync" 
+            @* 新增按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                               Text="新增採購單" 
+                               OnClick="@modalHandler.ShowAddModalAsync" 
                                IsDisabled="@indexComponent.IsLoading" 
-                               Title="批次審核採購單"
-                               CssClass="index-action-btn" 
-                               IconClass="fas fa-check-double" />
-        
+                               Title="新增採購單資料"
+                               CssClass="index-action-btn" />
         @* 批次列印按鈕 *@
         <GenericButtonComponent Variant="ButtonVariant.Info" 
                                Text="多筆列印" 
                                OnClick="@HandleBatchPrintAsync" 
                                IsDisabled="@indexComponent.IsLoading" 
                                Title="批次列印採購單"
-                               CssClass="index-action-btn" 
-                               IconClass="fas fa-print" />
-        
-        @* 新增按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                               Text="新增採購單" 
-                               OnClick="@modalHandler.ShowAddModalAsync" 
+                               CssClass="index-action-btn" />     
+        @* 批次審核按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Warning" 
+                               Text="批次審核" 
+                               OnClick="@HandleBatchApprovalAsync" 
                                IsDisabled="@indexComponent.IsLoading" 
-                               Title="新增採購單資料"
-                               CssClass="index-action-btn" 
-                               IconClass="fas fa-plus" />
-        
+                               Title="批次審核採購單"
+                               CssClass="index-action-btn" />       
+  
         @* 重新整理按鈕 *@
         <GenericButtonComponent Variant="ButtonVariant.Success" 
                                Text="重新整理" 
                                OnClick="@indexComponent.Refresh" 
                                IsDisabled="@indexComponent.IsLoading" 
                                Title="重新整理資料"
-                               CssClass="index-action-btn" 
-                               IconClass="fas fa-sync" />
+                               CssClass="index-action-btn" />
     </CustomActionButtons>
 </GenericIndexPageComponent>
 

@@ -1,0 +1,650 @@
+@* 產品條碼列印 Modal 組件 *@
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Models
+@using ERPCore2.Data.Entities
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IProductService ProductService
+@implements IDisposable
+
+<div class="modal fade @(IsVisible ? "show" : "")" 
+     style="display: @(IsVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);" 
+     tabindex="-1" 
+     role="dialog"
+     @onclick="@HandleBackdropClick">
+    
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" 
+         role="document"
+         @onclick:stopPropagation="true">
+        <div class="modal-content shadow-lg">
+            
+            @* Header：標題區 *@
+            <div class="modal-header barcode-print-modal-header">
+                <h5 class="modal-title text-white fw-bold">
+                    <i class="bi bi-upc-scan me-2"></i>
+                    產品條碼列印
+                </h5>
+                <GenericButtonComponent Type="button" 
+                                      CssClass="btn-close btn-close-white" 
+                                      OnClick="HandleCancel" 
+                                      Title="關閉" />
+            </div>
+            
+            @* Modal Actions - 按鈕區塊 *@
+            <div class="modal-footer border-bottom border-top-0 d-flex align-items-center">
+                @* 選中數量統計 *@
+                <div class="me-auto">
+                    <span class="badge bg-primary fs-6">
+                        已選擇：@selectedCount 項
+                    </span>
+                    @if (totalPrintQuantity > selectedCount)
+                    {
+                        <span class="badge bg-info fs-6 ms-2">
+                            總列印數量：@totalPrintQuantity 張
+                        </span>
+                    }
+                </div>
+                
+                @* 按鈕組靠右對齊 *@
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                                          Text="列印條碼" 
+                                          OnClick="HandlePrintConfirm"
+                                          IsDisabled="@(selectedCount == 0)"
+                                          Title="確認並執行列印" />
+                    <GenericButtonComponent Variant="ButtonVariant.Primary"
+                                          Size="ButtonSize.Small"
+                                          Text="全選"
+                                          OnClick="SelectAll" />
+                    <GenericButtonComponent Variant="ButtonVariant.Danger"
+                                          Size="ButtonSize.Small"
+                                          Text="取消全選"
+                                          OnClick="DeselectAll" />
+                </div>
+            </div>
+
+            @* Body：產品選擇區域 *@
+            <div class="modal-body p-4">
+                @if (barcodeItems == null || !barcodeItems.Any())
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        目前沒有可列印的產品條碼
+                    </div>
+                }
+                else
+                {
+                    @* 產品列表表格 *@
+                    <div class="table-responsive">
+                        <InteractiveTableComponent TItem="ProductBarcodeItem"
+                                                 Items="@barcodeItems"
+                                                 ColumnDefinitions="@tableColumns"
+                                                 ShowHeader="true"
+                                                 ShowActions="false"
+                                                 ShowRowNumbers="true"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 IsBordered="true"
+                                                 EnableRowClick="true"
+                                                 OnRowClick="@HandleRowClick"
+                                                 GetRowCssClass="@GetRowCssClass"
+                                                 CssClass="barcode-print-table"
+                                                 EmptyMessage="沒有可列印的產品" />
+                    </div>
+                    
+                    @* 列印設定區 *@
+                    <div class="card mt-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>
+                                列印設定
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">條碼尺寸</label>
+                                    <select class="form-select" @bind="printSettings.BarcodeSize">
+                                        <option value="@BarcodeSize.Small">小 (40mm x 20mm)</option>
+                                        <option value="@BarcodeSize.Medium">中 (50mm x 25mm)</option>
+                                        <option value="@BarcodeSize.Large">大 (70mm x 35mm)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label class="form-label">每頁條碼數</label>
+                                    <select class="form-select" @bind="printSettings.BarcodesPerPage">
+                                        <option value="10">10 個</option>
+                                        <option value="15">15 個</option>
+                                        <option value="20">20 個</option>
+                                        <option value="30">30 個</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" 
+                                               @bind="printSettings.ShowProductName" 
+                                               id="showProductName">
+                                        <label class="form-check-label" for="showProductName">
+                                            顯示產品名稱
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" 
+                                               @bind="printSettings.ShowProductCode" 
+                                               id="showProductCode">
+                                        <label class="form-check-label" for="showProductCode">
+                                            顯示產品代碼
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 條碼列印表格樣式 */
+    .barcode-print-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* 選取的行樣式 - 整個 Row 背景變色 */
+    .barcode-print-table tbody tr.table-row-selected {
+        background-color: #cfe2ff !important; /* 淺藍色背景 */
+        border-left: 5px solid #0d6efd !important; /* 左側藍色粗邊框 */
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2) !important; /* 添加陰影效果 */
+    }
+
+    /* 選取的行內所有儲存格都使用相同背景色和邊框顏色 */
+    .barcode-print-table tbody tr.table-row-selected td {
+        background-color: #cfe2ff !important;
+        border-color: #cfe2ff !important; /* 垂直線顏色與背景一致 */
+    }
+
+    /* 選取的行 hover 效果 */
+    .barcode-print-table tbody tr.table-row-selected:hover {
+        background-color: #b6d4fe !important; /* 稍深的藍色 */
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3) !important;
+    }
+
+    .barcode-print-table tbody tr.table-row-selected:hover td {
+        background-color: #b6d4fe !important;
+        border-color: #b6d4fe !important; /* hover 時垂直線顏色也跟著變 */
+    }
+
+    /* 未選取的行 hover 效果 */
+    .barcode-print-table tbody tr:not(.table-row-selected):hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .barcode-print-table tbody tr:not(.table-row-selected):hover td {
+        background-color: #f8f9fa !important;
+    }
+
+    /* 確保 striped 效果不會覆蓋選取樣式 */
+    .barcode-print-table.table-striped tbody tr.table-row-selected:nth-of-type(odd) td,
+    .barcode-print-table.table-striped tbody tr.table-row-selected:nth-of-type(even) td {
+        background-color: #cfe2ff !important;
+        border-color: #cfe2ff !important;
+    }
+
+    .barcode-print-table.table-striped tbody tr.table-row-selected:hover:nth-of-type(odd) td,
+    .barcode-print-table.table-striped tbody tr.table-row-selected:hover:nth-of-type(even) td {
+        background-color: #b6d4fe !important;
+        border-color: #b6d4fe !important;
+    }
+
+    /* 行選取時的文字對比度優化 */
+    .barcode-print-table tbody tr.table-row-selected td {
+        color: #000 !important;
+    }
+</style>
+
+@code {
+    // ===== 參數定義 =====
+    
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback OnPrintCompleted { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private List<ProductBarcodeItem> barcodeItems = new();
+    private List<InteractiveColumnDefinition> tableColumns = new();
+    private BarcodePrintSettings printSettings = new();
+    private HashSet<ProductBarcodeItem> selectedItems = new(); // 改用 HashSet 儲存選取項目
+    private int selectedCount = 0;
+    private int totalPrintQuantity = 0;
+    
+    // ESC 鍵支援
+    private DotNetObjectReference<ProductBarcodePrintModalComponent>? _escKeyDotNetRef;
+    private bool _isEscKeyListenerActive = false;
+    private bool _isDisposed = false;
+    private readonly object _escKeyLock = new object();
+    
+    // 追蹤上次的 IsVisible 狀態
+    private bool _previousIsVisible = false;
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 檢測 Modal 是否從關閉變為開啟
+        if (IsVisible && !_previousIsVisible)
+        {
+            // Modal 開啟時，重新載入所有產品並清空選取
+            await LoadAllProductsAsync();
+            ClearSelection();
+            BuildTableColumns();
+        }
+        
+        _previousIsVisible = IsVisible;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible)
+        {
+            bool shouldSetup;
+            lock (_escKeyLock)
+            {
+                shouldSetup = !_isEscKeyListenerActive;
+            }
+            
+            if (shouldSetup)
+            {
+                await SetupEscKeyListenerAsync();
+            }
+        }
+        else
+        {
+            bool shouldCleanup;
+            lock (_escKeyLock)
+            {
+                shouldCleanup = _isEscKeyListenerActive;
+            }
+            
+            if (shouldCleanup)
+            {
+                await CleanupEscKeyListenerAsync();
+            }
+        }
+    }
+    
+    // ===== 初始化方法 =====
+    
+    /// <summary>
+    /// 從資料庫載入所有產品（不受 Index 篩選影響）
+    /// </summary>
+    private async Task LoadAllProductsAsync()
+    {
+        try
+        {
+            var allProducts = await ProductService.GetAllAsync();
+            
+            if (allProducts == null || !allProducts.Any())
+            {
+                barcodeItems = new();
+                return;
+            }
+            
+            barcodeItems = allProducts
+                .Where(p => !string.IsNullOrWhiteSpace(p.Barcode))
+                .Select(p => new ProductBarcodeItem
+                {
+                    ProductId = p.Id,
+                    Code = p.Code ?? "",
+                    Name = p.Name ?? "",
+                    Barcode = p.Barcode ?? "",
+                    PrintQuantity = 1
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入產品資料失敗：{ex.Message}");
+            barcodeItems = new();
+        }
+    }
+    
+    /// <summary>
+    /// 清空選取狀態
+    /// </summary>
+    private void ClearSelection()
+    {
+        selectedItems.Clear();
+        selectedCount = 0;
+        totalPrintQuantity = 0;
+    }
+    
+    private void BuildTableColumns()
+    {
+        tableColumns = new List<InteractiveColumnDefinition>
+        {
+            // 產品代碼
+            new InteractiveColumnDefinition
+            {
+                Title = "產品代碼",
+                PropertyName = nameof(ProductBarcodeItem.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px"
+            },
+            
+            // 產品名稱
+            new InteractiveColumnDefinition
+            {
+                Title = "產品名稱",
+                PropertyName = nameof(ProductBarcodeItem.Name),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "auto"
+            },
+            
+            // 條碼
+            new InteractiveColumnDefinition
+            {
+                Title = "條碼號碼",
+                PropertyName = nameof(ProductBarcodeItem.Barcode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px"
+            },
+            
+            // 列印數量
+            new InteractiveColumnDefinition
+            {
+                Title = "列印數量",
+                PropertyName = nameof(ProductBarcodeItem.PrintQuantity),
+                ColumnType = InteractiveColumnType.Number,
+                Width = "120px",
+                MinValue = 1,
+                MaxValue = 100,
+                Step = 1,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(
+                    this, args => HandlePrintQuantityChanged((ProductBarcodeItem)args.Item1, args.Item2 ?? "1"))
+            }
+        };
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    /// <summary>
+    /// 處理行點擊事件 - 切換選取狀態
+    /// </summary>
+    private void HandleRowClick(ProductBarcodeItem item)
+    {
+        if (selectedItems.Contains(item))
+        {
+            selectedItems.Remove(item);
+        }
+        else
+        {
+            selectedItems.Add(item);
+        }
+        UpdateStatistics();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得行的 CSS 類別 - 為選取的行添加高亮樣式
+    /// </summary>
+    private string GetRowCssClass(ProductBarcodeItem item, int index)
+    {
+        return selectedItems.Contains(item) ? "table-row-selected" : "";
+    }
+    
+    private void HandlePrintQuantityChanged(ProductBarcodeItem item, string value)
+    {
+        if (int.TryParse(value, out int quantity) && quantity > 0)
+        {
+            item.PrintQuantity = quantity;
+            UpdateStatistics();
+        }
+    }
+    
+    private void SelectAll()
+    {
+        selectedItems = barcodeItems.ToHashSet();
+        UpdateStatistics();
+        StateHasChanged();
+    }
+    
+    private void DeselectAll()
+    {
+        selectedItems.Clear();
+        UpdateStatistics();
+        StateHasChanged();
+    }
+    
+    private void UpdateStatistics()
+    {
+        selectedCount = selectedItems.Count;
+        totalPrintQuantity = selectedItems.Sum(x => x.PrintQuantity);
+    }
+    
+    private async Task HandlePrintConfirm()
+    {
+        try
+        {
+            if (selectedCount == 0)
+            {
+                await NotificationService.ShowWarningAsync("請至少選擇一項產品");
+                return;
+            }
+            
+            // 組裝條碼列印條件
+            var criteria = new ProductBarcodePrintCriteria
+            {
+                ProductIds = selectedItems.Select(x => x.ProductId).ToList(),
+                BarcodeSize = printSettings.BarcodeSize,
+                BarcodesPerPage = printSettings.BarcodesPerPage,
+                ShowProductName = printSettings.ShowProductName,
+                ShowProductCode = printSettings.ShowProductCode,
+                OnlyWithBarcode = true,
+                PrintQuantities = selectedItems.ToDictionary(x => x.ProductId, x => x.PrintQuantity)
+            };
+            
+            // 驗證條件
+            var validation = criteria.Validate();
+            if (!validation.IsValid)
+            {
+                await NotificationService.ShowErrorAsync($"列印條件錯誤：{validation.GetAllErrors()}");
+                return;
+            }
+            
+            // 序列化條件為 JSON
+            var jsonPayload = System.Text.Json.JsonSerializer.Serialize(criteria);
+            
+            // 使用批次列印輔助函數開啟新視窗列印
+            var apiUrl = "/api/report/products/barcode/batch";
+            await JSRuntime.InvokeVoidAsync("openBatchPrintWindow", apiUrl, jsonPayload);
+            
+            await NotificationService.ShowSuccessAsync($"已開啟條碼列印視窗 (共 {totalPrintQuantity} 張)");
+            
+            if (OnPrintCompleted.HasDelegate)
+            {
+                await OnPrintCompleted.InvokeAsync();
+            }
+            
+            await HandleCancel();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"列印失敗：{ex.Message}");
+        }
+    }
+    
+    private async Task HandleCancel()
+    {
+        // 清空選取狀態
+        ClearSelection();
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+    
+    private async Task HandleBackdropClick()
+    {
+        await HandleCancel();
+    }
+    
+    // ===== ESC 鍵支援方法 =====
+    
+    private async Task SetupEscKeyListenerAsync()
+    {
+        try
+        {
+            lock (_escKeyLock)
+            {
+                if (_isEscKeyListenerActive && _escKeyDotNetRef != null)
+                {
+                    return;
+                }
+                _isEscKeyListenerActive = true;
+            }
+            
+            lock (_escKeyLock)
+            {
+                _escKeyDotNetRef = DotNetObjectReference.Create(this);
+            }
+            
+            await JSRuntime.InvokeVoidAsync("setupEscKeyListener", _escKeyDotNetRef);
+        }
+        catch (Exception ex)
+        {
+            lock (_escKeyLock)
+            {
+                _isEscKeyListenerActive = false;
+            }
+            System.Diagnostics.Debug.WriteLine($"[SetupEscKeyListener] 錯誤：{ex.Message}");
+        }
+    }
+    
+    private async Task CleanupEscKeyListenerAsync()
+    {
+        DotNetObjectReference<ProductBarcodePrintModalComponent>? refToDispose = null;
+        
+        lock (_escKeyLock)
+        {
+            if (!_isEscKeyListenerActive)
+            {
+                return;
+            }
+            
+            _isEscKeyListenerActive = false;
+            refToDispose = _escKeyDotNetRef;
+            _escKeyDotNetRef = null;
+        }
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener");
+            await Task.Delay(200);
+            
+            if (refToDispose != null)
+            {
+                try
+                {
+                    refToDispose.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 正常情況
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"DotNetObjectReference dispose: {ex.Message}");
+                }
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // 正常情況
+        }
+        catch (TaskCanceledException)
+        {
+            // 正常情況
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CleanupEscKeyListener] 錯誤：{ex.Message}");
+        }
+    }
+    
+    [JSInvokable]
+    public async Task HandleEscapeKey()
+    {
+        try
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+            
+            if (IsVisible)
+            {
+                await HandleCancel();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // 忽略
+        }
+        catch (InvalidOperationException)
+        {
+            // 忽略
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ESC Error: {ex.Message}");
+        }
+    }
+    
+    // ===== 資源清理 =====
+    
+    public void Dispose()
+    {
+        try
+        {
+            DotNetObjectReference<ProductBarcodePrintModalComponent>? refToDispose = null;
+            
+            lock (_escKeyLock)
+            {
+                _isDisposed = true;
+                _isEscKeyListenerActive = false;
+                refToDispose = _escKeyDotNetRef;
+                _escKeyDotNetRef = null;
+            }
+            
+            refToDispose?.Dispose();
+            
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await CleanupEscKeyListenerAsync();
+                }
+                catch
+                {
+                    // 忽略
+                }
+            });
+        }
+        catch
+        {
+            // 忽略
+        }
+    }
+}

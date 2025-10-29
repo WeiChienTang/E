@@ -18,9 +18,32 @@
                           FilterApplier="@ApplyProductFilters"
                           GetEntityDisplayName="@(product => product.Name)"
                           RequiredPermission="Product.Read"
-                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          ShowDefaultActions="false"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
-                          @ref="indexComponent" />
+                          @ref="indexComponent">
+    <CustomActionButtons>
+        @* 新增產品按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                              Text="新增產品"
+                              Icon="bi bi-plus-circle"
+                              OnClick="@modalHandler.ShowAddModalAsync"
+                              Title="新增產品資料" />
+        
+        @* 條碼列印按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                              Text="條碼列印"
+                              Icon="bi bi-upc-scan"
+                              OnClick="@HandleBarcodePrintClick"
+                              Title="批次列印產品條碼" />
+        
+        @* 重新整理按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Success" 
+                              Text="重新整理"
+                              Icon="bi bi-arrow-clockwise"
+                              OnClick="@(async () => await indexComponent.Refresh())"
+                              Title="重新載入產品資料" />
+    </CustomActionButtons>
+</GenericIndexPageComponent>
 
 @* 使用 ProductEditModalComponent 處理新增/編輯 *@
 <ProductEditModalComponent IsVisible="@showEditModal"
@@ -29,6 +52,11 @@
                           OnProductSaved="@modalHandler.OnEntitySavedAsync"
                           OnCancel="@modalHandler.OnModalCancelAsync" />
 
+@* 條碼列印 Modal *@
+<ProductBarcodePrintModalComponent IsVisible="@showBarcodePrintModal"
+                                  IsVisibleChanged="@((bool visible) => showBarcodePrintModal = visible)"
+                                  OnPrintCompleted="@HandleBarcodePrintCompleted" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<Product, IProductService> indexComponent = default!;
@@ -36,6 +64,7 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingProductId = null;
+    private bool showBarcodePrintModal = false;
     
     // Modal 處理器
     private ModalHandler<Product, GenericIndexPageComponent<Product, IProductService>> modalHandler = default!;
@@ -224,5 +253,20 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyProductFilters), GetType());
+    }
+    
+    // ===== 條碼列印相關方法 =====
+    
+    private void HandleBarcodePrintClick()
+    {
+        showBarcodePrintModal = true;
+        StateHasChanged();
+    }
+    
+    private async Task HandleBarcodePrintCompleted()
+    {
+        showBarcodePrintModal = false;
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 }

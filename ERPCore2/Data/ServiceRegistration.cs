@@ -177,6 +177,8 @@ namespace ERPCore2.Data
             services.AddScoped<ISalesOrderReportService, SalesOrderReportService>();
             // 銷貨退回單報表服務
             services.AddScoped<ISalesReturnReportService, SalesReturnReportService>();
+            // 產品條碼報表服務
+            services.AddScoped<IProductBarcodeReportService, ProductBarcodeReportService>();
         }
 
         /// <summary>

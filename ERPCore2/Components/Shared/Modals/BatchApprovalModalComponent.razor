@@ -629,7 +629,7 @@
     /* 批次審核表格樣式 */
     .batch-approval-table tbody tr {
         cursor: pointer;
-        transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
     /* 選取的行樣式 - 整個 Row 背景變色 */
@@ -639,9 +639,10 @@
         box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2) !important; /* 添加陰影效果 */
     }
 
-    /* 選取的行內所有儲存格都使用相同背景色 */
+    /* 選取的行內所有儲存格都使用相同背景色和邊框顏色 */
     .batch-approval-table tbody tr.table-row-selected td {
         background-color: #cfe2ff !important;
+        border-color: #cfe2ff !important; /* 垂直線顏色與背景一致 */
     }
 
     /* 選取的行 hover 效果 */
@@ -653,6 +654,7 @@
 
     .batch-approval-table tbody tr.table-row-selected:hover td {
         background-color: #b6d4fe !important;
+        border-color: #b6d4fe !important; /* hover 時垂直線顏色也跟著變 */
     }
 
     /* 未選取的行 hover 效果 */
@@ -689,10 +691,12 @@
     .batch-approval-table.table-striped tbody tr.table-row-selected:nth-of-type(odd) td,
     .batch-approval-table.table-striped tbody tr.table-row-selected:nth-of-type(even) td {
         background-color: #cfe2ff !important;
+        border-color: #cfe2ff !important;
     }
 
     .batch-approval-table.table-striped tbody tr.table-row-selected:hover:nth-of-type(odd) td,
     .batch-approval-table.table-striped tbody tr.table-row-selected:hover:nth-of-type(even) td {
         background-color: #b6d4fe !important;
+        border-color: #b6d4fe !important;
     }
 </style>

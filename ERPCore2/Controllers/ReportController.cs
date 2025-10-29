@@ -23,17 +23,20 @@ namespace ERPCore2.Controllers
     {
         private readonly IPurchaseOrderReportService _purchaseOrderReportService;
         private readonly IPurchaseReceivingReportService _purchaseReceivingReportService;
+        private readonly IProductBarcodeReportService _productBarcodeReportService;
         private readonly IReportPrintConfigurationService _reportPrintConfigurationService;
         private readonly ILogger<ReportController> _logger;
 
         public ReportController(
             IPurchaseOrderReportService purchaseOrderReportService,
             IPurchaseReceivingReportService purchaseReceivingReportService,
+            IProductBarcodeReportService productBarcodeReportService,
             IReportPrintConfigurationService reportPrintConfigurationService,
             ILogger<ReportController> logger)
         {
             _purchaseOrderReportService = purchaseOrderReportService;
             _purchaseReceivingReportService = purchaseReceivingReportService;
+            _productBarcodeReportService = productBarcodeReportService;
             _reportPrintConfigurationService = reportPrintConfigurationService;
             _logger = logger;
         }
@@ -597,6 +600,40 @@ namespace ERPCore2.Controllers
             {
                 _logger.LogError(ex, "批次列印進貨單時發生錯誤");
                 return StatusCode(500, new { message = "批次列印報表時發生錯誤", detail = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region 產品條碼列印
+
+        /// <summary>
+        /// 批次生成產品條碼列印報表
+        /// </summary>
+        /// <param name="criteria">條碼列印條件</param>
+        /// <returns>可列印的條碼 HTML</returns>
+        [HttpPost("products/barcode/batch")]
+        public async Task<IActionResult> BatchPrintProductBarcodes(
+            [FromBody] ProductBarcodePrintCriteria criteria)
+        {
+            try
+            {
+                _logger.LogInformation("開始批次列印產品條碼 - 條件: {Criteria}", criteria.GetSummary());
+
+                // 生成條碼報表
+                var reportHtml = await _productBarcodeReportService.GenerateBarcodeReportAsync(criteria);
+
+                return Content(reportHtml, "text/html; charset=utf-8");
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "條碼列印條件驗證失敗");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "批次列印產品條碼時發生錯誤");
+                return StatusCode(500, new { message = "批次列印條碼時發生錯誤", detail = ex.Message });
             }
         }
 

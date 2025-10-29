@@ -39,16 +39,14 @@ window.openBatchPrintWindow = function(apiUrl, jsonPayload) {
         iframeDoc.write(html);
         iframeDoc.close();
         
-        // 等待內容載入完成後直接觸發列印
+        // 注意：報表 HTML 本身已包含 window.print() 自動列印邏輯
+        // 因此這裡不需要再次調用 print()，否則會導致列印對話框出現兩次
+        // 只需等待列印完成後清理 iframe
         iframe.onload = function() {
+            // 等待足夠時間讓使用者完成列印或取消
             setTimeout(function() {
-                iframe.contentWindow.print();
-                
-                // 列印完成後移除 iframe
-                setTimeout(function() {
-                    document.body.removeChild(iframe);
-                }, 1000);
-            }, 500);
+                document.body.removeChild(iframe);
+            }, 3000);
         };
     })
     .catch(error => {
