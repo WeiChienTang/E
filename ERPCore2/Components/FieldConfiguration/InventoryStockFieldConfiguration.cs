@@ -84,7 +84,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = "Product.ProductCategory.Name",
-                            FilterPropertyName = "Product.ProductCategoryId",
+                            FilterPropertyName = "ProductCategoryId",
                             DisplayName = "商品類型",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,

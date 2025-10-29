@@ -242,7 +242,7 @@ public static class NavigationConfig
                         Name = "生產排程管理",
                         Description = "管理生產排程的詳細資料",
                         Route = "/production-schedules",
-                        IconClass = "",
+                        IconClass = "bi bi-caret-right-fill",
                         Category = "產品管理",
                         RequiredPermission = "ProductionSchedule.Read",
                         SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" }

@@ -42,6 +42,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
+                        .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -98,6 +99,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
+                        .ThenInclude(p => p.ProductCategory)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
