@@ -1,0 +1,673 @@
+@inject IQuotationService QuotationService
+@inject IQuotationDetailService QuotationDetailService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject IProductService ProductService
+@inject IUnitService UnitService
+@inject INotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject ActionButtonHelper ActionButtonHelper
+@inject IJSRuntime JSRuntime
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
+@using ERPCore2.Components.Shared.Buttons
+
+<GenericEditModalComponent TEntity="Quotation" 
+                          TService="IQuotationService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          Id="@QuotationId"
+                          Service="@QuotationService"
+                          EntityName="報價單"
+                          EntityNamePlural="報價單"
+                          ModalTitle="@(QuotationId.HasValue ? "編輯報價單" : "新增報價單")"
+                          Size="GenericEditModalComponent<Quotation, IQuotationService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
+                          DataLoader="@LoadQuotationData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          AfterSave="@AfterSaveQuotation"
+                          SaveSuccessMessage="@(QuotationId.HasValue ? "報價單更新成功" : "報價單新增成功")"
+                          SaveFailureMessage="報價單儲存失敗"
+                          RequiredPermission="Quotation.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          ShowPrintButton="true"
+                          OnPrint="@HandlePrint">
+</GenericEditModalComponent>
+
+@* 客戶編輯 Modal *@
+<CustomerEditModalComponent @ref="customerEditModal"
+                           IsVisible="@customerModalManager.IsModalVisible"
+                           IsVisibleChanged="@customerModalManager.HandleModalVisibilityChangedAsync"
+                           CustomerId="@customerModalManager.SelectedEntityId"
+                           OnCustomerSaved="@OnCustomerSavedWrapper"
+                           OnCancel="@customerModalManager.HandleModalCancelAsync" />
+
+@* 業務員編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? QuotationId { get; set; }
+    [Parameter] public EventCallback<Quotation> OnQuotationSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<Quotation, IQuotationService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 原始資料集合（用於 AutoComplete）
+    private List<Customer> availableCustomers = new();
+    private List<Employee> availableEmployees = new();
+    private List<Product> availableProducts = new();
+    private List<Unit> availableUnits = new();
+    
+    // 報價單明細
+    private List<QuotationDetail> quotationDetails = new();
+    
+    // Modal 管理器
+    private CustomerEditModalComponent? customerEditModal;
+    private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    
+    // 下拉選單選項（向下相容）
+    private List<Customer> customers = new();
+    private List<Employee> employees = new();
+    private List<SelectOption> customerOptions = new();
+    private List<SelectOption> employeeOptions = new();
+    private List<SelectOption> quotationStatusOptions = new();
+
+    // ===== 必要方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 管理器
+            InitializeCustomerModalManager();
+            InitializeEmployeeModalManager();
+            
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化報價單編輯組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當 QuotationId 參數變更時，重新初始化表單欄位
+        if (formFields != null) // 只有在已經初始化過的情況下才重新設定
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+        
+        await base.OnParametersSetAsync();
+    }
+
+    /// <summary>
+    /// 初始化客戶 Modal 管理器
+    /// </summary>
+    private void InitializeCustomerModalManager()
+    {
+        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
+            .WithPropertyName(nameof(Quotation.CustomerId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(customerId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.CustomerId = customerId;
+                }
+            })
+            .WithCustomPostProcess(async customer => 
+            {
+                // 重新初始化表單欄位以更新按鈕狀態
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+
+    /// <summary>
+    /// 初始化業務員 Modal 管理器
+    /// </summary>
+    private void InitializeEmployeeModalManager()
+    {
+        employeeModalManager = new RelatedEntityManagerBuilder<Employee>(NotificationService, "業務人員")
+            .WithPropertyName(nameof(Quotation.EmployeeId))
+            .WithReloadCallback(LoadAdditionalDataAsync)
+            .WithStateChangedCallback(StateHasChanged)
+            .WithAutoSelectCallback(employeeId => 
+            {
+                if (editModalComponent?.Entity != null)
+                {
+                    editModalComponent.Entity.EmployeeId = employeeId;
+                }
+            })
+            .WithCustomPostProcess(async employee => 
+            {
+                // 重新初始化表單欄位以更新按鈕狀態
+                await InitializeFormFieldsAsync();
+            })
+            .Build();
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            await OnQuotationSaved.InvokeAsync(editModalComponent.Entity);
+        }
+        await CloseModal();
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task<Quotation?> LoadQuotationData()
+    {
+        try
+        {
+            if (!QuotationId.HasValue)
+            {
+                // 新增模式
+                var newQuotation = new Quotation
+                {
+                    QuotationNumber = await GenerateQuotationNumberAsync(),
+                    QuotationDate = DateTime.Today,
+                    QuotationStatus = ERPCore2.Data.Enums.QuotationStatus.Draft,
+                    Status = EntityStatus.Active
+                };
+
+                // 初始化空的子集合
+                quotationDetails = new List<QuotationDetail>();
+
+                return newQuotation;
+            }
+
+            // 編輯模式
+            var quotation = await QuotationService.GetWithDetailsAsync(QuotationId.Value);
+            
+            if (quotation != null)
+            {
+                // 載入報價單明細
+                quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+            }
+            else
+            {
+                quotationDetails = new List<QuotationDetail>();
+            }
+
+            return quotation;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入報價單資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入客戶列表
+            availableCustomers = await CustomerService.GetAllAsync();
+            customers = availableCustomers;
+            customerOptions = customers.Select(c => new SelectOption 
+            { 
+                Text = c.CompanyName, 
+                Value = c.Id.ToString() 
+            }).ToList();
+            
+            // 載入業務人員列表
+            availableEmployees = await EmployeeService.GetAllAsync();
+            employees = availableEmployees;
+            employeeOptions = employees.Select(e => new SelectOption 
+            { 
+                Text = e.Name ?? "", 
+                Value = e.Id.ToString() 
+            }).ToList();
+            
+            // 載入產品列表（用於明細）
+            availableProducts = await ProductService.GetAllAsync();
+            
+            // 載入單位列表（用於明細）
+            availableUnits = await UnitService.GetAllAsync();
+            
+            // 載入報價狀態選項
+            quotationStatusOptions = Enum.GetValues<ERPCore2.Data.Enums.QuotationStatus>().Select(s => new SelectOption
+            {
+                Text = GetEnumDisplayName(s),
+                Value = ((int)s).ToString()
+            }).ToList();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("載入報價單編輯相關資料時發生錯誤");
+            availableCustomers = new List<Customer>();
+            availableEmployees = new List<Employee>();
+            availableProducts = new List<Product>();
+            availableUnits = new List<Unit>();
+            customers = new List<Customer>();
+            employees = new List<Employee>();
+            customerOptions = new List<SelectOption>();
+            employeeOptions = new List<SelectOption>();
+            quotationStatusOptions = new List<SelectOption>();
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Quotation.QuotationNumber),
+                    Label = "報價單號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入報價單號",
+                    IsRequired = true,
+                    MaxLength = 30,
+                    HelpText = "報價單的唯一識別編號，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.QuotationDate),
+                    Label = "報價日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "報價單的建立日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.ValidUntilDate),
+                    Label = "有效期限",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "報價單的有效期限日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.CustomerId),
+                    Label = "客戶",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.EmployeeId),
+                    Label = "業務人員",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇業務人員",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "輸入業務人員姓名進行搜尋，或直接選擇",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.PaymentTerms),
+                    Label = "付款條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款條件",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "例如：貨到付款、月結30天等"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.DeliveryTerms),
+                    Label = "交貨條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入交貨條件",
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "例如：工廠交貨、送貨到府等"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.TotalAmount),
+                    Label = "報價總金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "系統根據明細自動計算"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.DiscountAmount),
+                    Label = "折扣金額",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入折扣金額",
+                    IsRequired = false,
+                    HelpText = "整張報價單的額外折扣金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.TaxAmount),
+                    Label = "稅額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "系統根據總金額自動計算"
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.QuotationStatus),
+                    Label = "報價狀態",
+                    FieldType = FormFieldType.Select,
+                    Options = quotationStatusOptions,
+                    IsRequired = true,
+                    HelpText = "報價單目前的狀態"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<Quotation>(label: "報價說明")
+            };
+
+            formSections = new Dictionary<string, string>
+            {
+                { nameof(Quotation.QuotationNumber), "基本資訊" },
+                { nameof(Quotation.QuotationDate), "基本資訊" },
+                { nameof(Quotation.ValidUntilDate), "基本資訊" },
+                { nameof(Quotation.CustomerId), "基本資訊" },
+                { nameof(Quotation.EmployeeId), "基本資訊" },
+                { nameof(Quotation.PaymentTerms), "交易條件" },
+                { nameof(Quotation.DeliveryTerms), "交易條件" },
+                { nameof(Quotation.TotalAmount), "金額資訊" },
+                { nameof(Quotation.DiscountAmount), "金額資訊" },
+                { nameof(Quotation.TaxAmount), "金額資訊" },
+                { nameof(Quotation.QuotationStatus), "狀態資訊" },
+                { "Remarks", "其他資訊" }
+            };
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    /// <summary>
+    /// 儲存後處理
+    /// </summary>
+    private async Task AfterSaveQuotation(Quotation quotation)
+    {
+        try
+        {
+            // TODO: 儲存明細（如果有明細管理組件）
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(AfterSaveQuotation), GetType(), 
+                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+        }
+    }
+
+    /// <summary>
+    /// 儲存報價單（包裝方法）- 已棄用，改用 UseGenericSave
+    /// </summary>
+    private async Task SaveQuotationWrapper(Quotation quotation)
+    {
+        try
+        {
+            // 驗證資料
+            var validationResult = await QuotationService.ValidateAsync(quotation);
+            if (!validationResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(validationResult.ErrorMessage ?? "驗證失敗");
+                return;
+            }
+
+            // 儲存主檔
+            ServiceResult result;
+            if (quotation.Id == 0)
+            {
+                result = await QuotationService.CreateAsync(quotation);
+            }
+            else
+            {
+                result = await QuotationService.UpdateAsync(quotation);
+            }
+
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存失敗");
+                return;
+            }
+
+            // TODO: 儲存明細（如果有明細管理組件）
+
+            await NotificationService.ShowSuccessAsync(quotation.Id == 0 ? "報價單新增成功" : "報價單更新成功");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveQuotationWrapper), GetType(), 
+                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+            await NotificationService.ShowErrorAsync("儲存報價單時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 取得枚舉的顯示名稱
+    /// </summary>
+    private static string GetEnumDisplayName(Enum enumValue)
+    {
+        var displayAttribute = enumValue.GetType()
+            .GetField(enumValue.ToString())?
+            .GetCustomAttribute<DisplayAttribute>();
+        
+        return displayAttribute?.Name ?? enumValue.ToString();
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(Quotation.CustomerId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["CompanyName"] = searchTerm,
+                    ["Status"] = 1 // EntityStatus.Active
+                }
+            },
+            {
+                nameof(Quotation.EmployeeId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm,
+                    ["Status"] = 1 // EntityStatus.Active
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(Quotation.CustomerId), availableCustomers.Cast<object>() },
+            { nameof(Quotation.EmployeeId), availableEmployees.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Quotation.CustomerId), "CompanyName" },
+            { nameof(Quotation.EmployeeId), "Name" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Quotation.CustomerId), "Id" },
+            { nameof(Quotation.EmployeeId), "Id" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Quotation.CustomerId), customerModalManager },
+            { nameof(Quotation.EmployeeId), employeeModalManager }
+        };
+    }
+
+    /// <summary>
+    /// 包裝客戶儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnCustomerSavedWrapper(Customer savedCustomer)
+    {
+        await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝業務員儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
+    {
+        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 使用統一 Helper 產生客戶操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            customerModalManager, 
+            nameof(Quotation.CustomerId)
+        );
+    }
+
+    /// <summary>
+    /// 使用統一 Helper 產生業務員操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            employeeModalManager, 
+            nameof(Quotation.EmployeeId)
+        );
+    }
+
+    /// <summary>
+    /// 處理欄位值變更事件 - 使用統一 Helper
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用統一 Helper 處理客戶欄位變更
+            if (fieldChange.PropertyName == nameof(Quotation.CustomerId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            // 使用統一 Helper 處理業務員欄位變更
+            else if (fieldChange.PropertyName == nameof(Quotation.EmployeeId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 生成報價單號
+    /// </summary>
+    private async Task<string> GenerateQuotationNumberAsync()
+    {
+        return await CodeGenerationHelper.GenerateEntityCodeAsync(
+            QuotationService,
+            "QT",
+            (service, code, excludeId) => service.IsQuotationNumberExistsAsync(code, excludeId)
+        );
+    }
+
+    /// <summary>
+    /// 處理列印
+    /// </summary>
+    private async Task HandlePrint()
+    {
+        try
+        {
+            // TODO: 實作報價單列印邏輯
+            await NotificationService.ShowInfoAsync("報價單列印功能開發中...");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
+                additionalData: new { QuotationId = QuotationId });
+            await NotificationService.ShowErrorAsync("列印報價單時發生錯誤");
+        }
+    }
+}

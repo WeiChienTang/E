@@ -3,17 +3,10 @@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Components.Pages.Systems.SystemParameterSettings.Shared.UIComponent
 
-<EditForm Model="@Model" OnValidSubmit="@HandleSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary class="text-danger mb-3" />
-
-    <div class="row">
-        <div class="col-lg-8">
-            
-            @* ========== 採購流程審核設定 ========== *@
-            <TabFormSectionComponent Title="採購流程審核" 
-                                    IconClass="fas fa-shopping-cart"
-                                    Description="設定採購相關單據是否需要審核流程">
+@* ========== 採購流程審核設定 ========== *@
+<TabFormSectionComponent Title="採購流程審核" 
+                        IconClass="fas fa-shopping-cart"
+                        Description="">
                 
                 @* 採購單審核開關 *@
                 <TabFormFieldComponent Label="採購單審核" 
@@ -48,7 +41,7 @@
                 </TabFormFieldComponent>
 
                 @* 進貨單審核開關 *@
-                <TabFormFieldComponent Label="進貨單審核" 
+                @* <TabFormFieldComponent Label="進貨單審核" 
                                       IconClass="fas fa-truck-loading">
                     <ChildContent>
                         <div class="form-check form-switch">
@@ -77,10 +70,10 @@
                             </label>
                         </div>
                     </ChildContent>
-                </TabFormFieldComponent>
+                </TabFormFieldComponent> *@
 
                 @* 進貨退回審核開關 *@
-                <TabFormFieldComponent Label="進貨退回審核" 
+                @* <TabFormFieldComponent Label="進貨退回審核" 
                                       IconClass="fas fa-undo-alt">
                     <ChildContent>
                         <div class="form-check form-switch">
@@ -109,17 +102,48 @@
                             </label>
                         </div>
                     </ChildContent>
-                </TabFormFieldComponent>
+                </TabFormFieldComponent> *@
 
             </TabFormSectionComponent>
 
             @* ========== 銷售流程審核設定 ========== *@
             <TabFormSectionComponent Title="銷售流程審核" 
                                     IconClass="fas fa-hand-holding-usd"
-                                    Description="設定銷售相關單據是否需要審核流程">
-                
+                                    Description="">
+
+                                    <TabFormFieldComponent Label="報價單審核" 
+                                                          IconClass="fas fa-file-invoice">
+                                        <ChildContent>
+                                            <div class="form-check form-switch">
+                                                <InputCheckbox @bind-Value="Model.EnableQuotationApproval" 
+                                                             class="form-check-input" 
+                                                             id="enableQuotationApproval" />
+                                                <label class="form-check-label" for="enableQuotationApproval">
+                                                    @if (Model.EnableQuotationApproval)
+                                                    {
+                                                        <span class="text-success fw-bold">
+                                                            <i class="fas fa-check-circle me-1"></i>已啟用審核
+                                                        </span>
+                                                        <small class="d-block text-muted mt-1">
+                                                            報價單需經審核通過後才能影響庫存
+                                                        </small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-secondary">
+                                                            <i class="fas fa-times-circle me-1"></i>未啟用審核
+                                                        </span>
+                                                        <small class="d-block text-muted mt-1">
+                                                            報價單可直接儲存並影響庫存，不需審核
+                                                        </small>
+                                                    }
+                                                </label>
+                                            </div>
+                                        </ChildContent>
+                                    </TabFormFieldComponent>
+
                 @* 銷貨單審核開關 *@
-                <TabFormFieldComponent Label="銷貨單審核" 
+                @* <TabFormFieldComponent Label="銷貨單審核" 
                                       IconClass="fas fa-receipt">
                     <ChildContent>
                         <div class="form-check form-switch">
@@ -148,10 +172,10 @@
                             </label>
                         </div>
                     </ChildContent>
-                </TabFormFieldComponent>
+                </TabFormFieldComponent> *@
 
                 @* 銷貨退回審核開關 *@
-                <TabFormFieldComponent Label="銷貨退回審核" 
+                @* <TabFormFieldComponent Label="銷貨退回審核" 
                                       IconClass="fas fa-exchange-alt">
                     <ChildContent>
                         <div class="form-check form-switch">
@@ -180,17 +204,17 @@
                             </label>
                         </div>
                     </ChildContent>
-                </TabFormFieldComponent>
+                </TabFormFieldComponent> *@
 
             </TabFormSectionComponent>
 
             @* ========== 庫存流程審核設定 ========== *@
-            <TabFormSectionComponent Title="庫存流程審核" 
+            @* <TabFormSectionComponent Title="庫存流程審核" 
                                     IconClass="fas fa-warehouse"
-                                    Description="設定庫存相關單據是否需要審核流程">
+                                    Description="設定庫存相關單據是否需要審核流程"> *@
                 
                 @* 庫存調撥審核開關 *@
-                <TabFormFieldComponent Label="庫存調撥審核" 
+                @* <TabFormFieldComponent Label="庫存調撥審核" 
                                       IconClass="fas fa-boxes">
                     <ChildContent>
                         <div class="form-check form-switch">
@@ -219,142 +243,13 @@
                             </label>
                         </div>
                     </ChildContent>
-                </TabFormFieldComponent>
-
-            </TabFormSectionComponent>
-
-            @* ========== 說明區域 ========== *@
-            <div class="alert alert-info" role="alert">
-                <h6 class="alert-heading">
-                    <i class="fas fa-info-circle me-2"></i>審核流程說明
-                </h6>
-                <ul class="mb-0 small">
-                    <li><strong>啟用審核：</strong>單據需要經過審核通過後才能執行下一步操作（如轉單、影響庫存等）</li>
-                    <li><strong>未啟用審核：</strong>單據儲存後可直接執行後續操作，適合小型企業或信任度高的環境</li>
-                    <li><strong>建議：</strong>採購流程建議啟用審核以控制成本，其他流程可視企業需求調整</li>
-                    <li><strong>注意：</strong>變更設定後立即生效，不影響已存在的單據狀態</li>
-                </ul>
-            </div>
-
-            @* 按鈕區域 *@
-            <div class="row">
-                <div class="col-sm-9 offset-sm-3">
-                    <div class="d-flex gap-2">
-                        <button type="submit" 
-                              class="btn btn-primary" 
-                              disabled="@IsSaving">
-                            @if (IsSaving)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                                <span>儲存中...</span>
-                            }
-                            else
-                            {
-                                <i class="fas fa-save me-2"></i>
-                                <span>儲存設定</span>
-                            }
-                        </button>
-                        
-                        <button type="button" 
-                              class="btn btn-secondary" 
-                              @onclick="HandleReload"
-                              disabled="@IsSaving">
-                            <i class="fas fa-undo me-2"></i>
-                            重新載入
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @* 右側預覽區域（可選） *@
-        <div class="col-lg-4">
-            <div class="card bg-light border-0 sticky-top" style="top: 20px;">
-                <div class="card-body">
-                    <h6 class="card-title">
-                        <i class="fas fa-eye me-2"></i>當前設定預覽
-                    </h6>
-                    <hr />
-                    
-                    <div class="mb-3">
-                        <small class="text-muted d-block mb-2">採購流程</small>
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="@(Model.EnablePurchaseOrderApproval ? "fas fa-check-circle text-success" : "fas fa-times-circle text-secondary") me-2"></i>
-                            <span class="small">採購單審核</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="@(Model.EnablePurchaseReceivingApproval ? "fas fa-check-circle text-success" : "fas fa-times-circle text-secondary") me-2"></i>
-                            <span class="small">進貨單審核</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="@(Model.EnablePurchaseReturnApproval ? "fas fa-check-circle text-success" : "fas fa-times-circle text-secondary") me-2"></i>
-                            <span class="small">進貨退回審核</span>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <small class="text-muted d-block mb-2">銷售流程</small>
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="@(Model.EnableSalesOrderApproval ? "fas fa-check-circle text-success" : "fas fa-times-circle text-secondary") me-2"></i>
-                            <span class="small">銷貨單審核</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="@(Model.EnableSalesReturnApproval ? "fas fa-check-circle text-success" : "fas fa-times-circle text-secondary") me-2"></i>
-                            <span class="small">銷貨退回審核</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <small class="text-muted d-block mb-2">庫存流程</small>
-                        <div class="d-flex align-items-center">
-                            <i class="@(Model.EnableInventoryTransferApproval ? "fas fa-check-circle text-success" : "fas fa-times-circle text-secondary") me-2"></i>
-                            <span class="small">庫存調撥審核</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</EditForm>
-
+                </TabFormFieldComponent> *@
+@* 
+            </TabFormSectionComponent> *@
 @code {
     /// <summary>
     /// 系統參數模型
     /// </summary>
     [Parameter]
     public SystemParameter Model { get; set; } = new();
-
-    /// <summary>
-    /// 儲存事件回調
-    /// </summary>
-    [Parameter]
-    public EventCallback OnSave { get; set; }
-
-    /// <summary>
-    /// 重新載入事件回調
-    /// </summary>
-    [Parameter]
-    public EventCallback OnReload { get; set; }
-
-    /// <summary>
-    /// 是否正在儲存
-    /// </summary>
-    [Parameter]
-    public bool IsSaving { get; set; } = false;
-
-    /// <summary>
-    /// 處理表單提交
-    /// </summary>
-    private async Task HandleSubmit()
-    {
-        await OnSave.InvokeAsync();
-    }
-
-    /// <summary>
-    /// 處理重新載入
-    /// </summary>
-    private async Task HandleReload()
-    {
-        await OnReload.InvokeAsync();
-    }
 }

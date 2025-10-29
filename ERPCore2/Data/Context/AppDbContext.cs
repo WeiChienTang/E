@@ -69,6 +69,8 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesReturn> SalesReturns { get; set; }
       public DbSet<SalesReturnDetail> SalesReturnDetails { get; set; }
       public DbSet<SalesReturnReason> SalesReturnReasons { get; set; }
+      public DbSet<Quotation> Quotations { get; set; }
+      public DbSet<QuotationDetail> QuotationDetails { get; set; }
       
       // Financial Management
       // 統一沖款管理
@@ -619,6 +621,52 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(srd => srd.SalesOrderDetail)
                         .WithMany()
                         .HasForeignKey(srd => srd.SalesOrderDetailId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // Quotation Management
+                  modelBuilder.Entity<Quotation>(entity =>
+                  {
+                        entity.HasKey(q => q.Id);
+
+                        entity.HasOne(q => q.Customer)
+                        .WithMany()
+                        .HasForeignKey(q => q.CustomerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(q => q.Employee)
+                        .WithMany()
+                        .HasForeignKey(q => q.EmployeeId)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(q => q.ApprovedByUser)
+                        .WithMany()
+                        .HasForeignKey(q => q.ApprovedBy)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(q => q.SalesOrder)
+                        .WithMany()
+                        .HasForeignKey(q => q.ConvertedToSalesOrderId)
+                        .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<QuotationDetail>(entity =>
+                  {
+                        entity.HasKey(qd => qd.Id);
+
+                        entity.HasOne(qd => qd.Quotation)
+                        .WithMany(q => q.QuotationDetails)
+                        .HasForeignKey(qd => qd.QuotationId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(qd => qd.Product)
+                        .WithMany()
+                        .HasForeignKey(qd => qd.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(qd => qd.Unit)
+                        .WithMany()
+                        .HasForeignKey(qd => qd.UnitId)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
 

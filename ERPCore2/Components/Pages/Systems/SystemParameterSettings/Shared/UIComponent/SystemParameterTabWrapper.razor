@@ -1,0 +1,103 @@
+@* 系統參數 Tab 包裝元件 - 統一處理表單、按鈕和事件 *@
+@using Microsoft.AspNetCore.Components.Forms
+@using ERPCore2.Data.Entities
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Pages.Systems.SystemParameterSettings.Shared.UIComponent
+
+<EditForm Model="@Model" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger mb-3" />
+
+    @* 使用統一的表單區段元件 *@
+    <TabFormSectionComponent Title="@Title" 
+                            IconClass="@IconClass"
+                            Description="@Description">
+        
+        <ActionButtons>
+            <GenericButtonComponent Text="@(IsSaving ? "儲存中..." : "儲存設定")"
+                                  Variant="ButtonVariant.Primary"
+                                  IconClass="fas fa-save"
+                                  Type="submit"
+                                  IsDisabled="@IsSaving"
+                                  IsLoading="@IsSaving" />
+            
+            <GenericButtonComponent Text="重新載入"
+                                  Variant="ButtonVariant.Secondary"
+                                  IconClass="fas fa-undo"
+                                  OnClick="HandleReload"
+                                  IsDisabled="@IsSaving" />
+        </ActionButtons>
+        
+        <ChildContent>
+            @* Tab 的實際內容（表單欄位） *@
+            @ChildContent
+        </ChildContent>
+
+    </TabFormSectionComponent>
+</EditForm>
+
+@code {
+    /// <summary>
+    /// 系統參數模型
+    /// </summary>
+    [Parameter]
+    public SystemParameter Model { get; set; } = new();
+
+    /// <summary>
+    /// 區段標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "基本設定";
+
+    /// <summary>
+    /// 標題圖示 CSS 類別
+    /// </summary>
+    [Parameter]
+    public string IconClass { get; set; } = "fas fa-cog";
+
+    /// <summary>
+    /// 區段說明文字
+    /// </summary>
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Tab 內容（表單欄位）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// 儲存事件回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    /// <summary>
+    /// 重新載入事件回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnReload { get; set; }
+
+    /// <summary>
+    /// 是否正在儲存
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; } = false;
+
+    /// <summary>
+    /// 處理表單提交
+    /// </summary>
+    private async Task HandleSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    /// <summary>
+    /// 處理重新載入
+    /// </summary>
+    private async Task HandleReload()
+    {
+        await OnReload.InvokeAsync();
+    }
+}

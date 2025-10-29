@@ -17,6 +17,12 @@ namespace ERPCore2.Data.Entities
         // ===== 審核流程開關 =====
 
         /// <summary>
+        /// 是否啟用報價單審核
+        /// </summary>
+        [Display(Name = "啟用報價單審核")]
+        public bool EnableQuotationApproval { get; set; } = false;
+
+        /// <summary>
         /// 是否啟用採購單審核
         /// </summary>
         [Display(Name = "啟用採購單審核")]

@@ -377,6 +377,16 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
+                        Name = "報價單維護",
+                        Description = "管理銷售報價單",
+                        Route = "/quotations",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "銷售管理",
+                        RequiredPermission = "Quotation.Read",
+                        SearchKeywords = new List<string> { "報價單", "銷售報價", "quotation", "quote" }
+                    },
+                    new NavigationItem
+                    {
                         Name = "銷貨",
                         Description = "管理銷貨訂單",
                         Route = "/salesOrders",

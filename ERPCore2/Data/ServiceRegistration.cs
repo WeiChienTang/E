@@ -102,6 +102,9 @@ namespace ERPCore2.Data
             services.AddScoped<IPurchaseReturnDetailService, PurchaseReturnDetailService>();
 
             // 銷貨相關服務
+            services.AddScoped<IQuotationService, QuotationService>();
+            services.AddScoped<IQuotationDetailService, QuotationDetailService>();
+            
             services.AddScoped<ISalesOrderService, SalesOrderService>();
             services.AddScoped<ISalesOrderDetailService, SalesOrderDetailService>();
 

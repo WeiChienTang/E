@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029023724_AddQuotationTables")]
+    partial class AddQuotationTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3019,12 +3022,6 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("ApprovedBy")
-                        .HasColumnType("int");
-
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -3059,9 +3056,6 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsConverted")
                         .HasColumnType("bit");
 
@@ -3079,10 +3073,6 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("QuotationStatus")
                         .HasColumnType("int");
-
-                    b.Property<string>("RejectReason")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -3108,8 +3098,6 @@ namespace ERPCore2.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApprovedBy");
 
                     b.HasIndex("ConvertedToSalesOrderId");
 
@@ -4514,9 +4502,6 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("EnablePurchaseReturnApproval")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("EnableQuotationApproval")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("EnableSalesOrderApproval")
                         .HasColumnType("bit");
 
@@ -5465,11 +5450,6 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Quotation", b =>
                 {
-                    b.HasOne("ERPCore2.Data.Entities.Employee", "ApprovedByUser")
-                        .WithMany()
-                        .HasForeignKey("ApprovedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
                         .WithMany()
                         .HasForeignKey("ConvertedToSalesOrderId")
@@ -5485,8 +5465,6 @@ namespace ERPCore2.Migrations
                         .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("ApprovedByUser");
 
                     b.Navigation("Customer");
 

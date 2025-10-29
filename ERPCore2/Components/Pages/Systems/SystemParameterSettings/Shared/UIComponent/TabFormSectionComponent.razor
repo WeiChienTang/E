@@ -18,6 +18,28 @@
         </div>
     }
     
+    @* 按鈕區塊 - 放在最上方 *@
+    @if (ActionButtons != null || StatusMessage != null)
+    {
+        <div class="border-bottom mb-2 pb-2 d-flex align-items-center">
+            @* 最左側：自訂操作按鈕 *@
+            @if (ActionButtons != null)
+            {
+                <div class="d-flex gap-2 me-auto">
+                    @ActionButtons
+                </div>
+            }
+            
+            @* 右側：狀態訊息顯示 *@
+            @if (StatusMessage != null)
+            {
+                <div class="@(ActionButtons == null ? "flex-grow-1" : "")">
+                    @StatusMessage
+                </div>
+            }
+        </div>
+    }
+    
     <div class="@ContentCssClass">
         @ChildContent
     </div>
@@ -59,4 +81,16 @@
     /// </summary>
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+    
+    /// <summary>
+    /// 自訂操作按鈕區域（顯示在區段頂部的最左側）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ActionButtons { get; set; }
+    
+    /// <summary>
+    /// 狀態訊息區域（顯示在區段頂部的右側）
+    /// </summary>
+    [Parameter]
+    public RenderFragment? StatusMessage { get; set; }
 }

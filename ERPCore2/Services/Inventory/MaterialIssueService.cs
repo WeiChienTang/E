@@ -69,7 +69,7 @@ namespace ERPCore2.Services
                 // 3. 逐筆扣除庫存
                 foreach (var detail in details)
                 {
-                    // 扣除庫存
+                    // 扣除庫存（ReduceStockAsync 內部已經會建立庫存交易記錄）
                     var reduceResult = await _inventoryStockService.ReduceStockAsync(
                         detail.ProductId,
                         detail.WarehouseId,
@@ -84,16 +84,6 @@ namespace ERPCore2.Services
                         await transaction.RollbackAsync();
                         return ServiceResult<MaterialIssue>.Failure($"扣除庫存失敗：{reduceResult.ErrorMessage}");
                     }
-
-                    // 建立庫存異動記錄
-                    await _inventoryTransactionService.CreateOutboundTransactionAsync(
-                        detail.ProductId,
-                        detail.WarehouseId,
-                        detail.IssueQuantity,
-                        InventoryTransactionTypeEnum.MaterialIssue,
-                        materialIssue.Code ?? $"MI-{materialIssue.Id}",
-                        detail.WarehouseLocationId,
-                        $"領料單號：{materialIssue.Code}，部門：{materialIssue.DepartmentId}");
                 }
 
                 await transaction.CommitAsync();

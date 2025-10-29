@@ -32,7 +32,6 @@
 
                     <div class="card-body">
                         @* Tab 內容區域 *@
-                        <div class="tab-content">
                             @* 系統基本設定 *@
                             @if (activeTab == "basic")
                             {
@@ -40,10 +39,15 @@
                                                             ErrorMessage="@errorMessage"
                                                             ShowFooter="true"
                                                             Entity="@systemParameter">
-                                    <BasicSettingsTab Model="@systemParameter" 
-                                                    OnSave="@HandleSaveAsync"
-                                                    OnReload="@ReloadData"
-                                                    IsSaving="@isSaving" />
+                                    <SystemParameterTabWrapper Model="@systemParameter"
+                                                             Title=""
+                                                             IconClass=""
+                                                             Description=""
+                                                             OnSave="@HandleSaveAsync"
+                                                             OnReload="@ReloadData"
+                                                             IsSaving="@isSaving">
+                                        <BasicSettingsTab Model="@systemParameter" />
+                                    </SystemParameterTabWrapper>
                                 </SystemParameterTabContainer>
                             }
 
@@ -54,10 +58,15 @@
                                                             ErrorMessage="@errorMessage"
                                                             ShowFooter="true"
                                                             Entity="@systemParameter">
-                                    <ApprovalSettingsTab Model="@systemParameter" 
-                                                        OnSave="@HandleSaveAsync"
-                                                        OnReload="@ReloadData"
-                                                        IsSaving="@isSaving" />
+                                    <SystemParameterTabWrapper Model="@systemParameter"
+                                                             Title=""
+                                                             IconClass=""
+                                                             Description=""
+                                                             OnSave="@HandleSaveAsync"
+                                                             OnReload="@ReloadData"
+                                                             IsSaving="@isSaving">
+                                        <ApprovalSettingsTab Model="@systemParameter" />
+                                    </SystemParameterTabWrapper>
                                 </SystemParameterTabContainer>
                             }
 
@@ -92,7 +101,7 @@
                                     <CompanyInfoTab />
                                 </SystemParameterTabContainer>
                             }
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -116,10 +125,13 @@
     {
         new("basic", "系統基本設定", ""),
         new("approval", "審核流程設定", ""),
-        new("appearance", "外觀設定", ""),
+
+        // 因還尚未確定該顯示什麼，先不顯示
+
+        @* new("appearance", "外觀設定", ""),
         new("order", "訂單設定", ""),
         new("print", "列印設定", ""),
-        new("company", "公司資訊", "")
+        new("company", "公司資訊", "") *@
     };
 
     // ===== 生命週期方法 =====

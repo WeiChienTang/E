@@ -1,0 +1,292 @@
+@page "/quotations"
+@using ERPCore2.Components.Shared.Report
+@using ERPCore2.Models
+@inject IQuotationService QuotationService
+@inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="Quotation" 
+                      TService="IQuotationService"
+                      Service="@QuotationService"
+                      EntityBasePath="/quotations"
+                      PageTitle="報價管理"
+                      PageSubtitle="管理所有報價單資料與明細資訊"
+                      EntityName="報價單"
+                      BreadcrumbItems="@breadcrumbItems"
+                      FilterDefinitions="@filterDefinitions"
+                      ColumnDefinitions="@columnDefinitions"
+                      DataLoader="@LoadQuotationsAsync"
+                      FilterApplier="@ApplyQuotationFilters"
+                      GetEntityDisplayName="@(quotation => quotation.QuotationNumber)"
+                      RequiredPermission="Quotation.Read"
+                      ShowBatchPrintButton="true"
+                      OnBatchPrintClick="@HandleBatchPrintAsync"
+                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      OnRowClick="@modalHandler.ShowEditModalAsync"
+                      @ref="indexComponent" />
+
+@* 報價單編輯 Modal *@
+<QuotationEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           QuotationId="@editingQuotationId"
+                           OnQuotationSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* 批次列印篩選 Modal - 使用新架構 *@
+<BatchPrintFilterModalComponent IsVisible="@showBatchPrintModal"
+                               IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
+                               Title="報價單批次列印條件"
+                               OnConfirm="@HandleBatchPrintConfirmAsync"
+                               OnCancel="@HandleBatchPrintCancelAsync">
+    @* 區塊 1: 客戶多選篩選 *@
+    <FilterSectionComponent Title="客戶篩選 (可多選)" 
+                           Badge="@($"{selectedCustomers.Count} / {customers.Count}")">
+        <MultiSelectFilterComponent TItem="Customer"
+                                   Items="@customers"
+                                   @bind-SelectedItems="@selectedCustomers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="請輸入客戶名稱搜尋..."
+                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的報價單"
+                                   ShowCard="false" />
+    </FilterSectionComponent>
+    
+    @* 區塊 2: 報價日期範圍 - 使用日期範圍元件 *@
+    <FilterSectionComponent Title="報價日期" 
+                           IconClass="bi bi-calendar-range">
+        <DateRangeFilterComponent @bind-StartDate="@batchPrintStartDate"
+                                 @bind-EndDate="@batchPrintEndDate"
+                                 StartDateLabel="起始日期"
+                                 EndDateLabel="結束日期"
+                                 ShowQuickSelectors="true"
+                                 AutoValidate="true"
+                                 ShowValidationMessage="true" />
+    </FilterSectionComponent>
+</BatchPrintFilterModalComponent>
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<Quotation, IQuotationService> indexComponent = default!;
+    
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingQuotationId = null;
+    
+    // 批次列印 Modal 相關狀態
+    private bool showBatchPrintModal = false;
+    private List<Customer> selectedCustomers = new();
+    private DateTime? batchPrintStartDate = null;
+    private DateTime? batchPrintEndDate = null;
+    
+    // Modal 處理器
+    private ModalHandler<Quotation, GenericIndexPageComponent<Quotation, IQuotationService>> modalHandler = default!;
+    
+    // 選項清單
+    private List<Customer> customers = new();
+    private List<Employee> employees = new();
+    
+    // 欄位配置
+    private QuotationFieldConfiguration fieldConfiguration = default!;
+    
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<Quotation, GenericIndexPageComponent<Quotation, IQuotationService>>(
+                id => editingQuotationId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+            
+            await InitializeBreadcrumbsAsync();
+            
+            // 載入相關資料
+            await LoadCustomersAsync();
+            await LoadEmployeesAsync();
+            
+            // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
+            fieldConfiguration = new QuotationFieldConfiguration(customers, employees, NotificationService);
+            
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化報價單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化報價單頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync()
+    {
+        try
+        {
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new("報價管理")
+            };
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
+            // 設定安全的預設值
+            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+        }
+    }
+
+    // 載入報價單資料
+    private async Task<List<Quotation>> LoadQuotationsAsync()
+    {
+        try
+        {
+            return await QuotationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤到資料庫並通知使用者
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadQuotationsAsync), GetType(), additionalData: "載入報價單資料失敗");
+            await NotificationService.ShowErrorAsync("載入報價單資料失敗");
+            // 設定安全的預設值
+            return new List<Quotation>();
+        }
+    }
+
+    // 載入客戶資料
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            // 設定安全的預設值
+            customers = new List<Customer>();
+        }
+    }
+
+    // 載入業務人員資料
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            employees = await EmployeeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入業務人員資料失敗");
+            await NotificationService.ShowErrorAsync("載入業務人員資料失敗");
+            // 設定安全的預設值
+            employees = new List<Employee>();
+        }
+    }
+
+    private IQueryable<Quotation> ApplyQuotationFilters(SearchFilterModel searchModel, IQueryable<Quotation> query)
+    {
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
+        {
+            // 如果配置未初始化，回傳基本排序的查詢
+            return query.OrderByDescending(q => q.QuotationDate).ThenBy(q => q.QuotationNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyQuotationFilters), GetType());
+    }
+
+    // ===== 批次列印相關方法 =====
+
+    /// <summary>
+    /// 處理批次列印按鈕點擊事件
+    /// </summary>
+    private async Task HandleBatchPrintAsync()
+    {
+        try
+        {
+            // 初始化批次列印條件
+            selectedCustomers = new List<Customer>();
+            batchPrintStartDate = null;
+            batchPrintEndDate = null;
+            
+            // 顯示批次列印篩選 Modal
+            showBatchPrintModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintAsync), GetType(), additionalData: "開啟批次列印篩選失敗");
+            await NotificationService.ShowErrorAsync("開啟批次列印篩選失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理批次列印確認
+    /// </summary>
+    private async Task HandleBatchPrintConfirmAsync()
+    {
+        try
+        {
+            // 建立篩選條件
+            var criteria = new BatchPrintCriteria
+            {
+                StartDate = batchPrintStartDate,
+                EndDate = batchPrintEndDate,
+                RelatedEntityIds = selectedCustomers.Select(c => c.Id).ToList(),
+                SortDirection = SortDirection.Descending,
+                MaxResults = 1000 // 限制最大筆數
+            };
+
+            // 取得符合條件的報價單
+            var quotations = await QuotationService.GetByBatchCriteriaAsync(criteria);
+
+            if (!quotations.Any())
+            {
+                await NotificationService.ShowWarningAsync("沒有符合條件的報價單資料");
+                showBatchPrintModal = false;
+                return;
+            }
+
+            // TODO: 實作報價單批次列印邏輯
+            // 這裡可以調用報表服務來產生 PDF 或直接列印
+            await NotificationService.ShowInfoAsync($"找到 {quotations.Count} 筆報價單，準備列印...");
+            
+            // 關閉 Modal
+            showBatchPrintModal = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintConfirmAsync), GetType(), 
+                additionalData: new {
+                    SelectedCustomersCount = selectedCustomers?.Count ?? 0,
+                    StartDate = batchPrintStartDate,
+                    EndDate = batchPrintEndDate
+                });
+            await NotificationService.ShowErrorAsync("批次列印處理失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理批次列印取消
+    /// </summary>
+    private Task HandleBatchPrintCancelAsync()
+    {
+        showBatchPrintModal = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}
