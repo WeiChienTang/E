@@ -22,6 +22,21 @@
 }
 else
 {
+    @* 警告訊息：顯示未審核的明細數量 *@
+    @if (IsApprovalEnabled && GetUnapprovedItemsCount() > 0)
+    {
+        <div class="alert alert-warning mb-3" role="alert">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                <div>
+                    <strong>注意：</strong>目前有 <strong>@GetUnapprovedItemsCount()</strong> 項明細來自未審核的採購單。
+                    <br/>
+                    <small class="text-muted">這些明細將無法儲存，請確認相關採購單已完成審核後再進行入庫作業。</small>
+                </div>
+            </div>
+        </div>
+    }
+    
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent TItem="ReceivingItem" 
@@ -208,6 +223,21 @@ else
         return ReceivingItems.Any(item => 
             !IsEmptyRow(item) && 
             (HasReturnRecord(item) || HasPaymentRecord(item)));
+    }
+
+    /// <summary>
+    /// 取得未審核的明細數量
+    /// </summary>
+    private int GetUnapprovedItemsCount()
+    {
+        if (!IsApprovalEnabled)
+            return 0;
+        
+        return ReceivingItems
+            .Where(item => !IsEmptyRow(item) && 
+                          item.SelectedPurchaseDetail != null &&
+                          !(item.SelectedPurchaseDetail.PurchaseOrder?.IsApproved ?? false))
+            .Count();
     }
 
     protected override async Task OnInitializedAsync()
@@ -667,6 +697,10 @@ else
                 var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                 var selectedValue = receivingItem.SelectedPurchaseDetail?.Id.ToString() ?? "";
                 
+                // 檢查當前明細的審核狀態
+                var isApproved = receivingItem.SelectedPurchaseDetail?.PurchaseOrder?.IsApproved ?? true;
+                var needsApproval = IsApprovalEnabled && !isApproved;
+                
                 // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
                 if (hasReturnRecord)
@@ -676,8 +710,13 @@ else
                     var paidAmount = GetPaidAmount(receivingItem);
                     tooltipMessages.Add($"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元）");
                 }
+                if (needsApproval)
+                {
+                    var poNumber = receivingItem.SelectedPurchaseDetail?.PurchaseOrder?.PurchaseOrderNumber ?? "";
+                    tooltipMessages.Add($"採購單 {poNumber} 尚未審核");
+                }
                 var title = tooltipMessages.Any() 
-                    ? string.Join("；", tooltipMessages) + "，無法修改商品選擇" 
+                    ? string.Join("；", tooltipMessages) + (isFieldReadOnly ? "，無法修改商品選擇" : "") 
                     : "";
                 
                 // 如果是唯讀狀態，直接顯示格式化的商品名稱
@@ -704,7 +743,17 @@ else
                 }
                 
                 return @<div class="position-relative">
-                    <select class="form-select form-select-sm" 
+                    @* 如果啟用審核且明細未審核，顯示警告標記 *@
+                    @if (needsApproval && receivingItem.SelectedPurchaseDetail != null)
+                    {
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">
+                                <i class="fas fa-exclamation-triangle me-1"></i>未審核
+                            </span>
+                        </div>
+                    }
+                    
+                    <select class="form-select form-select-sm @(needsApproval ? "border-warning" : "")" 
                             value="@selectedValue"
                             disabled="@isFieldReadOnly"
                             title="@title"
@@ -713,7 +762,20 @@ else
                         @foreach (var detail in availableDetails)
                         {
                             var displayText = FormatPurchaseDetailDisplayText(detail);
-                            <option value="@detail.Id">@displayText</option>
+                            var detailIsApproved = detail.PurchaseOrder?.IsApproved ?? true;
+                            var detailNeedsApproval = IsApprovalEnabled && !detailIsApproved;
+                            
+                            @* 未審核的明細以不同樣式顯示 *@
+                            @if (detailNeedsApproval)
+                            {
+                                <option value="@detail.Id" style="color: #856404; background-color: #fff3cd;">
+                                    ⚠️ @displayText (未審核)
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@detail.Id">@displayText</option>
+                            }
                         }
                     </select>
                     
@@ -1080,12 +1142,12 @@ else
         {
             if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
             {
-                // 載入該廠商未完成進貨的採購明細
-                // 根據審核開關決定是否只載入已審核的採購單
+                // 🔑 修改：永遠載入所有明細（不在 Service 層過濾審核狀態）
+                // 改為在前端標記未審核明細，並在驗證時拒絕儲存
                 AvailablePurchaseDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
                     SelectedSupplierId.Value, 
                     includeCompleted: false,
-                    checkApproval: IsApprovalEnabled); // 傳遞審核開關
+                    checkApproval: false); // 永遠傳 false，載入所有明細
                 
                 // 從採購明細中提取商品清單（向下相容）
                 AvailableProducts = AvailablePurchaseDetails
@@ -1853,6 +1915,28 @@ else
         {
             var nonEmptyItems = AutoEmptyRowHelper.ForAny<ReceivingItem>.GetNonEmptyItems(ReceivingItems, IsEmptyRow);
             
+            // 🔑 新增：檢查明細是否已審核（如果啟用審核）
+            if (IsApprovalEnabled)
+            {
+                var unapprovedItems = nonEmptyItems
+                    .Where(item => item.SelectedPurchaseDetail != null && 
+                                  !(item.SelectedPurchaseDetail.PurchaseOrder?.IsApproved ?? false))
+                    .ToList();
+                
+                if (unapprovedItems.Any())
+                {
+                    var productNames = unapprovedItems
+                        .Select(item => {
+                            var productName = item.SelectedProduct?.Name ?? item.DisplayName;
+                            var poNumber = item.SelectedPurchaseDetail?.PurchaseOrder?.PurchaseOrderNumber ?? "N/A";
+                            return $"• {productName} (採購單: {poNumber})";
+                        })
+                        .ToList();
+                    
+                    errors.Add($"以下商品來自未審核的採購單，無法儲存：\n{string.Join("\n", productNames)}\n\n請先完成相關採購單的審核作業。");
+                }
+            }
+            
             // 檢查是否有選擇倉庫（如果啟用倉庫功能）
             if (ShowWarehouse)
             {
@@ -1875,7 +1959,7 @@ else
                 }
             }
             
-            // 新增：檢查退貨數量限制
+            // 檢查退貨數量限制
             foreach (var item in nonEmptyItems)
             {
                 var returnedQty = GetReturnedQuantity(item);
@@ -1889,7 +1973,7 @@ else
           
         if (errors.Any())
         {
-            var errorMessage = string.Join("\n", errors);
+            var errorMessage = string.Join("\n\n", errors);
             await NotificationService.ShowErrorAsync(errorMessage);
             return false;
         }

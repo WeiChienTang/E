@@ -1325,7 +1325,8 @@
     {
         get
         {
-            // 先計算是否可以顯示按鈕（避免在 RenderFragment 中出錯）
+            // 修改邏輯：轉進貨按鈕永遠顯示（只要採購單已儲存）
+            // 審核控制改為在載入明細時進行過濾
             bool shouldShowButton = false;
             
             try
@@ -1334,10 +1335,7 @@
                     PurchaseOrderId.HasValue && 
                     PurchaseOrderId.Value > 0)
                 {
-                    var isApproved = editModalComponent.Entity.IsApproved;
-                    shouldShowButton = ApprovalConfigHelper.CanPerformActionRequiringApproval(
-                        isApprovalEnabled, 
-                        isApproved);
+                    shouldShowButton = true;
                 }
             }
             catch
@@ -1347,7 +1345,7 @@
             
             return __builder =>
             {
-                @* 轉進貨單按鈕 - 只在採購單已儲存且符合轉單條件時顯示 *@
+                @* 轉進貨單按鈕 - 採購單已儲存即可顯示 *@
                 @if (shouldShowButton)
                 {
                     <GenericButtonComponent Text="轉進貨" 
@@ -1459,12 +1457,9 @@
                 return;
             }
             
-            // 使用 ApprovalConfigHelper 檢查是否可以執行轉單動作
-            if (!ApprovalConfigHelper.CanPerformActionRequiringApproval(isApprovalEnabled, editModalComponent.Entity.IsApproved))
-            {
-                await NotificationService.ShowWarningAsync("只有已核准的採購單才能轉進貨單");
-                return;
-            }
+            // 移除審核檢查：改為在載入明細時根據審核開關過濾
+            // 如果啟用審核，只會載入已審核的採購單明細
+            // 如果未啟用審核，載入所有採購單明細
             
             // 檢查是否有廠商資料
             if (editModalComponent.Entity.SupplierId <= 0)
