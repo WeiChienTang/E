@@ -74,7 +74,6 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Product> availableProducts = new();
-    private List<Product> saleableProducts = new(); // 可販售分類的產品（用於商品選擇）
     private List<Unit> availableUnits = new();
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
@@ -166,19 +165,8 @@
         {
             isDetailDataReady = false;
             
-            // 載入所有產品列表（用於材料選擇）
+            // 載入所有產品列表
             availableProducts = await ProductService.GetAllAsync();
-            
-            // 載入可販售分類的產品列表（用於商品選擇）
-            var allCategories = await ProductCategoryService.GetAllAsync();
-            var saleableCategoryIds = allCategories
-                .Where(c => c.IsSaleable)
-                .Select(c => c.Id)
-                .ToHashSet();
-            
-            saleableProducts = availableProducts
-                .Where(p => p.ProductCategoryId.HasValue && saleableCategoryIds.Contains(p.ProductCategoryId.Value))
-                .ToList();
             
             // 載入可選擇的單位列表
             availableUnits = await UnitService.GetAllAsync();
@@ -205,7 +193,6 @@
         {
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
             availableProducts = new List<Product>();
-            saleableProducts = new List<Product>();
             availableUnits = new List<Unit>();
             availableCustomers = new List<Customer>();
             availableEmployees = new List<Employee>();
@@ -311,12 +298,12 @@
     {
         try
         {
-            // 準備產品選項（只包含可販售分類的產品）
+            // 準備產品選項（所有產品）
             var productOptions = new List<SelectOption>
             {
                 new SelectOption { Text = "請選擇", Value = "" }
             };
-            productOptions.AddRange(saleableProducts.Select(p => new SelectOption
+            productOptions.AddRange(availableProducts.Select(p => new SelectOption
             {
                 Text = $"{p.Code} - {p.Name}".Trim(),
                 Value = p.Id.ToString()
@@ -366,7 +353,7 @@
                     Placeholder = "請選擇商品",
                     Options = productOptions,
                     IsRequired = true,
-                    HelpText = "選擇此配方要生產的商品（僅顯示可販售分類的產品）",
+                    HelpText = "選擇此配方要生產的商品",
                     ActionButtons = await GetProductActionButtonsAsync()
                 },
                 new()

@@ -1,5 +1,7 @@
 @page "/quotations"
 @using ERPCore2.Components.Shared.Report
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Approval
 @using ERPCore2.Models
 @inject IQuotationService QuotationService
 @inject ICustomerService CustomerService
@@ -22,11 +24,48 @@
                       FilterApplier="@ApplyQuotationFilters"
                       GetEntityDisplayName="@(quotation => quotation.QuotationNumber)"
                       RequiredPermission="Quotation.Read"
-                      ShowBatchPrintButton="true"
-                      OnBatchPrintClick="@HandleBatchPrintAsync"
+                      ShowDefaultActions="false"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
-                      @ref="indexComponent" />
+                      @ref="indexComponent">
+    <CustomActionButtons>
+        @* 批次審核按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Warning" 
+                               Text="批次審核" 
+                               OnClick="@HandleBatchApprovalAsync" 
+                               IsDisabled="@indexComponent.IsLoading" 
+                               Title="批次審核報價單"
+                               CssClass="index-action-btn" 
+                               IconClass="fas fa-check-double" />
+        
+        @* 批次列印按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Info" 
+                               Text="多筆列印" 
+                               OnClick="@HandleBatchPrintAsync" 
+                               IsDisabled="@indexComponent.IsLoading" 
+                               Title="批次列印報價單"
+                               CssClass="index-action-btn" 
+                               IconClass="fas fa-print" />
+        
+        @* 新增按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Primary" 
+                               Text="新增報價單" 
+                               OnClick="@modalHandler.ShowAddModalAsync" 
+                               IsDisabled="@indexComponent.IsLoading" 
+                               Title="新增報價單資料"
+                               CssClass="index-action-btn" 
+                               IconClass="fas fa-plus" />
+        
+        @* 重新整理按鈕 *@
+        <GenericButtonComponent Variant="ButtonVariant.Success" 
+                               Text="重新整理" 
+                               OnClick="@indexComponent.Refresh" 
+                               IsDisabled="@indexComponent.IsLoading" 
+                               Title="重新整理資料"
+                               CssClass="index-action-btn" 
+                               IconClass="fas fa-sync" />
+    </CustomActionButtons>
+</GenericIndexPageComponent>
 
 @* 報價單編輯 Modal *@
 <QuotationEditModalComponent IsVisible="@showEditModal"
@@ -34,6 +73,19 @@
                            QuotationId="@editingQuotationId"
                            OnQuotationSaved="@modalHandler.OnEntitySavedAsync"
                            OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@* 批次審核 Modal - 使用新組件 *@
+<BatchApprovalModalComponent TEntity="Quotation"
+                            IsVisible="@showBatchApprovalModal"
+                            IsVisibleChanged="@((bool visible) => showBatchApprovalModal = visible)"
+                            Title="報價單批次審核"
+                            EntityName="報價單"
+                            LoadPendingItems="@LoadPendingQuotationsAsync"
+                            OnApproveItem="@ApproveSingleQuotationAsync"
+                            OnApproveAll="@ApproveAllQuotationsAsync"
+                            OnViewClick="@HandleApprovalViewClick"
+                            ColumnDefinitions="@GetApprovalColumnDefinitions()"
+                            OnApprovalCompleted="@HandleApprovalCompleted" />
 
 @* 批次列印篩選 Modal - 使用新架構 *@
 <BatchPrintFilterModalComponent IsVisible="@showBatchPrintModal"
@@ -74,6 +126,9 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingQuotationId = null;
+    
+    // 批次審核 Modal 相關狀態
+    private bool showBatchApprovalModal = false;
     
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
@@ -206,6 +261,219 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyQuotationFilters), GetType());
+    }
+
+    // ===== 批次審核相關方法 =====
+
+    /// <summary>
+    /// 處理批次審核按鈕點擊事件
+    /// </summary>
+    private async Task HandleBatchApprovalAsync()
+    {
+        try
+        {
+            // 直接顯示批次審核 Modal
+            showBatchApprovalModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchApprovalAsync), GetType(), additionalData: "開啟批次審核視窗失敗");
+            await NotificationService.ShowErrorAsync("開啟批次審核視窗失敗");
+        }
+    }
+
+    /// <summary>
+    /// 載入待審核的報價單
+    /// </summary>
+    private async Task<List<Quotation>> LoadPendingQuotationsAsync()
+    {
+        try
+        {
+            var allQuotations = await QuotationService.GetAllAsync();
+            return allQuotations.Where(q => !q.IsApproved).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPendingQuotationsAsync), GetType(), additionalData: "載入待審核報價單失敗");
+            await NotificationService.ShowErrorAsync("載入待審核報價單失敗");
+            return new List<Quotation>();
+        }
+    }
+
+    /// <summary>
+    /// 審核單筆報價單
+    /// </summary>
+    private async Task<bool> ApproveSingleQuotationAsync(Quotation quotation)
+    {
+        try
+        {
+            quotation.IsApproved = true;
+            quotation.ApprovedAt = DateTime.Now;
+            // TODO: 設定 ApprovedBy 為當前使用者
+            
+            await QuotationService.UpdateAsync(quotation);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSingleQuotationAsync), GetType(), 
+                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 批次審核所有報價單
+    /// </summary>
+    private async Task<(int successCount, int failCount)> ApproveAllQuotationsAsync(List<Quotation> quotations)
+    {
+        int successCount = 0;
+        int failCount = 0;
+
+        foreach (var quotation in quotations)
+        {
+            try
+            {
+                if (!quotation.IsApproved)
+                {
+                    quotation.IsApproved = true;
+                    quotation.ApprovedAt = DateTime.Now;
+                    // TODO: 設定 ApprovedBy 為當前使用者
+                    
+                    await QuotationService.UpdateAsync(quotation);
+                    successCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                failCount++;
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllQuotationsAsync), GetType(), 
+                    additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+            }
+        }
+
+        return (successCount, failCount);
+    }
+
+    /// <summary>
+    /// 處理審核 Modal 中的查看按鈕點擊
+    /// </summary>
+    private async Task HandleApprovalViewClick(Quotation quotation)
+    {
+        try
+        {
+            // 不關閉批次審核 Modal，直接開啟編輯 Modal
+            await modalHandler.ShowEditModalAsync(quotation);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalViewClick), GetType(), 
+                additionalData: new { QuotationId = quotation.Id });
+            await NotificationService.ShowErrorAsync("開啟查看視窗失敗");
+        }
+    }
+
+    /// <summary>
+    /// 審核完成後的處理
+    /// </summary>
+    private async Task HandleApprovalCompleted()
+    {
+        try
+        {
+            // 刷新主列表
+            await indexComponent.Refresh();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalCompleted), GetType(), 
+                additionalData: "刷新列表失敗");
+        }
+    }
+
+    /// <summary>
+    /// 取得批次審核 Modal 的表格欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetApprovalColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "",
+                PropertyName = "IsApproved",
+                ColumnType = InteractiveColumnType.Checkbox,
+                Width = "60px",
+                CellCssClass = "text-center"
+            },
+            new()
+            {
+                Title = "報價單號",
+                PropertyName = nameof(Quotation.QuotationNumber),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "150px"
+            },
+            new()
+            {
+                Title = "客戶",
+                PropertyName = "Customer.CompanyName",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px"
+            },
+            new()
+            {
+                Title = "報價日期",
+                PropertyName = nameof(Quotation.QuotationDate),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item =>
+                {
+                    var quotation = item as Quotation;
+                    var dateStr = quotation?.QuotationDate.ToString("yyyy/MM/dd") ?? "";
+                    return @<span style="font-size: 0.875rem;">@dateStr</span>;
+                }
+            },
+            new()
+            {
+                Title = "有效期限",
+                PropertyName = nameof(Quotation.ValidUntilDate),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item =>
+                {
+                    var quotation = item as Quotation;
+                    var dateStr = quotation?.ValidUntilDate?.ToString("yyyy/MM/dd") ?? "-";
+                    return @<span style="font-size: 0.875rem;">@dateStr</span>;
+                }
+            },
+            new()
+            {
+                Title = "總金額",
+                PropertyName = nameof(Quotation.TotalAmount),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CellCssClass = "text-end",
+                CustomTemplate = item =>
+                {
+                    var quotation = item as Quotation;
+                    var amountStr = quotation?.TotalAmount.ToString("N0") ?? "";
+                    return @<span style="font-size: 0.875rem;" class="fw-bold">@amountStr</span>;
+                }
+            },
+            new()
+            {
+                Title = "建立日期",
+                PropertyName = nameof(Quotation.CreatedAt),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var quotation = item as Quotation;
+                    var dateStr = quotation?.CreatedAt.ToString("yyyy/MM/dd HH:mm") ?? "";
+                    return @<span style="font-size: 0.875rem;">@dateStr</span>;
+                }
+            }
+        };
     }
 
     // ===== 批次列印相關方法 =====
