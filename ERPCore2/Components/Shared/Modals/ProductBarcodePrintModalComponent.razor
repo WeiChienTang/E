@@ -102,47 +102,35 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">條碼尺寸</label>
-                                    <select class="form-select" @bind="printSettings.BarcodeSize">
-                                        <option value="@BarcodeSize.Small">小 (40mm x 20mm)</option>
-                                        <option value="@BarcodeSize.Medium">中 (50mm x 25mm)</option>
-                                        <option value="@BarcodeSize.Large">大 (70mm x 35mm)</option>
-                                    </select>
+                            <div class="d-flex align-items-center gap-4">
+                                <div>
+                                    <span class="text-muted">條碼尺寸：</span>
+                                    <span class="fw-bold">大 (70mm x 35mm)</span>
                                 </div>
                                 
-                                <div class="col-md-3">
-                                    <label class="form-label">每頁條碼數</label>
-                                    <select class="form-select" @bind="printSettings.BarcodesPerPage">
-                                        <option value="10">10 個</option>
-                                        <option value="15">15 個</option>
-                                        <option value="20">20 個</option>
-                                        <option value="30">30 個</option>
-                                    </select>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           @bind="printSettings.ShowProductName" 
+                                           id="showProductName">
+                                    <label class="form-check-label" for="showProductName">
+                                        顯示產品名稱
+                                    </label>
                                 </div>
                                 
-                                <div class="col-md-3">
-                                    <div class="form-check mt-4">
-                                        <input class="form-check-input" type="checkbox" 
-                                               @bind="printSettings.ShowProductName" 
-                                               id="showProductName">
-                                        <label class="form-check-label" for="showProductName">
-                                            顯示產品名稱
-                                        </label>
-                                    </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           @bind="printSettings.ShowProductCode" 
+                                           id="showProductCode">
+                                    <label class="form-check-label" for="showProductCode">
+                                        顯示產品代碼
+                                    </label>
                                 </div>
-                                
-                                <div class="col-md-3">
-                                    <div class="form-check mt-4">
-                                        <input class="form-check-input" type="checkbox" 
-                                               @bind="printSettings.ShowProductCode" 
-                                               id="showProductCode">
-                                        <label class="form-check-label" for="showProductCode">
-                                            顯示產品代碼
-                                        </label>
-                                    </div>
-                                </div>
+                            </div>
+                            
+                            @* 列印提示訊息 *@
+                            <div class="alert alert-info mt-3 mb-0 d-flex align-items-center" role="alert">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <span>提示：一張 A4 可以印 24 張條碼</span>
                             </div>
                         </div>
                     </div>
@@ -339,6 +327,7 @@
                 Title = "產品代碼",
                 PropertyName = nameof(ProductBarcodeItem.Code),
                 ColumnType = InteractiveColumnType.Display,
+                Tooltip = "產品的唯一識別代碼",
                 Width = "150px"
             },
             
@@ -348,6 +337,7 @@
                 Title = "產品名稱",
                 PropertyName = nameof(ProductBarcodeItem.Name),
                 ColumnType = InteractiveColumnType.Display,
+                Tooltip = "產品的名稱",
                 Width = "auto"
             },
             
@@ -357,6 +347,7 @@
                 Title = "條碼號碼",
                 PropertyName = nameof(ProductBarcodeItem.Barcode),
                 ColumnType = InteractiveColumnType.Display,
+                Tooltip = "產品的條碼",
                 Width = "200px"
             },
             
@@ -366,6 +357,7 @@
                 Title = "列印數量",
                 PropertyName = nameof(ProductBarcodeItem.PrintQuantity),
                 ColumnType = InteractiveColumnType.Number,
+                Tooltip = "列印的數量",
                 Width = "120px",
                 MinValue = 1,
                 MaxValue = 100,
@@ -446,8 +438,8 @@
             var criteria = new ProductBarcodePrintCriteria
             {
                 ProductIds = selectedItems.Select(x => x.ProductId).ToList(),
-                BarcodeSize = printSettings.BarcodeSize,
-                BarcodesPerPage = printSettings.BarcodesPerPage,
+                BarcodeSize = BarcodeSize.Large, // 固定使用大尺寸
+                BarcodesPerPage = 20, // 使用預設值，實際不影響列印
                 ShowProductName = printSettings.ShowProductName,
                 ShowProductCode = printSettings.ShowProductCode,
                 OnlyWithBarcode = true,

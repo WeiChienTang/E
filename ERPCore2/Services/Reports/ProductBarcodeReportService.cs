@@ -217,6 +217,7 @@ namespace ERPCore2.Services.Reports
             align-items: center;
             justify-content: center;
             page-break-inside: avoid;
+            overflow: visible;
         }}
 
         .barcode-item.barcode-small {{
@@ -235,10 +236,11 @@ namespace ERPCore2.Services.Reports
         }}
 
         .barcode-code {{
-            font-size: 8pt;
+            font-size: 12pt;
             font-weight: bold;
             margin-bottom: 2mm;
             color: #000;
+            line-height: 1.3;
         }}
 
         .barcode-svg {{
@@ -247,13 +249,15 @@ namespace ERPCore2.Services.Reports
         }}
 
         .barcode-name {{
-            font-size: 7pt;
+            font-size: 11pt;
             margin-top: 2mm;
+            padding-bottom: 1mm;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 100%;
             color: #000;
+            line-height: 1.3;
         }}
 
         @media print {{
@@ -313,7 +317,7 @@ namespace ERPCore2.Services.Reports
             {
                 BarcodeSize.Small => (1, 30),
                 BarcodeSize.Medium => (2, 40),
-                BarcodeSize.Large => (2, 50),
+                BarcodeSize.Large => (3, 70),
                 _ => (2, 40)
             };
         }

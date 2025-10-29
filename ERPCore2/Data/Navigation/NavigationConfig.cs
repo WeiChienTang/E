@@ -195,7 +195,7 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "產品管理",
                         RequiredPermission = "Product.Read",
-                        SearchKeywords = new List<string> { "產品維護", "產品資料", "商品目錄", "品項" }
+                        SearchKeywords = new List<string> { "產品維護", "產品資料", "商品目錄", "品項","條碼" }
                     },
                     new NavigationItem
                     {
