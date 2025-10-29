@@ -71,7 +71,7 @@
                                                           IsLoading="@IsApproving" />
                                     <GenericButtonComponent Text="駁回" 
                                                           Variant="ButtonVariant.Danger" 
-                                                          OnClick="HandleReject" 
+                                                          OnClick="OpenRejectConfirmModal" 
                                                           IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                           IsLoading="@IsRejecting" />
                                 </div>
@@ -224,6 +224,16 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+@* 駁回確認 Modal *@
+<RejectConfirmModalComponent @ref="_rejectConfirmModal"
+                            IsVisible="@_isRejectConfirmModalVisible"
+                            IsVisibleChanged="@((bool value) => _isRejectConfirmModalVisible = value)"
+                            Title="確認駁回"
+                            ShowReasonInput="@ShowRejectReasonInput"
+                            IsReasonRequired="@IsRejectReasonRequired"
+                            OnConfirm="@HandleRejectConfirm"
+                            OnCancel="@HandleRejectCancel" />
+
 </PagePermissionCheck>
 
 @code {
@@ -375,6 +385,11 @@
     [Parameter] public string ApprovalPermission { get; set; } = string.Empty;
     [Parameter] public Func<Task<bool>>? OnApprove { get; set; }
     [Parameter] public Func<Task<bool>>? OnReject { get; set; }
+    
+    // 駁回確認 Modal 相關參數
+    [Parameter] public bool ShowRejectReasonInput { get; set; } = true;
+    [Parameter] public bool IsRejectReasonRequired { get; set; } = false;
+    [Parameter] public Func<string, Task<bool>>? OnRejectWithReason { get; set; }
     // 移除 GetApprovalStatus，改用 GetStatusMessage
     
     // ===== 內部狀態 =====
@@ -390,6 +405,10 @@
     // 審核狀態
     private bool IsApproving { get; set; } = false;
     private bool IsRejecting { get; set; } = false;
+    
+    // 駁回確認 Modal
+    private RejectConfirmModalComponent? _rejectConfirmModal;
+    private bool _isRejectConfirmModalVisible = false;
     
     // 狀態訊息快取
     private string? _cachedStatusMessage;
@@ -904,39 +923,87 @@
         }
     }
     
-    private async Task HandleReject()
+    /// <summary>
+    /// 開啟駁回確認 Modal
+    /// </summary>
+    private void OpenRejectConfirmModal()
     {
-        if (OnReject == null || IsApproving || IsRejecting) return;
+        if (IsApproving || IsRejecting) return;
         
+        _isRejectConfirmModalVisible = true;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理駁回確認 Modal 的確認事件
+    /// </summary>
+    private async Task HandleRejectConfirm(string rejectReason)
+    {
         try
         {
             IsRejecting = true;
             StateHasChanged();
             
-            var success = await OnReject();
+            bool success;
+            
+            // 優先使用帶駁回原因的委派
+            if (OnRejectWithReason != null)
+            {
+                success = await OnRejectWithReason(rejectReason);
+            }
+            // 向下相容：使用原有的 OnReject 委派
+            else if (OnReject != null)
+            {
+                success = await OnReject();
+            }
+            else
+            {
+                await ShowErrorMessage("未設定駁回處理程序");
+                return;
+            }
             
             if (success)
             {
-                await ShowSuccessMessage("審核駁回");
-                
-                // 重新載入實體資料以確保狀態同步
+                // 成功訊息由具體的處理方法（如 HandlePurchaseOrderRejectWithReason）顯示
+                // 這裡只重新載入實體資料以確保狀態同步
                 await RefreshEntityAsync();
             }
             else
             {
-                await ShowErrorMessage("審核駁回失敗");
+                // 失敗訊息也由具體的處理方法顯示，這裡不重複顯示
+                // await ShowErrorMessage("審核駁回失敗");
             }
         }
         catch (Exception ex)
         {
             await ShowErrorMessage($"審核駁回時發生錯誤：{ex.Message}");
-            LogError("HandleReject", ex);
+            LogError("HandleRejectConfirm", ex);
         }
         finally
         {
             IsRejecting = false;
             StateHasChanged();
         }
+    }
+    
+    /// <summary>
+    /// 處理駁回確認 Modal 的取消事件
+    /// </summary>
+    private Task HandleRejectCancel()
+    {
+        _isRejectConfirmModalVisible = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// 處理駁回（舊方法，保留以向下相容，但現在會開啟確認 Modal）
+    /// </summary>
+    private async Task HandleReject()
+    {
+        // 新版本：開啟駁回確認 Modal
+        OpenRejectConfirmModal();
+        await Task.CompletedTask;
     }
     
 

@@ -48,7 +48,9 @@
                           ShowApprovalSection="@ShouldShowApprovalSection()"
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
-                          OnReject="@HandlePurchaseOrderReject"
+                          OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
+                          ShowRejectReasonInput="true"
+                          IsRejectReasonRequired="true"
                           FormHeaderContent="@WarningMessage"
                           CustomActionButtons="@CustomActionButtons">
 </GenericEditModalComponent>
@@ -1207,7 +1209,58 @@
     }
     
     /// <summary>
-    /// 處理採購單審核駁回
+    /// 處理採購單審核駁回（帶駁回原因）
+    /// </summary>
+    private async Task<bool> HandlePurchaseOrderRejectWithReason(string rejectReason)
+    {
+        try
+        {
+            if (!PurchaseOrderId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法審核：採購單ID不存在");
+                return false;
+            }
+            
+            // 駁回原因已從 Modal 中獲得，不需要再次確認
+            
+            // 取得當前使用者ID
+            var currentUserId = await GetCurrentUserIdAsync();
+            if (!currentUserId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得當前使用者資訊");
+                return false;
+            }
+            
+            // 呼叫服務進行駁回
+            var result = await PurchaseOrderService.RejectOrderAsync(PurchaseOrderId.Value, currentUserId.Value, rejectReason);
+            
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("採購單已駁回");
+                // 重新載入資料以更新界面
+                if (editModalComponent != null)
+                {
+                    await editModalComponent.RefreshEntityAsync();
+                }
+                return true;
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "駁回失敗");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseOrderRejectWithReason), GetType(), 
+                additionalData: $"採購單審核駁回失敗 - OrderId: {PurchaseOrderId}");
+            await NotificationService.ShowErrorAsync($"審核駁回時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// 處理採購單審核駁回（舊版本，保留向下相容）
     /// </summary>
     private async Task<bool> HandlePurchaseOrderReject()
     {
