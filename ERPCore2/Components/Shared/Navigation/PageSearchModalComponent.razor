@@ -19,7 +19,7 @@
                     </h5>
                     <div class="ms-auto d-flex align-items-center gap-3">
                         <small class="text-white">
-                            <kbd>Alt</kbd> + <kbd>S</kbd> 開啟 | <kbd>ESC</kbd> 關閉
+                            <kbd>Alt</kbd> + <kbd>S</kbd> 開啟 | <kbd>↑</kbd><kbd>↓</kbd> 選取 | <kbd>Enter</kbd> 確認 | <kbd>ESC</kbd> 關閉
                         </small>
                         <button type="button" class="btn-close btn-close-white" @onclick="Close" aria-label="關閉"></button>
                     </div>
@@ -53,18 +53,44 @@
                         {
                             <div class="search-results-section">
                                 <h6 class="mb-3">
-                                    <i class="bi bi-grid-fill me-2"></i>
+                                    <i class="bi bi-list-ul me-2"></i>
                                     搜尋結果 (共 @searchResults.Count 個功能)
                                 </h6>
-                                <div class="row">
-                                    @foreach (var item in searchResults)
+                                <div class="search-results-list">
+                                    @for (int i = 0; i < searchResults.Count; i++)
                                     {
-                                        <div class="col-lg-4 col-md-6 mb-3">
-                                            <div class="search-result-card">
-                                                <NavigationCard Item="@item" 
-                                                              ShowRoute="true" 
-                                                              ShowActionButton="false"
-                                                              OnCardClick="HandleNavigationCardClick" />
+                                        var index = i;
+                                        var item = searchResults[i];
+                                        var isSelected = index == selectedIndex;
+                                        
+                                        <div class="search-result-item @(isSelected ? "selected" : "")" 
+                                             id="search-result-@index"
+                                             @onclick="@(() => HandleNavigationCardClick(item))">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <span class="result-arrow">›</span>
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span class="result-name">@item.Name</span>
+                                                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                                                        {
+                                                            <span class="result-description text-muted">@item.Description</span>
+                                                        }
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        @if (!string.IsNullOrWhiteSpace(item.Route))
+                                                        {
+                                                            <small class="result-route text-muted">
+                                                                <i class="bi bi-link-45deg me-1"></i>@item.Route
+                                                            </small>
+                                                        }
+                                                        @if (!string.IsNullOrWhiteSpace(item.Category))
+                                                        {
+                                                            <small class="result-category">
+                                                                <span class="badge bg-secondary">@item.Category</span>
+                                                            </small>
+                                                        }
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     }
@@ -116,6 +142,7 @@
     private string searchTerm = "";
     private bool hasSearched = false;
     private bool _isDisposed = false;
+    private int selectedIndex = -1; // 目前選中的項目索引
     
     // 防抖計時器
     private System.Threading.Timer? _searchDebounceTimer;
@@ -150,6 +177,7 @@
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
+        selectedIndex = -1; // 重置選取
         await IsVisibleChanged.InvokeAsync(true);
         StateHasChanged();
     }
@@ -167,7 +195,7 @@
     // ===== 私有方法 =====
 
     /// <summary>
-    /// 處理鍵盤事件（支援 ESC 關閉）
+    /// 處理鍵盤事件（支援 ESC 關閉、方向鍵選取、Enter 確認）
     /// </summary>
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
@@ -175,6 +203,35 @@
         {
             // ESC 關閉 Modal
             await Close();
+        }
+        else if (e.Key == "ArrowDown" || e.Key == "Down")
+        {
+            // 向下移動選取
+            if (searchResults.Any())
+            {
+                selectedIndex = (selectedIndex + 1) % searchResults.Count;
+                await ScrollToSelectedItem();
+                StateHasChanged();
+            }
+        }
+        else if (e.Key == "ArrowUp" || e.Key == "Up")
+        {
+            // 向上移動選取
+            if (searchResults.Any())
+            {
+                selectedIndex = selectedIndex <= 0 ? searchResults.Count - 1 : selectedIndex - 1;
+                await ScrollToSelectedItem();
+                StateHasChanged();
+            }
+        }
+        else if (e.Key == "Enter")
+        {
+            // Enter 導航到選中的項目
+            if (selectedIndex >= 0 && selectedIndex < searchResults.Count)
+            {
+                var selectedItem = searchResults[selectedIndex];
+                await HandleNavigationCardClick(selectedItem);
+            }
         }
     }
 
@@ -206,6 +263,7 @@
         {
             searchResults.Clear();
             hasSearched = false;
+            selectedIndex = -1; // 重置選取
         }
         else
         {
@@ -213,6 +271,9 @@
                 .Where(item => !item.IsParent && !string.IsNullOrEmpty(item.Route) && item.Route != "#")
                 .ToList();
             hasSearched = true;
+            
+            // 自動選取第一個項目
+            selectedIndex = searchResults.Any() ? 0 : -1;
         }
         
         await Task.CompletedTask;
@@ -226,6 +287,7 @@
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
+        selectedIndex = -1; // 重置選取
         StateHasChanged();
     }
 
@@ -259,6 +321,25 @@
     private async Task HandleBackdropClick()
     {
         await Close();
+    }
+
+    /// <summary>
+    /// 滾動到選中的項目
+    /// </summary>
+    private async Task ScrollToSelectedItem()
+    {
+        if (selectedIndex >= 0 && !_isDisposed)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", 
+                    $"document.getElementById('search-result-{selectedIndex}')?.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }})");
+            }
+            catch
+            {
+                // 忽略滾動錯誤
+            }
+        }
     }
 
     // ===== 資源清理 =====

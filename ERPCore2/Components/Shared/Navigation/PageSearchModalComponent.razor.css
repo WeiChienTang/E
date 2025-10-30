@@ -131,9 +131,94 @@
 /* 搜尋結果列表 */
 .search-results-list {
     margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 /* 搜尋結果項目 */
+.search-result-item {
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    background-color: var(--bg-primary, #ffffff);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.search-result-item:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    transform: translateX(4px);
+}
+
+.search-result-item.selected {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.search-result-item.selected .text-muted {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.search-result-item.selected .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+}
+
+.search-result-item.selected i {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 結果項目內容 */
+.result-arrow {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+    line-height: 1;
+}
+
+.search-result-item.selected .result-arrow {
+    color: white;
+}
+
+.result-name {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.result-description {
+    font-size: 0.9rem;
+}
+
+.result-route {
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.result-category .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* 搜尋結果卡片容器 (已廢棄，保留以防需要) */
+.search-result-card {
+    height: 100%;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.search-result-card.selected {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    transform: scale(1.02);
+}
+
+/* 舊的搜尋結果項目樣式 (已被上方新樣式覆蓋) */
 .search-result-item {
     padding: 1rem;
     margin-bottom: 0.5rem;
