@@ -8,7 +8,6 @@
 }
 
 .nav-section-title small {
-    font-size: 0.85rem;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     color: white !important;
@@ -49,11 +48,7 @@
 }
 
 /* 響應式調整 */
-@media (max-width: 768px) {
-    .nav-section-divider small {
-        font-size: 0.7rem;
-    }
-    
+@media (max-width: 768px) {    
     .nav-item .nav-link {
         padding: 0.4rem 0.8rem;
         gap: 0.4rem;

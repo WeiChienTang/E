@@ -1,0 +1,294 @@
+/* ===== 快速功能表容器 ===== */
+.quick-action-menu {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+/* ===== 主按鈕 ===== */
+.quick-action-main-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-alt) 100%);
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1053;
+}
+
+.quick-action-main-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.quick-action-main-btn:active {
+    transform: scale(0.95);
+}
+
+/* 展開時主按鈕旋轉 */
+.quick-action-menu.expanded .quick-action-main-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    transform: rotate(90deg);
+}
+
+.quick-action-menu.expanded .quick-action-main-btn:hover {
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* ===== 功能選單項目容器 ===== */
+.quick-action-items {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 12px;
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1052;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 單個功能項目 ===== */
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    min-width: 160px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 28px;
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    position: relative;
+    animation: itemSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+}
+
+/* 為每個項目添加延遲動畫 */
+.quick-action-item:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.quick-action-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.quick-action-item:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.quick-action-item:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+@keyframes itemSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.quick-action-item:hover {
+    background-color: var(--primary-blue);
+    color: white;
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.quick-action-item .bi {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.quick-action-label {
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* ===== 徽章（通知數量） ===== */
+.quick-action-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== 遮罩層 ===== */
+.quick-action-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 1040;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 平板 */
+@media (max-width: 768px) {
+    .quick-action-menu {
+        bottom: 20px;
+        right: 20px;
+    }
+
+    .quick-action-main-btn {
+        width: 52px;
+        height: 52px;
+        font-size: 22px;
+    }
+
+    .quick-action-item {
+        min-width: 140px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .quick-action-item .bi {
+        font-size: 16px;
+    }
+}
+
+/* 手機 */
+@media (max-width: 640px) {
+    .quick-action-menu {
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .quick-action-main-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+
+    /* 手機版改為從下往上展開 */
+    .quick-action-items {
+        flex-direction: column-reverse;
+    }
+
+    .quick-action-item {
+        min-width: 120px;
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 24px;
+    }
+
+    .quick-action-item .bi {
+        font-size: 15px;
+    }
+
+    .quick-action-label {
+        font-size: 12px;
+    }
+
+    /* 手機版項目動畫調整 */
+    @keyframes itemSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .quick-action-item:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* 小型手機 */
+@media (max-width: 360px) {
+    .quick-action-menu {
+        bottom: 12px;
+        right: 12px;
+    }
+
+    .quick-action-main-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+}
+
+/* ===== 深色主題支援（預留） ===== */
+@media (prefers-color-scheme: dark) {
+    .quick-action-item {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    .quick-action-item:hover {
+        background-color: var(--primary-blue);
+        color: white;
+    }
+}
+
+/* ===== 可訪問性 ===== */
+.quick-action-main-btn:focus,
+.quick-action-item:focus {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+/* 減少動畫偏好 */
+@media (prefers-reduced-motion: reduce) {
+    .quick-action-main-btn,
+    .quick-action-item,
+    .quick-action-items,
+    .quick-action-backdrop {
+        animation: none;
+        transition: none;
+    }
+}

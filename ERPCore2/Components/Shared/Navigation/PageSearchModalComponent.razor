@@ -17,20 +17,15 @@
                         <i class="bi bi-search me-2"></i>
                         頁面搜尋
                     </h5>
-                    <div class="ms-auto d-flex align-items-center gap-3">
-                        <small class="text-white">
-                            <kbd>Alt</kbd> + <kbd>S</kbd> 開啟 | <kbd>↑</kbd><kbd>↓</kbd> 選取 | <kbd>Enter</kbd> 確認 | <kbd>ESC</kbd> 關閉
-                        </small>
-                        <button type="button" class="btn-close btn-close-white" @onclick="Close" aria-label="關閉"></button>
-                    </div>
+                    <button type="button" class="btn-close btn-close-white" @onclick="Close" aria-label="關閉"></button>
                 </div>
-                <div class="modal-body pt-0">
+                <div class="modal-body pt-3">
                     @* 搜尋輸入框 *@
                     <div class="search-input-wrapper mb-3">
                         <i class="bi bi-search search-icon"></i>
                         <input @ref="searchInput"
                                type="text" 
-                               class="form-control form-control-lg ps-5" 
+                               class="form-control ps-5" 
                                placeholder="輸入功能名稱或關鍵字搜尋..."
                                @bind="searchTerm"
                                @bind:event="oninput"
@@ -100,7 +95,7 @@
                         else if (hasSearched)
                         {
                             <div class="search-empty-state text-center py-5">
-                                <i class="bi bi-search-heart fs-1 text-muted d-block mb-3"></i>
+                                <i class="bi bi-emoji-frown fs-1 text-muted d-block mb-3"></i>
                                 <p class="text-muted mb-0">沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
                             </div>
                         }

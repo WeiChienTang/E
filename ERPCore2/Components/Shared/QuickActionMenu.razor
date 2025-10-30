@@ -1,0 +1,211 @@
+@inject IJSRuntime JSRuntime
+
+@* 快速功能表 - 右下角浮動按鈕 *@
+
+@* 遮罩層（點擊關閉選單） - 必須在最前面渲染 *@
+@if (isExpanded)
+{
+    <div class="quick-action-backdrop" @onclick="CloseMenu"></div>
+}
+
+<div class="quick-action-menu @(isExpanded ? "expanded" : "")">
+    
+    @* 主按鈕 *@
+    <button class="quick-action-main-btn" 
+            @onclick="ToggleMenu" 
+            title="快速功能 (Alt + Q)"
+            aria-label="快速功能選單"
+            aria-expanded="@isExpanded">
+        <span class="bi @(isExpanded ? "bi-x-lg" : "bi-lightning-charge-fill")"></span>
+    </button>
+
+    @* 展開的功能選單 *@
+    @if (isExpanded)
+    {
+        <div class="quick-action-items">
+            
+            @* 頁面搜尋 *@
+            <button class="quick-action-item" 
+                    @onclick="HandlePageSearchClick"
+                    title="頁面搜尋 (Alt + S)">
+                <span class="bi bi-search"></span>
+                <span class="quick-action-label">頁面搜尋</span>
+            </button>
+
+            @* 預留：通知中心 *@
+            @if (showNotifications)
+            {
+                <button class="quick-action-item" 
+                        @onclick="HandleNotificationsClick"
+                        title="通知中心">
+                    <span class="bi bi-bell"></span>
+                    <span class="quick-action-label">通知</span>
+                    @if (notificationCount > 0)
+                    {
+                        <span class="quick-action-badge">@notificationCount</span>
+                    }
+                </button>
+            }
+
+            @* 預留：最近頁面 *@
+            @if (showRecentPages)
+            {
+                <button class="quick-action-item" 
+                        @onclick="HandleRecentPagesClick"
+                        title="最近使用">
+                    <span class="bi bi-clock-history"></span>
+                    <span class="quick-action-label">最近使用</span>
+                </button>
+            }
+
+            @* 預留：快速設定 *@
+            @if (showSettings)
+            {
+                <button class="quick-action-item" 
+                        @onclick="HandleSettingsClick"
+                        title="快速設定">
+                    <span class="bi bi-gear"></span>
+                    <span class="quick-action-label">設定</span>
+                </button>
+            }
+
+        </div>
+    }
+
+</div>
+
+@code {
+    // ===== 參數 =====
+    
+    /// <summary>
+    /// 當點擊頁面搜尋時觸發
+    /// </summary>
+    [Parameter]
+    public EventCallback OnPageSearchClick { get; set; }
+
+    /// <summary>
+    /// 是否顯示通知功能（預留）
+    /// </summary>
+    [Parameter]
+    public bool showNotifications { get; set; } = false;
+
+    /// <summary>
+    /// 是否顯示最近頁面功能（預留）
+    /// </summary>
+    [Parameter]
+    public bool showRecentPages { get; set; } = false;
+
+    /// <summary>
+    /// 是否顯示設定功能（預留）
+    /// </summary>
+    [Parameter]
+    public bool showSettings { get; set; } = false;
+
+    // ===== 狀態 =====
+    
+    private bool isExpanded = false;
+    private int notificationCount = 0; // 預留：通知數量
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // 註冊 Alt+Q 快捷鍵來開關快速功能表
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    document.addEventListener('keydown', function(e) {
+                        if (e.altKey && e.key.toLowerCase() === 'q') {
+                            e.preventDefault();
+                            const btn = document.querySelector('.quick-action-main-btn');
+                            if (btn) btn.click();
+                        }
+                    });
+                ");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[QuickActionMenu] 註冊快捷鍵失敗: {ex.Message}");
+            }
+        }
+    }
+
+    // ===== 事件處理 =====
+
+    /// <summary>
+    /// 切換選單展開/收起
+    /// </summary>
+    private void ToggleMenu()
+    {
+        isExpanded = !isExpanded;
+    }
+
+    /// <summary>
+    /// 關閉選單
+    /// </summary>
+    private void CloseMenu()
+    {
+        isExpanded = false;
+    }
+
+    /// <summary>
+    /// 處理頁面搜尋點擊
+    /// </summary>
+    private async Task HandlePageSearchClick()
+    {
+        CloseMenu();
+        if (OnPageSearchClick.HasDelegate)
+        {
+            await OnPageSearchClick.InvokeAsync();
+        }
+    }
+
+    /// <summary>
+    /// 處理通知點擊（預留）
+    /// </summary>
+    private async Task HandleNotificationsClick()
+    {
+        CloseMenu();
+        await JSRuntime.InvokeVoidAsync("alert", "通知功能開發中...");
+    }
+
+    /// <summary>
+    /// 處理最近頁面點擊（預留）
+    /// </summary>
+    private async Task HandleRecentPagesClick()
+    {
+        CloseMenu();
+        await JSRuntime.InvokeVoidAsync("alert", "最近使用功能開發中...");
+    }
+
+    /// <summary>
+    /// 處理設定點擊（預留）
+    /// </summary>
+    private async Task HandleSettingsClick()
+    {
+        CloseMenu();
+        await JSRuntime.InvokeVoidAsync("alert", "快速設定功能開發中...");
+    }
+
+    // ===== 公開方法 =====
+
+    /// <summary>
+    /// 從外部開啟選單
+    /// </summary>
+    public void Open()
+    {
+        isExpanded = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 從外部關閉選單
+    /// </summary>
+    public void Close()
+    {
+        isExpanded = false;
+        StateHasChanged();
+    }
+}

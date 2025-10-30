@@ -275,21 +275,6 @@
     .search-results-container {
         max-height: 300px;
     }
-
-    .page-search-modal .modal-header {
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: flex-start;
-    }
-
-    .page-search-modal .modal-header .ms-auto {
-        margin-left: 0 !important;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        width: 100%;
-        justify-content: space-between;
-    }
 }
 
 /* Modal 動畫增強 */

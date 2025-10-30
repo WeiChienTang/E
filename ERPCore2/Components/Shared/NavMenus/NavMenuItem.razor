@@ -20,7 +20,10 @@
                     <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
                         <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> 
                         @Text
-                        <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                        @if (ShowDropdownArrow)
+                        {
+                            <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                        }
                     </div>
                     <div class="nav-menu-dropdown-content @(isDropdownOpen ? "show" : "")">
                         @DropdownItems
@@ -35,7 +38,10 @@
                 <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
                     <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> 
                     @Text
-                    <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                    @if (ShowDropdownArrow)
+                    {
+                        <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                    }
                 </div>
                 <div class="nav-menu-dropdown-content @(isDropdownOpen ? "show" : "")">
                     @DropdownItems
@@ -82,6 +88,11 @@
     /// 菜單識別鍵，用於權限收集
     /// </summary>
     [Parameter] public string? MenuKey { get; set; }
+
+    /// <summary>
+    /// 是否顯示下拉箭頭（預設為 true）
+    /// </summary>
+    [Parameter] public bool ShowDropdownArrow { get; set; } = true;
 
     /// <summary>
     /// 是否有下拉選單項目
