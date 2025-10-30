@@ -761,6 +761,14 @@
             {
                 await InitializeFormFieldsAsync();
             })
+            .WithRefreshDependentComponents(async supplier =>
+            {
+                // 當廠商被編輯後，重新載入該廠商的商品資料
+                if (purchaseOrderDetailManager != null)
+                {
+                    await purchaseOrderDetailManager.RefreshAvailableProductsAsync();
+                }
+            })
             .Build();
     }
     

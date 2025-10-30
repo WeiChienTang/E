@@ -429,15 +429,25 @@ function handleEscapeKey(event) {
         return;
     }
     
-    // 檢查是否有顯示的 modal
+    // 檢查是否有顯示的 modal 或 QuickActionMenu
     var visibleModals = document.querySelectorAll('.modal.show');
-    if (visibleModals.length === 0) {
+    var visibleQuickActionMenu = document.querySelector('.quick-action-menu.expanded');
+    
+    // 如果兩者都沒有顯示，直接返回
+    if (visibleModals.length === 0 && !visibleQuickActionMenu) {
         return;
     }
     
-    // 找到最上層的 modal（z-index 最大的）
-    var topModal = getTopMostModal(visibleModals);
-    if (!topModal) {
+    // 優先處理 QuickActionMenu（因為它是浮動在最上層的）
+    var topElement = null;
+    if (visibleQuickActionMenu) {
+        topElement = visibleQuickActionMenu;
+    } else if (visibleModals.length > 0) {
+        // 找到最上層的 modal（z-index 最大的）
+        topElement = getTopMostModal(visibleModals);
+    }
+    
+    if (!topElement) {
         return;
     }
     
@@ -446,7 +456,7 @@ function handleEscapeKey(event) {
     
     // 檢查是否在輸入元素上且內容不為空（有實際輸入內容時才阻止 ESC）
     var shouldBlockEsc = false;
-    if (activeElement && topModal.contains(activeElement)) {
+    if (activeElement && topElement.contains(activeElement)) {
         if (activeElement.tagName === 'TEXTAREA' && activeElement.value && activeElement.value.trim().length > 0) {
             shouldBlockEsc = true;
         } else if (activeElement.tagName === 'INPUT' && 
@@ -466,7 +476,7 @@ function handleEscapeKey(event) {
     event.preventDefault();
     event.stopPropagation();
     
-    // 調用最上層 Modal 對應的 C# 方法處理 ESC 鍵
+    // 調用最上層 Modal/QuickActionMenu 對應的 C# 方法處理 ESC 鍵
     if (escKeyDotNetHelpers.length > 0) {
         var topModalHelper = escKeyDotNetHelpers[escKeyDotNetHelpers.length - 1];
         try {
@@ -475,22 +485,26 @@ function handleEscapeKey(event) {
                     // ESC 鍵處理成功
                 })
                 .catch(function(error) {
-                    // 嘗試直接關閉模態視窗作為備用方案
+                    // 嘗試直接關閉模態視窗作為備用方案（只對 .modal 元素）
                     try {
-                        var cancelButton = topModal.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
-                        if (cancelButton && typeof cancelButton.click === 'function') {
-                            cancelButton.click();
+                        if (topElement.classList.contains('modal')) {
+                            var cancelButton = topElement.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
+                            if (cancelButton && typeof cancelButton.click === 'function') {
+                                cancelButton.click();
+                            }
                         }
                     } catch (fallbackError) {
                         // 備用方案失敗，忽略錯誤
                     }
                 });
         } catch (error) {
-            // 調用失敗，嘗試備用方案
+            // 調用失敗，嘗試備用方案（只對 .modal 元素）
             try {
-                var cancelButton = topModal.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
-                if (cancelButton && typeof cancelButton.click === 'function') {
-                    cancelButton.click();
+                if (topElement.classList.contains('modal')) {
+                    var cancelButton = topElement.querySelector('[data-bs-dismiss="modal"], .btn-secondary');
+                    if (cancelButton && typeof cancelButton.click === 'function') {
+                        cancelButton.click();
+                    }
                 }
             } catch (fallbackError) {
                 // 備用方案失敗，忽略錯誤

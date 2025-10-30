@@ -73,6 +73,13 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     public Action? StateHasChangedCallback { get; set; }
     
     /// <summary>
+    /// 重新整理相依組件的回調函式（在實體儲存成功後執行）
+    /// 用於通知其他組件重新載入與該實體相關的資料
+    /// 例如：編輯廠商後，通知商品管理器重新載入該廠商的商品
+    /// </summary>
+    public Func<TRelatedEntity, Task>? RefreshDependentComponentsCallback { get; set; }
+    
+    /// <summary>
     /// 預填值字典 - 用於新增模式時預設值
     /// </summary>
     public Dictionary<string, object?> PrefilledValues { get; private set; } = new();
@@ -188,6 +195,12 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
             if (CustomPostProcessCallback != null)
             {
                 await CustomPostProcessCallback(savedEntity);
+            }
+            
+            // 🔑 重新整理相依組件（在關閉 Modal 之前執行，確保資料已更新）
+            if (RefreshDependentComponentsCallback != null)
+            {
+                await RefreshDependentComponentsCallback(savedEntity);
             }
             
             // 自動選擇新實體 (如果原本沒有選擇且啟用自動選擇)

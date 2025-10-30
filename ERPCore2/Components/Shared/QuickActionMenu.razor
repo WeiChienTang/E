@@ -1,4 +1,5 @@
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 @* 快速功能表 - 右下角浮動按鈕 *@
 
@@ -105,6 +106,12 @@
     
     private bool isExpanded = false;
     private int notificationCount = 0; // 預留：通知數量
+    
+    // ESC 鍵支援
+    private DotNetObjectReference<QuickActionMenu>? _escKeyDotNetRef;
+    private bool _isEscKeyListenerActive = false;
+    private bool _isDisposed = false;
+    private readonly object _escKeyLock = new object();
 
     // ===== 生命週期 =====
 
@@ -128,6 +135,34 @@
             catch (Exception ex)
             {
                 Console.WriteLine($"[QuickActionMenu] 註冊快捷鍵失敗: {ex.Message}");
+            }
+        }
+        
+        // ESC 鍵監聽器管理
+        if (isExpanded)
+        {
+            bool shouldSetup;
+            lock (_escKeyLock)
+            {
+                shouldSetup = !_isEscKeyListenerActive;
+            }
+            
+            if (shouldSetup)
+            {
+                await SetupEscKeyListenerAsync();
+            }
+        }
+        else
+        {
+            bool shouldCleanup;
+            lock (_escKeyLock)
+            {
+                shouldCleanup = _isEscKeyListenerActive;
+            }
+            
+            if (shouldCleanup)
+            {
+                await CleanupEscKeyListenerAsync();
             }
         }
     }
@@ -207,5 +242,161 @@
     {
         isExpanded = false;
         StateHasChanged();
+    }
+
+    // ===== ESC 鍵支援方法 =====
+
+    private async Task SetupEscKeyListenerAsync()
+    {
+        try
+        {
+            lock (_escKeyLock)
+            {
+                if (_isEscKeyListenerActive && _escKeyDotNetRef != null)
+                {
+                    return;
+                }
+                
+                _isEscKeyListenerActive = true;
+            }
+            
+            lock (_escKeyLock)
+            {
+                _escKeyDotNetRef = DotNetObjectReference.Create(this);
+            }
+            
+            await JSRuntime.InvokeVoidAsync("setupEscKeyListener", _escKeyDotNetRef);
+        }
+        catch (Exception ex)
+        {
+            lock (_escKeyLock)
+            {
+                _isEscKeyListenerActive = false;
+            }
+            LogError("SetupEscKeyListener", ex);
+        }
+    }
+    
+    private async Task CleanupEscKeyListenerAsync()
+    {
+        DotNetObjectReference<QuickActionMenu>? refToDispose = null;
+        
+        lock (_escKeyLock)
+        {
+            if (!_isEscKeyListenerActive)
+            {
+                return;
+            }
+            
+            _isEscKeyListenerActive = false;
+            refToDispose = _escKeyDotNetRef;
+            _escKeyDotNetRef = null;
+        }
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener");
+            await Task.Delay(200);
+            
+            if (refToDispose != null)
+            {
+                try
+                {
+                    refToDispose.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 對象已被釋放，這是正常的
+                }
+                catch (Exception ex)
+                {
+                    LogError($"DotNetObjectReference dispose warning (safe to ignore): {ex.Message}", ex);
+                }
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Blazor 連接已斷開，這是正常的
+        }
+        catch (TaskCanceledException)
+        {
+            // 任務被取消，這是正常的
+        }
+        catch (Exception ex)
+        {
+            LogError("CleanupEscKeyListener", ex);
+        }
+    }
+    
+    [JSInvokable]
+    public async Task HandleEscapeKey()
+    {
+        try
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+            
+            if (isExpanded)
+            {
+                CloseMenu();
+                StateHasChanged();
+                await Task.CompletedTask;
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // 忽略已釋放物件的錯誤
+        }
+        catch (InvalidOperationException)
+        {
+            // 忽略無效操作錯誤
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ESC Error: {ex.Message}");
+        }
+    }
+    
+    private void LogError(string method, Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine($"[QuickActionMenu.{method}] 錯誤：{ex.Message}");
+    }
+
+    // ===== 資源清理 =====
+
+    public void Dispose()
+    {
+        try
+        {
+            DotNetObjectReference<QuickActionMenu>? refToDispose = null;
+            
+            lock (_escKeyLock)
+            {
+                _isDisposed = true;
+                _isEscKeyListenerActive = false;
+                refToDispose = _escKeyDotNetRef;
+                _escKeyDotNetRef = null;
+            }
+            
+            refToDispose?.Dispose();
+            
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await CleanupEscKeyListenerAsync();
+                }
+                catch
+                {
+                    // 忽略清理過程中的錯誤
+                }
+            });
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
     }
 }

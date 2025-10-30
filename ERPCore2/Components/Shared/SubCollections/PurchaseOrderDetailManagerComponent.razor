@@ -456,6 +456,16 @@ else
             AvailableProducts = new List<Product>();
         }
     }
+    
+    /// <summary>
+    /// 公開方法：重新載入可用商品（供父組件呼叫）
+    /// 當廠商資料被編輯後，父組件可以呼叫此方法來重新載入該廠商的商品
+    /// </summary>
+    public async Task RefreshAvailableProductsAsync()
+    {
+        await LoadAvailableProductsAsync();
+        StateHasChanged();
+    }
 
     /// <summary>
     /// 從現有明細資料載入到 ProductItems

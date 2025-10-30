@@ -224,6 +224,17 @@ public class RelatedEntityManagerBuilder<TRelatedEntity> where TRelatedEntity : 
     }
     
     /// <summary>
+    /// 設定重新整理相依組件回調
+    /// 用於在實體儲存後通知其他組件重新載入相關資料
+    /// 例如：編輯廠商後，通知商品管理器重新載入該廠商的商品
+    /// </summary>
+    public RelatedEntityManagerBuilder<TRelatedEntity> WithRefreshDependentComponents(Func<TRelatedEntity, Task> callback)
+    {
+        _manager.RefreshDependentComponentsCallback = callback;
+        return this;
+    }
+    
+    /// <summary>
     /// 設定按鈕樣式
     /// </summary>
     public RelatedEntityManagerBuilder<TRelatedEntity> WithButtonStyle(string variant = "OutlinePrimary", string size = "Small")
