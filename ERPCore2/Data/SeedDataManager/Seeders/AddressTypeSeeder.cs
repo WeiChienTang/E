@@ -22,13 +22,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var addressTypes = new[]
             {
                 new AddressType { 
-                    TypeName = "公司地址", 
-                    Description = "公司營業地址",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new AddressType { 
                     TypeName = "通訊地址", 
                     Description = "通訊聯絡地址",
                     CreatedAt = DateTime.Now,
@@ -36,29 +29,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new AddressType { 
-                    TypeName = "帳單地址", 
-                    Description = "帳單寄送地址",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new AddressType { 
                     TypeName = "送貨地址", 
                     Description = "商品送貨地址",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new AddressType { 
-                    TypeName = "倉庫地址", 
-                    Description = "倉庫或儲存地址",
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System",
-                    Status = EntityStatus.Active
-                },
-                new AddressType { 
-                    TypeName = "工廠地址", 
-                    Description = "生產工廠地址",
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     Status = EntityStatus.Active

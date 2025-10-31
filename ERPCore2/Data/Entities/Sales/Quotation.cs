@@ -40,12 +40,12 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal DiscountAmount { get; set; } = 0;
 
-        [Display(Name = "付款條件")]
-        [MaxLength(200, ErrorMessage = "付款條件不可超過200個字元")]
+        [Display(Name = "付款方式")]
+        [MaxLength(200, ErrorMessage = "付款方式不可超過200個字元")]
         public string? PaymentTerms { get; set; }
 
-        [Display(Name = "交貨條件")]
-        [MaxLength(200, ErrorMessage = "交貨條件不可超過200個字元")]
+        [Display(Name = "交貨方式")]
+        [MaxLength(200, ErrorMessage = "交貨方式不可超過200個字元")]
         public string? DeliveryTerms { get; set; }
 
         [Display(Name = "報價說明")]
