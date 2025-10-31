@@ -38,9 +38,6 @@
     // Modal 處理器
     private ModalHandler<Customer, GenericIndexPageComponent<Customer, ICustomerService>> modalHandler = default!;
     
-    // 選項清單
-    private List<CustomerType> customerTypes = new();
-    
     // 欄位配置
     private CustomerFieldConfiguration fieldConfiguration = default!;
     
@@ -63,11 +60,8 @@
             
             await InitializeBreadcrumbsAsync();
             
-            // 載入客戶類型資料
-            await LoadCustomerTypesAsync();
-            
-            // 建立欄位配置（在載入客戶類型後，並傳遞 NotificationService）
-            fieldConfiguration = new CustomerFieldConfiguration(customerTypes, NotificationService);
+            // 建立欄位配置（並傳遞 NotificationService）
+            fieldConfiguration = new CustomerFieldConfiguration(NotificationService);
             
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
@@ -113,22 +107,6 @@
             await NotificationService.ShowErrorAsync("載入客戶資料失敗");
             // 設定安全的預設值
             return new List<Customer>();
-        }
-    }
-
-    // 載入客戶類型資料
-    private async Task LoadCustomerTypesAsync()
-    {
-        try
-        {
-            customerTypes = await CustomerService.GetCustomerTypesAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypesAsync), GetType(), additionalData: "載入客戶類型資料失敗");
-            await NotificationService.ShowErrorAsync("載入客戶類型資料失敗");
-            // 設定安全的預設值
-            customerTypes = new List<CustomerType>();
         }
     }
 

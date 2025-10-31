@@ -28,11 +28,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Customers.AnyAsync())
                 return; // 客戶資料已存在
 
-            // 取得客戶類型
-            var vipCustomerType = await context.CustomerTypes.FirstOrDefaultAsync(ct => ct.TypeName == "VIP客戶");
-            var generalCustomerType = await context.CustomerTypes.FirstOrDefaultAsync(ct => ct.TypeName == "一般客戶");
-            var potentialCustomerType = await context.CustomerTypes.FirstOrDefaultAsync(ct => ct.TypeName == "潛在客戶");
-
             var customers = new[]
             {
                 new Customer
@@ -41,7 +36,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "台灣科技股份有限公司",
                     ContactPerson = "張經理",
                     TaxNumber = "12345678",
-                    CustomerTypeId = vipCustomerType?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-30),
                     CreatedBy = "System"
@@ -52,7 +46,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "精密機械工業有限公司",
                     ContactPerson = "李副理",
                     TaxNumber = "23456789",
-                    CustomerTypeId = vipCustomerType?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-25),
                     CreatedBy = "System"
@@ -63,7 +56,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "全球貿易商行",
                     ContactPerson = "王主任",
                     TaxNumber = "34567890",
-                    CustomerTypeId = generalCustomerType?.Id ?? 2,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-20),
                     CreatedBy = "System"

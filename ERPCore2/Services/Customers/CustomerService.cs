@@ -37,7 +37,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
-                    .Include(c => c.CustomerType)
                     .AsQueryable()
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
@@ -55,7 +54,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
-                    .Include(c => c.CustomerType)
                     .FirstOrDefaultAsync(c => c.Id == id);
             }
             catch (Exception ex)
@@ -74,7 +72,6 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
-                    .Include(c => c.CustomerType)
                     .Where(c => ((c.Code != null && c.Code.Contains(searchTerm)) ||
                                 (c.CompanyName != null && c.CompanyName.Contains(searchTerm)) ||
                                 (c.ContactPerson != null && c.ContactPerson.Contains(searchTerm)) ||
@@ -137,18 +134,8 @@ namespace ERPCore2.Services
                         .Where(c => c.Id != entity.Id) // 排除自己
                         .AnyAsync();
 
-                    if (isCompanyNameDuplicate)
-                        errors.Add("公司名稱已存在");
-                }
-
-                // 檢查客戶類型是否存在
-                if (entity.CustomerTypeId.HasValue)
-                {
-                    var customerTypeExists = await context.CustomerTypes
-                        .AnyAsync(ct => ct.Id == entity.CustomerTypeId.Value && ct.Status == EntityStatus.Active);
-
-                    if (!customerTypeExists)
-                        errors.Add("指定的客戶類型不存在或已停用");
+                if (isCompanyNameDuplicate)
+                    errors.Add("公司名稱已存在");
                 }
 
                 if (errors.Any())
@@ -179,7 +166,6 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
-                    .Include(c => c.CustomerType)
                     .FirstOrDefaultAsync(c => c.Code == customerCode);
             }
             catch (Exception ex)
@@ -198,7 +184,6 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
-                    .Include(c => c.CustomerType)
                     .Where(c => c.CompanyName != null && c.CompanyName.Contains(companyName))
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
@@ -264,23 +249,6 @@ namespace ERPCore2.Services
 
         #region 關聯資料查詢
 
-        public async Task<List<CustomerType>> GetCustomerTypesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerTypes
-                    .Where(ct => ct.Status == EntityStatus.Active)
-                    .OrderBy(ct => ct.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCustomerTypesAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
         public async Task<List<ContactType>> GetContactTypesAsync()
         {
             try
@@ -314,28 +282,6 @@ namespace ERPCore2.Services
                 throw;
             }
         }
-        
-        public async Task<List<CustomerType>> SearchCustomerTypesAsync(string keyword)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(keyword))
-                    return new List<CustomerType>();
-
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.CustomerTypes
-                    .Where(ct => ct.Status == EntityStatus.Active && 
-                                ct.TypeName.Contains(keyword))
-                    .OrderBy(ct => ct.TypeName)
-                    .Take(10) // 限制結果數量
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SearchCustomerTypesAsync), GetType(), _logger, new { Keyword = keyword });
-                throw;
-            }
-        }
 
         #endregion
 
@@ -349,7 +295,6 @@ namespace ERPCore2.Services
                 customer.CompanyName = null;
                 customer.ContactPerson = null;
                 customer.TaxNumber = null;
-                customer.CustomerTypeId = null;
                 customer.Status = EntityStatus.Active;
             }
             catch (Exception ex)

@@ -34,23 +34,14 @@ namespace ERPCore2.Services
         #region 關聯資料查詢
         
         /// <summary>
-        /// 取得客戶類型清單
-        /// </summary>
-        Task<List<CustomerType>> GetCustomerTypesAsync();
-        
-        /// <summary>
         /// 取得聯絡類型清單
         /// </summary>
         Task<List<ContactType>> GetContactTypesAsync();
-          /// <summary>
+        
+        /// <summary>
         /// 取得地址類型清單
         /// </summary>
         Task<List<AddressType>> GetAddressTypesAsync();
-        
-        /// <summary>
-        /// 根據關鍵字搜尋客戶類型
-        /// </summary>
-        Task<List<CustomerType>> SearchCustomerTypesAsync(string keyword);
         
         #endregion
 

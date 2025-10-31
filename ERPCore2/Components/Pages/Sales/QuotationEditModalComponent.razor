@@ -5,6 +5,7 @@
 @inject IProductService ProductService
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
@@ -775,20 +776,91 @@
     }
 
     /// <summary>
-    /// 處理列印
+    /// 處理列印事件
     /// </summary>
     private async Task HandlePrint()
     {
         try
         {
-            // TODO: 實作報價單列印邏輯
-            await NotificationService.ShowInfoAsync("報價單列印功能開發中...");
+            // 使用通用 Helper 進行完整驗證（實體、ID）
+            // 報價單不需要核准即可列印
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
+                entity: editModalComponent?.Entity,
+                entityId: QuotationId,
+                isApproved: true, // 報價單不需審核
+                entityName: "報價單",
+                requireApproval: false
+            );
+            
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync(errorMessage);
+                return;
+            }
+            
+            // 直接執行列印，使用預設設定
+            await HandleDirectPrint(null);
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
-                additionalData: new { QuotationId = QuotationId });
-            await NotificationService.ShowErrorAsync("列印報價單時發生錯誤");
+                additionalData: $"報價單列印處理失敗 - ID: {QuotationId}");
+            await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
+    /// </summary>
+    private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
+    {
+        try
+        {
+            if (!QuotationId.HasValue)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存報價單後再進行列印");
+                return;
+            }
+
+            // 驗證列印配置
+            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(printConfig);
+            if (!isValid)
+            {
+                await NotificationService.ShowWarningAsync(errorMessage);
+                return;
+            }
+
+            // 使用通用 Helper 建立列印 URL（新版路由）
+            var printUrl = ReportPrintHelper.BuildPrintUrl(
+                baseUrl: NavigationManager.BaseUri,
+                reportType: "sales-report/quotation",
+                documentId: QuotationId.Value,
+                configuration: printConfig,
+                autoprint: true
+            );
+
+            // 使用通用 Helper 執行列印（隱藏 iframe 方式）
+            var success = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
+                printUrl: printUrl,
+                jsRuntime: JSRuntime,
+                iframeId: "printFrame"
+            );
+            
+            if (success)
+            {
+                // 可選：顯示成功訊息
+                // await NotificationService.ShowSuccessAsync("報價單列印已送出");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync("列印執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
+                additionalData: $"報價單直接列印失敗 - ID: {QuotationId}, Config: {printConfig?.ReportName}");
+            await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
         }
     }
 }

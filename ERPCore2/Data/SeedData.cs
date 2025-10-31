@@ -75,7 +75,6 @@ namespace ERPCore2.Data
                     new PaymentMethodSeeder(),      // 付款方式
                     new PrepaymentTypeSeeder(),     // 預收付款項類型
                     new BankSeeder(),               // 銀行別
-                    new CustomerTypeSeeder(),       // 客戶類型
                     new SupplierTypeSeeder(),       // 廠商類型
                     new PaperSettingSeeder(),       // 紙張設定
                     new PrinterConfigurationSeeder(), // 印表機配置

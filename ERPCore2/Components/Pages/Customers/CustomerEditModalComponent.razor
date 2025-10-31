@@ -1,8 +1,5 @@
 @* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICustomerService CustomerService
-@inject IAddressService AddressService
-@inject IContactService ContactService
-@inject ICustomerTypeService CustomerTypeService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @using ERPCore2.Helpers
@@ -21,76 +18,14 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
-                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCustomerData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
-                          AfterSave="@SaveSubCollectionsAsync"
                           SaveSuccessMessage="@(CustomerId.HasValue ? "客戶更新成功" : "客戶新增成功")"
                           SaveFailureMessage="客戶儲存失敗"
                           RequiredPermission="Customer.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel"
-                          OnFieldChanged="@OnFieldValueChanged">
-    <AdditionalSections>
-        <div class="row mt-4">
-            <div class="col-md-6">
-                @* 聯絡方式管理 *@
-                <ContactManagerComponent TContactEntity="Contact" 
-                                        TParentEntity="Customer"
-                                        Items="@customerContacts"
-                                        Options="@contactTypeOptions"
-                                        ParentEntityId="@(CustomerId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                        Title="聯絡方式"
-                                        ItemDisplayName="聯絡方式"
-                                        TypeDisplayName="聯絡類型"
-                                        ValueDisplayName="聯絡內容"
-                                        ValuePlaceholder="請輸入聯絡內容"
-                                        GetTypeId="@(contact => contact.ContactTypeId)"
-                                        GetContactValue="@(contact => contact.ContactValue)"
-                                        GetOptionId="@(option => option.Id)"
-                                        GetOptionDisplayText="@(option => ((ContactType)option).TypeName)"
-                                        SetTypeId="@((contact, typeId) => contact.ContactTypeId = typeId)"
-                                        SetContactValue="@((contact, value) => contact.ContactValue = value)"
-                                        SetParentId="@((contact, parentId) => { contact.OwnerType = ContactOwnerTypes.Customer; contact.OwnerId = parentId; })"
-                                        ItemsChanged="@OnContactsChanged"
-                                        OnDeletedDetailsChanged="@HandleDeletedContactsChanged" />
-            </div>
-            <div class="col-md-6">
-                @* 地址管理 *@
-                <AddressManagerComponent TAddressEntity="Address" 
-                                        TParentEntity="Customer"
-                                        Items="@customerAddresses"
-                                        Options="@addressTypeOptions"
-                                        ParentEntityId="@(CustomerId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                        Title="地址資訊"
-                                        ItemDisplayName="地址"
-                                        TypeDisplayName="地址類型"
-                                        GetTypeId="@(address => address.AddressTypeId)"
-                                        GetAddress="@(address => address.AddressLine)"
-                                        GetOptionId="@(option => option.Id)"
-                                        GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
-                                        SetTypeId="@((address, typeId) => address.AddressTypeId = typeId)"
-                                        SetAddress="@((address, value) => address.AddressLine = value)"
-                                        SetParentId="@((address, parentId) => { address.OwnerType = AddressOwnerTypes.Customer; address.OwnerId = parentId; })"
-                                        ItemsChanged="@OnAddressesChanged"
-                                        OnDeletedDetailsChanged="@HandleDeletedAddressesChanged" />
-            </div>
-        </div>
-    </AdditionalSections>
+                          OnCancel="@HandleCancel">
 </GenericEditModalComponent>
-
-@* 客戶類型編輯 Modal *@
-<CustomerTypeEditModalComponent @ref="customerTypeEditModal"
-                               IsVisible="@customerTypeModalManager.IsModalVisible"
-                               IsVisibleChanged="@customerTypeModalManager.HandleModalVisibilityChangedAsync"
-                               CustomerTypeId="@customerTypeModalManager.SelectedEntityId"
-                               OnCustomerTypeSaved="@OnCustomerTypeSavedWrapper"
-                               OnCancel="@customerTypeModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -104,33 +39,12 @@
     private GenericEditModalComponent<Customer, ICustomerService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    
-    // 客戶類型編輯 Modal 相關變數 - 使用泛型管理器
-    private CustomerTypeEditModalComponent? customerTypeEditModal;
-    private RelatedEntityModalManager<CustomerType> customerTypeModalManager = default!;
-    
-    // 資料模型
-    private List<Contact> customerContacts = new();
-    private List<Address> customerAddresses = new();
-    
-    // 選項清單
-    private List<CustomerType> customerTypes = new();
-    private List<ContactType> contactTypes = new();
-    private List<AddressType> addressTypes = new();
-    
-    // 子集合組件用的轉換清單
-    private List<ERPCore2.Data.BaseEntity> contactTypeOptions = new();
-    private List<ERPCore2.Data.BaseEntity> addressTypeOptions = new();
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化客戶類型 Modal 管理器
-            InitializeCustomerTypeModalManager();
-            
-            await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
         catch (Exception)
@@ -144,35 +58,10 @@
         // 當 CustomerId 參數變更時，重新初始化表單欄位
         if (formFields != null) // 只有在已經初始化過的情況下才重新設定
         {
-            await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
         
         await base.OnParametersSetAsync();
-    }
-
-    /// <summary>
-    /// 初始化客戶類型 Modal 管理器
-    /// </summary>
-    private void InitializeCustomerTypeModalManager()
-    {
-        customerTypeModalManager = new RelatedEntityManagerBuilder<CustomerType>(NotificationService, "客戶類型")
-            .WithPropertyName(nameof(Customer.CustomerTypeId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(customerTypeId => 
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.CustomerTypeId = customerTypeId;
-                }
-            })
-            .WithCustomPostProcess(async customerType => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
     }
 
     private async Task HandleSaveSuccess()
@@ -208,29 +97,11 @@
                     Status = EntityStatus.Active
                 };
 
-                // 初始化空的子集合
-                customerContacts = new List<Contact>();
-                customerAddresses = new List<Address>();
-
                 return newCustomer;
             }
 
             // 編輯模式
             var customer = await CustomerService.GetByIdAsync(CustomerId.Value);
-            
-            if (customer != null)
-            {
-                // 載入聯絡方式
-                customerContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Customer, customer.Id);
-                
-                // 載入地址
-                customerAddresses = await AddressService.GetAddressesByOwnerAsync(AddressOwnerTypes.Customer, customer.Id);
-            }
-            else
-            {
-                customerContacts = new List<Contact>();
-                customerAddresses = new List<Address>();
-            }
 
             return customer;
         }
@@ -238,32 +109,6 @@
         {
             await NotificationService.ShowErrorAsync($"載入客戶資料時發生錯誤：{ex.Message}");
             return null;
-        }
-    }
-
-    private async Task LoadAdditionalDataAsync()
-    {
-        try
-        {
-            // 載入可選擇的客戶類型列表
-            customerTypes = await CustomerTypeService.GetActiveAsync();
-            
-            // 載入聯絡類型
-            contactTypes = await CustomerService.GetContactTypesAsync();
-            contactTypeOptions = contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
-            
-            // 載入地址類型
-            addressTypes = await CustomerService.GetAddressTypesAsync();
-            addressTypeOptions = addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("載入客戶編輯相關資料時發生錯誤");
-            customerTypes = new List<CustomerType>();
-            contactTypes = new List<ContactType>();
-            addressTypes = new List<AddressType>();
-            contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
-            addressTypeOptions = new List<ERPCore2.Data.BaseEntity>();
         }
     }
 
@@ -290,7 +135,7 @@
                 FieldType = FormFieldType.Text,
                 Placeholder = "請輸入公司名稱",
                 IsRequired = false,
-                MaxLength = 100,
+                MaxLength = 20,
                 HelpText = "客戶的完整公司名稱（公司名稱或聯絡人至少需填寫一項）"
             },
             new()
@@ -300,7 +145,7 @@
                 FieldType = FormFieldType.Text,
                 Placeholder = "請輸入聯絡人姓名",
                 IsRequired = false,
-                MaxLength = 50,
+                MaxLength = 10,
                 HelpText = "主要聯絡人姓名（公司名稱或聯絡人至少需填寫一項）"
             },
             new()
@@ -315,13 +160,126 @@
             },
             new()
             {
-                PropertyName = nameof(Customer.CustomerTypeId),
-                Label = "客戶類型",
-                FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇客戶類型",
-                MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
-                HelpText = "輸入客戶類型名稱進行搜尋，或直接選擇",
-                ActionButtons = await GetCustomerTypeActionButtonsAsync()
+                PropertyName = nameof(Customer.ResponsiblePerson),
+                Label = "負責人",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入負責人姓名",
+                IsRequired = false,
+                MaxLength = 10,
+                HelpText = "公司負責人姓名"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.JobTitle),
+                Label = "職稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入職稱",
+                IsRequired = false,
+                MaxLength = 10,
+                HelpText = "聯絡人職稱"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.ContactPhone),
+                Label = "聯絡電話",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入聯絡電話",
+                IsRequired = false,
+                MaxLength = 20,
+                HelpText = "聯絡人或是公司聯絡電話"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.MobilePhone),
+                Label = "行動電話",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入行動電話",
+                IsRequired = false,
+                MaxLength = 20,
+                HelpText = "聯絡人行動電話"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.Fax),
+                Label = "傳真",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入傳真號碼",
+                IsRequired = false,
+                MaxLength = 20,
+                HelpText = "公司傳真號碼"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.Email),
+                Label = "信箱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入電子郵件",
+                IsRequired = false,
+                MaxLength = 50,
+                HelpText = "聯絡人電子郵件地址"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.Website),
+                Label = "公司網址",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入公司網址",
+                IsRequired = false,
+                MaxLength = 50,
+                ContainerCssClass = "col-4",
+                HelpText = "公司官方網站網址"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.ContactAddress),
+                Label = "聯絡地址",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入聯絡地址",
+                IsRequired = false,
+                MaxLength = 50,
+                HelpText = "公司聯絡地址",
+                ContainerCssClass = "col-4"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.ShippingAddress),
+                Label = "貨運地址",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入貨運地址",
+                IsRequired = false,
+                MaxLength = 50,
+                HelpText = "貨物運送地址",
+                ContainerCssClass = "col-4"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.PaymentMethod),
+                Label = "付款方式",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入付款方式",
+                IsRequired = false,
+                MaxLength = 10,
+                HelpText = "客戶的付款方式（例如：現金、支票、匯款等）"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.PaymentTerms),
+                Label = "付款條件",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入付款條件",
+                IsRequired = false,
+                MaxLength = 50,
+                HelpText = "付款條件說明（例如：月結30天、貨到付款等）"
+            },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Customer.CompanyContactPhone),
+                Label = "聯絡電話",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入聯絡電話",
+                IsRequired = false,
+                MaxLength = 20,
+                HelpText = "負責人或是公司聯絡電話"
             },
 
             FormFieldConfigurationHelper.CreateRemarksField<Customer>()
@@ -331,9 +289,22 @@
         {
             { nameof(Customer.Code), "基本資訊" },
             { nameof(Customer.CompanyName), "基本資訊" },
-            { nameof(Customer.ContactPerson), "基本資訊" },
-            { nameof(Customer.TaxNumber), "基本資訊" },
-            { nameof(Customer.CustomerTypeId), "基本資訊" },            
+            { nameof(Customer.ResponsiblePerson), "基本資訊" },       
+            { nameof(Customer.CompanyContactPhone), "基本資訊" },
+            { nameof(Customer.TaxNumber), "基本資訊" },         
+            { nameof(Customer.Fax), "基本資訊" },   
+            { nameof(Customer.Website), "基本資訊" },
+            { nameof(Customer.ContactAddress), "基本資訊" },
+            { nameof(Customer.ShippingAddress), "基本資訊" },
+            
+            { nameof(Customer.ContactPerson), "聯絡人資訊" },
+            { nameof(Customer.JobTitle), "聯絡人資訊" },
+            { nameof(Customer.ContactPhone), "聯絡人資訊" },
+            { nameof(Customer.MobilePhone), "聯絡人資訊" },            
+            { nameof(Customer.Email), "聯絡人資訊" },           
+
+            { nameof(Customer.PaymentMethod), "付款資訊" },
+            { nameof(Customer.PaymentTerms), "付款資訊" },
             { nameof(Customer.Remarks), "其他資訊" }
         };
         }
@@ -346,240 +317,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    // 子集合變更事件處理
-    private Task OnContactsChanged(List<Contact> updatedContacts)
-    {
-        customerContacts = updatedContacts;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private Task OnAddressesChanged(List<Address> updatedAddresses)
-    {
-        customerAddresses = updatedAddresses;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// 處理已刪除的聯絡方式ID - 實際從資料庫刪除
-    /// </summary>
-    private async Task HandleDeletedContactsChanged(List<int> deletedContactIds)
-    {
-        try
-        {
-            if (deletedContactIds?.Any() == true)
-            {
-                foreach (var contactId in deletedContactIds)
-                {
-                    await ContactService.DeleteAsync(contactId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedContactIds.Count} 個聯絡方式");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除聯絡方式時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 處理已刪除的地址ID - 實際從資料庫刪除
-    /// </summary>
-    private async Task HandleDeletedAddressesChanged(List<int> deletedAddressIds)
-    {
-        try
-        {
-            if (deletedAddressIds?.Any() == true)
-            {
-                foreach (var addressId in deletedAddressIds)
-                {
-                    await AddressService.DeleteAddressAsync(addressId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedAddressIds.Count} 個地址");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除地址時發生錯誤：{ex.Message}");
-        }
-    }
-
-    private async Task SaveSubCollectionsAsync(Customer customer)
-    {
-        try
-        {
-            // 只有在客戶ID存在時才處理子集合（新增客戶時可能ID還是0）
-            if (customer.Id <= 0)
-            {
-                return; // 新增的客戶，ID可能還沒設定，跳過子集合儲存
-            }
-
-            // 更新聯絡資訊 - 只更新或新增，不刪除
-            foreach (var contact in customerContacts)
-            {
-                contact.OwnerType = ContactOwnerTypes.Customer;
-                contact.OwnerId = customer.Id;
-                
-                if (contact.Id == 0)
-                {
-                    // 新記錄
-                    await ContactService.CreateAsync(contact);
-                }
-                else
-                {
-                    // 更新現有記錄
-                    await ContactService.UpdateAsync(contact);
-                }
-            }
-
-            // 重新加載聯絡資料以更新UI顯示
-            customerContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Customer, customer.Id);
-
-            // 更新地址資訊 - 只更新或新增，不刪除
-            foreach (var address in customerAddresses)
-            {
-                address.OwnerType = AddressOwnerTypes.Customer;
-                address.OwnerId = customer.Id;
-                
-                if (address.Id == 0)
-                {
-                    // 新記錄
-                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Customer, customer.Id, address);
-                }
-                else
-                {
-                    // 更新現有記錄
-                    await AddressService.UpdateAddressAsync(address);
-                }
-            }
-
-            // 重新加載地址資料以更新UI顯示
-            customerAddresses = await AddressService.GetCustomerAddressesAsync(customer.Id);
-
-            StateHasChanged(); // 通知UI更新
-        }
-        catch (Exception)
-        {
-            // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
-            // 可以考慮使用 Logger 記錄錯誤
-        }
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(Customer.CustomerTypeId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["TypeName"] = searchTerm,
-                    ["Status"] = 1 // EntityStatus.Active
-                }
-            }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(Customer.CustomerTypeId), customerTypes.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Customer.CustomerTypeId), "TypeName" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Customer.CustomerTypeId), "Id" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Customer.CustomerTypeId), customerTypeModalManager }
-        };
-    }
-
-    /// <summary>
-    /// 包裝客戶類型儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnCustomerTypeSavedWrapper(CustomerType savedCustomerType)
-    {
-        await customerTypeModalManager.HandleEntitySavedAsync(savedCustomerType, shouldAutoSelect: true);
-    }
-
-    /// <summary>
-    /// 使用統一 Helper 產生客戶類型操作按鈕
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetCustomerTypeActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            customerTypeModalManager, 
-            nameof(Customer.CustomerTypeId)
-        );
-    }
-
-    /// <summary>
-    /// 開啟客戶類型編輯 Modal - 使用泛型管理器
-    /// </summary>
-    private async Task OpenCustomerTypeModal(int? customerTypeId)
-    {
-        await customerTypeModalManager.OpenModalAsync(customerTypeId);
-    }
-
-    /// <summary>
-    /// 處理欄位值變更事件 - 使用統一 Helper
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 使用統一 Helper 處理客戶類型欄位變更
-            if (fieldChange.PropertyName == nameof(Customer.CustomerTypeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    customerTypeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
     }
 
     /// <summary>

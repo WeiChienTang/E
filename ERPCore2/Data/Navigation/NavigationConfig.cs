@@ -161,16 +161,6 @@ public static class NavigationConfig
                         RequiredPermission = "Customer.Read",
                         SearchKeywords = new List<string> { "客戶維護", "客戶資料", "客戶管理", "聯絡人" }
                     },
-                    new NavigationItem
-                    {
-                        Name = "類型",
-                        Description = "管理客戶類型分類",
-                        Route = "/customer-types",
-                        IconClass = "",
-                        Category = "客戶關係管理",
-                        RequiredPermission = "CustomerType.Read",
-                        SearchKeywords = new List<string> { "客戶類型", "customer type" }
-                    }
                 }
             },
 

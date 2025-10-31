@@ -10,7 +10,6 @@ namespace ERPCore2.Data.Context
       {
       }
       public DbSet<Customer> Customers { get; set; }
-      public DbSet<CustomerType> CustomerTypes { get; set; }
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
@@ -137,17 +136,6 @@ namespace ERPCore2.Data.Context
                   
                   // 客戶相關
                   modelBuilder.Entity<Customer>(entity =>
-                  {
-                        // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.CustomerType)
-                        .WithMany(ct => ct.Customers)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  modelBuilder.Entity<CustomerType>(entity =>
                   {
                         // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
                         entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity

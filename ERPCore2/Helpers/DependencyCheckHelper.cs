@@ -523,38 +523,6 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 檢查客戶類型是否可以刪除
-        /// </summary>
-        public static async Task<DependencyCheckResult> CheckCustomerTypeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int customerTypeId)
-        {
-            try
-            {
-                using var context = await contextFactory.CreateDbContextAsync();
-                var result = new DependencyCheckResult { CanDelete = true };
-
-                // 檢查客戶
-                var customerCount = await context.Customers
-                    .CountAsync(c => c.CustomerTypeId == customerTypeId);
-
-                if (customerCount > 0)
-                {
-                    result.CanDelete = false;
-                    result.DependentEntities.Add($"客戶({customerCount}筆)");
-                }
-
-                return result;
-            }
-            catch (Exception)
-            {
-                return new DependencyCheckResult 
-                { 
-                    CanDelete = false, 
-                    ErrorMessage = "檢查客戶類型依賴關係時發生錯誤" 
-                };
-            }
-        }
-
-        /// <summary>
         /// 檢查尺寸是否可以刪除
         /// </summary>
         public static async Task<DependencyCheckResult> CheckSizeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int sizeId)

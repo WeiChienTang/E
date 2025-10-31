@@ -120,11 +120,11 @@
 /* 表單控制項 - 極度壓縮以節省空間 */
 ::deep .form-control,
 ::deep .form-select {
-    padding: 0.3rem 0.5rem !important; /* 極度縮小內邊距 */
+    padding: 0.25rem 0.5rem !important; /* 更小的內邊距 */
     border-radius: 6px !important; /* 縮小圓角 */
     background-color: white !important;
     transition: all 0.2s ease !important;
-    min-height: 30px !important; /* 進一步縮小高度 */
+    min-height: 28px !important; /* 更小的高度 */
     width: 100% !important; /* 確保欄位填滿容器寬度 */
     font-size: 1rem !important; /* 稍微縮小字體 */
 }
@@ -314,7 +314,7 @@
     ::deep .form-control,
     ::deep .form-select {
         font-size: 1rem !important;
-        padding: 0.35rem 0.5rem !important; /* 進一步縮小小螢幕上的內邊距 */
+        padding: 0.25rem 0.5rem !important; /* 小螢幕保持一致 */
     }
     
     /* 激進壓縮：表單區段間距 */
@@ -424,8 +424,8 @@
     /* 最大化壓縮：表單控制項 */
     ::deep .form-control,
     ::deep .form-select {
-        padding: 0.3rem 0.4rem !important;
-        min-height: 28px !important; /* 進一步縮小高度 */
+        padding: 0.2rem 0.4rem !important;
+        min-height: 26px !important; /* 極小螢幕最小高度 */
         font-size: 1rem !important;
     }
     

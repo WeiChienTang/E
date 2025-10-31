@@ -165,6 +165,14 @@ app.UseAuthorization();
 // 加入權限檢查中間件
 app.UseMiddleware<PermissionCheckMiddleware>();
 
+// 設定靜態檔案存取 - 提供 Resources 資料夾的圖片
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Resources")),
+    RequestPath = "/Resources"
+});
+
 // 加入反偽造令牌中間件
 app.UseAntiforgery();
 

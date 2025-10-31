@@ -45,7 +45,6 @@ namespace ERPCore2.Data
 
             // 客戶相關服務
             services.AddScoped<ICustomerService, CustomerService>();
-            services.AddScoped<ICustomerTypeService, CustomerTypeService>();
 
             // 共用資料服務
             services.AddScoped<IContactTypeService, ContactTypeService>();
@@ -177,6 +176,8 @@ namespace ERPCore2.Data
             services.AddScoped<ISalesOrderReportService, SalesOrderReportService>();
             // 銷貨退回單報表服務
             services.AddScoped<ISalesReturnReportService, SalesReturnReportService>();
+            // 報價單報表服務
+            services.AddScoped<IQuotationReportService, QuotationReportService>();
             // 產品條碼報表服務
             services.AddScoped<IProductBarcodeReportService, ProductBarcodeReportService>();
         }

@@ -10,12 +10,10 @@ namespace ERPCore2.FieldConfiguration
     /// </summary>
     public class CustomerFieldConfiguration : BaseFieldConfiguration<Customer>
     {
-        private readonly List<CustomerType> _customerTypes;
         private readonly INotificationService? _notificationService;
         
-        public CustomerFieldConfiguration(List<CustomerType> customerTypes, INotificationService? notificationService = null)
+        public CustomerFieldConfiguration(INotificationService? notificationService = null)
         {
-            _customerTypes = customerTypes;
             _notificationService = notificationService;
         }
         
@@ -66,33 +64,14 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(Customer.CustomerTypeId),
-                        new FieldDefinition<Customer>
-                        {
-                            PropertyName = "CustomerType.TypeName", // 用於表格顯示
-                            FilterPropertyName = nameof(Customer.CustomerTypeId), // 用於篩選器
-                            DisplayName = "客戶類型",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 4,
-                            FilterOrder = 4,
-                            Options = _customerTypes.Select(ct => new SelectOption 
-                            { 
-                                Text = ct.TypeName, 
-                                Value = ct.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Customer.CustomerTypeId), c => c.CustomerTypeId)
-                        }
-                    },
-                    {
                         nameof(Customer.TaxNumber),
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.TaxNumber),
                             DisplayName = "統一編號",
                             FilterPlaceholder = "輸入統一編號搜尋",
-                            TableOrder = 5,
-                            FilterOrder = 5,
+                            TableOrder = 4,
+                            FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true)
                         }
@@ -104,7 +83,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: new { CustomerTypesCount = _customerTypes?.Count ?? 0 });
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType());
                 });
 
                 // 通知使用者
