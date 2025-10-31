@@ -360,13 +360,13 @@ namespace ERPCore2.Services
             var customers = customerIds.Any()
                 ? await context.Customers
                     .Where(c => customerIds.Contains(c.Id))
-                    .ToDictionaryAsync(c => c.Id, c => c.CompanyName)
+                    .ToDictionaryAsync(c => c.Id, c => c.CompanyName ?? "")
                 : new Dictionary<int, string>();
 
             var suppliers = supplierIds.Any()
                 ? await context.Suppliers
                     .Where(s => supplierIds.Contains(s.Id))
-                    .ToDictionaryAsync(s => s.Id, s => s.CompanyName)
+                    .ToDictionaryAsync(s => s.Id, s => s.CompanyName ?? "")
                 : new Dictionary<int, string>();
 
             // 填充 RelatedPartyName

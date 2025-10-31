@@ -100,8 +100,9 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("客戶代碼為必填");
                 
-                if (string.IsNullOrWhiteSpace(entity.CompanyName))
-                    errors.Add("公司名稱為必填");
+                // 檢查公司名稱或聯絡人至少要有一個
+                if (string.IsNullOrWhiteSpace(entity.CompanyName) && string.IsNullOrWhiteSpace(entity.ContactPerson))
+                    errors.Add("公司名稱或聯絡人至少需填寫一項");
 
                 // 檢查長度限制
                 if (entity.Code?.Length > 20)
@@ -198,7 +199,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Customers
                     .Include(c => c.CustomerType)
-                    .Where(c => c.CompanyName.Contains(companyName))
+                    .Where(c => c.CompanyName != null && c.CompanyName.Contains(companyName))
                     .OrderBy(c => c.CompanyName)
                     .ToListAsync();
             }
@@ -345,9 +346,9 @@ namespace ERPCore2.Services
             try
             {
                 customer.Code = string.Empty;
-                customer.CompanyName = string.Empty;
-                customer.ContactPerson = string.Empty;
-                customer.TaxNumber = string.Empty;
+                customer.CompanyName = null;
+                customer.ContactPerson = null;
+                customer.TaxNumber = null;
                 customer.CustomerTypeId = null;
                 customer.Status = EntityStatus.Active;
             }
@@ -362,7 +363,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                return 2; // CustomerCode, CompanyName
+                return 2; // CustomerCode, CompanyName或ContactPerson (至少一個)
             }
             catch (Exception ex)
             {
@@ -380,7 +381,8 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(customer.Code))
                     count++;
 
-                if (!string.IsNullOrWhiteSpace(customer.CompanyName))
+                // 公司名稱或聯絡人至少要有一個
+                if (!string.IsNullOrWhiteSpace(customer.CompanyName) || !string.IsNullOrWhiteSpace(customer.ContactPerson))
                     count++;
 
                 return count;

@@ -428,19 +428,6 @@
             },
             new()
             {
-                Title = "有效期限",
-                PropertyName = nameof(Quotation.ValidUntilDate),
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "120px",
-                CustomTemplate = item =>
-                {
-                    var quotation = item as Quotation;
-                    var dateStr = quotation?.ValidUntilDate?.ToString("yyyy/MM/dd") ?? "-";
-                    return @<span style="font-size: 0.875rem;">@dateStr</span>;
-                }
-            },
-            new()
-            {
                 Title = "總金額",
                 PropertyName = nameof(Quotation.TotalAmount),
                 ColumnType = InteractiveColumnType.Custom,

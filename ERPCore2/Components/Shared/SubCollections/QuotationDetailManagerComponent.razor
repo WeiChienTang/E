@@ -1,0 +1,872 @@
+@* 報價單明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
+
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Helpers
+
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+
+@typeparam TMainEntity where TMainEntity : BaseEntity
+@typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
+
+@if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+{
+    <div class="alert alert-info text-center" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        請先選擇客戶後再進行報價明細管理
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <InteractiveTableComponent TItem="QuotationItem" 
+                                      Items="@QuotationItems"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      IsReadOnly="@IsReadOnly"
+                                      ShowRowNumbers="false"
+                                      EmptyMessage="@EmptyMessage"
+                                      ShowBuiltInActions="true"
+                                      ShowBuiltInDeleteButton="true"
+                                      DeleteButtonIcon="bi bi-trash text-white"
+                                      DeleteButtonVariant="ButtonVariant.Danger"
+                                      DeleteButtonSize="ButtonSize.Large"
+                                      DeleteButtonTitle="刪除"
+                                      IsDeleteDisabled="@((item) => IsReadOnly)"
+                                      OnItemDelete="@HandleItemDelete"
+                                      ActionsColumnWidth = "60px"/>
+        </div>
+
+        <div class="card-footer">
+            <div class="d-flex justify-content-end gap-2">
+                <GenericButtonComponent Text="清除明細"
+                                      Variant="ButtonVariant.Danger"
+                                      OnClick="ClearAllDetails"
+                                      IsDisabled="@IsReadOnly" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ===== 基本參數 =====
+    [Parameter] public List<Product> Products { get; set; } = new List<Product>();
+    [Parameter] public List<Unit> Units { get; set; } = new List<Unit>();
+    [Parameter] public EventCallback<List<QuotationItem>> OnQuotationItemsChanged { get; set; }
+    
+    // ===== 客戶過濾參數 =====
+    [Parameter] public int? SelectedCustomerId { get; set; }
+    
+    // ===== 泛型參數 =====
+    [Parameter] public TMainEntity? MainEntity { get; set; }
+    [Parameter] public List<TDetailEntity> ExistingDetails { get; set; } = new List<TDetailEntity>();
+    [Parameter] public EventCallback<List<TDetailEntity>> OnDetailsChanged { get; set; }
+    [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
+    [Parameter] public EventCallback<QuotationItem> OnItemRemoved { get; set; }
+    
+    // ===== 欄位映射參數 =====
+    [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty;
+    [Parameter] public string QuantityPropertyName { get; set; } = "Quantity";
+    [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice";
+    [Parameter] public string DiscountPercentagePropertyName { get; set; } = "DiscountPercentage";
+    [Parameter] public string RemarksPropertyName { get; set; } = "Remarks";
+    [Parameter] public string? UnitIdPropertyName { get; set; }
+    
+    // ===== 顯示設定 =====
+    [Parameter] public string Title { get; set; } = "報價明細";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增報價商品";
+    
+    // ===== 唯讀模式參數 =====
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+
+    private List<QuotationItem> QuotationItems { get; set; } = new List<QuotationItem>();
+    private int? _previousSelectedCustomerId = null;
+    private List<int> _deletedDetailIds { get; set; } = new List<int>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExistingDetailsAsync();
+        EnsureOneEmptyRow();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        base.OnParametersSet();
+        
+        // 檢查客戶是否變更
+        bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
+        
+        // 如果客戶變更，需要重新載入所有資料
+        if (customerChanged)
+        {
+            _previousSelectedCustomerId = SelectedCustomerId;
+            
+            // 客戶變更時清空現有選項並重新載入
+            QuotationItems.Clear();
+            await LoadExistingDetailsAsync();
+            return;
+        }
+        
+        // 總是確保有一行空行可以輸入
+        EnsureOneEmptyRow();
+    }
+
+    // ===== AutoEmptyRowHelper 相關方法 =====
+    private bool IsEmptyRow(QuotationItem item)
+    {
+        return item.SelectedProduct == null;
+    }
+    
+    private QuotationItem CreateEmptyItem()
+    {
+        return new QuotationItem();
+    }
+    
+    private void EnsureOneEmptyRow()
+    {
+        AutoEmptyRowHelper.ForAny<QuotationItem>.EnsureOneEmptyRow(
+            QuotationItems, 
+            IsEmptyRow, 
+            CreateEmptyItem
+        );
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 商品選擇欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "項目名稱/規格", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "300px",
+            Tooltip = "選擇報價商品",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                var selectedValue = quotationItem.SelectedProduct?.Id.ToString() ?? "";
+                
+                // 如果是唯讀狀態，直接顯示商品名稱
+                if (IsReadOnly)
+                {
+                    var displayText = quotationItem.DisplayName;
+                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted">@displayText</span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示下拉選單
+                return @<select class="form-select form-select-sm" 
+                            value="@selectedValue"
+                            @onchange="@(async (e) => await OnProductSelectionChanged(quotationItem, e.Value?.ToString()))">
+                    <option value="">請選擇商品</option>
+                    @foreach (var product in Products)
+                    {
+                        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+                            ? $"[{product.Code}] {product.Name}"
+                            : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? "");
+                        <option value="@product.Id">@productDisplay</option>
+                    }
+                </select>;
+            }
+        });
+
+        // 單位欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "單位", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            Tooltip = "選擇報價單位",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                var selectedUnitId = quotationItem.SelectedUnit?.Id.ToString() ?? "";
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    var displayText = quotationItem.SelectedUnit?.Name ?? "無";
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted">@displayText</span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示下拉選單
+                return @<select class="form-select form-select-sm"
+                               value="@selectedUnitId"
+                               @onchange="(e) => OnUnitSelectionChanged(quotationItem, e.Value?.ToString())">
+                    <option value="">請選擇單位</option>
+                    @foreach (var unit in Units)
+                    {
+                        <option value="@unit.Id">@unit.Name</option>
+                    }
+                </select>;
+            }
+        });
+
+        // 數量欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "數量", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            Tooltip = "輸入報價數量",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                var value = quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString() : "";
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted">
+                            @(quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString("N3") : "0")
+                        </span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
+                return @<input type="number" class="form-control form-control-sm text-end" 
+                               value="@value"
+                               @oninput="(e) => OnQuantityInput(quotationItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               placeholder="" 
+                               min="0" 
+                               step="0.001" />;
+            }
+        });
+
+        // 單價欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "單價", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            Tooltip = "輸入報價單價",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                var value = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString("F2") : "";
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted">
+                            @(quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString("N2") : "0")
+                        </span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
+                return @<input type="number" class="form-control form-control-sm text-end" 
+                               value="@value"
+                               @oninput="(e) => OnUnitPriceInput(quotationItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               placeholder="" 
+                               min="0" 
+                               step="0.01" />;
+            }
+        });
+
+        // 折扣欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "折扣(%)", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            Tooltip = "輸入折扣百分比",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                var value = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString("F2") : "";
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
+                        <span class="text-muted">
+                            @(quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString("N2") : "0")
+                        </span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
+                return @<input type="number" class="form-control form-control-sm text-end" 
+                               value="@value"
+                               @oninput="(e) => OnDiscountPercentageInput(quotationItem, e.Value?.ToString())"
+                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               placeholder="" 
+                               min="0" 
+                               max="100"
+                               step="0.01" />;
+            }
+        });
+
+        // 總價欄位 (計算欄位，唯讀)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "總價", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            Tooltip = "自動計算的小計金額",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                var subtotal = quotationItem.SubtotalAmount;
+                
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@subtotal.ToString("N2")</span>
+                </div>;
+            }
+        });
+
+        // 備註欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "備註", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "150px",
+            HideOnMobile = true,
+            Tooltip = "選填。可記錄報價相關的備註資訊",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (IsReadOnly)
+                {
+                    var displayText = string.IsNullOrEmpty(quotationItem.Remarks) ? "無備註" : quotationItem.Remarks;
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted">@displayText</span>
+                    </div>;
+                }
+                
+                // 可編輯狀態，顯示輸入框
+                return @<input type="text" class="form-control form-control-sm" 
+                               value="@quotationItem.Remarks"
+                               @oninput="(e) => OnRemarksInput(quotationItem, e.Value?.ToString())"
+                               placeholder="選填..." />;
+            }
+        });
+
+        return columns;
+    }
+
+    private async Task HandleItemDelete(QuotationItem item)
+    {
+        var index = QuotationItems.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    // ===== 內部方法 =====
+    private Task LoadExistingDetailsAsync()
+    {
+        if (ExistingDetails?.Any() != true) 
+        {
+            EnsureOneEmptyRow();
+            return Task.CompletedTask;
+        }
+
+        QuotationItems.Clear();
+        
+        foreach (var detail in ExistingDetails)
+        {
+            // 轉換為正確的實體類型
+            if (detail is QuotationDetail quotationDetail)
+            {
+                var item = new QuotationItem
+                {
+                    // 直接使用 Navigation Properties
+                    SelectedProduct = quotationDetail.Product,
+                    SelectedUnit = quotationDetail.Unit,
+                    
+                    // 直接使用屬性值
+                    Quantity = quotationDetail.Quantity,
+                    UnitPrice = quotationDetail.UnitPrice,
+                    DiscountPercentage = quotationDetail.DiscountPercentage,
+                    Remarks = string.Empty,
+                    ExistingDetailEntity = detail
+                };
+                
+                QuotationItems.Add(item);
+            }
+            else
+            {
+                // 對於非 QuotationDetail 類型，保留原有的泛型邏輯作為後備
+                var productId = GetPropertyValue<int>(detail, "ProductId");
+                var product = Products.FirstOrDefault(p => p.Id == productId);
+                
+                if (product != null)
+                {
+                    var item = new QuotationItem
+                    {
+                        SelectedProduct = product,
+                        Quantity = Convert.ToDecimal(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0m),
+                        UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
+                        DiscountPercentage = Convert.ToDecimal(GetPropertyValue<object>(detail, DiscountPercentagePropertyName) ?? 0m),
+                        Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
+                        ExistingDetailEntity = detail
+                    };
+                    
+                    // 載入單位資訊
+                    if (!string.IsNullOrEmpty(UnitIdPropertyName))
+                    {
+                        var unitId = GetPropertyValue<int?>(detail, UnitIdPropertyName);
+                        if (unitId.HasValue)
+                        {
+                            item.SelectedUnit = Units.FirstOrDefault(u => u.Id == unitId.Value);
+                        }
+                    }
+                    
+                    QuotationItems.Add(item);
+                }
+            }
+        }
+        
+        EnsureOneEmptyRow();
+        return Task.CompletedTask;
+    }
+
+    private List<TDetailEntity> ConvertToDetailEntities()
+    {
+        var details = new List<TDetailEntity>();
+        
+        // 只處理非空行、有選擇商品且數量大於 0 的項目
+        foreach (var item in QuotationItems.Where(x => !IsEmptyRow(x) && 
+                                                        x.SelectedProduct != null &&
+                                                        x.Quantity > 0))
+        {
+            TDetailEntity detail;
+            
+            if (item.ExistingDetailEntity != null)
+            {
+                detail = item.ExistingDetailEntity;
+                
+                // 如果是 QuotationDetail 類型，直接設置屬性
+                if (detail is QuotationDetail quotationDetail)
+                {
+                    quotationDetail.Quantity = item.Quantity;
+                    quotationDetail.UnitPrice = item.UnitPrice;
+                    quotationDetail.DiscountPercentage = item.DiscountPercentage;
+                    
+                    if (item.SelectedUnit != null)
+                        quotationDetail.UnitId = item.SelectedUnit.Id;
+                    
+                    if (item.SelectedProduct != null)
+                        quotationDetail.ProductId = item.SelectedProduct.Id;
+                }
+                else
+                {
+                    // 對於其他類型，使用反射
+                    SetPropertyValue(detail, QuantityPropertyName, item.Quantity);
+                    SetPropertyValue(detail, UnitPricePropertyName, item.UnitPrice);
+                    SetPropertyValue(detail, DiscountPercentagePropertyName, item.DiscountPercentage);
+                    SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
+                    
+                    if (!string.IsNullOrEmpty(UnitIdPropertyName) && item.SelectedUnit != null)
+                    {
+                        SetPropertyValue(detail, UnitIdPropertyName, item.SelectedUnit.Id);
+                    }
+                }
+            }
+            else
+            {
+                detail = new TDetailEntity();
+                
+                if (MainEntity != null && !string.IsNullOrEmpty(MainEntityIdPropertyName))
+                {
+                    SetPropertyValue(detail, MainEntityIdPropertyName, MainEntity.Id);
+                }
+                
+                // 設定商品ID
+                if (item.SelectedProduct != null)
+                {
+                    SetPropertyValue(detail, "ProductId", item.SelectedProduct.Id);
+                }
+                
+                SetPropertyValue(detail, QuantityPropertyName, item.Quantity);
+                SetPropertyValue(detail, UnitPricePropertyName, item.UnitPrice);
+                SetPropertyValue(detail, DiscountPercentagePropertyName, item.DiscountPercentage);
+                SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
+                
+                if (!string.IsNullOrEmpty(UnitIdPropertyName) && item.SelectedUnit != null)
+                {
+                    SetPropertyValue(detail, UnitIdPropertyName, item.SelectedUnit.Id);
+                }
+            }
+            
+            details.Add(detail);
+        }
+        
+        return details;
+    }
+
+    private async Task NotifyDetailsChanged()
+    {
+        var details = ConvertToDetailEntities();
+        await OnDetailsChanged.InvokeAsync(details);
+        
+        // 通知已刪除的明細 ID
+        if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
+        {
+            await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
+            _deletedDetailIds.Clear();
+        }
+    }
+
+    private T? GetPropertyValue<T>(object obj, string propertyName)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        if (property == null) return default(T);
+        
+        var value = property.GetValue(obj);
+        if (value == null) return default(T);
+        
+        if (typeof(T) == typeof(object)) return (T)value;
+        
+        return (T)Convert.ChangeType(value, typeof(T));
+    }
+
+    private void SetPropertyValue(object obj, string propertyName, object? value)
+    {
+        var property = obj.GetType().GetProperty(propertyName);
+        if (property != null && property.CanWrite)
+        {
+            if (value != null && property.PropertyType != value.GetType())
+            {
+                if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+                    value = Convert.ChangeType(value, underlyingType!);
+                }
+                else
+                {
+                    value = Convert.ChangeType(value, property.PropertyType);
+                }
+            }
+            property.SetValue(obj, value);
+        }
+    }
+
+    // ===== 事件處理方法 =====
+
+    private async Task OnProductSelectionChanged(QuotationItem item, string? productIdStr)
+    {
+        if (IsReadOnly) return;
+        
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(productIdStr) || !int.TryParse(productIdStr, out var productId))
+        {
+            item.SelectedProduct = null;
+            item.SelectedUnit = null;
+        }
+        else
+        {
+            var product = Products.FirstOrDefault(p => p.Id == productId);
+            if (product != null)
+            {
+                item.SelectedProduct = product;
+                
+                // 自動設定預設單位（如果商品有預設單位）
+                if (product.Unit != null)
+                {
+                    item.SelectedUnit = product.Unit;
+                }
+            }
+        }
+        
+        // 處理自動空行邏輯
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
+            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnUnitSelectionChanged(QuotationItem item, string? unitIdStr)
+    {
+        if (IsReadOnly) return;
+        
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(unitIdStr) || !int.TryParse(unitIdStr, out var unitId))
+        {
+            item.SelectedUnit = null;
+        }
+        else
+        {
+            item.SelectedUnit = Units.FirstOrDefault(u => u.Id == unitId);
+        }
+        
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
+            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnQuantityInput(QuotationItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.Quantity = 0;
+        }
+        else if (decimal.TryParse(value, out var quantity))
+        {
+            item.Quantity = quantity;
+        }
+        
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
+            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnUnitPriceInput(QuotationItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.UnitPrice = 0;
+        }
+        else if (decimal.TryParse(value, out var unitPrice))
+        {
+            item.UnitPrice = unitPrice;
+        }
+        
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
+            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnDiscountPercentageInput(QuotationItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            item.DiscountPercentage = 0;
+        }
+        else if (decimal.TryParse(value, out var discount))
+        {
+            // 限制折扣百分比在 0-100 之間
+            item.DiscountPercentage = Math.Max(0, Math.Min(100, discount));
+        }
+        
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
+            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnRemarksInput(QuotationItem item, string? value)
+    {
+        var wasEmpty = IsEmptyRow(item);
+        item.Remarks = value ?? string.Empty;
+        
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
+            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    public async Task RemoveItemAsync(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= QuotationItems.Count) return;
+        
+        var removedItem = QuotationItems[index];
+        
+        // 記錄要刪除的資料庫實體ID
+        if (removedItem.ExistingDetailEntity != null)
+        {
+            var entityId = GetExistingDetailId(removedItem.ExistingDetailEntity);
+            if (entityId > 0)
+            {
+                _deletedDetailIds.Add(entityId);
+            }
+        }
+        
+        // 通知父組件項目即將被移除
+        if (OnItemRemoved.HasDelegate)
+        {
+            await OnItemRemoved.InvokeAsync(removedItem);
+        }
+        
+        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleItemRemove(
+            QuotationItems, removedItem, IsEmptyRow, CreateEmptyItem);
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得現有明細實體的ID
+    /// </summary>
+    private int GetExistingDetailId(TDetailEntity entity)
+    {
+        if (entity == null) return 0;
+        
+        var idProperty = entity.GetType().GetProperty("Id");
+        if (idProperty != null && idProperty.PropertyType == typeof(int))
+        {
+            var value = idProperty.GetValue(entity);
+            return value != null ? (int)value : 0;
+        }
+        
+        return 0;
+    }
+
+    /// <summary>
+    /// 清除明細
+    /// </summary>
+    private async Task ClearAllDetails()
+    {
+        var nonEmptyItems = QuotationItems.Where(item => !IsEmptyRow(item)).ToList();
+        
+        if (!nonEmptyItems.Any())
+        {
+            await NotificationService.ShowWarningAsync("沒有可清除的明細項目", "提示");
+            return;
+        }
+        
+        // 通知父組件項目即將被移除
+        if (OnItemRemoved.HasDelegate)
+        {
+            foreach (var item in nonEmptyItems)
+            {
+                await OnItemRemoved.InvokeAsync(item);
+            }
+        }
+        
+        // 記錄所有要刪除的現有明細 ID
+        foreach (var item in nonEmptyItems.Where(item => item.ExistingDetailEntity != null))
+        {
+            var entityId = GetExistingDetailId(item.ExistingDetailEntity!);
+            if (entityId > 0)
+            {
+                _deletedDetailIds.Add(entityId);
+            }
+        }
+        
+        // 從列表中移除所有非空項目
+        foreach (var item in nonEmptyItems)
+        {
+            QuotationItems.Remove(item);
+        }
+        
+        // 確保有一個空行
+        EnsureOneEmptyRow();
+        
+        await NotifyDetailsChanged();
+        
+        await NotificationService.ShowSuccessAsync($"已清除 {nonEmptyItems.Count} 項明細");
+    }
+
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        if (!AutoEmptyRowHelper.ForAny<QuotationItem>.HasSufficientItems(QuotationItems, IsEmptyRow, 1))
+        {
+            errors.Add("至少需要一個報價商品");
+        }
+        else
+        {
+            var nonEmptyItems = AutoEmptyRowHelper.ForAny<QuotationItem>.GetNonEmptyItems(QuotationItems, IsEmptyRow);
+            
+            // 檢查是否有選擇商品
+            var itemsWithoutProduct = nonEmptyItems.Where(item => item.SelectedProduct == null).ToList();
+            if (itemsWithoutProduct.Any())
+            {
+                errors.Add("所有明細都必須選擇商品");
+            }
+            
+            // 檢查數量
+            var itemsWithZeroQuantity = nonEmptyItems.Where(item => item.Quantity <= 0).ToList();
+            if (itemsWithZeroQuantity.Any())
+            {
+                var productNames = itemsWithZeroQuantity
+                    .Select(item => item.SelectedProduct?.Name ?? "未知商品")
+                    .ToList();
+                errors.Add($"以下商品的數量必須大於0：{string.Join("、", productNames)}");
+            }
+            
+            // 檢查單價
+            var itemsWithZeroPrice = nonEmptyItems.Where(item => item.UnitPrice <= 0).ToList();
+            if (itemsWithZeroPrice.Any())
+            {
+                var productNames = itemsWithZeroPrice
+                    .Select(item => item.SelectedProduct?.Name ?? "未知商品")
+                    .ToList();
+                errors.Add($"以下商品的單價必須大於0：{string.Join("、", productNames)}");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
+    }
+
+    public class QuotationItem
+    {
+        public Product? SelectedProduct { get; set; }
+        public Unit? SelectedUnit { get; set; }
+        public decimal Quantity { get; set; } = 0;
+        public decimal UnitPrice { get; set; } = 0;
+        public decimal DiscountPercentage { get; set; } = 0;
+        public string Remarks { get; set; } = string.Empty;
+        public TDetailEntity? ExistingDetailEntity { get; set; }
+        
+        // === 計算屬性 ===
+        public decimal SubtotalAmount => Math.Round(Quantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
+        
+        // === SearchableSelect 相關屬性 ===
+        public string ProductSearchValue { get; set; } = string.Empty;
+        public List<Product> FilteredProducts { get; set; } = new();
+        public bool ShowProductDropdown { get; set; } = false;
+        public int SelectedProductIndex { get; set; } = -1;
+        
+        // === 顯示名稱 ===
+        public string DisplayName
+        {
+            get
+            {
+                if (SelectedProduct == null) return string.Empty;
+                
+                var parts = new List<string>();
+                if (!string.IsNullOrEmpty(SelectedProduct.Code))
+                    parts.Add($"[{SelectedProduct.Code}]");
+                if (!string.IsNullOrEmpty(SelectedProduct.Name))
+                    parts.Add(SelectedProduct.Name);
+                
+                return string.Join(" ", parts);
+            }
+        }
+    }
+}

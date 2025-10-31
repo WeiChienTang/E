@@ -193,7 +193,7 @@
             // 準備客戶選項
             var customerOptions = availableCustomers.Select(c => new SelectOption
             {
-                Text = c.CompanyName,
+                Text = c.CompanyName ?? "",
                 Value = c.Id.ToString()
             }).ToList();
 

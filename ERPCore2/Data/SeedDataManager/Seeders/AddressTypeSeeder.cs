@@ -22,6 +22,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var addressTypes = new[]
             {
                 new AddressType { 
+                    Code = "BILLING",
                     TypeName = "通訊地址", 
                     Description = "通訊聯絡地址",
                     CreatedAt = DateTime.Now,
@@ -29,6 +30,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new AddressType { 
+                    Code = "SHIPPING",
                     TypeName = "送貨地址", 
                     Description = "商品送貨地址",
                     CreatedAt = DateTime.Now,

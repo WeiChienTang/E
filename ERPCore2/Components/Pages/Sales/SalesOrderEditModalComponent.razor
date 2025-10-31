@@ -350,7 +350,7 @@
             customerOptions = customers.Where(c => c.Status == EntityStatus.Active)
                 .Select(c => new SelectOption
                 {
-                    Text = c.CompanyName,
+                    Text = c.CompanyName ?? "",
                     Value = c.Id.ToString()
                 }).ToList();
 

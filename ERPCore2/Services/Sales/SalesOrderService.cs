@@ -106,7 +106,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Employee)
                     .Where(so => (
                         so.SalesOrderNumber.ToLower().Contains(lowerSearchTerm) ||
-                        so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)
+                        (so.Customer != null && so.Customer.CompanyName != null && so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderByDescending(so => so.OrderDate)
                     .ThenBy(so => so.SalesOrderNumber)

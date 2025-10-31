@@ -12,6 +12,7 @@
 @using System.Reflection
 
 @using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.SubCollections
 
 <GenericEditModalComponent TEntity="Quotation" 
                           TService="IQuotationService"
@@ -35,13 +36,15 @@
                           DataLoader="@LoadQuotationData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
-                          AfterSave="@AfterSaveQuotation"
+                          CustomValidator="@ValidateQuotationDetailsAsync"
+                          AfterSave="@SaveQuotationDetailsAsync"
                           SaveSuccessMessage="@(QuotationId.HasValue ? "報價單更新成功" : "報價單新增成功")"
                           SaveFailureMessage="報價單儲存失敗"
                           RequiredPermission="Quotation.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()"
                           ShowPrintButton="true"
                           OnPrint="@HandlePrint">
 </GenericEditModalComponent>
@@ -83,6 +86,7 @@
     
     // 報價單明細
     private List<QuotationDetail> quotationDetails = new();
+    private QuotationDetailManagerComponent<Quotation, QuotationDetail>? quotationDetailManager;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -95,7 +99,6 @@
     private List<Employee> employees = new();
     private List<SelectOption> customerOptions = new();
     private List<SelectOption> employeeOptions = new();
-    private List<SelectOption> quotationStatusOptions = new();
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -206,7 +209,6 @@
                 {
                     QuotationNumber = await GenerateQuotationNumberAsync(),
                     QuotationDate = DateTime.Today,
-                    QuotationStatus = ERPCore2.Data.Enums.QuotationStatus.Draft,
                     Status = EntityStatus.Active
                 };
 
@@ -247,7 +249,7 @@
             customers = availableCustomers;
             customerOptions = customers.Select(c => new SelectOption 
             { 
-                Text = c.CompanyName, 
+                Text = c.CompanyName ?? "", 
                 Value = c.Id.ToString() 
             }).ToList();
             
@@ -265,13 +267,6 @@
             
             // 載入單位列表（用於明細）
             availableUnits = await UnitService.GetAllAsync();
-            
-            // 載入報價狀態選項
-            quotationStatusOptions = Enum.GetValues<ERPCore2.Data.Enums.QuotationStatus>().Select(s => new SelectOption
-            {
-                Text = GetEnumDisplayName(s),
-                Value = ((int)s).ToString()
-            }).ToList();
         }
         catch (Exception)
         {
@@ -284,7 +279,6 @@
             employees = new List<Employee>();
             customerOptions = new List<SelectOption>();
             employeeOptions = new List<SelectOption>();
-            quotationStatusOptions = new List<SelectOption>();
         }
     }
 
@@ -303,22 +297,6 @@
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "報價單的唯一識別編號，新增時系統會自動產生，也可手動修改"
-                },
-                new()
-                {
-                    PropertyName = nameof(Quotation.QuotationDate),
-                    Label = "報價日期",
-                    FieldType = FormFieldType.Date,
-                    IsRequired = true,
-                    HelpText = "報價單的建立日期"
-                },
-                new()
-                {
-                    PropertyName = nameof(Quotation.ValidUntilDate),
-                    Label = "有效期限",
-                    FieldType = FormFieldType.Date,
-                    IsRequired = false,
-                    HelpText = "報價單的有效期限日期"
                 },
                 new()
                 {
@@ -341,6 +319,14 @@
                     MinSearchLength = 0,
                     HelpText = "輸入業務人員姓名進行搜尋，或直接選擇",
                     ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.QuotationDate),
+                    Label = "報價日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "報價單的建立日期"
                 },
                 new()
                 {
@@ -380,40 +366,19 @@
                     IsRequired = false,
                     HelpText = "整張報價單的額外折扣金額"
                 },
-                new()
-                {
-                    PropertyName = nameof(Quotation.TaxAmount),
-                    Label = "稅額",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    IsReadOnly = true,
-                    HelpText = "系統根據總金額自動計算"
-                },
-                new()
-                {
-                    PropertyName = nameof(Quotation.QuotationStatus),
-                    Label = "報價狀態",
-                    FieldType = FormFieldType.Select,
-                    Options = quotationStatusOptions,
-                    IsRequired = true,
-                    HelpText = "報價單目前的狀態"
-                },
                 FormFieldConfigurationHelper.CreateRemarksField<Quotation>(label: "報價說明")
             };
 
             formSections = new Dictionary<string, string>
             {
                 { nameof(Quotation.QuotationNumber), "基本資訊" },
-                { nameof(Quotation.QuotationDate), "基本資訊" },
-                { nameof(Quotation.ValidUntilDate), "基本資訊" },
                 { nameof(Quotation.CustomerId), "基本資訊" },
                 { nameof(Quotation.EmployeeId), "基本資訊" },
+                { nameof(Quotation.QuotationDate), "基本資訊" },
                 { nameof(Quotation.PaymentTerms), "交易條件" },
                 { nameof(Quotation.DeliveryTerms), "交易條件" },
                 { nameof(Quotation.TotalAmount), "金額資訊" },
                 { nameof(Quotation.DiscountAmount), "金額資訊" },
-                { nameof(Quotation.TaxAmount), "金額資訊" },
-                { nameof(Quotation.QuotationStatus), "狀態資訊" },
                 { "Remarks", "其他資訊" }
             };
         }
@@ -429,25 +394,181 @@
     }
 
     /// <summary>
-    /// 儲存後處理
+    /// 驗證報價單明細 - 在儲存主檔之前執行
     /// </summary>
-    private async Task AfterSaveQuotation(Quotation quotation)
+    private async Task<bool> ValidateQuotationDetailsAsync(Quotation quotation)
     {
         try
         {
-            // TODO: 儲存明細（如果有明細管理組件）
-            await Task.CompletedTask;
+            if (quotationDetailManager != null)
+            {
+                return await quotationDetailManager.ValidateAsync();
+            }
+            return true;
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(AfterSaveQuotation), GetType(), 
-                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateQuotationDetailsAsync), GetType());
+            return false;
         }
     }
 
     /// <summary>
-    /// 儲存報價單（包裝方法）- 已棄用，改用 UseGenericSave
+    /// 儲存後處理 - 儲存報價單明細
     /// </summary>
+    private async Task SaveQuotationDetailsAsync(Quotation quotation)
+    {
+        try
+        {
+            if (quotationDetailManager == null)
+            {
+                await NotificationService.ShowWarningAsync("明細管理器尚未初始化");
+                return;
+            }
+
+            // 從明細管理器取得所有有效的明細資料
+            var detailsToSave = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+            
+            // 確保每個明細都關聯到正確的主檔ID
+            foreach (var detail in detailsToSave)
+            {
+                detail.QuotationId = quotation.Id;
+            }
+
+            // 批次儲存或更新明細
+            if (detailsToSave.Any())
+            {
+                foreach (var detail in detailsToSave)
+                {
+                    if (detail.Id == 0)
+                    {
+                        await QuotationDetailService.CreateAsync(detail);
+                    }
+                    else
+                    {
+                        await QuotationDetailService.UpdateAsync(detail);
+                    }
+                }
+            }
+
+            // 計算並更新主檔的總金額
+            quotation.TotalAmount = detailsToSave.Sum(d => d.SubtotalAmount);
+            
+            // 更新主檔
+            await QuotationService.UpdateAsync(quotation);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveQuotationDetailsAsync), GetType(), 
+                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule> GetCustomModules()
+    {
+        try
+        {
+            return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>
+            {
+                new()
+                {
+                    Title = "",
+                    Content = CreateQuotationDetailManagerContent()
+                }
+            };
+        }
+        catch
+        {
+            return new List<GenericEditModalComponent<Quotation, IQuotationService>.CustomModule>();
+        }
+    }
+
+    /// <summary>
+    /// 創建報價單明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateQuotationDetailManagerContent() => __builder =>
+    {
+        try
+        {
+            <QuotationDetailManagerComponent @ref="quotationDetailManager"
+                                            TMainEntity="Quotation"
+                                            TDetailEntity="QuotationDetail"
+                                            MainEntity="@editModalComponent?.Entity"
+                                            ExistingDetails="@quotationDetails"
+                                            OnDetailsChanged="@HandleQuotationDetailsChanged"
+                                            OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                                            Products="@availableProducts"
+                                            Units="@availableUnits"
+                                            SelectedCustomerId="@editModalComponent?.Entity?.CustomerId"
+                                            MainEntityIdPropertyName="@nameof(QuotationDetail.QuotationId)"
+                                            QuantityPropertyName="@nameof(QuotationDetail.Quantity)"
+                                            UnitPricePropertyName="@nameof(QuotationDetail.UnitPrice)"
+                                            DiscountPercentagePropertyName="@nameof(QuotationDetail.DiscountPercentage)"
+                                            RemarksPropertyName="@nameof(BaseEntity.Remarks)"
+                                            UnitIdPropertyName="@nameof(QuotationDetail.UnitId)"
+                                            IsReadOnly="false"
+                                            Title="報價明細"
+                                            EmptyMessage="尚未新增報價商品" />
+        }
+        catch
+        {
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                載入報價明細管理器時發生錯誤
+            </div>
+        }
+    };
+
+    /// <summary>
+    /// 處理報價單明細變更 - 自動計算總金額
+    /// </summary>
+    private async Task HandleQuotationDetailsChanged(List<QuotationDetail> details)
+    {
+        try
+        {
+            quotationDetails = details;
+            
+            if (editModalComponent?.Entity != null)
+            {
+                // 計算總金額
+                editModalComponent.Entity.TotalAmount = details.Sum(d => d.SubtotalAmount);
+                
+                // 更新主檔的 QuotationDetails 集合
+                editModalComponent.Entity.QuotationDetails = details;
+                
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleQuotationDetailsChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 處理已刪除的報價單明細ID
+    /// </summary>
+    private async Task HandleDeletedDetailsChanged(List<int> deletedDetailIds)
+    {
+        try
+        {
+            if (deletedDetailIds?.Any() == true)
+            {
+                foreach (var detailId in deletedDetailIds)
+                {
+                    await QuotationDetailService.DeleteAsync(detailId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDeletedDetailsChanged), GetType());
+        }
+    }
     private async Task SaveQuotationWrapper(Quotation quotation)
     {
         try

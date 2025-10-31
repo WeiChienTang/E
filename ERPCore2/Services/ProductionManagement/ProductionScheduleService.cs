@@ -129,7 +129,7 @@ namespace ERPCore2.Services
                     .Include(ps => ps.Customer)
                     .Where(ps => ps.ScheduleNumber.Contains(searchTerm) ||
                                 (ps.SourceDocumentType != null && ps.SourceDocumentType.Contains(searchTerm)) ||
-                                (ps.Customer != null && ps.Customer.CompanyName.Contains(searchTerm)))
+                                (ps.Customer != null && ps.Customer.CompanyName != null && ps.Customer.CompanyName.Contains(searchTerm)))
                     .OrderByDescending(ps => ps.ScheduleDate)
                     .ToListAsync();
             }

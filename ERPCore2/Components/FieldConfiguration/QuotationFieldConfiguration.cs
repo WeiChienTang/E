@@ -1,7 +1,6 @@
 using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Components.Shared.Tables;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.AspNetCore.Components;
@@ -76,7 +75,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterOrder = 3,
                             Options = _customers.Select(c => new SelectOption 
                             { 
-                                Text = c.CompanyName, 
+                                Text = c.CompanyName ?? "", 
                                 Value = c.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
@@ -118,54 +117,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(Quotation.ValidUntilDate),
-                        new FieldDefinition<Quotation>
-                        {
-                            PropertyName = nameof(Quotation.ValidUntilDate),
-                            DisplayName = "有效期限",
-                            ColumnType = ColumnDataType.Date,
-                            TableOrder = 6,
-                            FilterOrder = 6,
-                            HeaderStyle = "width: 120px;",
-                            NullDisplayText = "-",
-                            ShowInFilter = false
-                        }
-                    },
-                    {
-                        nameof(Quotation.QuotationStatus),
-                        new FieldDefinition<Quotation>
-                        {
-                            PropertyName = nameof(Quotation.QuotationStatus),
-                            DisplayName = "報價狀態",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 7,
-                            FilterOrder = 7,
-                            HeaderStyle = "width: 110px;",
-                            Options = Enum.GetValues<QuotationStatus>().Select(s => new SelectOption
-                            {
-                                Text = GetEnumDisplayName(s),
-                                Value = ((int)s).ToString()
-                            }).ToList(),
-                            CustomTemplate = item => builder =>
-                            {
-                                var quotation = (Quotation)item;
-                                var badgeClass = GetStatusBadgeClass(quotation.QuotationStatus);
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", $"badge {badgeClass}");
-                                builder.AddContent(2, GetEnumDisplayName(quotation.QuotationStatus));
-                                builder.CloseElement();
-                            },
-                            FilterFunction = (model, query) => {
-                                var statusValue = model.GetFilterValue(nameof(Quotation.QuotationStatus))?.ToString();
-                                if (!string.IsNullOrWhiteSpace(statusValue) && int.TryParse(statusValue, out int statusInt))
-                                {
-                                    query = query.Where(q => (int)q.QuotationStatus == statusInt);
-                                }
-                                return query;
-                            }
-                        }
-                    },
-                    {
                         nameof(Quotation.IsApproved),
                         new FieldDefinition<Quotation>
                         {
@@ -200,44 +151,10 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(Quotation.IsConverted),
+                        nameof(Quotation.Remarks),
                         new FieldDefinition<Quotation>
                         {
-                            PropertyName = nameof(Quotation.IsConverted),
-                            DisplayName = "轉單狀態",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 9,
-                            FilterOrder = 9,
-                            HeaderStyle = "width: 100px;",
-                            Options = new List<SelectOption>
-                            {
-                                new SelectOption { Text = "全部", Value = "" },
-                                new SelectOption { Text = "已轉單", Value = "true" },
-                                new SelectOption { Text = "未轉單", Value = "false" }
-                            },
-                            CustomTemplate = item => builder =>
-                            {
-                                var quotation = (Quotation)item;
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", quotation.IsConverted ? "badge bg-info" : "badge bg-secondary");
-                                builder.AddContent(2, quotation.IsConverted ? "已轉單" : "未轉單");
-                                builder.CloseElement();
-                            },
-                            FilterFunction = (model, query) => {
-                                var value = model.GetFilterValue(nameof(Quotation.IsConverted))?.ToString();
-                                if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool boolValue))
-                                {
-                                    query = query.Where(q => q.IsConverted == boolValue);
-                                }
-                                return query;
-                            }
-                        }
-                    },
-                    {
-                        nameof(Quotation.Description),
-                        new FieldDefinition<Quotation>
-                        {
-                            PropertyName = nameof(Quotation.Description),
+                            PropertyName = nameof(Quotation.Remarks),
                             DisplayName = "說明",
                             FilterPlaceholder = "輸入說明搜尋",
                             TableOrder = 10,
@@ -246,14 +163,14 @@ namespace ERPCore2.FieldConfiguration
                             CustomTemplate = item => builder =>
                             {
                                 var quotation = (Quotation)item;
-                                var desc = quotation.Description;
+                                var desc = quotation.Remarks;
                                 var displayText = !string.IsNullOrEmpty(desc) 
                                     ? (desc.Length > 30 ? desc.Substring(0, 30) + "..." : desc)
                                     : "-";
                                 builder.AddContent(0, displayText);
                             },
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Quotation.Description), q => q.Description, allowNull: true)
+                                model, query, nameof(Quotation.Remarks), q => q.Remarks, allowNull: true)
                         }
                     }
                 };
@@ -294,24 +211,6 @@ namespace ERPCore2.FieldConfiguration
                 .GetCustomAttribute<DisplayAttribute>();
             
             return displayAttribute?.Name ?? enumValue.ToString();
-        }
-
-        /// <summary>
-        /// 取得報價狀態徽章樣式類別
-        /// </summary>
-        private static string GetStatusBadgeClass(QuotationStatus status)
-        {
-            return status switch
-            {
-                QuotationStatus.Draft => "bg-secondary",
-                QuotationStatus.Submitted => "bg-primary",
-                QuotationStatus.Accepted => "bg-success",
-                QuotationStatus.Rejected => "bg-danger",
-                QuotationStatus.Expired => "bg-warning",
-                QuotationStatus.Converted => "bg-info",
-                QuotationStatus.Cancelled => "bg-dark",
-                _ => "bg-secondary"
-            };
         }
     }
 }

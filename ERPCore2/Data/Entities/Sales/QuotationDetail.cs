@@ -28,21 +28,6 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalAmount => Math.Round(Quantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
 
-        [Display(Name = "產品描述")]
-        [MaxLength(500, ErrorMessage = "產品描述不可超過500個字元")]
-        public string? ProductDescription { get; set; }
-
-        [Display(Name = "預計交期天數")]
-        public int? LeadTimeDays { get; set; }
-
-        [Display(Name = "已轉單數量")]
-        [Column(TypeName = "decimal(18,3)")]
-        public decimal ConvertedQuantity { get; set; } = 0;
-
-        [Display(Name = "剩餘數量")]
-        [NotMapped]
-        public decimal RemainingQuantity => Quantity - ConvertedQuantity;
-
         // Foreign Keys
         [Required(ErrorMessage = "報價單為必填")]
         [Display(Name = "報價單")]

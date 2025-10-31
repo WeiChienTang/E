@@ -59,7 +59,7 @@ namespace ERPCore2.FieldConfiguration
                             HeaderStyle = "width: 200px;",
                             Options = _customers.Select(c => new SelectOption 
                             { 
-                                Text = c.CompanyName, 
+                                Text = c.CompanyName ?? "", 
                                 Value = c.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(

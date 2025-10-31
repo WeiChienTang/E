@@ -106,7 +106,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
-                         sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
+                         (sr.Customer != null && sr.Customer.CompanyName != null && sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm))))
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.SalesReturnNumber)
                     .ToListAsync();

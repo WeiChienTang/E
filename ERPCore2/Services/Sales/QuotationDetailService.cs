@@ -95,8 +95,7 @@ namespace ERPCore2.Services
                     .Where(qd => (
                         qd.Product.Name.ToLower().Contains(lowerSearchTerm) ||
                         (qd.Product.Code != null && qd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        qd.Quotation.QuotationNumber.ToLower().Contains(lowerSearchTerm) ||
-                        (qd.ProductDescription != null && qd.ProductDescription.ToLower().Contains(lowerSearchTerm))
+                        qd.Quotation.QuotationNumber.ToLower().Contains(lowerSearchTerm)
                     ))
                     .OrderBy(qd => qd.QuotationId)
                     .ThenBy(qd => qd.Id)
@@ -133,12 +132,6 @@ namespace ERPCore2.Services
 
                 if (entity.DiscountPercentage < 0 || entity.DiscountPercentage > 100)
                     errors.Add("折扣百分比必須介於 0 到 100 之間");
-
-                if (entity.ConvertedQuantity < 0)
-                    errors.Add("已轉單數量不能為負數");
-
-                if (entity.ConvertedQuantity > entity.Quantity)
-                    errors.Add("已轉單數量不能大於報價數量");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -236,95 +229,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> CanConvertToOrderAsync(int detailId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.QuotationDetails
-                    .Include(qd => qd.Quotation)
-                    .FirstOrDefaultAsync(qd => qd.Id == detailId);
 
-                if (detail == null)
-                    return false;
-
-                // 檢查報價單是否已核准
-                if (!detail.Quotation.IsApproved)
-                    return false;
-
-                // 檢查是否還有剩餘數量可以轉單
-                if (detail.RemainingQuantity <= 0)
-                    return false;
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanConvertToOrderAsync), GetType(), _logger, new {
-                    Method = nameof(CanConvertToOrderAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detailId
-                });
-                return false;
-            }
-        }
-
-        public async Task<ServiceResult> UpdateConvertedQuantityAsync(int detailId, decimal convertedQuantity)
-        {
-            try
-            {
-                if (convertedQuantity < 0)
-                    return ServiceResult.Failure("已轉單數量不能為負數");
-
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.QuotationDetails.FindAsync(detailId);
-
-                if (detail == null)
-                    return ServiceResult.Failure("找不到指定的報價單明細");
-
-                if (convertedQuantity > detail.Quantity)
-                    return ServiceResult.Failure("已轉單數量不能大於報價數量");
-
-                detail.ConvertedQuantity = convertedQuantity;
-                detail.UpdatedAt = DateTime.Now;
-
-                // 更新主檔的轉單狀態
-                var quotation = await context.Quotations
-                    .Include(q => q.QuotationDetails)
-                    .FirstOrDefaultAsync(q => q.Id == detail.QuotationId);
-
-                if (quotation != null)
-                {
-                    // 如果所有明細都已全部轉單，則標記主檔為已轉單
-                    var allConverted = quotation.QuotationDetails.All(qd => 
-                        qd.Id == detailId ? convertedQuantity >= qd.Quantity : qd.ConvertedQuantity >= qd.Quantity);
-                    
-                    if (allConverted)
-                    {
-                        quotation.IsConverted = true;
-                        quotation.ConvertedDate = DateTime.Now;
-                    }
-                    else
-                    {
-                        quotation.IsConverted = false;
-                        quotation.ConvertedDate = null;
-                    }
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateConvertedQuantityAsync), GetType(), _logger, new {
-                    Method = nameof(UpdateConvertedQuantityAsync),
-                    ServiceType = GetType().Name,
-                    DetailId = detailId,
-                    ConvertedQuantity = convertedQuantity
-                });
-                return ServiceResult.Failure("更新已轉單數量過程發生錯誤");
-            }
-        }
 
         #endregion
     }

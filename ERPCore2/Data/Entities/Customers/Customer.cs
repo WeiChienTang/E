@@ -11,10 +11,9 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(Code), IsUnique = true)]
     public class Customer : BaseEntity
     {        
-        [Required(ErrorMessage = "公司名稱為必填")]
         [MaxLength(100, ErrorMessage = "公司名稱不可超過100個字元")]
         [Display(Name = "公司名稱")]
-        public string CompanyName { get; set; } = string.Empty;
+        public string? CompanyName { get; set; }
         
         // Optional Properties
         [MaxLength(50, ErrorMessage = "聯絡人不可超過50個字元")]

@@ -22,6 +22,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             var contactTypes = new[]
             {
                 new ContactType {
+                    Code = "PHONE",
                     TypeName = "電話",
                     Description = "固定電話號碼",
                     CreatedAt = DateTime.Now,
@@ -29,6 +30,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
+
                     TypeName = "手機", 
                     Description = "行動電話號碼",
                     CreatedAt = DateTime.Now,
@@ -36,6 +38,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
+                    Code = "EMAIL",
                     TypeName = "Email", 
                     Description = "電子郵件地址",
                     CreatedAt = DateTime.Now,
@@ -43,6 +46,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
+                    Code = "FAX",
                     TypeName = "傳真", 
                     Description = "傳真號碼",
                     CreatedAt = DateTime.Now,
@@ -50,6 +54,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
+                    Code = "LINE",
                     TypeName = "Line", 
                     Description = "Line 即時通訊",
                     CreatedAt = DateTime.Now,
@@ -57,6 +62,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active
                 },
                 new ContactType { 
+                    Code = "WEBSITE",
                     TypeName = "網站", 
                     Description = "公司或個人網站",
                     CreatedAt = DateTime.Now,

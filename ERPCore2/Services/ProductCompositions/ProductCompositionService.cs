@@ -101,9 +101,9 @@ namespace ERPCore2.Services
                     var lowerSearchTerm = searchTerm.ToLower();
                     query = query.Where(pc =>
                         (pc.Code != null && pc.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        pc.ParentProduct.Name.ToLower().Contains(lowerSearchTerm) ||
+                        (pc.ParentProduct != null && pc.ParentProduct.Name != null && pc.ParentProduct.Name.ToLower().Contains(lowerSearchTerm)) ||
                         (pc.Specification != null && pc.Specification.ToLower().Contains(lowerSearchTerm)) ||
-                        (pc.Customer != null && pc.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)));
+                        (pc.Customer != null && pc.Customer.CompanyName != null && pc.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)));
                 }
 
                 return await query

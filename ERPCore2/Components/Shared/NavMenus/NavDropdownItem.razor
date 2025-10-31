@@ -60,16 +60,18 @@ else
 
     private void RegisterPermission()
     {
-        // 如果有權限要求且有父菜單鍵，註冊到權限收集器
+        // 如果有權限要求且有父菜單鍵,註冊到權限收集器
         if (!string.IsNullOrEmpty(RequiredPermission) && !string.IsNullOrEmpty(ParentMenuKey))
         {
             PermissionCollector.RegisterPermission(ParentMenuKey, RequiredPermission);
         }
-        else
+        else if (!string.IsNullOrEmpty(RequiredPermission) || !string.IsNullOrEmpty(ParentMenuKey))
         {
+            // 只有在部分設定的情況下才警告(表示可能是遺漏了某個參數)
             Logger.LogWarning("無法註冊權限: Text={Text}, RequiredPermission={RequiredPermission}, ParentMenuKey={ParentMenuKey}", 
                 Text, RequiredPermission, ParentMenuKey);
         }
+        // 如果兩者都沒設定,則視為不需要權限控制的項目,不發出警告
     }
 
     /// <summary>

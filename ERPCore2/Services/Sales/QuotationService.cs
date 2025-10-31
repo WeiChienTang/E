@@ -1,6 +1,5 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -99,8 +98,8 @@ namespace ERPCore2.Services
                     .Include(q => q.Employee)
                     .Where(q => (
                         q.QuotationNumber.ToLower().Contains(lowerSearchTerm) ||
-                        q.Customer.CompanyName.ToLower().Contains(lowerSearchTerm) ||
-                        (q.Description != null && q.Description.ToLower().Contains(lowerSearchTerm))
+                        (q.Customer != null && q.Customer.CompanyName != null && q.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
+                        (q.Remarks != null && q.Remarks.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderByDescending(q => q.QuotationDate)
                     .ThenBy(q => q.QuotationNumber)
@@ -131,9 +130,6 @@ namespace ERPCore2.Services
 
                 if (entity.QuotationDate == default)
                     errors.Add("報價日期不能為空");
-
-                if (entity.ValidUntilDate.HasValue && entity.ValidUntilDate.Value < entity.QuotationDate)
-                    errors.Add("有效期限不能早於報價日期");
 
                 if (!string.IsNullOrWhiteSpace(entity.QuotationNumber) &&
                     await IsQuotationNumberExistsAsync(entity.QuotationNumber, entity.Id == 0 ? null : entity.Id))
@@ -269,10 +265,8 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的報價單");
 
                 var totalAmount = quotation.QuotationDetails.Sum(d => d.SubtotalAmount);
-                var taxAmount = totalAmount * 0.05m; // 假設稅率 5%
 
                 quotation.TotalAmount = totalAmount - quotation.DiscountAmount;
-                quotation.TaxAmount = taxAmount;
                 quotation.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();
@@ -297,7 +291,6 @@ namespace ERPCore2.Services
                 return await context.Quotations
                     .Include(q => q.Customer)
                     .Include(q => q.Employee)
-                    .Where(q => !q.IsConverted)
                     .OrderByDescending(q => q.QuotationDate)
                     .ToListAsync();
             }
@@ -319,7 +312,7 @@ namespace ERPCore2.Services
                 return await context.Quotations
                     .Include(q => q.Customer)
                     .Include(q => q.Employee)
-                    .Where(q => q.IsApproved && !q.IsConverted)
+                    .Where(q => q.IsApproved)
                     .OrderByDescending(q => q.QuotationDate)
                     .ToListAsync();
             }
@@ -339,7 +332,6 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 檢查報價單是否可以被刪除
-        /// 如果報價單已經轉單，則不能刪除
         /// </summary>
         protected override async Task<ServiceResult> CanDeleteAsync(Quotation entity)
         {
@@ -350,16 +342,10 @@ namespace ERPCore2.Services
                 if (!baseResult.IsSuccess)
                     return baseResult;
 
-                // 2. 檢查是否已轉單
-                if (entity.IsConverted)
+                // 2. 檢查是否已核准
+                if (entity.IsApproved)
                 {
-                    return ServiceResult.Failure($"無法刪除報價單「{entity.QuotationNumber}」，因為已經轉換成銷貨訂單");
-                }
-
-                // 3. 檢查是否已核准且已接受
-                if (entity.IsApproved && entity.QuotationStatus == QuotationStatus.Accepted)
-                {
-                    return ServiceResult.Failure($"無法刪除報價單「{entity.QuotationNumber}」，因為已經核准並接受");
+                    return ServiceResult.Failure($"無法刪除報價單「{entity.QuotationNumber}」，因為已經核准");
                 }
 
                 return ServiceResult.Success();

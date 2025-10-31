@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -21,20 +20,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "報價日期")]
         public DateTime QuotationDate { get; set; } = DateTime.Today;
 
-        [Display(Name = "有效期限")]
-        public DateTime? ValidUntilDate { get; set; }
-
         [Display(Name = "報價總金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;
-
-        [Display(Name = "稅額")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal TaxAmount { get; set; } = 0;
-
-        [Display(Name = "含稅總金額")]
-        [NotMapped]
-        public decimal TotalAmountWithTax => TotalAmount + TaxAmount;
 
         [Display(Name = "折扣金額")]
         [Column(TypeName = "decimal(18,2)")]
@@ -47,19 +35,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "交貨方式")]
         [MaxLength(200, ErrorMessage = "交貨方式不可超過200個字元")]
         public string? DeliveryTerms { get; set; }
-
-        [Display(Name = "報價說明")]
-        [MaxLength(500, ErrorMessage = "報價說明不可超過500個字元")]
-        public string? Description { get; set; }
-
-        [Display(Name = "是否已轉單")]
-        public bool IsConverted { get; set; } = false;
-
-        [Display(Name = "轉單日期")]
-        public DateTime? ConvertedDate { get; set; }
-
-        [Display(Name = "報價狀態")]
-        public QuotationStatus QuotationStatus { get; set; } = QuotationStatus.Draft;
 
         [Display(Name = "核准人員")]
         [ForeignKey(nameof(ApprovedByUser))]

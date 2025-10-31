@@ -191,7 +191,7 @@
                     var customer = customers.FirstOrDefault(c => c.Id == customerId);
                     if (customer != null)
                     {
-                        editModalComponent.Entity.RelatedPartyName = customer.CompanyName;
+                        editModalComponent.Entity.RelatedPartyName = customer.CompanyName ?? "";
                     }
                 }
             })
@@ -1389,7 +1389,7 @@
                     var customer = customers.FirstOrDefault(c => c.Id == customerId);
                     if (customer != null)
                     {
-                        editModalComponent.Entity.RelatedPartyName = customer.CompanyName;
+                        editModalComponent.Entity.RelatedPartyName = customer.CompanyName ?? "";
                     }
                     
                     // 更新 ActionButtons
