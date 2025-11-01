@@ -25,20 +25,6 @@ namespace ERPCore2.Services
         /// </summary>
         Task<bool> IsCompanyNameExistsAsync(string companyName, int? excludeId = null);
         
-        /// <summary>
-        /// 根據廠商類型取得廠商列表
-        /// </summary>
-        Task<List<Supplier>> GetBySupplierTypeAsync(int supplierTypeId);
-        
-        #endregion
-
-        #region 輔助資料查詢
-        
-        /// <summary>
-        /// 取得所有廠商類型
-        /// </summary>
-        Task<List<SupplierType>> GetSupplierTypesAsync();
-        
         #endregion
 
         #region 聯絡資料管理

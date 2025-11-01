@@ -28,11 +28,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.Suppliers.AnyAsync())
                 return; // 供應商資料已存在
 
-            // 取得供應商類型
-            var manufacturerType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "製造商");
-            var materialType = await context.SupplierTypes.FirstOrDefaultAsync(st => st.TypeName == "原料供應商");
-
-
             var suppliers = new[]
             {
                 new Supplier
@@ -41,7 +36,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "精密科技製造股份有限公司",
                     ContactPerson = "張總經理",
                     TaxNumber = "20123456",
-                    SupplierTypeId = manufacturerType?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-90),
                     CreatedBy = "System"
@@ -52,7 +46,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "台灣電子元件有限公司",
                     ContactPerson = "李經理",
                     TaxNumber = "20234567",
-                    SupplierTypeId = manufacturerType?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-85),
                     CreatedBy = "System"
@@ -64,7 +57,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "優質原料供應股份有限公司",
                     ContactPerson = "王經理",
                     TaxNumber = "20345678",
-                    SupplierTypeId = materialType?.Id ?? 2,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-80),
                     CreatedBy = "System"
@@ -75,7 +67,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "創新科技開發有限公司",
                     ContactPerson = "陳總監",
                     TaxNumber = "20456789",
-                    SupplierTypeId = manufacturerType?.Id ?? 1,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-75),
                     CreatedBy = "System"
@@ -86,7 +77,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     CompanyName = "環球貿易實業股份有限公司",
                     ContactPerson = "林副總",
                     TaxNumber = "20567890",
-                    SupplierTypeId = materialType?.Id ?? 2,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now.AddDays(-70),
                     CreatedBy = "System"

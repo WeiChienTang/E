@@ -491,38 +491,6 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 檢查供應商類型是否可以刪除
-        /// </summary>
-        public static async Task<DependencyCheckResult> CheckSupplierTypeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int supplierTypeId)
-        {
-            try
-            {
-                using var context = await contextFactory.CreateDbContextAsync();
-                var result = new DependencyCheckResult { CanDelete = true };
-
-                // 檢查供應商
-                var supplierCount = await context.Suppliers
-                    .CountAsync(s => s.SupplierTypeId == supplierTypeId);
-
-                if (supplierCount > 0)
-                {
-                    result.CanDelete = false;
-                    result.DependentEntities.Add($"供應商({supplierCount}筆)");
-                }
-
-                return result;
-            }
-            catch (Exception)
-            {
-                return new DependencyCheckResult 
-                { 
-                    CanDelete = false, 
-                    ErrorMessage = "檢查供應商類型依賴關係時發生錯誤" 
-                };
-            }
-        }
-
-        /// <summary>
         /// 檢查尺寸是否可以刪除
         /// </summary>
         public static async Task<DependencyCheckResult> CheckSizeDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int sizeId)

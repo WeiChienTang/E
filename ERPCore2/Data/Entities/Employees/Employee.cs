@@ -73,10 +73,69 @@ namespace ERPCore2.Data.Entities
         public int FailedLoginAttempts { get; set; } = 0;
 
         /// <summary>
-        /// 帳號鎖定時間
+        /// 性別
         /// </summary>
-        [Display(Name = "鎖定時間")]
-        public DateTime? LockedAt { get; set; }        
+        [Display(Name = "性別")]
+        public Gender? Gender { get; set; }
+
+        /// <summary>
+        /// 生日
+        /// </summary>
+        [Display(Name = "生日")]
+        public DateTime? BirthDate { get; set; }
+
+        /// <summary>
+        /// 身分證字號
+        /// </summary>
+        [Display(Name = "身分證字號")]
+        [MaxLength(10)]
+        public string? IdNumber { get; set; }
+
+        /// <summary>
+        /// 手機號碼
+        /// </summary>
+        [Display(Name = "手機")]
+        [MaxLength(20)]
+        public string? Mobile { get; set; }
+
+        /// <summary>
+        /// 電子郵件
+        /// </summary>
+        [Display(Name = "Email")]
+        [MaxLength(100)]
+        public string? Email { get; set; }
+
+        /// <summary>
+        /// 緊急聯絡人
+        /// </summary>
+        [Display(Name = "緊急聯絡人")]
+        [MaxLength(50)]
+        public string? EmergencyContact { get; set; }
+
+        /// <summary>
+        /// 緊急聯絡電話
+        /// </summary>
+        [Display(Name = "緊急聯絡電話")]
+        [MaxLength(20)]
+        public string? EmergencyPhone { get; set; }
+
+        /// <summary>
+        /// 到職日期
+        /// </summary>
+        [Display(Name = "到職日期")]
+        public DateTime? HireDate { get; set; }
+
+        /// <summary>
+        /// 離職日期
+        /// </summary>
+        [Display(Name = "離職日期")]
+        public DateTime? ResignationDate { get; set; }
+
+        /// <summary>
+        /// 在職狀態
+        /// </summary>
+        [Display(Name = "在職狀態")]
+        public EmployeeStatus EmploymentStatus { get; set; } = EmployeeStatus.Active;
         
         // 導航屬性
         public Role? Role { get; set; }
@@ -85,5 +144,41 @@ namespace ERPCore2.Data.Entities
         
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Employee", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
+    }
+
+    /// <summary>
+    /// 性別
+    /// </summary>
+    public enum Gender
+    {
+        [Display(Name = "男性")]
+        Male = 1,
+        
+        [Display(Name = "女性")]
+        Female = 2,
+        
+        [Display(Name = "其他")]
+        Other = 3
+    }
+
+    /// <summary>
+    /// 員工狀態
+    /// </summary>
+    public enum EmployeeStatus
+    {
+        [Display(Name = "試用期")]
+        Probation = 1,
+        
+        [Display(Name = "在職")]
+        Active = 2,
+        
+        [Display(Name = "留職停薪")]
+        LeaveOfAbsence = 3,
+        
+        [Display(Name = "已離職")]
+        Resigned = 4,
+        
+        [Display(Name = "停用")]
+        Inactive = 5
     }
 }

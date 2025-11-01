@@ -63,7 +63,6 @@ namespace ERPCore2.Data
 
             // 廠商相關服務
             services.AddScoped<ISupplierService, SupplierService>();
-            services.AddScoped<ISupplierTypeService, SupplierTypeService>();
 
             // 商品相關服務
             services.AddScoped<IProductService, ProductService>();
@@ -72,7 +71,6 @@ namespace ERPCore2.Data
             services.AddScoped<ISizeService, SizeService>();
             
             // 商品價格服務
-            services.AddScoped<IProductPricingService, ProductPricingService>();
             services.AddScoped<ISupplierPricingService, SupplierPricingService>();
             services.AddScoped<IPriceHistoryService, PriceHistoryService>();
 

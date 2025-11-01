@@ -10,12 +10,10 @@ namespace ERPCore2.FieldConfiguration
     /// </summary>
     public class SupplierFieldConfiguration : BaseFieldConfiguration<Supplier>
     {
-        private readonly List<SupplierType> _supplierTypes;
         private readonly INotificationService? _notificationService;
         
-        public SupplierFieldConfiguration(List<SupplierType> supplierTypes, INotificationService? notificationService = null)
+        public SupplierFieldConfiguration(INotificationService? notificationService = null)
         {
-            _supplierTypes = supplierTypes;
             _notificationService = notificationService;
         }
         
@@ -66,33 +64,14 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(Supplier.SupplierTypeId),
-                        new FieldDefinition<Supplier>
-                        {
-                            PropertyName = "SupplierType.TypeName", // 用於表格顯示
-                            FilterPropertyName = nameof(Supplier.SupplierTypeId), // 用於篩選器
-                            DisplayName = "廠商類型",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 4,
-                            FilterOrder = 4,
-                            Options = _supplierTypes.Select(st => new SelectOption 
-                            { 
-                                Text = st.TypeName, 
-                                Value = st.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Supplier.SupplierTypeId), s => s.SupplierTypeId)
-                        }
-                    },
-                    {
                         nameof(Supplier.TaxNumber),
                         new FieldDefinition<Supplier>
                         {
                             PropertyName = nameof(Supplier.TaxNumber),
                             DisplayName = "統一編號",
                             FilterPlaceholder = "輸入統一編號搜尋",
-                            TableOrder = 5,
-                            FilterOrder = 5,
+                            TableOrder = 4,
+                            FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.TaxNumber), s => s.TaxNumber, allowNull: true)
                         }
@@ -104,7 +83,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: new { SupplierTypesCount = _supplierTypes?.Count ?? 0 });
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType());
                 });
 
                 // 通知使用者

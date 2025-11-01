@@ -39,9 +39,6 @@
     // Modal 處理器
     private ModalHandler<Supplier, GenericIndexPageComponent<Supplier, ISupplierService>> modalHandler = default!;
     
-    // 選項清單
-    private List<SupplierType> supplierTypes = new();
-    
     // 欄位配置
     private SupplierFieldConfiguration fieldConfiguration = default!;
     
@@ -64,11 +61,8 @@
             
             await InitializeBreadcrumbsAsync();
             
-            // 載入廠商類型資料
-            await LoadSupplierTypesAsync();
-            
-            // 建立欄位配置（在載入廠商類型後，並傳遞 NotificationService）
-            fieldConfiguration = new SupplierFieldConfiguration(supplierTypes, NotificationService);
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new SupplierFieldConfiguration(NotificationService);
             
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
@@ -99,22 +93,6 @@
             breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
         }
     }    
-    // 載入廠商類型資料
-    private async Task LoadSupplierTypesAsync()
-    {
-        try
-        {
-            supplierTypes = await SupplierService.GetSupplierTypesAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSupplierTypesAsync), GetType(), additionalData: "載入廠商類型資料失敗");
-            await NotificationService.ShowErrorAsync("載入廠商類型資料失敗");
-            // 設定安全的預設值
-            supplierTypes = new List<SupplierType>();
-        }
-    }
-
     // 載入廠商資料
     private async Task<List<Supplier>> LoadSuppliersAsync()
     {

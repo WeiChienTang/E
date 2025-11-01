@@ -13,14 +13,9 @@ namespace ERPCore2.Data.Context
       public DbSet<ContactType> ContactTypes { get; set; }
       public DbSet<AddressType> AddressTypes { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
-      public DbSet<Bank> Banks { get; set; }
-      
-      // 統一聯絡方式管理
-      public DbSet<Contact> Contacts { get; set; }
-      
-      // 統一地址管理
-      public DbSet<Address> Addresses { get; set; }
-            
+      public DbSet<Bank> Banks { get; set; }      
+      public DbSet<Contact> Contacts { get; set; }      
+      public DbSet<Address> Addresses { get; set; }            
       public DbSet<Employee> Employees { get; set; }
       public DbSet<EmployeePosition> EmployeePositions { get; set; }
       public DbSet<Department> Departments { get; set; }
@@ -29,17 +24,10 @@ namespace ERPCore2.Data.Context
       public DbSet<RolePermission> RolePermissions { get; set; }
       public DbSet<Product> Products { get; set; }
       public DbSet<ProductCategory> ProductCategories { get; set; }
-      public DbSet<ProductSupplier> ProductSuppliers { get; set; }
-      
-      // Product Pricing Management
-      public DbSet<ProductPricing> ProductPricings { get; set; }
+      public DbSet<ProductSupplier> ProductSuppliers { get; set; }      
       public DbSet<SupplierPricing> SupplierPricings { get; set; }
-      public DbSet<PriceHistory> PriceHistories { get; set; }
-      
-      public DbSet<Supplier> Suppliers { get; set; }
-      public DbSet<SupplierType> SupplierTypes { get; set; }
-      
-      // Inventory Management
+      public DbSet<PriceHistory> PriceHistories { get; set; }      
+      public DbSet<Supplier> Suppliers { get; set; }      
       public DbSet<Warehouse> Warehouses { get; set; }
       public DbSet<WarehouseLocation> WarehouseLocations { get; set; }
       public DbSet<InventoryStock> InventoryStocks { get; set; }
@@ -53,16 +41,12 @@ namespace ERPCore2.Data.Context
       public DbSet<Unit> Units { get; set; }
       public DbSet<UnitConversion> UnitConversions { get; set; }
       public DbSet<InventoryTransactionType> InventoryTransactionTypes { get; set; }
-      
-      // Purchase Management
       public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
       public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
       public DbSet<PurchaseReceiving> PurchaseReceivings { get; set; }
       public DbSet<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; }
       public DbSet<PurchaseReturn> PurchaseReturns { get; set; }
       public DbSet<PurchaseReturnDetail> PurchaseReturnDetails { get; set; }
-      
-      // Sales Management
       public DbSet<SalesOrder> SalesOrders { get; set; }
       public DbSet<SalesOrderDetail> SalesOrderDetails { get; set; }
       public DbSet<SalesReturn> SalesReturns { get; set; }
@@ -70,9 +54,6 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesReturnReason> SalesReturnReasons { get; set; }
       public DbSet<Quotation> Quotations { get; set; }
       public DbSet<QuotationDetail> QuotationDetails { get; set; }
-      
-      // Financial Management
-      // 統一沖款管理
       public DbSet<SetoffDocument> SetoffDocuments { get; set; }
       public DbSet<SetoffPayment> SetoffPayments { get; set; }
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
@@ -80,28 +61,17 @@ namespace ERPCore2.Data.Context
       public DbSet<SetoffPrepaymentUsage> SetoffPrepaymentUsages { get; set; }
       public DbSet<FinancialTransaction> FinancialTransactions { get; set; }
       public DbSet<Entities.PrepaymentType> PrepaymentTypes { get; set; }
-      // Currency
       public DbSet<Currency> Currencies { get; set; }
-      
-      // BOM Foundations
       public DbSet<Material> Materials { get; set; }
       public DbSet<Weather> Weathers { get; set; }
       public DbSet<Color> Colors { get; set; }
-      public DbSet<Size> Sizes { get; set; }
-      
-      // Product Composition (BOM)
+      public DbSet<Size> Sizes { get; set; }      
       public DbSet<ProductComposition> ProductCompositions { get; set; }
       public DbSet<ProductCompositionDetail> ProductCompositionDetails { get; set; }
-      
-      // Production Schedule
       public DbSet<ProductionSchedule> ProductionSchedules { get; set; }
       public DbSet<ProductionScheduleDetail> ProductionScheduleDetails { get; set; }
-      
-      // System Logs
       public DbSet<ErrorLog> ErrorLogs { get; set; }
       public DbSet<DeletedRecord> DeletedRecords { get; set; }
-      
-      // System Settings
       public DbSet<SystemParameter> SystemParameters { get; set; }
       public DbSet<Company> Companies { get; set; }
       public DbSet<PaperSetting> PaperSettings { get; set; }
@@ -145,17 +115,6 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<Supplier>(entity =>
                   {
                         // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.SupplierType)
-                        .WithMany(st => st.Suppliers)
-                        .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  modelBuilder.Entity<SupplierType>(entity =>
-                  {
-                        // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   

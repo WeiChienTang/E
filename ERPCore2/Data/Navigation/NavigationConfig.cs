@@ -125,16 +125,6 @@ public static class NavigationConfig
                         RequiredPermission = "Supplier.Read",
                         SearchKeywords = new List<string> { "廠商維護", "供應商資料", "廠商管理" }
                     },
-                    new NavigationItem
-                    {
-                        Name = "類型",
-                        Description = "管理廠商類型分類",
-                        Route = "/supplier-types",
-                        IconClass = "",
-                        Category = "供應鏈管理",
-                        RequiredPermission = "SupplierType.Read",
-                        SearchKeywords = new List<string> { "廠商類型", "supplier type" }
-                    }
                 }
             },
 

@@ -38,7 +38,6 @@ namespace ERPCore2.Services
             try
             {
                 return await context.Suppliers
-                    .Include(s => s.SupplierType)
                     .AsQueryable()
                     .OrderBy(s => s.CompanyName)
                     .ToListAsync();
@@ -57,7 +56,6 @@ namespace ERPCore2.Services
             try
             {
                 return await context.Suppliers
-                    .Include(s => s.SupplierType)
                     .FirstOrDefaultAsync(s => s.Id == id);
             }
             catch (Exception ex)
@@ -77,7 +75,6 @@ namespace ERPCore2.Services
                     return await GetAllAsync();
 
                 return await context.Suppliers
-                    .Include(s => s.SupplierType)
                     .Where(s => (s.CompanyName != null && s.CompanyName.Contains(searchTerm)) ||
                                 (s.Code != null && s.Code.Contains(searchTerm)) ||
                                 (s.ContactPerson != null && s.ContactPerson.Contains(searchTerm)) ||
@@ -96,55 +93,64 @@ namespace ERPCore2.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var errors = new List<string>();
 
-                // 驗證必填欄位
+                // 檢查必要欄位
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                {
-                    errors.Add("廠商代碼為必填欄位");
-                }
+                    errors.Add("廠商代碼為必填");
+                
+                // 檢查公司名稱、負責人或聯絡人至少要有一個
+                if (string.IsNullOrWhiteSpace(entity.CompanyName) && string.IsNullOrWhiteSpace(entity.ContactPerson) && string.IsNullOrWhiteSpace(entity.ResponsiblePerson))
+                    errors.Add("公司名稱、負責人或聯絡人至少需填寫一項");
 
-                if (string.IsNullOrWhiteSpace(entity.CompanyName))
-                {
-                    errors.Add("公司名稱為必填欄位");
-                }
-                else
-                {
-                    // 檢查公司名稱唯一性
-                    var isCompanyNameDuplicate = await IsCompanyNameExistsAsync(entity.CompanyName, entity.Id);
-                    if (isCompanyNameDuplicate)
-                    {
-                        errors.Add("公司名稱已存在");
-                    }
-                }
+                // 檢查長度限制
+                if (entity.Code?.Length > 20)
+                    errors.Add("廠商代碼不可超過20個字元");
+                
+                if (entity.CompanyName?.Length > 100)
+                    errors.Add("公司名稱不可超過100個字元");
 
-                // 驗證廠商代碼唯一性
+                if (!string.IsNullOrEmpty(entity.ContactPerson) && entity.ContactPerson.Length > 50)
+                    errors.Add("聯絡人不可超過50個字元");
+
+                if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 8)
+                    errors.Add("統一編號不可超過8個字元");
+
+                // 檢查廠商代碼是否重複
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    var isDuplicate = await IsSupplierCodeExistsAsync(entity.Code, entity.Id);
+                    var isDuplicate = await context.Suppliers
+                        .Where(s => s.Code == entity.Code)
+                        .Where(s => s.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
                     if (isDuplicate)
-                    {
                         errors.Add("廠商代碼已存在");
-                    }
                 }
 
-                // 驗證統一編號格式（如果有提供）
-                if (!string.IsNullOrWhiteSpace(entity.TaxNumber) && entity.TaxNumber.Length != 8)
+                // 檢查公司名稱是否重複
+                if (!string.IsNullOrWhiteSpace(entity.CompanyName))
                 {
-                    errors.Add("統一編號必須為8位數字");
+                    var isCompanyNameDuplicate = await context.Suppliers
+                        .Where(s => s.CompanyName == entity.CompanyName)
+                        .Where(s => s.Id != entity.Id) // 排除自己
+                        .AnyAsync();
+
+                    if (isCompanyNameDuplicate)
+                        errors.Add("公司名稱已存在");
                 }
 
+                if (errors.Any())
+                    return ServiceResult.Failure(string.Join("; ", errors));
 
-
-                return errors.Any() 
-                    ? ServiceResult.Failure(string.Join("; ", errors))
-                    : ServiceResult.Success();
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
                     new { EntityId = entity.Id, SupplierCode = entity.Code });
-                throw;
+                return ServiceResult.Failure("驗證過程發生錯誤");
             }
         }
 
@@ -159,7 +165,6 @@ namespace ERPCore2.Services
             try
             {
                 return await context.Suppliers
-                    .Include(s => s.SupplierType)
                     .FirstOrDefaultAsync(s => s.Code == supplierCode);
             }
             catch (Exception ex)
@@ -215,47 +220,6 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<Supplier>> GetBySupplierTypeAsync(int supplierTypeId)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.Suppliers
-                    .Include(s => s.SupplierType)
-                    .Where(s => s.SupplierTypeId == supplierTypeId)
-                    .OrderBy(s => s.CompanyName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierTypeAsync), GetType(), _logger, 
-                    new { SupplierTypeId = supplierTypeId });
-                throw;
-            }
-        }
-
-        #endregion
-
-        #region 輔助資料查詢
-
-        public async Task<List<SupplierType>> GetSupplierTypesAsync()
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            try
-            {
-                return await context.SupplierTypes
-                    .Where(st => st.Status == EntityStatus.Active)
-                    .OrderBy(st => st.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetSupplierTypesAsync), GetType(), _logger);
-                throw;
-            }
-        }
         #endregion
 
         // 聯絡資料管理已移至 ContactService
@@ -304,7 +268,6 @@ namespace ERPCore2.Services
                 supplier.CompanyName = string.Empty;
                 supplier.ContactPerson = string.Empty;
                 supplier.TaxNumber = string.Empty;
-                supplier.SupplierTypeId = null;
                 supplier.Status = EntityStatus.Active;
             }
             catch (Exception ex)
@@ -336,7 +299,8 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(supplier.Code))
                     count++;
 
-                if (!string.IsNullOrWhiteSpace(supplier.CompanyName))
+                // 公司名稱或聯絡人或負責人至少要有一個
+                if (!string.IsNullOrWhiteSpace(supplier.CompanyName) || !string.IsNullOrWhiteSpace(supplier.ContactPerson) || !string.IsNullOrWhiteSpace(supplier.ResponsiblePerson))
                     count++;
 
                 return count;

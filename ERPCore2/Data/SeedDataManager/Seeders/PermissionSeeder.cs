@@ -69,7 +69,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "Color.Read", Name = "檢視顏色", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視顏色分類與色彩設定" },
                 new Permission { Code = "Size.Read", Name = "檢視尺寸", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視尺寸規格與大小設定" },
                 new Permission { Code = "Unit.Read", Name = "檢視單位", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視度量衡單位與換算設定" },
-                new Permission { Code = "SupplierType.Read", Name = "檢視供應商類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視供應商分類與類型設定" },
                 new Permission { Code = "CustomerType.Read", Name = "檢視客戶類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視客戶分類與類型設定" },
                 
                 // 倉庫管理權限

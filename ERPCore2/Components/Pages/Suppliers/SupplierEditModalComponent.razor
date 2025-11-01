@@ -1,10 +1,5 @@
 @* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
 @inject ISupplierService SupplierService
-@inject IContactService ContactService
-@inject IAddressService AddressService
-@inject IContactTypeService ContactTypeService
-@inject IAddressTypeService AddressTypeService
-@inject ISupplierTypeService SupplierTypeService
 @inject IProductSupplierService ProductSupplierService
 @inject IProductService ProductService
 @inject IUnitService UnitService
@@ -30,23 +25,13 @@
                           AutoCompleteCollections="@GetAutoCompleteCollections()"
                           AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
                           AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
-                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSupplierData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveSupplier"
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Supplier.Read"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
                           AdditionalSections="@GetAdditionalSections()" />
-
-@* 廠商類型編輯 Modal *@
-<SupplierTypeEditModalComponent @ref="supplierTypeEditModal"
-                               IsVisible="@supplierTypeModalManager.IsModalVisible"
-                               IsVisibleChanged="@supplierTypeModalManager.HandleModalVisibilityChangedAsync"
-                               SupplierTypeId="@supplierTypeModalManager.SelectedEntityId"
-                               OnSupplierTypeSaved="@OnSupplierTypeSavedWrapper"
-                               OnCancel="@supplierTypeModalManager.HandleModalCancelAsync" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -60,35 +45,15 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
-    // 廠商類型編輯 Modal 相關變數 - 使用泛型管理器
-    private SupplierTypeEditModalComponent? supplierTypeEditModal;
-    private RelatedEntityModalManager<SupplierType> supplierTypeModalManager = default!;
-    
-    // 選項清單
-    private List<SupplierType> supplierTypes = new();
-    private List<ContactType> contactTypes = new();
-    private List<AddressType> addressTypes = new();
-    
-    // 聯絡資訊和地址資訊相關變數
-    private List<Contact> supplierContacts = new();
-    private List<Address> supplierAddresses = new();
-    
     // 產品供應商關聯相關變數
     private List<ProductSupplier> supplierProducts = new();
     private List<Product> availableProducts = new();
     private List<Unit> availableUnits = new();
-    
-    // 子集合組件用的轉換清單
-    private List<ERPCore2.Data.BaseEntity> contactTypeOptions = new();
-    private List<ERPCore2.Data.BaseEntity> addressTypeOptions = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化廠商類型 Modal 管理器
-            InitializeSupplierTypeModalManager();
-            
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
@@ -110,59 +75,19 @@
         await base.OnParametersSetAsync();
     }
 
-    /// <summary>
-    /// 初始化廠商類型 Modal 管理器
-    /// </summary>
-    private void InitializeSupplierTypeModalManager()
-    {
-        supplierTypeModalManager = new RelatedEntityManagerBuilder<SupplierType>(NotificationService, "廠商類型")
-            .WithPropertyName(nameof(Supplier.SupplierTypeId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(supplierTypeId => 
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.SupplierTypeId = supplierTypeId;
-                }
-            })
-            .WithCustomPostProcess(async supplierType => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
-    }
-
     private async Task LoadAdditionalDataAsync()
     {
         try
         {
-            // 載入可選擇的廠商類型列表
-            supplierTypes = await SupplierService.GetSupplierTypesAsync();
-            
-            // 載入聯絡類型和地址類型
-            contactTypes = await ContactTypeService.GetActiveAsync();
-            addressTypes = await AddressTypeService.GetActiveAsync();
-            
             // 載入產品和單位選項
             availableProducts = await ProductService.GetActiveProductsAsync();
             availableUnits = await UnitService.GetActiveAsync();
-            
-            // 轉換為子集合組件用的基礎實體清單
-            contactTypeOptions = contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
-            addressTypeOptions = addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("載入廠商編輯相關資料時發生錯誤");
-            supplierTypes = new List<SupplierType>();
-            contactTypes = new List<ContactType>();
-            addressTypes = new List<AddressType>();
             availableProducts = new List<Product>();
             availableUnits = new List<Unit>();
-            contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
-            addressTypeOptions = new List<ERPCore2.Data.BaseEntity>();
         }
     }
 
@@ -188,9 +113,9 @@
                     Label = "公司名稱",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司名稱",
-                    IsRequired = true,
+                    IsRequired = false,
                     MaxLength = 100,
-                    HelpText = "廠商的正式公司名稱"
+                    HelpText = "廠商的正式公司名稱（公司名稱、負責人或聯絡人至少需填寫一項）"
                 },
                 new()
                 {
@@ -198,8 +123,9 @@
                     Label = "聯絡人",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入聯絡人姓名",
+                    IsRequired = false,
                     MaxLength = 50,
-                    HelpText = "主要聯絡人姓名"
+                    HelpText = "主要聯絡人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
                 },
                 new()
                 {
@@ -212,13 +138,125 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Supplier.SupplierTypeId),
-                    Label = "廠商類型",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇廠商類型",
-                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
-                    HelpText = "輸入廠商類型名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetSupplierTypeActionButtonsAsync()
+                    PropertyName = nameof(Supplier.ResponsiblePerson),
+                    Label = "負責人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入負責人姓名",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "公司負責人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.JobTitle),
+                    Label = "職稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入職稱",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "聯絡人職稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.ContactPhone),
+                    Label = "聯絡電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡電話",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "聯絡人或是公司聯絡電話"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.MobilePhone),
+                    Label = "行動電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入行動電話",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "聯絡人行動電話"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.Fax),
+                    Label = "傳真",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入傳真號碼",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "公司傳真號碼"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.Email),
+                    Label = "信箱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入電子郵件",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "聯絡人電子郵件地址"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.Website),
+                    Label = "公司網址",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司網址",
+                    MaxLength = 50,
+                    ContainerCssClass = "col-4",
+                    HelpText = "公司官方網站網址"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.ContactAddress),
+                    Label = "聯絡地址",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡地址",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "公司聯絡地址",
+                    ContainerCssClass = "col-4"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.SupplierAddress),
+                    Label = "公司地址",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司地址",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "公司地址",
+                    ContainerCssClass = "col-4"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.PaymentMethod),
+                    Label = "付款方式",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款方式",
+                    IsRequired = false,
+                    MaxLength = 10,
+                    HelpText = "客戶的付款方式（例如：現金、支票、匯款等）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Supplier.PaymentTerms),
+                    Label = "付款條件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入付款條件",
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "付款條件說明（例如：月結30天、貨到付款等）"
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Supplier.SupplierContactPhone),
+                    Label = "聯絡電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入聯絡電話",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "負責人或是公司聯絡電話"
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<Supplier>()
@@ -227,12 +265,25 @@
             // 更新表單區段定義
             formSections = new Dictionary<string, string>
             {
-                { nameof(Supplier.Code), "基本資訊" },
-                { nameof(Supplier.CompanyName), "基本資訊" },
-                { nameof(Supplier.ContactPerson), "基本資訊" },
-                { nameof(Supplier.TaxNumber), "基本資訊" },
-                { nameof(Supplier.SupplierTypeId), "基本資訊" },
-                { nameof(Supplier.Remarks), "額外資訊" }
+            { nameof(Supplier.Code), "基本資訊" },
+            { nameof(Supplier.CompanyName), "基本資訊" },
+            { nameof(Supplier.ResponsiblePerson), "基本資訊" },       
+            { nameof(Supplier.SupplierContactPhone), "基本資訊" },
+            { nameof(Supplier.TaxNumber), "基本資訊" },         
+            { nameof(Supplier.Fax), "基本資訊" },   
+            { nameof(Supplier.Website), "基本資訊" },
+            { nameof(Supplier.ContactAddress), "基本資訊" },
+            { nameof(Supplier.SupplierAddress), "基本資訊" },
+            
+            { nameof(Supplier.ContactPerson), "聯絡人資訊" },
+            { nameof(Supplier.JobTitle), "聯絡人資訊" },
+            { nameof(Supplier.ContactPhone), "聯絡人資訊" },
+            { nameof(Supplier.MobilePhone), "聯絡人資訊" },            
+            { nameof(Supplier.Email), "聯絡人資訊" },           
+
+            { nameof(Supplier.PaymentMethod), "付款資訊" },
+            { nameof(Supplier.PaymentTerms), "付款資訊" },
+            { nameof(Supplier.Remarks), "其他資訊" }
             };
         }
         catch (Exception)
@@ -251,17 +302,7 @@
     /// </summary>
     private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
     {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(Supplier.SupplierTypeId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["TypeName"] = searchTerm,
-                    ["Status"] = 1 // EntityStatus.Active
-                }
-            }
-        };
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>();
     }
 
     /// <summary>
@@ -269,10 +310,7 @@
     /// </summary>
     private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
     {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(Supplier.SupplierTypeId), supplierTypes.Cast<object>() }
-        };
+        return new Dictionary<string, IEnumerable<object>>();
     }
 
     /// <summary>
@@ -280,10 +318,7 @@
     /// </summary>
     private Dictionary<string, string> GetAutoCompleteDisplayProperties()
     {
-        return new Dictionary<string, string>
-        {
-            { nameof(Supplier.SupplierTypeId), "TypeName" }
-        };
+        return new Dictionary<string, string>();
     }
 
     /// <summary>
@@ -291,21 +326,7 @@
     /// </summary>
     private Dictionary<string, string> GetAutoCompleteValueProperties()
     {
-        return new Dictionary<string, string>
-        {
-            { nameof(Supplier.SupplierTypeId), "Id" }
-        };
-    }
-    
-    /// <summary>
-    /// 配置 Modal 管理器
-    /// </summary>
-    private Dictionary<string, object> GetModalManagers()
-    {
-        return new Dictionary<string, object>
-        {
-            { nameof(Supplier.SupplierTypeId), supplierTypeModalManager }
-        };
+        return new Dictionary<string, string>();
     }
 
     private async Task<Supplier?> LoadSupplierData()
@@ -346,8 +367,6 @@
                     }
                 }
                 
-                supplierContacts = new List<Contact>();
-                supplierAddresses = new List<Address>();
                 supplierProducts = new List<ProductSupplier>();
                 
                 return newSupplier;
@@ -361,10 +380,6 @@
                 return null;
             }
             
-            // 載入聯絡資訊和地址資訊
-            supplierContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Supplier, SupplierId.Value);
-            supplierAddresses = await AddressService.GetSupplierAddressesAsync(SupplierId.Value);
-            
             // 載入供應商產品資訊
             supplierProducts = await ProductSupplierService.GetBySupplierId(SupplierId.Value);
             
@@ -375,8 +390,6 @@
             _ = NotificationService.ShowErrorAsync("載入廠商資料時發生錯誤");
             
             // 設定安全的預設值，確保程式不會崩潰
-            supplierContacts = new List<Contact>();
-            supplierAddresses = new List<Address>();
             supplierProducts = new List<ProductSupplier>();
             
             return new Supplier
@@ -419,8 +432,8 @@
                 result = await SupplierService.UpdateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式、地址資料和產品關聯
-                    await UpdateSupplierSubCollectionsAsync(entity.Id);
+                    // 更新產品關聯
+                    await UpdateSupplierProductsAsync(entity.Id);
                 }
             }
             else
@@ -429,8 +442,8 @@
                 result = await SupplierService.CreateAsync(entity);
                 if (result.IsSuccess)
                 {
-                    // 更新聯絡方式、地址資料和產品關聯
-                    await UpdateSupplierSubCollectionsAsync(entity.Id);
+                    // 更新產品關聯
+                    await UpdateSupplierProductsAsync(entity.Id);
                 }
             }
 
@@ -441,62 +454,6 @@
         {
             _ = NotificationService.ShowErrorAsync("儲存廠商資料時發生錯誤");
             return false;
-        }
-    }
-
-    private async Task UpdateSupplierSubCollectionsAsync(int supplierId)
-    {
-        try
-        {
-            // 更新聯絡資訊 - 只更新或新增，不刪除
-            foreach (var contact in supplierContacts)
-            {
-                contact.OwnerType = ContactOwnerTypes.Supplier;
-                contact.OwnerId = supplierId;
-                
-                if (contact.Id == 0)
-                {
-                    // 新記錄
-                    await ContactService.CreateAsync(contact);
-                }
-                else
-                {
-                    // 更新現有記錄
-                    await ContactService.UpdateAsync(contact);
-                }
-            }
-
-            // 重新加載聯絡資料以更新UI顯示
-            supplierContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Supplier, supplierId);
-
-            // 更新地址資訊 - 只更新或新增，不刪除
-            foreach (var address in supplierAddresses)
-            {
-                SetSupplierIdForAddress(address, supplierId);
-                
-                if (address.Id == 0)
-                {
-                    // 新增地址
-                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Supplier, supplierId, address);
-                }
-                else
-                {
-                    // 更新地址
-                    await AddressService.UpdateAddressAsync(address);
-                }
-            }
-
-            // 重新加載地址資料以更新UI顯示
-            supplierAddresses = await AddressService.GetSupplierAddressesAsync(supplierId);
-
-            // 更新產品供應商關聯
-            await UpdateSupplierProductsAsync(supplierId);
-
-            StateHasChanged(); // 通知UI更新
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新廠商相關資料時發生錯誤");
         }
     }
 
@@ -603,96 +560,6 @@
         }
     }
 
-    private void SetSupplierIdForAddress(Address address, int parentId)
-    {
-        address.OwnerId = parentId;
-        address.OwnerType = AddressOwnerTypes.Supplier;
-    }
-
-    /// <summary>
-    /// 處理廠商聯絡方式變更事件
-    /// </summary>
-    private Task OnSupplierContactsChanged(List<Contact> updatedContacts)
-    {
-        try
-        {
-            supplierContacts = updatedContacts;
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新聯絡方式時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// 處理已刪除的廠商聯絡方式ID - 實際從資料庫刪除
-    /// </summary>
-    private async Task HandleDeletedSupplierContactsChanged(List<int> deletedContactIds)
-    {
-        try
-        {
-            if (deletedContactIds?.Any() == true)
-            {
-                foreach (var contactId in deletedContactIds)
-                {
-                    await ContactService.DeleteAsync(contactId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedContactIds.Count} 個聯絡方式");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除聯絡方式時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 處理廠商地址變更事件
-    /// </summary>
-    private Task OnSupplierAddressesChanged(List<Address> updatedAddresses)
-    {
-        try
-        {
-            supplierAddresses = updatedAddresses;
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新地址資料時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// 處理已刪除的廠商地址ID - 實際從資料庫刪除
-    /// </summary>
-    private async Task HandleDeletedSupplierAddressesChanged(List<int> deletedAddressIds)
-    {
-        try
-        {
-            if (deletedAddressIds?.Any() == true)
-            {
-                foreach (var addressId in deletedAddressIds)
-                {
-                    await AddressService.DeleteAddressAsync(addressId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedAddressIds.Count} 個廠商地址");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除廠商地址時發生錯誤：{ex.Message}");
-        }
-    }
-
     /// <summary>
     /// 處理已刪除的供應商產品ID - 實際從資料庫刪除
     /// </summary>
@@ -772,54 +639,12 @@
     }
 
     /// <summary>
-    /// 取得額外區段內容（聯絡方式、地址管理和產品管理）
+    /// 取得額外區段內容（產品管理）
     /// </summary>
     private RenderFragment? GetAdditionalSections()
     {
         return @<div class="mt-4">
             <div class="row">
-                <div class="col-md-6">
-                    <ContactManagerComponent TContactEntity="Contact"
-                                           TParentEntity="Supplier"
-                                           Items="@supplierContacts"
-                                           Options="@contactTypeOptions"
-                                           ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                           Title="聯絡方式"
-                                           ItemDisplayName="聯絡方式"
-                                           TypeDisplayName="聯絡類型"
-                                           ValueDisplayName="聯絡內容"
-                                           ValuePlaceholder="請輸入聯絡內容"
-                                           GetTypeId="@(c => c.ContactTypeId)"
-                                           GetContactValue="@(c => c.ContactValue)"
-                                           GetOptionId="@(option => option.Id)"
-                                           GetOptionDisplayText="@(option => ((ContactType)option).TypeName)"
-                                           SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
-                                           SetContactValue="@((c, value) => c.ContactValue = value)"
-                                           SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Supplier; c.OwnerId = parentId; })"
-                                           ItemsChanged="@OnSupplierContactsChanged"
-                                           OnDeletedDetailsChanged="@HandleDeletedSupplierContactsChanged" />
-                </div>
-                <div class="col-md-6">
-                    <AddressManagerComponent TAddressEntity="Address"
-                                           TParentEntity="Supplier"
-                                           Items="@supplierAddresses"
-                                           Options="@addressTypeOptions"
-                                           ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                           Title="地址資訊"
-                                           ItemDisplayName="地址"
-                                           TypeDisplayName="地址類型"
-                                           GetTypeId="@(a => a.AddressTypeId)"
-                                           GetAddress="@(a => a.AddressLine)"
-                                           GetOptionId="@(option => option.Id)"
-                                           GetOptionDisplayText="@(option => ((AddressType)option).TypeName)"
-                                           SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
-                                           SetAddress="@((a, address) => a.AddressLine = address)"
-                                           SetParentId="@((a, parentId) => SetSupplierIdForAddress(a, parentId))"
-                                           ItemsChanged="@OnSupplierAddressesChanged"
-                                           OnDeletedDetailsChanged="@HandleDeletedSupplierAddressesChanged" />
-                </div>
-            </div>
-            <div class="row mt-4">
                 <div class="col-12">
                     <SupplierProductManagerComponent TProductSupplierEntity="ProductSupplier"
                                                    TProductEntity="Product"
@@ -856,54 +681,6 @@
                 </div>
             </div>
         </div>;
-    }
-    
-    /// <summary>
-    /// 包裝廠商類型儲存事件以符合原有介面
-    /// </summary>
-    private async Task OnSupplierTypeSavedWrapper(SupplierType savedSupplierType)
-    {
-        await supplierTypeModalManager.HandleEntitySavedAsync(savedSupplierType, shouldAutoSelect: true);
-    }
-    
-    /// <summary>
-    /// 使用統一 Helper 產生廠商類型操作按鈕
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetSupplierTypeActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            supplierTypeModalManager, 
-            nameof(Supplier.SupplierTypeId)
-        );
-    }
-
-    /// <summary>
-    /// 開啟廠商類型編輯 Modal - 使用泛型管理器
-    /// </summary>
-    private async Task OpenSupplierTypeModal(int? supplierTypeId)
-    {
-        await supplierTypeModalManager.OpenModalAsync(supplierTypeId);
-    }
-
-    /// <summary>
-    /// 處理欄位值變更事件 - 使用統一 Helper
-    /// </summary>
-    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
-    {
-        try
-        {
-            // 使用統一 Helper 處理廠商類型欄位變更
-            if (fieldChange.PropertyName == nameof(Supplier.SupplierTypeId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    supplierTypeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
-        }
-        catch (Exception)
-        {
-            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
-        }
     }
 
     // ===== SupplierProductManagerComponent 委派屬性 =====

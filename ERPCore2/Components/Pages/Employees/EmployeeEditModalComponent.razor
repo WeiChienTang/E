@@ -4,10 +4,6 @@
 @inject IDepartmentService DepartmentService
 @inject IEmployeePositionService EmployeePositionService
 @inject IRoleService RoleService
-@inject IContactService ContactService
-@inject IAddressService AddressService
-@inject IContactTypeService ContactTypeService
-@inject IAddressTypeService AddressTypeService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INavigationPermissionService NavigationPermissionService
@@ -39,8 +35,7 @@
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Employee.Read"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged"
-                          AdditionalSections="@GetAdditionalSections()" />
+                          OnFieldChanged="@OnFieldValueChanged" />
 
 @* 部門編輯 Modal *@
 <DepartmentEditModalComponent @ref="departmentEditModal"
@@ -97,16 +92,6 @@
     private List<Department> availableDepartments = new();
     private List<EmployeePosition> availablePositions = new();
     private List<Role> availableRoles = new();
-    
-    // 聯絡資訊和地址資訊相關變數
-    private List<Contact> employeeContacts = new();
-    private List<Address> employeeAddresses = new();
-    private List<ContactType> contactTypes = new();
-    private List<AddressType> addressTypes = new();
-    
-    // 子集合組件用的轉換清單
-    private List<ERPCore2.Data.BaseEntity> contactTypeOptions = new();
-    private List<ERPCore2.Data.BaseEntity> addressTypeOptions = new();
     
     // 注意：搜尋關鍵字追蹤已整合到 GenericEditModalComponent 中，不再需要手動追蹤
     // private string lastDepartmentSearchTerm = string.Empty;  // 已移除
@@ -232,14 +217,6 @@
             var currentUserRole = await CurrentUserHelper.GetCurrentRoleAsync(AuthenticationStateProvider);
             var rolesResult = await RoleService.GetAssignableRolesForCurrentUserAsync(currentUserRole);
             availableRoles = rolesResult.IsSuccess ? rolesResult.Data ?? new List<Role>() : new List<Role>();
-            
-            // 載入聯絡類型和地址類型
-            contactTypes = await ContactTypeService.GetActiveAsync();
-            addressTypes = await AddressTypeService.GetActiveAsync();
-            
-            // 轉換為子集合組件用的基礎實體清單
-            contactTypeOptions = contactTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
-            addressTypeOptions = addressTypes.Cast<ERPCore2.Data.BaseEntity>().ToList();
         }
         catch (Exception)
         {
@@ -247,10 +224,6 @@
             availableDepartments = new List<Department>();
             availablePositions = new List<EmployeePosition>();
             availableRoles = new List<Role>();
-            contactTypes = new List<ContactType>();
-            addressTypes = new List<AddressType>();
-            contactTypeOptions = new List<ERPCore2.Data.BaseEntity>();
-            addressTypeOptions = new List<ERPCore2.Data.BaseEntity>();
         }
     }
 
@@ -293,8 +266,38 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入姓名",
                     IsRequired = true,
-                    MaxLength = 25,
+                    MaxLength = 10,
                     HelpText = "員工的名字"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.Gender),
+                    Label = "性別",
+                    FieldType = FormFieldType.Select,
+                    Options = Enum.GetValues<Gender>()
+                        .Select(g => new SelectOption
+                        {
+                            Text = GetGenderDisplayName(g),
+                            Value = ((int)g).ToString()
+                        }).ToList(),
+                    HelpText = "員工性別"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.BirthDate),
+                    Label = "生日",
+                    FieldType = FormFieldType.Date,
+                    Placeholder = "請選擇生日",
+                    HelpText = "員工出生日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.IdNumber),
+                    Label = "身分證字號",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入身分證字號",
+                    MaxLength = 10,
+                    HelpText = "員工身分證字號"
                 }
             };
 
@@ -311,7 +314,7 @@
                         Label = "登入帳號",
                         FieldType = FormFieldType.Text,
                         Placeholder = "請輸入登入帳號",
-                        MaxLength = 50,
+                        MaxLength = 20,
                         HelpText = "輸入帳號即可登入系統，留空表示此員工無法登入"
                     },
                     new()
@@ -320,13 +323,13 @@
                         Label = "登入密碼",
                         FieldType = FormFieldType.Password,
                         Placeholder = "請輸入登入密碼",
-                        MaxLength = 100,
+                        MaxLength = 20,
                         HelpText = "系統登入密碼（編輯時留空表示不變更）",
                     },
                     new()
                     {
                         PropertyName = nameof(Employee.RoleId),
-                        Label = "身分",
+                        Label = "身分/權限",
                         FieldType = FormFieldType.AutoComplete,
                         Placeholder = "請輸入或選擇身分",
                         MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
@@ -335,6 +338,47 @@
                     }
                 });
             }
+            
+            // 聯絡資訊區段
+            formFields.AddRange(new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Employee.Mobile),
+                    Label = "手機號碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入手機號碼",
+                    MaxLength = 20,
+                    HelpText = "員工個人手機號碼"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.Email),
+                    Label = "電子郵件",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入Email",
+                    MaxLength = 50,
+                    HelpText = "員工電子郵件地址"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.EmergencyContact),
+                    Label = "緊急聯絡人",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入緊急聯絡人姓名",
+                    MaxLength = 10,
+                    HelpText = "緊急狀況時的聯絡人"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.EmergencyPhone),
+                    Label = "緊急聯絡電話",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入緊急聯絡電話",
+                    MaxLength = 20,
+                    HelpText = "緊急聯絡人電話號碼"
+                }
+            });
             
             // 組織架構區段 - 所有人都可見
             formFields.AddRange(new List<FormFieldDefinition>
@@ -360,6 +404,41 @@
                     ActionButtons = await GetPositionActionButtonsAsync()
                 }
             });
+            
+            // 任職資訊區段
+            formFields.AddRange(new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Employee.HireDate),
+                    Label = "到職日期",
+                    FieldType = FormFieldType.Date,
+                    Placeholder = "請選擇到職日期",
+                    IsReadOnly = EmployeeId.HasValue, // 編輯模式下唯讀
+                    HelpText = "員工正式到職的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.ResignationDate),
+                    Label = "離職日期",
+                    FieldType = FormFieldType.Date,
+                    Placeholder = "請選擇離職日期",
+                    HelpText = "員工離職日期（在職者免填）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Employee.EmploymentStatus),
+                    Label = "在職狀態",
+                    FieldType = FormFieldType.Select,
+                    Options = Enum.GetValues<EmployeeStatus>()
+                        .Select(es => new SelectOption
+                        {
+                            Text = GetEmployeeStatusDisplayName(es),
+                            Value = ((int)es).ToString()
+                        }).ToList(),
+                    HelpText = "員工目前的在職狀態"
+                }
+            });
 
             formFields.Add(FormFieldConfigurationHelper.CreateRemarksField<Employee>());
 
@@ -367,9 +446,19 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(Employee.Code), "基本資訊" },
-                { nameof(Employee.Name), "基本資訊" },                
-                { nameof(Employee.DepartmentId), "基本資訊" },
-                { nameof(Employee.EmployeePositionId), "基本資訊" },
+                { nameof(Employee.Name), "基本資訊" },
+                { nameof(Employee.Gender), "基本資訊" },
+                { nameof(Employee.BirthDate), "基本資訊" },
+                { nameof(Employee.IdNumber), "基本資訊" },
+                { nameof(Employee.Mobile), "聯絡資訊" },
+                { nameof(Employee.Email), "聯絡資訊" },
+                { nameof(Employee.EmergencyContact), "聯絡資訊" },
+                { nameof(Employee.EmergencyPhone), "聯絡資訊" },
+                { nameof(Employee.DepartmentId), "組織架構" },
+                { nameof(Employee.EmployeePositionId), "組織架構" },
+                { nameof(Employee.HireDate), "任職資訊" },
+                { nameof(Employee.ResignationDate), "任職資訊" },
+                { nameof(Employee.EmploymentStatus), "任職資訊" },
                 { nameof(Employee.Remarks), "額外資料" }
             };
 
@@ -488,8 +577,6 @@
             if (!EmployeeId.HasValue) 
             {
                 // 新增模式：建立新的員工實體並生成代碼
-                employeeContacts = new List<Contact>();
-                employeeAddresses = new List<Address>();
                 
                 // 找出預設的身分 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
@@ -501,7 +588,9 @@
                     Name = string.Empty,
                     IsSystemUser = false,
                     RoleId = defaultRole?.Id,
-                    Status = EntityStatus.Active
+                    Status = EntityStatus.Active,
+                    EmploymentStatus = EmployeeStatus.Active,
+                    HireDate = DateTime.Today // 預設到職日期為當日
                 };
                 
                 return newEmployee;
@@ -518,15 +607,8 @@
                     Name = "ERROR",
                     Status = EntityStatus.Active
                 };
-                employeeContacts = new List<Contact>();
-                employeeAddresses = new List<Address>();
                 return employee;
             }
-            
-            // 載入聯絡資訊和地址資訊
-            employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, EmployeeId.Value);
-            
-            employeeAddresses = await AddressService.GetEmployeeAddressesAsync(EmployeeId.Value);
             
             return employee;
         }
@@ -650,19 +732,11 @@
             {
                 // 更新現有員工
                 result = await EmployeeService.UpdateAsync(entity);
-                if (result.IsSuccess)
-                {
-                    await UpdateEmployeeSubCollectionsAsync(EmployeeId.Value);
-                }
             }
             else
             {
                 // 新增員工
                 result = await EmployeeService.CreateAsync(entity);
-                if (result.IsSuccess && entity.Id > 0)
-                {
-                    await UpdateEmployeeSubCollectionsAsync(entity.Id);
-                }
             }
 
             // 讓 GenericEditModalComponent 處理通用的成功/失敗訊息
@@ -672,60 +746,6 @@
         {
             _ = NotificationService.ShowErrorAsync("儲存員工資料時發生錯誤");
             return false;
-        }
-    }
-
-    private async Task UpdateEmployeeSubCollectionsAsync(int employeeId)
-    {
-        try
-        {
-            // 更新聯絡資訊 - 只更新或新增，不刪除
-            foreach (var contact in employeeContacts)
-            {
-                contact.OwnerType = ContactOwnerTypes.Employee;
-                contact.OwnerId = employeeId;
-                
-                if (contact.Id == 0)
-                {
-                    // 新記錄
-                    await ContactService.CreateAsync(contact);
-                }
-                else
-                {
-                    // 更新現有記錄
-                    await ContactService.UpdateAsync(contact);
-                }
-            }
-
-            // 重新加載聯絡資料以更新UI顯示
-            employeeContacts = await ContactService.GetByOwnerAsync(ContactOwnerTypes.Employee, employeeId);
-
-            // 更新地址資訊 - 只更新或新增，不刪除
-            foreach (var address in employeeAddresses)
-            {
-                address.OwnerType = AddressOwnerTypes.Employee;
-                address.OwnerId = employeeId;
-                
-                if (address.Id == 0)
-                {
-                    // 新記錄
-                    await AddressService.CreateAddressAsync(AddressOwnerTypes.Employee, employeeId, address);
-                }
-                else
-                {
-                    // 更新現有記錄
-                    await AddressService.UpdateAddressAsync(address);
-                }
-            }
-
-            // 重新加載地址資料以更新UI顯示
-            employeeAddresses = await AddressService.GetEmployeeAddressesAsync(employeeId);
-
-            StateHasChanged(); // 通知UI更新
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新員工相關資料時發生錯誤");
         }
     }
 
@@ -861,131 +881,28 @@
     }
 
     /// <summary>
-    /// 處理員工聯絡方式變更事件
+    /// 取得性別的顯示名稱
     /// </summary>
-    private Task OnEmployeeContactsChanged(List<Contact> updatedContacts)
+    private static string GetGenderDisplayName(Gender gender)
     {
-        try
-        {
-            employeeContacts = updatedContacts;
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新聯絡方式時發生錯誤");
-            return Task.CompletedTask;
-        }
+        var displayAttribute = gender.GetType()
+            .GetField(gender.ToString())?
+            .GetCustomAttribute<DisplayAttribute>();
+        
+        return displayAttribute?.Name ?? gender.ToString();
     }
 
     /// <summary>
-    /// 處理已刪除的員工聯絡方式ID - 實際從資料庫刪除
+    /// 取得在職狀態的顯示名稱
     /// </summary>
-    private async Task HandleDeletedEmployeeContactsChanged(List<int> deletedContactIds)
+    private static string GetEmployeeStatusDisplayName(EmployeeStatus status)
     {
-        try
-        {
-            if (deletedContactIds?.Any() == true)
-            {
-                foreach (var contactId in deletedContactIds)
-                {
-                    await ContactService.DeleteAsync(contactId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedContactIds.Count} 個聯絡方式");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除聯絡方式時發生錯誤：{ex.Message}");
-        }
+        var displayAttribute = status.GetType()
+            .GetField(status.ToString())?
+            .GetCustomAttribute<DisplayAttribute>();
+        
+        return displayAttribute?.Name ?? status.ToString();
     }
 
-    /// <summary>
-    /// 處理員工地址變更事件
-    /// </summary>
-    private Task OnEmployeeAddressesChanged(List<Address> updatedAddresses)
-    {
-        try
-        {
-            employeeAddresses = updatedAddresses;
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新地址資料時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
 
-    /// <summary>
-    /// 處理已刪除的員工地址ID - 實際從資料庫刪除
-    /// </summary>
-    private async Task HandleDeletedEmployeeAddressesChanged(List<int> deletedAddressIds)
-    {
-        try
-        {
-            if (deletedAddressIds?.Any() == true)
-            {
-                foreach (var addressId in deletedAddressIds)
-                {
-                    await AddressService.DeleteAddressAsync(addressId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedAddressIds.Count} 個員工地址");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除員工地址時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 取得額外區段內容（聯絡方式和地址管理）
-    /// </summary>
-    private RenderFragment? GetAdditionalSections()
-    {
-        return @<div class="row mt-4">
-            <div class="row">
-                <div class="col-md-6">
-                        <ContactManagerComponent TContactEntity="Contact"
-                                               TParentEntity="Employee"
-                                               Items="@employeeContacts"
-                                               Options="@contactTypeOptions"
-                                               ParentEntityId="@(EmployeeId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                               GetTypeId="@(c => c.ContactTypeId)"
-                                               GetContactValue="@(c => c.ContactValue)"
-                                               SetTypeId="@((c, typeId) => c.ContactTypeId = typeId)"
-                                               SetContactValue="@((c, value) => c.ContactValue = value)"
-                                               SetParentId="@((c, parentId) => { c.OwnerType = ContactOwnerTypes.Employee; c.OwnerId = parentId; })"
-                                               ItemsChanged="@OnEmployeeContactsChanged"
-                                               OnDeletedDetailsChanged="@HandleDeletedEmployeeContactsChanged" />
-                </div>
-                <div class="col-md-6">
-                        <AddressManagerComponent TAddressEntity="Address"
-                                               TParentEntity="Employee"
-                                               Items="@employeeAddresses"
-                                               Options="@addressTypeOptions"
-                                               ParentEntityId="@(EmployeeId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                               GetTypeId="@(a => a.AddressTypeId)"
-                                               GetAddress="@(a => a.AddressLine)"
-                                               SetTypeId="@((a, typeId) => a.AddressTypeId = typeId)"
-                                               SetAddress="@((a, address) => a.AddressLine = address)"
-                                               SetParentId="@((a, parentId) => SetEmployeeIdForAddress(a, parentId))"
-                                               ItemsChanged="@OnEmployeeAddressesChanged"
-                                               OnDeletedDetailsChanged="@HandleDeletedEmployeeAddressesChanged" />
-                </div>
-            </div>
-        </div>;
-    }
-
-    private void SetEmployeeIdForAddress(Address address, int parentId)
-    {
-        address.OwnerId = parentId;
-        address.OwnerType = AddressOwnerTypes.Employee;
-    }
 }
