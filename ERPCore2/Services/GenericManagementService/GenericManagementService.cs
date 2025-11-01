@@ -162,12 +162,17 @@ namespace ERPCore2.Services
                     return ServiceResult<T>.Failure(validationResult.ErrorMessage);
                 }
 
-                // 更新資訊
+                // 保持原建立資訊
+                entity.CreatedAt = existingEntity.CreatedAt;
+                entity.CreatedBy = existingEntity.CreatedBy;
+                
+                // 更新時間
                 entity.UpdatedAt = DateTime.UtcNow;
-                entity.CreatedAt = existingEntity.CreatedAt; // 保持原建立時間
-                entity.CreatedBy = existingEntity.CreatedBy; // 保持原建立者
 
-                context.Entry(existingEntity).CurrentValues.SetValues(entity);
+                // 分離舊實體並附加新實體
+                context.Entry(existingEntity).State = EntityState.Detached;
+                context.Entry(entity).State = EntityState.Modified;
+                
                 await context.SaveChangesAsync();
 
                 return ServiceResult<T>.Success(entity);

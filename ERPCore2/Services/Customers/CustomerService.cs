@@ -97,9 +97,9 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("客戶代碼為必填");
                 
-                // 檢查公司名稱或聯絡人至少要有一個
-                if (string.IsNullOrWhiteSpace(entity.CompanyName) && string.IsNullOrWhiteSpace(entity.ContactPerson))
-                    errors.Add("公司名稱或聯絡人至少需填寫一項");
+                // 檢查公司名稱、負責人或聯絡人至少要有一個
+                if (string.IsNullOrWhiteSpace(entity.CompanyName) && string.IsNullOrWhiteSpace(entity.ContactPerson) && string.IsNullOrWhiteSpace(entity.ResponsiblePerson))
+                    errors.Add("公司名稱、負責人或聯絡人至少需填寫一項");
 
                 // 檢查長度限制
                 if (entity.Code?.Length > 20)
@@ -326,8 +326,8 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(customer.Code))
                     count++;
 
-                // 公司名稱或聯絡人至少要有一個
-                if (!string.IsNullOrWhiteSpace(customer.CompanyName) || !string.IsNullOrWhiteSpace(customer.ContactPerson))
+                // 公司名稱或聯絡人或負責人至少要有一個
+                if (!string.IsNullOrWhiteSpace(customer.CompanyName) || !string.IsNullOrWhiteSpace(customer.ContactPerson) || !string.IsNullOrWhiteSpace(customer.ResponsiblePerson))
                     count++;
 
                 return count;
