@@ -434,22 +434,25 @@
     /// </summary>
     private void InitializeProductModalManager()
     {
-        productModalManager = new RelatedEntityManagerBuilder<Product>(NotificationService, "商品")
-            .WithPropertyName(nameof(InventoryStock.ProductId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(productId => 
+        productModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<InventoryStock, Product, IInventoryStockService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "商品",
+                PropertyName = nameof(InventoryStock.ProductId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, productId) =>
                 {
-                    editModalComponent.Entity.ProductId = productId;
-                }
-            })
-            .WithCustomPostProcess(async product => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.ProductId = productId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>

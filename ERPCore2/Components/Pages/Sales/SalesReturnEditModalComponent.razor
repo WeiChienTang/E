@@ -1354,22 +1354,25 @@
     /// </summary>
     private void InitializeCustomerModalManager()
     {
-        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
-            .WithPropertyName(nameof(SalesReturn.CustomerId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(customerId => 
+        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<SalesReturn, Customer, ISalesReturnService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "客戶",
+                PropertyName = nameof(SalesReturn.CustomerId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, customerId) =>
                 {
-                    editModalComponent.Entity.CustomerId = customerId;
-                }
-            })
-            .WithCustomPostProcess(async customer => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.CustomerId = customerId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>

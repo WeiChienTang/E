@@ -166,9 +166,9 @@
     {
         try
         {
-            if (OnProductSaved.HasDelegate)
+            if (OnProductSaved.HasDelegate && editModalComponent?.Entity != null)
             {
-                await OnProductSaved.InvokeAsync();
+                await OnProductSaved.InvokeAsync(editModalComponent.Entity);
             }
             await CloseModal();
         }
@@ -644,68 +644,68 @@
     /// </summary>
     private void InitializeProductCategoryModalManager()
     {
-        productCategoryModalManager = new RelatedEntityManagerBuilder<ProductCategory>(NotificationService, "產品分類")
-            .WithPropertyName(nameof(Product.ProductCategoryId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(categoryId => 
+        productCategoryModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Product, ProductCategory, IProductService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "產品分類",
+                PropertyName = nameof(Product.ProductCategoryId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, categoryId) => 
                 {
-                    editModalComponent.Entity.ProductCategoryId = categoryId;
-                }
-            })
-            .WithCustomPostProcess(async category => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null) entity.ProductCategoryId = categoryId;
+                },
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>
-    /// 初始化單位 Modal 管理器
+    /// 初始化單位 Modal 管理器 - 使用統一 Helper
     /// </summary>
     private void InitializeUnitModalManager()
     {
-        unitModalManager = new RelatedEntityManagerBuilder<Unit>(NotificationService, "單位")
-            .WithPropertyName(nameof(Product.UnitId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(unitId => 
+        unitModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Product, Unit, IProductService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "單位",
+                PropertyName = nameof(Product.UnitId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, unitId) => 
                 {
-                    editModalComponent.Entity.UnitId = unitId;
-                }
-            })
-            .WithCustomPostProcess(async unit => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null) entity.UnitId = unitId;
+                },
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>
-    /// 初始化尺寸 Modal 管理器
+    /// 初始化尺寸 Modal 管理器 - 使用統一 Helper
     /// </summary>
     private void InitializeSizeModalManager()
     {
-        sizeModalManager = new RelatedEntityManagerBuilder<Size>(NotificationService, "尺寸")
-            .WithPropertyName(nameof(Product.SizeId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(sizeId => 
+        sizeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Product, Size, IProductService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "尺寸",
+                PropertyName = nameof(Product.SizeId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, sizeId) => 
                 {
-                    editModalComponent.Entity.SizeId = sizeId;
-                }
-            })
-            .WithCustomPostProcess(async size => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null) entity.SizeId = sizeId;
+                },
+                RefreshAutoCompleteFields = true
+            });
     }
 
     // ===== ActionButton 產生方法 =====

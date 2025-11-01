@@ -1591,22 +1591,25 @@
     /// </summary>
     private void InitializeSupplierModalManager()
     {
-        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "廠商")
-            .WithPropertyName(nameof(PurchaseReceiving.SupplierId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(supplierId => 
+        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<PurchaseReceiving, Supplier, IPurchaseReceivingService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "廠商",
+                PropertyName = nameof(PurchaseReceiving.SupplierId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, supplierId) =>
                 {
-                    editModalComponent.Entity.SupplierId = supplierId;
-                }
-            })
-            .WithCustomPostProcess(async supplier => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.SupplierId = supplierId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>

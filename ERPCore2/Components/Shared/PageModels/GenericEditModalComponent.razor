@@ -156,7 +156,8 @@
                         @if (UseGenericForm && FormFields.Any())
                         {
                             <div class="edit-form-container">
-                                <GenericFormComponent TModel="TEntity"
+                                <GenericFormComponent @key="@_autoCompleteVersion"
+                                                    TModel="TEntity"
                                                     Model="@Entity"
                                                     FieldDefinitions="@GetProcessedFormFields()"
                                                     FieldSections="@FormSections"
@@ -427,6 +428,9 @@
     
     // AutoComplete 搜尋關鍵字追蹤
     private readonly Dictionary<string, string> _lastSearchTerms = new();
+    
+    // AutoComplete 版本號機制 - 用於強制刷新 AutoComplete 欄位顯示
+    private int _autoCompleteVersion = 0;
     
     // ESC 鍵支援
     private DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? _escKeyDotNetRef;
@@ -792,6 +796,36 @@
                 await LoadStatusMessageData(); // 重新載入狀態訊息
                 StateHasChanged();
             }
+        }
+    }
+    
+    /// <summary>
+    /// 重新載入額外資料並刷新 AutoComplete 欄位顯示
+    /// 當子 Modal 編輯並儲存後，呼叫此方法以更新 AutoComplete 選項和顯示內容
+    /// </summary>
+    public async Task RefreshAutoCompleteFieldsAsync()
+    {
+        try
+        {
+            // 1. 重新載入額外資料（更新 AutoCompleteCollections）
+            if (AdditionalDataLoader != null)
+            {
+                await AdditionalDataLoader();
+            }
+            
+            // 2. 遞增版本號，強制 Blazor 重新建立 GenericFormComponent
+            _autoCompleteVersion++;
+            
+            // 3. 更新所有 ActionButtons 狀態
+            UpdateAllActionButtons();
+            
+            // 4. 通知 UI 更新
+            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            LogError("RefreshAutoCompleteFields", ex);
         }
     }
     

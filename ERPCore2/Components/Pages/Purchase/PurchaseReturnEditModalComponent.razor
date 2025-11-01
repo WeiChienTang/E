@@ -944,19 +944,22 @@
     /// </summary>
     private void InitializeSupplierModalManager()
     {
-        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "廠商")
-            .WithPropertyName(nameof(PurchaseReturn.SupplierId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(supplierId => 
+        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<PurchaseReturn, Supplier, IPurchaseReturnService>
             {
-                // 自動選擇廠商時的回調邏輯
-            })
-            .WithCustomPostProcess(async supplier => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                NotificationService = NotificationService,
+                EntityDisplayName = "廠商",
+                PropertyName = nameof(PurchaseReturn.SupplierId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, supplierId) =>
+                {
+                    // 自動選擇廠商時的回調邏輯
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
     
     // ===== ActionButton 產生方法 =====

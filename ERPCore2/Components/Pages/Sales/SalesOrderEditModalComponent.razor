@@ -753,22 +753,25 @@
     /// </summary>
     private void InitializeCustomerModalManager()
     {
-        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
-            .WithPropertyName(nameof(SalesOrder.CustomerId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(customerId => 
+        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<SalesOrder, Customer, ISalesOrderService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "客戶",
+                PropertyName = nameof(SalesOrder.CustomerId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, customerId) =>
                 {
-                    editModalComponent.Entity.CustomerId = customerId;
-                }
-            })
-            .WithCustomPostProcess(async customer => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.CustomerId = customerId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
     
     /// <summary>
@@ -776,22 +779,25 @@
     /// </summary>
     private void InitializeEmployeeModalManager()
     {
-        employeeModalManager = new RelatedEntityManagerBuilder<Employee>(NotificationService, "業務員")
-            .WithPropertyName(nameof(SalesOrder.EmployeeId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(employeeId => 
+        employeeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<SalesOrder, Employee, ISalesOrderService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "業務員",
+                PropertyName = nameof(SalesOrder.EmployeeId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, employeeId) =>
                 {
-                    editModalComponent.Entity.EmployeeId = employeeId;
-                }
-            })
-            .WithCustomPostProcess(async employee => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.EmployeeId = employeeId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
     
     // ===== ActionButton 產生方法 =====

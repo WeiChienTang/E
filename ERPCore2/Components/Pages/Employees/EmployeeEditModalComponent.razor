@@ -136,23 +136,22 @@
     /// </summary>
     private void InitializeDepartmentModalManager()
     {
-        departmentModalManager = new RelatedEntityManagerBuilder<Department>(NotificationService, "部門")
-            .WithPropertyName(nameof(Employee.DepartmentId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(departmentId => 
+        departmentModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Employee, Department, IEmployeeService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "部門",
+                PropertyName = nameof(Employee.DepartmentId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, departmentId) => 
                 {
-                    editModalComponent.Entity.DepartmentId = departmentId;
-                }
-            })
-            .WithCustomPostProcess(async department => 
-            {
-                // 員工特定的後處理邏輯
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null) entity.DepartmentId = departmentId;
+                },
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>
@@ -160,23 +159,22 @@
     /// </summary>
     private void InitializePositionModalManager()
     {
-        positionModalManager = new RelatedEntityManagerBuilder<EmployeePosition>(NotificationService, "職位")
-            .WithPropertyName(nameof(Employee.EmployeePositionId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(positionId => 
+        positionModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Employee, EmployeePosition, IEmployeeService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "職位",
+                PropertyName = nameof(Employee.EmployeePositionId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, positionId) => 
                 {
-                    editModalComponent.Entity.EmployeePositionId = positionId;
-                }
-            })
-            .WithCustomPostProcess(async position => 
-            {
-                // 員工特定的後處理邏輯
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null) entity.EmployeePositionId = positionId;
+                },
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>
@@ -184,23 +182,22 @@
     /// </summary>
     private void InitializeRoleModalManager()
     {
-        roleModalManager = new RelatedEntityManagerBuilder<Role>(NotificationService, "角色")
-            .WithPropertyName(nameof(Employee.RoleId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(roleId => 
+        roleModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Employee, Role, IEmployeeService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "角色",
+                PropertyName = nameof(Employee.RoleId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, roleId) => 
                 {
-                    editModalComponent.Entity.RoleId = roleId;
-                }
-            })
-            .WithCustomPostProcess(async role => 
-            {
-                // 員工特定的後處理邏輯
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null) entity.RoleId = roleId;
+                },
+                RefreshAutoCompleteFields = true
+            });
     }
 
     private async Task LoadAdditionalDataAsync()

@@ -136,23 +136,25 @@
     /// </summary>
     private void InitializeCustomerModalManager()
     {
-        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
-            .WithPropertyName(nameof(Quotation.CustomerId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(customerId => 
+        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Quotation, Customer, IQuotationService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "客戶",
+                PropertyName = nameof(Quotation.CustomerId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, customerId) =>
                 {
-                    editModalComponent.Entity.CustomerId = customerId;
-                }
-            })
-            .WithCustomPostProcess(async customer => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.CustomerId = customerId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true  // 刷新 Quotation EditModal 的 Customer AutoComplete
+            });
     }
 
     /// <summary>
@@ -160,23 +162,25 @@
     /// </summary>
     private void InitializeEmployeeModalManager()
     {
-        employeeModalManager = new RelatedEntityManagerBuilder<Employee>(NotificationService, "業務人員")
-            .WithPropertyName(nameof(Quotation.EmployeeId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(employeeId => 
+        employeeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Quotation, Employee, IQuotationService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "業務人員",
+                PropertyName = nameof(Quotation.EmployeeId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, employeeId) =>
                 {
-                    editModalComponent.Entity.EmployeeId = employeeId;
-                }
-            })
-            .WithCustomPostProcess(async employee => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.EmployeeId = employeeId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true  // 刷新 Quotation EditModal 的 Employee AutoComplete
+            });
     }
 
     private async Task HandleSaveSuccess()

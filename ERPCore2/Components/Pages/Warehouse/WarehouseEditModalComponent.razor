@@ -52,10 +52,10 @@
     {
         try
         {
-            if (OnWarehouseSaved.HasDelegate)
+            if (OnWarehouseSaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 // 如果有指定儲存成功回調，則執行
-                await OnWarehouseSaved.InvokeAsync();
+                await OnWarehouseSaved.InvokeAsync(editModalComponent.Entity);
             }
             await CloseModal();
         }

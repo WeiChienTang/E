@@ -176,31 +176,33 @@
     /// </summary>
     private void InitializeCustomerModalManager()
     {
-        customerModalManager = new RelatedEntityManagerBuilder<Customer>(NotificationService, "客戶")
-            .WithPropertyName("CustomerId")
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(customerId => 
+        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<SetoffDocument, Customer, ISetoffDocumentService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "客戶",
+                PropertyName = "CustomerId",
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, customerId) =>
                 {
-                    editModalComponent.Entity.RelatedPartyId = customerId;
-                    editModalComponent.Entity.RelatedPartyType = "Customer";
-                    
-                    // 更新 RelatedPartyName
-                    var customer = customers.FirstOrDefault(c => c.Id == customerId);
-                    if (customer != null)
+                    if (entity != null)
                     {
-                        editModalComponent.Entity.RelatedPartyName = customer.CompanyName ?? "";
+                        entity.RelatedPartyId = customerId;
+                        entity.RelatedPartyType = "Customer";
+                        
+                        // 更新 RelatedPartyName
+                        var customer = customers.FirstOrDefault(c => c.Id == customerId);
+                        if (customer != null)
+                        {
+                            entity.RelatedPartyName = customer.CompanyName ?? "";
+                        }
                     }
-                }
-            })
-            .WithCustomPostProcess(async customer => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>
@@ -208,31 +210,33 @@
     /// </summary>
     private void InitializeSupplierModalManager()
     {
-        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "廠商")
-            .WithPropertyName("SupplierId")
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(supplierId => 
+        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<SetoffDocument, Supplier, ISetoffDocumentService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "廠商",
+                PropertyName = "SupplierId",
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, supplierId) =>
                 {
-                    editModalComponent.Entity.RelatedPartyId = supplierId;
-                    editModalComponent.Entity.RelatedPartyType = "Supplier";
-                    
-                    // 更新 RelatedPartyName
-                    var supplier = suppliers.FirstOrDefault(s => s.Id == supplierId);
-                    if (supplier != null)
+                    if (entity != null)
                     {
-                        editModalComponent.Entity.RelatedPartyName = supplier.CompanyName;
+                        entity.RelatedPartyId = supplierId;
+                        entity.RelatedPartyType = "Supplier";
+                        
+                        // 更新 RelatedPartyName
+                        var supplier = suppliers.FirstOrDefault(s => s.Id == supplierId);
+                        if (supplier != null)
+                        {
+                            entity.RelatedPartyName = supplier.CompanyName;
+                        }
                     }
-                }
-            })
-            .WithCustomPostProcess(async supplier => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
 
     /// <summary>

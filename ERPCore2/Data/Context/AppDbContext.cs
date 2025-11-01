@@ -845,6 +845,17 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(5, 2); // 總共5位數，小數點後2位（可表示 0.00 到 999.99）
                   });
 
+                  // 公司資料相關
+                  modelBuilder.Entity<Company>(entity =>
+                  {
+                        // 欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 為 decimal 屬性設定精確度和小數位數
+                        entity.Property(e => e.CapitalAmount)
+                              .HasPrecision(18, 2); // 總共18位數，小數點後2位
+                  });
+
                   // Currency
                   modelBuilder.Entity<Currency>(entity =>
                   {

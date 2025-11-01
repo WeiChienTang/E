@@ -746,30 +746,25 @@
     /// </summary>
     private void InitializeSupplierModalManager()
     {
-        supplierModalManager = new RelatedEntityManagerBuilder<Supplier>(NotificationService, "廠商")
-            .WithPropertyName(nameof(PurchaseOrder.SupplierId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(supplierId => 
+        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<PurchaseOrder, Supplier, IPurchaseOrderService>
             {
-                if (editModalComponent?.Entity != null)
+                NotificationService = NotificationService,
+                EntityDisplayName = "廠商",
+                PropertyName = nameof(PurchaseOrder.SupplierId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, supplierId) =>
                 {
-                    editModalComponent.Entity.SupplierId = supplierId;
-                }
-            })
-            .WithCustomPostProcess(async supplier => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .WithRefreshDependentComponents(async supplier =>
-            {
-                // 當廠商被編輯後，重新載入該廠商的商品資料
-                if (purchaseOrderDetailManager != null)
-                {
-                    await purchaseOrderDetailManager.RefreshAvailableProductsAsync();
-                }
-            })
-            .Build();
+                    if (entity != null)
+                    {
+                        entity.SupplierId = supplierId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true
+            });
     }
     
     // ===== ActionButton 產生方法 =====
