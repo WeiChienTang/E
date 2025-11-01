@@ -88,10 +88,6 @@ namespace ERPCore2.Data.Entities
         [MaxLength(1000, ErrorMessage = "公司簡介不可超過1000個字元")]
         [Display(Name = "公司簡介")]
         public string? Description { get; set; }
-
-
-
-        
         /// <summary>
         /// 公司簡稱
         /// </summary>

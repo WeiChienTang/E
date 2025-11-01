@@ -52,7 +52,7 @@
         if (IsVisible)
         {
             await LoadAdditionalDataAsync();
-            InitializeFormFields();
+            await InitializeFormFieldsAsync();
         }
     }
 
@@ -136,7 +136,7 @@
     }
 
     // ===== 表單初始化 =====
-    private void InitializeFormFields()
+    private async Task InitializeFormFieldsAsync()
     {
         try
         {
@@ -277,7 +277,8 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司網站",
                     MaxLength = 100,
-                    HelpText = "公司的官方網站網址"
+                    HelpText = "公司的官方網站網址",
+                    ActionButtons = await GetWebsiteActionButtonsAsync()
                 },
                 new()
                 {
@@ -426,6 +427,59 @@
         if (logoInputFile != null)
         {
             await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('logo-file-input').click()");
+        }
+    }
+    
+    /// <summary>
+    /// 產生公司網站操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetWebsiteActionButtonsAsync()
+    {
+        await Task.CompletedTask; // 確保方法是異步的
+        
+        return new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "前往",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "在新視窗開啟公司網站",
+                OnClick = async () => await NavigateToWebsite(),
+                IsDisabled = false
+            }
+        };
+    }
+
+    /// <summary>
+    /// 前往公司網站
+    /// </summary>
+    private async Task NavigateToWebsite()
+    {
+        try
+        {
+            var website = editModalComponent?.Entity?.Website;
+            
+            if (string.IsNullOrWhiteSpace(website))
+            {
+                await NotificationService.ShowWarningAsync("請先輸入公司網站網址");
+                return;
+            }
+
+            // 確保網址有完整的協議
+            var url = website;
+            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
+                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                url = "https://" + url;
+            }
+
+            // 在新視窗開啟網站
+            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟網站時發生錯誤：{ex.Message}");
         }
     }
     
