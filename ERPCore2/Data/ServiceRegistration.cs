@@ -37,18 +37,9 @@ namespace ERPCore2.Data
             services.AddScoped<ActionButtonHelper>();
             services.AddScoped<RelatedDocumentsHelper>();
 
-            // 統一地址服務 (推薦使用)
-            services.AddScoped<IAddressService, AddressService>();
-            
-            // 統一聯絡方式服務 (推薦使用)
-            services.AddScoped<IContactService, ContactService>();
-
             // 客戶相關服務
             services.AddScoped<ICustomerService, CustomerService>();
 
-            // 共用資料服務
-            services.AddScoped<IContactTypeService, ContactTypeService>();
-            services.AddScoped<IAddressTypeService, AddressTypeService>();
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
             // 財務管理服務

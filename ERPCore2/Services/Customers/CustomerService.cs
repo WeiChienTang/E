@@ -247,44 +247,6 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 關聯資料查詢
-
-        public async Task<List<ContactType>> GetContactTypesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ContactTypes
-                    .Where(ct => ct.Status == EntityStatus.Active)
-                    .OrderBy(ct => ct.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetContactTypesAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
-        public async Task<List<AddressType>> GetAddressTypesAsync()
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.AddressTypes
-                    .Where(at => at.Status == EntityStatus.Active)
-                    .OrderBy(at => at.TypeName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAddressTypesAsync), GetType(), _logger);
-                throw;
-            }
-        }
-
-        #endregion
-
         #region 輔助方法
 
         public void InitializeNewCustomer(Customer customer)

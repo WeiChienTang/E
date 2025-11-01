@@ -31,20 +31,6 @@ namespace ERPCore2.Services
         
         #endregion
 
-        #region 關聯資料查詢
-        
-        /// <summary>
-        /// 取得聯絡類型清單
-        /// </summary>
-        Task<List<ContactType>> GetContactTypesAsync();
-        
-        /// <summary>
-        /// 取得地址類型清單
-        /// </summary>
-        Task<List<AddressType>> GetAddressTypesAsync();
-        
-        #endregion
-
         #region 輔助方法
         
         /// <summary>

@@ -70,8 +70,6 @@ namespace ERPCore2.Data
                     new PermissionSeeder(),
                     new RoleSeeder(),
                     new RolePermissionSeeder(),
-                    new ContactTypeSeeder(),        // 聯絡類型
-                    new AddressTypeSeeder(),        // 地址類型  
                     new PaymentMethodSeeder(),      // 付款方式
                     new PrepaymentTypeSeeder(),     // 預收付款項類型
                     new BankSeeder(),               // 銀行別

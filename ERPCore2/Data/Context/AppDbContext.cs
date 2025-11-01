@@ -10,12 +10,8 @@ namespace ERPCore2.Data.Context
       {
       }
       public DbSet<Customer> Customers { get; set; }
-      public DbSet<ContactType> ContactTypes { get; set; }
-      public DbSet<AddressType> AddressTypes { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
-      public DbSet<Bank> Banks { get; set; }      
-      public DbSet<Contact> Contacts { get; set; }      
-      public DbSet<Address> Addresses { get; set; }            
+      public DbSet<Bank> Banks { get; set; }            
       public DbSet<Employee> Employees { get; set; }
       public DbSet<EmployeePosition> EmployeePositions { get; set; }
       public DbSet<Department> Departments { get; set; }
@@ -82,28 +78,6 @@ namespace ERPCore2.Data.Context
             {
                   base.OnModelCreating(modelBuilder);
 
-                  // === 實體設定（包含欄位對應和關聯） ===
-                  
-                  // 統一地址配置
-                  modelBuilder.Entity<Address>(entity =>
-                  {
-                        // 欄位對應
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        entity.Property(e => e.OwnerType).IsRequired().HasMaxLength(20);
-                        entity.Property(e => e.OwnerId).IsRequired();
-                        entity.Property(e => e.AddressLine).HasMaxLength(200);
-                        
-                        // 索引設定
-                        entity.HasIndex(e => new { e.OwnerType, e.OwnerId })
-                              .HasDatabaseName("IX_Address_OwnerType_OwnerId");
-                        
-                        // 關聯設定
-                        entity.HasOne(e => e.AddressType)
-                              .WithMany(at => at.Addresses)
-                              .HasForeignKey(e => e.AddressTypeId)
-                              .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
                   // 客戶相關
                   modelBuilder.Entity<Customer>(entity =>
                   {
@@ -183,20 +157,7 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(ps => ps.Unit)
                         .WithMany()
                         .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  // 共用參考資料
-                  modelBuilder.Entity<AddressType>(entity =>
-                  {
-                        // 欄位對應                        
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
-                  });
-                  
-                  modelBuilder.Entity<ContactType>(entity =>
-                  {
-                        // 欄位對應                        
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd(); // 確保 Identity
-                  });
+                  });                  
                   
                   modelBuilder.Entity<PaymentMethod>(entity =>
                   {
