@@ -30,6 +30,13 @@
                         <i class="@GetModalIcon() me-2"></i>
                         @GetModalTitle()
                     </h5>
+                    @* 自訂按鈕區域（顯示在標題右側、關閉按鈕左側） *@
+                    @if (CustomButtons != null)
+                    {
+                        <div class="d-flex gap-2 ms-auto me-2">
+                            @CustomButtons
+                        </div>
+                    }
                     <GenericButtonComponent Type="button" 
                                           CssClass="btn-close" 
                                           OnClick="HandleCancel" 
@@ -304,6 +311,9 @@
     
     // 自訂操作按鈕區域（顯示在頂部按鈕列的最左側）
     [Parameter] public RenderFragment? CustomActionButtons { get; set; }
+    
+    // 自訂按鈕區域（顯示在 Modal Header 中）
+    [Parameter] public RenderFragment? CustomButtons { get; set; }
     
     // 表單設定
     [Parameter] public bool UseGenericForm { get; set; } = true;

@@ -166,7 +166,8 @@ namespace ERPCore2.Services.Reports
             
             // 左側：Logo (垂直置中)
             html.AppendLine("                    <div class='quotation-header-left'>");
-            html.AppendLine("                        <img src='/Resources/CompanyLOGO.png' alt='公司Logo' class='company-logo' />");
+            var logoPath = !string.IsNullOrEmpty(company?.LogoPath) ? company.LogoPath : "/Resources/CompanyLOGO.png";
+            html.AppendLine($"                        <img src='{logoPath}' alt='公司Logo' class='company-logo' />");
             html.AppendLine("                    </div>");
             
             // 中間：公司名稱和報價單標題 (靠左對齊)

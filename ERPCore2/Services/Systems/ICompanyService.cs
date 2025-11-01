@@ -40,5 +40,13 @@ namespace ERPCore2.Services
         /// <param name="taxId">統一編號</param>
         /// <returns>是否有效</returns>
         bool ValidateTaxId(string? taxId);
+
+        /// <summary>
+        /// 更新公司 LOGO 路徑
+        /// </summary>
+        /// <param name="companyId">公司 ID</param>
+        /// <param name="logoPath">LOGO 檔案路徑</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateLogoPathAsync(int companyId, string logoPath);
     }
 }

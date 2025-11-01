@@ -152,30 +152,7 @@ namespace ERPCore2.Services
                 return true; // 統一編號為選填
 
             // 台灣統一編號驗證：8位數字
-            if (!Regex.IsMatch(taxId, @"^\d{8}$"))
-                return false;
-
-            // 統一編號檢查碼驗證演算法
-            var weights = new int[] { 1, 2, 1, 2, 1, 2, 4, 1 };
-            var sum = 0;
-
-            for (int i = 0; i < 8; i++)
-            {
-                var digit = int.Parse(taxId[i].ToString());
-                var product = digit * weights[i];
-                
-                // 如果乘積大於等於10，將十位數和個位數相加
-                if (product >= 10)
-                {
-                    sum += (product / 10) + (product % 10);
-                }
-                else
-                {
-                    sum += product;
-                }
-            }
-
-            return sum % 10 == 0;
+            return Regex.IsMatch(taxId, @"^\d{8}$");
         }
 
         public override async Task<ServiceResult> ValidateAsync(Company entity)
@@ -202,7 +179,7 @@ namespace ERPCore2.Services
                 // 驗證統一編號
                 if (!ValidateTaxId(entity.TaxId))
                 {
-                    return ServiceResult.Failure("統一編號格式不正確");
+                    return ServiceResult.Failure("統一編號格式不正確，正確格式為8位數字");
                 }
 
                 return ServiceResult.Success();
@@ -260,6 +237,53 @@ namespace ERPCore2.Services
                     CompanyId = entity.Id 
                 });
                 return ServiceResult.Failure("檢查公司刪除條件時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 更新公司 LOGO 路徑
+        /// </summary>
+        public async Task<ServiceResult> UpdateLogoPathAsync(int companyId, string logoPath)
+        {
+            try
+            {
+                if (companyId <= 0)
+                {
+                    return ServiceResult.Failure("公司 ID 無效");
+                }
+
+                if (string.IsNullOrWhiteSpace(logoPath))
+                {
+                    return ServiceResult.Failure("LOGO 路徑不能為空");
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var company = await context.Companies.FindAsync(companyId);
+                
+                if (company == null)
+                {
+                    return ServiceResult.Failure("找不到指定的公司");
+                }
+
+                // 更新 LOGO 路徑
+                company.LogoPath = logoPath;
+                company.UpdatedAt = DateTime.Now;
+                company.UpdatedBy = "System";
+
+                await context.SaveChangesAsync();
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateLogoPathAsync), GetType(), _logger, new
+                {
+                    Method = nameof(UpdateLogoPathAsync),
+                    ServiceType = GetType().Name,
+                    CompanyId = companyId,
+                    LogoPath = logoPath
+                });
+                return ServiceResult.Failure("更新 LOGO 路徑時發生錯誤");
             }
         }
     }

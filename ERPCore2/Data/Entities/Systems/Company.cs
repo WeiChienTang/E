@@ -88,5 +88,39 @@ namespace ERPCore2.Data.Entities
         [MaxLength(1000, ErrorMessage = "公司簡介不可超過1000個字元")]
         [Display(Name = "公司簡介")]
         public string? Description { get; set; }
+
+
+
+        
+        /// <summary>
+        /// 公司簡稱
+        /// </summary>
+        [MaxLength(50)]
+        [Display(Name = "公司簡稱")]
+        public string? ShortName { get; set; }
+
+        /// <summary>
+        /// 公司英文簡稱
+        /// </summary>
+        [MaxLength(50)]
+        [Display(Name = "公司英文簡稱")]
+        public string? ShortNameEn { get; set; }
+
+        /// <summary>
+        /// 成立日期
+        /// </summary>
+        [Display(Name = "成立日期")]
+        public DateTime? EstablishedDate { get; set; }
+        /// <summary>
+        /// 資本額
+        /// </summary>
+        [Display(Name = "資本額")]
+        public decimal? CapitalAmount { get; set; }
+        /// <summary>
+        /// 發票抬頭（如與公司名稱不同）
+        /// </summary>
+        [MaxLength(100)]
+        [Display(Name = "發票抬頭")]
+        public string? InvoiceTitle { get; set; }
     }
 }

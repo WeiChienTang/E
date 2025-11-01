@@ -1,6 +1,8 @@
 @* 可重用的公司編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IWebHostEnvironment WebHostEnvironment
 
 <GenericEditModalComponent TEntity="Company" 
                           TService="ICompanyService"
@@ -23,7 +25,12 @@
                           SaveFailureMessage="公司儲存失敗"
                           RequiredPermission="Company.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel" />
+                          OnCancel="@HandleCancel"
+                          CustomActionButtons="@LogoManagementButtons">
+</GenericEditModalComponent>
+
+@* 隱藏的檔案輸入元素 *@
+<InputFile id="logo-file-input" OnChange="HandleLogoFileSelected" accept=".jpg,.jpeg,.png,.gif,.svg" style="display: none;" @ref="logoInputFile" />
 
 @code {
     // ===== 參數 =====
@@ -143,6 +150,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司代碼",
                     IsRequired = true,
+                    MaxLength = 25,
                     HelpText = "公司的唯一識別代碼，新增時系統會自動產生，也可手動修改"
                 },
                 new()
@@ -152,6 +160,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司名稱",
                     IsRequired = true,
+                    MaxLength = 20,
                     HelpText = "公司的正式名稱，將顯示在系統各處"
                 },
                 new()
@@ -160,7 +169,26 @@
                     Label = "公司英文名稱",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司英文名稱",
+                    MaxLength = 50,
                     HelpText = "公司的英文名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Company.ShortName),
+                    Label = "公司簡稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司簡稱",
+                    MaxLength = 20,
+                    HelpText = "公司的簡稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Company.ShortNameEn),
+                    Label = "公司英文簡稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入公司英文簡稱",
+                    MaxLength = 50,
+                    HelpText = "公司的英文簡稱"
                 },
                 new()
                 {
@@ -168,7 +196,33 @@
                     Label = "統一編號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入統一編號",
+                    MaxLength = 8,
                     HelpText = "8位數字的統一編號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Company.InvoiceTitle),
+                    Label = "發票抬頭",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入發票抬頭",
+                    MaxLength = 50,
+                    HelpText = "發票抬頭（如與公司名稱不同時使用）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Company.EstablishedDate),
+                    Label = "成立日期",
+                    FieldType = FormFieldType.Date,
+                    Placeholder = "請選擇成立日期",
+                    HelpText = "公司成立日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Company.CapitalAmount),
+                    Label = "資本額",
+                    FieldType = FormFieldType.Number,
+                    Placeholder = "請輸入資本額",
+                    HelpText = "公司資本額"
                 },
                 new()
                 {
@@ -176,6 +230,7 @@
                     Label = "負責人",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入負責人姓名",
+                    MaxLength = 10,
                     HelpText = "公司的法定代表人"
                 },
                 // 聯絡資訊區段
@@ -185,6 +240,7 @@
                     Label = "公司地址",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司地址",
+                    MaxLength = 50,
                     HelpText = "公司的註冊地址"
                 },
                 new()
@@ -193,6 +249,7 @@
                     Label = "公司電話",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司電話",
+                    MaxLength = 20,
                     HelpText = "公司的聯絡電話"
                 },
                 new()
@@ -201,6 +258,7 @@
                     Label = "公司傳真",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司傳真",
+                    MaxLength = 20,
                     HelpText = "公司的傳真號碼"
                 },
                 new()
@@ -209,6 +267,7 @@
                     Label = "公司Email",
                     FieldType = FormFieldType.Email,
                     Placeholder = "請輸入公司Email",
+                    MaxLength = 100,
                     HelpText = "公司的官方電子郵件地址"
                 },
                 new()
@@ -217,6 +276,7 @@
                     Label = "公司網站",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入公司網站",
+                    MaxLength = 100,
                     HelpText = "公司的官方網站網址"
                 },
                 new()
@@ -225,6 +285,7 @@
                     Label = "公司簡介",
                     FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入公司簡介",
+                    MaxLength = 120,
                     HelpText = "公司的簡要說明",
                     ContainerCssClass = "col-12"
                 },
@@ -246,8 +307,13 @@
                 { nameof(Company.Code), "基本資訊" },
                 { nameof(Company.CompanyName), "基本資訊" },
                 { nameof(Company.CompanyNameEn), "基本資訊" },
+                { nameof(Company.ShortName), "基本資訊" },
+                { nameof(Company.ShortNameEn), "基本資訊" },
                 { nameof(Company.TaxId), "基本資訊" },
-                { nameof(Company.Representative), "基本資訊" },
+                { nameof(Company.InvoiceTitle), "基本資訊" },
+                { nameof(Company.EstablishedDate), "公司資料" },
+                { nameof(Company.CapitalAmount), "公司資料" },
+                { nameof(Company.Representative), "公司資料" },
                 { nameof(Company.Status), "基本資訊" },
                 { nameof(Company.Address), "聯絡資訊" },
                 { nameof(Company.Phone), "聯絡資訊" },
@@ -321,6 +387,128 @@
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== LOGO 管理相關 =====
+    
+    private InputFile? logoInputFile;
+    
+    /// <summary>
+    /// LOGO 管理按鈕 - 顯示在 Modal Footer 最左側
+    /// </summary>
+    private RenderFragment LogoManagementButtons => 
+        @<text>
+            @if (editModalComponent?.Entity != null)
+            {
+                <GenericButtonComponent Text="@(string.IsNullOrEmpty(editModalComponent.Entity.LogoPath) ? "上傳 LOGO" : "更換 LOGO")"
+                                      Variant="ButtonVariant.Primary"
+                                      Size="ButtonSize.Small"
+                                      OnClick="TriggerFileInput" />
+                
+                @if (!string.IsNullOrEmpty(editModalComponent.Entity.LogoPath))
+                {
+                    <GenericButtonComponent Text="預覽 LOGO"
+                                          Variant="ButtonVariant.Primary"
+                                          Size="ButtonSize.Small"
+                                          OnClick="PreviewLogo" />
+                }
+            }
+        </text>;
+
+
+    
+    /// <summary>
+    /// 觸發檔案選擇
+    /// </summary>
+    private async Task TriggerFileInput()
+    {
+        if (logoInputFile != null)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('logo-file-input').click()");
+        }
+    }
+    
+    /// <summary>
+    /// 處理 LOGO 檔案選擇
+    /// </summary>
+    private async Task HandleLogoFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+            
+            // 驗證檔案
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg" };
+            var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+            
+            if (!allowedExtensions.Contains(extension))
+            {
+                await NotificationService.ShowErrorAsync("只允許上傳 JPG、PNG、GIF、SVG 格式的圖片檔案");
+                return;
+            }
+            
+            if (file.Size > 500 * 1024) // 500KB
+            {
+                await NotificationService.ShowErrorAsync("LOGO 檔案大小不能超過 500KB");
+                return;
+            }
+            
+            // 上傳檔案
+            var companyId = editModalComponent?.Entity?.Id ?? 0;
+            
+            // 如果是新增模式（companyId = 0），先提示使用者需要先儲存公司資料
+            if (companyId == 0)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存公司資料後，再上傳 LOGO");
+                return;
+            }
+            
+            // 取得舊的 Logo 路徑（用於刪除舊檔案）
+            var oldLogoPath = editModalComponent?.Entity?.LogoPath;
+            
+            // 上傳新檔案（會自動刪除舊檔案）
+            var result = await FileUploadHelper.UploadCompanyLogoAsync(file, companyId, WebHostEnvironment, oldLogoPath);
+            
+            if (result.Success && !string.IsNullOrEmpty(result.FilePath) && editModalComponent?.Entity != null)
+            {
+                // 更新實體的 LogoPath
+                editModalComponent.Entity.LogoPath = result.FilePath;
+                
+                // 儲存到資料庫
+                var updateResult = await CompanyService.UpdateLogoPathAsync(companyId, result.FilePath);
+                
+                if (updateResult.IsSuccess)
+                {
+                    await NotificationService.ShowSuccessAsync("LOGO 上傳成功");
+                    StateHasChanged();
+                }
+                else
+                {
+                    await NotificationService.ShowErrorAsync($"LOGO 上傳成功，但儲存失敗：{updateResult.ErrorMessage}");
+                }
+            }
+            else if (!result.Success)
+            {
+                await NotificationService.ShowErrorAsync(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"上傳 LOGO 時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 預覽 LOGO
+    /// </summary>
+    private async Task PreviewLogo()
+    {
+        if (!string.IsNullOrEmpty(editModalComponent?.Entity?.LogoPath))
+        {
+            var logoUrl = editModalComponent.Entity.LogoPath;
+            await JSRuntime.InvokeVoidAsync("open", logoUrl, "_blank");
         }
     }
 

@@ -144,6 +144,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<decimal?>("CapitalAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -172,9 +175,16 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("EstablishedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Fax")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("InvoiceTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("LogoPath")
                         .HasMaxLength(500)
@@ -189,6 +199,14 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Representative")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ShortName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ShortNameEn")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
