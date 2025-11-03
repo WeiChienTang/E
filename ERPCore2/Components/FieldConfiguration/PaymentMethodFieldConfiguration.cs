@@ -3,7 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
-using ERPCore2.Components.Shared.Tables;
+using ERPCore2.Components.Shared.GenericComponents.IndexComponent;
 
 namespace ERPCore2.FieldConfiguration
 {

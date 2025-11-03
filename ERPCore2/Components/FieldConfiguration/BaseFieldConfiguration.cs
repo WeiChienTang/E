@@ -1,5 +1,5 @@
 using ERPCore2.Components.Shared.Forms;
-using ERPCore2.Components.Shared.Tables;
+using ERPCore2.Components.Shared.GenericComponents.IndexComponent;
 using ERPCore2.Data;
 using ERPCore2.Models;
 using Microsoft.AspNetCore.Components;

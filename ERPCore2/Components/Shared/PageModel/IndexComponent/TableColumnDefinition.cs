@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace ERPCore2.Components.Shared.Tables;
+namespace ERPCore2.Components.Shared.GenericComponents.IndexComponent;
 
 /// <summary>
 /// 資料表格欄位定義
