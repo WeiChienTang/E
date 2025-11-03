@@ -76,7 +76,6 @@
                             OnApproveItem="@ApproveSingleQuotationAsync"
                             OnApproveAll="@ApproveAllQuotationsAsync"
                             OnViewClick="@HandleApprovalViewClick"
-                            ColumnDefinitions="@GetApprovalColumnDefinitions()"
                             OnApprovalCompleted="@HandleApprovalCompleted" />
 
 @* 批次列印篩選 Modal - 使用新架構 *@
@@ -381,78 +380,6 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalCompleted), GetType(), 
                 additionalData: "刷新列表失敗");
         }
-    }
-
-    /// <summary>
-    /// 取得批次審核 Modal 的表格欄位定義
-    /// </summary>
-    private List<InteractiveColumnDefinition> GetApprovalColumnDefinitions()
-    {
-        return new List<InteractiveColumnDefinition>
-        {
-            new()
-            {
-                Title = "",
-                PropertyName = "IsApproved",
-                ColumnType = InteractiveColumnType.Checkbox,
-                Width = "60px",
-                CellCssClass = "text-center"
-            },
-            new()
-            {
-                Title = "報價單號",
-                PropertyName = nameof(Quotation.QuotationNumber),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "150px"
-            },
-            new()
-            {
-                Title = "客戶",
-                PropertyName = "Customer.CompanyName",
-                ColumnType = InteractiveColumnType.Display,
-                Width = "200px"
-            },
-            new()
-            {
-                Title = "報價日期",
-                PropertyName = nameof(Quotation.QuotationDate),
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "120px",
-                CustomTemplate = item =>
-                {
-                    var quotation = item as Quotation;
-                    var dateStr = quotation?.QuotationDate.ToString("yyyy/MM/dd") ?? "";
-                    return @<span style="font-size: 0.875rem;">@dateStr</span>;
-                }
-            },
-            new()
-            {
-                Title = "總金額",
-                PropertyName = nameof(Quotation.TotalAmount),
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "120px",
-                CellCssClass = "text-end",
-                CustomTemplate = item =>
-                {
-                    var quotation = item as Quotation;
-                    var amountStr = quotation?.TotalAmount.ToString("N0") ?? "";
-                    return @<span style="font-size: 0.875rem;" class="fw-bold">@amountStr</span>;
-                }
-            },
-            new()
-            {
-                Title = "建立日期",
-                PropertyName = nameof(Quotation.CreatedAt),
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "150px",
-                CustomTemplate = item =>
-                {
-                    var quotation = item as Quotation;
-                    var dateStr = quotation?.CreatedAt.ToString("yyyy/MM/dd HH:mm") ?? "";
-                    return @<span style="font-size: 0.875rem;">@dateStr</span>;
-                }
-            }
-        };
     }
 
     // ===== 批次列印相關方法 =====

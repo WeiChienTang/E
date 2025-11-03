@@ -1,11 +1,7 @@
-@* 通用搜尋篩選組件 - 基於配置驅動的動態篩選 *@
-@using System.Reflection
-@using Microsoft.AspNetCore.Components.Rendering
+@* 通用搜尋篩選組件 - 使用標準 Blazor 語法 *@
 @using Microsoft.AspNetCore.Components.Web
-@using Microsoft.JSInterop
 @using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Forms
-@inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
 
@@ -29,7 +25,194 @@
             {
                 @foreach (var filter in FilterDefinitions)
                 {
-                    @RenderFilter(filter)
+                    <div class="@(filter.ContainerCssClass ?? "col-md-2")">
+                        @if (!string.IsNullOrEmpty(filter.Label) && filter.FilterType != SearchFilterType.Boolean)
+                        {
+                            <label class="form-label" for="@filter.PropertyName">@filter.Label</label>
+                        }
+                        
+                        @switch (filter.FilterType)
+                        {
+                            case SearchFilterType.Text:
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="@filter.PropertyName"
+                                       placeholder="@filter.Placeholder"
+                                       value="@GetTextValue(filter.PropertyName)"
+                                       @oninput="e => HandleTextInput(filter.PropertyName, e.Value?.ToString())" />
+                                break;
+                                
+                            case SearchFilterType.Number:
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="@filter.PropertyName"
+                                       placeholder="@filter.Placeholder"
+                                       value="@GetNumberValue(filter.PropertyName)"
+                                       @onchange="e => HandleNumberChange(filter.PropertyName, e.Value?.ToString())" />
+                                break;
+                                
+                            case SearchFilterType.Date:
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="@filter.PropertyName"
+                                       value="@GetDateValue(filter.PropertyName)"
+                                       @onchange="e => HandleDateChange(filter.PropertyName, e.Value?.ToString())" />
+                                break;
+                                
+                            case SearchFilterType.DateTime:
+                                <input type="datetime-local" 
+                                       class="form-control" 
+                                       id="@filter.PropertyName"
+                                       value="@GetDateTimeValue(filter.PropertyName)"
+                                       @onchange="e => HandleDateTimeChange(filter.PropertyName, e.Value?.ToString())" />
+                                break;
+                                
+                            case SearchFilterType.Select:
+                                <select class="form-select" 
+                                        id="@filter.PropertyName"
+                                        value="@GetTextValue(filter.PropertyName)"
+                                        @onchange="e => HandleSelectChange(filter.PropertyName, e.Value?.ToString())">
+                                    <option value="">@(filter.EmptyOptionText ?? "全部")</option>
+                                    @if (filter.Options != null)
+                                    {
+                                        @foreach (var option in filter.Options)
+                                        {
+                                            <option value="@option.Value">@option.Text</option>
+                                        }
+                                    }
+                                </select>
+                                break;
+                                
+                            case SearchFilterType.MultiSelect:
+                                @if (filter.Options != null)
+                                {
+                                    var currentValues = GetMultiSelectValues(filter.PropertyName);
+                                    @foreach (var option in filter.Options)
+                                    {
+                                        var isChecked = currentValues.Contains(option.Value);
+                                        <div class="form-check">
+                                            <input type="checkbox" 
+                                                   class="form-check-input" 
+                                                   id="@($"{filter.PropertyName}_{option.Value}")"
+                                                   checked="@isChecked"
+                                                   @onchange="e => HandleMultiSelectChange(filter.PropertyName, option.Value, e.Value)" />
+                                            <label class="form-check-label" for="@($"{filter.PropertyName}_{option.Value}")">
+                                                @option.Text
+                                            </label>
+                                        </div>
+                                    }
+                                }
+                                break;
+                                
+                            case SearchFilterType.DateRange:
+                                var dateRange = GetDateRange(filter.PropertyName);
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="date" 
+                                               class="form-control" 
+                                               placeholder="開始日期"
+                                               value="@(dateRange.StartDate?.ToString("yyyy-MM-dd"))"
+                                               @onchange="e => HandleDateRangeChange(filter.PropertyName, e.Value?.ToString(), true)" />
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="date" 
+                                               class="form-control" 
+                                               placeholder="結束日期"
+                                               value="@(dateRange.EndDate?.ToString("yyyy-MM-dd"))"
+                                               @onchange="e => HandleDateRangeChange(filter.PropertyName, e.Value?.ToString(), false)" />
+                                    </div>
+                                </div>
+                                break;
+                                
+                            case SearchFilterType.DateTimeRange:
+                                var dateTimeRange = GetDateTimeRange(filter.PropertyName);
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="datetime-local" 
+                                               class="form-control" 
+                                               placeholder="開始時間"
+                                               value="@(dateTimeRange.StartDateTime?.ToString("yyyy-MM-ddTHH:mm"))"
+                                               @onchange="e => HandleDateTimeRangeChange(filter.PropertyName, e.Value?.ToString(), true)" />
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="datetime-local" 
+                                               class="form-control" 
+                                               placeholder="結束時間"
+                                               value="@(dateTimeRange.EndDateTime?.ToString("yyyy-MM-ddTHH:mm"))"
+                                               @onchange="e => HandleDateTimeRangeChange(filter.PropertyName, e.Value?.ToString(), false)" />
+                                    </div>
+                                </div>
+                                break;
+                                
+                            case SearchFilterType.NumberRange:
+                                var numberRange = GetNumberRange(filter.PropertyName);
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               placeholder="最小值"
+                                               value="@numberRange.Min"
+                                               @onchange="e => HandleNumberRangeChange(filter.PropertyName, e.Value?.ToString(), true)" />
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               placeholder="最大值"
+                                               value="@numberRange.Max"
+                                               @onchange="e => HandleNumberRangeChange(filter.PropertyName, e.Value?.ToString(), false)" />
+                                    </div>
+                                </div>
+                                break;
+                                
+                            case SearchFilterType.Boolean:
+                                var boolValue = GetBoolValue(filter.PropertyName);
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input" 
+                                           id="@filter.PropertyName"
+                                           checked="@boolValue"
+                                           @onchange="e => HandleBoolChange(filter.PropertyName, e.Value)" />
+                                    <label class="form-check-label" for="@filter.PropertyName">
+                                        @filter.Label
+                                    </label>
+                                </div>
+                                break;
+                                
+                            case SearchFilterType.Custom:
+                                <div class="alert alert-info">
+                                    自定義篩選類型需要在父組件中實作
+                                </div>
+                                break;
+                                
+                            case SearchFilterType.AutoComplete:
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="@filter.PropertyName"
+                                       placeholder="@filter.Placeholder"
+                                       list="@($"{filter.PropertyName}_datalist")"
+                                       value="@GetTextValue(filter.PropertyName)"
+                                       @oninput="e => HandleAutoCompleteInput(filter, e.Value?.ToString())" />
+                                <datalist id="@($"{filter.PropertyName}_datalist")">
+                                    @if (autoCompleteOptions.ContainsKey(filter.PropertyName))
+                                    {
+                                        @foreach (var option in autoCompleteOptions[filter.PropertyName])
+                                        {
+                                            <option value="@option.Value">@option.Text</option>
+                                        }
+                                    }
+                                </datalist>
+                                break;
+                                
+                            default:
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="@filter.PropertyName"
+                                       placeholder="@filter.Placeholder"
+                                       value="@GetTextValue(filter.PropertyName)"
+                                       @oninput="e => HandleTextInput(filter.PropertyName, e.Value?.ToString())" />
+                                break;
+                        }
+                    </div>
                 }
             }        
         </div>
@@ -46,17 +229,263 @@
     [Parameter] public int SearchDelayMs { get; set; } = 300;
 
     private Timer? searchTimer;
-
-    // 自動完成相關狀態
     private readonly Dictionary<string, List<SelectOption>> autoCompleteOptions = new();
-    private readonly Dictionary<string, bool> autoCompleteLoading = new();
-    private readonly Dictionary<string, bool> autoCompleteVisible = new();
     private readonly Dictionary<string, Timer?> autoCompleteTimers = new();
-    private readonly Dictionary<string, string> autoCompleteDisplayValues = new();
-    
-    // 鍵盤導航狀態
-    private readonly Dictionary<string, int> highlightedOptionIndex = new();
-    private readonly Dictionary<string, bool> keyboardNavigationActive = new();
+
+    // 輔助方法：取得文字值
+    private string GetTextValue(string propertyName)
+    {
+        return FilterModel.GetFilterValue(propertyName)?.ToString() ?? "";
+    }
+
+    // 輔助方法：取得數字值
+    private string GetNumberValue(string propertyName)
+    {
+        var value = FilterModel.GetFilterValue(propertyName);
+        return value?.ToString() ?? "";
+    }
+
+    // 輔助方法：取得日期值
+    private string GetDateValue(string propertyName)
+    {
+        var value = FilterModel.GetFilterValue(propertyName);
+        return value is DateTime dateValue ? dateValue.ToString("yyyy-MM-dd") : "";
+    }
+
+    // 輔助方法：取得日期時間值
+    private string GetDateTimeValue(string propertyName)
+    {
+        var value = FilterModel.GetFilterValue(propertyName);
+        return value is DateTime dateTimeValue ? dateTimeValue.ToString("yyyy-MM-ddTHH:mm") : "";
+    }
+
+    // 輔助方法：取得多選值
+    private List<string> GetMultiSelectValues(string propertyName)
+    {
+        return FilterModel.GetFilterValue(propertyName) as List<string> ?? new List<string>();
+    }
+
+    // 輔助方法：取得日期範圍
+    private DateRange GetDateRange(string propertyName)
+    {
+        return FilterModel.GetFilterValue(propertyName) as DateRange ?? new DateRange();
+    }
+
+    // 輔助方法：取得日期時間範圍
+    private DateTimeRange GetDateTimeRange(string propertyName)
+    {
+        return FilterModel.GetFilterValue(propertyName) as DateTimeRange ?? new DateTimeRange();
+    }
+
+    // 輔助方法：取得數字範圍
+    private NumberRange GetNumberRange(string propertyName)
+    {
+        return FilterModel.GetFilterValue(propertyName) as NumberRange ?? new NumberRange();
+    }
+
+    // 輔助方法：取得布林值
+    private bool GetBoolValue(string propertyName)
+    {
+        var value = FilterModel.GetFilterValue(propertyName);
+        return value is bool boolValue && boolValue;
+    }
+
+    // 事件處理：文字輸入
+    private void HandleTextInput(string propertyName, string? value)
+    {
+        FilterModel.SetFilterValue(propertyName, value);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：數字變更
+    private void HandleNumberChange(string propertyName, string? value)
+    {
+        if (decimal.TryParse(value, out var num))
+        {
+            FilterModel.SetFilterValue(propertyName, num);
+        }
+        else
+        {
+            FilterModel.SetFilterValue(propertyName, null);
+        }
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：日期變更
+    private void HandleDateChange(string propertyName, string? value)
+    {
+        if (DateTime.TryParse(value, out var date))
+        {
+            FilterModel.SetFilterValue(propertyName, date);
+        }
+        else
+        {
+            FilterModel.SetFilterValue(propertyName, null);
+        }
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：日期時間變更
+    private void HandleDateTimeChange(string propertyName, string? value)
+    {
+        if (DateTime.TryParse(value, out var dateTime))
+        {
+            FilterModel.SetFilterValue(propertyName, dateTime);
+        }
+        else
+        {
+            FilterModel.SetFilterValue(propertyName, null);
+        }
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：下拉選單變更
+    private void HandleSelectChange(string propertyName, string? value)
+    {
+        FilterModel.SetFilterValue(propertyName, value);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：多選變更
+    private void HandleMultiSelectChange(string propertyName, string optionValue, object? isCheckedObj)
+    {
+        var isChecked = isCheckedObj is bool boolValue ? boolValue : bool.Parse(isCheckedObj?.ToString() ?? "false");
+        var currentValues = GetMultiSelectValues(propertyName);
+        
+        if (isChecked && !currentValues.Contains(optionValue))
+            currentValues.Add(optionValue);
+        else if (!isChecked && currentValues.Contains(optionValue))
+            currentValues.Remove(optionValue);
+        
+        FilterModel.SetFilterValue(propertyName, currentValues);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：日期範圍變更
+    private void HandleDateRangeChange(string propertyName, string? value, bool isStartDate)
+    {
+        var dateRange = GetDateRange(propertyName);
+        
+        if (DateTime.TryParse(value, out var date))
+        {
+            if (isStartDate)
+                dateRange.StartDate = date;
+            else
+                dateRange.EndDate = date;
+        }
+        else
+        {
+            if (isStartDate)
+                dateRange.StartDate = null;
+            else
+                dateRange.EndDate = null;
+        }
+        
+        FilterModel.SetFilterValue(propertyName, dateRange);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：日期時間範圍變更
+    private void HandleDateTimeRangeChange(string propertyName, string? value, bool isStartDateTime)
+    {
+        var dateTimeRange = GetDateTimeRange(propertyName);
+        
+        if (DateTime.TryParse(value, out var dateTime))
+        {
+            if (isStartDateTime)
+                dateTimeRange.StartDateTime = dateTime;
+            else
+                dateTimeRange.EndDateTime = dateTime;
+        }
+        else
+        {
+            if (isStartDateTime)
+                dateTimeRange.StartDateTime = null;
+            else
+                dateTimeRange.EndDateTime = null;
+        }
+        
+        FilterModel.SetFilterValue(propertyName, dateTimeRange);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：數字範圍變更
+    private void HandleNumberRangeChange(string propertyName, string? value, bool isMin)
+    {
+        var numberRange = GetNumberRange(propertyName);
+        
+        if (decimal.TryParse(value, out var num))
+        {
+            if (isMin)
+                numberRange.Min = num;
+            else
+                numberRange.Max = num;
+        }
+        else
+        {
+            if (isMin)
+                numberRange.Min = null;
+            else
+                numberRange.Max = null;
+        }
+        
+        FilterModel.SetFilterValue(propertyName, numberRange);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：布林值變更
+    private void HandleBoolChange(string propertyName, object? isCheckedObj)
+    {
+        var isChecked = isCheckedObj is bool boolValue ? boolValue : bool.Parse(isCheckedObj?.ToString() ?? "false");
+        FilterModel.SetFilterValue(propertyName, isChecked);
+        _ = HandleFilterChanged();
+    }
+
+    // 事件處理：自動完成輸入
+    private void HandleAutoCompleteInput(SearchFilterDefinition filter, string? inputValue)
+    {
+        var fieldId = filter.PropertyName;
+        
+        FilterModel.SetFilterValue(filter.PropertyName, inputValue);
+        
+        // 清除之前的計時器
+        if (autoCompleteTimers.ContainsKey(fieldId))
+        {
+            autoCompleteTimers[fieldId]?.Dispose();
+        }
+        
+        // 如果輸入長度不足，不觸發搜尋
+        if (string.IsNullOrEmpty(inputValue) || inputValue.Length < filter.MinSearchLength)
+        {
+            autoCompleteOptions.Remove(fieldId);
+            _ = HandleFilterChanged();
+            return;
+        }
+        
+        // 設置延遲搜尋計時器
+        autoCompleteTimers[fieldId] = new Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                try
+                {
+                    if (filter.SearchFunction != null)
+                    {
+                        var options = await filter.SearchFunction(inputValue);
+                        autoCompleteOptions[fieldId] = options;
+                        StateHasChanged();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"AutoComplete search error: {ex.Message}");
+                    autoCompleteOptions[fieldId] = new List<SelectOption>();
+                }
+            });
+        }, null, filter.AutoCompleteDelayMs, Timeout.Infinite);
+        
+        _ = HandleFilterChanged();
+    }
 
     private async Task HandleSearch()
     {
@@ -92,590 +521,6 @@
     {
         FilterModel = new SearchFilterModel();
         await HandleFilterChanged();
-    }    private RenderFragment RenderFilter(SearchFilterDefinition filter) => builder =>
-    {
-        var containerCssClass = filter.ContainerCssClass ?? "col-md-2";
-        
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", containerCssClass);
-        
-        // 欄位標籤
-        if (!string.IsNullOrEmpty(filter.Label))
-        {
-            builder.OpenElement(2, "label");
-            builder.AddAttribute(3, "class", "form-label");
-            builder.AddAttribute(4, "for", filter.PropertyName);
-            builder.AddContent(5, filter.Label);
-            builder.CloseElement();
-        }
-        
-        // 根據篩選類型渲染不同的控制項
-        switch (filter.FilterType)
-        {
-            case SearchFilterType.Text:
-                RenderTextFilter(builder, filter, 6);
-                break;
-            case SearchFilterType.Select:
-                RenderSelectFilter(builder, filter, 6);
-                break;
-            case SearchFilterType.MultiSelect:
-                RenderMultiSelectFilter(builder, filter, 6);
-                break;            
-            case SearchFilterType.DateRange:
-                RenderDateRangeFilter(builder, filter, 6);
-                break;            
-            case SearchFilterType.NumberRange:
-                RenderNumberRangeFilter(builder, filter, 6);
-                break;
-            case SearchFilterType.Boolean:
-                RenderCheckboxFilter(builder, filter, 6);
-                break;
-            case SearchFilterType.AutoComplete:
-                RenderAutoCompleteFilter(builder, filter, 6);
-                break;
-            default:
-                RenderTextFilter(builder, filter, 6);
-                break;
-        }
-        
-        builder.CloseElement(); // container div
-    };   
-
-    private void RenderTextFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        builder.OpenElement(sequence, "input");
-        builder.AddAttribute(sequence + 1, "type", "text");
-        builder.AddAttribute(sequence + 2, "class", "form-control");
-        builder.AddAttribute(sequence + 3, "id", filter.PropertyName);
-        builder.AddAttribute(sequence + 4, "placeholder", filter.Placeholder);
-          var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString() ?? "";
-        builder.AddAttribute(sequence + 5, "value", currentValue);        builder.AddAttribute(sequence + 6, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            FilterModel.SetFilterValue(filter.PropertyName, args.Value?.ToString());
-            _ = HandleFilterChanged();
-        }));
-        builder.CloseElement();
-    }    
-
-    private void RenderSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        builder.OpenElement(sequence, "select");
-        builder.AddAttribute(sequence + 1, "class", "form-select");
-        builder.AddAttribute(sequence + 2, "id", filter.PropertyName);        builder.AddAttribute(sequence + 3, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            FilterModel.SetFilterValue(filter.PropertyName, args.Value?.ToString());
-            _ = HandleFilterChanged();
-        }));
-        
-        // 空選項
-        builder.OpenElement(sequence + 10, "option");
-        builder.AddAttribute(sequence + 11, "value", "");
-        var currentValue = FilterModel.GetFilterValue(filter.PropertyName)?.ToString();
-        builder.AddAttribute(sequence + 12, "selected", string.IsNullOrWhiteSpace(currentValue));
-        builder.AddContent(sequence + 13, filter.EmptyOptionText ?? "全部");
-        builder.CloseElement();
-        
-        // 選項
-        if (filter.Options != null)
-        {
-            var optionSequence = sequence + 20;
-            
-            foreach (var option in filter.Options)
-            {
-                builder.OpenElement(optionSequence, "option");
-                builder.AddAttribute(optionSequence + 1, "value", option.Value);
-                builder.AddAttribute(optionSequence + 2, "selected", option.Value == currentValue);
-                builder.AddContent(optionSequence + 3, option.Text);
-                builder.CloseElement();
-                optionSequence += 4;
-            }
-        }
-        
-        builder.CloseElement();
-    }
-    
-    private void RenderMultiSelectFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        // 簡化版多選，使用多個 checkbox
-        if (filter.Options != null)
-        {
-            var currentValues = FilterModel.GetFilterValue(filter.PropertyName) as List<string> ?? new List<string>();
-            var checkboxSequence = sequence;
-            
-            foreach (var option in filter.Options)
-            {
-                builder.OpenElement(checkboxSequence, "div");
-                builder.AddAttribute(checkboxSequence + 1, "class", "form-check");
-                
-                builder.OpenElement(checkboxSequence + 2, "input");
-                builder.AddAttribute(checkboxSequence + 3, "type", "checkbox");
-                builder.AddAttribute(checkboxSequence + 4, "class", "form-check-input");
-                builder.AddAttribute(checkboxSequence + 5, "id", $"{filter.PropertyName}_{option.Value}");
-                builder.AddAttribute(checkboxSequence + 6, "value", option.Value);
-                builder.AddAttribute(checkboxSequence + 7, "checked", currentValues.Contains(option.Value));
-                  builder.AddAttribute(checkboxSequence + 8, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-                {
-                    var isChecked = args.Value is bool boolValue ? boolValue : bool.Parse(args.Value?.ToString() ?? "false");
-                    
-                    if (isChecked && !currentValues.Contains(option.Value))
-                        currentValues.Add(option.Value);
-                    else if (!isChecked && currentValues.Contains(option.Value))
-                        currentValues.Remove(option.Value);
-                    
-                    FilterModel.SetFilterValue(filter.PropertyName, currentValues);
-                    _ = HandleFilterChanged();
-                }));
-                builder.CloseElement();
-                
-                builder.OpenElement(checkboxSequence + 9, "label");
-                builder.AddAttribute(checkboxSequence + 10, "class", "form-check-label");
-                builder.AddAttribute(checkboxSequence + 11, "for", $"{filter.PropertyName}_{option.Value}");
-                builder.AddContent(checkboxSequence + 12, option.Text);
-                builder.CloseElement();
-                
-                builder.CloseElement();
-                checkboxSequence += 13;
-            }
-        }
-    }    
-    
-    private void RenderDateRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        var dateRange = FilterModel.GetFilterValue(filter.PropertyName) as DateRange ?? new DateRange();
-        
-        // 開始日期
-        builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "row g-2");
-        
-        builder.OpenElement(sequence + 2, "div");
-        builder.AddAttribute(sequence + 3, "class", "col-6");
-        
-        builder.OpenElement(sequence + 4, "input");
-        builder.AddAttribute(sequence + 5, "type", "date");
-        builder.AddAttribute(sequence + 6, "class", "form-control");
-        builder.AddAttribute(sequence + 7, "placeholder", "開始日期");
-        
-        if (dateRange.StartDate.HasValue)
-        {
-            builder.AddAttribute(sequence + 8, "value", dateRange.StartDate.Value.ToString("yyyy-MM-dd"));
-        }          builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            if (DateTime.TryParse(args.Value?.ToString(), out var date))
-                dateRange.StartDate = date;
-            else
-                dateRange.StartDate = null;
-            FilterModel.SetFilterValue(filter.PropertyName, dateRange);
-            _ = HandleFilterChanged();
-        }));
-        builder.CloseElement();
-        builder.CloseElement();
-        
-        // 結束日期
-        builder.OpenElement(sequence + 10, "div");
-        builder.AddAttribute(sequence + 11, "class", "col-6");
-        
-        builder.OpenElement(sequence + 12, "input");
-        builder.AddAttribute(sequence + 13, "type", "date");
-        builder.AddAttribute(sequence + 14, "class", "form-control");
-        builder.AddAttribute(sequence + 15, "placeholder", "結束日期");
-        
-        if (dateRange.EndDate.HasValue)
-        {
-            builder.AddAttribute(sequence + 16, "value", dateRange.EndDate.Value.ToString("yyyy-MM-dd"));
-        }          builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            if (DateTime.TryParse(args.Value?.ToString(), out var date))
-                dateRange.EndDate = date;
-            else
-                dateRange.EndDate = null;
-            FilterModel.SetFilterValue(filter.PropertyName, dateRange);
-            _ = HandleFilterChanged();
-        }));
-        builder.CloseElement();
-        builder.CloseElement();
-        
-        builder.CloseElement();
-    }    
-    
-    private void RenderNumberRangeFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        var numberRange = FilterModel.GetFilterValue(filter.PropertyName) as NumberRange ?? new NumberRange();
-        
-        // 最小值
-        builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "row g-2");
-        
-        builder.OpenElement(sequence + 2, "div");
-        builder.AddAttribute(sequence + 3, "class", "col-6");
-        
-        builder.OpenElement(sequence + 4, "input");
-        builder.AddAttribute(sequence + 5, "type", "number");
-        builder.AddAttribute(sequence + 6, "class", "form-control");
-        builder.AddAttribute(sequence + 7, "placeholder", "最小值");
-        
-        if (numberRange.Min.HasValue)
-        {
-            builder.AddAttribute(sequence + 8, "value", numberRange.Min.Value);
-        }          builder.AddAttribute(sequence + 9, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            if (decimal.TryParse(args.Value?.ToString(), out var num))
-                numberRange.Min = num;
-            else
-                numberRange.Min = null;
-            FilterModel.SetFilterValue(filter.PropertyName, numberRange);
-            _ = HandleFilterChanged();
-        }));
-        builder.CloseElement();
-        builder.CloseElement();
-        
-        // 最大值
-        builder.OpenElement(sequence + 10, "div");
-        builder.AddAttribute(sequence + 11, "class", "col-6");
-        
-        builder.OpenElement(sequence + 12, "input");
-        builder.AddAttribute(sequence + 13, "type", "number");
-        builder.AddAttribute(sequence + 14, "class", "form-control");
-        builder.AddAttribute(sequence + 15, "placeholder", "最大值");
-        
-        if (numberRange.Max.HasValue)
-        {
-            builder.AddAttribute(sequence + 16, "value", numberRange.Max.Value);
-        }          builder.AddAttribute(sequence + 17, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            if (decimal.TryParse(args.Value?.ToString(), out var num))
-                numberRange.Max = num;
-            else
-                numberRange.Max = null;
-            FilterModel.SetFilterValue(filter.PropertyName, numberRange);
-            _ = HandleFilterChanged();
-        }));
-        builder.CloseElement();
-        builder.CloseElement();
-        
-        builder.CloseElement();
-    }    
-    
-    private void RenderCheckboxFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "form-check");
-        
-        builder.OpenElement(sequence + 2, "input");
-        builder.AddAttribute(sequence + 3, "type", "checkbox");
-        builder.AddAttribute(sequence + 4, "class", "form-check-input");
-        builder.AddAttribute(sequence + 5, "id", filter.PropertyName);
-        
-        var currentValue = FilterModel.GetFilterValue(filter.PropertyName);
-        var isChecked = currentValue is bool boolValue && boolValue;
-        
-        if (isChecked)
-        {
-            builder.AddAttribute(sequence + 6, "checked", true);
-        }
-          builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            var isChecked = args.Value is bool boolValue ? boolValue : bool.Parse(args.Value?.ToString() ?? "false");
-            FilterModel.SetFilterValue(filter.PropertyName, isChecked);
-            _ = HandleFilterChanged();
-        }));
-        builder.CloseElement();
-        
-        builder.OpenElement(sequence + 8, "label");
-        builder.AddAttribute(sequence + 9, "class", "form-check-label");
-        builder.AddAttribute(sequence + 10, "for", filter.PropertyName);
-        builder.AddContent(sequence + 11, filter.Label);
-        builder.CloseElement();
-          builder.CloseElement();
-    }
-
-    private void RenderAutoCompleteFilter(RenderTreeBuilder builder, SearchFilterDefinition filter, int sequence)
-    {
-        var fieldId = filter.PropertyName;
-        var currentValue = FilterModel.GetFilterValue(filter.PropertyName);
-        var displayValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, currentValue?.ToString() ?? "");
-          // 容器 div
-        builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "autocomplete-container");
-        
-        // 輸入框
-        builder.OpenElement(sequence + 2, "input");
-        builder.AddAttribute(sequence + 3, "type", "text");
-        builder.AddAttribute(sequence + 4, "class", "form-control");
-        builder.AddAttribute(sequence + 5, "id", fieldId);
-        builder.AddAttribute(sequence + 6, "placeholder", filter.Placeholder);
-        builder.AddAttribute(sequence + 7, "value", displayValue);
-        
-        // 輸入事件處理
-        builder.AddAttribute(sequence + 8, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-        {
-            var inputValue = args.Value?.ToString() ?? "";
-            autoCompleteDisplayValues[fieldId] = inputValue;
-            _ = HandleAutoCompleteInput(filter, inputValue);
-        }));
-        
-        // 焦點事件處理
-        builder.AddAttribute(sequence + 9, "onfocus", EventCallback.Factory.Create(this, () =>
-        {
-            var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-            // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋以顯示所有選項
-            if (filter.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= filter.MinSearchLength))
-            {
-                _ = HandleAutoCompleteInput(filter, inputValue);
-            }
-        }));
-        
-        // 失去焦點事件處理
-        builder.AddAttribute(sequence + 10, "onblur", EventCallback.Factory.Create(this, () =>
-        {
-            // 延遲隱藏下拉選單，讓使用者有時間點擊選項
-            Timer? timer = null;
-            timer = new Timer(_ =>
-            {
-                autoCompleteVisible[fieldId] = false;
-                InvokeAsync(StateHasChanged);
-                timer?.Dispose();
-            }, null, 150, Timeout.Infinite);
-        }));
-        
-        // 鍵盤事件處理
-        builder.AddAttribute(sequence + 11, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
-        {
-            _ = HandleKeyDown(filter, args);
-        }));
-        
-        builder.CloseElement(); // input
-        
-        // 載入指示器
-        if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
-        {
-            builder.OpenElement(sequence + 20, "div");
-            builder.AddAttribute(sequence + 21, "class", "position-absolute");
-            builder.AddAttribute(sequence + 22, "style", "right: 10px; top: 50%; transform: translateY(-50%);");
-            builder.OpenElement(sequence + 23, "span");
-            builder.AddAttribute(sequence + 24, "class", "spinner-border spinner-border-sm");
-            builder.CloseElement();
-            builder.CloseElement();
-        }
-        
-        // 下拉選項
-        if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
-        {
-            var options = autoCompleteOptions[fieldId];
-            if (options.Any())
-            {
-                builder.OpenElement(sequence + 30, "div");
-                builder.AddAttribute(sequence + 31, "class", "autocomplete-dropdown position-absolute w-100");
-                builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");
-                
-                var optionSequence = sequence + 40;
-                var optionIndex = 0;
-                foreach (var option in options)
-                {
-                    var isHighlighted = keyboardNavigationActive.GetValueOrDefault(fieldId, false) && 
-                                       highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
-                    
-                    builder.OpenElement(optionSequence, "button");
-                    builder.AddAttribute(optionSequence + 1, "type", "button");                    builder.AddAttribute(optionSequence + 2, "class", $"autocomplete-item{(isHighlighted ? " highlighted" : "")}");
-                    builder.AddAttribute(optionSequence + 3, "id", $"{fieldId}_option_{optionIndex}");
-                    builder.AddAttribute(optionSequence + 4, "onmousedown", EventCallback.Factory.Create(this, () =>
-                    {
-                        autoCompleteDisplayValues[fieldId] = option.Text;
-                        FilterModel.SetFilterValue(filter.PropertyName, option.Value);
-                        HideDropdown(fieldId);
-                        _ = HandleFilterChanged();
-                    }));
-                    builder.AddAttribute(optionSequence + 5, "onmouseenter", EventCallback.Factory.Create(this, () =>
-                    {
-                        highlightedOptionIndex[fieldId] = optionIndex;
-                        keyboardNavigationActive[fieldId] = false; // 滑鼠懸停時停用鍵盤導航高亮
-                        StateHasChanged();
-                    }));
-                    builder.AddContent(optionSequence + 6, option.Text);
-                    builder.CloseElement();
-                    
-                    optionSequence += 7;
-                    optionIndex++;
-                }
-                
-                builder.CloseElement(); // dropdown-menu
-            }
-        }
-        
-        builder.CloseElement(); // container div
-    }
-
-    private Task HandleAutoCompleteInput(SearchFilterDefinition filter, string inputValue)
-    {
-        var fieldId = filter.PropertyName;
-        
-        // 清除之前的計時器
-        if (autoCompleteTimers.ContainsKey(fieldId))
-        {
-            autoCompleteTimers[fieldId]?.Dispose();
-        }
-        
-        // 如果輸入長度不足，檢查 MinSearchLength 設定
-        if (inputValue.Length < filter.MinSearchLength)
-        {
-            autoCompleteVisible[fieldId] = false;
-            // 如果 MinSearchLength > 0，清空篩選值
-            if (filter.MinSearchLength > 0)
-            {
-                FilterModel.SetFilterValue(filter.PropertyName, "");
-                _ = HandleFilterChanged();
-            }
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        
-        // 設置載入狀態
-        autoCompleteLoading[fieldId] = true;
-        StateHasChanged();
-        
-        // 設置延遲搜尋計時器
-        autoCompleteTimers[fieldId] = new Timer(async _ =>
-        {
-            await InvokeAsync(async () =>
-            {
-                try
-                {
-                    if (filter.SearchFunction != null)
-                    {
-                        var options = await filter.SearchFunction(inputValue);
-                        autoCompleteOptions[fieldId] = options;
-                        autoCompleteVisible[fieldId] = options.Any();
-                        ResetKeyboardNavigation(fieldId);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"AutoComplete search error: {ex.Message}");
-                    autoCompleteOptions[fieldId] = new List<SelectOption>();
-                    autoCompleteVisible[fieldId] = false;
-                }
-                finally
-                {
-                    autoCompleteLoading[fieldId] = false;
-                    StateHasChanged();
-                }
-            });
-        }, null, filter.AutoCompleteDelayMs, Timeout.Infinite);
-        
-        return Task.CompletedTask;
-    }
-
-    private async Task HandleKeyDown(SearchFilterDefinition filter, KeyboardEventArgs args)
-    {
-        var fieldId = filter.PropertyName;
-        var options = autoCompleteOptions.GetValueOrDefault(fieldId, new List<SelectOption>());
-        
-        switch (args.Key)
-        {
-            case "ArrowDown":
-                // 如果下拉選單未顯示，顯示它
-                if (!autoCompleteVisible.GetValueOrDefault(fieldId, false))
-                {
-                    var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-                    // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋
-                    if (filter.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= filter.MinSearchLength))
-                    {
-                        await HandleAutoCompleteInput(filter, inputValue);
-                    }
-                }
-                else if (options.Any())
-                {
-                    MoveHighlight(fieldId, options, 1);
-                }
-                break;
-                
-            case "ArrowUp":
-                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
-                {
-                    MoveHighlight(fieldId, options, -1);
-                }
-                break;
-                
-            case "Enter":
-                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
-                {
-                    await SelectHighlightedOption(filter, options);
-                }
-                break;
-                
-            case "Escape":
-                HideDropdown(fieldId);
-                break;
-                
-            case "Tab":
-                HideDropdown(fieldId);
-                // 不阻止 Tab，讓它正常移動到下一個欄位
-                break;
-        }
-        
-        StateHasChanged();
-    }
-
-    private void MoveHighlight(string fieldId, List<SelectOption> options, int direction)
-    {
-        if (!options.Any()) return;
-        
-        var currentIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
-        var newIndex = currentIndex + direction;
-        
-        // 循環導航
-        if (newIndex < 0)
-            newIndex = options.Count - 1;
-        else if (newIndex >= options.Count)
-            newIndex = 0;
-            
-        highlightedOptionIndex[fieldId] = newIndex;
-        keyboardNavigationActive[fieldId] = true;
-        
-        // 滾動到可見區域
-        _ = ScrollToHighlightedOption(fieldId, newIndex);
-    }
-
-    private async Task ScrollToHighlightedOption(string fieldId, int optionIndex)
-    {
-        try
-        {
-            var optionId = $"{fieldId}_option_{optionIndex}";
-            await JSRuntime.InvokeVoidAsync("scrollToElement", optionId);
-        }
-        catch (Exception ex)
-        {
-            // 靜默處理滾動錯誤，不影響主要功能
-            Console.Error.WriteLine($"ScrollToHighlightedOption error: {ex.Message}");
-        }
-    }
-
-    private Task SelectHighlightedOption(SearchFilterDefinition filter, List<SelectOption> options)
-    {
-        var fieldId = filter.PropertyName;
-        var highlightedIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
-        
-        if (highlightedIndex >= 0 && highlightedIndex < options.Count)
-        {
-            var selectedOption = options[highlightedIndex];
-            autoCompleteDisplayValues[fieldId] = selectedOption.Text;
-            FilterModel.SetFilterValue(filter.PropertyName, selectedOption.Value);
-            HideDropdown(fieldId);
-            _ = HandleFilterChanged();
-        }
-        
-        return Task.CompletedTask;
-    }
-
-    private void HideDropdown(string fieldId)
-    {
-        autoCompleteVisible[fieldId] = false;
-        ResetKeyboardNavigation(fieldId);
-    }
-
-    private void ResetKeyboardNavigation(string fieldId)
-    {
-        highlightedOptionIndex[fieldId] = -1;
-        keyboardNavigationActive[fieldId] = false;
     }
 
     public void Dispose()

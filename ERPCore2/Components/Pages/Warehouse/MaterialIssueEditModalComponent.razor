@@ -61,7 +61,7 @@
     
     // 領料明細
     private List<MaterialIssueDetail> materialIssueDetails = new();
-    private MaterialIssueDetailManagerComponent? detailManagerComponent;
+    private MaterialIssueTable? detailManagerComponent;
     
     // 下拉選單選項
     private List<Employee> employees = new();
@@ -336,7 +336,7 @@
     {
         if (editModalComponent?.Entity != null)
         {
-            <MaterialIssueDetailManagerComponent @ref="detailManagerComponent"
+            <MaterialIssueTable @ref="detailManagerComponent"
                                                 Details="@materialIssueDetails"
                                                 DetailsChanged="@HandleDetailsChanged"
                                                 IsReadOnly="false" />

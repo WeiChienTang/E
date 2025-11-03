@@ -87,16 +87,18 @@
                     }
                 </div>
 
-                @* ===== Modal Footer (Metadata) ===== *@
+                @* ===== Modal Footer (Custom Content) ===== *@
                 @if (ShowFooter && FooterContent != null)
                 {
                     <div class="modal-footer border-top bg-light">
                         @FooterContent
                     </div>
                 }
-                else if (ShowFooter && AuditInfo != null)
+                
+                @* ===== Modal Metadata (Audit Info) ===== *@
+                @if (ShowFooter && AuditInfo != null)
                 {
-                    <div class="modal-footer border-top bg-light px-3 py-2">
+                    <div class="modal-metadata border-top bg-light px-3 py-2">
                         <div class="text-muted small d-flex flex-wrap gap-3">
                             @if (AuditInfo.CreatedAt.HasValue)
                             {

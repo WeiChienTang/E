@@ -78,7 +78,7 @@
     
     // 庫存明細
     private List<InventoryStockDetail> inventoryStockDetails = new();
-    private InventoryStockDetailModalComponent<InventoryStock, InventoryStockDetail>? inventoryStockDetailManager;
+    private InventoryStockTable<InventoryStock, InventoryStockDetail>? inventoryStockDetailManager;
 
     // Modal 管理器
     private ProductEditModalComponent? productEditModal;
@@ -659,7 +659,7 @@
             // 一律顯示庫存明細組件（不論是新增或編輯模式）
             @if (editModalComponent?.Entity != null)
             {
-                <InventoryStockDetailModalComponent @ref="inventoryStockDetailManager"
+                <InventoryStockTable @ref="inventoryStockDetailManager"
                                                    TMainEntity="InventoryStock"
                                                    TDetailEntity="InventoryStockDetail"
                                                    MainEntity="@editModalComponent.Entity"

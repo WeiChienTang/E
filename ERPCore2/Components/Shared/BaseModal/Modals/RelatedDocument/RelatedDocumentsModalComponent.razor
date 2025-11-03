@@ -1,0 +1,234 @@
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@($"相關單據 - {ProductName}")"
+                   Icon="bi bi-link-45deg"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="false"
+                   IsLoading="@IsLoading"
+                   LoadingMessage="正在載入相關單據..."
+                   OnClose="@Close">
+    
+    <BodyContent>
+        @if (RelatedDocuments == null || !RelatedDocuments.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <p class="mt-3 text-muted">暫無相關單據</p>
+            </div>
+        }
+        else
+        {
+            var receivingDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.ReceivingDocument).ToList();
+            var returnDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.ReturnDocument).ToList();
+            var setoffDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.SetoffDocument).ToList();
+            
+            @* 入庫單區塊 *@
+            @if (receivingDocs.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="text-info mb-3">
+                        <i class="bi bi-box-seam me-2"></i>
+                        入庫記錄 (@receivingDocs.Count)
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var doc in receivingDocs)
+                        {
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action"
+                               @onclick="@(() => HandleDocumentClick(doc))">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-info me-2">
+                                                <i class="@doc.Icon me-1"></i>
+                                                @doc.TypeDisplayName
+                                            </span>
+                                            @doc.DocumentNumber
+                                        </h6>
+                                        <p class="mb-1 text-muted small">
+                                            <span class="text-nowrap">
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                            </span>
+                                            @if (doc.Quantity.HasValue)
+                                            {
+                                                <span class="ms-3 text-nowrap">
+                                                    <i class="bi bi-box-seam me-1"></i>
+                                                    入庫數量: @doc.Quantity.Value
+                                                </span>
+                                            }
+                                            @if (doc.UnitPrice.HasValue)
+                                            {
+                                                <span class="ms-3 text-nowrap">
+                                                    <i class="bi bi-cash me-1"></i>
+                                                    單價: @doc.UnitPrice.Value.ToString("N2")
+                                                </span>
+                                            }
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(doc.Remarks))
+                                        {
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-chat-left-text me-1"></i>
+                                                @doc.Remarks
+                                            </p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+            
+            @* 退貨單區塊 *@
+            @if (returnDocs.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="text-warning mb-3">
+                        <i class="bi bi-arrow-return-left me-2"></i>
+                        退貨記錄 (@returnDocs.Count)
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var doc in returnDocs)
+                        {
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action"
+                               @onclick="@(() => HandleDocumentClick(doc))">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-warning text-dark me-2">
+                                                <i class="@doc.Icon me-1"></i>
+                                                @doc.TypeDisplayName
+                                            </span>
+                                            @doc.DocumentNumber
+                                        </h6>
+                                        <p class="mb-1 text-muted small">
+                                            <span class="text-nowrap">
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                            </span>
+                                            @if (doc.Quantity.HasValue)
+                                            {
+                                                <span class="ms-3 text-nowrap">
+                                                    <i class="bi bi-box-seam me-1"></i>
+                                                    退貨數量: @doc.Quantity.Value
+                                                </span>
+                                            }
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(doc.Remarks))
+                                        {
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-chat-left-text me-1"></i>
+                                                @doc.Remarks
+                                            </p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* 沖款單區塊 *@
+            @if (setoffDocs.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="text-success mb-3">
+                        <i class="bi bi-cash-coin me-2"></i>
+                        沖款記錄 (@setoffDocs.Count)
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var doc in setoffDocs)
+                        {
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action"
+                               @onclick="@(() => HandleDocumentClick(doc))">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-success me-2">
+                                                <i class="@doc.Icon me-1"></i>
+                                                @doc.TypeDisplayName
+                                            </span>
+                                            @doc.DocumentNumber
+                                        </h6>
+                                        <p class="mb-1 text-muted small">
+                                            <span class="text-nowrap">
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                            </span>
+                                            @if (doc.CurrentAmount.HasValue)
+                                            {
+                                                <span class="ms-3 text-nowrap">
+                                                    <i class="bi bi-currency-dollar me-1"></i>
+                                                    本次收款: @doc.CurrentAmount.Value.ToString("N2")
+                                                </span>
+                                            }
+                                            @if (doc.TotalAmount.HasValue)
+                                            {
+                                                <span class="ms-3 text-nowrap">
+                                                    <i class="bi bi-cash-stack me-1"></i>
+                                                    累計收款: @doc.TotalAmount.Value.ToString("N2")
+                                                </span>
+                                            }
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(doc.Remarks))
+                                        {
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-chat-left-text me-1"></i>
+                                                @doc.Remarks
+                                            </p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public string ProductName { get; set; } = string.Empty;
+    [Parameter] public List<RelatedDocument>? RelatedDocuments { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    
+    /// <summary>
+    /// 當點擊單據時觸發,傳回單據資訊供父組件開啟對應的 EditModal
+    /// </summary>
+    [Parameter] public EventCallback<RelatedDocument> OnDocumentClick { get; set; }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleDocumentClick(RelatedDocument document)
+    {
+        if (OnDocumentClick.HasDelegate)
+        {
+            await OnDocumentClick.InvokeAsync(document);
+        }
+    }
+}

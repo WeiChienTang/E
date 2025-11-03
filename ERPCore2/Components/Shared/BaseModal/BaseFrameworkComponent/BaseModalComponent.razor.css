@@ -90,6 +90,25 @@
     border-bottom-right-radius: 0.5rem;
 }
 
+/* Metadata 樣式優化（審計資訊區域） */
+::deep .modal-metadata {
+    border-top: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+::deep .modal-metadata .text-muted {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+::deep .modal-metadata strong {
+    font-weight: 600;
+    color: #495057;
+}
+
 /* ===== 動畫效果 ===== */
 
 /* Modal 淡入動畫 */

@@ -87,7 +87,7 @@
     
     // 報價單明細
     private List<QuotationDetail> quotationDetails = new();
-    private QuotationDetailManagerComponent<Quotation, QuotationDetail>? quotationDetailManager;
+    private QuotationTable<Quotation, QuotationDetail>? quotationDetailManager;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -499,7 +499,7 @@
     {
         try
         {
-            <QuotationDetailManagerComponent @ref="quotationDetailManager"
+            <QuotationTable @ref="quotationDetailManager"
                                             TMainEntity="Quotation"
                                             TDetailEntity="QuotationDetail"
                                             MainEntity="@editModalComponent?.Entity"

@@ -4,6 +4,7 @@
 @inject INotificationService NotificationService
 @using System.Reflection
 @using ERPCore2.Components.Shared.BaseModal.Modals
+@using ERPCore2.Components.Shared.BaseModal.BaseFrameworkComponent
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -19,219 +20,174 @@
 
 <PagePermissionCheck RequiredPermission="@requiredPermission">
 
-@* Bootstrap Modal *@
-@if (IsVisible)
-{
-    <div class="modal fade show" tabindex="-1" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; overflow: hidden;">
-        <div class="modal-dialog @GetModalSizeClass()" style="position: relative; margin: 1.5rem auto; max-height: calc(100vh - 3rem);">
-            <div class="modal-content">
-                @* Modal Header *@
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="@GetModalIcon() me-2"></i>
-                        @GetModalTitle()
-                    </h5>
-                    @* 自訂按鈕區域（顯示在標題右側、關閉按鈕左側） *@
-                    @if (CustomButtons != null)
-                    {
-                        <div class="d-flex gap-2 ms-auto me-2">
-                            @CustomButtons
-                        </div>
-                    }
-                    <GenericButtonComponent Type="button" 
-                                          CssClass="btn-close" 
-                                          OnClick="HandleCancel" 
-                                          Title="關閉" />
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@GetModalTitle()"
+                   Icon="@GetModalIcon()"
+                   Size="@ConvertToBaseModalSize(Size)"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true"
+                   ShowCloseButton="true"
+                   IsLoading="@IsLoading"
+                   LoadingMessage="@LoadingMessage"
+                   ErrorMessage="@ErrorMessage"
+                   ShowFooter="@(Entity != null && Entity.Id > 0)"
+                   AuditInfo="@GetAuditInfo()"
+                   BodyCssClass="p-0"
+                   OnClose="@HandleCancel">
+    
+    <HeaderButtons>
+        @* ===== Modal Actions 按鈕區塊 ===== *@
+        <div class="w-100 d-flex align-items-center px-2">
+            @* 最左側：自訂操作按鈕（例如：轉入庫、轉沖款等業務流程按鈕） *@
+            @if (CustomActionButtons != null)
+            {
+                <div class="d-flex gap-2 me-auto">
+                    @CustomActionButtons
                 </div>
-
-                @* Modal Actions - 按鈕區塊移到頂部 *@
-                <div class="modal-footer border-bottom border-top-0 d-flex align-items-center">
-                    @* 最左側：自訂操作按鈕（例如：轉入庫、轉沖款等業務流程按鈕） *@
-                    @if (CustomActionButtons != null)
-                    {
-                        <div class="d-flex gap-2 me-auto">
-                            @CustomActionButtons
-                        </div>
-                    }
-                    
-                    @* 左側：狀態訊息顯示（整合審核和其他所有狀態訊息） *@
-                    <div class="@(CustomActionButtons == null ? "flex-grow-1" : "")">
-                        @if (ShouldShowStatusMessage() && !IsLoading && Entity != null && Entity.Id > 0 && !string.IsNullOrEmpty(_cachedStatusMessage))
-                        {
-                            <span class="badge bg-@GetBadgeColorClass(_cachedStatusVariant) me-2 fs-6">
-                                <i class="@_cachedStatusIcon me-1"></i>@_cachedStatusMessage
-                            </span>
-                        }
-                    </div>
-                    
-                    @* 中央：審核操作按鈕 *@
-                    @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0)
-                    {
-                        @* 有權限者才能看到審核通過/駁回按鈕 *@
-                        @if (!IsEntityApproved())
-                        {
-                            <PermissionCheck Permission="@ApprovalPermission">
-                                <div class="d-flex gap-2 me-3">
-                                    <GenericButtonComponent Text="通過" 
-                                                          Variant="ButtonVariant.Success" 
-                                                          OnClick="HandleApprove" 
-                                                          IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
-                                                          IsLoading="@IsApproving" />
-                                    <GenericButtonComponent Text="駁回" 
-                                                          Variant="ButtonVariant.Danger" 
-                                                          OnClick="OpenRejectConfirmModal" 
-                                                          IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
-                                                          IsLoading="@IsRejecting" />
-                                </div>
-                            </PermissionCheck>
-                        }
-                    }
-                    
-                    @* 右側：原有的主要操作按鈕 *@
-                    <div class="d-flex gap-2">
-                        @* 根據審核狀態動態顯示按鈕 *@
-                        @if (IsEntityApproved())
-                        {
-                            @* 已審核狀態：只顯示完成按鈕 *@
-                            <GenericButtonComponent Text="完成" 
-                                                  Variant="ButtonVariant.Primary" 
-                                                  OnClick="HandleApprovedEntityComplete" 
-                                                  IsDisabled="@IsSubmitting" />
-                        }
-                        else
-                        {
-                            @* 未審核狀態：顯示取消和儲存按鈕 *@
-                            <GenericButtonComponent Text="@CancelButtonText" 
-                                                  Variant="ButtonVariant.Secondary" 
-                                                  OnClick="HandleCancel" 
-                                                  IsDisabled="@IsSubmitting" />
-                            @if (ShowSaveButton)
-                            {
-                                <GenericButtonComponent Text="@SaveButtonText" 
-                                                      Variant="ButtonVariant.Primary" 
-                                                      OnClick="HandleSave" 
-                                                      IsDisabled="@(IsSubmitting || IsLoading)" 
-                                                      IsLoading="@IsSubmitting" />
-                            }
-                        }
-                        
-                        @if (ShowPrintButton)
-                        {
-                            <GenericButtonComponent Text="@PrintButtonText" 
-                                                  Variant="ButtonVariant.Info" 
-                                                  OnClick="HandlePrint" 
-                                                  IsDisabled="@(IsSubmitting || IsLoading)" />
-                        }
-                    </div>
-                </div>
-
-                @* Modal Body *@
-                <div class="modal-body edit-modal-body">
-                    @if (IsLoading)
-                    {
-                        <div class="d-flex justify-content-center align-items-center py-4">
-                            <div class="spinner-border text-primary me-3" role="status"></div>
-                            <span>@LoadingMessage</span>
-                        </div>
-                    }
-                    else if (!string.IsNullOrEmpty(ErrorMessage))
-                    {
-                        <div class="alert alert-danger" role="alert">
-                            <h6 class="alert-heading">載入錯誤</h6>
-                            @ErrorMessage
-                        </div>
-                    }
-                    else
-                    {
-                        @* 表單頂部內容（在所有欄位之前） *@
-                        @if (FormHeaderContent != null)
-                        {
-                            <div class="form-header-content">
-                                <CascadingValue Value="@editContext">
-                                    @FormHeaderContent
-                                </CascadingValue>
-                            </div>
-                        }
-
-                        @* 基本表單 *@
-                        @if (UseGenericForm && FormFields.Any())
-                        {
-                            <div class="edit-form-container">
-                                <GenericFormComponent @key="@_autoCompleteVersion"
-                                                    TModel="TEntity"
-                                                    Model="@Entity"
-                                                    FieldDefinitions="@GetProcessedFormFields()"
-                                                    FieldSections="@FormSections"
-                                                    ShowFormHeader="false"
-                                                    ShowFormButtons="false"
-                                                    OnFieldChanged="@HandleFieldChanged" />
-                            </div>
-                        }
-
-                        @* 自訂表單內容 *@
-                        @if (CustomFormContent != null)
-                        {
-                            <div class="custom-form-content">
-                                <CascadingValue Value="@editContext">
-                                    @CustomFormContent
-                                </CascadingValue>
-                            </div>
-                        }
-
-                        @* 自訂模組系統 *@
-                        @if (CustomModules != null && CustomModules.Any())
-                        {
-                            @foreach (var module in CustomModules.Where(m => m.IsVisible).OrderBy(m => m.Order))
-                            {
-                                @if (module.Content != null)
-                                {
-                                    <div class="@GetModuleCssClass(module) custom-module">
-                                        @if (!string.IsNullOrWhiteSpace(module.Title))
-                                        {
-                                            <h6 class="mb-3">@module.Title</h6>
-                                        }
-                                        <CascadingValue Value="@editContext">
-                                            @module.Content
-                                        </CascadingValue>
-                                    </div>
-                                }
-                            }
-                        }
-
-                        @* 額外區段 *@
-                        @if (AdditionalSections != null)
-                        {
-                            <div class="additional-sections">
-                                <CascadingValue Value="@editContext">
-                                    @AdditionalSections
-                                </CascadingValue>
-                            </div>
-                        }
-                    }
-                </div>
-
-                @* 元數據區段 - 顯示審計資訊 *@
-                @if (!IsLoading && Entity != null && Entity.Id > 0)
+            }
+            
+            @* 左側/中間：狀態訊息顯示（整合審核和其他所有狀態訊息） *@
+            <div class="@(CustomActionButtons == null ? "flex-grow-1" : "")">
+                @if (ShouldShowStatusMessage() && !IsLoading && Entity != null && Entity.Id > 0 && !string.IsNullOrEmpty(_cachedStatusMessage))
                 {
-                    <div class="modal-metadata border-top bg-light px-3 py-2">
-                        <div class="text-muted small d-flex flex-wrap gap-3">
-                            <span><strong>建立時間：</strong>@Entity.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                            <span><strong>創建者：</strong>@(Entity.CreatedBy ?? "系統")</span>
-                            @if (Entity.UpdatedAt.HasValue)
-                            {
-                                <span><strong>最後更新時間：</strong>@Entity.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
-                                <span><strong>最後修改者：</strong>@(Entity.UpdatedBy ?? "系統")</span>
-                            }
-                        </div>
-                    </div>
+                    <span class="badge bg-@GetBadgeColorClass(_cachedStatusVariant) me-2 fs-6">
+                        <i class="@_cachedStatusIcon me-1"></i>@_cachedStatusMessage
+                    </span>
                 }
-
-
+            </div>
+            
+            @* 中央：審核操作按鈕 *@
+            @if (ShowApprovalSection && !IsLoading && Entity != null && Entity.Id > 0)
+            {
+                @* 有權限者才能看到審核通過/駁回按鈕 *@
+                @if (!IsEntityApproved())
+                {
+                    <PermissionCheck Permission="@ApprovalPermission">
+                        <div class="d-flex gap-2 me-3">
+                            <GenericButtonComponent Text="通過" 
+                                                  Variant="ButtonVariant.Success" 
+                                                  OnClick="HandleApprove" 
+                                                  IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
+                                                  IsLoading="@IsApproving" />
+                            <GenericButtonComponent Text="駁回" 
+                                                  Variant="ButtonVariant.Danger" 
+                                                  OnClick="OpenRejectConfirmModal" 
+                                                  IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
+                                                  IsLoading="@IsRejecting" />
+                        </div>
+                    </PermissionCheck>
+                }
+            }
+            
+            @* 右側：原有的主要操作按鈕 *@
+            <div class="d-flex gap-2">
+                @* 根據審核狀態動態顯示按鈕 *@
+                @if (IsEntityApproved())
+                {
+                    @* 已審核狀態：只顯示完成按鈕 *@
+                    <GenericButtonComponent Text="完成" 
+                                          Variant="ButtonVariant.Primary" 
+                                          OnClick="HandleApprovedEntityComplete" 
+                                          IsDisabled="@IsSubmitting" />
+                }
+                else
+                {
+                    @* 未審核狀態：顯示取消和儲存按鈕 *@
+                    <GenericButtonComponent Text="@CancelButtonText" 
+                                          Variant="ButtonVariant.Secondary" 
+                                          OnClick="HandleCancel" 
+                                          IsDisabled="@IsSubmitting" />
+                    @if (ShowSaveButton)
+                    {
+                        <GenericButtonComponent Text="@SaveButtonText" 
+                                              Variant="ButtonVariant.Primary" 
+                                              OnClick="HandleSave" 
+                                              IsDisabled="@(IsSubmitting || IsLoading)" 
+                                              IsLoading="@IsSubmitting" />
+                    }
+                }
+                
+                @if (ShowPrintButton)
+                {
+                    <GenericButtonComponent Text="@PrintButtonText" 
+                                          Variant="ButtonVariant.Info" 
+                                          OnClick="HandlePrint" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)" />
+                }
             </div>
         </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+    </HeaderButtons>
+    
+    <BodyContent>
+        @* 表單頂部內容（在所有欄位之前） *@
+        @if (FormHeaderContent != null)
+        {
+            <div class="form-header-content px-3 pt-3">
+                <CascadingValue Value="@editContext">
+                    @FormHeaderContent
+                </CascadingValue>
+            </div>
+        }
+
+        @* 基本表單 *@
+        @if (UseGenericForm && FormFields.Any())
+        {
+            <div class="edit-form-container px-3">
+                <GenericFormComponent @key="@_autoCompleteVersion"
+                                    TModel="TEntity"
+                                    Model="@Entity"
+                                    FieldDefinitions="@GetProcessedFormFields()"
+                                    FieldSections="@FormSections"
+                                    ShowFormHeader="false"
+                                    ShowFormButtons="false"
+                                    OnFieldChanged="@HandleFieldChanged" />
+            </div>
+        }
+
+        @* 自訂表單內容 *@
+        @if (CustomFormContent != null)
+        {
+            <div class="custom-form-content px-3">
+                <CascadingValue Value="@editContext">
+                    @CustomFormContent
+                </CascadingValue>
+            </div>
+        }
+
+        @* 自訂模組系統 *@
+        @if (CustomModules != null && CustomModules.Any())
+        {
+            @foreach (var module in CustomModules.Where(m => m.IsVisible).OrderBy(m => m.Order))
+            {
+                @if (module.Content != null)
+                {
+                    <div class="@GetModuleCssClass(module) custom-module px-3">
+                        @if (!string.IsNullOrWhiteSpace(module.Title))
+                        {
+                            <h6 class="mb-3">@module.Title</h6>
+                        }
+                        <CascadingValue Value="@editContext">
+                            @module.Content
+                        </CascadingValue>
+                    </div>
+                }
+            }
+        }
+
+        @* 額外區段 *@
+        @if (AdditionalSections != null)
+        {
+            <div class="additional-sections px-3 pb-3">
+                <CascadingValue Value="@editContext">
+                    @AdditionalSections
+                </CascadingValue>
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
 
 @* 駁回確認 Modal *@
 <RejectConfirmModalComponent @ref="_rejectConfirmModal"
@@ -429,12 +385,6 @@
     // AutoComplete 版本號機制 - 用於強制刷新 AutoComplete 欄位顯示
     private int _autoCompleteVersion = 0;
     
-    // ESC 鍵支援
-    private DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? _escKeyDotNetRef;
-    private bool _isEscKeyListenerActive = false;
-    private bool _isDisposed = false;
-    private readonly object _escKeyLock = new object();
-    
     // ===== Modal 尺寸列舉 =====
     
     public enum ModalSize
@@ -498,34 +448,9 @@
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (IsVisible)
+        if (IsVisible && firstRender)
         {
-            // 只在狀態真正改變時設置監聽器
-            bool shouldSetup;
-            lock (_escKeyLock)
-            {
-                shouldSetup = !_isEscKeyListenerActive;
-            }
-            
-            if (shouldSetup)
-            {
-                await SetupTabNavigationAsync();
-                await SetupEscKeyListenerAsync();
-            }
-        }
-        else
-        {
-            // 只在有監聽器時才清理
-            bool shouldCleanup;
-            lock (_escKeyLock)
-            {
-                shouldCleanup = _isEscKeyListenerActive;
-            }
-            
-            if (shouldCleanup)
-            {
-                await CleanupEscKeyListenerAsync();
-            }
+            await SetupTabNavigationAsync();
         }
     }
     
@@ -563,136 +488,8 @@
     
     // ===== ESC 鍵處理 =====
     
-    /// <summary>
-    /// 設置 ESC 鍵監聽器，當按下 ESC 鍵時自動關閉 Modal
-    /// </summary>
-    private async Task SetupEscKeyListenerAsync()
-    {
-        try
-        {
-            lock (_escKeyLock)
-            {
-                // 如果已經設置過，不重複設置
-                if (_isEscKeyListenerActive && _escKeyDotNetRef != null)
-                {
-                    return;
-                }
-                
-                _isEscKeyListenerActive = true;
-            }
-            
-            // 創建新的 DotNetObjectReference（不需要先清理，因為JavaScript現在使用堆疊管理）
-            lock (_escKeyLock)
-            {
-                _escKeyDotNetRef = DotNetObjectReference.Create(this);
-            }
-            
-            await JSRuntime.InvokeVoidAsync("setupEscKeyListener", _escKeyDotNetRef);
-        }
-        catch (Exception ex)
-        {
-            lock (_escKeyLock)
-            {
-                _isEscKeyListenerActive = false;
-            }
-            LogError("SetupEscKeyListener", ex);
-        }
-    }
-    
-    /// <summary>
-    /// 清理 ESC 鍵事件監聽器
-    /// </summary>
-    private async Task CleanupEscKeyListenerAsync()
-    {
-        DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? refToDispose = null;
-        
-        lock (_escKeyLock)
-        {
-            // 如果已經清理過，不重複清理
-            if (!_isEscKeyListenerActive)
-            {
-                return;
-            }
-            
-            _isEscKeyListenerActive = false;
-            refToDispose = _escKeyDotNetRef;
-            _escKeyDotNetRef = null;
-        }
-        
-        try
-        {
-            // 先調用 JavaScript 清理
-            await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener");
-            
-            // 給 JavaScript 更多時間完成清理
-            await Task.Delay(200);
-            
-            // 在鎖外釋放資源，避免死鎖
-            if (refToDispose != null)
-            {
-                try
-                {
-                    refToDispose.Dispose();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // 對象已被釋放，這是正常的
-                }
-                catch (Exception ex)
-                {
-                    // 記錄但不拋出 dispose 錯誤
-                    LogError($"DotNetObjectReference dispose warning (safe to ignore): {ex.Message}", ex);
-                }
-            }
-        }
-        catch (JSDisconnectedException)
-        {
-            // Blazor 連接已斷開，這是正常的
-        }
-        catch (TaskCanceledException)
-        {
-            // 任務被取消，這是正常的
-        }
-        catch (Exception ex)
-        {
-            LogError("CleanupEscKeyListener", ex);
-        }
-    }
-    
-    /// <summary>
-    /// 處理 ESC 鍵按下事件（由 JavaScript 調用）
-    /// </summary>
-    [JSInvokable]
-    public async Task HandleEscapeKey()
-    {
-        try
-        {
-            // 增加額外的安全檢查，特別是對於複雜的子組件
-            if (_isDisposed)
-            {
-                return;
-            }
-            
-            if (IsVisible && !IsSubmitting && !IsApproving && !IsRejecting)
-            {
-                await HandleCancel();
-            }
-        }
-        catch (ObjectDisposedException)
-        {
-            // 忽略已釋放物件的錯誤
-        }
-        catch (InvalidOperationException)
-        {
-            // 忽略無效操作錯誤（通常發生在組件已被釋放時）
-        }
-        catch (Exception ex)
-        {
-            // 簡化錯誤處理，避免複雜的 JSInterop 調用
-            System.Diagnostics.Debug.WriteLine($"ESC Error: {ex.Message}");
-            // 不重新拋出例外，避免影響使用者體驗
-        }
-    }
+    // ESC 鍵監聽、處理和清理方法已移除，由 BaseModalComponent 自動處理
+
     
     // ===== 資料載入方法 =====
     
@@ -893,12 +690,6 @@
     {
         try
         {
-            // 檢查是否已經被釋放
-            if (_isDisposed)
-            {
-                return;
-            }
-            
             if (OnCancel.HasDelegate)
             {
                 await OnCancel.InvokeAsync();
@@ -906,18 +697,9 @@
             
             await CloseModal();
         }
-        catch (ObjectDisposedException)
-        {
-            // 忽略已釋放物件的錯誤
-        }
-        catch (InvalidOperationException)
-        {
-            // 忽略無效操作錯誤
-        }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Cancel Error: {ex.Message}");
-            // 不重新拋出例外，避免影響使用者體驗
+            LogError("HandleCancel", ex);
         }
     }
     
@@ -1119,16 +901,36 @@
         return Id.HasValue ? "fas fa-edit" : "fas fa-plus";
     }
     
-    private string GetModalSizeClass()
+    /// <summary>
+    /// 轉換 ModalSize 到 BaseModalComponent.ModalSize
+    /// </summary>
+    private BaseModalComponent.ModalSize ConvertToBaseModalSize(ModalSize size)
     {
-        return Size switch
+        return size switch
         {
-            ModalSize.Small => "modal-sm",
-            ModalSize.Default => "",
-            ModalSize.Large => "modal-lg",
-            ModalSize.ExtraLarge => "modal-xl",
-            ModalSize.Desktop => "modal-xl modal-desktop", // 新增桌面專用樣式
-            _ => "modal-xl modal-desktop"
+            ModalSize.Small => BaseModalComponent.ModalSize.Small,
+            ModalSize.Default => BaseModalComponent.ModalSize.Default,
+            ModalSize.Large => BaseModalComponent.ModalSize.Large,
+            ModalSize.ExtraLarge => BaseModalComponent.ModalSize.ExtraLarge,
+            ModalSize.Desktop => BaseModalComponent.ModalSize.Desktop,
+            _ => BaseModalComponent.ModalSize.Desktop
+        };
+    }
+    
+    /// <summary>
+    /// 取得審計資訊
+    /// </summary>
+    private BaseModalComponent.ModalAuditInfo? GetAuditInfo()
+    {
+        if (Entity == null || Entity.Id <= 0)
+            return null;
+            
+        return new BaseModalComponent.ModalAuditInfo
+        {
+            CreatedAt = Entity.CreatedAt,
+            CreatedBy = Entity.CreatedBy ?? "系統",
+            UpdatedAt = Entity.UpdatedAt,
+            UpdatedBy = Entity.UpdatedBy ?? "系統"
         };
     }
     
@@ -1655,44 +1457,5 @@
     
     // ===== 清理資源 =====
     
-    public void Dispose()
-    {
-        try
-        {
-            DotNetObjectReference<GenericEditModalComponent<TEntity, TService>>? refToDispose = null;
-            
-            lock (_escKeyLock)
-            {
-                // 標記為已釋放
-                _isDisposed = true;
-                // 標記為已清理，防止重複操作
-                _isEscKeyListenerActive = false;
-                refToDispose = _escKeyDotNetRef;
-                _escKeyDotNetRef = null;
-            }
-            
-            // 同步釋放 DotNetObjectReference（避免重複釋放）
-            refToDispose?.Dispose();
-            
-            // 異步清理事件監聽器，但不等待結果以避免阻塞 Dispose
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await CleanupTabNavigationAsync();
-                    // 不需要再調用 CleanupEscKeyListenerAsync，因為已經在上面處理了
-                }
-                catch
-                {
-                    // 忽略清理過程中的錯誤
-                }
-            });
-        }
-        catch
-        {
-            // 忽略清理過程中的錯誤
-        }
-        
-        _loadingSemaphore?.Dispose();
-    }
+    // Dispose 方法已移除，資源清理由 BaseModalComponent 自動處理
 }
