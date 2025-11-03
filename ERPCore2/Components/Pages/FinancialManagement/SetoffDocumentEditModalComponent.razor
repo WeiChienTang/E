@@ -98,15 +98,15 @@
     // 商品明細相關
     private List<SetoffProductDetail> setoffProductDetails = new();
     private bool IsReadOnly => false; // 可根據權限或狀態控制
-    private SetoffProductDetailManagerComponent? setoffProductDetailManager;
+    private SetoffProductTable? setoffProductDetailManager;
     
     // 收款記錄相關
     private List<SetoffPayment> setoffPayments = new();
-    private SetoffPaymentDetailManagerComponent? setoffPaymentDetailManager;
+    private SetoffPaymentTable? setoffPaymentTable;
     
     // 預收付款項相關
     private List<SetoffPrepayment> setoffPrepayments = new();
-    private SetoffPrepaymentDetailManagerComponent? setoffPrepaymentDetailManager;
+    private SetoffPrepaymentTable? setoffPrepaymentDetailManager;
     
     // 日期篩選
     private DateTime? filterStartDate;
@@ -269,8 +269,8 @@
             }
 
             // ===== 儲存前驗證金額 =====
-            var receivedFromPayments = setoffPaymentDetailManager?.GetTotalReceivedAmount() ?? 0;
-            var allowanceFromPayments = setoffPaymentDetailManager?.GetTotalAllowanceAmount() ?? 0;
+            var receivedFromPayments = setoffPaymentTable?.GetTotalReceivedAmount() ?? 0;
+            var allowanceFromPayments = setoffPaymentTable?.GetTotalAllowanceAmount() ?? 0;
             var hasProductSetoff = setoffProductDetails?.Any(d => 
                 d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0) ?? false;
             
@@ -770,7 +770,7 @@
         if (editModalComponent?.Entity != null)
         {
             // 【本期應收】= 被選入的來源明細的原始應收/付總金額
-            // 這個值應該從 SetoffProductDetailManagerComponent 取得來源明細的總金額
+            // 這個值應該從 SetoffProductTable 取得來源明細的總金額
             // 只在明細被選入時計算，不會因為輸入本次沖款金額而改變
             // 退貨單據會以負數計算（例如：銷貨600 + 銷貨退回-300 = 300）
             if (setoffProductDetailManager != null)
@@ -818,10 +818,10 @@
     {
         setoffPayments = payments;
         
-        if (editModalComponent?.Entity != null && setoffPaymentDetailManager != null)
+        if (editModalComponent?.Entity != null && setoffPaymentTable != null)
         {
-            var receivedFromPayments = setoffPaymentDetailManager.GetTotalReceivedAmount();
-            var allowanceFromPayments = setoffPaymentDetailManager.GetTotalAllowanceAmount();
+            var receivedFromPayments = setoffPaymentTable.GetTotalReceivedAmount();
+            var allowanceFromPayments = setoffPaymentTable.GetTotalAllowanceAmount();
             
             // 計算預收付款項金額
             var prepaymentUsedAmount = 0m;  // 轉沖款類型
@@ -1630,7 +1630,7 @@
         {
             @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
             {
-                <SetoffProductDetailManagerComponent 
+                <SetoffProductTable 
                     @ref="setoffProductDetailManager"
                     SetoffDocumentId="@SetoffDocumentId"
                     SetoffType="@editModalComponent.Entity.SetoffType"
@@ -1667,8 +1667,8 @@
         {
             @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
             {
-                <SetoffPaymentDetailManagerComponent 
-                    @ref="setoffPaymentDetailManager"
+                <SetoffPaymentTable
+                    @ref="setoffPaymentTable"
                     SetoffDocumentId="@SetoffDocumentId"
                     SetoffType="@(editModalComponent.Entity.SetoffType)"
                     ExistingPayments="@setoffPayments"
@@ -1692,7 +1692,7 @@
         {
             @if (editModalComponent?.Entity != null && editModalComponent.Entity.RelatedPartyId > 0)
             {
-                <SetoffPrepaymentDetailManagerComponent @ref="setoffPrepaymentDetailManager"
+                <SetoffPrepaymentTable @ref="setoffPrepaymentDetailManager"
                                                        SetoffDocumentId="@SetoffDocumentId"
                                                        SetoffType="@editModalComponent.Entity.SetoffType"
                                                        CustomerId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsReceivable ? editModalComponent.Entity.RelatedPartyId : null)"

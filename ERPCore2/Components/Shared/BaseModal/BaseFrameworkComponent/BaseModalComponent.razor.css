@@ -1,0 +1,225 @@
+/*
+    BaseModalComponent 專屬樣式
+    處理 Modal 的 z-index 層級和視覺效果
+*/
+
+/* ===== Modal 容器層級管理 ===== */
+
+/* 
+    Modal 外層容器
+    基礎 z-index: 1050
+    每開啟一個新的 Modal，z-index 會自動遞增
+*/
+::deep .modal {
+    z-index: 1050;
+}
+
+/* 
+    Modal Backdrop（背景遮罩）
+    z-index 比 Modal 容器少 1，確保在 Modal 後面
+*/
+::deep .modal-backdrop {
+    z-index: 1049;
+}
+
+/* 
+    多層 Modal 支援
+    當有多個 Modal 同時開啟時，後開啟的 Modal 會有更高的 z-index
+*/
+::deep .modal.show ~ .modal.show {
+    z-index: 1060;
+}
+
+::deep .modal.show ~ .modal.show ~ .modal.show {
+    z-index: 1070;
+}
+
+::deep .modal.show ~ .modal.show ~ .modal.show ~ .modal.show {
+    z-index: 1080;
+}
+
+/* 對應的 Backdrop 層級 */
+::deep .modal-backdrop.show ~ .modal-backdrop.show {
+    z-index: 1059;
+}
+
+::deep .modal-backdrop.show ~ .modal-backdrop.show ~ .modal-backdrop.show {
+    z-index: 1069;
+}
+
+::deep .modal-backdrop.show ~ .modal-backdrop.show ~ .modal-backdrop.show ~ .modal-backdrop.show {
+    z-index: 1079;
+}
+
+/* ===== Modal 視覺效果增強 ===== */
+
+/* Modal 內容陰影效果 */
+::deep .modal-content {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Header 樣式優化 */
+::deep .modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+/* 專案主色 Header 特殊處理 */
+::deep .modal-header.bg-project-primary {
+    background-color: #1F2937;
+    color: #FFFFFF;
+}
+
+/* Body 樣式優化 */
+::deep .modal-body {
+    padding: 1.5rem;
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+}
+
+/* Footer 樣式優化 */
+::deep .modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* ===== 動畫效果 ===== */
+
+/* Modal 淡入動畫 */
+::deep .modal.fade {
+    transition: opacity 0.15s linear;
+}
+
+::deep .modal.show {
+    opacity: 1;
+}
+
+/* Backdrop 淡入動畫 */
+::deep .modal-backdrop.fade {
+    transition: opacity 0.15s linear;
+}
+
+::deep .modal-backdrop.show {
+    opacity: 0.5;
+}
+
+/* ===== 滾動條樣式（針對 Modal Body） ===== */
+
+::deep .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+::deep .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::deep .modal-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::deep .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 小螢幕裝置 */
+@media (max-width: 576px) {
+    ::deep .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    ::deep .modal-body {
+        max-height: calc(100vh - 180px);
+    }
+}
+
+/* 中等螢幕裝置 */
+@media (min-width: 577px) and (max-width: 768px) {
+    ::deep .modal-dialog {
+        margin: 1rem auto;
+    }
+}
+
+/* ===== 載入中狀態樣式 ===== */
+
+::deep .modal-body .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* ===== 錯誤訊息樣式 ===== */
+
+::deep .modal-body .alert-danger {
+    border-left: 4px solid #dc3545;
+}
+
+/* ===== 空狀態樣式 ===== */
+
+::deep .modal-body .text-center.text-muted {
+    opacity: 0.7;
+}
+
+/* ===== 桌面專用尺寸樣式 ===== */
+
+::deep .modal-dialog.modal-desktop {
+    max-width: 90%;
+    width: 1400px;
+}
+
+@media (min-width: 1600px) {
+    ::deep .modal-dialog.modal-desktop {
+        max-width: 80%;
+        width: 1600px;
+    }
+}
+
+/* ===== 確保 Modal 可互動性 ===== */
+
+/* 防止背景滾動（當 Modal 開啟時） */
+::deep body.modal-open {
+    overflow: hidden;
+}
+
+/* 確保關閉按鈕在最上層 */
+::deep .modal-header .btn-close {
+    z-index: 1;
+    position: relative;
+}
+
+/* ===== Header 按鈕區域樣式 ===== */
+
+::deep .modal-header .d-flex.gap-2 {
+    gap: 0.5rem;
+}
+
+/* ===== 多層 Modal 的 Backdrop 透明度調整 ===== */
+
+/* 第一層 Modal 的 Backdrop */
+::deep .modal-backdrop.show {
+    opacity: 0.5;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 第二層 Modal 的 Backdrop（稍微加深） */
+::deep .modal-backdrop.show ~ .modal-backdrop.show {
+    opacity: 0.3;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* 第三層 Modal 的 Backdrop（更深） */
+::deep .modal-backdrop.show ~ .modal-backdrop.show ~ .modal-backdrop.show {
+    opacity: 0.2;
+    background-color: rgba(0, 0, 0, 0.2);
+}

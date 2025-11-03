@@ -3,6 +3,7 @@
 @inject IJSRuntime JSRuntime
 @inject INotificationService NotificationService
 @using System.Reflection
+@using ERPCore2.Components.Shared.BaseModal.Modals
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -237,8 +238,6 @@
                             IsVisible="@_isRejectConfirmModalVisible"
                             IsVisibleChanged="@((bool value) => _isRejectConfirmModalVisible = value)"
                             Title="確認駁回"
-                            ShowReasonInput="@ShowRejectReasonInput"
-                            IsReasonRequired="@IsRejectReasonRequired"
                             OnConfirm="@HandleRejectConfirm"
                             OnCancel="@HandleRejectCancel" />
 
@@ -398,8 +397,6 @@
     [Parameter] public Func<Task<bool>>? OnReject { get; set; }
     
     // 駁回確認 Modal 相關參數
-    [Parameter] public bool ShowRejectReasonInput { get; set; } = true;
-    [Parameter] public bool IsRejectReasonRequired { get; set; } = false;
     [Parameter] public Func<string, Task<bool>>? OnRejectWithReason { get; set; }
     // 移除 GetApprovalStatus，改用 GetStatusMessage
     

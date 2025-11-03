@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251101073323_FixCompanyCapitalAmountPrecision")]
-    partial class FixCompanyCapitalAmountPrecision
+    [Migration("20251103010955_初始化")]
+    partial class 初始化
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

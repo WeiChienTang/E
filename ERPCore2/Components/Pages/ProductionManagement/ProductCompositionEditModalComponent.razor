@@ -70,7 +70,7 @@
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<ProductComposition, IProductCompositionService>? editModalComponent;
-    private ProductCompositionDetailManagerComponent? detailManager;
+    private ProductCompositionTable? detailManager;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Product> availableProducts = new();
@@ -490,7 +490,7 @@
                     // 檢查是否已選擇商品
                     @if (editModalComponent.Entity.ParentProductId > 0)
                     {
-                        <ProductCompositionDetailManagerComponent @ref="detailManager"
+                        <ProductCompositionTable @ref="detailManager"
                                                                  Items="@compositionDetails"
                                                                  AvailableProducts="@availableProducts"
                                                                  AvailableUnits="@availableUnits"

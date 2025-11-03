@@ -115,7 +115,7 @@
     private List<SalesOrderDetail> salesOrderDetails = new();
     
     // 明細管理組件引用
-    private SalesOrderDetailManagerComponent<SalesOrder, SalesOrderDetail>? salesOrderDetailManager;
+    private SalesOrderTable<SalesOrder, SalesOrderDetail>? salesOrderDetailManager;
     
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
@@ -691,7 +691,7 @@
                     // 檢查是否已選擇客戶
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
-                        <SalesOrderDetailManagerComponent @ref="salesOrderDetailManager"
+                        <SalesOrderTable @ref="salesOrderDetailManager"
                                                           TMainEntity="SalesOrder" 
                                                           TDetailEntity="SalesOrderDetail"
                                                           MainEntity="@editModalComponent.Entity"

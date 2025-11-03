@@ -1,0 +1,297 @@
+@*
+    批次審核 Modal 組件
+    用於顯示待審核單據清單並提供查看和審核功能
+*@
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Shared.BaseModal.BaseFrameworkComponent
+@using ERPCore2.Models
+@using ERPCore2.Services
+@using Microsoft.JSInterop
+@typeparam TEntity where TEntity : class
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Size="BaseModalComponent.ModalSize.ExtraLarge"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true"
+                   OnClose="@HandleClose"
+                   IsLoading="@isLoading"
+                   LoadingMessage="正在載入待審核資料...">
+    
+    <HeaderButtons>
+        @* 左側：選取資訊 *@
+        <div class="d-flex align-items-center gap-3 flex-grow-1">
+            <div class="text-muted">
+                @if (pendingItems.Any())
+                {
+                    <small>
+                        已選取 <strong class="text-primary">@selectedItems.Count</strong> / @pendingItems.Count 筆
+                    </small>
+                }
+            </div>
+            
+            @* 右側：按鈕組 *@
+            <div class="d-flex gap-2 ms-auto">
+                @* 全選/取消全選按鈕 *@
+                <GenericButtonComponent Variant="ButtonVariant.Secondary" 
+                                      Text="@(selectedItems.Count == pendingItems.Count ? "取消全選" : "全選")" 
+                                      OnClick="HandleToggleSelectAll"
+                                      IsDisabled="@(!pendingItems.Any() || isLoading)"
+                                      Title="@(selectedItems.Count == pendingItems.Count ? "取消選取所有項目" : "選取所有項目")" />
+                
+                @* 審核按鈕 - 只審核已選取的項目 *@
+                <GenericButtonComponent Variant="ButtonVariant.Success" 
+                                      Text="審核" 
+                                      OnClick="HandleApproveSelected"
+                                      IsDisabled="@(!selectedItems.Any() || isLoading)"
+                                      Title="@($"審核已選取的 {selectedItems.Count} 筆單據")" />
+            </div>
+        </div>
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (!pendingItems.Any() && !isLoading)
+        {
+            <div class="alert alert-success mb-0">
+                太棒了！目前沒有待審核的項目。
+            </div>
+        }
+        else if (pendingItems.Any())
+        {                    
+            <BatchApprovalTable TEntity="TEntity"
+                              Items="@pendingItems"
+                              SelectedItems="@selectedItems"
+                              OnSelectionChanged="@HandleSelectionChanged"
+                              OnViewClick="@HandleViewClick"
+                              GetRowCssClass="@GetRowCssClass" />
+        }
+    </BodyContent>
+    
+    <FooterContent>
+        <GenericButtonComponent Variant="ButtonVariant.Danger" 
+                              Text="關閉" 
+                              OnClick="HandleClose"
+                              Title="關閉視窗" />
+    </FooterContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// Modal 標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "批次審核";
+
+    /// <summary>
+    /// 實體名稱（例如：採購單、報價單）
+    /// </summary>
+    [Parameter]
+    public string EntityName { get; set; } = "單據";
+
+    /// <summary>
+    /// 載入待審核資料的方法
+    /// </summary>
+    [Parameter]
+    public Func<Task<List<TEntity>>>? LoadPendingItems { get; set; }
+
+    /// <summary>
+    /// 單筆審核方法
+    /// </summary>
+    [Parameter]
+    public Func<TEntity, Task<bool>>? OnApproveItem { get; set; }
+
+    /// <summary>
+    /// 批次審核方法
+    /// </summary>
+    [Parameter]
+    public Func<List<TEntity>, Task<(int successCount, int failCount)>>? OnApproveAll { get; set; }
+
+    /// <summary>
+    /// 查看按鈕點擊事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<TEntity> OnViewClick { get; set; }
+
+    /// <summary>
+    /// 審核完成後的回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnApprovalCompleted { get; set; }
+
+    // ===== 私有欄位 =====
+    private bool isLoading = false;
+    private List<TEntity> pendingItems = new();
+    private HashSet<TEntity> selectedItems = new(); // 儲存選取的項目
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isLoading && !pendingItems.Any())
+        {
+            await LoadPendingDataAsync();
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    /// <summary>
+    /// 載入待審核資料
+    /// </summary>
+    private async Task LoadPendingDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            if (LoadPendingItems != null)
+            {
+                pendingItems = await LoadPendingItems();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入待審核{EntityName}失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 事件處理方法 =====
+
+    /// <summary>
+    /// 處理選取狀態變更事件
+    /// </summary>
+    private void HandleSelectionChanged(HashSet<TEntity> items)
+    {
+        selectedItems = items;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得行的 CSS 類別 - 為選取的行添加高亮樣式
+    /// </summary>
+    private string GetRowCssClass(TEntity entity, int index)
+    {
+        return selectedItems.Contains(entity) ? "table-row-selected" : "";
+    }
+
+    /// <summary>
+    /// 處理全選/取消全選
+    /// </summary>
+    private void HandleToggleSelectAll()
+    {
+        if (selectedItems.Count == pendingItems.Count)
+        {
+            // 取消全選
+            selectedItems.Clear();
+        }
+        else
+        {
+            // 全選
+            selectedItems = pendingItems.ToHashSet();
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理審核所選項目
+    /// </summary>
+    private async Task HandleApproveSelected()
+    {
+        try
+        {
+            if (!selectedItems.Any())
+            {
+                await NotificationService.ShowWarningAsync("請先選取要審核的項目");
+                return;
+            }
+
+            isLoading = true;
+            StateHasChanged();
+
+            if (OnApproveAll != null)
+            {
+                var (successCount, failCount) = await OnApproveAll(selectedItems.ToList());
+
+                if (failCount == 0)
+                {
+                    await NotificationService.ShowSuccessAsync($"審核完成！成功審核 {successCount} 筆{EntityName}");
+                }
+                else
+                {
+                    await NotificationService.ShowWarningAsync($"審核完成！成功 {successCount} 筆，失敗 {failCount} 筆");
+                }
+
+                // 清空選取
+                selectedItems.Clear();
+                
+                // 重新載入待審核資料
+                await LoadPendingDataAsync();
+
+                // 觸發審核完成事件
+                if (OnApprovalCompleted.HasDelegate)
+                {
+                    await OnApprovalCompleted.InvokeAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"審核所選項目時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理查看按鈕點擊
+    /// </summary>
+    private async Task HandleViewClick(TEntity entity)
+    {
+        if (OnViewClick.HasDelegate)
+        {
+            await OnViewClick.InvokeAsync(entity);
+        }
+    }
+
+    /// <summary>
+    /// 處理 Modal 關閉事件（由 BaseModalComponent 的 OnClose 觸發）
+    /// </summary>
+    private void HandleClose()
+    {
+        // 清理資料
+        pendingItems.Clear();
+        selectedItems.Clear();
+        
+        // 注意：不需要手動調用 IsVisibleChanged.InvokeAsync(false)
+        // BaseModalComponent 會自動處理
+    }
+}

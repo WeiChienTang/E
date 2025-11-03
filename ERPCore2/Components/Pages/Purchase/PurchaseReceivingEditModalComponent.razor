@@ -107,7 +107,7 @@
     
     // ===== 進貨明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
-    private PurchaseReceivingDetailManagerComponent<PurchaseReceiving, PurchaseReceivingDetail>? purchaseReceivingDetailManager;
+    private PurchaseReceivingTable<PurchaseReceiving, PurchaseReceivingDetail>? purchaseReceivingDetailManager;
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
@@ -1525,7 +1525,7 @@
                     // 多採購單模式
                     try
                     {
-                        <PurchaseReceivingDetailManagerComponent @ref="purchaseReceivingDetailManager"
+                        <PurchaseReceivingTable @ref="purchaseReceivingDetailManager"
                                                                TMainEntity="PurchaseReceiving" 
                                                                TDetailEntity="PurchaseReceivingDetail"
                                                                SelectedSupplierId="@editModalComponent.Entity.SupplierId"

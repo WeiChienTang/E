@@ -77,7 +77,6 @@
                             OnApproveItem="@ApproveSinglePurchaseOrderAsync"
                             OnApproveAll="@ApproveAllPurchaseOrdersAsync"
                             OnViewClick="@HandleApprovalViewClick"
-                            ColumnDefinitions="@GetApprovalColumnDefinitions()"
                             OnApprovalCompleted="@HandleApprovalCompleted" />
 
 @* 批次列印篩選 Modal - 使用新架構 *@
@@ -380,83 +379,6 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApprovalCompleted), GetType(), 
                 additionalData: "刷新列表失敗");
         }
-    }
-
-    /// <summary>
-    /// 取得批次審核 Modal 的表格欄位定義
-    /// </summary>
-    private List<InteractiveColumnDefinition> GetApprovalColumnDefinitions()
-    {
-        return new List<InteractiveColumnDefinition>
-        {
-            new()
-            {
-                Title = "採購單號",
-                PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "150px"
-            },
-            new()
-            {
-                Title = "廠商",
-                PropertyName = "Supplier.CompanyName",
-                ColumnType = InteractiveColumnType.Display,
-                Width = "200px"
-            },
-            new()
-            {
-                Title = "訂單日期",
-                PropertyName = nameof(PurchaseOrder.OrderDate),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "120px",
-                DisplayFormatter = value => 
-                {
-                    if (value is DateTime date)
-                        return $"<span style='font-size: 0.875rem;'>{date:yyyy/MM/dd}</span>";
-                    return "-";
-                }
-            },
-            new()
-            {
-                Title = "預計到貨日",
-                PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "120px",
-                DisplayFormatter = value => 
-                {
-                    if (value is DateTime date)
-                        return $"<span style='font-size: 0.875rem;'>{date:yyyy/MM/dd}</span>";
-                    return "<span style='font-size: 0.875rem;'>-</span>";
-                }
-            },
-            new()
-            {
-                Title = "總金額",
-                PropertyName = nameof(PurchaseOrder.TotalAmount),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "120px",
-                CellCssClass = "text-end",
-                DisplayFormatter = value => 
-                {
-                    if (value is decimal amount)
-                        return $"<span style='font-size: 0.875rem;' class='fw-bold'>{amount:N0}</span>";
-                    return "0";
-                }
-            },
-            new()
-            {
-                Title = "建立日期",
-                PropertyName = nameof(PurchaseOrder.CreatedAt),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "150px",
-                DisplayFormatter = value => 
-                {
-                    if (value is DateTime date)
-                        return $"<span style='font-size: 0.875rem;'>{date:yyyy/MM/dd HH:mm}</span>";
-                    return "-";
-                }
-            }
-        };
     }
 
     // ===== 批次列印相關方法 =====

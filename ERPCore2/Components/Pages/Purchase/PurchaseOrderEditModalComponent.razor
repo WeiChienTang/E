@@ -49,8 +49,6 @@
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
-                          ShowRejectReasonInput="true"
-                          IsRejectReasonRequired="true"
                           FormHeaderContent="@WarningMessage"
                           CustomActionButtons="@CustomActionButtons">
 </GenericEditModalComponent>
@@ -93,7 +91,7 @@
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
-    private PurchaseOrderDetailManagerComponent<PurchaseOrder, PurchaseOrderDetail>? purchaseOrderDetailManager;
+    private PurchaseOrderTable<PurchaseOrder, PurchaseOrderDetail>? purchaseOrderDetailManager;
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
@@ -688,7 +686,7 @@
                     // 檢查是否已選擇廠商
                     @if (editModalComponent.Entity.SupplierId > 0)
                     {
-                        <PurchaseOrderDetailManagerComponent @ref="purchaseOrderDetailManager"
+                        <PurchaseOrderTable @ref="purchaseOrderDetailManager"
                                                    TMainEntity="PurchaseOrder" 
                                                    TDetailEntity="PurchaseOrderDetail"
                                                    Products="@availableProducts"

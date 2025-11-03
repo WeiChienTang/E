@@ -1,0 +1,179 @@
+@* 
+    駁回確認 Modal 組件
+    提供審核駁回前的確認對話框，可選填駁回原因
+*@
+@using ERPCore2.Components.Shared.Buttons
+@using ERPCore2.Components.Shared.Modals
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Icon="bi-x-circle"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                   UseWhiteCloseButton="true"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="@(!IsProcessing)"
+                   OnClose="@HandleCancel">
+        <HeaderButtons>
+            <GenericButtonComponent Variant="ButtonVariant.Secondary" 
+                                Text="@CancelButtonText" 
+                                OnClick="HandleCancel"
+                                IsDisabled="@IsProcessing"
+                                Title="取消" />
+            <GenericButtonComponent Variant="ButtonVariant.Danger" 
+                                Text="@ConfirmButtonText" 
+                                OnClick="HandleConfirm"
+                                IsDisabled="@IsProcessing"
+                                IsLoading="@IsProcessing"
+                                Title="確認" />
+        </HeaderButtons>
+    <BodyContent>
+        <div class="mb-3">                    
+            <textarea class="form-control" 
+                      rows="4" 
+                      placeholder="請輸入駁回原因..."
+                      @bind="RejectReason"
+                      disabled="@IsProcessing"></textarea>
+        </div>
+    </BodyContent>
+    
+
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+    
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// Modal 標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "確認駁回";
+    
+    /// <summary>
+    /// 確認按鈕文字
+    /// </summary>
+    [Parameter]
+    public string ConfirmButtonText { get; set; } = "確認駁回";
+    
+    /// <summary>
+    /// 取消按鈕文字
+    /// </summary>
+    [Parameter]
+    public string CancelButtonText { get; set; } = "取消";
+    
+    /// <summary>
+    /// 駁回原因（必填）
+    /// </summary>
+    [Parameter]
+    public string RejectReason { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 駁回原因變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> RejectReasonChanged { get; set; }
+    
+    /// <summary>
+    /// 確認事件（返回駁回原因）
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnConfirm { get; set; }
+    
+    /// <summary>
+    /// 取消事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private bool IsProcessing { get; set; } = false;
+
+    // ===== 事件處理方法 =====
+
+    /// <summary>
+    /// 處理確認按鈕點擊
+    /// </summary>
+    private async Task HandleConfirm()
+    {
+        try
+        {
+            // 驗證必填欄位
+            if (string.IsNullOrWhiteSpace(RejectReason))
+            {
+                await NotificationService.ShowWarningAsync("請填寫駁回原因");
+                return;
+            }
+            
+            IsProcessing = true;
+            StateHasChanged();
+            
+            if (OnConfirm.HasDelegate)
+            {
+                await OnConfirm.InvokeAsync(RejectReason);
+            }
+            
+            // 關閉 Modal
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"確認駁回時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            IsProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理取消按鈕點擊
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (IsProcessing) return;
+            
+            await CloseModal();
+            
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"取消操作時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    private async Task CloseModal()
+    {
+        // 重置駁回原因
+        RejectReason = string.Empty;
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+}

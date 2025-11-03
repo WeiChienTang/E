@@ -51,12 +51,33 @@
 /* 表格基本樣式 */
 .interactive-table tbody tr {
     min-height: 44px; /* 確保行有足夠高度 */
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out; /* 添加平滑過渡效果 */
+}
+
+/* Hover 效果 - 符合規格：文字 #92400e，背景 #fde68a */
+.interactive-table tbody tr:hover td {
+    background-color: #fde68a !important;
+    color: #92400e !important;
+}
+
+/* 選取的 Row 樣式 - 使用較深的黃色背景以區分 */
+.interactive-table tbody tr.row-selected td {
+    background-color: #fcd34d !important; /* 較深的黃色，與 hover 的 #fde68a 區分 */
+    color: #92400e !important;
+    font-weight: 500;
+}
+
+/* 選取的 Row 在 Hover 時的樣式 - 使用更深的顏色 */
+.interactive-table tbody tr.row-selected:hover td {
+    background-color: #fbbf24 !important; /* 更深的黃色 */
+    color: #78350f !important; /* 更深的棕色 */
 }
 
 /* 表格儲存格的 padding 設定 */
 .interactive-table tbody td {
     padding: 0.2rem 0.75rem !important; /* 進一步縮小上下內邊距 */
     vertical-align: middle; /* 所有儲存格內容垂直置中 */
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out; /* 添加平滑過渡效果 */
 }
 
     /* 操作欄位智慧調整樣式 - 手機版也使用自動調整 */

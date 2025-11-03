@@ -98,7 +98,7 @@
     
     // ===== 退貨明細 =====
     private List<PurchaseReturnDetail> purchaseReturnDetails = new();
-    private PurchaseReturnDetailManagerComponent? purchaseReturnDetailManager;
+    private PurchaseReturnTable? purchaseReturnDetailManager;
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
@@ -1171,7 +1171,7 @@
                     try
                     {
 
-                        <PurchaseReturnDetailManagerComponent @ref="purchaseReturnDetailManager"
+                        <PurchaseReturnTable @ref="purchaseReturnDetailManager"
                             SupplierId="@editModalComponent.Entity.SupplierId"
                             FilterPurchaseReceivingId="@filterPurchaseReceivingId"
                             FilterProductId="@filterProductId"

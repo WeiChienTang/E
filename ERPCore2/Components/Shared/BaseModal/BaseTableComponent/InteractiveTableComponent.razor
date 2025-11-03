@@ -58,7 +58,7 @@
                     var currentIndex = itemIndex;
                     <tr class="@GetRowClass(item, currentIndex)" 
                         @onclick="() => HandleRowClick(item)"
-                        style="@(EnableRowClick ? $"cursor: {RowClickCursor};" : "")">
+                        style="@(EnableRowClick || EnableRowSelection ? $"cursor: {RowClickCursor};" : "")">
                         
                         @if (ShowRowNumbers)
                         {
@@ -367,6 +367,12 @@
     [Parameter] public bool EnableRowClick { get; set; } = false;
     [Parameter] public string RowClickCursor { get; set; } = "pointer";
     
+    // 行選取功能設定
+    [Parameter] public bool EnableRowSelection { get; set; } = false;
+    [Parameter] public bool AllowMultipleSelection { get; set; } = false;
+    [Parameter] public HashSet<TItem>? SelectedItems { get; set; }
+    [Parameter] public EventCallback<HashSet<TItem>> OnSelectionChanged { get; set; }
+    
     // 驗證相關
     [Parameter] public EventCallback<(TItem item, string propertyName, string? errorMessage)> OnValidationFailed { get; set; }
     [Parameter] public Dictionary<string, string>? ValidationErrors { get; set; }
@@ -406,10 +412,23 @@
 
     private string GetRowClass(TItem item, int index)
     {
-        var baseClass = "";
+        var classes = new List<string>();
+        
+        // 使用者自訂的 CSS class
         if (GetRowCssClass != null)
-            baseClass = GetRowCssClass(item, index) ?? "";
-        return baseClass;
+        {
+            var customClass = GetRowCssClass(item, index);
+            if (!string.IsNullOrEmpty(customClass))
+                classes.Add(customClass);
+        }
+        
+        // 如果啟用選取功能，檢查是否為選取的項目
+        if (EnableRowSelection && SelectedItems != null && SelectedItems.Contains(item))
+        {
+            classes.Add("row-selected");
+        }
+        
+        return string.Join(" ", classes);
     }
 
     private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
@@ -471,6 +490,51 @@
 
     private async Task HandleRowClick(TItem item)
     {
+        // 處理行選取功能
+        if (EnableRowSelection)
+        {
+            if (SelectedItems == null)
+            {
+                SelectedItems = new HashSet<TItem>();
+            }
+            
+            if (AllowMultipleSelection)
+            {
+                // 多選模式：切換選取狀態
+                if (SelectedItems.Contains(item))
+                {
+                    SelectedItems.Remove(item);
+                }
+                else
+                {
+                    SelectedItems.Add(item);
+                }
+            }
+            else
+            {
+                // 單選模式：清除其他選取，只選取當前項目
+                if (SelectedItems.Contains(item) && SelectedItems.Count == 1)
+                {
+                    // 如果點擊已選取的唯一項目，則取消選取
+                    SelectedItems.Clear();
+                }
+                else
+                {
+                    SelectedItems.Clear();
+                    SelectedItems.Add(item);
+                }
+            }
+            
+            // 通知父組件選取狀態已改變
+            if (OnSelectionChanged.HasDelegate)
+            {
+                await OnSelectionChanged.InvokeAsync(SelectedItems);
+            }
+            
+            StateHasChanged();
+        }
+        
+        // 原有的 OnRowClick 事件
         if (EnableRowClick && OnRowClick.HasDelegate)
         {
             await OnRowClick.InvokeAsync(item);

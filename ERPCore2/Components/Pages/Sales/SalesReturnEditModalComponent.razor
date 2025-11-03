@@ -98,7 +98,7 @@
     
     // ===== 銷售退貨明細 =====
     private List<SalesReturnDetail> salesReturnDetails = new();
-    private SalesReturnDetailManagerComponent? salesReturnDetailManager;
+    private SalesReturnTable? salesReturnDetailManager;
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
@@ -1302,7 +1302,7 @@
                     // 檢查是否已選擇客戶
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
-                        <SalesReturnDetailManagerComponent @ref="salesReturnDetailManager"
+                        <SalesReturnTable @ref="salesReturnDetailManager"
                             Products="@products"
                             CustomerId="@(editModalComponent?.Entity?.CustomerId)"
                             FilterSalesOrderId="@FilterSalesOrderId"
