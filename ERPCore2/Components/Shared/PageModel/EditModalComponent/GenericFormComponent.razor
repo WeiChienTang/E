@@ -29,6 +29,8 @@
             {
                 <div class="mb-3">
                     <h6 class="text-primary fw-bold">@(section.Key)</h6> @* 區段標題 *@
+                    <hr/> @* 標題和欄位之間的分隔線 *@
+                    
                     <div class="row g-3"> @* 內含欄位的行 *@
                         @foreach (var fieldKvp in section)
                         {
@@ -63,44 +65,109 @@
     private RenderFragment RenderFieldMarkup(FormFieldDefinition field) => __builder =>
     {
         var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
+        var hasActionButtons = field.ActionButtons != null && field.ActionButtons.Any();
         
         <div class="@containerCssClass">
             @if (!string.IsNullOrEmpty(field.Label) && field.FieldType != FormFieldType.Checkbox)
             {
-                <label class="form-label" for="@field.PropertyName" title="@field.HelpText">
+                <label class="form-label fw-bold" for="@field.PropertyName" title="@field.HelpText">
                     @field.Label
                     @if (field.IsRequired)
                     {
                         <span class="text-danger"> *</span>
                     }
                 </label>
-                
-                // 如果有設定 ActionButtons，則在標籤旁邊顯示按鈕
-                @if (field.ActionButtons != null && field.ActionButtons.Any())
-                {
-                    <div class="d-inline-block ms-2">
-                        @foreach (var actionButton in field.ActionButtons)
-                        {
-                            <GenericButtonComponent 
-                                Text="@actionButton.Text"
-                                Variant="@GetButtonVariant(actionButton.Variant)"
-                                Size="@GetButtonSize(actionButton.Size)"
-                                IconClass="@actionButton.IconClass"
-                                Title="@actionButton.Title"
-                                OnClick="@(actionButton.OnClick ?? (() => Task.CompletedTask))"
-                                IsDisabled="@actionButton.IsDisabled" />
-                        }
-                    </div>
-                }
             }
             
-            @switch (field.FieldType)
+            @* 判斷是否需要包裝 input 與按鈕的容器 *@
+            @if (hasActionButtons && ShouldWrapWithActionButtons(field.FieldType))
+            {
+                var multipleButtonsClass = field.ActionButtons?.Count > 1 ? "multiple-buttons" : "";
+                <div class="position-relative input-with-action-buttons @multipleButtonsClass">
+                    @RenderInputField(field, hasActionButtons)
+                    
+                    @* 在 Input 右側渲染圖示按鈕 *@
+                    <div class="input-action-buttons-container">
+                        @foreach (var actionButton in field.ActionButtons!)
+                        {
+                            <button type="button"
+                                    class="btn input-action-button input-action-button-@(GetActionButtonColorClass(actionButton.Variant))"
+                                    title="@(actionButton.Title ?? actionButton.Text)"
+                                    disabled="@actionButton.IsDisabled"
+                                    @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">
+                                <i class="@GetActionButtonIcon(actionButton.Text)"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                @RenderInputField(field, hasActionButtons)
+            }
+        </div>
+    };
+    
+    // 新增：判斷欄位類型是否應該包裝 ActionButtons
+    private bool ShouldWrapWithActionButtons(FormFieldType fieldType)
+    {
+        return fieldType switch
+        {
+            FormFieldType.Text => true,
+            FormFieldType.Email => true,
+            FormFieldType.Number => true,
+            FormFieldType.AutoComplete => true,
+            FormFieldType.Select => true,
+            _ => false
+        };
+    }
+    
+    // 新增：根據按鈕文字返回對應的圖示
+    private string GetActionButtonIcon(string buttonText)
+    {
+        return buttonText switch
+        {
+            "新增" => "fas fa-plus-circle",
+            "編輯" => "fas fa-edit",
+            "複製" => "fas fa-copy",
+            "前往" => "fas fa-external-link-alt",
+            "刪除" => "fas fa-trash-alt",
+            "搜尋" => "fas fa-search",
+            _ => "fas fa-ellipsis-h"
+        };
+    }
+    
+    // 新增：根據 Variant 返回顏色 class
+    private string GetActionButtonColorClass(string variant)
+    {
+        return variant switch
+        {
+            "OutlinePrimary" or "Primary" => "primary",
+            "OutlineSecondary" or "Secondary" => "secondary",
+            "OutlineSuccess" or "Success" => "success",
+            "OutlineDanger" or "Danger" => "danger",
+            "OutlineWarning" or "Warning" => "warning",
+            "OutlineInfo" or "Info" => "info",
+            _ => "primary"
+        };
+    }
+    
+    // 新增：渲染輸入欄位的通用方法
+    private RenderFragment RenderInputField(FormFieldDefinition field, bool hasActionButtons) => __builder =>
+    {
+        var inputClass = GetInputCssClass(field);
+        if (hasActionButtons)
+        {
+            inputClass += " has-action-buttons";
+        }
+        
+        @switch (field.FieldType)
             {
                 case FormFieldType.Text:
                 case FormFieldType.Email:
                 case FormFieldType.Password:
                     <input type="@GetInputType(field.FieldType)"
-                           class="@GetInputCssClass(field)"
+                           class="@inputClass"
                            id="@field.PropertyName"
                            name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                            placeholder="@field.Placeholder"
@@ -116,11 +183,13 @@
                     
                 case FormFieldType.Number:
                     <input type="number"
-                           class="@GetInputCssClass(field)"
+                           class="@inputClass"
                            id="@field.PropertyName"
+                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                            placeholder="@field.Placeholder"
                            readonly="@field.IsReadOnly"
                            disabled="@field.IsDisabled"
+                           autocomplete="off"
                            required="@field.IsRequired"
                            min="@field.Min"
                            max="@field.Max"
@@ -132,10 +201,12 @@
                 case FormFieldType.Date:
                     var dateValue = GetPropertyValue(Model, field.PropertyName);
                     <input type="date"
-                           class="@GetInputCssClass(field)"
+                           class="@inputClass"
                            id="@field.PropertyName"
+                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                            readonly="@field.IsReadOnly"
                            disabled="@field.IsDisabled"
+                           autocomplete="off"
                            value="@(dateValue is DateTime dt ? dt.ToString("yyyy-MM-dd") : "")"
                            @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                     break;
@@ -143,20 +214,24 @@
                 case FormFieldType.DateTime:
                     var dateTimeValue = GetPropertyValue(Model, field.PropertyName);
                     <input type="datetime-local"
-                           class="@GetInputCssClass(field)"
+                           class="@inputClass"
                            id="@field.PropertyName"
+                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                            readonly="@field.IsReadOnly"
                            disabled="@field.IsDisabled"
+                           autocomplete="off"
                            value="@(dateTimeValue is DateTime dtValue ? dtValue.ToString("yyyy-MM-ddTHH:mm") : "")"
                            @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                     break;
                     
                 case FormFieldType.TextArea:
-                    <textarea class="@GetInputCssClass(field)"
+                    <textarea class="@inputClass"
                               id="@field.PropertyName"
+                              name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                               placeholder="@field.Placeholder"
                               readonly="@field.IsReadOnly"
                               disabled="@field.IsDisabled"
+                              autocomplete="off"
                               rows="@(field.Rows ?? 3)"
                               maxlength="@field.MaxLength"
                               minlength="@field.MinLength"
@@ -168,7 +243,7 @@
                         Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
                         ValueChanged="@(value => SetPropertyValue(Model, field.PropertyName, value))"
                         Id="@field.PropertyName"
-                        CssClass="@GetInputCssClass(field)"
+                        CssClass="@inputClass"
                         Placeholder="@field.Placeholder"
                         HelpText="@field.HelpText"
                         IsReadOnly="@field.IsReadOnly"
@@ -185,9 +260,11 @@
                     {
                         currentValue = ((int)currentValueObj).ToString();
                     }
-                    <select class="@GetInputCssClass(field)"
+                    <select class="@inputClass"
                             id="@field.PropertyName"
+                            name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                             disabled="@(field.IsReadOnly || field.IsDisabled)"
+                            autocomplete="off"
                             @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))">
                         @if (!field.IsRequired)
                         {
@@ -210,7 +287,9 @@
                         <input type="checkbox"
                                class="form-check-input"
                                id="@field.PropertyName"
+                               name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                                disabled="@(field.IsReadOnly || field.IsDisabled)"
+                               autocomplete="off"
                                checked="@boolValue"
                                @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value))" />
                         <label class="form-check-label" for="@field.PropertyName">
@@ -223,15 +302,17 @@
                     @if (field.Options != null)
                     {
                         var radioValue = GetPropertyValue(Model, field.PropertyName)?.ToString();
+                        var radioGroupName = field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
                         @foreach (var option in field.Options)
                         {
                             <div class="form-check">
                                 <input type="radio"
                                        class="form-check-input"
                                        id="@($"{field.PropertyName}_{option.Value}")"
-                                       name="@field.PropertyName"
+                                       name="@radioGroupName"
                                        value="@option.Value"
                                        disabled="@(field.IsReadOnly || field.IsDisabled)"
+                                       autocomplete="off"
                                        checked="@(option.Value == radioValue)"
                                        @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                                 <label class="form-check-label" for="@($"{field.PropertyName}_{option.Value}")">
@@ -243,37 +324,45 @@
                     break;
                     
                 case FormFieldType.AutoComplete:
-                    @RenderAutoCompleteField(field)
+                    @RenderAutoCompleteFieldWithButtons(field, hasActionButtons)
                     break;
                     
                 default:
                     <input type="text"
-                           class="@GetInputCssClass(field)"
+                           class="@inputClass"
                            id="@field.PropertyName"
+                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                            placeholder="@field.Placeholder"
                            readonly="@field.IsReadOnly"
                            disabled="@field.IsDisabled"
+                           autocomplete="off"
                            value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
                            @oninput="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                     break;
             }
-        </div>
     };
     
-    // AutoComplete 欄位的渲染（因為比較複雜，單獨處理）
-    private RenderFragment RenderAutoCompleteField(FormFieldDefinition field) => __builder =>
+    // AutoComplete 欄位的渲染（因為比較複雜，單獨處理）- 帶 ActionButtons 支援
+    private RenderFragment RenderAutoCompleteFieldWithButtons(FormFieldDefinition field, bool hasActionButtons) => __builder =>
     {
         var fieldId = field.PropertyName;
         var currentValue = GetPropertyValue(Model, field.PropertyName);
         var displayValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, currentValue?.ToString() ?? "");
+        var inputClass = GetInputCssClass(field);
+        if (hasActionButtons)
+        {
+            inputClass += " has-action-buttons";
+        }
         
         <div class="position-relative">
             <input type="text"
-                   class="@GetInputCssClass(field)"
+                   class="@inputClass"
                    id="@fieldId"
+                   name="@(fieldId + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                    placeholder="@field.Placeholder"
                    readonly="@field.IsReadOnly"
                    disabled="@field.IsDisabled"
+                   autocomplete="off"
                    maxlength="@field.MaxLength"
                    minlength="@field.MinLength"
                    value="@displayValue"
@@ -287,7 +376,7 @@
                 @if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
                 {
                     <div class="position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);">
-                        <span class="spinner-border spinner-border-sm"></span>
+                        <span class="spinner-border" style="width: 2rem; height: 2rem; border-width: 0.15em;"></span> @* 載入中指示器 *@
                     </div>
                 }
                 
@@ -749,7 +838,17 @@
         var fieldId = field.PropertyName;
         var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "").Trim();
         
-        if (string.IsNullOrEmpty(inputValue)) return;
+        // 如果輸入為空，清空欄位值並通知父組件
+        if (string.IsNullOrEmpty(inputValue))
+        {
+            var currentValue = GetPropertyValue(Model, field.PropertyName);
+            if (currentValue != null)
+            {
+                SetPropertyValue(Model, field.PropertyName, null);
+                await OnFieldChanged.InvokeAsync((field.PropertyName, null));
+            }
+            return;
+        }
         
         try
         {
@@ -777,6 +876,15 @@
                     autoCompleteDisplayValues[fieldId] = singleResult.Text;
                     SetPropertyValue(Model, field.PropertyName, singleResult.Value);
                     await OnFieldChanged.InvokeAsync((field.PropertyName, singleResult.Value));
+                    return;
+                }
+                
+                // 如果有輸入但找不到匹配，也清空值並通知
+                var currentValue = GetPropertyValue(Model, field.PropertyName);
+                if (currentValue != null)
+                {
+                    SetPropertyValue(Model, field.PropertyName, null);
+                    await OnFieldChanged.InvokeAsync((field.PropertyName, null));
                 }
             }
         }

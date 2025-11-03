@@ -1,5 +1,32 @@
 /* 通用 Index 頁面組件樣式 */
 
+/* 區段標題樣式 */
+.section-header-primary {
+    background-color: var(--primary-blue-alt);
+    color: var(--primary-white);
+    border-bottom: 1px solid var(--primary-blue-alt);
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.section-header-primary .card-title {
+    margin-bottom: 0;
+    font-weight: 600;
+}
+
+.section-header-primary .card-title i {
+    color: var(--primary-white);
+}
+
+/* 區段卡片樣式 */
+.section-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
 /* 操作按鈕樣式 - 覆蓋 Bootstrap 的預設樣式 */
 
 /* 檢視按鈕 - 使用原本 btn-outline-primary 的 hover 顏色作為背景色 */

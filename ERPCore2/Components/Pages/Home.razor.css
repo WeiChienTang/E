@@ -52,7 +52,7 @@
     min-width: 250px;
 }
 
-/* 區段卡片樣式 */
+/* 區段卡片樣式 - Home 頁面專用 */
 .section-card {
     border-radius: 0.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -76,7 +76,7 @@
     margin-bottom: 0;
 }
 
-/* 區段標題樣式 - 主要主題（頁面搜尋） */
+/* 區段標題樣式 - 主要主題（頁面搜尋） - Home 頁面專用 */
 .section-header-primary {
     background-color: #1F2937;
     color: #FFFFFF;

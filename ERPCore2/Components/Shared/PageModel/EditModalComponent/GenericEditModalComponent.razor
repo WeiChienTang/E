@@ -1109,6 +1109,24 @@
     
     private async Task HandleFieldChanged((string PropertyName, object? Value) fieldChange)
     {
+        // 檢查是否是 AutoComplete 欄位，如果是則更新按鈕
+        var field = FormFields?.FirstOrDefault(f => f.PropertyName == fieldChange.PropertyName);
+        if (field != null && 
+            field.FieldType == FormFieldType.AutoComplete && 
+            field.ActionButtons != null && 
+            field.ActionButtons.Any())
+        {
+            // 如果欄位值被清空（null 或空字串），同步清空搜尋關鍵字記錄
+            if (fieldChange.Value == null || string.IsNullOrEmpty(fieldChange.Value.ToString()))
+            {
+                _lastSearchTerms[fieldChange.PropertyName] = string.Empty;
+            }
+            
+            // 重新處理該欄位的 ActionButtons
+            field.ActionButtons = ProcessActionButtonsForAutoComplete(field);
+            StateHasChanged(); // 觸發 UI 更新
+        }
+        
         if (OnFieldChanged != null)
         {
             await OnFieldChanged(fieldChange);
@@ -1196,8 +1214,74 @@
     {
         var processedButtons = new List<FieldActionButton>();
         
+        // 智能按鈕選擇：根據輸入值是否存在於資料庫決定顯示哪個按鈕
+        var searchTerm = _lastSearchTerms.GetValueOrDefault(field.PropertyName, string.Empty);
+        
+        // 先檢查實體欄位的實際值，如果為空則確保 searchTerm 也為空
+        var currentValue = GetEntityPropertyValue(Entity, field.PropertyName);
+        var currentId = currentValue as int?;
+        
+        // 如果實體值為空或 0，強制清空 searchTerm（避免殘留舊關鍵字）
+        if (currentId == null || currentId.Value <= 0)
+        {
+            searchTerm = string.Empty;
+            _lastSearchTerms[field.PropertyName] = string.Empty;
+        }
+        // 如果 searchTerm 為空但實體有值（編輯模式），從 AutoComplete 集合中找出對應的顯示名稱
+        else if (string.IsNullOrWhiteSpace(searchTerm) && 
+            Entity != null && 
+            AutoCompleteCollections?.ContainsKey(field.PropertyName) == true)
+        {
+            if (currentId.HasValue && currentId.Value > 0)
+            {
+                var availableEntities = AutoCompleteCollections[field.PropertyName];
+                var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(field.PropertyName, "Name") ?? "Name";
+                
+                // 根據 ID 找出對應的實體
+                var matchedByIdEntity = availableEntities.FirstOrDefault(e => 
+                {
+                    var idValue = GetPropertyValue(e, "Id") as int?;
+                    return idValue == currentId.Value;
+                });
+                
+                if (matchedByIdEntity != null)
+                {
+                    // 取得顯示名稱並存入 _lastSearchTerms
+                    var displayValue = GetPropertyValue(matchedByIdEntity, displayProperty)?.ToString();
+                    if (!string.IsNullOrWhiteSpace(displayValue))
+                    {
+                        searchTerm = displayValue;
+                        _lastSearchTerms[field.PropertyName] = displayValue;
+                    }
+                }
+            }
+        }
+        
+        bool entityExists = false;
+        object? matchedEntity = null;
+        
+        // 檢查輸入值是否存在於 AutoComplete 集合中
+        if (AutoCompleteCollections?.ContainsKey(field.PropertyName) == true && 
+            !string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var availableEntities = AutoCompleteCollections[field.PropertyName];
+            var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(field.PropertyName, "Name") ?? "Name";
+            matchedEntity = FindMatchingEntity(availableEntities, displayProperty, searchTerm);
+            entityExists = matchedEntity != null;
+        }
+        
         foreach (var button in field.ActionButtons!)
         {
+            // 智能過濾：如果實體存在，只保留「編輯」按鈕；否則只保留「新增」按鈕
+            if (entityExists && button.Text == "新增")
+            {
+                continue; // 實體存在時跳過新增按鈕
+            }
+            if (!entityExists && button.Text == "編輯")
+            {
+                continue; // 實體不存在時跳過編輯按鈕
+            }
+            
             var processedButton = new FieldActionButton
             {
                 Text = button.Text,
@@ -1245,53 +1329,36 @@
                     await originalOnClick();
                 };
             }
-            // 如果是編輯按鈕，包裝點擊事件以支援智能檢查
+            // 如果是編輯按鈕，包裝點擊事件以支援智能編輯
             else if (button.Text == "編輯" && button.OnClick != null)
             {
+                var capturedMatchedEntity = matchedEntity; // 捕獲外層已找到的實體
                 var originalOnClick = button.OnClick;
                 processedButton.OnClick = async () =>
                 {
-                    // 取得當前輸入值
-                    var searchTerm = _lastSearchTerms.GetValueOrDefault(field.PropertyName, string.Empty);
-                    
-                    // 如果有 Modal 管理器且有 AutoComplete 集合，使用智能檢查
-                    if (ModalManagers?.ContainsKey(field.PropertyName) == true && 
-                        AutoCompleteCollections?.ContainsKey(field.PropertyName) == true &&
-                        !string.IsNullOrWhiteSpace(searchTerm))
+                    // 使用已找到的匹配實體
+                    if (ModalManagers?.ContainsKey(field.PropertyName) == true && capturedMatchedEntity != null)
                     {
                         var modalManager = ModalManagers[field.PropertyName];
-                        var availableEntities = AutoCompleteCollections[field.PropertyName];
-                        var displayProperty = AutoCompleteDisplayProperties?.GetValueOrDefault(field.PropertyName, "Name") ?? "Name";
                         
-                        // 檢查是否存在匹配的實體
-                        var matchedEntity = FindMatchingEntity(availableEntities, displayProperty, searchTerm);
-                        if (matchedEntity != null)
+                        // 取得實體 ID 並開啟編輯模式
+                        var entityIdValue = GetPropertyValue(capturedMatchedEntity, "Id") as int?;
+                        if (entityIdValue.HasValue)
                         {
-                            // 找到匹配的實體，開啟編輯模式
-                            var entityId = GetPropertyValue(matchedEntity, "Id") as int?;
-                            if (entityId.HasValue)
+                            var openMethod = modalManager.GetType().GetMethod("OpenModalAsync");
+                            if (openMethod != null)
                             {
-                                var openMethod = modalManager.GetType().GetMethod("OpenModalAsync");
-                                if (openMethod != null)
+                                var task = (Task?)openMethod.Invoke(modalManager, new object[] { entityIdValue.Value });
+                                if (task != null)
                                 {
-                                    var task = (Task?)openMethod.Invoke(modalManager, new object[] { entityId.Value });
-                                    if (task != null)
-                                    {
-                                        await task;
-                                        return;
-                                    }
+                                    await task;
+                                    return;
                                 }
                             }
                         }
-                        else
-                        {
-                            // 找不到匹配的實體，顯示警告
-                            await ShowErrorMessage($"找不到名稱為「{searchTerm}」的資料，請先新增此資料");
-                            return;
-                        }
                     }
                     
-                    // 否則使用原始點擊事件
+                    // 如果沒有匹配實體或開啟失敗，使用原始點擊事件
                     await originalOnClick();
                 };
             }

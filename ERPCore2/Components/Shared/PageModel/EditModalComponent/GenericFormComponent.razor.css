@@ -1,0 +1,218 @@
+/* ===== Input 右側 ActionButton 樣式 ===== */
+
+/* 包含 ActionButtons 的 input 容器 */
+.input-with-action-buttons {
+    position: relative;
+    display: block;
+}
+
+/* 有 ActionButtons 的 input 需要預留右側空間 */
+.input-with-action-buttons .has-action-buttons {
+    padding-right: 45px !important; /* 為單個按鈕預留空間 (按鈕 32px + 邊距) */
+}
+
+/* 當有多個按鈕時預留更多空間 */
+.input-with-action-buttons.multiple-buttons .has-action-buttons {
+    padding-right: 75px !important; /* 為兩個按鈕預留空間 (每個按鈕約 32px + 間距) */
+}
+
+/* ActionButtons 容器 - 定位在 input 右側 */
+.input-action-buttons-container {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    z-index: 5; /* 確保在 input 上方 */
+}
+
+/* 單個 ActionButton 基礎樣式 */
+.input-action-button {
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none !important;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+/* 圖示樣式 */
+.input-action-button i {
+    margin: 0 !important;
+    font-size: 1rem; /* 從 0.875rem 增加到 1rem */
+}
+
+/* ===== 不同顏色變體的樣式 ===== */
+
+/* Primary (新增按鈕) */
+.input-action-button-primary {
+    color: #0d6efd;
+}
+
+.input-action-button-primary:hover:not(:disabled) {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0a58ca;
+}
+
+.input-action-button-primary:active:not(:disabled) {
+    background-color: rgba(13, 110, 253, 0.2);
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Secondary (編輯按鈕) */
+.input-action-button-secondary {
+    color: #6c757d;
+}
+
+.input-action-button-secondary:hover:not(:disabled) {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #5c636a;
+}
+
+.input-action-button-secondary:active:not(:disabled) {
+    background-color: rgba(108, 117, 125, 0.2);
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Success */
+.input-action-button-success {
+    color: #198754;
+}
+
+.input-action-button-success:hover:not(:disabled) {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #146c43;
+}
+
+.input-action-button-success:active:not(:disabled) {
+    background-color: rgba(25, 135, 84, 0.2);
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Danger */
+.input-action-button-danger {
+    color: #dc3545;
+}
+
+.input-action-button-danger:hover:not(:disabled) {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #b02a37;
+}
+
+.input-action-button-danger:active:not(:disabled) {
+    background-color: rgba(220, 53, 69, 0.2);
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Warning */
+.input-action-button-warning {
+    color: #ffc107;
+}
+
+.input-action-button-warning:hover:not(:disabled) {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #cc9a06;
+}
+
+.input-action-button-warning:active:not(:disabled) {
+    background-color: rgba(255, 193, 7, 0.2);
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Info */
+.input-action-button-info {
+    color: #0dcaf0;
+}
+
+.input-action-button-info:hover:not(:disabled) {
+    background-color: rgba(13, 202, 240, 0.1);
+    color: #0aa2c0;
+}
+
+.input-action-button-info:active:not(:disabled) {
+    background-color: rgba(13, 202, 240, 0.2);
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* ===== 停用狀態 ===== */
+.input-action-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.input-action-button:disabled:hover {
+    background-color: transparent !important;
+}
+
+/* ===== AutoComplete 特殊處理 ===== */
+/* 當有 loading spinner 時，調整按鈕位置 */
+.input-with-action-buttons .spinner-border-sm {
+    right: 80px !important; /* 為按鈕預留空間 */
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 平板尺寸 */
+@media (max-width: 992px) {
+    .input-action-button {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8125rem;
+    }
+    
+    .input-action-button i {
+        font-size: 0.8125rem;
+    }
+    
+    .input-with-action-buttons .has-action-buttons {
+        padding-right: 42px !important;
+    }
+    
+    .input-with-action-buttons.multiple-buttons .has-action-buttons {
+        padding-right: 70px !important;
+    }
+}
+
+/* 手機尺寸 */
+@media (max-width: 576px) {
+    .input-action-button {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+    
+    .input-action-button i {
+        font-size: 0.75rem;
+    }
+    
+    .input-with-action-buttons .has-action-buttons {
+        padding-right: 38px !important;
+    }
+    
+    .input-with-action-buttons.multiple-buttons .has-action-buttons {
+        padding-right: 65px !important;
+    }
+    
+    .input-action-buttons-container {
+        gap: 2px;
+    }
+}
+
+/* ===== Focus 狀態優化 ===== */
+.input-with-action-buttons input:focus + .input-action-buttons-container .input-action-button {
+    /* 當 input focus 時，稍微提高按鈕的可見度 */
+    opacity: 1;
+}
+
+/* ===== 與 AutoComplete 下拉選單的 z-index 協調 ===== */
+.input-with-action-buttons .list-group {
+    z-index: 1000; /* 確保下拉選單在按鈕上方 */
+}

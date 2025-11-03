@@ -1,134 +1,113 @@
+@*
+    頁面搜尋 Modal 組件
+    用於快速搜尋並導航到系統中的功能頁面
+*@
 @using ERPCore2.Models
+@using ERPCore2.Components.Shared.Modals
 @inject INavigationSearchService NavigationSearchService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @implements IDisposable
 
-@* Modal 背景遮罩 *@
-@if (IsVisible)
-{
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-labelledby="pageSearchModalLabel" aria-modal="true"
-         @onclick="@HandleBackdropClick">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document" @onclick:stopPropagation="true">
-            <div class="modal-content page-search-modal">
-                <div class="modal-header border-0 pb-2">
-                    <h5 class="modal-title" id="pageSearchModalLabel">
-                        <i class="bi bi-search me-2"></i>
-                        頁面搜尋
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="Close" aria-label="關閉"></button>
-                </div>
-                <div class="modal-body pt-3">
-                    @* 搜尋輸入框 *@
-                    <div class="search-input-wrapper mb-3">
-                        <i class="bi bi-search search-icon"></i>
-                        <input @ref="searchInput"
-                               type="text" 
-                               class="form-control ps-5" 
-                               placeholder="輸入功能名稱或關鍵字搜尋..."
-                               @bind="searchTerm"
-                               @bind:event="oninput"
-                               @bind:after="OnSearchTermChanged"
-                               @onkeydown="HandleKeyDown" />
-                        @if (!string.IsNullOrWhiteSpace(searchTerm))
-                        {
-                            <button type="button" 
-                                    class="btn btn-sm btn-link clear-button" 
-                                    @onclick="ClearSearch"
-                                    title="清除搜尋">
-                                <i class="bi bi-x-circle-fill"></i>
-                            </button>
-                        }
-                    </div>
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="頁面搜尋"
+                   Icon="bi-search"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   UseWhiteCloseButton="true"
+                   BodyCssClass="pt-3"
+                   OnClose="@HandleClose"
+                   CloseOnEscape="false"
+                   CloseOnBackdropClick="true">
+    
+    <BodyContent>
+        @* 搜尋輸入框 *@
+        <div class="search-input-wrapper mb-3">
+            <i class="bi bi-search search-icon"></i>
+            <input @ref="searchInput"
+                   type="text" 
+                   class="form-control ps-5" 
+                   placeholder="輸入功能名稱或關鍵字搜尋..."
+                   @bind="searchTerm"
+                   @bind:event="oninput"
+                   @bind:after="OnSearchTermChanged"
+                   @onkeydown="HandleKeyDown" />
+            @if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                <button type="button" 
+                        class="btn btn-sm btn-link clear-button" 
+                        @onclick="ClearSearch"
+                        title="清除搜尋">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            }
+        </div>
 
-                    @* 搜尋結果區域 *@
-                    <div class="search-results-container">
-                        @if (searchResults.Any())
+        @* 搜尋結果區域 *@
+        <div class="search-results-container">
+            @if (searchResults.Any())
+            {
+                <div class="search-results-section">
+                    <h6 class="mb-3">
+                        <i class="bi bi-list-ul me-2"></i>
+                        搜尋結果 (共 @searchResults.Count 個功能)
+                    </h6>
+                    <div class="search-results-list">
+                        @for (int i = 0; i < searchResults.Count; i++)
                         {
-                            <div class="search-results-section">
-                                <h6 class="mb-3">
-                                    <i class="bi bi-list-ul me-2"></i>
-                                    搜尋結果 (共 @searchResults.Count 個功能)
-                                </h6>
-                                <div class="search-results-list">
-                                    @for (int i = 0; i < searchResults.Count; i++)
+                            var index = i;
+                            var item = searchResults[i];
+                            var isSelected = index == selectedIndex;
+                            
+                            <div class="search-result-item @(isSelected ? "keyboard-selected" : "")" 
+                                 id="search-result-@index"
+                                 @onclick="@(() => HandleNavigationCardClick(item))"
+                                 @onmouseenter="@(() => HandleMouseEnter(index))"
+                                 @onmouseleave="@HandleMouseLeave">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="result-arrow">›</span>
+                                    <span class="result-name">@item.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.Description))
                                     {
-                                        var index = i;
-                                        var item = searchResults[i];
-                                        var isSelected = index == selectedIndex;
-                                        
-                                        <div class="search-result-item @(isSelected ? "selected" : "")" 
-                                             id="search-result-@index"
-                                             @onclick="@(() => HandleNavigationCardClick(item))">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <span class="result-arrow">›</span>
-                                                <div class="flex-grow-1">
-                                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                                        <span class="result-name">@item.Name</span>
-                                                        @if (!string.IsNullOrWhiteSpace(item.Description))
-                                                        {
-                                                            <span class="result-description text-muted">@item.Description</span>
-                                                        }
-                                                    </div>
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        @if (!string.IsNullOrWhiteSpace(item.Route))
-                                                        {
-                                                            <small class="result-route text-muted">
-                                                                <i class="bi bi-link-45deg me-1"></i>@item.Route
-                                                            </small>
-                                                        }
-                                                        @if (!string.IsNullOrWhiteSpace(item.Category))
-                                                        {
-                                                            <small class="result-category">
-                                                                <span class="badge bg-secondary">@item.Category</span>
-                                                            </small>
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <span class="result-description">@item.Description</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.Category))
+                                    {
+                                        <span class="result-category">@item.Category</span>
                                     }
                                 </div>
                             </div>
                         }
-                        else if (hasSearched)
-                        {
-                            <div class="search-empty-state text-center py-5">
-                                <i class="bi bi-emoji-frown fs-1 text-muted d-block mb-3"></i>
-                                <p class="text-muted mb-0">沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="search-empty-state text-center py-5">
-                                <i class="bi bi-lightning-charge fs-1 text-primary d-block mb-3"></i>
-                                <p class="text-muted mb-1">開始輸入以搜尋功能頁面</p>
-                                <small class="text-muted">支援功能名稱、關鍵字搜尋</small>
-                            </div>
-                        }
                     </div>
                 </div>
-            </div>
+            }
+            else if (hasSearched)
+            {
+                <div class="search-empty-state text-center py-5">
+                    <i class="bi bi-emoji-frown fs-1 text-muted d-block mb-3"></i>
+                    <p class="text-muted mb-0">沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
+                </div>
+            }
+            else
+            {
+                <div class="search-empty-state text-center py-5">
+                    <i class="bi bi-lightning-charge fs-1 text-primary d-block mb-3"></i>
+                    <p class="text-muted mb-1">開始輸入以搜尋功能頁面</p>
+                    <small class="text-muted">支援功能名稱、關鍵字搜尋</small>
+                </div>
+            }
         </div>
-    </div>
+    </BodyContent>
     
-    @* Bootstrap Modal 背景遮罩 *@
-    <div class="modal-backdrop fade show"></div>
-}
+</BaseModalComponent>
 
 @code {
-    /// <summary>
-    /// 控制 Modal 顯示/隱藏
-    /// </summary>
-    [Parameter]
-    public bool IsVisible { get; set; }
-
-    /// <summary>
-    /// Modal 顯示狀態改變時的回調
-    /// </summary>
-    [Parameter]
-    public EventCallback<bool> IsVisibleChanged { get; set; }
+    // ===== 參數定義 =====
+    
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
 
     // ===== 私有欄位 =====
     
@@ -138,6 +117,7 @@
     private bool hasSearched = false;
     private bool _isDisposed = false;
     private int selectedIndex = -1; // 目前選中的項目索引
+    private bool isUsingKeyboard = false; // 追蹤是否正在使用鍵盤導航
     
     // 防抖計時器
     private System.Threading.Timer? _searchDebounceTimer;
@@ -152,7 +132,7 @@
             try
             {
                 await Task.Delay(100);
-                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.page-search-modal input')?.focus()");
+                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.search-input-wrapper input')?.focus()");
             }
             catch
             {
@@ -182,28 +162,44 @@
     /// </summary>
     public async Task Close()
     {
-        IsVisible = false;
-        await IsVisibleChanged.InvokeAsync(false);
-        StateHasChanged();
+        await HandleClose();
     }
 
-    // ===== 私有方法 =====
+    // ===== 事件處理方法 =====
+    
+    /// <summary>
+    /// 處理 Modal 關閉事件
+    /// </summary>
+    private async Task HandleClose()
+    {
+        searchTerm = "";
+        searchResults.Clear();
+        hasSearched = false;
+        selectedIndex = -1;
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
 
     /// <summary>
     /// 處理鍵盤事件（支援 ESC 關閉、方向鍵選取、Enter 確認）
+    /// 注意：ESC 關閉功能已由 BaseModalComponent 處理，但因需自訂行為所以設定 CloseOnEscape="false"
     /// </summary>
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Escape")
         {
-            // ESC 關閉 Modal
-            await Close();
+            // ESC 關閉 Modal（自訂行為：需清空搜尋狀態）
+            await HandleClose();
         }
         else if (e.Key == "ArrowDown" || e.Key == "Down")
         {
             // 向下移動選取
             if (searchResults.Any())
             {
+                isUsingKeyboard = true; // 標記為鍵盤導航
                 selectedIndex = (selectedIndex + 1) % searchResults.Count;
                 await ScrollToSelectedItem();
                 StateHasChanged();
@@ -214,6 +210,7 @@
             // 向上移動選取
             if (searchResults.Any())
             {
+                isUsingKeyboard = true; // 標記為鍵盤導航
                 selectedIndex = selectedIndex <= 0 ? searchResults.Count - 1 : selectedIndex - 1;
                 await ScrollToSelectedItem();
                 StateHasChanged();
@@ -227,6 +224,30 @@
                 var selectedItem = searchResults[selectedIndex];
                 await HandleNavigationCardClick(selectedItem);
             }
+        }
+    }
+
+    /// <summary>
+    /// 處理滑鼠移入事件
+    /// </summary>
+    private void HandleMouseEnter(int index)
+    {
+        // 滑鼠移入時，清除鍵盤導航狀態並設定新的選取
+        isUsingKeyboard = false;
+        selectedIndex = index;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理滑鼠移出事件
+    /// </summary>
+    private void HandleMouseLeave()
+    {
+        // 滑鼠移出時，如果不是鍵盤導航模式，則清除選取
+        if (!isUsingKeyboard)
+        {
+            selectedIndex = -1;
+            StateHasChanged();
         }
     }
 
@@ -287,35 +308,15 @@
     }
 
     /// <summary>
-    /// 導航到指定頁面
-    /// </summary>
-    private async Task NavigateToPage(string? route)
-    {
-        if (!string.IsNullOrEmpty(route) && route != "#")
-        {
-            await Close();
-            NavigationManager.NavigateTo(route);
-        }
-    }
-
-    /// <summary>
     /// 處理導航卡片點擊事件
     /// </summary>
     private async Task HandleNavigationCardClick(NavigationItem item)
     {
         if (!string.IsNullOrEmpty(item.Route) && item.Route != "#")
         {
-            await Close();
+            await HandleClose();
             NavigationManager.NavigateTo(item.Route);
         }
-    }
-
-    /// <summary>
-    /// 處理背景點擊事件（點擊背景關閉 Modal）
-    /// </summary>
-    private async Task HandleBackdropClick()
-    {
-        await Close();
     }
 
     /// <summary>
@@ -338,6 +339,7 @@
     }
 
     // ===== 資源清理 =====
+    
     public void Dispose()
     {
         try

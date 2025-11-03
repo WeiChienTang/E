@@ -1,299 +1,340 @@
-/* ===================================================
-   頁面搜尋 Modal 樣式
-   用於全域快捷鍵 (Alt + S) 啟動的頁面搜尋功能
-   =================================================== */
+/*
+    PageSearchModalComponent 專屬樣式
+    用於頁面搜尋 Modal 的互動式搜尋介面
+*/
 
-/* Modal 容器 */
-.page-search-modal {
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.2s ease-out;
-}
+/* ===== 搜尋輸入框區域 ===== */
 
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Modal 標題區域 */
-.page-search-modal .modal-header {
-    background-color: #1F2937;
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 12px 12px 0 0;
-}
-
-.page-search-modal .modal-header .modal-title {
-    font-weight: 600;
-    font-size: 1.1rem;
-}
-
-.page-search-modal .modal-header .btn-close {
-    filter: brightness(0) invert(1);
-    opacity: 0.8;
-}
-
-.page-search-modal .modal-header .btn-close:hover {
-    opacity: 1;
-}
-
-/* 快捷鍵提示 */
-.page-search-modal kbd {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.75rem;
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    font-family: monospace;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* 搜尋輸入框區域 */
+/* 搜尋輸入框容器 */
 .search-input-wrapper {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
+/* 搜尋圖示（左側） - 黑色 */
 .search-input-wrapper .search-icon {
     position: absolute;
     left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6c757d;
-    font-size: 1.2rem;
+    color: #000000; /* 黑色放大鏡 */
+    font-size: 1.1rem;
     pointer-events: none;
+    z-index: 10;
 }
 
-.search-input-wrapper .form-control {
-    padding-left: 3rem;
-    padding-right: 3rem;
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
+/* 搜尋輸入框樣式 - 白色背景 */
+.search-input-wrapper input.form-control {
+    padding-left: 2.8rem;
+    padding-right: 2.5rem;
+    height: 3rem;
+    font-size: 1rem;
+    background-color: #ffffff; /* 白色背景 */
+    border: 2px solid #dee2e6;
+    border-radius: 0.5rem;
     transition: all 0.2s ease;
 }
 
-.search-input-wrapper .form-control:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+/* 輸入框聚焦效果 */
+.search-input-wrapper input.form-control:focus {
+    background-color: #ffffff; /* 保持白色 */
+    border-color: #1F2937;
+    box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.15);
+    outline: none;
 }
 
+/* 清除按鈕 */
 .search-input-wrapper .clear-button {
     position: absolute;
     right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
     color: #6c757d;
     padding: 0.25rem 0.5rem;
-    text-decoration: none;
+    z-index: 10;
+    transition: all 0.2s ease;
 }
 
 .search-input-wrapper .clear-button:hover {
     color: #dc3545;
+    text-decoration: none;
 }
 
-/* 搜尋結果容器 */
+.search-input-wrapper .clear-button i {
+    font-size: 1.2rem;
+}
+
+/* ===== 搜尋結果容器 ===== */
+
 .search-results-container {
-    max-height: 400px;
+    min-height: 300px;
+    max-height: 450px;
     overflow-y: auto;
-    overflow-x: hidden;
 }
 
-/* 捲軸樣式美化 */
-.search-results-container::-webkit-scrollbar {
-    width: 8px;
+/* 搜尋結果區段標題 */
+.search-results-section h6 {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
 }
 
-.search-results-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.search-results-container::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 10px;
-}
-
-.search-results-container::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* 搜尋結果標題 */
-.search-results-header {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e9ecef;
+.search-results-section h6 i {
+    color: #6c757d;
 }
 
 /* 搜尋結果列表 */
 .search-results-list {
-    margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/* 搜尋結果項目 */
+/* ===== 搜尋結果項目 ===== */
+
+/* 結果項目基礎樣式 - 白色背景 */
 .search-result-item {
-    padding: 1rem 1.25rem;
-    border-radius: 8px;
-    background-color: var(--bg-primary, #ffffff);
-    border: 2px solid transparent;
+    padding: 0.875rem 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
     cursor: pointer;
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.15s ease-in-out;
+    transition: all 0.2s ease;
+    background-color: #ffffff; /* 白色背景 */
 }
 
+/* 滑鼠懸停效果 - 黃色背景 + 深棕色文字 */
 .search-result-item:hover {
-    background-color: rgba(13, 110, 253, 0.05);
+    background-color: #fde68a; /* 黃色背景 */
+    color: #92400e; /* 深棕色文字 */
+    border-color: #fbbf24;
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
     transform: translateX(4px);
 }
 
-.search-result-item.selected {
-    background-color: #667eea;
-    border-color: #667eea;
-    color: white;
-    transform: translateX(4px);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+/* 鍵盤選取效果（方向鍵選擇） - 黃色背景 + 深棕色文字 */
+.search-result-item.keyboard-selected {
+    background-color: #fde68a; /* 黃色背景 */
+    color: #92400e; /* 深棕色文字 */
+    border-color: #fbbf24;
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
 }
 
-.search-result-item.selected .text-muted {
-    color: rgba(255, 255, 255, 0.85) !important;
-}
-
-.search-result-item.selected .badge {
-    background-color: rgba(255, 255, 255, 0.25) !important;
-    color: white !important;
-}
-
-.search-result-item.selected i {
-    color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* 結果項目內容 */
-.result-arrow {
+/* 選取時的箭頭 */
+.search-result-item .result-arrow {
     font-size: 1.5rem;
+    color: #6c757d;
     font-weight: bold;
-    color: #667eea;
-    line-height: 1;
+    transition: all 0.2s ease;
 }
 
-.search-result-item.selected .result-arrow {
-    color: white;
+.search-result-item:hover .result-arrow,
+.search-result-item.keyboard-selected .result-arrow {
+    color: #92400e; /* Hover 時箭頭也變深棕色 */
 }
 
-.result-name {
+/* ===== 結果項目內容（單行顯示） ===== */
+
+/* 項目名稱 */
+.search-result-item .result-name {
     font-weight: 600;
     font-size: 1rem;
+    color: #212529;
+    transition: color 0.2s ease;
 }
 
-.result-description {
+.search-result-item:hover .result-name,
+.search-result-item.keyboard-selected .result-name {
+    color: #92400e; /* Hover 時名稱變深棕色 */
+}
+
+/* 項目描述 */
+.search-result-item .result-description {
     font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: normal;
+    margin-left: 8px;
 }
 
-.result-route {
+.search-result-item:hover .result-description,
+.search-result-item.keyboard-selected .result-description {
+    color: #92400e; /* Hover 時描述變深棕色 */
+    opacity: 0.85;
+}
+
+/* 項目分類標籤（單行末端） */
+.search-result-item .result-category {
     font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
+    color: #6b7280;
+    background-color: #f3f4f6;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-left: 12px;
+    white-space: nowrap;
 }
 
-.result-category .badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
+.search-result-item:hover .result-category,
+.search-result-item.keyboard-selected .result-category {
+    background-color: #fbbf24; /* Hover 時標籤背景變金黃色 */
+    color: #92400e; /* Hover 時標籤文字變深棕色 */
 }
 
-/* 搜尋結果卡片容器 (已廢棄，保留以防需要) */
-.search-result-card {
-    height: 100%;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-}
+/* ===== 空狀態樣式 ===== */
 
-.search-result-card.selected {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-    transform: scale(1.02);
-}
-
-/* 舊的搜尋結果項目樣式 (已被上方新樣式覆蓋) */
-.search-result-item {
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.search-result-item:hover {
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-    transform: translateX(4px);
-}
-
-.search-result-item.selected {
-    background-color: #667eea;
-    border-color: #667eea;
-    color: white;
-    transform: translateX(4px);
-}
-
-.search-result-item.selected .text-muted {
-    color: rgba(255, 255, 255, 0.8) !important;
-}
-
-.search-result-item.selected i {
-    color: white !important;
-}
-
-.search-result-item .result-title {
-    font-weight: 500;
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-}
-
-/* 空狀態樣式 */
 .search-empty-state {
-    padding: 2rem 1rem;
+    padding: 3rem 1rem;
 }
 
 .search-empty-state i {
-    opacity: 0.5;
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    display: block;
 }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
-    .page-search-modal .modal-dialog {
-        max-width: 95%;
-        margin: 1rem auto;
-    }
+.search-empty-state p {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
 
+.search-empty-state small {
+    font-size: 0.875rem;
+    color: #adb5bd;
+}
+
+/* 空狀態動畫 */
+.search-empty-state i.bi-lightning-charge {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+/* ===== 滾動條樣式 ===== */
+
+.search-results-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.search-results-container::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb {
+    background: #ced4da;
+    border-radius: 4px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+/* ===== 鍵盤快捷鍵提示（可選） ===== */
+
+.keyboard-hint {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.keyboard-hint kbd {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    font-family: 'Courier New', monospace;
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 小螢幕裝置 */
+@media (max-width: 576px) {
+    .search-input-wrapper input.form-control {
+        height: 2.5rem;
+        font-size: 0.9rem;
+    }
+    
     .search-results-container {
-        max-height: 300px;
+        max-height: 350px;
+    }
+    
+    .search-result-item {
+        padding: 0.75rem 0.875rem;
+    }
+    
+    .search-result-item .result-name {
+        font-size: 0.95rem;
+    }
+    
+    .search-result-item .result-description {
+        font-size: 0.85rem;
+    }
+    
+    .search-result-item .result-category {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+    }
+    
+    .search-empty-state i {
+        font-size: 2.5rem;
     }
 }
 
-/* Modal 動畫增強 */
-.modal.fade .modal-dialog {
-    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+/* 中等螢幕裝置 */
+@media (min-width: 577px) and (max-width: 768px) {
+    .search-results-container {
+        max-height: 400px;
+    }
 }
 
-.modal.show .modal-dialog {
-    transform: none;
+/* 大螢幕裝置 */
+@media (min-width: 1200px) {
+    .search-results-container {
+        max-height: 500px;
+    }
 }
 
-/* 鍵盤導航視覺回饋 */
-.search-result-item:focus-visible {
-    outline: 2px solid #667eea;
+/* ===== 無障礙支援 ===== */
+
+/* 鍵盤焦點樣式 */
+.search-result-item:focus {
+    outline: 2px solid #fbbf24;
     outline-offset: 2px;
 }
 
-/* 提高可訪問性 */
-.search-result-item[aria-selected="true"] {
-    background-color: #667eea;
-    color: white;
+/* 減少動畫（針對偏好設定） */
+@media (prefers-reduced-motion: reduce) {
+    .search-result-item,
+    .search-input-wrapper input.form-control,
+    .search-input-wrapper .clear-button,
+    .search-result-item .result-arrow,
+    .search-result-item .result-name {
+        transition: none;
+    }
+    
+    .search-empty-state i.bi-lightning-charge {
+        animation: none;
+    }
+}
+
+/* ===== 高對比模式支援 ===== */
+
+@media (prefers-contrast: high) {
+    .search-result-item {
+        border-width: 2px;
+    }
+    
+    .search-result-item:hover,
+    .search-result-item.keyboard-selected {
+        border-width: 3px;
+    }
 }

@@ -257,19 +257,12 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
     {
         var buttons = new List<FieldActionButton>();
         
-        // 新增按鈕 - 永遠顯示
-        buttons.Add(new FieldActionButton
-        {
-            Text = "新增",
-            Variant = "OutlinePrimary",
-            Size = "Small",
-            Title = $"新增新的{EntityDisplayName}",
-            OnClick = () => OpenModalAsync(null)
-        });
-        
-        // 編輯按鈕 - 只有在有有效選擇值時才顯示 (排除 0 或負數等無效 ID)
+        // 智能單按鈕邏輯：
+        // - 有選擇值時 → 顯示「編輯」按鈕
+        // - 沒有選擇值時 → 顯示「新增」按鈕
         if (currentSelectedId.HasValue && currentSelectedId.Value > 0)
         {
+            // 編輯按鈕 - 只有在有有效選擇值時才顯示
             buttons.Add(new FieldActionButton
             {
                 Text = "編輯",
@@ -277,6 +270,18 @@ public class RelatedEntityModalManager<TRelatedEntity> where TRelatedEntity : Ba
                 Size = "Small",
                 Title = $"編輯目前選擇的{EntityDisplayName}",
                 OnClick = () => OpenModalAsync(currentSelectedId.Value)
+            });
+        }
+        else
+        {
+            // 新增按鈕 - 沒有選擇值時顯示
+            buttons.Add(new FieldActionButton
+            {
+                Text = "新增",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = $"新增新的{EntityDisplayName}",
+                OnClick = () => OpenModalAsync(null)
             });
         }
         
