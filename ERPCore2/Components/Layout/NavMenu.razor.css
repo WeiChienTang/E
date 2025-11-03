@@ -76,26 +76,6 @@
     z-index: 1; /* 確保使用者資訊在一般層級 */
 }
 
-/* 確保切換按鈕在手機模式下位於最上層 */
-@media (max-width: 640px) {
-    .navbar-toggler-label {
-        position: relative;
-        z-index: 1001; /* 比使用者下拉選單更高 */
-    }
-    
-    /* 限制使用者資訊下拉選單的 z-index */
-    .user-info-nav ::deep .nav-menu-dropdown-content {
-        z-index: 1000 !important;
-    }
-}
-
-/* 桌面版本中調整頂部列定位 */
-@media (min-width: 641px) {
-    .top-row {
-        position: relative; /* 在桌面版本中使用相對定位 */
-    }
-}
-
 .navbar-brand {
     font-size: 1.1rem;
 }
@@ -104,26 +84,6 @@
 .auth-section {
     position: relative;
     z-index: 999;
-}
-
-/* 在小螢幕上調整登出/登入按鈕的位置 */
-@media (max-width: 640px) {
-    .auth-section {
-        margin-right: 4.5rem; /* 為導航按鈕留出空間 */
-    }
-    
-    .user-welcome {
-        display: none !important; /* 在小螢幕上隱藏歡迎文字 */
-    }
-    
-    .logout-btn,
-    .login-btn {
-        padding: 0.25rem 0.5rem;
-    }
-}
-
-/* 中等螢幕尺寸的調整 */
-@media (min-width: 641px) and (max-width: 991px) {
 }
 
 .nav-scrollable {
@@ -135,14 +95,80 @@
     display: block;
 }
 
-/* 桌面版本中顯示導航選單並填充剩餘空間 */
-@media (min-width: 641px) {
+
+/* ========================================= */
+/* 響應式設計 - Media Queries */
+/* ========================================= */
+
+/* 所有螢幕斷點統一使用 640px */
+@media (max-width: 640px) {
+    /* 確保切換按鈕位於最上層 */
+    .navbar-toggler-label {
+        position: relative;
+        z-index: 1001; /* 比使用者下拉選單更高 */
+    }
+    
+    /* 限制使用者資訊下拉選單的 z-index */
+    .user-info-nav ::deep .nav-menu-dropdown-content {
+        z-index: 1000;
+    }
+    
+    /* 登入/登出按鈕區域調整 */
+    .auth-section {
+        margin-right: 4.5rem; /* 為導航按鈕留出空間 */
+    }
+    
+    .user-welcome {
+        display: none; /* 在小螢幕上隱藏歡迎文字 */
+    }
+    
+    .logout-btn,
+    .login-btn {
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* 確保導航選單有較高的 z-index */
     .nav-scrollable {
-        display: block !important;
+        z-index: 1050;
+        position: relative;
+    }
+    
+    /* 為選單項目添加更好的觸控體驗 */
+    .nav-scrollable .nav-item {
+        min-height: 40px; /* 符合無障礙設計的最小觸控目標 */
+    }
+    
+    /* 確保下拉選單項目有足夠的觸控區域 */
+    .nav-scrollable ::deep .dropdown-item {
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+    }
+}
+
+@media (min-width: 640px) {
+    /* 調整頂部列定位 */
+    .top-row {
+        position: relative; /* 在桌面版本中使用相對定位 */
+    }
+    
+    .top-row-content {
+        justify-content: flex-start;
+    }
+    
+    /* 隱藏切換按鈕 */
+    .navbar-toggler-label {
+        display: none;
+    }
+
+    /* 顯示導航選單並填充剩餘空間 */
+    .nav-scrollable {
+        display: block;
         flex: 1; /* 填充 sidebar 的剩餘空間 */
         overflow-y: auto; /* 允許垂直滾動 */
         min-height: 0; /* 允許收縮 */
-        max-height: calc(100vh - 3.5rem); /* 限制最大高度為視口高度減去頂部列高度 */
+        height: calc(100vh - 3.5rem);
+        max-height: calc(100vh - 3.5rem); /* 限制最大高度為視港高度減去頂部列高度 */
         padding-bottom: 1rem; /* 為底部項目添加額外間距 */
         scroll-behavior: smooth; /* 平滑滾動 */
     }
@@ -152,7 +178,7 @@
         padding-bottom: 1rem;
     }
     
-    /* 自訂滾動條樣式（可選） */
+    /* 自訂滾動條樣式 */
     .nav-scrollable::-webkit-scrollbar {
         width: 6px;
     }
@@ -171,130 +197,3 @@
         background: rgba(255, 255, 255, 0.5);
     }
 }
-
-/* ========================================= */
-/* 導航選單圖示樣式 - 使用全域樣式 */
-/* ========================================= */
-
-/* 移除作用域限制，直接覆蓋 Bootstrap Icons */
-:global(.nav-menu-bi) {
-    font-size: 1.25rem !important;
-    width: 1.25rem !important;
-    height: 1.25rem !important;
-    line-height: 1 !important;
-    vertical-align: text-bottom !important;
-    margin-right: 0.5rem !important;
-    flex-shrink: 0 !important;
-    display: inline-block !important;
-}
-
-/* 直接覆蓋 Bootstrap Icons 的 ::before 偽元素 */
-:global(.nav-menu-bi::before) {
-    font-size: 1.25rem !important;
-    width: 1.25rem !important;
-    height: 1.25rem !important;
-    line-height: 1 !important;
-}
-
-/* 下拉選單圖示 */
-:global(.nav-dropdown-bi) {
-    font-size: 1rem !important;
-    width: 1rem !important;
-    height: 1rem !important;
-    line-height: 1 !important;
-    vertical-align: text-bottom !important;
-    margin-right: 0.5rem !important;
-    flex-shrink: 0 !important;
-    display: inline-block !important;
-}
-
-/* 直接覆蓋 Bootstrap Icons 的 ::before 偽元素 */
-:global(.nav-dropdown-bi::before) {
-    font-size: 1rem !important;
-    width: 1rem !important;
-    height: 1rem !important;
-    line-height: 1 !important;
-}
-
-/* Media queries for responsive design */
-@media (min-width: 641px) {
-    .navbar-toggler-label {
-        display: none;
-    }
-
-    .nav-scrollable {
-        display: block;
-        height: calc(100vh - 3.5rem);
-        overflow-y: auto;
-    }
-    
-    .top-row-content {
-        justify-content: flex-start;
-    }
-}
-
-/* 手機模式下的互動改善 */
-@media (max-width: 640px) {
-    /* 確保導航選單在手機模式下有較高的 z-index */
-    .nav-scrollable {
-        z-index: 1050;
-        position: relative;
-    }
-    
-    /* 為選單項目添加更好的觸控體驗 */
-    .nav-scrollable .nav-item {
-        min-height: 40px; /* 符合無障礙設計的最小觸控目標 */
-    }
-    
-    /* 確保下拉選單項目有足夠的觸控區域 */
-    .nav-scrollable ::deep .dropdown-item {
-        min-height: 36px !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-}
-
-/* 強化下拉選單樣式覆蓋 Bootstrap - 使用 ::deep 穿透 */
-.nav-scrollable ::deep .nav-item .dropdown-container .dropdown-content.show,
-.nav-scrollable ::deep .nav-item .dropdown-container .dropdown-content.show.dropdown-menu {
-    display: block !important;
-    position: static !important;
-    float: none !important;
-    min-width: auto !important;
-    padding: 0 !important;
-    margin: 2px 0 0 0 !important;
-    text-align: left !important;
-    list-style: none !important;
-    background-color: rgba(31, 41, 55, 0.8) !important;
-    background-clip: padding-box !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 0 0 4px 4px !important;
-}
-
-.nav-scrollable ::deep .nav-item .dropdown-container .dropdown-content .dropdown-item,
-.nav-scrollable ::deep .nav-item .dropdown-container .dropdown-content .dropdown-item.dropdown-item {
-    display: flex !important;
-    align-items: center !important;
-    padding: 0.5rem 1rem 0.5rem 2.25rem !important;
-    color: #FFFFFF !important;
-    text-decoration: none !important;
-    transition: all 0.2s ease !important;
-    background-color: transparent !important;
-    border: none !important;
-    width: 100% !important;
-    clear: both !important;
-    font-weight: 400 !important;
-    line-height: 1.5 !important;
-    white-space: nowrap !important;
-}
-
-.nav-scrollable ::deep .nav-item .dropdown-container .dropdown-content .dropdown-item:hover,
-.nav-scrollable ::deep .nav-item .dropdown-container .dropdown-content .dropdown-item.dropdown-item:hover {
-    background-color: #fef3c7 !important;
-    color: #92400e !important;
-    text-decoration: none !important;
-    transform: translateX(5px) !important;
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.2s ease !important;
-}
-
-

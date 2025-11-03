@@ -7,15 +7,23 @@
 @if (!string.IsNullOrEmpty(RequiredPermission))
 {
     <NavigationPermissionCheck Permission="@RequiredPermission">
-        <a class="nav-dropdown-item dropdown-item" href="@Url" @onclick="OnDropdownItemClick">
-            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
+        <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+            }
+            @Text
         </a>
     </NavigationPermissionCheck>
 }
 else
 {
-    <a class="nav-dropdown-item dropdown-item" href="@Url" @onclick="OnDropdownItemClick">
-        <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span> @Text
+    <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
+        @if (!string.IsNullOrEmpty(IconClass))
+        {
+            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+        }
+        @Text
     </a>
 }
 

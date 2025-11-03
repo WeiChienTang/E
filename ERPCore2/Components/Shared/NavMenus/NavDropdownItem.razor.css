@@ -15,6 +15,30 @@
     white-space: nowrap;
 }
 
+/* 沒有圖示的項目，添加額外的左側縮排 */
+.nav-dropdown-item.no-icon {
+    padding-left: 3.5rem; /* 2.25rem + 1.25rem (圖示寬度和間距) */
+}
+
+/* 下拉選單圖示樣式 */
+.nav-dropdown-item .nav-dropdown-bi {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    line-height: 1;
+    vertical-align: text-bottom;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.nav-dropdown-item .nav-dropdown-bi::before {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    line-height: 1;
+}
+
 .nav-dropdown-item:hover {
     background-color: var(--table-hover-bg-striped);
     color: var(--table-hover-text);

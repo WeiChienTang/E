@@ -18,7 +18,7 @@
             <NavigationPermissionCheck AnyPermissions="@GetCollectedPermissions()">
                 <div class="nav-menu-dropdown-container @(isDropdownOpen ? "expanded" : "")">
                     <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
-                        <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> 
+                        <span class="@IconClass" aria-hidden="true"></span> 
                         @Text
                         @if (ShowDropdownArrow)
                         {
@@ -36,7 +36,7 @@
             <!-- 傳統下拉選單容器（無自動權限檢查） -->
             <div class="nav-menu-dropdown-container @(isDropdownOpen ? "expanded" : "")">
                 <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
-                    <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> 
+                    <span class="@IconClass" aria-hidden="true"></span> 
                     @Text
                     @if (ShowDropdownArrow)
                     {
@@ -53,7 +53,7 @@
     {
         <!-- 簡單連結 -->
         <a class="nav-menu-nav-link" href="@Url" @onclick="OnNavLinkClick">
-            <span class="@IconClass nav-menu-bi" aria-hidden="true"></span> @Text
+            <span class="@IconClass" aria-hidden="true"></span> @Text
         </a>
     }
 </div>

@@ -93,3 +93,10 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
     text-decoration: none;
 }
+
+/* Icon 樣式 - 放大並增加右邊間距 */
+.nav-menu-nav-link span[aria-hidden="true"],
+.nav-menu-dropdown-toggle-btn span[aria-hidden="true"] {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+}
