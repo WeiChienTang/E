@@ -85,6 +85,7 @@
     [Parameter] public int? PrefilledSalesOrderId { get; set; }
 
     // ===== 內部狀態 =====
+    
     private GenericEditModalComponent<SalesReturn, ISalesReturnService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
