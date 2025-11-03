@@ -1,6 +1,3 @@
-@* 統一按鈕組件 - 取代所有HTML button標籤的主要共享組件 *@
-@using ERPCore2.Components.Shared.Buttons
-
 <button class="@GetFullButtonClass()" 
         type="@(IsSubmit ? "submit" : Type)"
         title="@(string.IsNullOrEmpty(Title) ? Text : Title)"

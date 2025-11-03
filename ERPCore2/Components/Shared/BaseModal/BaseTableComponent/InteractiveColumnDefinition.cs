@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using ERPCore2.Components.Shared.Buttons;
+using ERPCore2.Components.Shared.GenericComponent.Button;
 
 namespace ERPCore2.Components.Shared.SubCollections
 {

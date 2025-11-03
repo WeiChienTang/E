@@ -4,8 +4,8 @@
 @using Microsoft.AspNetCore.Components.Rendering
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Forms
-@using ERPCore2.Components.Shared.Buttons
 @using ERPCore2.Components.Shared.Forms
+@using ERPCore2.Components.Shared.GenericComponent.Button
 @inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
@@ -285,7 +285,7 @@
                 var buttonSequence = 13;
                 foreach (var actionButton in field.ActionButtons)
                 {
-                    builder.OpenComponent(buttonSequence, typeof(ERPCore2.Components.Shared.Buttons.GenericButtonComponent));
+                    builder.OpenComponent(buttonSequence, typeof(ERPCore2.Components.Shared.GenericComponent.Button.GenericButtonComponent));
                     builder.AddAttribute(buttonSequence + 1, "Text", actionButton.Text);
                     builder.AddAttribute(buttonSequence + 2, "Variant", GetButtonVariant(actionButton.Variant));
                     builder.AddAttribute(buttonSequence + 3, "Size", GetButtonSize(actionButton.Size));
@@ -1226,34 +1226,34 @@
         }
     }
 
-    private ERPCore2.Components.Shared.Buttons.ButtonVariant GetButtonVariant(string variant)
+    private ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant GetButtonVariant(string variant)
     {
         return variant switch
         {
-            "Primary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Primary,
-            "Secondary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Secondary,
-            "Success" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Success,
-            "Danger" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Danger,
-            "Warning" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Warning,
-            "Info" => ERPCore2.Components.Shared.Buttons.ButtonVariant.Info,
-            "OutlinePrimary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlinePrimary,
-            "OutlineSecondary" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineSecondary,
-            "OutlineSuccess" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineSuccess,
-            "OutlineDanger" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineDanger,
-            "OutlineWarning" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineWarning,
-            "OutlineInfo" => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlineInfo,
-            _ => ERPCore2.Components.Shared.Buttons.ButtonVariant.OutlinePrimary
+            "Primary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Primary,
+            "Secondary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Secondary,
+            "Success" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Success,
+            "Danger" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Danger,
+            "Warning" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Warning,
+            "Info" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Info,
+            "OutlinePrimary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlinePrimary,
+            "OutlineSecondary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineSecondary,
+            "OutlineSuccess" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineSuccess,
+            "OutlineDanger" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineDanger,
+            "OutlineWarning" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineWarning,
+            "OutlineInfo" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineInfo,
+            _ => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlinePrimary
         };
     }
 
-    private ERPCore2.Components.Shared.Buttons.ButtonSize GetButtonSize(string size)
+    private ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize GetButtonSize(string size)
     {
         return size switch
         {
-            "Large" => ERPCore2.Components.Shared.Buttons.ButtonSize.Large,
-            "Normal" => ERPCore2.Components.Shared.Buttons.ButtonSize.Normal,
-            "Small" => ERPCore2.Components.Shared.Buttons.ButtonSize.Small,
-            _ => ERPCore2.Components.Shared.Buttons.ButtonSize.Small
+            "Large" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Large,
+            "Normal" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Normal,
+            "Small" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Small,
+            _ => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Small
         };
     }
 }

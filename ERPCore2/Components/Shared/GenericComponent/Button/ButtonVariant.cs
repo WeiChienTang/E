@@ -1,4 +1,4 @@
-namespace ERPCore2.Components.Shared.Buttons
+namespace ERPCore2.Components.Shared.GenericComponent.Button
 {
     /// <summary>
     /// 按鈕變體枚舉 - 決定按鈕的顏色和樣式

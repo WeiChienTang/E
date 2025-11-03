@@ -1,5 +1,5 @@
 
-namespace ERPCore2.Components.Shared.Buttons
+namespace ERPCore2.Components.Shared.GenericComponent.Button
 {
     /// <summary>
     /// 按鈕尺寸枚舉

@@ -76,7 +76,7 @@ namespace ERPCore2.FieldConfiguration
                                 
                                 return builder =>
                                 {
-                                    builder.OpenComponent<ERPCore2.Components.Shared.Badges.StatusBadgeComponent>(0);
+                                    builder.OpenComponent<ERPCore2.Components.Shared.GenericComponent.Badge.GenericStatusBadgeComponent>(0);
                                     builder.AddAttribute(1, "Status", category.IsSaleable ? EntityStatus.Active : EntityStatus.Inactive);
                                     builder.AddAttribute(2, "CustomText", category.IsSaleable ? "可販售" : "不販售");
                                     builder.CloseComponent();

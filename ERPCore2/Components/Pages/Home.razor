@@ -1,9 +1,4 @@
 @page "/"
-@using ERPCore2.Components.Shared.BaseModal.Modals.Warehouse
-@using Microsoft.AspNetCore.Components.Authorization
-@using ERPCore2.Components.Shared.Badges
-@using ERPCore2.Components.Shared.Navigation
-@using ERPCore2.Data.Enums
 @attribute [Authorize]
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
@@ -49,10 +44,10 @@
                                          style="cursor: pointer;">
                                         <div class="card-body d-flex align-items-center py-3">
                                             <i class="bi bi-exclamation-triangle-fill text-warning fs-3 me-3"></i>
-                                            <StatusBadgeComponent Status="EntityStatus.Active" 
+                                            <GenericStatusBadgeComponent Status="EntityStatus.Active" 
                                                                  CustomText="低庫存警戒" 
                                                                  CssClass="bg-warning text-dark me-2"
-                                                                 Size="StatusBadgeComponent.BadgeSize.Large"
+                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
                                                                  UseCustomColor="true" />
                                             <span class="fs-4 fw-bold text-warning ms-auto">@lowStockCount</span>
                                         </div>
@@ -66,10 +61,10 @@
                                          style="cursor: pointer;">
                                         <div class="card-body d-flex align-items-center py-3">
                                             <i class="bi bi-inbox-fill text-info fs-3 me-3"></i>
-                                            <StatusBadgeComponent Status="EntityStatus.Active" 
+                                            <GenericStatusBadgeComponent Status="EntityStatus.Active" 
                                                                  CustomText="庫存過多警戒" 
                                                                  CssClass="bg-info me-2"
-                                                                 Size="StatusBadgeComponent.BadgeSize.Large"
+                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
                                                                  UseCustomColor="true" />
                                             <span class="fs-4 fw-bold text-info ms-auto">@overStockCount</span>
                                         </div>
@@ -83,10 +78,10 @@
                                          style="cursor: pointer;">
                                         <div class="card-body d-flex align-items-center py-3">
                                             <i class="bi bi-gear-fill text-secondary fs-3 me-3"></i>
-                                            <StatusBadgeComponent Status="EntityStatus.Inactive" 
+                                            <GenericStatusBadgeComponent Status="EntityStatus.Inactive" 
                                                                  CustomText="未設警戒線" 
                                                                  CssClass="bg-secondary me-2"
-                                                                 Size="StatusBadgeComponent.BadgeSize.Large"
+                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
                                                                  UseCustomColor="true" />
                                             <span class="fs-4 fw-bold text-secondary ms-auto">@noWarningLevelCount</span>
                                         </div>
