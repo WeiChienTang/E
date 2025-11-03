@@ -2,7 +2,7 @@
 
 /* 基礎按鈕樣式 */
 .search-filter-btn {
-    height: 42px;
+    height: 30px;
     transition: all 0.2s ease-in-out;
     border-radius: 0.375rem;
     font-weight: 500;

@@ -19,18 +19,6 @@
     color: var(--primary-white);
 }
 
-.btn-primary:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正主要按鈕 hover 時圖標顏色 */
-.btn-primary:hover i {
-    color: var(--table-hover-text) !important;
-}
-
 .btn-primary:focus {
     background-color: var(--primary-blue-hover);
     border-color: var(--primary-blue-hover);
@@ -50,35 +38,11 @@
     color: var(--primary-white);
 }
 
-.btn-secondary:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正次要按鈕 hover 時圖標顏色 */
-.btn-secondary:hover i {
-    color: var(--table-hover-text) !important;
-}
-
 /* 成功按鈕樣式 */
 .btn-success {
     background-color: var(--success-color);
     border-color: var(--success-color);
     color: var(--primary-white);
-}
-
-.btn-success:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正成功按鈕 hover 時圖標顏色 */
-.btn-success:hover i {
-    color: var(--table-hover-text) !important;
 }
 
 /* 警告按鈕樣式 */
@@ -88,35 +52,11 @@
     color: var(--primary-white);
 }
 
-.btn-warning:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正警告按鈕 hover 時圖標顏色 */
-.btn-warning:hover i {
-    color: var(--table-hover-text) !important;
-}
-
 /* 危險按鈕樣式 */
 .btn-danger {
     background-color: var(--danger-color);
     border-color: var(--danger-color);
     color: var(--primary-white);
-}
-
-.btn-danger:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正危險按鈕 hover 時圖標顏色 */
-.btn-danger:hover i {
-    color: var(--table-hover-text) !important;
 }
 
 /* 資訊按鈕樣式 */
@@ -126,35 +66,11 @@
     color: var(--primary-white);
 }
 
-.btn-info:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正資訊按鈕 hover 時圖標顏色 */
-.btn-info:hover i {
-    color: var(--table-hover-text) !important;
-}
-
 /* 輪廓按鈕樣式 */
 .btn-outline-primary {
     color: var(--primary-blue);
     border-color: var(--primary-blue);
     background-color: transparent;
-}
-
-.btn-outline-primary:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正輪廓主要按鈕 hover 時圖標顏色 */
-.btn-outline-primary:hover i {
-    color: var(--table-hover-text) !important;
 }
 
 .btn-outline-secondary {
@@ -163,34 +79,10 @@
     background-color: transparent;
 }
 
-.btn-outline-secondary:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正輪廓次要按鈕 hover 時圖標顏色 */
-.btn-outline-secondary:hover i {
-    color: var(--table-hover-text) !important;
-}
-
 .btn-outline-success {
     color: var(--success-color);
     border-color: var(--success-color);
     background-color: transparent;
-}
-
-.btn-outline-success:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正輪廓成功按鈕 hover 時圖標顏色 */
-.btn-outline-success:hover i {
-    color: var(--table-hover-text) !important;
 }
 
 .btn-outline-warning {
@@ -199,34 +91,10 @@
     background-color: transparent;
 }
 
-.btn-outline-warning:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正輪廓警告按鈕 hover 時圖標顏色 */
-.btn-outline-warning:hover i {
-    color: var(--table-hover-text) !important;
-}
-
 .btn-outline-danger {
     color: var(--danger-color);
     border-color: var(--danger-color);
     background-color: transparent;
-}
-
-.btn-outline-danger:hover {
-    background-color: var(--table-hover-bg-striped);
-    border-color: var(--table-hover-bg-striped);
-    color: var(--table-hover-text);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-/* 修正輪廓危險按鈕 hover 時圖標顏色 */
-.btn-outline-danger:hover i {
-    color: var(--table-hover-text) !important;
 }
 
 .btn-outline-info {
@@ -235,6 +103,18 @@
     background-color: transparent;
 }
 
+/* 統一的 hover 效果 - 所有按鈕變體 */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-success:hover,
+.btn-warning:hover,
+.btn-danger:hover,
+.btn-info:hover,
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-success:hover,
+.btn-outline-warning:hover,
+.btn-outline-danger:hover,
 .btn-outline-info:hover {
     background-color: var(--table-hover-bg-striped);
     border-color: var(--table-hover-bg-striped);
@@ -242,7 +122,18 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
-/* 修正輪廓資訊按鈕 hover 時圖標顏色 */
+/* 統一修正所有按鈕 hover 時圖標顏色 */
+.btn-primary:hover i,
+.btn-secondary:hover i,
+.btn-success:hover i,
+.btn-warning:hover i,
+.btn-danger:hover i,
+.btn-info:hover i,
+.btn-outline-primary:hover i,
+.btn-outline-secondary:hover i,
+.btn-outline-success:hover i,
+.btn-outline-warning:hover i,
+.btn-outline-danger:hover i,
 .btn-outline-info:hover i {
     color: var(--table-hover-text) !important;
 }
@@ -418,31 +309,11 @@
     border: none !important;
 }
 
-.field-action-button.btn-outline-primary:hover {
-    background-color: rgba(13, 110, 253, 0.2) !important;
-    color: #0a58ca !important;
-    border: none !important;
-}
-
-.field-action-button.btn-outline-primary:hover i {
-    color: #0a58ca !important;
-}
-
 /* Secondary 外框按鈕 - 淡灰色背景 */
 .field-action-button.btn-outline-secondary {
     background-color: rgba(108, 117, 125, 0.1) !important;
     color: #6c757d !important;
     border: none !important;
-}
-
-.field-action-button.btn-outline-secondary:hover {
-    background-color: rgba(108, 117, 125, 0.2) !important;
-    color: #5c636a !important;
-    border: none !important;
-}
-
-.field-action-button.btn-outline-secondary:hover i {
-    color: #5c636a !important;
 }
 
 /* Success 外框按鈕 - 淡綠色背景 */
@@ -452,31 +323,11 @@
     border: none !important;
 }
 
-.field-action-button.btn-outline-success:hover {
-    background-color: rgba(25, 135, 84, 0.2) !important;
-    color: #146c43 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-outline-success:hover i {
-    color: #146c43 !important;
-}
-
 /* Warning 外框按鈕 - 淡黃色背景 */
 .field-action-button.btn-outline-warning {
     background-color: rgba(255, 193, 7, 0.15) !important;
     color: #997404 !important;
     border: none !important;
-}
-
-.field-action-button.btn-outline-warning:hover {
-    background-color: rgba(255, 193, 7, 0.25) !important;
-    color: #805b02 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-outline-warning:hover i {
-    color: #805b02 !important;
 }
 
 /* Danger 外框按鈕 - 淡紅色背景 */
@@ -486,31 +337,11 @@
     border: none !important;
 }
 
-.field-action-button.btn-outline-danger:hover {
-    background-color: rgba(220, 53, 69, 0.2) !important;
-    color: #b02a37 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-outline-danger:hover i {
-    color: #b02a37 !important;
-}
-
 /* Info 外框按鈕 - 淡青色背景 */
 .field-action-button.btn-outline-info {
     background-color: rgba(13, 202, 240, 0.1) !important;
     color: #0dcaf0 !important;
     border: none !important;
-}
-
-.field-action-button.btn-outline-info:hover {
-    background-color: rgba(13, 202, 240, 0.2) !important;
-    color: #0aa2c0 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-outline-info:hover i {
-    color: #0aa2c0 !important;
 }
 
 /* Primary 實心按鈕 - 淡藍色背景 */
@@ -520,31 +351,11 @@
     border: none !important;
 }
 
-.field-action-button.btn-primary:hover {
-    background-color: rgba(13, 110, 253, 0.25) !important;
-    color: #0a58ca !important;
-    border: none !important;
-}
-
-.field-action-button.btn-primary:hover i {
-    color: #0a58ca !important;
-}
-
 /* Secondary 實心按鈕 - 淡灰色背景 */
 .field-action-button.btn-secondary {
     background-color: rgba(108, 117, 125, 0.15) !important;
     color: #6c757d !important;
     border: none !important;
-}
-
-.field-action-button.btn-secondary:hover {
-    background-color: rgba(108, 117, 125, 0.25) !important;
-    color: #5c636a !important;
-    border: none !important;
-}
-
-.field-action-button.btn-secondary:hover i {
-    color: #5c636a !important;
 }
 
 /* Success 實心按鈕 - 淡綠色背景 */
@@ -554,31 +365,11 @@
     border: none !important;
 }
 
-.field-action-button.btn-success:hover {
-    background-color: rgba(25, 135, 84, 0.25) !important;
-    color: #146c43 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-success:hover i {
-    color: #146c43 !important;
-}
-
 /* Warning 實心按鈕 - 淡黃色背景 */
 .field-action-button.btn-warning {
     background-color: rgba(255, 193, 7, 0.2) !important;
     color: #997404 !important;
     border: none !important;
-}
-
-.field-action-button.btn-warning:hover {
-    background-color: rgba(255, 193, 7, 0.3) !important;
-    color: #805b02 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-warning:hover i {
-    color: #805b02 !important;
 }
 
 /* Danger 實心按鈕 - 淡紅色背景 */
@@ -588,20 +379,78 @@
     border: none !important;
 }
 
-.field-action-button.btn-danger:hover {
-    background-color: rgba(220, 53, 69, 0.25) !important;
-    color: #b02a37 !important;
-    border: none !important;
-}
-
-.field-action-button.btn-danger:hover i {
-    color: #b02a37 !important;
-}
-
 /* Info 實心按鈕 - 淡青色背景 */
 .field-action-button.btn-info {
     background-color: rgba(13, 202, 240, 0.15) !important;
     color: #0dcaf0 !important;
+    border: none !important;
+}
+
+/* 統一的 Field Action Button hover 效果 - outline 變體 */
+.field-action-button.btn-outline-primary:hover {
+    background-color: rgba(13, 110, 253, 0.2) !important;
+    color: #0a58ca !important;
+    border: none !important;
+}
+
+.field-action-button.btn-outline-secondary:hover {
+    background-color: rgba(108, 117, 125, 0.2) !important;
+    color: #5c636a !important;
+    border: none !important;
+}
+
+.field-action-button.btn-outline-success:hover {
+    background-color: rgba(25, 135, 84, 0.2) !important;
+    color: #146c43 !important;
+    border: none !important;
+}
+
+.field-action-button.btn-outline-warning:hover {
+    background-color: rgba(255, 193, 7, 0.25) !important;
+    color: #805b02 !important;
+    border: none !important;
+}
+
+.field-action-button.btn-outline-danger:hover {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    color: #b02a37 !important;
+    border: none !important;
+}
+
+.field-action-button.btn-outline-info:hover {
+    background-color: rgba(13, 202, 240, 0.2) !important;
+    color: #0aa2c0 !important;
+    border: none !important;
+}
+
+/* 統一的 Field Action Button hover 效果 - 實心變體 */
+.field-action-button.btn-primary:hover {
+    background-color: rgba(13, 110, 253, 0.25) !important;
+    color: #0a58ca !important;
+    border: none !important;
+}
+
+.field-action-button.btn-secondary:hover {
+    background-color: rgba(108, 117, 125, 0.25) !important;
+    color: #5c636a !important;
+    border: none !important;
+}
+
+.field-action-button.btn-success:hover {
+    background-color: rgba(25, 135, 84, 0.25) !important;
+    color: #146c43 !important;
+    border: none !important;
+}
+
+.field-action-button.btn-warning:hover {
+    background-color: rgba(255, 193, 7, 0.3) !important;
+    color: #805b02 !important;
+    border: none !important;
+}
+
+.field-action-button.btn-danger:hover {
+    background-color: rgba(220, 53, 69, 0.25) !important;
+    color: #b02a37 !important;
     border: none !important;
 }
 
@@ -611,6 +460,33 @@
     border: none !important;
 }
 
+/* 統一的 Field Action Button hover 圖標顏色 */
+.field-action-button.btn-outline-primary:hover i,
+.field-action-button.btn-primary:hover i {
+    color: #0a58ca !important;
+}
+
+.field-action-button.btn-outline-secondary:hover i,
+.field-action-button.btn-secondary:hover i {
+    color: #5c636a !important;
+}
+
+.field-action-button.btn-outline-success:hover i,
+.field-action-button.btn-success:hover i {
+    color: #146c43 !important;
+}
+
+.field-action-button.btn-outline-warning:hover i,
+.field-action-button.btn-warning:hover i {
+    color: #805b02 !important;
+}
+
+.field-action-button.btn-outline-danger:hover i,
+.field-action-button.btn-danger:hover i {
+    color: #b02a37 !important;
+}
+
+.field-action-button.btn-outline-info:hover i,
 .field-action-button.btn-info:hover i {
     color: #0aa2c0 !important;
 }
