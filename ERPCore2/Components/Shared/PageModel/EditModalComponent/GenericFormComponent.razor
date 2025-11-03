@@ -1,7 +1,6 @@
 @* 通用表單組件 - 基於配置驅動的動態表單 *@
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
-@using Microsoft.AspNetCore.Components.Rendering
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.Forms
@@ -10,73 +9,316 @@
 @typeparam TModel
 @implements IDisposable
 
-    <div class="@GetFormBodyCssClass()">
-        @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
-        <input type="text" style="display:none" autocomplete="off" />
-        <input type="password" style="display:none" autocomplete="new-password" />
+<div>
+    @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
+    <input type="text" style="display:none" autocomplete="off" />
+    <input type="password" style="display:none" autocomplete="new-password" />
+    
+    <EditForm Model="Model" @ref="editForm">
+        <DataAnnotationsValidator />
         
-        <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" @ref="editForm">
-            <DataAnnotationsValidator />
-            
-            @if (ShowValidationSummary)
+        @if (ShowValidationSummary)
+        {
+            <ValidationSummary />
+        }
+        
+        @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
+        {
+            @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
+            @foreach (var section in GetOrderedSections())
             {
-                <ValidationSummary class="alert alert-danger" />
-            }
-            
-            @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
-            {
-                @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
-                @foreach (var section in GetOrderedSections())
-                {
-                    <div class="mb-2">
-                        <h6 class="text-primary border-bottom pb-2">@(section.Key)</h6>
-                        <div class="row g-3">
-                            @foreach (var fieldKvp in section)
+                <div class="mb-3">
+                    <h6 class="text-primary fw-bold">@(section.Key)</h6> @* 區段標題 *@
+                    <div class="row g-3"> @* 內含欄位的行 *@
+                        @foreach (var fieldKvp in section)
+                        {
+                            var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                            if (field != null)
                             {
-                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                                if (field != null)
-                                {
-                                    @RenderField(field)
-                                }
+                                @RenderFieldMarkup(field)
                             }
-                        </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="row g-3">
+                @if (FieldDefinitions != null)
+                {
+                    @foreach (var field in FieldDefinitions)
+                    {
+                        @RenderFieldMarkup(field)
+                    }
+                }
+            </div>
+        }
+    </EditForm>
+</div>
+
+@code
+{
+    // 渲染欄位標記的輔助方法
+    private RenderFragment RenderFieldMarkup(FormFieldDefinition field) => __builder =>
+    {
+        var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
+        
+        <div class="@containerCssClass">
+            @if (!string.IsNullOrEmpty(field.Label) && field.FieldType != FormFieldType.Checkbox)
+            {
+                <label class="form-label" for="@field.PropertyName" title="@field.HelpText">
+                    @field.Label
+                    @if (field.IsRequired)
+                    {
+                        <span class="text-danger"> *</span>
+                    }
+                </label>
+                
+                // 如果有設定 ActionButtons，則在標籤旁邊顯示按鈕
+                @if (field.ActionButtons != null && field.ActionButtons.Any())
+                {
+                    <div class="d-inline-block ms-2">
+                        @foreach (var actionButton in field.ActionButtons)
+                        {
+                            <GenericButtonComponent 
+                                Text="@actionButton.Text"
+                                Variant="@GetButtonVariant(actionButton.Variant)"
+                                Size="@GetButtonSize(actionButton.Size)"
+                                IconClass="@actionButton.IconClass"
+                                Title="@actionButton.Title"
+                                OnClick="@(actionButton.OnClick ?? (() => Task.CompletedTask))"
+                                IsDisabled="@actionButton.IsDisabled" />
+                        }
                     </div>
                 }
             }
-            else
+            
+            @switch (field.FieldType)
             {
-                <div class="row g-3">
-                    @if (FieldDefinitions != null)
+                case FormFieldType.Text:
+                case FormFieldType.Email:
+                case FormFieldType.Password:
+                    <input type="@GetInputType(field.FieldType)"
+                           class="@GetInputCssClass(field)"
+                           id="@field.PropertyName"
+                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
+                           placeholder="@field.Placeholder"
+                           readonly="@field.IsReadOnly"
+                           disabled="@field.IsDisabled"
+                           autocomplete="@GetAutocompleteValue(field)"
+                           required="@field.IsRequired"
+                           maxlength="@field.MaxLength"
+                           minlength="@field.MinLength"
+                           value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                           @oninput="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    break;
+                    
+                case FormFieldType.Number:
+                    <input type="number"
+                           class="@GetInputCssClass(field)"
+                           id="@field.PropertyName"
+                           placeholder="@field.Placeholder"
+                           readonly="@field.IsReadOnly"
+                           disabled="@field.IsDisabled"
+                           required="@field.IsRequired"
+                           min="@field.Min"
+                           max="@field.Max"
+                           step="@field.Step"
+                           value="@(GetPropertyValue(Model, field.PropertyName)?.ToString() ?? "")"
+                           @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    break;
+                    
+                case FormFieldType.Date:
+                    var dateValue = GetPropertyValue(Model, field.PropertyName);
+                    <input type="date"
+                           class="@GetInputCssClass(field)"
+                           id="@field.PropertyName"
+                           readonly="@field.IsReadOnly"
+                           disabled="@field.IsDisabled"
+                           value="@(dateValue is DateTime dt ? dt.ToString("yyyy-MM-dd") : "")"
+                           @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    break;
+                    
+                case FormFieldType.DateTime:
+                    var dateTimeValue = GetPropertyValue(Model, field.PropertyName);
+                    <input type="datetime-local"
+                           class="@GetInputCssClass(field)"
+                           id="@field.PropertyName"
+                           readonly="@field.IsReadOnly"
+                           disabled="@field.IsDisabled"
+                           value="@(dateTimeValue is DateTime dtValue ? dtValue.ToString("yyyy-MM-ddTHH:mm") : "")"
+                           @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    break;
+                    
+                case FormFieldType.TextArea:
+                    <textarea class="@GetInputCssClass(field)"
+                              id="@field.PropertyName"
+                              placeholder="@field.Placeholder"
+                              readonly="@field.IsReadOnly"
+                              disabled="@field.IsDisabled"
+                              rows="@(field.Rows ?? 3)"
+                              maxlength="@field.MaxLength"
+                              minlength="@field.MinLength"
+                              @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))">@GetPropertyValue(Model, field.PropertyName)?.ToString()</textarea>
+                    break;
+                    
+                case FormFieldType.TextAreaWithCharacterCount:
+                    <CharacterCountTextAreaComponent 
+                        Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                        ValueChanged="@(value => SetPropertyValue(Model, field.PropertyName, value))"
+                        Id="@field.PropertyName"
+                        CssClass="@GetInputCssClass(field)"
+                        Placeholder="@field.Placeholder"
+                        HelpText="@field.HelpText"
+                        IsReadOnly="@field.IsReadOnly"
+                        IsDisabled="@field.IsDisabled"
+                        Rows="@(field.Rows ?? 3)"
+                        MaxCharacters="@(field.MaxLength ?? 500)"
+                        MaxBytes="@(field.MaxBytes ?? 500)" />
+                    break;
+                    
+                case FormFieldType.Select:
+                    var currentValueObj = GetPropertyValue(Model, field.PropertyName);
+                    var currentValue = currentValueObj?.ToString();
+                    if (currentValueObj != null && currentValueObj.GetType().IsEnum)
                     {
-                        @foreach (var field in FieldDefinitions)
+                        currentValue = ((int)currentValueObj).ToString();
+                    }
+                    <select class="@GetInputCssClass(field)"
+                            id="@field.PropertyName"
+                            disabled="@(field.IsReadOnly || field.IsDisabled)"
+                            @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))">
+                        @if (!field.IsRequired)
                         {
-                            @RenderField(field)
+                            <option value="">請選擇...</option>
+                        }
+                        @if (field.Options != null)
+                        {
+                            @foreach (var option in field.Options)
+                            {
+                                <option value="@option.Value" selected="@(option.Value == currentValue)">@option.Text</option>
+                            }
+                        }
+                    </select>
+                    break;
+                    
+                case FormFieldType.Checkbox:
+                    var checkboxValue = GetPropertyValue(Model, field.PropertyName);
+                    var boolValue = checkboxValue is bool b && b;
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="@field.PropertyName"
+                               disabled="@(field.IsReadOnly || field.IsDisabled)"
+                               checked="@boolValue"
+                               @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value))" />
+                        <label class="form-check-label" for="@field.PropertyName">
+                            @field.Label
+                        </label>
+                    </div>
+                    break;
+                    
+                case FormFieldType.Radio:
+                    @if (field.Options != null)
+                    {
+                        var radioValue = GetPropertyValue(Model, field.PropertyName)?.ToString();
+                        @foreach (var option in field.Options)
+                        {
+                            <div class="form-check">
+                                <input type="radio"
+                                       class="form-check-input"
+                                       id="@($"{field.PropertyName}_{option.Value}")"
+                                       name="@field.PropertyName"
+                                       value="@option.Value"
+                                       disabled="@(field.IsReadOnly || field.IsDisabled)"
+                                       checked="@(option.Value == radioValue)"
+                                       @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                                <label class="form-check-label" for="@($"{field.PropertyName}_{option.Value}")">
+                                    @option.Text
+                                </label>
+                            </div>
                         }
                     }
-                </div>
-            }              
-            @if (ShowFormButtons)
-            {
-                <div class="mt-2 d-flex gap-2">
-                    <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@SubmitButtonText" 
-                                           OnClick="@(async () => await HandleValidSubmit())" IsDisabled="@IsSubmitting" 
-                                           IsLoading="@IsSubmitting" IsSubmit="true" />
+                    break;
                     
-                    @if (ShowCancelButton)
-                    {
-                        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@CancelButtonText" 
-                                               OnClick="@(async () => await HandleCancel())" IsDisabled="@IsSubmitting" />
-                    }
+                case FormFieldType.AutoComplete:
+                    @RenderAutoCompleteField(field)
+                    break;
                     
-                    @if (ShowResetButton)
-                    {
-                        <GenericButtonComponent Variant="ButtonVariant.OutlineSecondary" Text="@ResetButtonText" 
-                                               Type="reset" IsDisabled="@IsSubmitting" />
-                    }
-                </div>
+                default:
+                    <input type="text"
+                           class="@GetInputCssClass(field)"
+                           id="@field.PropertyName"
+                           placeholder="@field.Placeholder"
+                           readonly="@field.IsReadOnly"
+                           disabled="@field.IsDisabled"
+                           value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                           @oninput="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    break;
             }
-        </EditForm>
-    </div>
+        </div>
+    };
+    
+    // AutoComplete 欄位的渲染（因為比較複雜，單獨處理）
+    private RenderFragment RenderAutoCompleteField(FormFieldDefinition field) => __builder =>
+    {
+        var fieldId = field.PropertyName;
+        var currentValue = GetPropertyValue(Model, field.PropertyName);
+        var displayValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, currentValue?.ToString() ?? "");
+        
+        <div class="position-relative">
+            <input type="text"
+                   class="@GetInputCssClass(field)"
+                   id="@fieldId"
+                   placeholder="@field.Placeholder"
+                   readonly="@field.IsReadOnly"
+                   disabled="@field.IsDisabled"
+                   maxlength="@field.MaxLength"
+                   minlength="@field.MinLength"
+                   value="@displayValue"
+                   @oninput="@(e => HandleAutoCompleteInputEvent(field, e.Value?.ToString() ?? ""))"
+                   @onfocus="@(() => HandleAutoCompleteFocus(field))"
+                   @onblur="@(async () => await HandleAutoCompleteBlur(field))"
+                   @onkeydown="@(async (e) => await HandleKeyDown(field, e))" />
+            
+            @if (!field.IsReadOnly && !field.IsDisabled)
+            {
+                @if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
+                {
+                    <div class="position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);">
+                        <span class="spinner-border spinner-border-sm"></span>
+                    </div>
+                }
+                
+                @if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
+                {
+                    var options = autoCompleteOptions[fieldId];
+                    if (options.Any())
+                    {
+                        <div class="list-group position-absolute w-100" style="max-height: 200px; overflow-y: auto; z-index: 1000;">
+                            @for (int i = 0; i < options.Count; i++)
+                            {
+                                var index = i;
+                                var option = options[i];
+                                var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == index;
+                                var cssClass = isHighlighted ? "list-group-item list-group-item-action active" : "list-group-item list-group-item-action";
+                                
+                                <button type="button"
+                                        class="@cssClass"
+                                        id="@($"{fieldId}_option_{index}")"
+                                        @onmousemove="@(() => { highlightedOptionIndex[fieldId] = index; keyboardNavigationActive[fieldId] = false; StateHasChanged(); })"
+                                        @onmousedown="@(async () => await SelectAutoCompleteOption(field, option))">
+                                    @option.Text
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+            }
+        </div>
+    };
+}
 
 @code {
     [Parameter] public TModel Model { get; set; } = default!;
@@ -86,18 +328,7 @@
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public EventCallback<(string PropertyName, object? Value)> OnFieldChanged { get; set; }
     [Parameter] public bool IsSubmitting { get; set; } = false;
-    [Parameter] public bool ShowFormHeader { get; set; } = true;
-    [Parameter] public bool ShowFormButtons { get; set; } = true;
-    [Parameter] public bool ShowCancelButton { get; set; } = true;
-    [Parameter] public bool ShowResetButton { get; set; } = false;
     [Parameter] public bool ShowValidationSummary { get; set; } = true;
-    [Parameter] public string FormTitle { get; set; } = "表單";
-    [Parameter] public string FormIconClass { get; set; } = string.Empty;
-    [Parameter] public string SubmitButtonText { get; set; } = "提交";
-    [Parameter] public string CancelButtonText { get; set; } = "取消";
-    [Parameter] public string ResetButtonText { get; set; } = "重置";
-    [Parameter] public string FormCssClass { get; set; } = "card";
-    [Parameter] public string FormBodyCssClass { get; set; } = "card-body";
     [Parameter] public string FieldContainerCssClass { get; set; } = "col-md-2";
 
     private EditForm? editForm;
@@ -113,19 +344,7 @@
     private readonly Dictionary<string, int> highlightedOptionIndex = new();
     private readonly Dictionary<string, bool> keyboardNavigationActive = new();
 
-    private async Task HandleValidSubmit()
-    {
-        if (OnFormSubmit.HasDelegate)
-        {
-            await OnFormSubmit.InvokeAsync(Model);
-        }
-    }    private async Task HandleCancel()
-    {
-        if (OnCancel.HasDelegate)
-        {
-            await OnCancel.InvokeAsync();
-        }
-    }    protected override void OnParametersSet()
+    protected override void OnParametersSet()
     {
         // 初始化 AutoComplete 欄位的顯示值
         if (FieldDefinitions != null && Model != null)
@@ -234,564 +453,66 @@
             .OrderBy(g => sectionOrderMap.GetValueOrDefault(g.Key, int.MaxValue));
     }
 
-    private string GetFormCssClass()
-    {
-        return string.IsNullOrEmpty(FormCssClass) ? "" : FormCssClass;
-    }
-
-    private string GetFormBodyCssClass()
-    {
-        return string.IsNullOrEmpty(FormBodyCssClass) ? "" : FormBodyCssClass;
-    }
-
-    private RenderFragment RenderField(FormFieldDefinition field) => builder =>
-    {
-    var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
-            
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", containerCssClass);
-        
-        // 欄位標籤
-        if (!string.IsNullOrEmpty(field.Label))
-        {
-            builder.OpenElement(2, "div");
-            builder.AddAttribute(3, "class", "d-flex align-items-center gap-2 mb-1");
-            
-            builder.OpenElement(4, "label");
-            builder.AddAttribute(5, "class", "form-label mb-0");
-            builder.AddAttribute(6, "for", field.PropertyName);
-            
-            // 如果有 HelpText，將其作為 title 屬性顯示為 Tooltip
-            if (!string.IsNullOrEmpty(field.HelpText))
-            {
-                builder.AddAttribute(7, "title", field.HelpText);
-                builder.AddAttribute(8, "style", "cursor: help;");
-            }
-            
-            builder.AddContent(9, field.Label);
-            
-            if (field.IsRequired)
-            {
-                builder.OpenElement(10, "span");
-                builder.AddAttribute(11, "class", "text-danger");
-                builder.AddContent(12, " *");
-                builder.CloseElement();
-            }
-            builder.CloseElement(); // label
-            
-            // 渲染操作按鈕
-            if (field.ActionButtons != null && field.ActionButtons.Any())
-            {
-                var buttonSequence = 13;
-                foreach (var actionButton in field.ActionButtons)
-                {
-                    builder.OpenComponent(buttonSequence, typeof(ERPCore2.Components.Shared.GenericComponent.Button.GenericButtonComponent));
-                    builder.AddAttribute(buttonSequence + 1, "Text", actionButton.Text);
-                    builder.AddAttribute(buttonSequence + 2, "Variant", GetButtonVariant(actionButton.Variant));
-                    builder.AddAttribute(buttonSequence + 3, "Size", GetButtonSize(actionButton.Size));
-                    builder.AddAttribute(buttonSequence + 4, "CssClass", "field-action-button"); // 添加特定 CSS class
-                    if (!string.IsNullOrEmpty(actionButton.IconClass))
-                    {
-                        builder.AddAttribute(buttonSequence + 5, "IconClass", actionButton.IconClass);
-                    }
-                    if (!string.IsNullOrEmpty(actionButton.Title))
-                    {
-                        builder.AddAttribute(buttonSequence + 6, "Title", actionButton.Title);
-                    }
-                    if (actionButton.OnClick != null)
-                    {
-                        builder.AddAttribute(buttonSequence + 7, "OnClick", EventCallback.Factory.Create(this, actionButton.OnClick));
-                    }
-                    builder.AddAttribute(buttonSequence + 8, "IsDisabled", actionButton.IsDisabled);
-                    builder.CloseComponent();
-                    buttonSequence += 9;
-                }
-            }
-            
-            builder.CloseElement(); // div
-        }
-        
-        // 根據欄位類型渲染不同的輸入控制項
-        switch (field.FieldType)
-        {
-            case FormFieldType.Text:
-            case FormFieldType.Email:
-            case FormFieldType.Password:
-                RenderTextInput(builder, field, 9);
-                break;
-            case FormFieldType.Number:
-                RenderNumberInput(builder, field, 9);
-                break;
-            case FormFieldType.Date:
-                RenderDateInput(builder, field, 9);
-                break;
-            case FormFieldType.DateTime:
-                RenderDateTimeInput(builder, field, 9);
-                break;
-            case FormFieldType.TextArea:
-                RenderTextArea(builder, field, 9);
-                break;
-            case FormFieldType.TextAreaWithCharacterCount:
-                RenderTextAreaWithCharacterCount(builder, field, 9);
-                break;
-            case FormFieldType.Select:
-                RenderSelect(builder, field, 9);
-                break;
-            case FormFieldType.Checkbox:
-                RenderCheckbox(builder, field, 9);
-                break;            case FormFieldType.Radio:
-                RenderRadio(builder, field, 9);
-                break;
-            case FormFieldType.AutoComplete:
-                RenderAutoComplete(builder, field, 9);
-                break;
-            default:
-                RenderTextInput(builder, field, 9);
-                break;
-        }
-        
-        // 說明文字已改為 Label 的 Tooltip，因此這裡不再顯示
-        // TextAreaWithCharacterCount 會自己處理 helpText 顯示，所以保留
-        // if (!string.IsNullOrEmpty(field.HelpText) && field.FieldType != FormFieldType.TextAreaWithCharacterCount)
-        // {
-        //     builder.OpenElement(20, "div");
-        //     builder.AddAttribute(21, "class", "form-text");
-        //     builder.AddContent(22, field.HelpText);
-        //     builder.CloseElement();
-        // }
-        
-        // 驗證訊息 - 使用簡單的驗證錯誤顯示，不依賴 ValidationMessage 組件
-        if (field.IsRequired && ShowValidationSummary)
-        {
-            builder.OpenElement(23, "div");
-            builder.AddAttribute(24, "class", "invalid-feedback");
-            builder.AddContent(25, $"{field.Label} 為必填欄位");
-            builder.CloseElement();
-        }
-        
-        builder.CloseElement(); // container div
-    };    private void RenderTextInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "input");
-        builder.AddAttribute(sequence + 1, "type", GetInputType(field.FieldType));
-        builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 3, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 4, "name", field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8)); // 隨機 name 避免瀏覽器記憶
-        builder.AddAttribute(sequence + 5, "placeholder", field.Placeholder);
-        builder.AddAttribute(sequence + 6, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 7, "disabled", field.IsDisabled);
-        
-        // 添加 autocomplete 屬性支援 - 使用多重策略防止自動填入
-        var autocompleteValue = !string.IsNullOrEmpty(field.AutoCompleteAttribute) 
-            ? field.AutoCompleteAttribute 
-            : (field.FieldType == FormFieldType.Password ? "new-password" : "off");
-        builder.AddAttribute(sequence + 8, "autocomplete", autocompleteValue);
-        
-        if (field.IsRequired)
-        {
-            builder.AddAttribute(sequence + 9, "required", true);
-        }
-        if (field.MaxLength.HasValue)
-        {
-            builder.AddAttribute(sequence + 10, "maxlength", field.MaxLength.Value);
-        }
-        if (field.MinLength.HasValue)
-        {
-            builder.AddAttribute(sequence + 11, "minlength", field.MinLength.Value);
-        }
-        builder.AddAttribute(sequence + 12, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 13, "oninput", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
-        builder.CloseElement();
-    }    private void RenderNumberInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "input");
-        builder.AddAttribute(sequence + 1, "type", "number");
-        builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 3, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 4, "placeholder", field.Placeholder);
-        builder.AddAttribute(sequence + 5, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 6, "disabled", field.IsDisabled);
-        
-        if (field.IsRequired)
-        {
-            builder.AddAttribute(sequence + 7, "required", true);
-        }
-        
-        if (field.Min.HasValue)
-            builder.AddAttribute(sequence + 8, "min", field.Min.Value);
-        if (field.Max.HasValue)
-            builder.AddAttribute(sequence + 9, "max", field.Max.Value);
-        if (field.Step.HasValue)
-            builder.AddAttribute(sequence + 10, "step", field.Step.Value);
-        
-        // 對於可空數字欄位，當值為 null 時顯示空字串而不是 0
-        var propertyValue = GetPropertyValue(Model, field.PropertyName);
-        var displayValue = propertyValue?.ToString() ?? "";
-            
-        builder.AddAttribute(sequence + 11, "value", displayValue);
-        builder.AddAttribute(sequence + 12, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            displayValue));
-        builder.CloseElement();
-    }
-
-    private void RenderDateInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "input");
-        builder.AddAttribute(sequence + 1, "type", "date");
-        builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 3, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
-        
-        var dateValue = GetPropertyValue(Model, field.PropertyName);
-        if (dateValue is DateTime dt)
-        {
-            builder.AddAttribute(sequence + 6, "value", dt.ToString("yyyy-MM-dd"));
-        }
-        
-        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            dateValue?.ToString() ?? ""));
-        builder.CloseElement();
-    }
-
-    private void RenderDateTimeInput(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "input");
-        builder.AddAttribute(sequence + 1, "type", "datetime-local");
-        builder.AddAttribute(sequence + 2, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 3, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
-        
-        var dateValue = GetPropertyValue(Model, field.PropertyName);
-        if (dateValue is DateTime dt)
-        {
-            builder.AddAttribute(sequence + 6, "value", dt.ToString("yyyy-MM-ddTHH:mm"));
-        }
-        
-        builder.AddAttribute(sequence + 7, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            dateValue?.ToString() ?? ""));
-        builder.CloseElement();
-    }
-
-    private void RenderTextArea(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "textarea");
-        builder.AddAttribute(sequence + 1, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 2, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 3, "placeholder", field.Placeholder);
-        builder.AddAttribute(sequence + 4, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 5, "disabled", field.IsDisabled);
-        builder.AddAttribute(sequence + 6, "rows", field.Rows ?? 3);
-        if (field.MaxLength.HasValue)
-        {
-            builder.AddAttribute(sequence + 7, "maxlength", field.MaxLength.Value);
-        }
-        if (field.MinLength.HasValue)
-        {
-            builder.AddAttribute(sequence + 8, "minlength", field.MinLength.Value);
-        }
-        builder.AddAttribute(sequence + 9, "value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 10, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
-        builder.CloseElement();
-    }
-
-    private void RenderTextAreaWithCharacterCount(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenComponent<ERPCore2.Components.Shared.Forms.CharacterCountTextAreaComponent>(sequence);
-        builder.AddAttribute(sequence + 1, "Value", GetPropertyValue(Model, field.PropertyName)?.ToString());
-        builder.AddAttribute(sequence + 2, "ValueChanged", EventCallback.Factory.Create<string>(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value)));
-        builder.AddAttribute(sequence + 3, "Id", field.PropertyName);
-        builder.AddAttribute(sequence + 4, "CssClass", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 5, "Placeholder", field.Placeholder);
-        builder.AddAttribute(sequence + 6, "HelpText", field.HelpText);
-        builder.AddAttribute(sequence + 7, "IsReadOnly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 8, "IsDisabled", field.IsDisabled);
-        builder.AddAttribute(sequence + 9, "Rows", field.Rows ?? 3);
-        builder.AddAttribute(sequence + 10, "MaxCharacters", field.MaxLength ?? 500);
-        builder.AddAttribute(sequence + 11, "MaxBytes", field.MaxBytes ?? 500);
-        builder.CloseComponent();
-    }
-
-    private void RenderSelect(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "select");
-        builder.AddAttribute(sequence + 1, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 2, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 3, "disabled", field.IsReadOnly || field.IsDisabled);
-        builder.AddAttribute(sequence + 4, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            GetPropertyValue(Model, field.PropertyName)?.ToString() ?? ""));
-        
-        // 空選項
-        if (!field.IsRequired)
-        {
-            builder.OpenElement(sequence + 10, "option");
-            builder.AddAttribute(sequence + 11, "value", "");
-            builder.AddContent(sequence + 12, "請選擇...");
-            builder.CloseElement();
-        }        
-        // 選項
-        if (field.Options != null)
-        {
-            var currentValueObj = GetPropertyValue(Model, field.PropertyName);
-            var currentValue = currentValueObj?.ToString();
-            
-            // 特別處理枚舉類型，確保比較值正確
-            if (currentValueObj != null && currentValueObj.GetType().IsEnum)
-            {
-                currentValue = ((int)currentValueObj).ToString();
-            }
-            
-            var optionSequence = sequence + 20;
-            
-            foreach (var option in field.Options)
-            {
-                builder.OpenElement(optionSequence, "option");
-                builder.AddAttribute(optionSequence + 1, "value", option.Value);
-                builder.AddAttribute(optionSequence + 2, "selected", option.Value == currentValue);
-                builder.AddContent(optionSequence + 3, option.Text);
-                builder.CloseElement();
-                optionSequence += 4;
-            }        }
-        
-        builder.CloseElement();
-    }
-
-    private void RenderCheckbox(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "form-check");
-        
-        builder.OpenElement(sequence + 2, "input");
-        builder.AddAttribute(sequence + 3, "type", "checkbox");
-        builder.AddAttribute(sequence + 4, "class", "form-check-input");
-        builder.AddAttribute(sequence + 5, "id", field.PropertyName);
-        builder.AddAttribute(sequence + 6, "disabled", field.IsReadOnly || field.IsDisabled);
-          var currentValue = GetPropertyValue(Model, field.PropertyName);
-        bool boolValue = false;
-        if (currentValue is bool b)
-        {
-            boolValue = b;
-            builder.AddAttribute(sequence + 7, "checked", boolValue);
-        }
-        
-        builder.AddAttribute(sequence + 8, "onchange", EventCallback.Factory.CreateBinder(this, 
-            value => SetPropertyValue(Model, field.PropertyName, value), 
-            boolValue));
-        builder.CloseElement();
-        
-        builder.OpenElement(sequence + 9, "label");
-        builder.AddAttribute(sequence + 10, "class", "form-check-label");
-        builder.AddAttribute(sequence + 11, "for", field.PropertyName);
-        builder.AddContent(sequence + 12, field.Label);
-        builder.CloseElement();
-        
-        builder.CloseElement();
-    }
-
-    private void RenderRadio(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
-    {
-        if (field.Options != null)
-        {
-            var currentValue = GetPropertyValue(Model, field.PropertyName)?.ToString();
-            var radioSequence = sequence;
-            
-            foreach (var option in field.Options)
-            {
-                builder.OpenElement(radioSequence, "div");
-                builder.AddAttribute(radioSequence + 1, "class", "form-check");
-                
-                builder.OpenElement(radioSequence + 2, "input");
-                builder.AddAttribute(radioSequence + 3, "type", "radio");
-                builder.AddAttribute(radioSequence + 4, "class", "form-check-input");
-                builder.AddAttribute(radioSequence + 5, "id", $"{field.PropertyName}_{option.Value}");
-                builder.AddAttribute(radioSequence + 6, "name", field.PropertyName);
-                builder.AddAttribute(radioSequence + 7, "value", option.Value);
-                builder.AddAttribute(radioSequence + 8, "disabled", field.IsReadOnly || field.IsDisabled);
-                builder.AddAttribute(radioSequence + 9, "checked", option.Value == currentValue);
-                builder.AddAttribute(radioSequence + 10, "onchange", EventCallback.Factory.CreateBinder(this, 
-                    value => SetPropertyValue(Model, field.PropertyName, value), 
-                    currentValue ?? ""));
-                builder.CloseElement();
-                
-                builder.OpenElement(radioSequence + 11, "label");
-                builder.AddAttribute(radioSequence + 12, "class", "form-check-label");
-                builder.AddAttribute(radioSequence + 13, "for", $"{field.PropertyName}_{option.Value}");
-                builder.AddContent(radioSequence + 14, option.Text);
-                builder.CloseElement();
-                
-                builder.CloseElement();
-                radioSequence += 15;
-            }        }
-    }
-
-    private void RenderAutoComplete(RenderTreeBuilder builder, FormFieldDefinition field, int sequence)
+    // AutoComplete 事件處理輔助方法
+    private void HandleAutoCompleteInputEvent(FormFieldDefinition field, string inputValue)
     {
         var fieldId = field.PropertyName;
-        var currentValue = GetPropertyValue(Model, field.PropertyName);
-        var displayValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, currentValue?.ToString() ?? "");
+        autoCompleteDisplayValues[fieldId] = inputValue;
+        _ = HandleAutoCompleteInput(field, inputValue);
+    }
+
+    private void HandleAutoCompleteFocus(FormFieldDefinition field)
+    {
+        var fieldId = field.PropertyName;
+        blurredFields.Remove(fieldId);
         
-        // 容器 div
-        builder.OpenElement(sequence, "div");
-        builder.AddAttribute(sequence + 1, "class", "autocomplete-container");
-        
-        // 輸入框
-        builder.OpenElement(sequence + 2, "input");
-        builder.AddAttribute(sequence + 3, "type", "text");
-        builder.AddAttribute(sequence + 4, "class", GetInputCssClass(field));
-        builder.AddAttribute(sequence + 5, "id", fieldId);
-        builder.AddAttribute(sequence + 6, "placeholder", field.Placeholder);
-        builder.AddAttribute(sequence + 7, "readonly", field.IsReadOnly);
-        builder.AddAttribute(sequence + 8, "disabled", field.IsDisabled);
-        builder.AddAttribute(sequence + 9, "value", displayValue);
-        if (field.MaxLength.HasValue)
+        var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
+        if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
         {
-            builder.AddAttribute(sequence + 10, "maxlength", field.MaxLength.Value);
+            _ = HandleAutoCompleteInput(field, inputValue);
         }
-        if (field.MinLength.HasValue)
-        {
-            builder.AddAttribute(sequence + 11, "minlength", field.MinLength.Value);
-        }
+    }
+
+    private async Task HandleAutoCompleteBlur(FormFieldDefinition field)
+    {
+        var fieldId = field.PropertyName;
+        blurredFields.Add(fieldId);
         
-        // 🔑 只有在非唯讀和非停用狀態下才綁定互動事件
-        if (!field.IsReadOnly && !field.IsDisabled)
+        if (autoCompleteTimers.ContainsKey(fieldId))
         {
-            // 輸入事件處理
-            builder.AddAttribute(sequence + 12, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args =>
-            {
-                var inputValue = args.Value?.ToString() ?? "";
-                autoCompleteDisplayValues[fieldId] = inputValue;
-                _ = HandleAutoCompleteInput(field, inputValue);
-            }));
-            
-            // 焦點事件處理
-            builder.AddAttribute(sequence + 13, "onfocus", EventCallback.Factory.Create(this, () =>
-            {
-                // 清除失去焦點標記
-                blurredFields.Remove(fieldId);
-                
-                var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-                // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋以顯示所有選項
-                if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
-                {
-                    _ = HandleAutoCompleteInput(field, inputValue);
-                }
-            }));
-              // 失去焦點事件處理
-            builder.AddAttribute(sequence + 14, "onblur", EventCallback.Factory.Create(this, async () =>
-            {
-                // 標記為已失去焦點
-                blurredFields.Add(fieldId);
-                
-                // 取消正在進行的搜尋
-                if (autoCompleteTimers.ContainsKey(fieldId))
-                {
-                    autoCompleteTimers[fieldId]?.Dispose();
-                    autoCompleteTimers[fieldId] = null;
-                }
-                
-                // 清除載入狀態 (重要：因為計時器被取消，finally 塊不會執行)
-                autoCompleteLoading[fieldId] = false;
-                
-                // 嘗試智能匹配
-                await TrySmartMatch(field);
-                
-                // 延遲隱藏下拉選單，讓使用者有時間點擊選項
-                Timer? timer = null;
-                timer = new Timer(_ =>
-                {
-                    autoCompleteVisible[fieldId] = false;
-                    InvokeAsync(StateHasChanged);
-                    timer?.Dispose();
-                }, null, 300, Timeout.Infinite); // 增加延遲時間
-            }));
-            
-            // 鍵盤事件處理
-            builder.AddAttribute(sequence + 15, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args =>
-            {
-                _ = HandleKeyDown(field, args);
-            }));
+            autoCompleteTimers[fieldId]?.Dispose();
+            autoCompleteTimers[fieldId] = null;
         }
         
-        builder.CloseElement(); // input
+        autoCompleteLoading[fieldId] = false;
+        await TrySmartMatch(field);
         
-        // 🔑 只有在非唯讀和非停用狀態下才顯示載入指示器和下拉選項
-        if (!field.IsReadOnly && !field.IsDisabled)
+        Timer? timer = null;
+        timer = new Timer(_ =>
         {
-            // 載入指示器
-            if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
-            {
-                builder.OpenElement(sequence + 20, "div");
-                builder.AddAttribute(sequence + 21, "class", "position-absolute");
-                builder.AddAttribute(sequence + 22, "style", "right: 10px; top: 50%; transform: translateY(-50%);");
-                builder.OpenElement(sequence + 23, "span");
-                builder.AddAttribute(sequence + 24, "class", "spinner-border spinner-border-sm");
-                builder.CloseElement();
-                builder.CloseElement();
-            }
-            
-            // 下拉選項
-            if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
-            {
-                var options = autoCompleteOptions[fieldId];
-                if (options.Any())
-                {
-                    builder.OpenElement(sequence + 30, "div");
-                    builder.AddAttribute(sequence + 31, "class", "autocomplete-dropdown position-absolute w-100");
-                    builder.AddAttribute(sequence + 32, "style", "max-height: 200px; overflow-y: auto; z-index: 1000;");                
-                    var optionSequence = sequence + 40;
-                    var optionIndex = 0;
-                    foreach (var option in options)
-                    {
-                        var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == optionIndex;
-                        var cssClass = isHighlighted ? "autocomplete-item highlighted" : "autocomplete-item";
-                        var optionId = $"{fieldId}_option_{optionIndex}";
-                        
-                        builder.OpenElement(optionSequence, "button");
-                        builder.AddAttribute(optionSequence + 1, "type", "button");
-                        builder.AddAttribute(optionSequence + 2, "class", cssClass);
-                        builder.AddAttribute(optionSequence + 3, "id", optionId);
-                        
-                        // 滑鼠移動時更新高亮索引
-                        builder.AddAttribute(optionSequence + 4, "onmousemove", EventCallback.Factory.Create(this, () =>
-                        {
-                            highlightedOptionIndex[fieldId] = optionIndex;
-                            keyboardNavigationActive[fieldId] = false;
-                            StateHasChanged();
-                        }));
-                          builder.AddAttribute(optionSequence + 5, "onmousedown", EventCallback.Factory.Create(this, async () =>
-                        {
-                            autoCompleteDisplayValues[fieldId] = option.Text;
-                            SetPropertyValue(Model, field.PropertyName, option.Value);
-                            autoCompleteVisible[fieldId] = false;
-                            ResetKeyboardNavigation(fieldId);
-                            
-                            // 觸發欄位變更事件
-                            await OnFieldChanged.InvokeAsync((field.PropertyName, option.Value));
-                            
-                            StateHasChanged();
-                        }));
-                        builder.AddContent(optionSequence + 6, option.Text);
-                        builder.CloseElement();
-                        optionSequence += 7;
-                        optionIndex++;
-                    }
-                    
-                    builder.CloseElement(); // dropdown-menu
-                }
-            }
-        }
+            autoCompleteVisible[fieldId] = false;
+            InvokeAsync(StateHasChanged);
+            timer?.Dispose();
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private async Task SelectAutoCompleteOption(FormFieldDefinition field, SelectOption option)
+    {
+        var fieldId = field.PropertyName;
+        autoCompleteDisplayValues[fieldId] = option.Text;
+        SetPropertyValue(Model, field.PropertyName, option.Value);
+        autoCompleteVisible[fieldId] = false;
+        ResetKeyboardNavigation(fieldId);
         
-        builder.CloseElement(); // container div
+        await OnFieldChanged.InvokeAsync((field.PropertyName, option.Value));
+        StateHasChanged();
+    }
+
+    private string GetAutocompleteValue(FormFieldDefinition field)
+    {
+        return !string.IsNullOrEmpty(field.AutoCompleteAttribute) 
+            ? field.AutoCompleteAttribute 
+            : (field.FieldType == FormFieldType.Password ? "new-password" : "off");
     }
     
     private async Task HandleAutoCompleteInput(FormFieldDefinition field, string inputValue)
