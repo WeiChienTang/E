@@ -866,7 +866,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control form-control-sm" 
+                return @<input type="number" class="form-control " 
                                value="@value"
                                @oninput="(e) => OnOrderQuantityInput(salesItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
@@ -915,7 +915,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control form-control-sm"
+                return @<input type="number" class="form-control "
                                 min="0"
                                 step="1"
                                 value="@((int)salesItem.UnitPrice)"
@@ -1010,7 +1010,7 @@ else
             {
                 var salesItem = (SalesItem)item;
                 
-                return @<input type="text" class="form-control form-control-sm"
+                return @<input type="text" class="form-control "
                               value="@salesItem.DetailRemarks"
                               @oninput="(e) => OnRemarksInput(salesItem, e.Value?.ToString())"
                               readonly="@IsReadOnly"

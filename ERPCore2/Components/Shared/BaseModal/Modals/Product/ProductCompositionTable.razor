@@ -139,7 +139,7 @@
                     var detail = (ProductCompositionDetail)item;
                     var selectedValue = detail.ComponentProductId > 0 ? detail.ComponentProductId.ToString() : "";
                     
-                    return @<select class="form-select form-select-sm" 
+                    return @<select class="form-select" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
                                     @onchange="@(async (e) => await OnProductChanged((detail, e.Value)))">
@@ -165,7 +165,7 @@
                     var value = detail.Quantity > 0 ? detail.Quantity.ToString("0.####") : "";
                     
                     return @<input type="number" 
-                                   class="form-control form-control-sm text-end" 
+                                   class="form-control  text-end" 
                                    value="@value"
                                    min="0"
                                    placeholder="請輸入數量"
@@ -186,7 +186,7 @@
                     var detail = (ProductCompositionDetail)item;
                     var selectedValue = detail.UnitId?.ToString() ?? "";
                     
-                    return @<select class="form-select form-select-sm" 
+                    return @<select class="form-select" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
                                     @onchange="@(async (e) => await OnUnitChanged((detail, e.Value)))">

@@ -101,12 +101,41 @@
     min-height: 44px; /* 確保儲存格有足夠高度 */
 }
 
-/* 表格控件樣式 */
-.interactive-table-container .form-control-sm,
-.interactive-table-container .form-select-sm {
-    font-size: 1rem;
-    padding: 0.25rem 0.5rem;
+/* 表格控件樣式 - 縮減 Padding - 使用 ::deep 確保能夠影響到 CustomTemplate */
+::deep .interactive-table-container .form-control,
+::deep .interactive-table-container .form-select,
+::deep .interactive-table .form-control,
+::deep .interactive-table .form-select,
+::deep .interactive-table tbody .form-control,
+::deep .interactive-table tbody .form-select {
+    padding: 0.25rem 0.5rem !important; /* 從預設的 0.375rem 0.75rem 縮小 */
+    font-size: 1rem !important;
     border-radius: 0.25rem;
+    transition: border-color 0.2s ease;
+}
+
+/* Input Hover 效果 */
+::deep .interactive-table-container .form-control:hover:not(:disabled):not([readonly]),
+::deep .interactive-table-container .form-select:hover:not(:disabled):not([readonly]),
+::deep .interactive-table .form-control:hover:not(:disabled):not([readonly]),
+::deep .interactive-table .form-select:hover:not(:disabled):not([readonly]) {
+    border-color: var(--table-hover-text) !important;
+    background-color: var(--table-hover-bg-striped) !important;
+}
+
+/* textarea 特別調整 */
+::deep .interactive-table-container textarea.form-control,
+::deep .interactive-table textarea.form-control {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 1rem !important;
+    transition: border-color 0.2s ease;
+}
+
+/* Textarea Hover 效果 */
+::deep .interactive-table-container textarea.form-control:hover:not(:disabled):not([readonly]),
+::deep .interactive-table textarea.form-control:hover:not(:disabled):not([readonly]) {
+    border-color: var(--table-hover-text) !important;
+    background-color: var(--table-hover-bg-striped) !important;
 }
 
 /* 驗證錯誤樣式 */

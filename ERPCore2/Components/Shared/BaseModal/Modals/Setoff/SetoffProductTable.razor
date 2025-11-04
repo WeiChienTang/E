@@ -345,7 +345,7 @@ else
                     var displayValue = setoffItem.CurrentSetoffAmount == 0 ? "" : 
                         (isReturn ? -setoffItem.CurrentSetoffAmount : setoffItem.CurrentSetoffAmount).ToString();
                     return @<input type="number"
-                                  class="form-control form-control-sm text-end"
+                                  class="form-control  text-end"
                                   min="0"
                                   step="1"
                                   value="@displayValue"
@@ -372,7 +372,7 @@ else
                     var displayValue = setoffItem.CurrentAllowanceAmount == 0 ? "" : 
                         (isReturn ? -setoffItem.CurrentAllowanceAmount : setoffItem.CurrentAllowanceAmount).ToString();
                     return @<input type="number"
-                                  class="form-control form-control-sm text-end"
+                                  class="form-control  text-end"
                                   min="0"
                                   step="1"
                                   value="@displayValue"

@@ -190,17 +190,35 @@
     opacity: 0.7;
 }
 
-/* ===== 桌面專用尺寸樣式 ===== */
+/* ===== 桌面專用尺寸樣式（響應式設計） ===== */
 
+/* 小螢幕（< 1200px）：95% 寬度 */
 ::deep .modal-dialog.modal-desktop {
-    max-width: 90%;
-    width: 1400px;
+    max-width: 95%;
+    width: 95%;
 }
 
+/* 中等螢幕（≥ 1200px）：90% 寬度，最大 1400px */
+@media (min-width: 1200px) {
+    ::deep .modal-dialog.modal-desktop {
+        max-width: 95%;
+        width: 95%;
+    }
+}
+
+/* 大螢幕（≥ 1600px）：85% 寬度 */
 @media (min-width: 1600px) {
     ::deep .modal-dialog.modal-desktop {
-        max-width: 80%;
-        width: 1600px;
+        max-width: 95%;
+        width: 95%;
+    }
+}
+
+/* 超大螢幕（≥ 1920px）：80% 寬度 */
+@media (min-width: 1920px) {
+    ::deep .modal-dialog.modal-desktop {
+        max-width: 95%;
+        width: 95%;
     }
 }
 

@@ -27,9 +27,9 @@
             @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
             @foreach (var section in GetOrderedSections())
             {
-                <div class="mb-3">
-                    <h6 class="text-primary fw-bold">@(section.Key)</h6> @* 區段標題 *@
-                    <hr/> @* 標題和欄位之間的分隔線 *@
+                <div class="mb-3 form-section-wrapper">
+                    <h6 class="text-primary fw-bold section-title-compact">@(section.Key)</h6> @* 區段標題 *@
+                    
                     
                     <div class="row g-3"> @* 內含欄位的行 *@
                         @foreach (var fieldKvp in section)
@@ -91,7 +91,7 @@
                         @foreach (var actionButton in field.ActionButtons!)
                         {
                             <button type="button"
-                                    class="btn input-action-button input-action-button-@(GetActionButtonColorClass(actionButton.Variant))"
+                                    class="btn input-action-button"
                                     title="@(actionButton.Title ?? actionButton.Text)"
                                     disabled="@actionButton.IsDisabled"
                                     @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">
@@ -130,6 +130,7 @@
             "新增" => "fas fa-plus-circle",
             "編輯" => "fas fa-edit",
             "複製" => "fas fa-copy",
+            "同產編" => "fas fa-copy",
             "前往" => "fas fa-external-link-alt",
             "刪除" => "fas fa-trash-alt",
             "搜尋" => "fas fa-search",

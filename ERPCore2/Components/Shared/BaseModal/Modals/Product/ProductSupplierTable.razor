@@ -145,7 +145,7 @@
                     var supplierId = GetSupplierId(productSupplier);
                     var selectedValue = supplierId?.ToString() ?? "";
                     
-                    return @<select class="form-select form-select-sm" 
+                    return @<select class="form-select" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
                                     title="選擇供應此產品的廠商"
@@ -173,7 +173,7 @@
                     var value = GetSupplierProductCode(productSupplier) ?? "";
                     
                     return @<input type="text" 
-                                   class="form-control form-control-sm" 
+                                   class="form-control" 
                                    value="@value"
                                    placeholder="請輸入代碼"
                                    title="輸入廠商對此產品的商品代碼或料號"
@@ -196,7 +196,7 @@
                     var value = GetSupplierPrice(productSupplier)?.ToString("F0") ?? "";
                     
                     return @<input type="number" 
-                                   class="form-control form-control-sm" 
+                                   class="form-control" 
                                    value="@value"
                                    min="0"
                                    step="1"
@@ -220,7 +220,7 @@
                     var value = GetLeadTime(productSupplier)?.ToString() ?? "";
                     
                     return @<input type="number" 
-                                   class="form-control form-control-sm" 
+                                   class="form-control" 
                                    value="@value"
                                    min="0"
                                    title="輸入廠商的交貨時間（以天為單位）"
@@ -243,7 +243,7 @@
                     var value = GetMinOrderQuantity(productSupplier)?.ToString() ?? "";
                     
                     return @<input type="number" 
-                                   class="form-control form-control-sm" 
+                                   class="form-control" 
                                    value="@value"
                                    min="0"
                                    title="輸入廠商要求的最小訂購數量"
@@ -266,7 +266,7 @@
                     var unitId = GetUnitId(productSupplier);
                     var selectedValue = unitId?.ToString() ?? "";
                     
-                    return @<select class="form-select form-select-sm" 
+                    return @<select class="form-select" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
                                     title="選擇廠商供應此產品的計量單位"

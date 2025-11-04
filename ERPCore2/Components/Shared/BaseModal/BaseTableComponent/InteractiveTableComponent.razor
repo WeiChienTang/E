@@ -103,7 +103,7 @@
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     
                                     <input type="text" 
-                                           class="form-control form-control-sm @validationClass" 
+                                           class="form-control @validationClass" 
                                            value="@stringValue"
                                            placeholder="@column.Placeholder"
                                            title="@column.Tooltip"
@@ -120,7 +120,7 @@
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     
                                     <input type="number" 
-                                           class="form-control form-control-sm @validationClass" 
+                                           class="form-control @validationClass" 
                                            value="@stringValue"
                                            placeholder="@column.Placeholder"
                                            title="@column.Title"
@@ -140,7 +140,7 @@
                                     var isDisabled = IsReadOnly || column.IsDisabled;
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     
-                                    <select class="form-select form-select-sm @validationClass"
+                                    <select class="form-select @validationClass"
                                             value="@selectedValue"
                                             title="@column.Title"
                                             disabled="@isDisabled"
@@ -175,7 +175,7 @@
                                     
                                     <div class="position-relative">
                                         <input type="text" 
-                                               class="form-control form-control-sm @validationClass" 
+                                               class="form-control @validationClass" 
                                                value="@searchValue"
                                                placeholder="@column.Placeholder"
                                                title="@column.Tooltip"

@@ -324,7 +324,7 @@
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "產品的條碼編號",
-                ActionButtons = GetBarcodeActionButtons()
+                ActionButtons = await GetBarcodeActionButtonsAsync()
             },
             new()
             {
@@ -749,9 +749,9 @@
     /// <summary>
     /// 產生條碼編號操作按鈕 - 同產品編號
     /// </summary>
-    private List<FieldActionButton> GetBarcodeActionButtons()
+    private Task<List<FieldActionButton>> GetBarcodeActionButtonsAsync()
     {
-        return new List<FieldActionButton>
+        var buttons = new List<FieldActionButton>
         {
             new FieldActionButton
             {
@@ -763,6 +763,8 @@
                 IsDisabled = false
             }
         };
+        
+        return Task.FromResult(buttons);
     }
 
     /// <summary>

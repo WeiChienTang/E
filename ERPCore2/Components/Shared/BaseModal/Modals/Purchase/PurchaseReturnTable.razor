@@ -562,7 +562,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control form-control-sm" 
+                return @<input type="number" class="form-control " 
                                value="@value"
                                @oninput="(e) => OnReturnQuantityInput(returnItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
@@ -622,7 +622,7 @@ else
             {
                 var returnItem = (ReturnItem)item;
                 
-                return @<input type="text" class="form-control form-control-sm" 
+                return @<input type="text" class="form-control " 
                                value="@returnItem.Remarks"
                                @oninput="(e) => OnRemarksInput(returnItem, e.Value?.ToString())"
                                placeholder="選填..."

@@ -260,7 +260,7 @@ else
                     </div>;
                 }
                 
-                return @<input type="number" class="form-control form-control-sm" 
+                return @<input type="number" class="form-control " 
                                value="@value"
                                @oninput="(e) => OnQuantityInput(productItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
@@ -314,7 +314,7 @@ else
                     </div>;
                 }
                 
-                return @<input type="number" class="form-control form-control-sm" 
+                return @<input type="number" class="form-control " 
                                value="@value"
                                @oninput="(e) => OnPriceInput(productItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
@@ -387,7 +387,7 @@ else
                     </div>;
                 }
                 
-                return @<input type="text" class="form-control form-control-sm" 
+                return @<input type="text" class="form-control " 
                                value="@productItem.Remarks"
                                @oninput="(e) => OnRemarksInput(productItem, e.Value?.ToString())"
                                placeholder="選填..." />;

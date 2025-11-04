@@ -7,14 +7,13 @@
 <div class="card mb-3">    
     <div class="card-header d-flex justify-content-between align-items-center">        
         <h6 class="card-title mb-0">
-            <i class="fas fa-filter me-2"></i>
-            搜尋篩選
+            條件
         </h6>        
         <div class="d-flex gap-2">            
             <GenericButtonComponent Variant="ButtonVariant.Danger" 
-                                    Text="清除篩選" 
+                                    Text="清除" 
                                     OnClick="ClearAllFilters" 
-                                    CssClass="search-filter-btn search-clear-btn" />
+                                    CssClass="search-clear-btn" />
         </div>
     </div>
     
@@ -27,7 +26,7 @@
                     <div class="@(filter.ContainerCssClass ?? "col-md-2")">
                         @if (!string.IsNullOrEmpty(filter.Label) && filter.FilterType != SearchFilterType.Boolean)
                         {
-                            <label class="form-label" for="@filter.PropertyName">@filter.Label</label>
+                            <label class="form-label " for="@filter.PropertyName">@filter.Label</label>
                         }
                         
                         @switch (filter.FilterType)

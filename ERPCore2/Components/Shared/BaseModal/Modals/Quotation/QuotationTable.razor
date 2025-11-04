@@ -233,7 +233,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control form-control-sm text-end" 
+                return @<input type="number" class="form-control  text-end" 
                                value="@value"
                                @oninput="(e) => OnQuantityInput(quotationItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
@@ -254,7 +254,7 @@ else
             CustomTemplate = item => 
             {
                 var quotationItem = (QuotationItem)item;
-                var value = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString("F2") : "";
+                var value = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString() : "";
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (IsReadOnly)
@@ -267,13 +267,13 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control form-control-sm text-end" 
+                return @<input type="number" class="form-control  text-end" 
                                value="@value"
                                @oninput="(e) => OnUnitPriceInput(quotationItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
-                               min="0" 
-                               step="0.01" />;
+                               min="0"
+                               step="any" />;
             }
         });
 
@@ -288,7 +288,7 @@ else
             CustomTemplate = item => 
             {
                 var quotationItem = (QuotationItem)item;
-                var value = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString("F2") : "";
+                var value = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString() : "";
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (IsReadOnly)
@@ -301,14 +301,16 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control form-control-sm text-end" 
+                // 使用 maxlength 屬性限制最多輸入3個字符(0-100)
+                return @<input type="number" class="form-control  text-end" 
                                value="@value"
                                @oninput="(e) => OnDiscountPercentageInput(quotationItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                               onkeypress="if(this.value.length >= 3 && event.key >= '0' && event.key <= '9') return false;"
                                placeholder="" 
                                min="0" 
                                max="100"
-                               step="0.01" />;
+                               step="any" />;
             }
         });
 
@@ -354,7 +356,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="text" class="form-control form-control-sm" 
+                return @<input type="text" class="form-control " 
                                value="@quotationItem.Remarks"
                                @oninput="(e) => OnRemarksInput(quotationItem, e.Value?.ToString())"
                                placeholder="選填..." />;
@@ -669,7 +671,15 @@ else
         else if (decimal.TryParse(value, out var discount))
         {
             // 限制折扣百分比在 0-100 之間
-            item.DiscountPercentage = Math.Max(0, Math.Min(100, discount));
+            // 如果輸入值超過100，直接設為100並強制更新UI
+            var limitedDiscount = Math.Max(0, Math.Min(100, discount));
+            item.DiscountPercentage = limitedDiscount;
+            
+            // 如果值被限制了，強制刷新UI以顯示修正後的值
+            if (limitedDiscount != discount)
+            {
+                StateHasChanged();
+            }
         }
         
         AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(

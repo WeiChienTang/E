@@ -1,3 +1,94 @@
+/* ===== 表單區段樣式 - 縮減間距 ===== */
+
+/* 區段標題樣式 - 縮短與水平線的距離 */
+.section-title-compact {
+    margin-bottom: 0.25rem !important; /* 從預設的 0.5rem 縮短到 0.25rem */
+}
+
+/* 水平線樣式 - 縮短與下方欄位的距離 */
+.section-divider-compact {
+    margin-top: 0 !important;
+    margin-bottom: 0.5rem !important; /* 從預設的 1rem 縮短到 0.5rem */
+}
+
+/* 表單區段包裝器 */
+.form-section-wrapper {
+    margin-bottom: 1rem !important;
+}
+
+/* ===== Input 欄位樣式 - 縮減 Padding 和字體大小 ===== */
+
+/* 縮減所有 input、select 和 textarea 的內邊距和字體大小 */
+::deep .form-control,
+::deep .form-select {
+    padding: 0.25rem 0.5rem !important; /* 從預設的 0.375rem 0.75rem 縮小 */
+    font-size: 1rem !important; /* 14px - 縮小字體 */
+    transition: border-color 0.2s ease;
+}
+
+/* Input Hover 效果 */
+::deep .form-control:hover:not(:disabled):not([readonly]),
+::deep .form-select:hover:not(:disabled):not([readonly]) {
+    border-color: var( --table-hover-text) !important;
+    background-color: var( --table-hover-bg-striped) !important;
+}
+
+/* textarea 特別調整 */
+::deep textarea.form-control {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 1rem !important;
+    transition: border-color 0.2s ease;
+}
+
+/* Textarea Hover 效果 */
+::deep textarea.form-control:hover:not(:disabled):not([readonly]) {
+    border-color: var( --table-hover-text) !important;
+    background-color: var( --table-hover-bg-striped) !important;
+}
+
+/* Label 標籤字體 */
+::deep .form-label {
+    font-size: 1rem !important; /* 14px - 與 input 一致 */
+    margin-bottom: 0 !important;
+}
+
+/* 區段標題字體 */
+::deep .section-title-compact {
+    font-size: 1rem !important; /* 16px - 區段標題稍大 */
+}
+
+/* Placeholder 字體顏色 - 更淡色 */
+::deep .form-control::placeholder,
+::deep .form-select::placeholder,
+::deep textarea.form-control::placeholder {
+    color: #b0b0b0 !important; /* 淡灰色 */
+    opacity: 0.6 !important;
+}
+
+/* Firefox 專用 */
+::deep .form-control::-moz-placeholder,
+::deep .form-select::-moz-placeholder,
+::deep textarea.form-control::-moz-placeholder {
+    color: #b0b0b0 !important;
+    opacity: 0.6 !important;
+}
+
+/* WebKit/Blink 專用 */
+::deep .form-control::-webkit-input-placeholder,
+::deep .form-select::-webkit-input-placeholder,
+::deep textarea.form-control::-webkit-input-placeholder {
+    color: #b0b0b0 !important;
+    opacity: 0.6 !important;
+}
+
+/* Edge 專用 */
+::deep .form-control::-ms-input-placeholder,
+::deep .form-select::-ms-input-placeholder,
+::deep textarea.form-control::-ms-input-placeholder {
+    color: #b0b0b0 !important;
+    opacity: 0.6 !important;
+}
+
 /* ===== Input 右側 ActionButton 樣式 ===== */
 
 /* 包含 ActionButtons 的 input 容器 */
@@ -50,95 +141,20 @@
     font-size: 1rem; /* 從 0.875rem 增加到 1rem */
 }
 
-/* ===== 不同顏色變體的樣式 ===== */
+/* ===== 統一使用藍色樣式 ===== */
 
-/* Primary (新增按鈕) */
-.input-action-button-primary {
+/* 所有 ActionButton 統一使用藍色 (Primary) */
+.input-action-button {
     color: #0d6efd;
 }
 
-.input-action-button-primary:hover:not(:disabled) {
+.input-action-button:hover:not(:disabled) {
     background-color: rgba(13, 110, 253, 0.1);
     color: #0a58ca;
 }
 
-.input-action-button-primary:active:not(:disabled) {
+.input-action-button:active:not(:disabled) {
     background-color: rgba(13, 110, 253, 0.2);
-    transform: translateY(-50%) scale(0.95);
-}
-
-/* Secondary (編輯按鈕) */
-.input-action-button-secondary {
-    color: #6c757d;
-}
-
-.input-action-button-secondary:hover:not(:disabled) {
-    background-color: rgba(108, 117, 125, 0.1);
-    color: #5c636a;
-}
-
-.input-action-button-secondary:active:not(:disabled) {
-    background-color: rgba(108, 117, 125, 0.2);
-    transform: translateY(-50%) scale(0.95);
-}
-
-/* Success */
-.input-action-button-success {
-    color: #198754;
-}
-
-.input-action-button-success:hover:not(:disabled) {
-    background-color: rgba(25, 135, 84, 0.1);
-    color: #146c43;
-}
-
-.input-action-button-success:active:not(:disabled) {
-    background-color: rgba(25, 135, 84, 0.2);
-    transform: translateY(-50%) scale(0.95);
-}
-
-/* Danger */
-.input-action-button-danger {
-    color: #dc3545;
-}
-
-.input-action-button-danger:hover:not(:disabled) {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: #b02a37;
-}
-
-.input-action-button-danger:active:not(:disabled) {
-    background-color: rgba(220, 53, 69, 0.2);
-    transform: translateY(-50%) scale(0.95);
-}
-
-/* Warning */
-.input-action-button-warning {
-    color: #ffc107;
-}
-
-.input-action-button-warning:hover:not(:disabled) {
-    background-color: rgba(255, 193, 7, 0.1);
-    color: #cc9a06;
-}
-
-.input-action-button-warning:active:not(:disabled) {
-    background-color: rgba(255, 193, 7, 0.2);
-    transform: translateY(-50%) scale(0.95);
-}
-
-/* Info */
-.input-action-button-info {
-    color: #0dcaf0;
-}
-
-.input-action-button-info:hover:not(:disabled) {
-    background-color: rgba(13, 202, 240, 0.1);
-    color: #0aa2c0;
-}
-
-.input-action-button-info:active:not(:disabled) {
-    background-color: rgba(13, 202, 240, 0.2);
     transform: translateY(-50%) scale(0.95);
 }
 
@@ -165,11 +181,7 @@
     .input-action-button {
         width: 30px;
         height: 30px;
-        font-size: 0.8125rem;
-    }
-    
-    .input-action-button i {
-        font-size: 0.8125rem;
+        font-size: 1rem;
     }
     
     .input-with-action-buttons .has-action-buttons {
@@ -186,11 +198,6 @@
     .input-action-button {
         width: 28px;
         height: 28px;
-        font-size: 0.75rem;
-    }
-    
-    .input-action-button i {
-        font-size: 0.75rem;
     }
     
     .input-with-action-buttons .has-action-buttons {

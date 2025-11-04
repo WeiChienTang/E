@@ -1,0 +1,256 @@
+/*
+    GenericSearchFilterComponent 專屬樣式
+    處理搜尋篩選卡片的視覺效果和使用者體驗
+*/
+
+/* ===== 卡片容器樣式 ===== */
+
+/* 卡片外層容器 */
+::deep .card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.3s ease;
+}
+
+::deep .card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Header 樣式優化 ===== */
+
+/* Header 背景色 - 使用專案主色 */
+::deep .card-header {
+    background-color: #1F2937;
+    color: #FFFFFF;
+    border-bottom: none;
+    padding: 0rem 0.75rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+/* Header 標題樣式 */
+::deep .card-header .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Header Icon 樣式 */
+::deep .card-header .card-title i {
+    color: #FFFFFF;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+}
+
+/* Header 按鈕區域 */
+::deep .card-header .d-flex.gap-2 {
+    gap: 0.5rem;
+}
+
+/* ===== Body 樣式優化 ===== */
+
+::deep .card-body {
+    padding: 0.5rem;
+    background-color: #FFFFFF;
+    color: #000000;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* ===== 表單元素樣式優化 ===== */
+
+/* Label 樣式 */
+::deep .form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0 !important; /* 縮短與 input 之間的距離 */
+    font-size: 1rem;
+}
+
+/* Input 和 Select 通用樣式 */
+::deep .form-control,
+::deep .form-select {
+    border: 1px solid #D1D5DB;
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.5rem !important; /* 縮減內邊距 */
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+/* Input Hover 效果 */
+::deep .form-control:hover:not(:disabled):not([readonly]),
+::deep .form-select:hover:not(:disabled):not([readonly]) {
+    border-color: var(--table-hover-text) !important;
+    background-color: var(--table-hover-bg-striped) !important;
+}
+
+::deep .form-control:focus,
+::deep .form-select:focus {
+    border-color: #60A5FA;
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    outline: none;
+}
+
+/* ===== Checkbox 和 Radio 樣式 ===== */
+
+::deep .form-check {
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+::deep .form-check-input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.125rem;
+    border: 2px solid #D1D5DB;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+::deep .form-check-input:checked {
+    background-color: #1F2937;
+    border-color: #1F2937;
+}
+
+::deep .form-check-input:focus {
+    border-color: #60A5FA;
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+}
+
+::deep .form-check-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ===== Grid 系統優化 ===== */
+/* 移除自訂 gap 設定，使用 Bootstrap 預設的 gutter 系統以確保正確的欄位排列 */
+
+/* ===== 日期範圍和數字範圍樣式 ===== */
+/* 確保日期範圍欄位可以並排顯示 */
+
+::deep .row.g-2 .form-control {
+    font-size: 1rem;
+}
+
+/* ===== Placeholder 樣式 ===== */
+
+::deep .form-control::placeholder,
+::deep .form-select::placeholder {
+    color: #9CA3AF;
+    opacity: 1;
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 小螢幕裝置（手機） */
+@media (max-width: 576px) {
+    ::deep .card-header {
+        padding: 0.375rem 0.75rem;
+    }
+    
+    ::deep .card-header .card-title {
+        font-size: 1rem;
+    }
+    
+    ::deep .card-body {
+        padding: 1rem;
+    }
+    
+    ::deep .row.g-3 > [class*="col"] {
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* 中等螢幕裝置（平板） */
+@media (min-width: 577px) and (max-width: 768px) {
+    ::deep .card-header {
+        padding: 0.5rem 1rem;
+    }
+    
+    ::deep .card-body {
+        padding: 1.25rem;
+    }
+}
+
+/* 大螢幕裝置（桌面） */
+@media (min-width: 1200px) {
+    ::deep .card {
+        box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* ===== 動畫效果 ===== */
+
+/* 卡片展開動畫 */
+::deep .card {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 無障礙優化 ===== */
+
+::deep .form-control:disabled,
+::deep .form-select:disabled {
+    background-color: #F3F4F6;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+::deep .form-check-input:disabled ~ .form-check-label {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ===== 滾動條樣式（針對多選區域） ===== */
+
+::deep .card-body::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::deep .card-body::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 3px;
+}
+
+::deep .card-body::-webkit-scrollbar-thumb {
+    background: #9CA3AF;
+    border-radius: 3px;
+}
+
+::deep .card-body::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+}
+
+/* ===== 打印樣式優化 ===== */
+
+@media print {
+    ::deep .card {
+        box-shadow: none;
+        border: 1px solid #E5E7EB;
+    }
+    
+    ::deep .card-header {
+        background: #F9FAFB !important;
+        color: #000000 !important;
+        border-bottom: 2px solid #E5E7EB;
+    }
+}

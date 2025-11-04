@@ -849,7 +849,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                var cssClass = hasReturnRecord ? "form-control form-control-sm border-warning" : "form-control form-control-sm";
+                var cssClass = hasReturnRecord ? "form-control  border-warning" : "form-control ";
                 
                 return @<div class="position-relative">
                     <input type="number" class="@cssClass" 
@@ -1020,7 +1020,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="text" class="form-control form-control-sm" 
+                return @<input type="text" class="form-control " 
                                value="@receivingItem.Remarks"
                                @oninput="(e) => OnRemarksInput(receivingItem, e.Value?.ToString())"
                                placeholder="選填..." />;

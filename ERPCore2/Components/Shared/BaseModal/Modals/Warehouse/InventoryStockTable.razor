@@ -202,7 +202,7 @@
                 var value = stockItem.CurrentStock > 0 ? stockItem.CurrentStock.ToString() : "";
                 
                 return @<input type="number"
-                               class="form-control form-control-sm text-end"
+                               class="form-control  text-end"
                                value="@value"
                                @oninput="@(e => OnCurrentStockInput(stockItem, e.Value?.ToString()))"
                                readonly="@IsReadOnly"
@@ -225,7 +225,7 @@
                     var value = stockItem.AverageCost?.ToString() ?? "";
                     
                     return @<input type="number"
-                                   class="form-control form-control-sm text-end"
+                                   class="form-control  text-end"
                                    value="@value"
                                    @oninput="@(e => OnAverageCostInput(stockItem, e.Value?.ToString()))"
                                    readonly="@IsReadOnly"
@@ -248,7 +248,7 @@
                 var value = stockItem.MinStockLevel?.ToString() ?? "";
                 
                 return @<input type="number"
-                               class="form-control form-control-sm text-end"
+                               class="form-control  text-end"
                                value="@value"
                                @oninput="@(e => OnMinStockLevelInput(stockItem, e.Value?.ToString()))"
                                readonly="@IsReadOnly"
@@ -269,7 +269,7 @@
                 var value = stockItem.MaxStockLevel?.ToString() ?? "";
                 
                 return @<input type="number"
-                               class="form-control form-control-sm text-end"
+                               class="form-control  text-end"
                                value="@value"
                                @oninput="@(e => OnMaxStockLevelInput(stockItem, e.Value?.ToString()))"
                                readonly="@IsReadOnly"

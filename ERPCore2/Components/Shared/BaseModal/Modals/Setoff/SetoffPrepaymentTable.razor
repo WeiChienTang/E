@@ -535,7 +535,7 @@
                     var displayValue = isTransferType ? prepaymentItem.UsedAmount : prepaymentItem.Amount;
                     
                     return @<input type="number" 
-                                   class="form-control form-control-sm text-end" 
+                                   class="form-control  text-end" 
                                    value="@(displayValue == 0 ? "" : displayValue.ToString("F0"))" 
                                    onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                    disabled="@IsReadOnly"

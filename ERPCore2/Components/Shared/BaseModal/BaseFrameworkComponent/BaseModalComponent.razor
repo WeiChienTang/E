@@ -38,7 +38,7 @@
                     @if (ShowCloseButton)
                     {
                         <button type="button" 
-                                class="btn-close @(UseWhiteCloseButton ? "btn-close-white" : "")" 
+                                class="btn-close @(ShouldUseWhiteCloseButton() ? "btn-close-white" : "")" 
                                 @onclick="HandleClose" 
                                 title="關閉"
                                 aria-label="關閉"></button>
@@ -639,6 +639,39 @@
         }
         
         return string.Empty;
+    }
+    
+    /// <summary>
+    /// 判斷是否應該使用白色關閉按鈕
+    /// </summary>
+    private bool ShouldUseWhiteCloseButton()
+    {
+        // 如果手動設定了，優先使用手動設定
+        if (UseWhiteCloseButton)
+        {
+            return true;
+        }
+        
+        // 自動判斷：如果有自訂 Header 顏色，使用白色按鈕
+        if (!string.IsNullOrEmpty(CustomHeaderColor))
+        {
+            return true;
+        }
+        
+        // 根據 Header 顏色變體判斷
+        return HeaderColor switch
+        {
+            HeaderVariant.Primary => true,
+            HeaderVariant.Secondary => true,
+            HeaderVariant.Success => true,
+            HeaderVariant.Danger => true,
+            HeaderVariant.Info => true,
+            HeaderVariant.Dark => true,
+            HeaderVariant.ProjectPrimary => true,
+            HeaderVariant.Warning => false,  // 黃色背景用黑色按鈕
+            HeaderVariant.Default => false,
+            _ => false
+        };
     }
     
     /// <summary>

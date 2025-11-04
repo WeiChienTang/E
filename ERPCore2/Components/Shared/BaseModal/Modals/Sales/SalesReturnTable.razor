@@ -423,7 +423,7 @@ else
                 
                 // 可編輯狀態，顯示輸入框
                 return @<div>
-                    <input type="number" class="form-control form-control-sm text-end" 
+                    <input type="number" class="form-control  text-end" 
                            value="@value"
                            min="0" max="@returnableQuantity"
                            step="1"
@@ -517,7 +517,7 @@ else
                 }
                 
                 // 可編輯狀態，顯示輸入框
-                return @<input type="text" class="form-control form-control-sm" 
+                return @<input type="text" class="form-control " 
                                value="@returnItem.Remarks"
                                @onchange="@(async (e) => await OnRemarksInput(returnItem, e.Value?.ToString()))"
                                placeholder="備註"
