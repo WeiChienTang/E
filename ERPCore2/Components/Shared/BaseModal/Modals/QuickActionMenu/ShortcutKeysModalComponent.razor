@@ -1,0 +1,169 @@
+@*
+    快捷鍵說明 Modal
+    顯示系統所有可用的快捷鍵列表
+*@
+@inject IJSRuntime JSRuntime
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="快捷鍵說明"
+                   Icon="bi bi-keyboard"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   ShowCloseButton="true"
+                   CloseOnBackdropClick="true"
+                   CloseOnEscape="true"
+                   OnClose="@HandleClose">
+    <BodyContent>
+        <div class="shortcut-keys-content">
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                以下是系統中可用的快捷鍵組合，使用快捷鍵可以提高您的操作效率。
+            </div>
+
+            <InteractiveTableComponent TItem="ShortcutKeyInfo"
+                                      Items="@shortcutKeys"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      ShowHeader="true"
+                                      ShowActions="false"
+                                      ShowRowNumbers="false"
+                                      IsStriped="true"
+                                      IsHoverable="true"
+                                      IsBordered="true"
+                                      IsReadOnly="true"
+                                      EmptyMessage="沒有可用的快捷鍵" />
+        </div>
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 私有欄位 =====
+    private List<ShortcutKeyInfo> shortcutKeys = new();
+
+    // ===== 生命週期方法 =====
+    protected override void OnInitialized()
+    {
+        InitializeShortcutKeys();
+    }
+
+    // ===== 私有方法 =====
+
+    /// <summary>
+    /// 初始化快捷鍵列表
+    /// </summary>
+    private void InitializeShortcutKeys()
+    {
+        shortcutKeys = new List<ShortcutKeyInfo>
+        {
+            new ShortcutKeyInfo
+            {
+                Keys = "Alt + S",
+                Description = "開啟頁面搜尋功能",
+                Category = "導航"
+            },
+            new ShortcutKeyInfo
+            {
+                Keys = "Alt + Q",
+                Description = "開啟快速功能表",
+                Category = "導航"
+            },
+            new ShortcutKeyInfo
+            {
+                Keys = "Esc",
+                Description = "關閉當前 Modal 視窗",
+                Category = "視窗控制"
+            },
+        };
+    }
+
+    /// <summary>
+    /// 取得欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(ShortcutKeyInfo.Category),
+                Title = "分類",
+                Width = "15%",
+                ColumnType = InteractiveColumnType.Display,
+                IsReadOnly = true,
+                CellCssClass = "text-center"
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(ShortcutKeyInfo.Keys),
+                Title = "快捷鍵",
+                Width = "25%",
+                ColumnType = InteractiveColumnType.Custom,
+                IsReadOnly = true,
+                CellCssClass = "text-center",
+                CustomTemplate = item => builder =>
+                {
+                    var shortcut = item as ShortcutKeyInfo;
+                    if (shortcut != null)
+                    {
+                        builder.OpenElement(0, "div");
+                        builder.AddAttribute(1, "class", "d-flex justify-content-center gap-1");
+                        
+                        var keys = shortcut.Keys.Split('+').Select(k => k.Trim()).ToArray();
+                        for (int i = 0; i < keys.Length; i++)
+                        {
+                            builder.OpenElement(2 + (i * 4), "kbd");
+                            builder.AddAttribute(3 + (i * 4), "class", "bg-dark text-white border px-2 py-1");
+                            builder.AddContent(4 + (i * 4), keys[i]);
+                            builder.CloseElement();
+                            
+                            if (i < keys.Length - 1)
+                            {
+                                builder.OpenElement(5 + (i * 4), "span");
+                                builder.AddAttribute(6 + (i * 4), "class", "mx-1");
+                                builder.AddContent(7 + (i * 4), "+");
+                                builder.CloseElement();
+                            }
+                        }
+                        
+                        builder.CloseElement();
+                    }
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(ShortcutKeyInfo.Description),
+                Title = "說明",
+                Width = "60%",
+                ColumnType = InteractiveColumnType.Display,
+                IsReadOnly = true
+            }
+        };
+    }
+
+    /// <summary>
+    /// 處理關閉事件
+    /// </summary>
+    private async Task HandleClose()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 內部類別 =====
+
+    /// <summary>
+    /// 快捷鍵資訊類別
+    /// </summary>
+    public class ShortcutKeyInfo
+    {
+        public string Category { get; set; } = string.Empty;
+        public string Keys { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+}

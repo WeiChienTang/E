@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251103010955_初始化")]
-    partial class 初始化
+    [Migration("20251104062341_新增報價單工程名稱欄位")]
+    partial class 新增報價單工程名稱欄位
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2791,6 +2791,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ConvertedToSalesOrderId")
                         .HasColumnType("int");
 
@@ -2818,6 +2821,10 @@ namespace ERPCore2.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("PaymentTerms")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProjectName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -2853,6 +2860,8 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("CompanyId");
 
                     b.HasIndex("ConvertedToSalesOrderId");
 
@@ -5157,6 +5166,12 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("ApprovedBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("ERPCore2.Data.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
                         .WithMany()
                         .HasForeignKey("ConvertedToSalesOrderId")
@@ -5174,6 +5189,8 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ApprovedByUser");
+
+                    b.Navigation("Company");
 
                     b.Navigation("Customer");
 

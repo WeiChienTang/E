@@ -1,6 +1,7 @@
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
 @inject ICustomerService CustomerService
+@inject ICompanyService CompanyService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
 @inject IUnitService UnitService
@@ -65,6 +66,14 @@
                            OnEmployeeSaved="@OnEmployeeSavedWrapper"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
 
+@* 公司編輯 Modal *@
+<CompanyEditModalComponent @ref="companyEditModal"
+                          IsVisible="@companyModalManager.IsModalVisible"
+                          IsVisibleChanged="@companyModalManager.HandleModalVisibilityChangedAsync"
+                          CompanyId="@companyModalManager.SelectedEntityId"
+                          OnCompanySaved="@OnCompanySavedWrapper"
+                          OnCancel="@companyModalManager.HandleModalCancelAsync" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -80,6 +89,7 @@
     
     // 原始資料集合（用於 AutoComplete）
     private List<Customer> availableCustomers = new();
+    private List<Company> availableCompanies = new();
     private List<Employee> availableEmployees = new();
     private List<Product> availableProducts = new();
     private List<Unit> availableUnits = new();
@@ -91,6 +101,8 @@
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    private CompanyEditModalComponent? companyEditModal;
+    private RelatedEntityModalManager<Company> companyModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
     
@@ -107,6 +119,7 @@
         {
             // 初始化 Modal 管理器
             InitializeCustomerModalManager();
+            InitializeCompanyModalManager();
             InitializeEmployeeModalManager();
             
             await LoadAdditionalDataAsync();
@@ -153,6 +166,32 @@
                 },
                 InitializeFormFieldsCallback = InitializeFormFieldsAsync,
                 RefreshAutoCompleteFields = true  // 刷新 Quotation EditModal 的 Customer AutoComplete
+            });
+    }
+
+    /// <summary>
+    /// 初始化公司 Modal 管理器
+    /// </summary>
+    private void InitializeCompanyModalManager()
+    {
+        companyModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Quotation, Company, IQuotationService>
+            {
+                NotificationService = NotificationService,
+                EntityDisplayName = "公司",
+                PropertyName = nameof(Quotation.CompanyId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                AutoSelectAction = (entity, companyId) =>
+                {
+                    if (entity != null)
+                    {
+                        entity.CompanyId = companyId;
+                    }
+                },
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                RefreshAutoCompleteFields = true  // 刷新 Quotation EditModal 的 Company AutoComplete
             });
     }
 
@@ -257,6 +296,9 @@
                 Value = c.Id.ToString() 
             }).ToList();
             
+            // 載入公司列表
+            availableCompanies = await CompanyService.GetAllAsync();
+            
             // 載入業務人員列表
             availableEmployees = await EmployeeService.GetAllAsync();
             employees = availableEmployees;
@@ -276,6 +318,7 @@
         {
             _ = NotificationService.ShowErrorAsync("載入報價單編輯相關資料時發生錯誤");
             availableCustomers = new List<Customer>();
+            availableCompanies = new List<Company>();
             availableEmployees = new List<Employee>();
             availableProducts = new List<Product>();
             availableUnits = new List<Unit>();
@@ -315,6 +358,17 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(Quotation.CompanyId),
+                    Label = "公司",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇公司",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "輸入公司名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetCompanyActionButtonsAsync()
+                },
+                new()
+                {
                     PropertyName = nameof(Quotation.EmployeeId),
                     Label = "業務人員",
                     FieldType = FormFieldType.AutoComplete,
@@ -339,7 +393,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入付款條件",
                     IsRequired = false,
-                    MaxLength = 200,
+                    MaxLength = 100,
                     HelpText = "例如：貨到付款、月結30天等"
                 },
                 new()
@@ -349,7 +403,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入交貨條件",
                     IsRequired = false,
-                    MaxLength = 200,
+                    MaxLength = 100,
                     HelpText = "例如：工廠交貨、送貨到府等"
                 },
                 new()
@@ -370,6 +424,17 @@
                     IsRequired = false,
                     HelpText = "整張報價單的額外折扣金額"
                 },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Quotation.ProjectName),
+                    Label = "工程名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入工程名稱",
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "報價所屬的工程名稱"
+                },
+
                 FormFieldConfigurationHelper.CreateRemarksField<Quotation>(label: "報價說明")
             };
 
@@ -377,7 +442,9 @@
             {
                 { nameof(Quotation.QuotationNumber), "基本資訊" },
                 { nameof(Quotation.CustomerId), "基本資訊" },
+                { nameof(Quotation.CompanyId), "基本資訊" },
                 { nameof(Quotation.EmployeeId), "基本資訊" },
+                { nameof(Quotation.ProjectName), "基本資訊" },
                 { nameof(Quotation.QuotationDate), "基本資訊" },
                 { nameof(Quotation.PaymentTerms), "交易條件" },
                 { nameof(Quotation.DeliveryTerms), "交易條件" },
@@ -642,6 +709,14 @@
                 }
             },
             {
+                nameof(Quotation.CompanyId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["CompanyName"] = searchTerm,
+                    ["Status"] = 1 // EntityStatus.Active
+                }
+            },
+            {
                 nameof(Quotation.EmployeeId),
                 searchTerm => new Dictionary<string, object?>
                 {
@@ -660,6 +735,7 @@
         return new Dictionary<string, IEnumerable<object>>
         {
             { nameof(Quotation.CustomerId), availableCustomers.Cast<object>() },
+            { nameof(Quotation.CompanyId), availableCompanies.Cast<object>() },
             { nameof(Quotation.EmployeeId), availableEmployees.Cast<object>() }
         };
     }
@@ -672,6 +748,7 @@
         return new Dictionary<string, string>
         {
             { nameof(Quotation.CustomerId), "CompanyName" },
+            { nameof(Quotation.CompanyId), "CompanyName" },
             { nameof(Quotation.EmployeeId), "Name" }
         };
     }
@@ -684,6 +761,7 @@
         return new Dictionary<string, string>
         {
             { nameof(Quotation.CustomerId), "Id" },
+            { nameof(Quotation.CompanyId), "Id" },
             { nameof(Quotation.EmployeeId), "Id" }
         };
     }
@@ -696,6 +774,7 @@
         return new Dictionary<string, object>
         {
             { nameof(Quotation.CustomerId), customerModalManager },
+            { nameof(Quotation.CompanyId), companyModalManager },
             { nameof(Quotation.EmployeeId), employeeModalManager }
         };
     }
@@ -706,6 +785,14 @@
     private async Task OnCustomerSavedWrapper(Customer savedCustomer)
     {
         await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝公司儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnCompanySavedWrapper(Company savedCompany)
+    {
+        await companyModalManager.HandleEntitySavedAsync(savedCompany, shouldAutoSelect: true);
     }
 
     /// <summary>
@@ -725,6 +812,18 @@
             editModalComponent, 
             customerModalManager, 
             nameof(Quotation.CustomerId)
+        );
+    }
+
+    /// <summary>
+    /// 使用統一 Helper 產生公司操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetCompanyActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            companyModalManager, 
+            nameof(Quotation.CompanyId)
         );
     }
 
@@ -752,6 +851,12 @@
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            // 使用統一 Helper 處理公司欄位變更
+            else if (fieldChange.PropertyName == nameof(Quotation.CompanyId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
             // 使用統一 Helper 處理業務員欄位變更
             else if (fieldChange.PropertyName == nameof(Quotation.EmployeeId))

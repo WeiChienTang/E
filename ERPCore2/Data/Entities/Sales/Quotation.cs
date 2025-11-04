@@ -36,6 +36,10 @@ namespace ERPCore2.Data.Entities
         [MaxLength(200, ErrorMessage = "交貨方式不可超過200個字元")]
         public string? DeliveryTerms { get; set; }
 
+        [Display(Name = "工程名稱")]
+        [MaxLength(200, ErrorMessage = "工程名稱不可超過200個字元")]
+        public string? ProjectName { get; set; }
+
         [Display(Name = "核准人員")]
         [ForeignKey(nameof(ApprovedByUser))]
         public int? ApprovedBy { get; set; }
@@ -51,6 +55,11 @@ namespace ERPCore2.Data.Entities
         public string? RejectReason { get; set; }
 
         // Foreign Keys
+        [Required(ErrorMessage = "公司為必填")]
+        [Display(Name = "公司")]
+        [ForeignKey(nameof(Company))]
+        public int CompanyId { get; set; }
+
         [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
@@ -65,6 +74,7 @@ namespace ERPCore2.Data.Entities
         public int? ConvertedToSalesOrderId { get; set; }
 
         // Navigation Properties
+        public Company Company { get; set; } = null!;
         public Customer Customer { get; set; } = null!;
         public Employee? Employee { get; set; }
         public Employee? ApprovedByUser { get; set; }

@@ -32,7 +32,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Company
                 {
                     Code = "MJ001",
-                    CompanyName = "美莊磚業",
+                    CompanyName = "美莊股份有限公司",
                     CompanyNameEn = "Mei Juang",
                     Address = "634雲林縣褒忠鄉中正路28-10號",
                     Website = "https://www.meijuang.com/",

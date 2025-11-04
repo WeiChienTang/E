@@ -161,17 +161,24 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("            <!-- 標題區 -->");
             html.AppendLine("            <div class='quotation-title-section'>");
             
-            // 使用 Grid 三欄式佈局：Logo(左) + 公司名稱標題(中) + 公司資訊(右)
-            html.AppendLine("                <div class='quotation-header-wrapper'>");
+            // 第一行：Logo（靠左） + 公司名稱和報價單標題（絕對置中）
+            html.AppendLine("                <div class='quotation-header-row-1'>");
             
-            // 左側：Logo (垂直置中)
-            html.AppendLine("                    <div class='quotation-header-left'>");
-            var logoPath = !string.IsNullOrEmpty(company?.LogoPath) ? company.LogoPath : "/Resources/CompanyLOGO.png";
-            html.AppendLine($"                        <img src='{logoPath}' alt='公司Logo' class='company-logo' />");
-            html.AppendLine("                    </div>");
+            // 從 company-logos 資料夾中取得唯一的圖片
+            var logoPath = "/Resources/CompanyLOGO.png"; // 預設
+            var logoDirectory = Path.Combine("wwwroot", "uploads", "company-logos");
+            if (Directory.Exists(logoDirectory))
+            {
+                var logoFiles = Directory.GetFiles(logoDirectory);
+                if (logoFiles.Length > 0)
+                {
+                    var logoFileName = Path.GetFileName(logoFiles[0]);
+                    logoPath = $"/uploads/company-logos/{logoFileName}";
+                }
+            }
             
-            // 中間：公司名稱和報價單標題 (靠左對齊)
-            html.AppendLine("                    <div class='quotation-header-center'>");
+            html.AppendLine($"                    <img src='{logoPath}' alt='公司Logo' class='company-logo' />");
+            html.AppendLine("                    <div class='quotation-title-wrapper'>");
             html.AppendLine("                        <div class='quotation-company-name'>");
             html.AppendLine($"                            {company?.CompanyName ?? "公司名稱"}");
             html.AppendLine("                        </div>");
@@ -179,45 +186,38 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("                            報價單");
             html.AppendLine("                        </div>");
             html.AppendLine("                    </div>");
-
-            // 右側：公司聯絡資訊 (靠左對齊)
-            html.AppendLine("                    <div class='quotation-header-right'>");
-            html.AppendLine("                        <div class='company-contact-item'>");
-            html.AppendLine($"                            <span class='contact-label'>電　話：</span><span class='contact-value'>{company?.Phone ?? ""}</span>");
-            html.AppendLine("                        </div>");
-            html.AppendLine("                        <div class='company-contact-item'>");
-            html.AppendLine($"                            <span class='contact-label'>傳　真：</span><span class='contact-value'>{company?.Fax ?? ""}</span>");
-            html.AppendLine("                        </div>");
-            html.AppendLine("                        <div class='company-contact-item'>");
-            html.AppendLine($"                            <span class='contact-label'>E-mail：</span><span class='contact-value'>{company?.Email ?? ""}</span>");
-            html.AppendLine("                        </div>");
-            html.AppendLine("                        <div class='company-contact-item'>");
-            html.AppendLine($"                            <span class='contact-label'>地　址：</span><span class='contact-value'>{company?.Address ?? ""}</span>");
-            html.AppendLine("                        </div>");
+            html.AppendLine("                    <div class='quotation-date-info'>");
+            html.AppendLine($"                        <div>報價日期：{quotation.QuotationDate:yyyy/MM/dd}</div>");
+            html.AppendLine($"                        <div>報價單號：{quotation.QuotationNumber}</div>");
             html.AppendLine("                    </div>");
-            
             html.AppendLine("                </div>");
             
-            // 報價單資訊（單號、日期、客戶等）
+            // 聯絡資訊（一行顯示完成）
+            html.AppendLine("                <div class='quotation-header-row-2'>");
+            html.AppendLine($"                    電話：{company?.Phone ?? ""}　傳真：{company?.Fax ?? ""}　E-mail：{company?.Email ?? ""}　地址：{company?.Address ?? ""}");
+            html.AppendLine("                </div>");
+            
+            // 報價單資訊（無框線設計）
             html.AppendLine("                <div class='quotation-doc-info'>");
-            html.AppendLine("                    <table class='quotation-info-table'>");
-            html.AppendLine("                        <tr>");
-            html.AppendLine($"                            <td width='15%'><strong>報價日期</strong></td>");
-            html.AppendLine($"                            <td width='35%'>{quotation.QuotationDate:yyyy/MM/dd}</td>");
-            html.AppendLine($"                            <td width='15%'><strong>報價單號</strong></td>");
-            html.AppendLine($"                            <td width='35%' class='highlight-field'>{quotation.QuotationNumber}</td>");
-            html.AppendLine("                        </tr>");
-            html.AppendLine("                        <tr>");
-            html.AppendLine($"                            <td><strong>客　　戶</strong></td>");
-            html.AppendLine($"                            <td>{customer?.CompanyName ?? ""}</td>");
-            html.AppendLine($"                            <td><strong>統一編號</strong></td>");
-            html.AppendLine($"                            <td>{customer?.TaxNumber ?? ""}</td>");
-            html.AppendLine("                        </tr>");
-            html.AppendLine("                        <tr>");
-            html.AppendLine($"                            <td><strong>聯絡人</strong></td>");
-            html.AppendLine($"                            <td>{customer?.ContactPerson ?? ""}</td>");
-            html.AppendLine("                        </tr>");
-            html.AppendLine("                    </table>");
+            html.AppendLine("                    <div class='quotation-info-row'>");
+            html.AppendLine($"                        <span class='info-label'>客　　戶：</span><span class='info-value'>{customer?.CompanyName ?? ""}</span>");
+            html.AppendLine($"                        <span class='info-label'>統一編號：</span><span class='info-value'>{customer?.TaxNumber ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                    <div class='quotation-info-row'>");
+            html.AppendLine($"                        <span class='info-label'>聯 絡 人：</span><span class='info-value'>{customer?.ContactPerson ?? ""}</span>");
+            html.AppendLine($"                        <span class='info-label'>信　　箱：</span><span class='info-value'>{customer?.Email ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                    <div class='quotation-info-row'>");
+            html.AppendLine($"                        <span class='info-label'>連絡電話：</span><span class='info-value'>{customer?.ContactPhone ?? ""} {customer?.MobilePhone ?? ""}</span>");
+            html.AppendLine($"                        <span class='info-label'>傳　　真：</span><span class='info-value'>{customer?.Fax ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                    <div class='quotation-info-row'>");
+            html.AppendLine($"                        <span class='info-label'>聯絡地址：</span><span class='info-value info-value-full'>{customer?.ContactAddress ?? ""}</span>");
+            html.AppendLine("                    </div>");
+            html.AppendLine("                    <div class='quotation-info-row'>");
+            html.AppendLine($"                        <span class='info-label'>運貨地點：</span><span class='info-value'>{customer?.ShippingAddress ?? ""}</span>");
+            html.AppendLine($"                        <span class='info-label'>工程名稱：</span><span class='info-value'>{quotation?.ProjectName ?? ""}</span>");
+            html.AppendLine("                    </div>");
             html.AppendLine("                </div>");
             
             html.AppendLine("            </div>");
@@ -368,93 +368,93 @@ namespace ERPCore2.Services.Reports
             position: relative;
         }
 
-        .quotation-header-wrapper {
-            display: grid;
-            grid-template-columns: 120px 1fr 280px;
-            gap: 15px;
-            margin-bottom: 10px;
-            align-items: center;
-            width: 100%;
-        }
-
-        .quotation-header-left {
+        /* 第一行：Logo（靠左） + 公司名稱和報價單（置中） + 報價資訊（靠右） */
+        .quotation-header-row-1 {
+            position: relative;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            min-height: 90px;
+            gap: 10px; /* 添加間距 */
         }
 
         .company-logo {
             height: auto;
             width: auto;
-            max-height: 90px;
-            max-width: 120px;
+            max-height: 80px;
+            max-width: 100px;
             object-fit: contain;
+            flex-shrink: 0;
+            margin-right: auto; /* Logo 靠左 */
         }
 
-        .quotation-header-center {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            text-align: left;
-            width: 100%;
+        .quotation-title-wrapper {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .quotation-date-info {
+            text-align: right;
+            font-size: 11pt;
+            line-height: 1.6;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: auto; /* 報價資訊靠右 */
         }
 
         .quotation-company-name {
             font-size: 24pt;
             font-weight: bold;
-            text-align: left;
+            text-align: center;
             letter-spacing: 2px;
             margin-bottom: 5px;
         }
 
         .quotation-doc-title {
-            font-size: 24pt;
+            font-size: 20pt;
             font-weight: bold;
-            text-align: left;
+            text-align: center;
             letter-spacing: 8px;
         }
 
-        .quotation-header-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            gap: 2px;
-        }
-
-        .company-contact-item {
+        /* 第二行：聯絡資訊（一行） */
+        .quotation-header-row-2 {
+            text-align: center;
             font-size: 10pt;
-            text-align: left;
-            line-height: 1.4;
-        }
-
-        .contact-label {
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .contact-value {
-            word-break: break-all;
+            margin-bottom: 1px;
+            line-height: 1.5;
         }
 
         .quotation-doc-info {
-            margin-bottom: 0;
+            margin-bottom: 5px;
+            padding: 3px 0;
         }
 
-        .quotation-info-table {
-            width: 100%;
-            border-collapse: collapse;
+        .quotation-info-row {
+            display: flex;
+            align-items: baseline;
+            padding: 1px 0;
             font-size: 11pt;
+            line-height: 1.3;
         }
 
-        .quotation-info-table td {
-            padding: 1x 8px;
-            border: 1px solid #000;
-        }
-
-        .quotation-info-table td strong {
+        .info-label {
             font-weight: bold;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+
+        .info-value {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .info-value-full {
+            flex: 3;
+            margin-right: 0;
         }
 
         .highlight-field {
@@ -513,7 +513,7 @@ namespace ERPCore2.Services.Reports
         }
 
         .quotation-amount-table td {
-            border: 1px solid #000;
+            border: none;
             padding: 1px 8px;
         }
 
@@ -547,7 +547,7 @@ namespace ERPCore2.Services.Reports
         }
 
         .quotation-signature-table td {
-            border: 1px solid #000;
+            border: none;
             padding: 1px 8px;
             text-align: center;
             height: 60px;

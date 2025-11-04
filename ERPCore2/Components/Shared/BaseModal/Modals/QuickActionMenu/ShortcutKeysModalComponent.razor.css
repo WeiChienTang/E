@@ -1,0 +1,32 @@
+/* 快捷鍵說明 Modal 樣式 */
+
+.shortcut-keys-content {
+    padding: 0;
+}
+
+/* 快捷鍵按鍵樣式 */
+.shortcut-keys-content kbd {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 40px;
+    display: inline-block;
+    text-align: center;
+}
+
+/* 表格樣式調整 */
+.shortcut-keys-content ::deep .interactive-table {
+    margin-bottom: 0;
+}
+
+.shortcut-keys-content ::deep .interactive-table td {
+    vertical-align: middle;
+}
+
+/* 分類欄位樣式 */
+.shortcut-keys-content ::deep .interactive-table td:first-child {
+    font-weight: 600;
+    color: #495057;
+}

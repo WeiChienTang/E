@@ -1929,6 +1929,7 @@ namespace ERPCore2.Migrations
                     ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsApproved = table.Column<bool>(type: "bit", nullable: false),
                     RejectReason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     EmployeeId = table.Column<int>(type: "int", nullable: true),
                     ConvertedToSalesOrderId = table.Column<int>(type: "int", nullable: true),
@@ -1943,6 +1944,12 @@ namespace ERPCore2.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Quotations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Quotations_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Quotations_Customers_CustomerId",
                         column: x => x.CustomerId,
@@ -2989,6 +2996,11 @@ namespace ERPCore2.Migrations
                 name: "IX_Quotations_ApprovedBy",
                 table: "Quotations",
                 column: "ApprovedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Quotations_CompanyId",
+                table: "Quotations",
+                column: "CompanyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Quotations_ConvertedToSalesOrderId",

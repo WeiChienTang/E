@@ -1,3 +1,4 @@
+@using System.Reflection.Metadata
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 
@@ -33,7 +34,13 @@
                 <span class="quick-action-label">頁面搜尋</span>
             </button>
 
-            
+            @* 快捷鍵說明 *@
+            <button class="quick-action-item" 
+                    @onclick="HandleShortcutKeysClick"
+                    title="快捷鍵說明">
+                <span class="bi bi-keyboard"></span>
+                <span class="quick-action-label">快捷鍵說明</span>
+            </button>
 
             @* 預留：通知中心 *@
             @if (showNotifications)
@@ -85,6 +92,12 @@
     /// </summary>
     [Parameter]
     public EventCallback OnPageSearchClick { get; set; }
+
+    /// <summary>
+    /// 當點擊快捷鍵說明時觸發
+    /// </summary>
+    [Parameter]
+    public EventCallback OnShortcutKeysClick { get; set; }
 
     /// <summary>
     /// 是否顯示通知功能（預留）
@@ -196,6 +209,15 @@
         if (OnPageSearchClick.HasDelegate)
         {
             await OnPageSearchClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleShortcutKeysClick()
+    {
+        CloseMenu();
+        if (OnShortcutKeysClick.HasDelegate)
+        {
+            await OnShortcutKeysClick.InvokeAsync();
         }
     }
 

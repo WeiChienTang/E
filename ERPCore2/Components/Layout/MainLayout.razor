@@ -22,13 +22,22 @@
                          IsVisible="@showPageSearch"
                          IsVisibleChanged="@((bool visible) => showPageSearch = visible)" />
 
+@* 快捷鍵說明 Modal *@
+<ShortcutKeysModalComponent IsVisible="@showShortcutKeys"
+                           IsVisibleChanged="@((bool visible) => showShortcutKeys = visible)" />
+
 @* 快速功能表（右下角浮動按鈕） *@
-<QuickActionMenu @rendermode="InteractiveServer" OnPageSearchClick="@OpenPageSearch" />
+<QuickActionMenu @rendermode="InteractiveServer" 
+                OnPageSearchClick="@OpenPageSearch"
+                OnShortcutKeysClick="@OpenShortcutKeys" />
 
 @code {
     // 頁面搜尋 Modal 參考
     private PageSearchModalComponent? pageSearchModal;
     private bool showPageSearch = false;
+    
+    // 快捷鍵說明 Modal 狀態
+    private bool showShortcutKeys = false;
     
     // JavaScript 互操作
     private DotNetObjectReference<MainLayout>? dotNetReference;
@@ -83,6 +92,22 @@
         catch (Exception ex)
         {
             Console.WriteLine($"[MainLayout] 開啟頁面搜尋失敗: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 開啟快捷鍵說明 Modal
+    /// </summary>
+    private void OpenShortcutKeys()
+    {
+        try
+        {
+            showShortcutKeys = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainLayout] 開啟快捷鍵說明失敗: {ex.Message}");
         }
     }
 
