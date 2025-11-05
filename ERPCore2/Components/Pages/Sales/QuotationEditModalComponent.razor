@@ -995,23 +995,66 @@
     {
         try
         {
+            // 檢查是否應該鎖定欄位（避免在鎖定狀態下重新加入 ActionButtons）
+            var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
+                isApprovalEnabled,
+                editModalComponent?.Entity?.IsApproved ?? false,
+                isConvertedToSalesOrder  // 使用已轉單狀態作為額外的鎖定條件
+            );
+            
             // 使用統一 Helper 處理客戶欄位變更
             if (fieldChange.PropertyName == nameof(Quotation.CustomerId))
             {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                if (!shouldLock)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                }
+                else
+                {
+                    // 如果是鎖定狀態，確保移除 ActionButtons
+                    var customerField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Quotation.CustomerId));
+                    if (customerField != null)
+                    {
+                        customerField.ActionButtons = new List<FieldActionButton>();
+                    }
+                }
             }
             // 使用統一 Helper 處理公司欄位變更
             else if (fieldChange.PropertyName == nameof(Quotation.CompanyId))
             {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                if (!shouldLock)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                }
+                else
+                {
+                    // 如果是鎖定狀態，確保移除 ActionButtons
+                    var companyField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Quotation.CompanyId));
+                    if (companyField != null)
+                    {
+                        companyField.ActionButtons = new List<FieldActionButton>();
+                    }
+                }
             }
             // 使用統一 Helper 處理業務員欄位變更
             else if (fieldChange.PropertyName == nameof(Quotation.EmployeeId))
             {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                if (!shouldLock)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                }
+                else
+                {
+                    // 如果是鎖定狀態，確保移除 ActionButtons
+                    var employeeField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Quotation.EmployeeId));
+                    if (employeeField != null)
+                    {
+                        employeeField.ActionButtons = new List<FieldActionButton>();
+                    }
+                }
             }
         }
         catch (Exception)
@@ -1036,41 +1079,11 @@
     /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
     /// 當報價單已審核通過時，顯示鎖定警告訊息
     /// </summary>
-    private RenderFragment? WarningMessage
+    private RenderFragment? WarningMessage => __builder =>
     {
-        get
-        {
-            // 先計算警告訊息（避免在 RenderFragment 中出錯）
-            string? approvalWarning = null;
-            
-            try
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    approvalWarning = ApprovalConfigHelper.GetApprovalWarningMessage(
-                        isApprovalEnabled,
-                        editModalComponent.Entity.IsApproved,
-                        "報價單"
-                    );
-                }
-            }
-            catch
-            {
-                // 如果出錯，就不顯示警告
-                approvalWarning = null;
-            }
-            
-            return __builder =>
-            {
-                @if (!string.IsNullOrEmpty(approvalWarning))
-                {
-                    <div class="alert alert-warning mb-2 py-2" role="alert">
-                        <i class="fas fa-lock me-2"></i>@approvalWarning
-                    </div>
-                }
-            };
-        }
-    }
+        <GenericLockedFieldMessage IsVisible="@(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)"
+                                  Message="報價單已審核通過，主檔欄位已鎖定。" />
+    };
     
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機

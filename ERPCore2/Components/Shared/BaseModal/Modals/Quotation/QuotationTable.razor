@@ -223,7 +223,7 @@ else
                                value="@selectedUnitId"
                                disabled="@isFieldReadOnly"
                                @onchange="(e) => OnUnitSelectionChanged(quotationItem, e.Value?.ToString())">
-                    <option value="">請選擇單位</option>
+                    <option value="">請選擇</option>
                     @foreach (var unit in Units)
                     {
                         <option value="@unit.Id">@unit.Name</option>

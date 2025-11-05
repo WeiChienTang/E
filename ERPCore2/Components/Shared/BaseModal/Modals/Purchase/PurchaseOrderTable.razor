@@ -588,7 +588,22 @@ else
         
         if (typeof(T) == typeof(object)) return (T)value;
         
-        return (T)Convert.ChangeType(value, typeof(T));
+        // 🔑 修復：處理 nullable 類型的轉換
+        var targetType = typeof(T);
+        
+        // 如果目標類型是 nullable，取得其底層類型
+        if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+        {
+            var underlyingType = Nullable.GetUnderlyingType(targetType);
+            if (underlyingType != null)
+            {
+                // 轉換為底層類型，然後讓 C# 自動裝箱為 nullable
+                var convertedValue = Convert.ChangeType(value, underlyingType);
+                return (T)convertedValue;
+            }
+        }
+        
+        return (T)Convert.ChangeType(value, targetType);
     }
 
     /// <summary>

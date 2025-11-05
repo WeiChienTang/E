@@ -1,0 +1,102 @@
+@* 鎖定欄位訊息組件 - 用於顯示欄位被鎖定的警告訊息 *@
+
+@if (IsVisible)
+{
+    <div class="alert @GetAlertClass() @CssClass mb-2 py-2" role="alert">
+        <i class="@IconClass me-2"></i>@Message
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// 是否顯示訊息
+    /// </summary>
+    [Parameter] public bool IsVisible { get; set; } = true;
+
+    /// <summary>
+    /// 訊息內容
+    /// </summary>
+    [Parameter] public string Message { get; set; } = "因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。";
+
+    /// <summary>
+    /// 訊息類型（決定背景顏色）
+    /// </summary>
+    [Parameter] public MessageType Type { get; set; } = MessageType.Info;
+
+    /// <summary>
+    /// 圖示 CSS 類別（Font Awesome）
+    /// </summary>
+    [Parameter] public string? IconClass { get; set; } = null;
+
+    /// <summary>
+    /// 額外的 CSS 類別
+    /// </summary>
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 取得 Alert 的 CSS 類別
+    /// </summary>
+    private string GetAlertClass()
+    {
+        return Type switch
+        {
+            MessageType.Primary => "alert-primary",
+            MessageType.Secondary => "alert-secondary",
+            MessageType.Success => "alert-success",
+            MessageType.Danger => "alert-danger",
+            MessageType.Warning => "alert-warning",
+            MessageType.Info => "alert-info",
+            MessageType.Light => "alert-light",
+            MessageType.Dark => "alert-dark",
+            _ => "alert-info" // 預設為藍色背景
+        };
+    }
+
+    /// <summary>
+    /// 取得預設圖示
+    /// </summary>
+    private string GetDefaultIcon()
+    {
+        // 如果有自訂圖示，使用自訂圖示
+        if (!string.IsNullOrEmpty(IconClass))
+            return IconClass;
+
+        // 根據訊息類型返回預設圖示
+        return Type switch
+        {
+            MessageType.Success => "fas fa-check-circle",
+            MessageType.Danger => "fas fa-times-circle",
+            MessageType.Warning => "fas fa-lock",
+            MessageType.Info => "fas fa-info-circle",
+            MessageType.Primary => "fas fa-info-circle",
+            MessageType.Secondary => "fas fa-info-circle",
+            MessageType.Light => "fas fa-info-circle",
+            MessageType.Dark => "fas fa-info-circle",
+            _ => "fas fa-info-circle" // 預設為驚嘆號
+        };
+    }
+
+    protected override void OnParametersSet()
+    {
+        // 如果沒有指定圖示，使用預設圖示
+        if (string.IsNullOrEmpty(IconClass))
+        {
+            IconClass = GetDefaultIcon();
+        }
+    }
+
+    /// <summary>
+    /// 訊息類型枚舉
+    /// </summary>
+    public enum MessageType
+    {
+        Primary,    // 藍色
+        Secondary,  // 灰色
+        Success,    // 綠色
+        Danger,     // 紅色
+        Warning,    // 黃色
+        Info,       // 淡藍色（預設）
+        Light,      // 淺色
+        Dark        // 深色
+    }
+}

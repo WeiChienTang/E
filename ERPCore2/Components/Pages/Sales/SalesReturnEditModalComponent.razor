@@ -1086,12 +1086,10 @@
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-        @if (isDetailDataReady && hasUndeletableDetails)
-        {
-            <div class="alert alert-warning mb-2 py-2" role="alert">
-                <i class="fas fa-lock me-2"></i>因部分明細有沖款記錄，為保護資料完整性主檔欄位已設唯讀。
-            </div>
-        }
+        <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
+                                  Message="因部分明細有沖款記錄，為保護資料完整性主檔欄位已設唯讀。"
+                                  Type="GenericLockedFieldMessage.MessageType.Warning"
+                                  IconClass="fas fa-lock" />
     };
 
     /// <summary>

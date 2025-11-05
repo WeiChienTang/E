@@ -83,30 +83,18 @@
             
             @* 右側：原有的主要操作按鈕 *@
             <div class="d-flex gap-2">
-                @* 根據審核狀態動態顯示按鈕 *@
-                @if (IsEntityApproved())
+                @* 不論審核狀態，都顯示取消和儲存按鈕 *@
+                <GenericButtonComponent Text="@CancelButtonText" 
+                                      Variant="ButtonVariant.Secondary" 
+                                      OnClick="HandleCancel" 
+                                      IsDisabled="@IsSubmitting" />
+                @if (ShowSaveButton)
                 {
-                    @* 已審核狀態：只顯示完成按鈕 *@
-                    <GenericButtonComponent Text="完成" 
+                    <GenericButtonComponent Text="@SaveButtonText" 
                                           Variant="ButtonVariant.Primary" 
-                                          OnClick="HandleApprovedEntityComplete" 
-                                          IsDisabled="@IsSubmitting" />
-                }
-                else
-                {
-                    @* 未審核狀態：顯示取消和儲存按鈕 *@
-                    <GenericButtonComponent Text="@CancelButtonText" 
-                                          Variant="ButtonVariant.Secondary" 
-                                          OnClick="HandleCancel" 
-                                          IsDisabled="@IsSubmitting" />
-                    @if (ShowSaveButton)
-                    {
-                        <GenericButtonComponent Text="@SaveButtonText" 
-                                              Variant="ButtonVariant.Primary" 
-                                              OnClick="HandleSave" 
-                                              IsDisabled="@(IsSubmitting || IsLoading)" 
-                                              IsLoading="@IsSubmitting" />
-                    }
+                                          OnClick="HandleSave" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)" 
+                                          IsLoading="@IsSubmitting" />
                 }
                 
                 @if (ShowPrintButton)

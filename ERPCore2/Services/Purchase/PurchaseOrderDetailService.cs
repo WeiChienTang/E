@@ -438,6 +438,13 @@ namespace ERPCore2.Services
                                     existingDetail.OrderQuantity = detail.OrderQuantity;
                                     existingDetail.UnitPrice = detail.UnitPrice;
                                     existingDetail.ExpectedDeliveryDate = detail.ExpectedDeliveryDate;
+                                    existingDetail.Remarks = detail.Remarks;
+                                    
+                                    // 🔑 更新執行狀態欄位（審核後可修改）
+                                    existingDetail.IsReceivingCompleted = detail.IsReceivingCompleted;
+                                    existingDetail.CompletedByEmployeeId = detail.CompletedByEmployeeId;
+                                    existingDetail.CompletedAt = detail.CompletedAt;
+                                    
                                     // 不更新 ReceivedQuantity 和 ReceivedAmount，這些由進貨作業更新
                                     existingDetail.UpdatedAt = DateTime.UtcNow;
                                 }
