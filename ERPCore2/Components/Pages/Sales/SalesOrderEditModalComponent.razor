@@ -17,6 +17,9 @@
 @inject ISalesReturnService SalesReturnService
 @inject ISetoffDocumentService SetoffDocumentService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject IQuotationService QuotationService
+@inject IQuotationDetailService QuotationDetailService
+@inject IDbContextFactory<AppDbContext> DbContextFactory
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -95,6 +98,14 @@
     [Parameter] public int? SalesOrderId { get; set; }
     [Parameter] public EventCallback<SalesOrder> OnSalesOrderSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    
+    // ===== 預填參數（用於從報價單轉單） =====
+    [Parameter] public int? PrefilledCustomerId { get; set; }
+    [Parameter] public int? PrefilledQuotationId { get; set; }
+    
+    // ===== 審核控制 =====
+    private bool isApprovalEnabled = false; // 系統參數：是否啟用報價單審核
+    private bool? isSourceQuotationApproved = null; // 來源報價單是否已審核
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
@@ -239,8 +250,23 @@
                     SalesOrderNumber = generatedCode
                 };
                 
-                // 清空明細
-                salesOrderDetails.Clear();
+                // 如果是從報價單轉單，載入報價單資料
+                if (PrefilledQuotationId.HasValue)
+                {
+                    await LoadDataFromQuotation(newOrder, PrefilledQuotationId.Value);
+                }
+                // 否則使用預填客戶
+                else if (PrefilledCustomerId.HasValue)
+                {
+                    newOrder.CustomerId = PrefilledCustomerId.Value;
+                }
+                
+                // 清空明細（如果沒有從報價單載入）
+                if (!PrefilledQuotationId.HasValue)
+                {
+                    salesOrderDetails.Clear();
+                }
+                
                 isDetailDataReady = true;
                 
                 return newOrder;
@@ -705,6 +731,9 @@
                                                           UnitIdPropertyName="UnitId"
                                                           WarehouseIdPropertyName="WarehouseId"
                                                           RemarksPropertyName="DetailRemarks"
+                                                          IsApprovalEnabled="@isApprovalEnabled"
+                                                          SourceQuotationId="@PrefilledQuotationId"
+                                                          IsSourceQuotationApproved="@isSourceQuotationApproved"
                                                           OnDetailsChanged="@HandleDetailsChanged"
                                                           OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                                           OnOpenRelatedDocument="@HandleOpenRelatedDocument"
@@ -1423,34 +1452,12 @@
                 return false;
             }
 
-            // 儲存明細 - 根據模式選擇不同的方法
-            if (isEditMode)
+            // 儲存明細
+            await SaveSalesOrderDetails(result.Data.Id, isEditMode, isEditMode ? originalDetails : new List<SalesOrderDetail>());
+            
+            // 只有新增模式才需要進行庫存扣減（編輯模式的庫存由 SalesOrderDetailService.UpdateDetailsWithInventoryAsync 處理）
+            if (!isEditMode)
             {
-                // 編輯模式：使用帶有庫存回滾功能的更新方法
-                var updateResult = await SalesOrderDetailService.UpdateDetailsWithInventoryAsync(
-                    result.Data.Id, 
-                    salesOrderDetails, 
-                    originalDetails);
-                    
-                if (!updateResult.IsSuccess)
-                {
-                    await NotificationService.ShowErrorAsync($"更新銷貨明細失敗：{updateResult.ErrorMessage}");
-                    return false;
-                }
-
-                var calculateResult = await SalesOrderService.CalculateOrderTotalAsync(result.Data.Id);
-                if (!calculateResult.IsSuccess)
-                {
-                    await NotificationService.ShowWarningAsync($"明細更新成功，但計算總金額失敗：{calculateResult.ErrorMessage}");
-                    // 不返回 false，因為明細已經成功更新，只是總金額計算有問題
-                }
-
-            }
-            else
-            {
-
-                // 新增模式：使用原有的儲存邏輯
-                await SaveSalesOrderDetails(result.Data.Id);
                 await ReduceInventoryWithFIFOAsync(result.Data.Id);
             }
 
@@ -1466,9 +1473,12 @@
     }
 
     /// <summary>
-    /// 儲存銷貨訂單明細
+    /// 儲存銷貨訂單明細（支援新增和編輯模式）
     /// </summary>
-    private async Task SaveSalesOrderDetails(int salesOrderId)
+    /// <param name="salesOrderId">銷貨訂單ID</param>
+    /// <param name="isEditMode">是否為編輯模式</param>
+    /// <param name="originalDetails">原始明細列表（編輯模式使用）</param>
+    private async Task SaveSalesOrderDetails(int salesOrderId, bool isEditMode = false, List<SalesOrderDetail>? originalDetails = null)
     {
         try
         {
@@ -1492,9 +1502,8 @@
 
             }
 
-            // 先獲取現有的明細
-            var existingOrder = await SalesOrderService.GetWithDetailsAsync(salesOrderId);
-            var existingDetails = existingOrder?.SalesOrderDetails?.ToList() ?? new List<SalesOrderDetail>();
+            // 先獲取現有的明細（如果未提供）
+            var existingDetails = originalDetails ?? (await SalesOrderService.GetWithDetailsAsync(salesOrderId))?.SalesOrderDetails?.ToList() ?? new List<SalesOrderDetail>();
             
             // 處理新增和更新的明細
             foreach (var detail in validDetails)
@@ -1507,12 +1516,35 @@
                     {
                         // 更新本地明細的 ID
                         detail.Id = createResult.Data.Id;
+                        
+                        // 🔑 更新報價單明細的已轉銷貨數量
+                        if (detail.QuotationDetailId.HasValue)
+                        {
+                            await UpdateQuotationDetailConvertedQuantity(
+                                detail.QuotationDetailId.Value, 
+                                detail.OrderQuantity, 
+                                isAdding: true
+                            );
+                        }
                     }
                 }
                 else
                 {
-                    // 更新明細
+                    // 更新明細 - 需要檢查數量變化
+                    var originalDetail = existingDetails.FirstOrDefault(e => e.Id == detail.Id);
+                    var quantityDiff = detail.OrderQuantity - (originalDetail?.OrderQuantity ?? 0);
+                    
                     await SalesOrderDetailService.UpdateAsync(detail);
+                    
+                    // 🔑 如果數量有變化且有報價單來源，更新報價單明細的已轉銷貨數量
+                    if (quantityDiff != 0 && detail.QuotationDetailId.HasValue)
+                    {
+                        await UpdateQuotationDetailConvertedQuantity(
+                            detail.QuotationDetailId.Value,
+                            Math.Abs(quantityDiff),
+                            isAdding: quantityDiff > 0
+                        );
+                    }
                 }
             }
 
@@ -1523,6 +1555,16 @@
 
             foreach (var detailToDelete in detailsToDelete)
             {
+                // 🔑 如果有報價單來源，減少報價單明細的已轉銷貨數量
+                if (detailToDelete.QuotationDetailId.HasValue)
+                {
+                    await UpdateQuotationDetailConvertedQuantity(
+                        detailToDelete.QuotationDetailId.Value,
+                        detailToDelete.OrderQuantity,
+                        isAdding: false
+                    );
+                }
+                
                 await SalesOrderDetailService.PermanentDeleteAsync(detailToDelete.Id);
             }
         }
@@ -1531,6 +1573,42 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesOrderDetails), GetType(), 
                 additionalData: $"儲存銷貨訂單明細失敗 - OrderId: {salesOrderId}");
             throw; // 重新拋出例外，讓上層處理
+        }
+    }
+
+    /// <summary>
+    /// 更新報價單明細的已轉銷貨數量
+    /// </summary>
+    private async Task UpdateQuotationDetailConvertedQuantity(int quotationDetailId, decimal quantity, bool isAdding)
+    {
+        try
+        {
+            using var context = await DbContextFactory.CreateDbContextAsync();
+            var quotationDetail = await context.QuotationDetails.FindAsync(quotationDetailId);
+            
+            if (quotationDetail != null)
+            {
+                if (isAdding)
+                {
+                    quotationDetail.ConvertedQuantity += quantity;
+                }
+                else
+                {
+                    quotationDetail.ConvertedQuantity -= quantity;
+                    // 確保不會變成負數
+                    if (quotationDetail.ConvertedQuantity < 0)
+                        quotationDetail.ConvertedQuantity = 0;
+                }
+                
+                quotationDetail.UpdatedAt = DateTime.Now;
+                await context.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateQuotationDetailConvertedQuantity), GetType(),
+                additionalData: new { QuotationDetailId = quotationDetailId, Quantity = quantity, IsAdding = isAdding });
+            // 不拋出異常，避免影響主流程
         }
     }
 
@@ -1573,6 +1651,134 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ReduceInventoryWithFIFOAsync), GetType(), 
                 additionalData: $"FIFO庫存扣減失敗 - OrderId: {salesOrderId}");
             await NotificationService.ShowWarningAsync("庫存扣減時發生錯誤，請檢查庫存記錄");
+        }
+    }
+    
+    // ===== 從報價單轉單相關方法 =====
+    
+    /// <summary>
+    /// 打開新增銷貨訂單 Modal 並預填報價單資料（公開方法，供父組件呼叫）
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledQuotation(int customerId, int quotationId)
+    {
+        try
+        {
+            // 設定為新增模式
+            SalesOrderId = null;
+            
+            // 設定預填值
+            PrefilledCustomerId = customerId;
+            PrefilledQuotationId = quotationId;
+            
+            // 觸發 Modal 顯示
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+            }
+            
+            // 增加延遲時間以確保子組件完全就緒
+            await Task.Delay(500);
+            
+            // 檢查子組件是否已就緒並執行自動載入報價單明細
+            if (salesOrderDetailManager != null)
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadQuotationDetailsToSalesOrder(quotationId);
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledQuotation), GetType(), 
+                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, QuotationId: {quotationId}");
+            await NotificationService.ShowErrorAsync("開啟銷貨訂單時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 從報價單載入明細到銷貨訂單明細表
+    /// </summary>
+    private async Task LoadQuotationDetailsToSalesOrder(int quotationId)
+    {
+        try
+        {
+            // 載入報價單資料（含明細和審核狀態）
+            var quotation = await QuotationService.GetWithDetailsAsync(quotationId);
+            if (quotation == null)
+            {
+                await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
+                return;
+            }
+            
+            // 記錄審核狀態
+            isSourceQuotationApproved = quotation.IsApproved;
+            
+            // 載入系統參數：是否啟用報價單審核
+            var systemParameter = await SystemParameterService.GetSystemParameterAsync();
+            isApprovalEnabled = systemParameter?.EnableQuotationApproval ?? false;
+            
+            // 驗證報價單明細
+            if (quotation.QuotationDetails == null || !quotation.QuotationDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("報價單沒有明細資料", "載入失敗");
+                return;
+            }
+            
+            // 使用 SalesOrderTable 的公開方法載入明細
+            if (salesOrderDetailManager != null)
+            {
+                await salesOrderDetailManager.LoadQuotationDetails(
+                    quotation.QuotationDetails.ToList(), 
+                    quotationId, 
+                    quotation.IsApproved
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadQuotationDetailsToSalesOrder), GetType(),
+                additionalData: new { QuotationId = quotationId });
+            await NotificationService.ShowErrorAsync("載入報價單明細時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 從報價單載入資料到銷貨訂單
+    /// 注意：實際的轉單邏輯由 QuotationEditModalComponent 在儲存時處理
+    /// 這裡只是預留參數，實際使用 PrefilledCustomerId
+    /// </summary>
+    private async Task LoadDataFromQuotation(SalesOrder salesOrder, int quotationId)
+    {
+        try
+        {
+            // 載入報價單資料（含明細和審核狀態）
+            var quotation = await QuotationService.GetWithDetailsAsync(quotationId);
+            if (quotation == null)
+            {
+                await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
+                return;
+            }
+            
+            // 設定客戶ID
+            salesOrder.CustomerId = quotation.CustomerId;
+            
+            // 記錄審核狀態
+            isSourceQuotationApproved = quotation.IsApproved;
+            
+            // 載入系統參數：是否啟用報價單審核
+            var systemParameter = await SystemParameterService.GetSystemParameterAsync();
+            isApprovalEnabled = systemParameter?.EnableQuotationApproval ?? false;
+            
+            // 注意：明細的載入將由父組件（QuotationEditModalComponent）的 HandleCreateSalesOrderFromQuotation 處理
+            // 這裡不直接處理明細轉換，只設定審核狀態和客戶
+            salesOrderDetails.Clear();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataFromQuotation), GetType(),
+                additionalData: new { QuotationId = quotationId });
         }
     }
 }

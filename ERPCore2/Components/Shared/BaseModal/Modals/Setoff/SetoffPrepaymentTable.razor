@@ -279,13 +279,9 @@
 
     private void LoadExistingPrepayments()
     {
-        Console.WriteLine($"[LoadExistingPrepayments] 開始載入現有預收付款項");
-        Console.WriteLine($"  ExistingPrepayments?.Count: {ExistingPrepayments?.Count ?? 0}");
-        
         if (ExistingPrepayments?.Any() == true)
         {
             // 編輯模式：載入已存在的預收付款項記錄
-            Console.WriteLine($"[LoadExistingPrepayments] 編輯模式：有 {ExistingPrepayments.Count} 筆現有資料");
             
             PrepaymentItems = ExistingPrepayments.Select((prepayment, index) => 
             {
@@ -312,12 +308,8 @@
                     ExistingPrepayment = prepayment
                 };
                 
-                Console.WriteLine($"  [{index}] 建立 item: Id={item.Id}, SourceCode={item.SourceDocumentCode}, Amount={item.Amount}, ExistingPrepayment.Id={item.ExistingPrepayment?.Id}");
-                
                 return item;
             }).ToList();
-            
-            Console.WriteLine($"[LoadExistingPrepayments] PrepaymentItems.Count: {PrepaymentItems.Count}");
             
             // ✅ 載入後立即嘗試比對 SourcePrepaymentId（如果 AvailablePrepayments 已載入）
             if (AvailablePrepayments?.Any() == true)
@@ -328,7 +320,6 @@
         else
         {
             // 新增模式：初始化為空列表
-            Console.WriteLine($"[LoadExistingPrepayments] 新增模式：初始化空列表");
             PrepaymentItems = new List<SetoffPrepaymentItem>();
         }
     }

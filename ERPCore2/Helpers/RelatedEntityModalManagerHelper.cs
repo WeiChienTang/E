@@ -79,11 +79,6 @@ public static class RelatedEntityModalManagerHelper
             });
         }
 
-        else
-        {
-            Console.WriteLine($"[DEBUG] RefreshAutoCompleteFields 為 false，不會設定 RefreshDependentComponents");
-        }
-
         return builder.Build();
     }
 }

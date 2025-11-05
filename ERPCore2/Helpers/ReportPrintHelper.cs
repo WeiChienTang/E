@@ -27,24 +27,20 @@ namespace ERPCore2.Helpers
                 if (configuration == null)
                 {
                     // 沒有找到配置，使用系統預設
-                    Console.WriteLine($"沒有找到報表類型 '{reportType}' 的列印配置，將使用系統預設設定");
                     return null;
                 }
 
                 // 如果找到配置且狀態為啟用，則使用該配置
                 if (configuration.Status == Data.Enums.EntityStatus.Active)
                 {
-                    Console.WriteLine($"使用報表類型 '{reportType}' 的列印配置：{configuration.ReportName}");
                     return configuration;
                 }
 
                 // 配置存在但已停用
-                Console.WriteLine($"報表類型 '{reportType}' 的列印配置已停用，將使用系統預設設定");
                 return null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"取得列印配置時發生錯誤: {ex.Message}");
                 return null;
             }
         }

@@ -28,6 +28,14 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalAmount => Math.Round(Quantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
 
+        [Display(Name = "已轉銷貨數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal ConvertedQuantity { get; set; } = 0;
+
+        [Display(Name = "待轉銷貨數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal PendingQuantity => Quantity - ConvertedQuantity;
+
         // Foreign Keys
         [Required(ErrorMessage = "報價單為必填")]
         [Display(Name = "報價單")]
@@ -47,5 +55,6 @@ namespace ERPCore2.Data.Entities
         public Quotation Quotation { get; set; } = null!;
         public Product Product { get; set; } = null!;
         public Unit? Unit { get; set; }
+        public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
     }
 }

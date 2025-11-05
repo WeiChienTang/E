@@ -98,6 +98,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "InventoryTransactionType.Read", Name = "檢視庫存異動類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視庫存異動類型與分類設定" },
                 
                 // 銷貨管理權限
+                new Permission { Code = "Quotation.Read", Name = "檢視報價單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視報價單與客戶交易紀錄" },
+                new Permission { Code = "Quotation.Approve", Name = "審核報價單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "審核與核准報價單" },
                 new Permission { Code = "Sales.Read", Name = "檢視銷售訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷售訂單與客戶交易紀錄" },
                 new Permission { Code = "SalesOrder.Read", Name = "檢視銷貨訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷貨訂單詳細資料" },
                 new Permission { Code = "SalesDelivery.Read", Name = "檢視銷貨出貨", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視銷貨出貨單與配送記錄" },
@@ -106,7 +108,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
                 // 採購管理權限
                 new Permission { Code = "PurchaseOrder.Read", Name = "檢視採購訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購訂單與供應商交易" },
-                new Permission { Code = "PurchaseOrder_Approve.Read", Name = "採購訂單審核", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "審核與核准採購訂單權限" },
+                new Permission { Code = "PurchaseOrder.Approve", Name = "審核採購訂單", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "審核與核准採購訂單權限" },
                 new Permission { Code = "PurchaseReceiving.Read", Name = "檢視採購收貨", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購收貨單與驗收記錄" },
                 new Permission { Code = "PurchaseReturn.Read", Name = "檢視採購退回貨", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視採購退貨與退回處理" }
             };

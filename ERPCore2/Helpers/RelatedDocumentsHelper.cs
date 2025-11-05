@@ -223,5 +223,37 @@ namespace ERPCore2.Helpers
 
             return documents.OrderByDescending(d => d.DocumentDate).ToList();
         }
+
+        /// <summary>
+        /// 取得與報價單明細相關的單據（銷貨訂單）
+        /// </summary>
+        public async Task<List<RelatedDocument>> GetRelatedDocumentsByQuotationDetailAsync(int quotationDetailId)
+        {
+            var documents = new List<RelatedDocument>();
+
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            // 查詢銷貨訂單
+            var salesOrderDetails = await context.SalesOrderDetails
+                .Include(d => d.SalesOrder)
+                .Where(d => d.QuotationDetailId == quotationDetailId)
+                .ToListAsync();
+
+            foreach (var detail in salesOrderDetails)
+            {
+                documents.Add(new RelatedDocument
+                {
+                    DocumentId = detail.SalesOrderId,
+                    DocumentType = RelatedDocumentType.SalesOrder,
+                    DocumentNumber = detail.SalesOrder.SalesOrderNumber,
+                    DocumentDate = detail.SalesOrder.OrderDate,
+                    Quantity = detail.OrderQuantity,
+                    UnitPrice = detail.UnitPrice,
+                    Remarks = detail.SalesOrder.Remarks
+                });
+            }
+
+            return documents.OrderByDescending(d => d.DocumentDate).ToList();
+        }
     }
 }

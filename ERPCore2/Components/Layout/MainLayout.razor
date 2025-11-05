@@ -66,9 +66,9 @@
                 // 初始化快捷鍵監聽
                 await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.initialize", dotNetReference);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[MainLayout] 初始化快捷鍵失敗: {ex.Message}");
+                // 忽略初始化快捷鍵失敗
             }
         }
     }
@@ -89,9 +89,9 @@
                 await pageSearchModal.Open();
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[MainLayout] 開啟頁面搜尋失敗: {ex.Message}");
+            // 忽略開啟頁面搜尋失敗
         }
     }
 
@@ -105,9 +105,9 @@
             showShortcutKeys = true;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"[MainLayout] 開啟快捷鍵說明失敗: {ex.Message}");
+            // 忽略開啟快捷鍵說明失敗
         }
     }
 

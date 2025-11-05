@@ -331,23 +331,59 @@ namespace ERPCore2.Services
         #region 刪除限制檢查
 
         /// <summary>
-        /// 檢查報價單是否可以被刪除
+        /// 檢查報價單是否可以刪除（基類覆寫方法）
+        /// 檢查邏輯：
+        /// 1. 先執行基類的刪除檢查（外鍵關聯等）
+        /// 2. 檢查所有明細項目是否已有銷貨記錄
+        ///    - 檢查欄位：ConvertedQuantity (已轉銷貨數量)
+        ///    - 限制原因：已轉銷貨的報價單不可刪除，以保持資料一致性
+        /// 注意：不再檢查「是否已核准」，參考採購單的設計模式（檢查是否已入庫而非是否已核准）
         /// </summary>
+        /// <param name="entity">報價單實體</param>
+        /// <returns>刪除檢查結果</returns>
         protected override async Task<ServiceResult> CanDeleteAsync(Quotation entity)
         {
             try
             {
-                // 1. 基礎檢查（外鍵關聯等）
+                // 1. 先檢查基類的刪除條件（外鍵關聯等）
                 var baseResult = await base.CanDeleteAsync(entity);
                 if (!baseResult.IsSuccess)
-                    return baseResult;
-
-                // 2. 檢查是否已核准
-                if (entity.IsApproved)
                 {
-                    return ServiceResult.Failure($"無法刪除報價單「{entity.QuotationNumber}」，因為已經核准");
+                    return baseResult;
                 }
 
+                // 2. 載入明細資料（如果尚未載入）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var loadedEntity = await context.Quotations
+                    .Include(q => q.QuotationDetails)
+                        .ThenInclude(qd => qd.Product)
+                    .FirstOrDefaultAsync(q => q.Id == entity.Id);
+
+                if (loadedEntity == null)
+                {
+                    return ServiceResult.Failure("找不到要檢查的報價單");
+                }
+
+                // 如果沒有明細，可以刪除
+                if (loadedEntity.QuotationDetails == null || !loadedEntity.QuotationDetails.Any())
+                {
+                    return ServiceResult.Success();
+                }
+
+                // 3. 檢查每個明細項目是否已有銷貨記錄
+                foreach (var detail in loadedEntity.QuotationDetails)
+                {
+                    if (detail.ConvertedQuantity > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此報價單，因為商品「{productName}」已有銷貨記錄（已轉銷貨 {detail.ConvertedQuantity} 個）"
+                        );
+                    }
+                }
+                
+                // 4. 所有檢查通過，允許刪除
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -366,71 +402,6 @@ namespace ERPCore2.Services
         #endregion
 
         #region 覆寫刪除方法
-
-        /// <summary>
-        /// 覆寫刪除方法 - 刪除主檔時同步刪除明細
-        /// </summary>
-        public override async Task<ServiceResult> DeleteAsync(int id)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                using var transaction = await context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    // 1. 獲取報價單資料（在刪除前）
-                    var quotation = await GetByIdAsync(id);
-                    if (quotation == null)
-                        return ServiceResult.Failure("找不到要刪除的報價單");
-
-                    // 2. 檢查是否可以刪除
-                    var canDeleteResult = await CanDeleteAsync(quotation);
-                    if (!canDeleteResult.IsSuccess)
-                        return canDeleteResult;
-
-                    // 3. 刪除報價單明細（如果有明細服務）
-                    if (_detailService != null)
-                    {
-                        var deleteDetailsResult = await _detailService.DeleteByQuotationIdAsync(id);
-                        if (!deleteDetailsResult.IsSuccess)
-                        {
-                            await transaction.RollbackAsync();
-                            return ServiceResult.Failure($"刪除報價單明細失敗：{deleteDetailsResult.ErrorMessage}");
-                        }
-                    }
-
-                    // 4. 執行軟刪除（主檔）
-                    var entity = await context.Quotations.FirstOrDefaultAsync(x => x.Id == id);
-                    if (entity == null)
-                    {
-                        await transaction.RollbackAsync();
-                        return ServiceResult.Failure("找不到要刪除的資料");
-                    }
-
-                    entity.UpdatedAt = DateTime.UtcNow;
-
-                    await context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                    
-                    return ServiceResult.Success();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
-                    Method = nameof(DeleteAsync),
-                    ServiceType = GetType().Name,
-                    Id = id 
-                });
-                return ServiceResult.Failure("刪除報價單過程發生錯誤");
-            }
-        }
 
         /// <summary>
         /// 永久刪除報價單

@@ -298,11 +298,9 @@ namespace ERPCore2.Helpers
                         return defaultOrderBy(query);
                     }
                 }
-                catch (Exception anyEx)
+                catch (Exception)
                 {
-                    // 如果無法檢查 Any()（例如資料庫連接問題），記錄具體錯誤但不顯示給用戶
-                    Console.WriteLine($"資料檢查時發生錯誤: {anyEx.Message}");
-                    // 嘗試返回空查詢，避免進一步的錯誤
+                    // 如果無法檢查 Any()（例如資料庫連接問題），嘗試返回空查詢，避免進一步的錯誤
                     return defaultOrderBy(Enumerable.Empty<T>().AsQueryable());
                 }
 
@@ -315,9 +313,6 @@ namespace ERPCore2.Helpers
             }
             catch (Exception ex)
             {
-                // 記錄錯誤但只有在真正的業務邏輯錯誤時才通知用戶
-                Console.WriteLine($"篩選處理時發生錯誤: {ex.Message}");
-                
                 // 只有在確實是業務邏輯錯誤時才通知用戶
                 // 避免因為空資料或資料庫連接暫時問題而顯示錯誤
                 bool shouldNotifyUser = !IsEmptyDataRelatedError(ex);

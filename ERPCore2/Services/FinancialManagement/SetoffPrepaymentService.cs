@@ -122,18 +122,6 @@ namespace ERPCore2.Services
     {
         try
         {
-            // ===== DEBUG：輸出驗證資訊 =====
-            Console.WriteLine("========================================");
-            Console.WriteLine($"[SetoffPrepaymentService.ValidateAsync] 開始驗證");
-            Console.WriteLine($"  Entity.Id: {entity.Id}");
-            Console.WriteLine($"  Entity.SourceDocumentCode: {entity.SourceDocumentCode}");
-            Console.WriteLine($"  Entity.Amount: {entity.Amount}");
-            Console.WriteLine($"  Entity.UsedAmount: {entity.UsedAmount}");
-            Console.WriteLine($"  Entity.CustomerId: {entity.CustomerId}");
-            Console.WriteLine($"  Entity.SupplierId: {entity.SupplierId}");
-            Console.WriteLine($"  Entity.SetoffDocumentId: {entity.SetoffDocumentId}");
-            Console.WriteLine("========================================");
-            
             var errors = new List<string>();
 
             // 檢查來源單號
@@ -163,38 +151,16 @@ namespace ERPCore2.Services
             // 檢查來源單號是否重複（預收/預付主記錄的來源單號必須唯一）
             // 注意：編輯模式下，如果 Id > 0，則完全跳過唯一性檢查（因為是更新現有記錄）
             // 只有新增模式（Id = 0）才需要檢查來源單號是否重複
-            Console.WriteLine($"[DEBUG] 準備檢查來源單號唯一性...");
-            Console.WriteLine($"  SourceDocumentCode IsNullOrWhiteSpace: {string.IsNullOrWhiteSpace(entity.SourceDocumentCode)}");
-            Console.WriteLine($"  entity.Id == 0: {entity.Id == 0}");
-            
             if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode) && entity.Id == 0)
             {
-                Console.WriteLine($"[DEBUG] 執行唯一性檢查（新增模式）");
                 // 只有新增時才檢查唯一性
                 var exists = await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, null);
-                Console.WriteLine($"[DEBUG] IsSourceDocumentCodeExistsAsync 結果: {exists}");
                 
                 if (exists)
                 {
                     errors.Add("來源單號已存在");
-                    Console.WriteLine($"[DEBUG] ❌ 來源單號重複！");
-                }
-                else
-                {
-                    Console.WriteLine($"[DEBUG] ✅ 來源單號唯一");
                 }
             }
-            else
-            {
-                Console.WriteLine($"[DEBUG] ⏭️ 跳過唯一性檢查（編輯模式或來源單號為空）");
-            }
-
-            Console.WriteLine($"[DEBUG] 驗證結果 - 錯誤數量: {errors.Count}");
-            if (errors.Any())
-            {
-                Console.WriteLine($"[DEBUG] 錯誤內容: {string.Join("; ", errors)}");
-            }
-            Console.WriteLine("========================================\n");
 
             if (errors.Any())
                 return ServiceResult.Failure(string.Join("; ", errors));
@@ -203,9 +169,6 @@ namespace ERPCore2.Services
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] ValidateAsync 發生例外: {ex.Message}");
-            Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
-            
             await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new
             {
                 Method = nameof(ValidateAsync),
@@ -361,35 +324,20 @@ namespace ERPCore2.Services
         {
             try
             {
-                Console.WriteLine($"[IsSourceDocumentCodeExistsAsync] 開始檢查");
-                Console.WriteLine($"  SourceDocumentCode: {sourceDocumentCode}");
-                Console.WriteLine($"  ExcludeId: {excludeId}");
-                
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SetoffPrepayments.Where(sp => sp.SourceDocumentCode == sourceDocumentCode);
-                
-                var allMatches = await query.ToListAsync();
-                Console.WriteLine($"  找到 {allMatches.Count} 筆符合的記錄:");
-                foreach (var match in allMatches)
-                {
-                    Console.WriteLine($"    - Id={match.Id}, SourceCode={match.SourceDocumentCode}, Amount={match.Amount}");
-                }
                 
                 if (excludeId.HasValue)
                 {
                     query = query.Where(sp => sp.Id != excludeId.Value);
-                    Console.WriteLine($"  排除 Id={excludeId.Value} 後...");
                 }
 
                 var exists = await query.AnyAsync();
-                Console.WriteLine($"  最終結果: {(exists ? "存在重複" : "不存在重複")}");
                 
                 return exists;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] IsSourceDocumentCodeExistsAsync 發生例外: {ex.Message}");
-                
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSourceDocumentCodeExistsAsync), GetType(), _logger, new
                 {
                     Method = nameof(IsSourceDocumentCodeExistsAsync),

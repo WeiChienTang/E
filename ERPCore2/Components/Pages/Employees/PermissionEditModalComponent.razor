@@ -200,6 +200,7 @@
         return action switch
         {
             PermissionAction.Read => "讀取/查看",
+            PermissionAction.Approve => "核准",
             _ => action.ToString()
         };
     }

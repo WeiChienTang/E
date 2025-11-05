@@ -694,8 +694,6 @@ namespace ERPCore2.Services
                                t.TransactionType == InventoryTransactionTypeEnum.Return)
                     .ToList();
                 
-                Console.WriteLine($"[GetInventoryTransactionsBySalesOrderAsync] 找到 {saleTransactions.Count} 筆銷貨記錄，{revertTransactions.Count} 筆回滾記錄");
-                
                 // 計算每個InventoryStockId的淨扣減量
                 var netReductions = new Dictionary<int, int>();
                 
@@ -750,7 +748,6 @@ namespace ERPCore2.Services
                     }
                 }
                 
-                Console.WriteLine($"[GetInventoryTransactionsBySalesOrderAsync] 計算出 {virtualTransactions.Count} 筆需要回滾的淨記錄");
                 return virtualTransactions;
             }
             catch (Exception ex)
@@ -797,17 +794,12 @@ namespace ERPCore2.Services
 
                     if (originalDetail == null)
                     {
-                        Console.WriteLine($"[RevertStockToOriginalAsync] 找不到原始庫存明細記錄 ID: {inventoryStockId}");
                         return ServiceResult.Failure($"ORIGINAL_NOT_FOUND:{inventoryStockId}");
                     }
 
                     var stockBefore = originalDetail.CurrentStock;
                     originalDetail.CurrentStock += quantity; // 回滾是增加庫存
                     originalDetail.LastTransactionDate = DateTime.Now;
-
-                    Console.WriteLine($"[RevertStockToOriginalAsync] 精確回滾: DetailId={inventoryStockId}, 產品={originalDetail.InventoryStock?.ProductId}, " +
-                                    $"倉庫={originalDetail.WarehouseId}, 位置={originalDetail.WarehouseLocationId}, " +
-                                    $"批號={originalDetail.BatchNumber}, 數量={quantity}, 回滾前={stockBefore}, 回滾後={originalDetail.CurrentStock}");
 
                     // 建立回滾交易記錄
                     var inventoryTransaction = new InventoryTransaction

@@ -8,6 +8,11 @@ namespace ERPCore2.Data.Enums
         /// <summary>
         /// 讀取/查看
         /// </summary>
-        Read = 1
+        Read = 1,
+
+        /// <summary>
+        /// 核准
+        /// </summary>
+        Approve = 2
     }
 }

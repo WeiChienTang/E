@@ -24,6 +24,21 @@
 }
 else
 {
+    @* 警告訊息：顯示未審核的報價單明細 *@
+    @if (IsApprovalEnabled && GetUnapprovedItemsCount() > 0)
+    {
+        <div class="alert alert-warning mb-3" role="alert">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                <div>
+                    <strong>注意：</strong>目前有 <strong>@GetUnapprovedItemsCount()</strong> 項明細來自未審核的報價單。
+                    <br/>
+                    <small class="text-muted">這些明細將無法儲存，請確認相關報價單已完成審核後再進行銷貨作業。</small>
+                </div>
+            </div>
+        </div>
+    }
+    
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <InteractiveTableComponent TItem="SalesItem" 
@@ -118,6 +133,11 @@ else
     
     // ===== 下拉選項參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
+    
+    // ===== 審核管理參數 =====
+    [Parameter] public bool IsApprovalEnabled { get; set; } = false; // 是否啟用報價單審核（從系統參數載入）
+    [Parameter] public int? SourceQuotationId { get; set; } // 來源報價單ID（用於從報價單轉單時）
+    [Parameter] public bool? IsSourceQuotationApproved { get; set; } // 來源報價單是否已審核
 
     private List<SalesItem> SalesItems { get; set; } = new List<SalesItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
@@ -161,6 +181,21 @@ else
         return SalesItems.Any(item => 
             !IsEmptyRow(item) && 
             (HasReturnRecord(item) || HasPaymentRecord(item)));
+    }
+    
+    /// <summary>
+    /// 取得未審核的明細數量
+    /// </summary>
+    private int GetUnapprovedItemsCount()
+    {
+        if (!IsApprovalEnabled)
+            return 0;
+        
+        return SalesItems
+            .Where(item => !IsEmptyRow(item) && 
+                          item.SourceQuotationId.HasValue &&
+                          !(item.IsQuotationApproved ?? false))
+            .Count();
     }
 
     protected override async Task OnInitializedAsync()
@@ -551,6 +586,10 @@ else
                 
                 // 更新倉庫位置ID
                 SetPropertyValue(detail, "WarehouseLocationId", item.WarehouseLocationId);
+                
+                // 更新報價單明細來源（如果有）
+                if (item.SourceQuotationDetailId.HasValue)
+                    SetPropertyValue(detail, "QuotationDetailId", item.SourceQuotationDetailId.Value);
             }
             else
             {
@@ -579,6 +618,10 @@ else
                 
                 // 設定倉庫位置ID
                 SetPropertyValue(detail, "WarehouseLocationId", item.WarehouseLocationId);
+                
+                // 設定報價單明細來源（如果有）
+                if (item.SourceQuotationDetailId.HasValue)
+                    SetPropertyValue(detail, "QuotationDetailId", item.SourceQuotationDetailId.Value);
             }
             
             details.Add(detail);
@@ -658,6 +701,10 @@ else
                 var hasPaymentRecord = HasPaymentRecord(salesItem);
                 var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
                 var selectedValue = salesItem.SelectedProduct?.Id.ToString() ?? "";
+                
+                // 檢查當前明細的審核狀態
+                var isApproved = salesItem.IsQuotationApproved ?? true;
+                var needsApproval = IsApprovalEnabled && salesItem.SourceQuotationId.HasValue && !isApproved;
 
                 // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
@@ -671,8 +718,12 @@ else
                     var receivedAmount = GetReceivedAmount(salesItem);
                     tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
                 }
+                if (needsApproval)
+                {
+                    tooltipMessages.Add($"來自報價單 (ID: {salesItem.SourceQuotationId}) 尚未審核");
+                }
                 var title = tooltipMessages.Any()
-                    ? string.Join("；", tooltipMessages) + "，無法修改商品選擇"
+                    ? string.Join("；", tooltipMessages) + (isFieldReadOnly ? "，無法修改商品選擇" : "")
                     : "";
 
                 // 如果是唯讀狀態，直接顯示格式化的商品名稱
@@ -699,7 +750,17 @@ else
                 }
 
                 return @<div class="position-relative">
-                    <select class="form-select form-select-sm" 
+                    @* 如果啟用審核且明細未審核，顯示警告標記 *@
+                    @if (needsApproval && salesItem.SelectedProduct != null)
+                    {
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">
+                                <i class="fas fa-exclamation-triangle me-1"></i>未審核
+                            </span>
+                        </div>
+                    }
+                    
+                    <select class="form-select form-select-sm @(needsApproval ? "border-warning" : "")" 
                             value="@selectedValue"
                             disabled="@isFieldReadOnly"
                             title="@title"
@@ -1148,6 +1209,11 @@ else
         public string DetailRemarks { get; set; } = string.Empty;
         public Warehouse? SelectedWarehouse { get; set; }
         public TDetailEntity? ExistingDetailEntity { get; set; }
+        
+        // === 報價單來源相關屬性 ===
+        public int? SourceQuotationId { get; set; }
+        public int? SourceQuotationDetailId { get; set; }
+        public bool? IsQuotationApproved { get; set; }
         
         /// <summary>
         /// 即時庫存量（不儲存到資料庫）
@@ -1647,6 +1713,89 @@ else
     }
 
     /// <summary>
+    /// 從報價單載入明細（公開方法，供父組件呼叫）
+    /// </summary>
+    /// <param name="quotationDetails">報價單明細列表</param>
+    /// <param name="quotationId">報價單ID</param>
+    /// <param name="isQuotationApproved">報價單是否已審核</param>
+    public async Task LoadQuotationDetails(List<QuotationDetail> quotationDetails, int quotationId, bool isQuotationApproved)
+    {
+        if (IsReadOnly) return;
+        
+        try
+        {
+            if (quotationDetails == null || !quotationDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("報價單沒有明細資料", "載入失敗");
+                return;
+            }
+
+            // 清空現有項目
+            SalesItems.Clear();
+
+            // 將報價單明細轉換為銷貨項目
+            foreach (var quotationDetail in quotationDetails)
+            {
+                // 🔑 關鍵修改：只載入尚未轉單的數量（報價數量 - 已轉數量）
+                var pendingQuantity = quotationDetail.Quantity - quotationDetail.ConvertedQuantity;
+                
+                // 如果該明細已經全部轉完，跳過不載入
+                if (pendingQuantity <= 0)
+                {
+                    continue;
+                }
+                
+                var salesItem = new SalesItem
+                {
+                    SelectedProduct = quotationDetail.Product,
+                    OrderQuantity = pendingQuantity,  // 使用剩餘數量，而非全部數量
+                    UnitPrice = quotationDetail.UnitPrice,
+                    DiscountPercentage = quotationDetail.DiscountPercentage,
+                    DetailRemarks = quotationDetail.Remarks ?? "",
+                    // 設定報價單來源資訊（用於審核檢查和轉單追蹤）
+                    SourceQuotationId = quotationId,
+                    SourceQuotationDetailId = quotationDetail.Id,
+                    IsQuotationApproved = isQuotationApproved
+                };
+                
+                // 計算小計
+                salesItem.CalculateSubtotal();
+                
+                // 載入該商品的可用倉庫位置清單
+                if (salesItem.SelectedProduct != null)
+                {
+                    salesItem.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(salesItem.SelectedProduct.Id);
+                }
+                
+                SalesItems.Add(salesItem);
+            }
+            
+            // 確保有空行
+            EnsureOneEmptyRow();
+            
+            await NotifyDetailsChanged();
+            
+            // 計算實際載入的明細數量
+            var loadedCount = SalesItems.Count(item => !IsEmptyRow(item));
+            if (loadedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 項未轉完的報價明細", "載入成功");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("所有報價明細都已完成轉單，無需再轉單", "提示");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadQuotationDetails), GetType());
+            await NotificationService.ShowErrorAsync("載入報價單明細時發生錯誤", "錯誤");
+        }
+    }
+
+    /// <summary>
     /// 顯示確認對話框
     /// </summary>
     private async Task<bool> ShowConfirmationAsync(string title, string message)
@@ -1677,6 +1826,21 @@ else
         }
         else
         {
+            // === 審核檢查 ===
+            if (IsApprovalEnabled)
+            {
+                var unapprovedItems = SalesItems
+                    .Where(item => !IsEmptyRow(item) && 
+                                  item.SourceQuotationId.HasValue &&
+                                  !(item.IsQuotationApproved ?? false))
+                    .ToList();
+                
+                if (unapprovedItems.Any())
+                {
+                    errors.Add($"有 {unapprovedItems.Count} 項明細來自未審核的報價單，無法儲存。請先完成報價單審核。");
+                }
+            }
+            
             var lineNumber = 1;
             foreach (var item in SalesItems.Where(x => !IsEmptyRow(x)))
             {

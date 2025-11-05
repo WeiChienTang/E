@@ -5,6 +5,7 @@
 
 @inject IProductService ProductService
 @inject INotificationService NotificationService
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -27,13 +28,8 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="@EmptyMessage"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
-                                      DeleteButtonIcon="bi bi-trash text-white"
-                                      DeleteButtonVariant="ButtonVariant.Danger"
-                                      DeleteButtonSize="ButtonSize.Large"
-                                      DeleteButtonTitle="刪除"
-                                      IsDeleteDisabled="@((item) => IsReadOnly)"
-                                      OnItemDelete="@HandleItemDelete"
+                                      ShowBuiltInDeleteButton="false"
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
                                       ActionsColumnWidth = "60px"/>
         </div>
 
@@ -47,6 +43,14 @@ else
         </div>
     </div>
 }
+
+<!-- 相關單據查看 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
     // ===== 基本參數 =====
@@ -78,10 +82,19 @@ else
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 相關單據開啟事件 =====
+    [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
 
     private List<QuotationItem> QuotationItems { get; set; } = new List<QuotationItem>();
     private int? _previousSelectedCustomerId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
+    
+    // ===== 相關單據查看 =====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,19 +161,24 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var selectedValue = quotationItem.SelectedProduct?.Id.ToString() ?? "";
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示商品名稱
-                if (IsReadOnly)
+                if (isFieldReadOnly && quotationItem.SelectedProduct != null)
                 {
                     var displayText = quotationItem.DisplayName;
+                    var title = hasConverted ? "此商品已轉銷貨，無法修改商品選擇" : "";
                     return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
                 // 可編輯狀態，顯示下拉選單
                 return @<select class="form-select form-select-sm" 
                             value="@selectedValue"
+                            disabled="@isFieldReadOnly"
                             @onchange="@(async (e) => await OnProductSelectionChanged(quotationItem, e.Value?.ToString()))">
                     <option value="">請選擇商品</option>
                     @foreach (var product in Products)
@@ -186,19 +204,24 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var selectedUnitId = quotationItem.SelectedUnit?.Id.ToString() ?? "";
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示 span
-                if (IsReadOnly)
+                if (isFieldReadOnly)
                 {
                     var displayText = quotationItem.SelectedUnit?.Name ?? "無";
+                    var title = hasConverted ? "此商品已轉銷貨，無法修改單位" : "";
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted">@displayText</span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
                 // 可編輯狀態，顯示下拉選單
                 return @<select class="form-select form-select-sm"
                                value="@selectedUnitId"
+                               disabled="@isFieldReadOnly"
                                @onchange="(e) => OnUnitSelectionChanged(quotationItem, e.Value?.ToString())">
                     <option value="">請選擇單位</option>
                     @foreach (var unit in Units)
@@ -212,7 +235,7 @@ else
         // 數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "數量", 
+            Title = "報價數量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "100px",
@@ -221,25 +244,47 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var value = quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString() : "";
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示 span
-                if (IsReadOnly)
+                if (isFieldReadOnly)
                 {
+                    var displayText = quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString("F0") : "0";
+                    var title = hasConverted ? "此商品已轉銷貨，無法修改數量" : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted">
-                            @(quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString("N3") : "0")
-                        </span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
                 // 可編輯狀態，顯示輸入框
                 return @<input type="number" class="form-control  text-end" 
                                value="@value"
+                               disabled="@isFieldReadOnly"
                                @oninput="(e) => OnQuantityInput(quotationItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
                                min="0" 
-                               step="0.001" />;
+                               step="1" />;
+            }
+        });
+
+        // 已轉數量欄位 (唯讀)
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "已轉數量", 
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            Tooltip = "已轉為銷貨訂單的累計數量（唯讀）",
+            CustomTemplate = item => 
+            {
+                var quotationItem = (QuotationItem)item;
+                
+                return @<div class="d-flex align-items-center justify-content-end">
+                    <span class="fw-bold">@quotationItem.ConvertedQuantity.ToString("F0")</span>
+                </div>;
             }
         });
 
@@ -255,20 +300,24 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var value = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString() : "";
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示 span
-                if (IsReadOnly)
+                if (isFieldReadOnly)
                 {
+                    var displayText = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString("N2") : "0";
+                    var title = hasConverted ? "此商品已轉銷貨，無法修改單價" : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted">
-                            @(quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString("N2") : "0")
-                        </span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
                 // 可編輯狀態，顯示輸入框
                 return @<input type="number" class="form-control  text-end" 
                                value="@value"
+                               disabled="@isFieldReadOnly"
                                @oninput="(e) => OnUnitPriceInput(quotationItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                placeholder="" 
@@ -289,14 +338,17 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var value = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString() : "";
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示 span
-                if (IsReadOnly)
+                if (isFieldReadOnly)
                 {
+                    var displayText = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString("N2") : "0";
+                    var title = hasConverted ? "此商品已轉銷貨，無法修改折扣" : "";
                     return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted">
-                            @(quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString("N2") : "0")
-                        </span>
+                        <span class="text-muted" title="@title">@displayText</span>
                     </div>;
                 }
                 
@@ -304,6 +356,7 @@ else
                 // 使用 maxlength 屬性限制最多輸入3個字符(0-100)
                 return @<input type="number" class="form-control  text-end" 
                                value="@value"
+                               disabled="@isFieldReadOnly"
                                @oninput="(e) => OnDiscountPercentageInput(quotationItem, e.Value?.ToString())"
                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                onkeypress="if(this.value.length >= 3 && event.key >= '0' && event.key <= '9') return false;"
@@ -333,7 +386,7 @@ else
             }
         });
 
-        // 備註欄位
+        // 備註欄位 - 即使已轉銷貨也可編輯（用於記錄執行狀況）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "備註", 
@@ -366,10 +419,105 @@ else
         return columns;
     }
 
+    private RenderFragment<QuotationItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        var quotationItem = (QuotationItem)item;
+        var hasConverted = quotationItem.ConvertedQuantity > 0;
+        var isEmptyRow = IsEmptyRow(quotationItem);
+        
+        if (IsReadOnly)
+        {
+            // 唯讀模式：所有項目都顯示檢視按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Info"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(quotationItem)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (!hasConverted || isEmptyRow)
+        {
+            // 可編輯模式且未轉銷貨（或是空行）：顯示刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Danger"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(quotationItem)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 已轉銷貨且非空行：顯示查看相關單據按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Info"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(quotationItem)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+    };
+
     private async Task HandleItemDelete(QuotationItem item)
     {
         var index = QuotationItems.IndexOf(item);
         await RemoveItemAsync(index);
+    }
+
+    /// <summary>
+    /// 顯示相關單據（銷貨訂單）
+    /// </summary>
+    private async Task ShowRelatedDocuments(QuotationItem item)
+    {
+        if (item.ExistingDetailEntity is not QuotationDetail detail || detail.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync("此明細尚未儲存，無法查看相關單據", "提示");
+            return;
+        }
+
+        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsByQuotationDetailAsync(detail.Id);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入相關單據時發生錯誤：{ex.Message}", "錯誤");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理點擊相關單據的事件
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        // 注意：不關閉 RelatedDocumentsModal，讓使用者可以繼續查看列表
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理此事件，則顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在父組件中實作 OnOpenRelatedDocument 事件處理器以開啟 {document.TypeDisplayName}",
+                "提示"
+            );
+        }
     }
 
     // ===== 內部方法 =====
@@ -398,6 +546,7 @@ else
                     Quantity = quotationDetail.Quantity,
                     UnitPrice = quotationDetail.UnitPrice,
                     DiscountPercentage = quotationDetail.DiscountPercentage,
+                    ConvertedQuantity = quotationDetail.ConvertedQuantity,
                     Remarks = string.Empty,
                     ExistingDetailEntity = detail
                 };
@@ -418,6 +567,7 @@ else
                         Quantity = Convert.ToDecimal(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0m),
                         UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
                         DiscountPercentage = Convert.ToDecimal(GetPropertyValue<object>(detail, DiscountPercentagePropertyName) ?? 0m),
+                        ConvertedQuantity = Convert.ToDecimal(GetPropertyValue<object>(detail, "ConvertedQuantity") ?? 0m),
                         Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
                         ExistingDetailEntity = detail
                     };
@@ -462,6 +612,7 @@ else
                     quotationDetail.Quantity = item.Quantity;
                     quotationDetail.UnitPrice = item.UnitPrice;
                     quotationDetail.DiscountPercentage = item.DiscountPercentage;
+                    // ConvertedQuantity 不應在此更新，它由轉單流程控制
                     
                     if (item.SelectedUnit != null)
                         quotationDetail.UnitId = item.SelectedUnit.Id;
@@ -506,6 +657,12 @@ else
                 if (!string.IsNullOrEmpty(UnitIdPropertyName) && item.SelectedUnit != null)
                 {
                     SetPropertyValue(detail, UnitIdPropertyName, item.SelectedUnit.Id);
+                }
+                
+                // 新增的明細，ConvertedQuantity 預設為 0
+                if (detail is QuotationDetail newQuotationDetail)
+                {
+                    newQuotationDetail.ConvertedQuantity = 0;
                 }
             }
             
@@ -566,7 +723,10 @@ else
 
     private async Task OnProductSelectionChanged(QuotationItem item, string? productIdStr)
     {
-        if (IsReadOnly) return;
+        // 檢查全域唯讀或個別明細已轉銷貨
+        var hasConverted = item.ConvertedQuantity > 0;
+        var isEmptyRow = IsEmptyRow(item);
+        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
         
         var wasEmpty = IsEmptyRow(item);
         
@@ -600,7 +760,10 @@ else
 
     private async Task OnUnitSelectionChanged(QuotationItem item, string? unitIdStr)
     {
-        if (IsReadOnly) return;
+        // 檢查全域唯讀或個別明細已轉銷貨
+        var hasConverted = item.ConvertedQuantity > 0;
+        var isEmptyRow = IsEmptyRow(item);
+        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
         
         var wasEmpty = IsEmptyRow(item);
         
@@ -622,6 +785,11 @@ else
 
     private async Task OnQuantityInput(QuotationItem item, string? value)
     {
+        // 檢查全域唯讀或個別明細已轉銷貨
+        var hasConverted = item.ConvertedQuantity > 0;
+        var isEmptyRow = IsEmptyRow(item);
+        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
@@ -642,6 +810,11 @@ else
 
     private async Task OnUnitPriceInput(QuotationItem item, string? value)
     {
+        // 檢查全域唯讀或個別明細已轉銷貨
+        var hasConverted = item.ConvertedQuantity > 0;
+        var isEmptyRow = IsEmptyRow(item);
+        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
@@ -662,6 +835,11 @@ else
 
     private async Task OnDiscountPercentageInput(QuotationItem item, string? value)
     {
+        // 檢查全域唯讀或個別明細已轉銷貨
+        var hasConverted = item.ConvertedQuantity > 0;
+        var isEmptyRow = IsEmptyRow(item);
+        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
+        
         var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
@@ -706,6 +884,13 @@ else
         if (IsReadOnly || index < 0 || index >= QuotationItems.Count) return;
         
         var removedItem = QuotationItems[index];
+        
+        // 檢查是否已轉銷貨，已轉銷貨的項目不允許刪除
+        if (removedItem.ConvertedQuantity > 0)
+        {
+            await NotificationService.ShowWarningAsync("此明細已轉銷貨，無法刪除", "操作失敗");
+            return;
+        }
         
         // 記錄要刪除的資料庫實體ID
         if (removedItem.ExistingDetailEntity != null)
@@ -752,25 +937,35 @@ else
     /// </summary>
     private async Task ClearAllDetails()
     {
+        // 只清除未轉銷貨的項目
         var nonEmptyItems = QuotationItems.Where(item => !IsEmptyRow(item)).ToList();
+        var itemsToRemove = nonEmptyItems.Where(item => item.ConvertedQuantity == 0).ToList();
+        var convertedItems = nonEmptyItems.Where(item => item.ConvertedQuantity > 0).ToList();
         
-        if (!nonEmptyItems.Any())
+        if (!itemsToRemove.Any())
         {
-            await NotificationService.ShowWarningAsync("沒有可清除的明細項目", "提示");
+            if (convertedItems.Any())
+            {
+                await NotificationService.ShowWarningAsync("所有明細項目都已轉銷貨，無法清除", "提示");
+            }
+            else
+            {
+                await NotificationService.ShowWarningAsync("沒有可清除的明細項目", "提示");
+            }
             return;
         }
         
         // 通知父組件項目即將被移除
         if (OnItemRemoved.HasDelegate)
         {
-            foreach (var item in nonEmptyItems)
+            foreach (var item in itemsToRemove)
             {
                 await OnItemRemoved.InvokeAsync(item);
             }
         }
         
         // 記錄所有要刪除的現有明細 ID
-        foreach (var item in nonEmptyItems.Where(item => item.ExistingDetailEntity != null))
+        foreach (var item in itemsToRemove.Where(item => item.ExistingDetailEntity != null))
         {
             var entityId = GetExistingDetailId(item.ExistingDetailEntity!);
             if (entityId > 0)
@@ -779,8 +974,8 @@ else
             }
         }
         
-        // 從列表中移除所有非空項目
-        foreach (var item in nonEmptyItems)
+        // 從列表中移除所有可刪除的項目
+        foreach (var item in itemsToRemove)
         {
             QuotationItems.Remove(item);
         }
@@ -790,7 +985,12 @@ else
         
         await NotifyDetailsChanged();
         
-        await NotificationService.ShowSuccessAsync($"已清除 {nonEmptyItems.Count} 項明細");
+        var message = $"已清除 {itemsToRemove.Count} 項明細";
+        if (convertedItems.Any())
+        {
+            message += $"，保留 {convertedItems.Count} 項已轉銷貨的明細";
+        }
+        await NotificationService.ShowSuccessAsync(message);
     }
 
     public async Task<bool> ValidateAsync()
@@ -852,6 +1052,9 @@ else
         public decimal DiscountPercentage { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public TDetailEntity? ExistingDetailEntity { get; set; }
+        
+        // === 追蹤已轉銷貨數量 ===
+        public decimal ConvertedQuantity { get; set; } = 0;
         
         // === 計算屬性 ===
         public decimal SubtotalAmount => Math.Round(Quantity * UnitPrice * (1 - DiscountPercentage / 100), 2);

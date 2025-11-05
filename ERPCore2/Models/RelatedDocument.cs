@@ -18,7 +18,12 @@ namespace ERPCore2.Models
         /// <summary>
         /// 入庫單（採購進貨）
         /// </summary>
-        ReceivingDocument
+        ReceivingDocument,
+        
+        /// <summary>
+        /// 銷貨訂單（從報價單轉入）
+        /// </summary>
+        SalesOrder
     }
 
     /// <summary>
@@ -84,6 +89,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.ReturnDocument => "bi-arrow-return-left",
             RelatedDocumentType.SetoffDocument => "bi-cash-coin",
             RelatedDocumentType.ReceivingDocument => "bi-box-seam",
+            RelatedDocumentType.SalesOrder => "bi-cart-check",
             _ => "bi-file-text"
         };
 
@@ -95,6 +101,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.ReturnDocument => "warning",
             RelatedDocumentType.SetoffDocument => "success",
             RelatedDocumentType.ReceivingDocument => "info",
+            RelatedDocumentType.SalesOrder => "primary",
             _ => "secondary"
         };
 
@@ -106,6 +113,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.ReturnDocument => "退貨單",
             RelatedDocumentType.SetoffDocument => "沖款單",
             RelatedDocumentType.ReceivingDocument => "入庫單",
+            RelatedDocumentType.SalesOrder => "銷貨訂單",
             _ => "未知單據"
         };
     }

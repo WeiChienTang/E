@@ -596,9 +596,9 @@
                 finalProperty.SetValue(currentObj, convertedValue);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"設定屬性值失敗: {ex.Message}");
+            // 忽略設定屬性值失敗
         }
     }
 

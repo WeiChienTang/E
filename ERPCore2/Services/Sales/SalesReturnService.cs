@@ -861,15 +861,10 @@ namespace ERPCore2.Services
         /// </summary>
         public override async Task<ServiceResult> PermanentDeleteAsync(int id)
         {
-            Console.WriteLine($"=== SalesReturnService.PermanentDeleteAsync 開始執行 ===");
-            Console.WriteLine($"要刪除的 SalesReturn ID: {id}");
-            
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 using var transaction = await context.Database.BeginTransactionAsync();
-                
-                Console.WriteLine("資料庫交易已開始");
                 
                 try
                 {
@@ -884,11 +879,8 @@ namespace ERPCore2.Services
 
                     if (entity == null)
                     {
-                        Console.WriteLine($"找不到ID為 {id} 的銷貨退回記錄");
                         return ServiceResult.Failure("找不到要刪除的銷貨退回記錄");
                     }
-                    
-                    Console.WriteLine($"找到銷貨退回記錄: {entity.SalesReturnNumber}, 明細數量: {entity.SalesReturnDetails.Count}");
                     
                     // 2. 檢查是否可以刪除
                     var canDeleteResult = await CanDeleteAsync(entity);
@@ -901,7 +893,6 @@ namespace ERPCore2.Services
                     if (_inventoryStockService != null)
                     {
                         var eligibleDetails = entity.SalesReturnDetails.Where(d => d.ReturnQuantity > 0).ToList();
-                        Console.WriteLine($"需要進行庫存回滾的明細數量: {eligibleDetails.Count}");
 
                         foreach (var detail in eligibleDetails)
                         {
@@ -914,12 +905,8 @@ namespace ERPCore2.Services
 
                             if (!warehouseId.HasValue)
                             {
-                                Console.WriteLine($"明細 {detail.Id} 無法取得倉庫ID，跳過庫存回滾");
                                 continue;
                             }
-
-                            Console.WriteLine($"處理明細庫存回滾 - 產品ID: {detail.ProductId}, 倉庫ID: {warehouseId}, " +
-                                             $"退貨數量: {detail.ReturnQuantity}");
                             
                             // 執行庫存減少（撤銷退貨時增加的庫存）
                             var reduceResult = await _inventoryStockService.ReduceStockAsync(
@@ -931,49 +918,33 @@ namespace ERPCore2.Services
                                 null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
                                 $"刪除銷貨退回單回滾庫存 - {entity.SalesReturnNumber}"
                             );
-
-                            Console.WriteLine($"庫存回滾結果: {(reduceResult.IsSuccess ? "成功" : $"失敗 - {reduceResult.ErrorMessage}")}");
                             
                             if (!reduceResult.IsSuccess)
                             {
-                                Console.WriteLine($"庫存回滾失敗，取消刪除操作: {reduceResult.ErrorMessage}");
                                 await transaction.RollbackAsync();
                                 return ServiceResult.Failure($"庫存回滾失敗：{reduceResult.ErrorMessage}");
                             }
                         }
-                        
-                        Console.WriteLine("庫存回滾處理完成");
-                    }
-                    else
-                    {
-                        Console.WriteLine("庫存服務未注入，跳過庫存回滾操作");
                     }
 
                     // 4. 執行實際的資料刪除（硬刪除）
-                    Console.WriteLine($"開始執行資料刪除操作 - 銷貨退回單ID: {id}");
                     
                     // 刪除明細
                     context.SalesReturnDetails.RemoveRange(entity.SalesReturnDetails);
-                    Console.WriteLine($"已標記刪除 {entity.SalesReturnDetails.Count} 筆明細記錄");
                     
                     // 刪除主檔
                     context.SalesReturns.Remove(entity);
-                    Console.WriteLine("已標記刪除主檔記錄");
 
                     // 5. 儲存變更
-                    var changesCount = await context.SaveChangesAsync();
-                    Console.WriteLine($"資料庫變更已保存，影響 {changesCount} 筆記錄");
+                    await context.SaveChangesAsync();
                     
                     // 6. 提交交易
                     await transaction.CommitAsync();
-                    Console.WriteLine("資料庫交易已提交");
                     
-                    Console.WriteLine("=== SalesReturnService.PermanentDeleteAsync 執行成功 ===");
                     return ServiceResult.Success();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Console.WriteLine($"執行過程中發生異常: {ex.Message}");
                     await transaction.RollbackAsync();
                     throw;
                 }

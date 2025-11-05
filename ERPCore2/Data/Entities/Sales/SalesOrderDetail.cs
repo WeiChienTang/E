@@ -42,6 +42,10 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SalesOrder))]
         public int SalesOrderId { get; set; }
 
+        [Display(Name = "來源報價單明細")]
+        [ForeignKey(nameof(QuotationDetail))]
+        public int? QuotationDetailId { get; set; }
+
         [Required(ErrorMessage = "商品為必填")]
         [Display(Name = "商品")]
         [ForeignKey(nameof(Product))]
@@ -61,6 +65,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public SalesOrder SalesOrder { get; set; } = null!;
+        public QuotationDetail? QuotationDetail { get; set; }
         public Product Product { get; set; } = null!;
         public Unit? Unit { get; set; }
         public Warehouse? Warehouse { get; set; }
