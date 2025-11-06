@@ -394,68 +394,39 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "退貨數量", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(ReturnItem.ReturnQuantity),
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "要退回的商品數量。已有沖款記錄的商品將無法修改數量",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
             {
                 var returnItem = (ReturnItem)item;
-                var returnableQuantity = returnItem.AvailableQuantity;
-                var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString("N0") : "";
+                return HasPaymentRecord(returnItem);
+            },
+            TooltipFunc = item =>
+            {
+                var returnItem = (ReturnItem)item;
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
-                var isFieldReadOnly = IsReadOnly || hasPaymentRecord;
+                if (!hasPaymentRecord) return null;
                 
-                // 組合 tooltip 訊息
-                var title = hasPaymentRecord 
-                    ? $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改退貨數量" 
-                    : "";
-                
-                // 如果是唯讀狀態（含沖款記錄），直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">
-                            @(returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString("N0") : "0")
-                        </span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<div>
-                    <input type="number" class="form-control  text-end" 
-                           value="@value"
-                           min="0" max="@returnableQuantity"
-                           step="1"
-                           @oninput="@((e) => OnReturnQuantityInput(returnItem, e.Value?.ToString()))"
-                           onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                           placeholder="0"
-                           disabled="@(returnItem.SelectedOrderDetail == null)" />
-                    @if (!string.IsNullOrEmpty(returnItem.ValidationError))
-                    {
-                        <small class="text-danger">@returnItem.ValidationError</small>
-                    }
-                </div>;
-            }
+                return $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改退貨數量";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnReturnQuantityInput((ReturnItem)item, valueString);
+            })
         });
 
         // 單價欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "退貨單價", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(ReturnItem.OriginalUnitPrice),
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "商品的原始銷售單價（唯讀）",
-            CustomTemplate = item => 
-            {
-                var returnItem = (ReturnItem)item;
-                var value = returnItem.OriginalUnitPrice;
-                
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span>@value.ToString("N0")</span>
-                </div>;
-            }
+            IsReadOnly = true
         });
 
         // 折扣欄位 (只讀顯示)
@@ -472,7 +443,7 @@ else
                 var discount = returnItem.SelectedOrderDetail?.DiscountPercentage ?? 0;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span>@discount.ToString("N0")</span>
+                    <span>@(discount % 1 == 0 ? discount.ToString("F0") : discount.ToString())</span>
                 </div>;
             }
         });
@@ -668,6 +639,22 @@ else
         }
     }
 
+    /// <summary>
+    /// 公開方法：刷新明細資料（供父組件呼叫）
+    /// 用於沖款單儲存後，重新載入明細以更新沖款相關資訊
+    /// </summary>
+    public void RefreshDetails()
+    {
+        // 重新載入現有明細（會從 ExistingReturnDetails 參數重新載入）
+        LoadExistingDetailsAsync();
+        
+        // 強制 UI 更新
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 從現有明細資料載入到 ReturnItems
+    /// </summary>
     private void LoadExistingDetailsAsync()
     {
         if (ExistingReturnDetails?.Any() != true) 

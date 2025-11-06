@@ -194,20 +194,15 @@
         { 
             Title = "現有庫存", 
             PropertyName = "CurrentStock",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
-                var stockItem = (StockDetailItem)item;
-                var value = stockItem.CurrentStock > 0 ? stockItem.CurrentStock.ToString() : "";
-                
-                return @<input type="number"
-                               class="form-control  text-end"
-                               value="@value"
-                               @oninput="@(e => OnCurrentStockInput(stockItem, e.Value?.ToString()))"
-                               readonly="@IsReadOnly"
-                               min="0" />;
-            }
+                var (item, valueString) = args;
+                await OnCurrentStockInput((StockDetailItem)item, valueString);
+            })
         });
 
         // 平均成本欄位（條件顯示）
@@ -217,21 +212,15 @@
             { 
                 Title = "平均成本", 
                 PropertyName = "AverageCost",
-                ColumnType = InteractiveColumnType.Custom,
+                ColumnType = InteractiveColumnType.Number,
                 Width = "120px",
-                CustomTemplate = item => 
+                CellCssClass = "text-end",
+                MinValue = 0,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
                 {
-                    var stockItem = (StockDetailItem)item;
-                    var value = stockItem.AverageCost?.ToString() ?? "";
-                    
-                    return @<input type="number"
-                                   class="form-control  text-end"
-                                   value="@value"
-                                   @oninput="@(e => OnAverageCostInput(stockItem, e.Value?.ToString()))"
-                                   readonly="@IsReadOnly"
-                                   step="0.01"
-                                   min="0" />;
-                }
+                    var (item, valueString) = args;
+                    await OnAverageCostInput((StockDetailItem)item, valueString);
+                })
             });
         }
 
@@ -240,20 +229,15 @@
         { 
             Title = "最低警戒線", 
             PropertyName = "MinStockLevel",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
-                var stockItem = (StockDetailItem)item;
-                var value = stockItem.MinStockLevel?.ToString() ?? "";
-                
-                return @<input type="number"
-                               class="form-control  text-end"
-                               value="@value"
-                               @oninput="@(e => OnMinStockLevelInput(stockItem, e.Value?.ToString()))"
-                               readonly="@IsReadOnly"
-                               min="0" />;
-            }
+                var (item, valueString) = args;
+                await OnMinStockLevelInput((StockDetailItem)item, valueString);
+            })
         });
 
         // 最高庫存警戒線欄位
@@ -261,20 +245,15 @@
         { 
             Title = "最高警戒線", 
             PropertyName = "MaxStockLevel",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
-                var stockItem = (StockDetailItem)item;
-                var value = stockItem.MaxStockLevel?.ToString() ?? "";
-                
-                return @<input type="number"
-                               class="form-control  text-end"
-                               value="@value"
-                               @oninput="@(e => OnMaxStockLevelInput(stockItem, e.Value?.ToString()))"
-                               readonly="@IsReadOnly"
-                               min="0" />;
-            }
+                var (item, valueString) = args;
+                await OnMaxStockLevelInput((StockDetailItem)item, valueString);
+            })
         });
 
         return columns;

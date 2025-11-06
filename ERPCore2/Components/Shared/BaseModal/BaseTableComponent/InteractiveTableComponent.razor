@@ -113,20 +113,33 @@
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Number)
                                 {
-                                    @* 數字輸入框 *@
+                                    @* 數字輸入框 - 智能格式化：整數不顯示小數點 *@
                                     var value = GetPropertyValue(item, column.PropertyName);
-                                    var stringValue = value?.ToString() ?? "";
-                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var stringValue = "";
+                                    
+                                    // 智能格式化數字：如果是整數則不顯示小數點，有小數才顯示
+                                    if (value != null && decimal.TryParse(value.ToString(), out var decimalValue))
+                                    {
+                                        if (decimalValue != 0)
+                                        {
+                                            stringValue = decimalValue % 1 == 0 
+                                                ? decimalValue.ToString("F0") 
+                                                : decimalValue.ToString();
+                                        }
+                                    }
+                                    
+                                    var isDisabled = IsReadOnly || column.IsDisabled || (column.IsDisabledFunc?.Invoke(item!) ?? false);
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
+                                    var tooltip = column.TooltipFunc?.Invoke(item!) ?? column.Tooltip;
                                     
                                     <input type="number" 
                                            class="form-control @validationClass" 
                                            value="@stringValue"
                                            placeholder="@column.Placeholder"
-                                           title="@column.Title"
+                                           title="@tooltip"
                                            min="@column.MinValue"
                                            max="@column.MaxValue"
-                                           step="@column.Step"
+                                           step="any"
                                            disabled="@isDisabled"
                                            readonly="@column.IsReadOnly"
                                            onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"

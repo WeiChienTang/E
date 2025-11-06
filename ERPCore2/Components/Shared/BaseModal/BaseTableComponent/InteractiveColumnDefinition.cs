@@ -67,9 +67,14 @@ namespace ERPCore2.Components.Shared.SubCollections
         public bool IsRequired { get; set; } = false;
         
         /// <summary>
-        /// 是否禁用
+        /// 是否禁用（靜態設定）
         /// </summary>
         public bool IsDisabled { get; set; } = false;
+        
+        /// <summary>
+        /// 動態判斷是否禁用的函數（優先於 IsDisabled）
+        /// </summary>
+        public Func<object, bool>? IsDisabledFunc { get; set; }
         
         /// <summary>
         /// 佔位符文字
@@ -80,6 +85,11 @@ namespace ERPCore2.Components.Shared.SubCollections
         /// 工具提示
         /// </summary>
         public string? Tooltip { get; set; }
+        
+        /// <summary>
+        /// 動態工具提示函數（用於根據項目狀態顯示不同提示）
+        /// </summary>
+        public Func<object, string?>? TooltipFunc { get; set; }
         #endregion
 
         #region Input/Number 專用屬性

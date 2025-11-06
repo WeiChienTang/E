@@ -1,6 +1,5 @@
 @* 沖款收款記錄管理組件 - 管理收款、折讓等財務資訊 *@
 
-@using ERPCore2.Data.Enums
 @inject ISetoffPaymentService SetoffPaymentService
 @inject IBankService BankService
 @inject IPaymentMethodService PaymentMethodService
@@ -219,47 +218,31 @@
             {
                 Title = receivedAmountLabel,
                 Tooltip = SetoffType == SetoffType.AccountsReceivable ? "本次實際收到的款項金額" : "本次實際支付的款項金額",
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
+                PropertyName = nameof(SetoffPaymentItem.ReceivedAmount),
+                ColumnType = InteractiveColumnType.Number,
                 Width = "150px",
-                CustomTemplate = item =>
+                CellCssClass = "text-end",
+                MinValue = 0,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
                 {
-                    var paymentItem = (SetoffPaymentItem)item;
-                    return @<div class="position-relative">
-                        <input type="number" 
-                               class="form-control text-end"
-                               value="@(paymentItem.ReceivedAmount == 0 ? "" : paymentItem.ReceivedAmount.ToString("F0"))"
-                               @oninput="@(e => OnReceivedAmountInput(paymentItem, e.Value?.ToString()))"
-                               onkeydown="if(['e','E','+'].includes(event.key)) event.preventDefault();"
-                               disabled="@IsReadOnly"
-                               placeholder=""
-                               step="1"
-                               min="0" />
-                    </div>;
-                }
+                    var (item, valueString) = args;
+                    await OnReceivedAmountInput((SetoffPaymentItem)item, valueString);
+                })
             },
             new()
             {
                 Title = "折讓金額",
                 Tooltip = "本次給予的折讓金額（不計入實際收付款）",
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
+                PropertyName = nameof(SetoffPaymentItem.AllowanceAmount),
+                ColumnType = InteractiveColumnType.Number,
                 Width = "150px",
-                CustomTemplate = item =>
+                CellCssClass = "text-end",
+                MinValue = 0,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
                 {
-                    var paymentItem = (SetoffPaymentItem)item;
-                    return @<div class="position-relative">
-                        <input type="number" 
-                               class="form-control text-end"
-                               value="@(paymentItem.AllowanceAmount == 0 ? "" : paymentItem.AllowanceAmount.ToString("F0"))"
-                               @oninput="@(e => OnAllowanceAmountInput(paymentItem, e.Value?.ToString()))"
-                               onkeydown="if(['e','E','+'].includes(event.key)) event.preventDefault();"
-                               disabled="@IsReadOnly"
-                               placeholder=""
-                               step="1"
-                               min="0" />
-                    </div>;
-                }
+                    var (item, valueString) = args;
+                    await OnAllowanceAmountInput((SetoffPaymentItem)item, valueString);
+                })
             },
 
 
@@ -361,7 +344,7 @@
                 {
                     var paymentItem = (SetoffPaymentItem)item;
                     var subtotal = paymentItem.ReceivedAmount + paymentItem.AllowanceAmount;
-                    var displayValue = subtotal == 0 ? "" : subtotal.ToString("N2");
+                    var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
                     // 根據正負數決定顏色：正數為綠色，負數為紅色
                     var cssClass = subtotal >= 0 ? "text-success" : "text-danger";
                     return @<div class="text-end fw-bold @cssClass">@displayValue</div>;

@@ -301,24 +301,15 @@
         {
             Title = "領貨數量",
             PropertyName = "IssueQuantity",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "輸入領貨數量",
-            CustomTemplate = item =>
+            MinValue = 1,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
-                var detailItem = (DetailItem)item;
-                var displayValue = detailItem.IssueQuantity > 0 ? detailItem.IssueQuantity.ToString() : "";
-                var isDisabled = IsReadOnly;
-
-                return @<input type="number"
-                               class="form-control "
-                               value="@displayValue"
-                               min="1"
-                               step="1"
-                               placeholder="請輸入數量"
-                               disabled="@isDisabled"
-                               @onchange="@(async (e) => await OnIssueQuantityChanged(detailItem, e.Value))" />;
-            }
+                var (item, valueString) = args;
+                await OnIssueQuantityChanged((DetailItem)item, valueString);
+            })
         });
 
         return columns;

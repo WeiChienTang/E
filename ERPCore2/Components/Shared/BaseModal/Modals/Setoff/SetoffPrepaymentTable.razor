@@ -1,5 +1,6 @@
 @* 沖款預收付款項管理組件 - 管理預收付款項的使用記錄 *@
 
+@using ERPCore2.Helpers.NumericHelpers
 @inject ISetoffPrepaymentService SetoffPrepaymentService
 @inject ISetoffPrepaymentUsageService SetoffPrepaymentUsageService
 @inject IPrepaymentTypeService PrepaymentTypeService
@@ -412,7 +413,7 @@
                     var availableOptions = AvailablePrepayments.Select(p => new InteractiveSelectOption
                     { 
                         Value = p.Id, 
-                        Text = $"{p.SourceDocumentCode} (可用餘額: {p.AvailableBalance:N2})" 
+                        Text = $"{p.SourceDocumentCode}" 
                     });
                     options.AddRange(availableOptions);
                     
@@ -424,7 +425,7 @@
                     {
                         // 使用 SourceDocumentCode 和 Amount 顯示（因為 AvailablePrepayments 中找不到）
                         var displayText = !string.IsNullOrEmpty(prepaymentItem.SourceDocumentCode)
-                            ? $"{prepaymentItem.SourceDocumentCode} (總金額: {prepaymentItem.Amount:N2})"
+                            ? $"{prepaymentItem.SourceDocumentCode} (總金額: {NumberFormatHelper.FormatSmart(prepaymentItem.Amount)})"
                             : "未知來源";
                         
                         // 插入到第二個位置（"請選擇..."之後）
@@ -475,7 +476,7 @@
                         amount = sourcePrepayment?.Amount ?? 0;
                     }
                     
-                    return @<span class="text-muted">@amount.ToString("N2")</span>;
+                    return @<span class="text-muted">@NumberFormatHelper.FormatSmart(amount)</span>;
                 }
             },
             new()
@@ -500,7 +501,7 @@
                     var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == prepaymentItem.SourcePrepaymentId);
                     var availableBalance = sourcePrepayment?.AvailableBalance ?? 0;
 
-                    return @<span class="text-primary fw-bold">@availableBalance.ToString("N2")</span>;
+                    return @<span class="text-primary fw-bold">@NumberFormatHelper.FormatSmart(availableBalance)</span>;
                 }
             },
             new()
@@ -524,10 +525,11 @@
                     
                     // 根據類型決定顯示的值
                     var displayValue = isTransferType ? prepaymentItem.UsedAmount : prepaymentItem.Amount;
+                    var formattedValue = NumberFormatHelper.FormatForInput(displayValue);
                     
                     return @<input type="number" 
                                    class="form-control  text-end" 
-                                   value="@(displayValue == 0 ? "" : displayValue.ToString("F0"))" 
+                                   value="@formattedValue" 
                                    onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
                                    disabled="@IsReadOnly"
                                    step="1"
@@ -641,7 +643,7 @@
                 {
                     if (amount > sourcePrepayment.AvailableBalance)
                     {
-                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {sourcePrepayment.AvailableBalance:N2}");
+                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {NumberFormatHelper.FormatSmart(sourcePrepayment.AvailableBalance)}");
                         item.UsedAmount = sourcePrepayment.AvailableBalance;
                     }
                     else if (amount < 0)

@@ -158,20 +158,14 @@
                 Title = "所需數量", 
                 Tooltip = "輸入此材料所需的數量",
                 PropertyName = nameof(ProductCompositionDetail.Quantity),
-                ColumnType = InteractiveColumnType.Custom,
-                CustomTemplate = item => 
+                ColumnType = InteractiveColumnType.Number,
+                Width = "120px",
+                CellCssClass = "text-end",
+                MinValue = 0,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
                 {
-                    var detail = (ProductCompositionDetail)item;
-                    var value = detail.Quantity > 0 ? detail.Quantity.ToString("0.####") : "";
-                    
-                    return @<input type="number" 
-                                   class="form-control  text-end" 
-                                   value="@value"
-                                   min="0"
-                                   placeholder="請輸入數量"
-                                   disabled="@IsReadOnly"
-                                   @oninput="@(async (e) => await OnQuantityChanged((detail, e.Value?.ToString())))" />;
-                }
+                    await OnQuantityChanged(args);
+                })
             },
             
             // 單位選擇欄位

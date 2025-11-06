@@ -3,6 +3,7 @@
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
@@ -159,8 +160,11 @@
             await LoadSuppliersAsync();
             await LoadCompaniesAsync();
             
+            // 檢查是否啟用採購單審核
+            var enableApproval = await SystemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+            
             // 👇 使用欄位配置替代原本的方法調用
-            fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, companies, NotificationService);
+            fieldConfiguration = new PurchaseOrderFieldConfiguration(suppliers, companies, enableApproval, NotificationService);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }

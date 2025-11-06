@@ -236,38 +236,33 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "報價數量", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "Quantity",
+            ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             Tooltip = "輸入報價數量",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var value = quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString() : "";
                 var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    var displayText = quotationItem.Quantity > 0 ? quotationItem.Quantity.ToString("F0") : "0";
-                    var title = hasConverted ? "此商品已轉銷貨，無法修改數量" : "";
-                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control  text-end" 
-                               value="@value"
-                               disabled="@isFieldReadOnly"
-                               @oninput="(e) => OnQuantityInput(quotationItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               placeholder="" 
-                               min="0" 
-                               step="1" />;
-            }
+                return hasConverted && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                if (hasConverted && !isEmptyRow)
+                    return "此商品已轉銷貨，無法修改數量";
+                return "輸入報價數量";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var quotationItem = (QuotationItem)args.Item1;
+                await OnQuantityInput(quotationItem, args.Item2);
+            })
         });
 
         // 已轉數量欄位 (唯讀)
@@ -283,7 +278,7 @@ else
                 var quotationItem = (QuotationItem)item;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@quotationItem.ConvertedQuantity.ToString("F0")</span>
+                    <span class="text-muted">@quotationItem.ConvertedQuantity.ToString("F0")</span>
                 </div>;
             }
         });
@@ -292,79 +287,67 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單價", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "UnitPrice",
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "輸入報價單價",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var value = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString() : "";
                 var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    var displayText = quotationItem.UnitPrice > 0 ? quotationItem.UnitPrice.ToString("N2") : "0";
-                    var title = hasConverted ? "此商品已轉銷貨，無法修改單價" : "";
-                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control  text-end" 
-                               value="@value"
-                               disabled="@isFieldReadOnly"
-                               @oninput="(e) => OnUnitPriceInput(quotationItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               placeholder="" 
-                               min="0"
-                               step="any" />;
-            }
+                return hasConverted && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                if (hasConverted && !isEmptyRow)
+                    return "此商品已轉銷貨，無法修改單價";
+                return "輸入報價單價";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var quotationItem = (QuotationItem)args.Item1;
+                await OnUnitPriceInput(quotationItem, args.Item2);
+            })
         });
 
         // 折扣欄位
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "折扣(%)", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "DiscountPercentage",
+            ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             Tooltip = "輸入折扣百分比",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            MaxValue = 100,
+            IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var value = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString() : "";
                 var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    var displayText = quotationItem.DiscountPercentage > 0 ? quotationItem.DiscountPercentage.ToString("N2") : "0";
-                    var title = hasConverted ? "此商品已轉銷貨，無法修改折扣" : "";
-                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                // 使用 maxlength 屬性限制最多輸入3個字符(0-100)
-                return @<input type="number" class="form-control  text-end" 
-                               value="@value"
-                               disabled="@isFieldReadOnly"
-                               @oninput="(e) => OnDiscountPercentageInput(quotationItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               onkeypress="if(this.value.length >= 3 && event.key >= '0' && event.key <= '9') return false;"
-                               placeholder="" 
-                               min="0" 
-                               max="100"
-                               step="any" />;
-            }
+                return hasConverted && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                var hasConverted = quotationItem.ConvertedQuantity > 0;
+                var isEmptyRow = IsEmptyRow(quotationItem);
+                if (hasConverted && !isEmptyRow)
+                    return "此商品已轉銷貨，無法修改折扣";
+                return "輸入折扣百分比";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var quotationItem = (QuotationItem)args.Item1;
+                await OnDiscountPercentageInput(quotationItem, args.Item2);
+            })
         });
 
         // 總價欄位 (計算欄位，唯讀)
@@ -521,6 +504,22 @@ else
     }
 
     // ===== 內部方法 =====
+    /// <summary>
+    /// 公開方法：刷新明細資料（供父組件呼叫）
+    /// 用於銷貨訂單儲存後，重新載入明細以更新轉單數量
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        // 重新載入現有明細（會從 ExistingDetails 參數重新載入）
+        await LoadExistingDetailsAsync();
+        
+        // 強制 UI 更新
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 從現有明細資料載入到 QuotationItems
+    /// </summary>
     private Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 

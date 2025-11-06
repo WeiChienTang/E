@@ -218,6 +218,7 @@ namespace ERPCore2.Services
 
                 return approvalType switch
                 {
+                    ApprovalType.Quotation => parameter.EnableQuotationApproval,
                     ApprovalType.PurchaseOrder => parameter.EnablePurchaseOrderApproval,
                     ApprovalType.PurchaseReceiving => parameter.EnablePurchaseReceivingApproval,
                     ApprovalType.PurchaseReturn => parameter.EnablePurchaseReturnApproval,
@@ -238,6 +239,12 @@ namespace ERPCore2.Services
                 return false; // 發生錯誤時預設不啟用審核
             }
         }
+
+        /// <summary>
+        /// 檢查報價單是否需要審核
+        /// </summary>
+        public async Task<bool> IsQuotationApprovalEnabledAsync()
+            => await IsApprovalEnabledAsync(ApprovalType.Quotation);
 
         /// <summary>
         /// 檢查採購單是否需要審核

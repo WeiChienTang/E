@@ -1,4 +1,5 @@
 @* 進貨編輯模態組件 *@
+@using ERPCore2.Helpers.EditModal
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseOrderService PurchaseOrderService
@@ -536,15 +537,7 @@
             await Task.WhenAll(tasks);
             
             // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
-            try
-            {
-                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
-            }
-            catch (Exception)
-            {
-                // 如果載入失敗，使用預設值 5%
-                currentTaxRate = 5.0m;
-            }
+            currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
         }
         catch (Exception ex)
         {
@@ -741,7 +734,8 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入廠商名稱進行篩選，或直接選擇",
-                    ActionButtons = await GetSupplierActionButtonsAsync()
+                    ActionButtons = await GetSupplierActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -750,7 +744,8 @@
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
                     Options = await GetFilterProductOptions(),
-                    HelpText = "選擇特定產品進行篩選，或留空顯示所有產品"
+                    HelpText = "選擇特定產品進行篩選，或留空顯示所有產品",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -758,7 +753,8 @@
                     Label = "篩選採購單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,  // 改為非必填，支援多採購單模式
-                    HelpText = "可選擇特定採購單進行篩選，或留空使用多採購單模式"
+                    HelpText = "可選擇特定採購單進行篩選，或留空使用多採購單模式",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -766,7 +762,8 @@
                     Label = "進貨日",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    HelpText = "貨品實際進貨日"
+                    HelpText = "貨品實際進貨日",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 
                 new FormFieldDefinition()
@@ -781,10 +778,10 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTaxAmount),
-                    Label = $"採購稅額({currentTaxRate:F2}%)",
+                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("採購稅額", currentTaxRate),
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = $"採購單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）",
+                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("採購單", currentTaxRate),
                     IsReadOnly = true // 稅額欄位始終為唯讀
                 },
                 new FormFieldDefinition()
@@ -798,7 +795,9 @@
                 },
 
 
-                FormFieldConfigurationHelper.CreateRemarksField<PurchaseReceiving>()
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseReceiving>(
+                    readOnly: hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                )
             };
 
             formSections = new Dictionary<string, string>
@@ -1050,10 +1049,10 @@
                 // 1. 計算總金額（未稅）= Σ(進貨數量 × 單價)
                 editModalComponent.Entity.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
                 
-                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
-                editModalComponent.Entity.PurchaseReceivingTaxAmount = Math.Round(
-                    editModalComponent.Entity.TotalAmount * (currentTaxRate / 100), 
-                    2  // 四捨五入到小數點後2位
+                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
+                editModalComponent.Entity.PurchaseReceivingTaxAmount = TaxCalculationHelper.CalculateTax(
+                    editModalComponent.Entity.TotalAmount, 
+                    currentTaxRate
                 );
                 
                 // 3. 含稅總金額會自動計算（PurchaseReceivingTotalAmountIncludingTax 是計算屬性）
@@ -1129,65 +1128,45 @@
     }
 
     /// <summary>
-    /// 更新欄位的唯讀狀態
-    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
-    /// - 廠商 (SupplierId) - 同時禁用新增/編輯按鈕
-    /// - 採購單 (PurchaseOrderId)
-    /// - 產品篩選 (FilterProductId)
-    /// - 進貨日 (ReceiptDate)
-    /// - 備註 (Remarks)
-    /// 
-    /// 不鎖定的欄位（系統自動計算/生成）:
-    /// - 進貨單號 (ReceiptNumber) - 已經是唯讀
-    /// - 總金額 (TotalAmount) - 已經是唯讀
-    /// - 稅額 (PurchaseReceivingTaxAmount) - 已經是唯讀
-    /// - 含稅總金額 (PurchaseReceivingTotalAmountIncludingTax) - 已經是唯讀
+    /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 廠商欄位 - 設為唯讀並清空 ActionButtons
-        var supplierField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReceiving.SupplierId));
-        if (supplierField != null)
+        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
+        var fieldsToLock = new[]
         {
-            supplierField.IsReadOnly = hasUndeletableDetails;
-            
-            // 如果有不可刪除的明細，移除操作按鈕；否則恢復操作按鈕
-            if (hasUndeletableDetails)
-            {
-                supplierField.ActionButtons = new List<FieldActionButton>();
-            }
-            else
-            {
-                supplierField.ActionButtons = GetSupplierActionButtonsAsync().Result;
-            }
-        }
+            nameof(PurchaseReceiving.PurchaseOrderId),
+            "FilterProductId",
+            nameof(PurchaseReceiving.ReceiptDate),
+            nameof(BaseEntity.Remarks)
+        };
         
-        // 採購單欄位
-        var purchaseOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId));
-        if (purchaseOrderField != null)
-        {
-            purchaseOrderField.IsReadOnly = hasUndeletableDetails;
-        }
+        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
+        FormFieldLockHelper.LockMultipleFieldsSimple(
+            formFields, 
+            fieldsToLock, 
+            isLocked: hasUndeletableDetails
+        );
         
-        // 產品篩選欄位
-        var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-        if (filterProductField != null)
+        // 特殊處理廠商欄位（需要 ActionButtons）
+        if (hasUndeletableDetails)
         {
-            filterProductField.IsReadOnly = hasUndeletableDetails;
+            // 鎖定：移除 ActionButtons
+            FormFieldLockHelper.LockField(
+                formFields,
+                nameof(PurchaseReceiving.SupplierId),
+                isLocked: true
+            );
         }
-        
-        // 進貨日欄位
-        var receiptDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReceiving.ReceiptDate));
-        if (receiptDateField != null)
+        else
         {
-            receiptDateField.IsReadOnly = hasUndeletableDetails;
-        }
-        
-        // 備註欄位
-        var remarksField = formFields.FirstOrDefault(f => f.PropertyName == nameof(BaseEntity.Remarks));
-        if (remarksField != null)
-        {
-            remarksField.IsReadOnly = hasUndeletableDetails;
+            // 解鎖：恢復 ActionButtons
+            FormFieldLockHelper.LockField(
+                formFields,
+                nameof(PurchaseReceiving.SupplierId),
+                isLocked: false,
+                actionButtonsGetter: GetSupplierActionButtonsAsync
+            );
         }
     }
 
@@ -1353,11 +1332,11 @@
                 purchaseReceivingDetails = await PurchaseReceivingDetailService.GetByPurchaseReceivingIdAsync(purchaseReceiving.Id);
             }
 
-            // 更新主檔的總金額和稅額
+            // 更新主檔的總金額和稅額（使用 TaxCalculationHelper 統一處理）
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
-            purchaseReceiving.PurchaseReceivingTaxAmount = Math.Round(
-                purchaseReceiving.TotalAmount * (currentTaxRate / 100), 
-                2  // 四捨五入到小數點後2位
+            purchaseReceiving.PurchaseReceivingTaxAmount = TaxCalculationHelper.CalculateTax(
+                purchaseReceiving.TotalAmount, 
+                currentTaxRate
             );
             
             if (purchaseReceiving.TotalAmount > 0)
@@ -1658,34 +1637,46 @@
     /// <summary>
     /// 處理進貨退出儲存後的事件
     /// </summary>
+    /// <summary>
+    /// 處理進貨退出儲存後的事件
+    /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯
+    /// </summary>
     private async Task HandlePurchaseReturnSaved(PurchaseReturn savedReturn)
     {
-        // 關閉 Modal
-        showPurchaseReturnModal = false;
-        selectedPurchaseReturnId = null;
-        
-        // 重新載入進貨明細的退貨數量資訊
-        if (purchaseReceivingDetailManager != null)
-        {
-            await purchaseReceivingDetailManager.LoadReturnedQuantitiesAsync();
-        }
-        
-        StateHasChanged();
+        await ChildDocumentRefreshHelper.HandleChildDocumentSavedWithCustomRefreshAsync(
+            closeModal: () =>
+            {
+                showPurchaseReturnModal = false;
+                selectedPurchaseReturnId = null;
+            },
+            customRefresh: async () =>
+            {
+                // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                // 重新載入進貨明細的退貨數量資訊
+                if (purchaseReceivingDetailManager != null)
+                {
+                    await purchaseReceivingDetailManager.LoadReturnedQuantitiesAsync();
+                }
+            },
+            stateHasChanged: StateHasChanged,
+            invokeAsync: InvokeAsync
+        );
     }
 
     /// <summary>
     /// 處理沖款單儲存後的事件
+    /// 使用 ChildDocumentRefreshHelper 簡化版處理
     /// </summary>
-    private void HandleSetoffDocumentSaved(SetoffDocument savedDocument)
+    private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
     {
-        // 關閉 Modal
-        showSetoffDocumentModal = false;
-        selectedSetoffDocumentId = null;
-        
-        // 如果需要，可以重新載入相關資料
-        // 目前沒有特別需要重新載入的資料
-        
-        StateHasChanged();
+        await ChildDocumentRefreshHelper.HandleChildDocumentSavedSimpleAsync(
+            closeModal: () =>
+            {
+                showSetoffDocumentModal = false;
+                selectedSetoffDocumentId = null;
+            },
+            stateHasChanged: StateHasChanged
+        );
     }
 
     // ===== 公開方法（供外部組件調用） =====
@@ -1706,35 +1697,33 @@
     {
         try
         {
-            // 設定為新增模式
-            PurchaseReceivingId = null;
-            
-            // 設定預填值
-            PrefilledSupplierId = supplierId;
-            PrefilledPurchaseOrderId = purchaseOrderId;
-            
-            // 重置自動載入相關標記
-            shouldAutoLoadUnreceived = true;
-            
-            // 觸發 Modal 顯示
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(true);
-            }
-            
-            // 增加延遲時間以確保子組件完全就緒
-            await Task.Delay(500);
-            
-            // 檢查子組件是否已就緒並執行自動載入
-            if (purchaseReceivingDetailManager != null && shouldAutoLoadUnreceived)
-            {
-                shouldAutoLoadUnreceived = false;
-                
-                await InvokeAsync(async () =>
+            // 使用 DocumentConversionHelper 統一處理轉單邏輯
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
                 {
-                    await purchaseReceivingDetailManager.LoadAllUnreceivedItems();
-                    StateHasChanged();
-                });
+                    PurchaseReceivingId = null;
+                    PrefilledSupplierId = supplierId;
+                    PrefilledPurchaseOrderId = purchaseOrderId;
+                    shouldAutoLoadUnreceived = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadUnreceived = false;
+                    if (purchaseReceivingDetailManager != null)
+                    {
+                        await purchaseReceivingDetailManager.LoadAllUnreceivedItems();
+                    }
+                },
+                detailManagerReady: () => purchaseReceivingDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadUnreceived,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
             }
         }
         catch (Exception ex)

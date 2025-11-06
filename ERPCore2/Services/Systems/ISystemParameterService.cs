@@ -7,6 +7,8 @@ namespace ERPCore2.Services
     /// </summary>
     public enum ApprovalType
     {
+        /// <summary>報價單</summary>
+        Quotation,
         /// <summary>採購單</summary>
         PurchaseOrder,
         /// <summary>進貨單</summary>
@@ -53,6 +55,11 @@ namespace ERPCore2.Services
         /// <param name="approvalType">審核類型</param>
         /// <returns>是否啟用審核</returns>
         Task<bool> IsApprovalEnabledAsync(ApprovalType approvalType);
+
+        /// <summary>
+        /// 檢查報價單是否需要審核
+        /// </summary>
+        Task<bool> IsQuotationApprovalEnabledAsync();
 
         /// <summary>
         /// 檢查採購單是否需要審核

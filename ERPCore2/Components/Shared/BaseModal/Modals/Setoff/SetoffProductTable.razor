@@ -3,11 +3,7 @@
 @inject ISetoffProductDetailService SetoffProductDetailService
 @inject IProductService ProductService
 @inject INotificationService NotificationService
-@using ERPCore2.Data.Entities
-@using ERPCore2.Data.Enums
-@using ERPCore2.Services
 @using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Helpers
 
 @if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
 {
@@ -296,7 +292,8 @@ else
                     var cssClass = detail?.IsReturn == true ? "text-danger" : "text-success";
                     var amount = detail?.TotalAmount ?? 0;
                     var displayAmount = detail?.IsReturn == true ? -amount : amount;
-                    return @<div class="text-end fw-bold @cssClass">@displayAmount.ToString("N2")</div>;
+                    var formattedValue = NumberFormatHelper.FormatSmart(displayAmount);
+                    return @<div class="text-end fw-bold @cssClass">@formattedValue</div>;
                 }
             },
             new()
@@ -328,7 +325,8 @@ else
                     var displayAmount = detail?.IsReturn == true ? -adjustedRemainingAmount : adjustedRemainingAmount;
                     var cssClass = adjustedRemainingAmount > 0 ? "text-warning fw-bold" : 
                                    adjustedRemainingAmount < 0 ? "text-danger fw-bold" : "text-muted";
-                    return @<div class="text-end @cssClass">@displayAmount.ToString("N2")</div>;
+                    var formattedValue = NumberFormatHelper.FormatSmart(displayAmount);
+                    return @<div class="text-end @cssClass">@formattedValue</div>;
                 }
             },
             new()
@@ -342,8 +340,7 @@ else
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
                     var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
-                    var displayValue = setoffItem.CurrentSetoffAmount == 0 ? "" : 
-                        (isReturn ? -setoffItem.CurrentSetoffAmount : setoffItem.CurrentSetoffAmount).ToString();
+                    var displayValue = NumberFormatHelper.FormatForInput(setoffItem.CurrentSetoffAmount, isReturn);
                     return @<input type="number"
                                   class="form-control  text-end"
                                   min="0"
@@ -369,8 +366,7 @@ else
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
                     var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
-                    var displayValue = setoffItem.CurrentAllowanceAmount == 0 ? "" : 
-                        (isReturn ? -setoffItem.CurrentAllowanceAmount : setoffItem.CurrentAllowanceAmount).ToString();
+                    var displayValue = NumberFormatHelper.FormatForInput(setoffItem.CurrentAllowanceAmount, isReturn);
                     return @<input type="number"
                                   class="form-control  text-end"
                                   min="0"
@@ -397,7 +393,7 @@ else
                 // 如果是退貨單據，小計需要顯示為負數
                 var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
                 var displaySubtotal = isReturn ? -subtotal : subtotal;
-                var displayValue = subtotal == 0 ? "" : displaySubtotal.ToString("N2");
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(displaySubtotal);
                 // 根據正負數決定顏色：正數為綠色，負數為紅色
                 var cssClass = displaySubtotal >= 0 ? "text-success" : "text-danger";
                 return @<div class="text-end fw-bold @cssClass">@displayValue</div>;

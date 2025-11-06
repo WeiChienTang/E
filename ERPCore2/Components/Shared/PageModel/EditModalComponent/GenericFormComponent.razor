@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.GenericComponent.Button
+@using ERPCore2.Helpers.NumericHelpers
 @inject IJSRuntime JSRuntime
 @typeparam TModel
 @implements IDisposable
@@ -183,6 +184,8 @@
                     break;
                     
                 case FormFieldType.Number:
+                    var numberValue = GetPropertyValue(Model, field.PropertyName);
+                    var formattedNumberValue = FormatNumberForInput(numberValue);
                     <input type="number"
                            class="@inputClass"
                            id="@field.PropertyName"
@@ -195,7 +198,7 @@
                            min="@field.Min"
                            max="@field.Max"
                            step="@field.Step"
-                           value="@(GetPropertyValue(Model, field.PropertyName)?.ToString() ?? "")"
+                           value="@formattedNumberValue"
                            @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                     break;
                     
@@ -1054,6 +1057,30 @@
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// 格式化數字欄位用於輸入框顯示
+    /// </summary>
+    /// <remarks>
+    /// - 整數不顯示小數點（100 而非 100.00）
+    /// - 有小數才顯示小數點（100.5）
+    /// - 零值顯示為空字串
+    /// - 不使用千分位（避免影響 input type="number"）
+    /// </remarks>
+    private string FormatNumberForInput(object? value)
+    {
+        if (value == null)
+            return string.Empty;
+
+        // 嘗試轉換為 decimal
+        if (decimal.TryParse(value.ToString(), out decimal decimalValue))
+        {
+            return NumberFormatHelper.FormatForInput(decimalValue);
+        }
+
+        // 如果無法轉換，返回原始字串
+        return value.ToString() ?? string.Empty;
     }
 
     private ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant GetButtonVariant(string variant)

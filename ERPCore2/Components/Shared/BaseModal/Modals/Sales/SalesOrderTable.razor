@@ -243,9 +243,10 @@ else
     // ===== 退貨數量管理方法 =====
     
     /// <summary>
-    /// 載入所有銷貨訂單明細的退貨數量
+    /// 載入所有銷貨訂單明細的退貨數量（公開方法，供父組件呼叫）
+    /// 用於子單據儲存後，重新載入明細以更新退貨數量
     /// </summary>
-    private async Task LoadReturnedQuantitiesAsync()
+    public async Task LoadReturnedQuantitiesAsync()
     {
         _returnedQuantities.Clear();
         
@@ -277,6 +278,9 @@ else
         
         // 載入退貨數量後，通知父組件是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();
+        
+        // 強制 UI 更新
+        StateHasChanged();
     }
     
     /// <summary>
@@ -891,19 +895,22 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "訂單數量", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(SalesItem.OrderQuantity),
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "銷售的商品數量。已退貨或已收款的商品將無法修改數量",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
+            {
+                var salesItem = (SalesItem)item;
+                return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+            },
+            TooltipFunc = item =>
             {
                 var salesItem = (SalesItem)item;
                 var hasReturnRecord = HasReturnRecord(salesItem);
                 var hasPaymentRecord = HasPaymentRecord(salesItem);
-                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
-                var value = salesItem.OrderQuantity > 0 ? ((int)salesItem.OrderQuantity).ToString() : "";
+                if (!hasReturnRecord && !hasPaymentRecord) return null;
                 
-                // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
                 if (hasReturnRecord)
                     tooltipMessages.Add("此商品已有退貨記錄");
@@ -912,47 +919,35 @@ else
                     var receivedAmount = GetReceivedAmount(salesItem);
                     tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
                 }
-                var title = tooltipMessages.Any() 
-                    ? string.Join("；", tooltipMessages) + "，無法修改訂單數量" 
-                    : "";
-                
-                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">
-                            @(salesItem.OrderQuantity > 0 ? salesItem.OrderQuantity.ToString("N0") : "0")
-                        </span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control " 
-                               value="@value"
-                               @oninput="(e) => OnOrderQuantityInput(salesItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               placeholder="" 
-                               min="0" 
-                               step="1" />;
-            }
+                return string.Join("；", tooltipMessages) + "，無法修改訂單數量";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnOrderQuantityInput((SalesItem)item, valueString);
+            })
         });
 
         // 單價欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單價", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(SalesItem.UnitPrice),
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "商品的銷售單價。已退貨或已收款的商品將無法修改價格",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
+            {
+                var salesItem = (SalesItem)item;
+                return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+            },
+            TooltipFunc = item =>
             {
                 var salesItem = (SalesItem)item;
                 var hasReturnRecord = HasReturnRecord(salesItem);
                 var hasPaymentRecord = HasPaymentRecord(salesItem);
-                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                if (!hasReturnRecord && !hasPaymentRecord) return null;
                 
-                // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
                 if (hasReturnRecord)
                     tooltipMessages.Add("此商品已有退貨記錄");
@@ -961,48 +956,36 @@ else
                     var receivedAmount = GetReceivedAmount(salesItem);
                     tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
                 }
-                var title = tooltipMessages.Any() 
-                    ? string.Join("；", tooltipMessages) + "，無法修改單價" 
-                    : "";
-                
-                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">
-                            @(salesItem.UnitPrice > 0 ? salesItem.UnitPrice.ToString("N0") : "0")
-                        </span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control "
-                                min="0"
-                                step="1"
-                                value="@((int)salesItem.UnitPrice)"
-                                @oninput="(e) => OnUnitPriceInput(salesItem, e.Value?.ToString())"
-                                onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                                placeholder="" />;
-            }
+                return string.Join("；", tooltipMessages) + "，無法修改單價";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnUnitPriceInput((SalesItem)item, valueString);
+            })
         });        
 
         // 折扣欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "折扣%", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(SalesItem.DiscountPercentage),
+            ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             HideOnMobile = true,
             Tooltip = "折扣百分比（0-100%）。已退貨或已收款的商品將無法修改折扣",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
+            {
+                var salesItem = (SalesItem)item;
+                return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+            },
+            TooltipFunc = item =>
             {
                 var salesItem = (SalesItem)item;
                 var hasReturnRecord = HasReturnRecord(salesItem);
                 var hasPaymentRecord = HasPaymentRecord(salesItem);
-                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                if (!hasReturnRecord && !hasPaymentRecord) return null;
                 
-                // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
                 if (hasReturnRecord)
                     tooltipMessages.Add("此商品已有退貨記錄");
@@ -1011,32 +994,13 @@ else
                     var receivedAmount = GetReceivedAmount(salesItem);
                     tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
                 }
-                var title = tooltipMessages.Any() 
-                    ? string.Join("；", tooltipMessages) + "，無法修改折扣" 
-                    : "";
-                
-                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">
-                            @(salesItem.DiscountPercentage > 0 ? $"{salesItem.DiscountPercentage:N0}%" : "0%")
-                        </span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<div class="input-group input-group-sm">
-                    <input type="number" class="form-control"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value="@((int)salesItem.DiscountPercentage)"
-                            @oninput="(e) => OnDiscountPercentageInput(salesItem, e.Value?.ToString())"
-                            onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                            placeholder="%" />
-                </div>;
-            }
+                return string.Join("；", tooltipMessages) + "，無法修改折扣";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnDiscountPercentageInput((SalesItem)item, valueString);
+            })
         });
         
 

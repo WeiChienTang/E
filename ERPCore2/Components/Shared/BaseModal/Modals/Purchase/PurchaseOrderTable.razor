@@ -239,35 +239,25 @@ else
         { 
             Title = "數量", 
             PropertyName = "Quantity",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "採購的商品數量。已有進貨記錄的商品將無法修改數量",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
             {
                 var productItem = (ProductItem)item;
-                var isEmptyRow = IsEmptyRow(productItem);
-                var value = productItem.Quantity > 0 ? productItem.Quantity.ToString() : "";
+                return productItem.ReceivedQuantity > 0;
+            },
+            TooltipFunc = item =>
+            {
+                var productItem = (ProductItem)item;
                 var hasReceiving = productItem.ReceivedQuantity > 0;
-                var isFieldReadOnly = IsReadOnly || hasReceiving;
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    var displayText = productItem.Quantity > 0 ? productItem.Quantity.ToString("N0") : "";
-                    var title = hasReceiving ? "此商品已有進貨記錄，無法修改數量" : "";
-                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                return @<input type="number" class="form-control " 
-                               value="@value"
-                               @oninput="(e) => OnQuantityInput(productItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               placeholder="" 
-                               min="0" 
-                               step="1" />;
-            }
+                return hasReceiving ? "此商品已有進貨記錄，無法修改數量" : null;
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnQuantityInput((ProductItem)item, valueString);
+            })
         });
 
         // 入庫量欄位 (只讀)
@@ -275,17 +265,10 @@ else
         { 
             Title = "入庫量", 
             PropertyName = "ReceivedQuantity",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "已入庫的累計數量（唯讀）",
-            CustomTemplate = item => 
-            {
-                var productItem = (ProductItem)item;
-                
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@productItem.ReceivedQuantity.ToString("F0")</span>
-                </div>;
-            }
+            IsReadOnly = true
         });
 
         // 單價欄位
@@ -293,35 +276,25 @@ else
         { 
             Title = "單價", 
             PropertyName = "Price",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "商品的採購單價。已有進貨記錄的商品將無法修改單價",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
             {
                 var productItem = (ProductItem)item;
-                var isEmptyRow = IsEmptyRow(productItem);
-                var value = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
+                return productItem.ReceivedQuantity > 0;
+            },
+            TooltipFunc = item =>
+            {
+                var productItem = (ProductItem)item;
                 var hasReceiving = productItem.ReceivedQuantity > 0;
-                var isFieldReadOnly = IsReadOnly || hasReceiving;
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    var displayText = productItem.Price > 0 ? productItem.Price.ToString("F0") : "";
-                    var title = hasReceiving ? "此商品已有進貨記錄，無法修改單價" : "";
-                    return @<div class="d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                return @<input type="number" class="form-control " 
-                               value="@value"
-                               @oninput="(e) => OnPriceInput(productItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               placeholder=""
-                               step="1"
-                               min="0" />;
-            }
+                return hasReceiving ? "此商品已有進貨記錄，無法修改單價" : null;
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnPriceInput((ProductItem)item, valueString);
+            })
         });
 
         // 只有在已核准的狀態下才顯示「完成進貨」欄位
@@ -464,6 +437,23 @@ else
     public async Task RefreshAvailableProductsAsync()
     {
         await LoadAvailableProductsAsync();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 公開方法：刷新明細資料（供父組件呼叫）
+    /// 用於子單據儲存後，重新載入明細以更新相關數量（如入庫量）
+    /// 
+    /// 使用場景：
+    /// - 進貨單儲存後，刷新採購單明細的「入庫量」
+    /// - 確保 UI 顯示最新的資料狀態
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        // 重新載入現有明細（會從 ExistingDetails 參數重新載入）
+        await LoadExistingDetailsAsync();
+        
+        // 強制 UI 更新
         StateHasChanged();
     }
 

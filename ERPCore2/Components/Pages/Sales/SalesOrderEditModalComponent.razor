@@ -1,3 +1,4 @@
+@using ERPCore2.Helpers.EditModal
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
@@ -415,15 +416,7 @@
             };
             
             // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
-            try
-            {
-                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
-            }
-            catch (Exception)
-            {
-                // 如果載入失敗，使用預設值 5%
-                currentTaxRate = 5.0m;
-            }
+            currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
         }
         catch (Exception ex)
         {
@@ -454,7 +447,8 @@
                     Placeholder = "請輸入銷貨單號",
                     IsRequired = true,
                     MaxLength = 30,
-                    HelpText = "銷貨訂單的唯一編號，新增時系統會自動產生，也可手動修改"
+                    HelpText = "銷貨訂單的唯一編號，新增時系統會自動產生，也可手動修改",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -465,7 +459,8 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetCustomerActionButtonsAsync()
+                    ActionButtons = await GetCustomerActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -476,7 +471,8 @@
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇負責此訂單的業務員",
-                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                    ActionButtons = await GetEmployeeActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -484,7 +480,8 @@
                     Label = "訂單日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    HelpText = "銷貨訂單建立日期"
+                    HelpText = "銷貨訂單建立日期",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -492,7 +489,8 @@
                     Label = "預定出貨日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
-                    HelpText = "預計出貨給客戶的日期"
+                    HelpText = "預計出貨給客戶的日期",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
 
                 new FormFieldDefinition()
@@ -507,10 +505,10 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.SalesTaxAmount),
-                    Label = $"銷貨稅額({currentTaxRate:F2}%)",
+                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("銷貨稅額", currentTaxRate),
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = $"銷貨單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）",
+                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("銷貨單", currentTaxRate),
                     IsReadOnly = true // 稅額欄位始終為唯讀
                 },
                 new FormFieldDefinition()
@@ -531,7 +529,8 @@
                     IsRequired = false,
                     MaxLength = 200,
                     HelpText = "與客戶約定的付款方式和期限",
-                    ContainerCssClass = "col-3" 
+                    ContainerCssClass = "col-3",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -542,10 +541,14 @@
                     IsRequired = false,
                     MaxLength = 200,
                     HelpText = "與客戶約定的交貨方式和條件",
-                    ContainerCssClass = "col-3" 
+                    ContainerCssClass = "col-3",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
 
-                FormFieldConfigurationHelper.CreateRemarksField<SalesOrder>(containerCssClass: "col-6"),
+                FormFieldConfigurationHelper.CreateRemarksField<SalesOrder>(
+                    containerCssClass: "col-6",
+                    readOnly: hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                ),
             };
 
             formSections = new Dictionary<string, string>
@@ -1003,10 +1006,10 @@
                 // 1. 計算總金額（未稅）- 使用明細的 SubtotalAmount（已扣除折扣）
                 editModalComponent.Entity.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
                 
-                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
-                editModalComponent.Entity.SalesTaxAmount = Math.Round(
-                    editModalComponent.Entity.TotalAmount * (currentTaxRate / 100), 
-                    2  // 四捨五入到小數點後2位
+                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
+                editModalComponent.Entity.SalesTaxAmount = TaxCalculationHelper.CalculateTax(
+                    editModalComponent.Entity.TotalAmount, 
+                    currentTaxRate
                 );
                 
                 // 3. 含稅總金額會自動計算（TotalAmountWithTax 是計算屬性）
@@ -1055,80 +1058,58 @@
     /// - 交貨條件 (DeliveryTerms)
     /// - 備註 (Remarks)
     /// </summary>
+    /// <summary>
+    /// 更新欄位的唯讀狀態 - 根據是否有不可刪除的明細
+    /// 使用 FormFieldLockHelper 統一處理欄位鎖定邏輯
+    /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 銷貨單號欄位
-        var orderNumberField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.SalesOrderNumber));
-        if (orderNumberField != null)
+        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
+        var fieldsToLock = new[]
         {
-            orderNumberField.IsReadOnly = hasUndeletableDetails;
-        }
+            nameof(SalesOrder.SalesOrderNumber),
+            nameof(SalesOrder.OrderDate),
+            nameof(SalesOrder.ExpectedDeliveryDate),
+            nameof(SalesOrder.PaymentTerms),
+            nameof(SalesOrder.DeliveryTerms),
+            nameof(BaseEntity.Remarks)
+        };
         
-        // 客戶欄位 - 設為唯讀並清空 ActionButtons
-        var customerField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.CustomerId));
-        if (customerField != null)
+        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
+        FormFieldLockHelper.LockMultipleFieldsSimple(
+            formFields, 
+            fieldsToLock, 
+            isLocked: hasUndeletableDetails
+        );
+        
+        // 特殊處理有 ActionButtons 的欄位
+        var fieldsWithActionButtons = new Dictionary<string, Func<Task<List<FieldActionButton>>>>
         {
-            customerField.IsReadOnly = hasUndeletableDetails;
-            
+            { nameof(SalesOrder.CustomerId), GetCustomerActionButtonsAsync },
+            { nameof(SalesOrder.EmployeeId), GetEmployeeActionButtonsAsync }
+        };
+
+        foreach (var kvp in fieldsWithActionButtons)
+        {
             if (hasUndeletableDetails)
             {
-                customerField.ActionButtons = new List<FieldActionButton>();
+                // 鎖定：移除 ActionButtons
+                FormFieldLockHelper.LockField(
+                    formFields,
+                    kvp.Key,
+                    isLocked: true
+                );
             }
             else
             {
-                customerField.ActionButtons = GetCustomerActionButtonsAsync().Result;
+                // 解鎖：恢復 ActionButtons
+                FormFieldLockHelper.LockField(
+                    formFields,
+                    kvp.Key,
+                    isLocked: false,
+                    actionButtonsGetter: kvp.Value
+                );
             }
-        }
-        
-        // 業務員欄位 - 設為唯讀並清空 ActionButtons
-        var employeeField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.EmployeeId));
-        if (employeeField != null)
-        {
-            employeeField.IsReadOnly = hasUndeletableDetails;
-            
-            if (hasUndeletableDetails)
-            {
-                employeeField.ActionButtons = new List<FieldActionButton>();
-            }
-            else
-            {
-                employeeField.ActionButtons = GetEmployeeActionButtonsAsync().Result;
-            }
-        }
-        
-        // 訂單日期欄位
-        var orderDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.OrderDate));
-        if (orderDateField != null)
-        {
-            orderDateField.IsReadOnly = hasUndeletableDetails;
-        }
-        
-        // 預定出貨日期欄位
-        var deliveryDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.ExpectedDeliveryDate));
-        if (deliveryDateField != null)
-        {
-            deliveryDateField.IsReadOnly = hasUndeletableDetails;
-        }
-        
-        // 付款條件欄位
-        var paymentTermsField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.PaymentTerms));
-        if (paymentTermsField != null)
-        {
-            paymentTermsField.IsReadOnly = hasUndeletableDetails;
-        }
-        
-        // 交貨條件欄位
-        var deliveryTermsField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesOrder.DeliveryTerms));
-        if (deliveryTermsField != null)
-        {
-            deliveryTermsField.IsReadOnly = hasUndeletableDetails;
-        }
-        
-        // 備註欄位
-        var remarksField = formFields.FirstOrDefault(f => f.PropertyName == nameof(BaseEntity.Remarks));
-        if (remarksField != null)
-        {
-            remarksField.IsReadOnly = hasUndeletableDetails;
         }
     }
 
@@ -1255,29 +1236,49 @@
     /// <summary>
     /// 處理銷售退貨單儲存後的事件
     /// </summary>
+    /// <summary>
+    /// 處理銷售退貨單儲存後的事件
+    /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯
+    /// </summary>
     private async Task HandleSalesReturnSaved(SalesReturn savedReturn)
     {
         try
         {
-            // 關閉 Modal
-            showSalesReturnModal = false;
-            selectedSalesReturnId = null;
-            
-            // 重新載入銷貨訂單明細以更新已退貨數量
-            if (SalesOrderId.HasValue)
-            {
-                await LoadSalesOrderDetails(SalesOrderId.Value);
-                
-                // 重新計算總金額和稅額
-                if (editModalComponent?.Entity != null)
+            await ChildDocumentRefreshHelper.HandleChildDocumentSavedAsync(
+                closeModal: () =>
                 {
-                    await HandleDetailsChanged(salesOrderDetails);
+                    showSalesReturnModal = false;
+                    selectedSalesReturnId = null;
+                },
+                reloadDetails: async () =>
+                {
+                    if (SalesOrderId.HasValue)
+                    {
+                        await LoadSalesOrderDetails(SalesOrderId.Value);
+                        
+                        // 重新計算總金額和稅額
+                        if (editModalComponent?.Entity != null)
+                        {
+                            await HandleDetailsChanged(salesOrderDetails);
+                        }
+                    }
+                },
+                detailManager: salesOrderDetailManager,
+                notificationMessage: null,
+                stateHasChanged: StateHasChanged,
+                invokeAsync: InvokeAsync,
+                additionalActions: async () =>
+                {
+                    // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                    // 重新載入退貨數量資訊
+                    if (salesOrderDetailManager != null)
+                    {
+                        await salesOrderDetailManager.LoadReturnedQuantitiesAsync();
+                    }
                 }
-                
-                await NotificationService.ShowSuccessAsync($"銷售退貨單 {savedReturn.SalesReturnNumber} 已更新");
-            }
+            );
             
-            StateHasChanged();
+            await NotificationService.ShowSuccessAsync($"銷售退貨單 {savedReturn.SalesReturnNumber} 已更新，銷貨訂單明細已刷新");
         }
         catch (Exception ex)
         {
@@ -1405,11 +1406,11 @@
                 }
             }
 
-            // 更新總金額和稅額
+            // 更新總金額和稅額（使用 TaxCalculationHelper 統一處理）
             salesOrder.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
-            salesOrder.SalesTaxAmount = Math.Round(
-                salesOrder.TotalAmount * (currentTaxRate / 100), 
-                2
+            salesOrder.SalesTaxAmount = TaxCalculationHelper.CalculateTax(
+                salesOrder.TotalAmount, 
+                currentTaxRate
             );
 
             var isEditMode = SalesOrderId.HasValue;
@@ -1661,30 +1662,27 @@
     {
         try
         {
-            // 設定為新增模式
-            SalesOrderId = null;
-            
-            // 設定預填值
-            PrefilledCustomerId = customerId;
-            PrefilledQuotationId = quotationId;
-            
-            // 觸發 Modal 顯示
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(true);
-            }
-            
-            // 增加延遲時間以確保子組件完全就緒
-            await Task.Delay(500);
-            
-            // 檢查子組件是否已就緒並執行自動載入報價單明細
-            if (salesOrderDetailManager != null)
-            {
-                await InvokeAsync(async () =>
+            // 使用 DocumentConversionHelper 處理轉單邏輯（自訂載入邏輯版本）
+            var success = await DocumentConversionHelper.ShowConversionModalWithCustomLoadAsync(
+                resetEntityId: () => SalesOrderId = null,
+                setPrefilledValues: () =>
+                {
+                    PrefilledCustomerId = customerId;
+                    PrefilledQuotationId = quotationId;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                customLoadAction: async () =>
                 {
                     await LoadQuotationDetailsToSalesOrder(quotationId);
-                    StateHasChanged();
-                });
+                },
+                detailManagerReady: () => salesOrderDetailManager != null,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
             }
         }
         catch (Exception ex)

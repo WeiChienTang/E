@@ -17,14 +17,17 @@ namespace ERPCore2.FieldConfiguration
         private readonly List<Customer> _customers;
         private readonly List<Employee> _employees;
         private readonly INotificationService? _notificationService;
+        private readonly bool _enableApproval;
         
         public QuotationFieldConfiguration(
             List<Customer> customers, 
             List<Employee> employees,
+            bool enableApproval = false,
             INotificationService? notificationService = null)
         {
             _customers = customers;
             _employees = employees;
+            _enableApproval = enableApproval;
             _notificationService = notificationService;
         }
         
@@ -32,7 +35,7 @@ namespace ERPCore2.FieldConfiguration
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<Quotation>>
+                var fields = new Dictionary<string, FieldDefinition<Quotation>>
                 {
                     {
                         nameof(Quotation.QuotationNumber),
@@ -42,7 +45,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "報價單號",
                             FilterPlaceholder = "輸入報價單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Quotation.QuotationNumber), q => q.QuotationNumber)
@@ -57,7 +59,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
-                            FilterOrder = 2,
                             HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(Quotation.QuotationDate), q => q.QuotationDate)
@@ -72,7 +73,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "客戶",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            FilterOrder = 3,
                             Options = _customers.Select(c => new SelectOption 
                             { 
                                 Text = c.CompanyName ?? "", 
@@ -91,7 +91,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "業務人員",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            FilterOrder = 4,
                             HeaderStyle = "width: 120px;",
                             NullDisplayText = "未指派",
                             Options = _employees.Select(e => new SelectOption 
@@ -111,24 +110,25 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "報價金額",
                             ColumnType = ColumnDataType.Currency,
                             TableOrder = 5,
-                            FilterOrder = 5,
                             HeaderStyle = "width: 130px; text-align: right;",
                             ShowInFilter = false
                         }
-                    },
-                    {
-                        nameof(Quotation.IsApproved),
+                    }
+                };
+
+                // 只有在啟用審核時才加入核准狀態欄位
+                if (_enableApproval)
+                {
+                    fields.Add(nameof(Quotation.IsApproved),
                         new FieldDefinition<Quotation>
                         {
                             PropertyName = nameof(Quotation.IsApproved),
                             DisplayName = "核准狀態",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
-                            FilterOrder = 8,
                             HeaderStyle = "width: 100px;",
                             Options = new List<SelectOption>
                             {
-                                new SelectOption { Text = "全部", Value = "" },
                                 new SelectOption { Text = "已核准", Value = "true" },
                                 new SelectOption { Text = "未核准", Value = "false" }
                             },
@@ -148,32 +148,32 @@ namespace ERPCore2.FieldConfiguration
                                 }
                                 return query;
                             }
-                        }
-                    },
+                        });
+                }
+
+                // 加入說明欄位
+                fields.Add(nameof(Quotation.Remarks),
+                    new FieldDefinition<Quotation>
                     {
-                        nameof(Quotation.Remarks),
-                        new FieldDefinition<Quotation>
+                        PropertyName = nameof(Quotation.Remarks),
+                        DisplayName = "說明",
+                        FilterPlaceholder = "輸入說明搜尋",
+                        TableOrder = 10,
+                        NullDisplayText = "-",
+                        CustomTemplate = item => builder =>
                         {
-                            PropertyName = nameof(Quotation.Remarks),
-                            DisplayName = "說明",
-                            FilterPlaceholder = "輸入說明搜尋",
-                            TableOrder = 10,
-                            FilterOrder = 10,
-                            NullDisplayText = "-",
-                            CustomTemplate = item => builder =>
-                            {
-                                var quotation = (Quotation)item;
-                                var desc = quotation.Remarks;
-                                var displayText = !string.IsNullOrEmpty(desc) 
-                                    ? (desc.Length > 30 ? desc.Substring(0, 30) + "..." : desc)
-                                    : "-";
-                                builder.AddContent(0, displayText);
-                            },
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Quotation.Remarks), q => q.Remarks, allowNull: true)
-                        }
-                    }
-                };
+                            var quotation = (Quotation)item;
+                            var desc = quotation.Remarks;
+                            var displayText = !string.IsNullOrEmpty(desc) 
+                                ? (desc.Length > 30 ? desc.Substring(0, 30) + "..." : desc)
+                                : "-";
+                            builder.AddContent(0, displayText);
+                        },
+                        FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                            model, query, nameof(Quotation.Remarks), q => q.Remarks, allowNull: true)
+                    });
+
+                return fields;
             }
             catch (Exception ex)
             {

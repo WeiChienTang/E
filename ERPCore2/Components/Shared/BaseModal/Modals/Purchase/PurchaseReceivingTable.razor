@@ -252,6 +252,10 @@ else
     /// <summary>
     /// 載入所有進貨明細的退貨數量（公開方法，可供父組件呼叫）
     /// </summary>
+    /// <summary>
+    /// 公開方法：重新載入退貨數量
+    /// 當進貨退出儲存後，父組件可以呼叫此方法來更新退貨數量顯示
+    /// </summary>
     public async Task LoadReturnedQuantitiesAsync()
     {
         _returnedQuantities.Clear();
@@ -811,21 +815,26 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "入庫數量", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "ReceivedQuantity",
+            ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             Tooltip = "實際入庫的數量。已退貨或已沖款的商品將無法修改數量",
-            CustomTemplate = item => 
+            CellCssClass = "text-end",
+            MinValue = 0,
+            IsDisabledFunc = item =>
             {
                 var receivingItem = (ReceivingItem)item;
-                var value = receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString() : "";
-                var returnedQty = GetReturnedQuantity(receivingItem);
-                var minValue = returnedQty > 0 ? returnedQty : 0;
                 var hasReturnRecord = HasReturnRecord(receivingItem);
                 var hasPaymentRecord = HasPaymentRecord(receivingItem);
-                var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
+                return hasReturnRecord || hasPaymentRecord;
+            },
+            TooltipFunc = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var returnedQty = GetReturnedQuantity(receivingItem);
+                var hasReturnRecord = HasReturnRecord(receivingItem);
+                var hasPaymentRecord = HasPaymentRecord(receivingItem);
                 
-                // 組合 tooltip 訊息
                 var tooltipMessages = new List<string>();
                 if (hasReturnRecord)
                     tooltipMessages.Add($"此商品已退貨 {returnedQty} 個");
@@ -834,52 +843,29 @@ else
                     var paidAmount = GetPaidAmount(receivingItem);
                     tooltipMessages.Add($"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元）");
                 }
-                var title = tooltipMessages.Any() 
-                    ? string.Join("；", tooltipMessages) + "，無法修改入庫數量" 
-                    : "";
                 
-                // 如果是唯讀狀態（含退貨或沖款記錄），直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="position-relative d-flex align-items-center justify-content-end" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">
-                            @(receivingItem.ReceivedQuantity > 0 ? receivingItem.ReceivedQuantity.ToString("N0") : "0")
-                        </span>
-                    </div>;
-                }
+                if (tooltipMessages.Any())
+                    return string.Join("；", tooltipMessages) + "，無法修改入庫數量";
                 
-                // 可編輯狀態，顯示輸入框
-                var cssClass = hasReturnRecord ? "form-control  border-warning" : "form-control ";
-                
-                return @<div class="position-relative">
-                    <input type="number" class="@cssClass" 
-                           value="@value"
-                           title="@title"
-                           @oninput="(e) => OnReceivedQuantityInput(receivingItem, e.Value?.ToString())"
-                           onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                           placeholder="" 
-                           min="@minValue" 
-                           step="1" />
-                </div>;
-            }
+                return "實際入庫的數量。已退貨或已沖款的商品將無法修改數量";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var receivingItem = (ReceivingItem)args.Item1;
+                await OnReceivedQuantityInput(receivingItem, args.Item2);
+            })
         });
 
         // 單價欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單價", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "UnitPrice",
+            ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             Tooltip = "商品的採購單價（唯讀）",
-            CustomTemplate = item => 
-            {
-                var receivingItem = (ReceivingItem)item;
-                
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span>@receivingItem.UnitPrice.ToString("F0")</span>
-                </div>;
-            }
+            CellCssClass = "text-end",
+            IsReadOnly = true
         });
 
         // 倉庫欄位 (條件顯示)

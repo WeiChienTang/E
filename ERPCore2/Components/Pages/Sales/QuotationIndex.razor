@@ -3,6 +3,7 @@
 @inject IQuotationService QuotationService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
@@ -159,8 +160,11 @@
             await LoadCustomersAsync();
             await LoadEmployeesAsync();
             
-            // 建立欄位配置（在載入相關資料後，並傳遞 NotificationService）
-            fieldConfiguration = new QuotationFieldConfiguration(customers, employees, NotificationService);
+            // 檢查是否啟用報價單審核
+            var enableApproval = await SystemParameterService.IsQuotationApprovalEnabledAsync();
+            
+            // 建立欄位配置（在載入相關資料後，並傳遞審核設定和 NotificationService）
+            fieldConfiguration = new QuotationFieldConfiguration(customers, employees, enableApproval, NotificationService);
             
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();

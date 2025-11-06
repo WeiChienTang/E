@@ -536,59 +536,39 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "退回數量", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(ReturnItem.ReturnQuantity),
+            ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             Tooltip = "要退回給供應商的商品數量。已收款的商品將無法修改數量",
-            CustomTemplate = item => 
+            IsDisabledFunc = item =>
             {
                 var returnItem = (ReturnItem)item;
-                var returnableQuantity = returnItem.AvailableQuantity;
-                var value = returnItem.ReturnQuantity > 0 ? returnItem.ReturnQuantity.ToString("N0") : "";
+                return HasPaymentRecord(returnItem);
+            },
+            TooltipFunc = item =>
+            {
+                var returnItem = (ReturnItem)item;
                 var hasPaymentRecord = HasPaymentRecord(returnItem);
-                var isFieldReadOnly = IsReadOnly || hasPaymentRecord;
+                if (!hasPaymentRecord) return null;
                 
-                // 組合 tooltip 訊息
-                var title = hasPaymentRecord 
-                    ? $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改退回數量" 
-                    : "";
-                
-                // 如果是唯讀狀態（含沖款記錄），直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    return @<div class="d-flex align-items-center justify-content-end">
-                        <span class="text-muted" title="@title">@value</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<input type="number" class="form-control " 
-                               value="@value"
-                               @oninput="(e) => OnReturnQuantityInput(returnItem, e.Value?.ToString())"
-                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                               placeholder="" 
-                               min="0" 
-                               max="@returnableQuantity"
-                               step="1" />;
-            }
+                return $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改退回數量";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnReturnQuantityInput((ReturnItem)item, valueString);
+            })
         });
 
         // 單價欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單價", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = nameof(ReturnItem.OriginalUnitPrice),
+            ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             Tooltip = "商品的原始進貨單價（唯讀）",
-            CustomTemplate = item => 
-            {
-                var returnItem = (ReturnItem)item;
-                
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span>@returnItem.OriginalUnitPrice.ToString("F0")</span>
-                </div>;
-            }
+            IsReadOnly = true
         });
 
         // 小計欄位 (只讀顯示)

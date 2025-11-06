@@ -1,6 +1,7 @@
 @* 進貨退出編輯模態組件 *@
 @using Microsoft.AspNetCore.Components.Rendering
 @using ERPCore2.Services.Reports
+@using ERPCore2.Helpers.EditModal
 @inject IPurchaseReturnService PurchaseReturnService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject ISupplierService SupplierService
@@ -429,15 +430,7 @@
             );
             
             // 一次性載入系統稅率（避免每次計算都查詢資料庫）
-            try
-            {
-                currentTaxRate = await SystemParameterService.GetTaxRateAsync();
-            }
-            catch (Exception)
-            {
-                // 如果載入失敗，使用預設值 5%
-                currentTaxRate = 5.0m;
-            }
+            currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
         }
         catch (Exception ex)
         {
@@ -497,7 +490,8 @@
                     IsRequired = true,
                     MaxLength = 30,
                     Order = 1,
-                    HelpText = "系統自動生成的唯一退回單號，也可手動修改"
+                    HelpText = "系統自動生成的唯一退回單號，也可手動修改",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -509,7 +503,8 @@
                     MinSearchLength = 0,
                     Order = 2,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetSupplierActionButtonsAsync()
+                    ActionButtons = await GetSupplierActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -519,7 +514,8 @@
                     IsRequired = false,
                     Order = 3,
                     Options = await GetFilterProductOptions(),
-                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品"
+                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -529,7 +525,8 @@
                     IsRequired = false,
                     Order = 4,
                     Options = await GetFilterPurchaseReceivingOptions(),
-                    HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單"
+                    HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -538,7 +535,8 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     Order = 5,
-                    HelpText = "請選擇退回日期"
+                    HelpText = "請選擇退回日期",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
@@ -553,12 +551,12 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReturn.ReturnTaxAmount),
-                    Label = $"退回稅額({currentTaxRate:F2}%)",
+                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("退回稅額", currentTaxRate),
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
                     Order = 8,
-                    HelpText = $"退回單的稅額，根據明細自動計算（稅率：{currentTaxRate:F2}%）"
+                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("退回單", currentTaxRate)
                 },
                 new()
                 {
@@ -570,7 +568,9 @@
                     Order = 9,
                     HelpText = "系統自動計算的退回含稅總金額"
                 },
-                FormFieldConfigurationHelper.CreateRemarksField<PurchaseReturn>(),
+                FormFieldConfigurationHelper.CreateRemarksField<PurchaseReturn>(
+                    readOnly: hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                ),
             };
 
             formSections = new Dictionary<string, string>
@@ -626,66 +626,46 @@
     }
 
     /// <summary>
-    /// 更新欄位的唯讀狀態
-    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
-    /// - 退回單號 (PurchaseReturnNumber)
-    /// - 篩選廠商 (SupplierId) - 同時禁用新增/編輯按鈕
-    /// - 篩選商品 (FilterProductId)
-    /// - 篩選進貨單 (FilterPurchaseReceivingId)
-    /// - 退回日期 (ReturnDate)
-    /// - 備註 (Remarks)
+    /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
-        // 退回單號欄位
-        var returnNumberField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.PurchaseReturnNumber));
-        if (returnNumberField != null)
+        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
+        var fieldsToLock = new[]
         {
-            returnNumberField.IsReadOnly = hasUndeletableDetails;
-        }
-
-        // 廠商欄位 - 設為唯讀並清空 ActionButtons
-        var supplierField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.SupplierId));
-        if (supplierField != null)
-        {
-            supplierField.IsReadOnly = hasUndeletableDetails;
-            
-            if (hasUndeletableDetails)
-            {
-                supplierField.ActionButtons = new List<FieldActionButton>();
-            }
-            else
-            {
-                supplierField.ActionButtons = GetSupplierActionButtonsAsync().GetAwaiter().GetResult();
-            }
-        }
+            nameof(PurchaseReturn.PurchaseReturnNumber),
+            "FilterProductId",
+            nameof(PurchaseReturn.PurchaseReceivingId),
+            nameof(PurchaseReturn.ReturnDate),
+            nameof(BaseEntity.Remarks)
+        };
         
-        // 篩選商品欄位
-        var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-        if (filterProductField != null)
-        {
-            filterProductField.IsReadOnly = hasUndeletableDetails;
-        }
+        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
+        FormFieldLockHelper.LockMultipleFieldsSimple(
+            formFields, 
+            fieldsToLock, 
+            isLocked: hasUndeletableDetails
+        );
         
-        // 篩選進貨單欄位
-        var filterReceivingField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.PurchaseReceivingId));
-        if (filterReceivingField != null)
+        // 特殊處理廠商欄位（需要 ActionButtons）
+        if (hasUndeletableDetails)
         {
-            filterReceivingField.IsReadOnly = hasUndeletableDetails;
+            // 鎖定：移除 ActionButtons
+            FormFieldLockHelper.LockField(
+                formFields,
+                nameof(PurchaseReturn.SupplierId),
+                isLocked: true
+            );
         }
-        
-        // 退回日期欄位
-        var returnDateField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReturn.ReturnDate));
-        if (returnDateField != null)
+        else
         {
-            returnDateField.IsReadOnly = hasUndeletableDetails;
-        }
-        
-        // 備註欄位
-        var remarksField = formFields.FirstOrDefault(f => f.PropertyName == nameof(BaseEntity.Remarks));
-        if (remarksField != null)
-        {
-            remarksField.IsReadOnly = hasUndeletableDetails;
+            // 解鎖：恢復 ActionButtons
+            FormFieldLockHelper.LockField(
+                formFields,
+                nameof(PurchaseReturn.SupplierId),
+                isLocked: false,
+                actionButtonsGetter: GetSupplierActionButtonsAsync
+            );
         }
     }
 
@@ -1242,10 +1222,10 @@
                     .Where(d => d.ProductId > 0 && d.ReturnQuantity > 0)
                     .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice);
                 
-                // 2. 計算稅額 = 總金額 × 稅率（使用快取的稅率，避免每次都查詢資料庫）
-                editModalComponent.Entity.ReturnTaxAmount = Math.Round(
-                    editModalComponent.Entity.TotalReturnAmount * (currentTaxRate / 100), 
-                    2  // 四捨五入到小數點後2位
+                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
+                editModalComponent.Entity.ReturnTaxAmount = TaxCalculationHelper.CalculateTax(
+                    editModalComponent.Entity.TotalReturnAmount, 
+                    currentTaxRate
                 );
                 
                 // 3. 含稅總金額會自動計算（TotalReturnAmountWithTax 是計算屬性）
@@ -1358,41 +1338,35 @@
     {
         try
         {
-            // 設定為新增模式
-            PurchaseReturnId = null;
-            
-            // 🔑 關鍵：在開啟 Modal 之前先設定篩選參數
-            // 這樣 DataLoader 會在執行時就設定好 filterPurchaseReceivingId
-            PrefilledSupplierId = supplierId;
-            PrefilledPurchaseReceivingId = purchaseReceivingId;
-            
-            // 🔑 立即設定篩選ID（不要等到 LoadPurchaseReturnData）
-            // 確保明細管理器渲染時就能使用正確的篩選參數
-            filterPurchaseReceivingId = purchaseReceivingId;
-            
-            // 重置自動載入相關標記
-            shouldAutoLoadReturnable = true;
-            
-            // 觸發 Modal 顯示
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(true);
-            }
-            
-            // 🔑 等待 Modal 和子組件完全渲染後再觸發自動載入
-            // 增加延遲時間以確保子組件完全就緒（500ms 為經驗值，可應對大多數情況）
-            await Task.Delay(500);
-            
-            // 檢查子組件是否已就緒並執行自動載入
-            if (purchaseReturnDetailManager != null && shouldAutoLoadReturnable)
-            {
-                shouldAutoLoadReturnable = false;
-                
-                await InvokeAsync(async () =>
+            // 使用 DocumentConversionHelper 統一處理轉單邏輯
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
                 {
-                    await purchaseReturnDetailManager.LoadAllReturnableItems();
-                    StateHasChanged();
-                });
+                    PurchaseReturnId = null;
+                    PrefilledSupplierId = supplierId;
+                    PrefilledPurchaseReceivingId = purchaseReceivingId;
+                    // 🔑 立即設定篩選ID（確保明細管理器渲染時就能使用正確的篩選參數）
+                    filterPurchaseReceivingId = purchaseReceivingId;
+                    shouldAutoLoadReturnable = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadReturnable = false;
+                    if (purchaseReturnDetailManager != null)
+                    {
+                        await purchaseReturnDetailManager.LoadAllReturnableItems();
+                    }
+                },
+                detailManagerReady: () => purchaseReturnDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadReturnable,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
             }
         }
         catch (Exception ex)

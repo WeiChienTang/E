@@ -139,7 +139,7 @@
     private bool isApprovalEnabled = true; // 是否啟用報價單審核功能（從系統參數載入）
     
     // ===== 鎖定狀態 =====
-    private bool isConvertedToSalesOrder = false; // 是否已轉為銷貨訂單（已轉單則鎖定主檔欄位）
+    private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有轉單記錄）
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -170,7 +170,7 @@
             // 打開時,如果是新增模式,重置鎖定狀態
             if (!QuotationId.HasValue)
             {
-                isConvertedToSalesOrder = false;
+                hasUndeletableDetails = false;
             }
             
             await LoadAdditionalDataAsync();
@@ -294,7 +294,7 @@
                 quotationDetails = new List<QuotationDetail>();
                 
                 // 新增模式時,重置鎖定狀態為 false
-                isConvertedToSalesOrder = false;
+                hasUndeletableDetails = false;
 
                 return newQuotation;
             }
@@ -307,19 +307,25 @@
                 // 載入報價單明細
                 quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
                 
-                // 檢查是否已轉為銷貨訂單
-                isConvertedToSalesOrder = quotation.ConvertedToSalesOrderId.HasValue;
+                // 檢查明細是否有已轉單的記錄（與 PurchaseOrderEditModalComponent 邏輯一致）
+                var hasConvertedDetails = quotationDetails.Any(d => d.ConvertedQuantity > 0);
+                hasUndeletableDetails = hasConvertedDetails;
                 
-                // 在實體載入後重新初始化表單欄位以反映正確的唯讀狀態
-                await Task.Delay(10); // 短暫延遲確保實體已設定
-                _ = Task.Run(async () =>
+                // 如果已轉單或已審核，需要鎖定欄位
+                if (hasUndeletableDetails || quotation.IsApproved)
                 {
-                    await InvokeAsync(async () =>
+                    // 在實體載入後重新初始化表單欄位以反映正確的唯讀狀態
+                    await Task.Delay(10); // 短暫延遲確保實體已設定
+                    _ = Task.Run(async () =>
                     {
-                        await InitializeFormFieldsAsync();
-                        StateHasChanged();
+                        await InvokeAsync(async () =>
+                        {
+                            await InitializeFormFieldsAsync();
+                            UpdateFieldsReadOnlyState(); // 重新計算並鎖定欄位
+                            StateHasChanged();
+                        });
                     });
-                });
+                }
             }
             else
             {
@@ -407,11 +413,11 @@
         try
         {
             // 使用 ApprovalConfigHelper 統一判斷是否鎖定欄位
-            // 報價單的鎖定條件：(審核通過) 或 (已轉為銷貨訂單)
+            // 報價單的鎖定條件：(審核通過) 或 (明細有轉單記錄)
             var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
                 isApprovalEnabled,
                 editModalComponent?.Entity?.IsApproved ?? false,
-                isConvertedToSalesOrder  // 使用已轉單狀態作為額外的鎖定條件
+                hasUndeletableDetails  // 使用明細轉單狀態作為額外的鎖定條件
             );
             
             formFields = new List<FormFieldDefinition>
@@ -425,7 +431,7 @@
                     IsRequired = true,
                     MaxLength = 30,
                     HelpText = "報價單的唯一識別編號，新增時系統會自動產生，也可手動修改",
-                    IsReadOnly = shouldLock
+                    IsReadOnly = shouldLock // 根據審核狀態和明細轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -436,8 +442,8 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
-                    ActionButtons = shouldLock ? new List<FieldActionButton>() : await GetCustomerActionButtonsAsync(),
-                    IsReadOnly = shouldLock
+                    ActionButtons = await GetCustomerActionButtonsAsync(),
+                    IsReadOnly = shouldLock // 根據審核狀態和明細轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -448,8 +454,8 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入公司名稱進行搜尋，或直接選擇",
-                    ActionButtons = shouldLock ? new List<FieldActionButton>() : await GetCompanyActionButtonsAsync(),
-                    IsReadOnly = shouldLock
+                    ActionButtons = await GetCompanyActionButtonsAsync(),
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -460,8 +466,8 @@
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "輸入業務人員姓名進行搜尋，或直接選擇",
-                    ActionButtons = shouldLock ? new List<FieldActionButton>() : await GetEmployeeActionButtonsAsync(),
-                    IsReadOnly = shouldLock
+                    ActionButtons = await GetEmployeeActionButtonsAsync(),
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -470,7 +476,7 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
                     HelpText = "報價單的建立日期",
-                    IsReadOnly = shouldLock
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -481,7 +487,7 @@
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "例如：貨到付款、月結30天等",
-                    IsReadOnly = shouldLock
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -492,7 +498,7 @@
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "例如：工廠交貨、送貨到府等",
-                    IsReadOnly = shouldLock
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()
                 {
@@ -511,7 +517,7 @@
                     Placeholder = "請輸入折扣金額",
                     IsRequired = false,
                     HelpText = "整張報價單的額外折扣金額",
-                    IsReadOnly = shouldLock
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new FormFieldDefinition()
                 {
@@ -522,10 +528,13 @@
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "報價所屬的工程名稱",
-                    IsReadOnly = shouldLock
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
 
-                FormFieldConfigurationHelper.CreateRemarksField<Quotation>(label: "報價說明") // 備註永遠可編輯（不受轉單影響）
+                FormFieldConfigurationHelper.CreateRemarksField<Quotation>(
+                    label: "報價說明",
+                    readOnly: shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
+                )
             };
 
             formSections = new Dictionary<string, string>
@@ -576,6 +585,7 @@
 
     /// <summary>
     /// 自訂儲存邏輯 - 同時儲存主檔和明細
+    /// 特殊處理：審核通過或已轉單後仍允許儲存，用於更新明細的執行狀態
     /// </summary>
     private async Task<bool> SaveQuotationWithDetails(Quotation quotation)
     {
@@ -600,13 +610,11 @@
                 return false;
             }
 
-            // 檢查是否已轉為銷貨訂單（已轉單則不能儲存主檔欄位，只能修改備註）
-            if (isConvertedToSalesOrder)
-            {
-                await NotificationService.ShowWarningAsync("此報價單已轉為銷貨訂單，無法修改主檔資料");
-                return false;
-            }
-
+            // 🔑 修改：審核通過或已轉單後仍允許儲存（用於更新明細的執行狀態）
+            // 移除原有的 hasUndeletableDetails 檢查，與 PurchaseOrderEditModalComponent 保持一致
+            // 欄位鎖定由 InitializeFormFieldsAsync 中的 IsReadOnly 控制
+            // 但使用者仍可修改明細並儲存整個單據
+            
             // 更新總金額
             quotation.TotalAmount = quotationDetails.Sum(d => d.SubtotalAmount);
 
@@ -977,6 +985,73 @@
     }
 
     /// <summary>
+    /// 更新欄位的唯讀狀態 - 根據審核狀態和明細轉單狀態
+    /// 使用 FormFieldLockHelper 統一處理欄位鎖定邏輯
+    /// </summary>
+    private async void UpdateFieldsReadOnlyState()
+    {
+        // 計算是否應該鎖定欄位
+        var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
+            isApprovalEnabled,
+            editModalComponent?.Entity?.IsApproved ?? false,
+            hasUndeletableDetails
+        );
+
+        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
+        var fieldsToLock = new[]
+        {
+            nameof(Quotation.QuotationNumber),
+            nameof(Quotation.QuotationDate),
+            nameof(Quotation.PaymentTerms),
+            nameof(Quotation.DeliveryTerms),
+            nameof(Quotation.DiscountAmount),
+            nameof(Quotation.ProjectName),
+            nameof(BaseEntity.Remarks)
+        };
+        
+        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
+        FormFieldLockHelper.LockMultipleFieldsSimple(
+            formFields, 
+            fieldsToLock, 
+            isLocked: shouldLock
+        );
+        
+        // 特殊處理有 ActionButtons 的欄位
+        var fieldsWithActionButtons = new Dictionary<string, Func<Task<List<FieldActionButton>>>>
+        {
+            { nameof(Quotation.CustomerId), GetCustomerActionButtonsAsync },
+            { nameof(Quotation.CompanyId), GetCompanyActionButtonsAsync },
+            { nameof(Quotation.EmployeeId), GetEmployeeActionButtonsAsync }
+        };
+
+        foreach (var kvp in fieldsWithActionButtons)
+        {
+            if (shouldLock)
+            {
+                // 鎖定：移除 ActionButtons
+                FormFieldLockHelper.LockField(
+                    formFields,
+                    kvp.Key,
+                    isLocked: true
+                );
+            }
+            else
+            {
+                // 解鎖：恢復 ActionButtons
+                FormFieldLockHelper.LockField(
+                    formFields,
+                    kvp.Key,
+                    isLocked: false,
+                    actionButtonsGetter: kvp.Value
+                );
+            }
+        }
+        
+        // 強制更新 UI
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    /// <summary>
     /// 使用統一 Helper 產生業務員操作按鈕
     /// </summary>
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
@@ -999,61 +1074,37 @@
             var shouldLock = ApprovalConfigHelper.ShouldLockFieldByApproval(
                 isApprovalEnabled,
                 editModalComponent?.Entity?.IsApproved ?? false,
-                isConvertedToSalesOrder  // 使用已轉單狀態作為額外的鎖定條件
+                hasUndeletableDetails
             );
             
             // 使用統一 Helper 處理客戶欄位變更
             if (fieldChange.PropertyName == nameof(Quotation.CustomerId))
             {
+                // 只有在非鎖定狀態下才更新 ActionButtons
                 if (!shouldLock)
                 {
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
-                else
-                {
-                    // 如果是鎖定狀態，確保移除 ActionButtons
-                    var customerField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Quotation.CustomerId));
-                    if (customerField != null)
-                    {
-                        customerField.ActionButtons = new List<FieldActionButton>();
-                    }
-                }
             }
             // 使用統一 Helper 處理公司欄位變更
             else if (fieldChange.PropertyName == nameof(Quotation.CompanyId))
             {
+                // 只有在非鎖定狀態下才更新 ActionButtons
                 if (!shouldLock)
                 {
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
-                else
-                {
-                    // 如果是鎖定狀態，確保移除 ActionButtons
-                    var companyField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Quotation.CompanyId));
-                    if (companyField != null)
-                    {
-                        companyField.ActionButtons = new List<FieldActionButton>();
-                    }
-                }
             }
             // 使用統一 Helper 處理業務員欄位變更
             else if (fieldChange.PropertyName == nameof(Quotation.EmployeeId))
             {
+                // 只有在非鎖定狀態下才更新 ActionButtons
                 if (!shouldLock)
                 {
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-                }
-                else
-                {
-                    // 如果是鎖定狀態，確保移除 ActionButtons
-                    var employeeField = formFields.FirstOrDefault(f => f.PropertyName == nameof(Quotation.EmployeeId));
-                    if (employeeField != null)
-                    {
-                        employeeField.ActionButtons = new List<FieldActionButton>();
-                    }
                 }
             }
         }
@@ -1191,38 +1242,70 @@
     /// <summary>
     /// 處理銷貨訂單儲存後的事件
     /// </summary>
+    /// <summary>
+    /// 處理銷貨訂單儲存後的事件（報價單轉單）
+    /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯
+    /// </summary>
     private async Task HandleSalesOrderSaved(SalesOrder savedSalesOrder)
     {
         try
         {
-            showSalesOrderModal = false;
-            selectedSalesOrderId = null;
-
-            // 更新報價單的轉單狀態
-            if (QuotationId.HasValue && editModalComponent?.Entity != null)
-            {
-                editModalComponent.Entity.ConvertedToSalesOrderId = savedSalesOrder.Id;
-                
-                var updateResult = await QuotationService.UpdateAsync(editModalComponent.Entity);
-                if (!updateResult.IsSuccess)
+            await ChildDocumentRefreshHelper.HandleQuotationConversionAsync(
+                closeModal: () =>
                 {
-                    await NotificationService.ShowWarningAsync($"報價單轉單狀態更新失敗：{updateResult.ErrorMessage}");
-                }
-                
-                // 重新載入以取得完整的關聯資料
-                var updatedQuotation = await QuotationService.GetWithDetailsAsync(QuotationId.Value);
-                if (updatedQuotation != null)
+                    showSalesOrderModal = false;
+                    selectedSalesOrderId = null;
+                },
+                quotationId: QuotationId,
+                savedSalesOrderId: savedSalesOrder.Id,
+                updateEntity: async () =>
                 {
-                    editModalComponent.Entity.SalesOrder = updatedQuotation.SalesOrder;
+                    if (editModalComponent?.Entity != null)
+                    {
+                        editModalComponent.Entity.ConvertedToSalesOrderId = savedSalesOrder.Id;
+                        var updateResult = await QuotationService.UpdateAsync(editModalComponent.Entity);
+                        if (!updateResult.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync($"報價單轉單狀態更新失敗：{updateResult.ErrorMessage}");
+                        }
+                    }
+                },
+                reloadQuotation: async () =>
+                {
+                    // 🔑 關鍵修復：使用專門的 LoadQuotationDetails 方法從資料庫重新載入明細
+                    // 這確保 ConvertedQuantity 等欄位都是最新的資料
+                    if (QuotationId.HasValue)
+                    {
+                        await LoadQuotationDetails(QuotationId.Value);
+                        
+                        // 同時更新主檔實體的銷貨訂單關聯
+                        if (editModalComponent?.Entity != null)
+                        {
+                            var updatedQuotation = await QuotationService.GetWithDetailsAsync(QuotationId.Value);
+                            if (updatedQuotation != null)
+                            {
+                                editModalComponent.Entity.SalesOrder = updatedQuotation.SalesOrder;
+                            }
+                        }
+                    }
+                },
+                checkUndeletable: () => quotationDetails.Any(d => d.ConvertedQuantity > 0),
+                updateHasUndeletableDetails: (hasUndeletable) => hasUndeletableDetails = hasUndeletable,
+                reinitializeFields: InitializeFormFieldsAsync,
+                stateHasChanged: StateHasChanged,
+                additionalActions: async () =>
+                {
+                    // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                    // 因為父 Modal 沒有關閉，Table 組件不會自動重新載入
+                    // 需要主動呼叫刷新方法來更新 UI 顯示
+                    if (quotationDetailManager != null)
+                    {
+                        await quotationDetailManager.RefreshDetailsAsync();
+                    }
                 }
-                
-                // 更新鎖定狀態並重新初始化表單欄位
-                isConvertedToSalesOrder = true;
-                await InitializeFormFieldsAsync();
-            }
+            );
 
             await NotificationService.ShowSuccessAsync($"已成功從報價單轉為銷貨訂單（訂單編號：{savedSalesOrder.SalesOrderNumber}）");
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -1401,6 +1484,35 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleQuotationRejectWithReason), GetType());
             await NotificationService.ShowErrorAsync("駁回處理時發生錯誤");
             return false;
+        }
+    }
+    
+    /// <summary>
+    /// 載入報價單明細
+    /// </summary>
+    private async Task LoadQuotationDetails(int quotationId)
+    {
+        try
+        {
+            // 從服務載入報價單明細（包含最新的 ConvertedQuantity）
+            var quotation = await QuotationService.GetWithDetailsAsync(quotationId);
+            quotationDetails = quotation?.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+            
+            // 載入明細後，檢查是否有不可刪除的明細（有轉單記錄）
+            var hasConverted = quotationDetails.Any(d => d.ConvertedQuantity > 0);
+            if (hasUndeletableDetails != hasConverted)
+            {
+                hasUndeletableDetails = hasConverted;
+                // 如果鎖定狀態改變，需要重新初始化表單欄位
+                await InitializeFormFieldsAsync();
+                UpdateFieldsReadOnlyState();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadQuotationDetails), GetType(), 
+                additionalData: $"載入報價單明細失敗 - QuotationId: {quotationId}");
+            quotationDetails = new List<QuotationDetail>();
         }
     }
     
