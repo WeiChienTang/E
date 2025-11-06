@@ -218,34 +218,42 @@
             {
                 Title = receivedAmountLabel,
                 Tooltip = SetoffType == SetoffType.AccountsReceivable ? "本次實際收到的款項金額" : "本次實際支付的款項金額",
-                PropertyName = nameof(SetoffPaymentItem.ReceivedAmount),
-                ColumnType = InteractiveColumnType.Number,
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
-                CellCssClass = "text-end",
-                MinValue = 0,
-                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+                CustomTemplate = item =>
                 {
-                    var (item, valueString) = args;
-                    await OnReceivedAmountInput((SetoffPaymentItem)item, valueString);
-                })
+                    var paymentItem = (SetoffPaymentItem)item;
+                    var displayValue = NumberFormatHelper.FormatForInput(paymentItem.ReceivedAmount);
+                    return @<input type="number"
+                                  class="form-control text-end"
+                                  step="1"
+                                  value="@displayValue"
+                                  placeholder=""
+                                  @oninput="@(e => OnReceivedAmountInput(paymentItem, e.Value?.ToString()))"
+                                  readonly="@IsReadOnly" />;
+                }
             },
             new()
             {
                 Title = "折讓金額",
                 Tooltip = "本次給予的折讓金額（不計入實際收付款）",
-                PropertyName = nameof(SetoffPaymentItem.AllowanceAmount),
-                ColumnType = InteractiveColumnType.Number,
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
                 Width = "150px",
-                CellCssClass = "text-end",
-                MinValue = 0,
-                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+                CustomTemplate = item =>
                 {
-                    var (item, valueString) = args;
-                    await OnAllowanceAmountInput((SetoffPaymentItem)item, valueString);
-                })
+                    var paymentItem = (SetoffPaymentItem)item;
+                    var displayValue = NumberFormatHelper.FormatForInput(paymentItem.AllowanceAmount);
+                    return @<input type="number"
+                                  class="form-control text-end"
+                                  step="1"
+                                  value="@displayValue"
+                                  placeholder=""
+                                  @oninput="@(e => OnAllowanceAmountInput(paymentItem, e.Value?.ToString()))"
+                                  readonly="@IsReadOnly" />;
+                }
             },
-
-
 
             new()
             {

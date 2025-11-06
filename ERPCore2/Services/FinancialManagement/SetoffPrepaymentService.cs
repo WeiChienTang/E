@@ -115,8 +115,9 @@ namespace ERPCore2.Services
 
     /// <summary>
     /// 覆寫驗證功能
-    /// 注意：此驗證僅針對「預收/預付」主記錄，不包含「轉沖款」
-    /// 轉沖款使用 SetoffPrepaymentUsage 表，由 SetoffPrepaymentUsageService 負責驗證
+    /// 注意：此驗證針對「預收/預付」主記錄和「轉沖款」記錄
+    /// - 預收/預付：必須有 Amount > 0，SourcePrepaymentId 為 null
+    /// - 轉沖款：必須有 SourcePrepaymentId，Amount 為 0，UsedAmount > 0
     /// </summary>
     public override async Task<ServiceResult> ValidateAsync(SetoffPrepayment entity)
     {
@@ -128,18 +129,6 @@ namespace ERPCore2.Services
             if (string.IsNullOrWhiteSpace(entity.SourceDocumentCode))
                 errors.Add("來源單號為必填");
 
-            // 檢查金額必須大於0（預收/預付主記錄必須有金額）
-            if (entity.Amount <= 0)
-                errors.Add("金額必須大於0");
-
-            // 檢查已用金額不能大於總金額
-            if (entity.UsedAmount > entity.Amount)
-                errors.Add("已用金額不能大於總金額");
-
-            // 檢查已用金額不能小於0
-            if (entity.UsedAmount < 0)
-                errors.Add("已用金額不能小於0");
-
             // 檢查客戶或供應商至少要有一個
             if (!entity.CustomerId.HasValue && !entity.SupplierId.HasValue)
                 errors.Add("客戶或供應商至少需填寫一個");
@@ -148,17 +137,76 @@ namespace ERPCore2.Services
             if (entity.CustomerId.HasValue && entity.SupplierId.HasValue)
                 errors.Add("客戶和供應商不能同時填寫");
 
-            // 檢查來源單號是否重複（預收/預付主記錄的來源單號必須唯一）
-            // 注意：編輯模式下，如果 Id > 0，則完全跳過唯一性檢查（因為是更新現有記錄）
-            // 只有新增模式（Id = 0）才需要檢查來源單號是否重複
-            if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode) && entity.Id == 0)
+            // 判斷是「轉沖款」還是「預收/預付」
+            bool isTransferType = entity.SourcePrepaymentId.HasValue && entity.SourcePrepaymentId.Value > 0;
+
+            if (isTransferType)
             {
-                // 只有新增時才檢查唯一性
-                var exists = await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, null);
+                // ===== 轉沖款類型的驗證 =====
                 
-                if (exists)
+                // 檢查 UsedAmount 必須大於 0
+                if (entity.UsedAmount <= 0)
+                    errors.Add("轉沖款的使用金額必須大於0");
+
+                // 檢查 Amount 應該為 0（轉沖款不記錄在 Amount）
+                if (entity.Amount != 0)
+                    errors.Add("轉沖款的金額應該為0");
+
+                // 檢查來源預收付款項是否存在
+                if (entity.SourcePrepaymentId.HasValue)
                 {
-                    errors.Add("來源單號已存在");
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var sourcePrepayment = await context.SetoffPrepayments
+                        .FirstOrDefaultAsync(sp => sp.Id == entity.SourcePrepaymentId);
+                    if (sourcePrepayment == null)
+                        errors.Add("找不到來源預收付款項");
+                    else
+                    {
+                        // 檢查來源預收付款項的可用餘額是否足夠（編輯模式要扣除自己原本的使用金額）
+                        var availableBalance = sourcePrepayment.Amount - sourcePrepayment.UsedAmount;
+                        
+                        // 如果是編輯模式，需要加回原本這筆記錄的使用金額
+                        if (entity.Id > 0)
+                        {
+                            var existingEntity = await context.SetoffPrepayments.AsNoTracking()
+                                .FirstOrDefaultAsync(sp => sp.Id == entity.Id);
+                            if (existingEntity != null && existingEntity.SourcePrepaymentId == entity.SourcePrepaymentId)
+                            {
+                                availableBalance += existingEntity.UsedAmount;
+                            }
+                        }
+                        
+                        if (entity.UsedAmount > availableBalance)
+                            errors.Add($"來源預收付款項可用餘額不足（可用：{availableBalance}）");
+                    }
+                }
+            }
+            else
+            {
+                // ===== 預收/預付類型的驗證 =====
+                
+                // 檢查金額必須大於0
+                if (entity.Amount <= 0)
+                    errors.Add("預收/預付的金額必須大於0");
+
+                // 檢查已用金額不能大於總金額
+                if (entity.UsedAmount > entity.Amount)
+                    errors.Add("已用金額不能大於總金額");
+
+                // 檢查已用金額不能小於0
+                if (entity.UsedAmount < 0)
+                    errors.Add("已用金額不能小於0");
+
+                // 檢查來源單號是否重複（預收/預付主記錄的來源單號必須唯一）
+                // 只有新增模式（Id = 0）才需要檢查來源單號是否重複
+                if (!string.IsNullOrWhiteSpace(entity.SourceDocumentCode) && entity.Id == 0)
+                {
+                    var exists = await IsSourceDocumentCodeExistsAsync(entity.SourceDocumentCode, null);
+                    
+                    if (exists)
+                    {
+                        errors.Add("來源單號已存在");
+                    }
                 }
             }
 
@@ -174,7 +222,8 @@ namespace ERPCore2.Services
                 Method = nameof(ValidateAsync),
                 ServiceType = GetType().Name,
                 EntityId = entity.Id,
-                SourceDocumentCode = entity.SourceDocumentCode
+                SourceDocumentCode = entity.SourceDocumentCode,
+                SourcePrepaymentId = entity.SourcePrepaymentId
             });
             return ServiceResult.Failure("驗證過程發生錯誤");
         }

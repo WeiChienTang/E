@@ -413,13 +413,13 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "應收帳款",
-                        Description = "管理應收帳款沖銷",
+                        Name = "應收帳款沖款",
+                        Description = "管理應收帳款沖款",
                         Route = "/accountsReceivableSetoff",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "財務管理",
                         RequiredPermission = "SetoffDocument.Read",
-                        SearchKeywords = new List<string> { "應收帳款", "AR", "receivable", "收款" }
+                        SearchKeywords = new List<string> { "應收帳款", "AR", "receivable", "收款","沖款" }
                     },
                     new NavigationItem
                     {
@@ -453,13 +453,13 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "應付帳款",
-                        Description = "管理應付帳款沖銷",
+                        Name = "應付帳款沖款",
+                        Description = "管理應付帳款沖款",
                         Route = "/accountsPayableSetoff",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "財務管理",
                         RequiredPermission = "SetoffDocument.Read",
-                        SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款" }
+                        SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" }
                     }
                 }
             },

@@ -231,19 +231,29 @@
                                                 <i class="bi bi-calendar3 me-1"></i>
                                                 @doc.DocumentDate.ToString("yyyy-MM-dd")
                                             </span>
-                                            @if (doc.CurrentAmount.HasValue)
+                                            @if (doc.Amount.HasValue)
                                             {
                                                 <span class="ms-3 text-nowrap">
                                                     <i class="bi bi-currency-dollar me-1"></i>
-                                                    本次收款: @doc.CurrentAmount.Value.ToString("N2")
+                                                    使用金額: @doc.Amount.Value.ToString("N2")
                                                 </span>
                                             }
-                                            @if (doc.TotalAmount.HasValue)
+                                            else
                                             {
-                                                <span class="ms-3 text-nowrap">
-                                                    <i class="bi bi-cash-stack me-1"></i>
-                                                    累計收款: @doc.TotalAmount.Value.ToString("N2")
-                                                </span>
+                                                @if (doc.CurrentAmount.HasValue)
+                                                {
+                                                    <span class="ms-3 text-nowrap">
+                                                        <i class="bi bi-currency-dollar me-1"></i>
+                                                        本次收款: @doc.CurrentAmount.Value.ToString("N2")
+                                                    </span>
+                                                }
+                                                @if (doc.TotalAmount.HasValue)
+                                                {
+                                                    <span class="ms-3 text-nowrap">
+                                                        <i class="bi bi-cash-stack me-1"></i>
+                                                        累計收款: @doc.TotalAmount.Value.ToString("N2")
+                                                    </span>
+                                                }
                                             }
                                         </p>
                                         @if (!string.IsNullOrEmpty(doc.Remarks))

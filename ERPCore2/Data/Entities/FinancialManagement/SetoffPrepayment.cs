@@ -16,6 +16,7 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(CustomerId))]
     [Index(nameof(SupplierId))]
     [Index(nameof(SetoffDocumentId))]
+    [Index(nameof(SourcePrepaymentId))]
     public class SetoffPrepayment : BaseEntity
     {
         /// <summary>
@@ -72,6 +73,14 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SetoffDocument))]
         public int? SetoffDocumentId { get; set; }
         
+        /// <summary>
+        /// 來源預收付款項ID - 用於「轉沖款」類型，記錄此筆轉沖款來自哪一筆預收付款項
+        /// 只有「轉沖款」類型才會填寫此欄位，預收/預付類型此欄位為 null
+        /// </summary>
+        [Display(Name = "來源預收付款項")]
+        [ForeignKey(nameof(SourcePrepayment))]
+        public int? SourcePrepaymentId { get; set; }
+        
         // Navigation Properties
         
         /// <summary>
@@ -93,6 +102,12 @@ namespace ERPCore2.Data.Entities
         /// 沖款單導航屬性 - 建立此預收付款項的沖款單
         /// </summary>
         public SetoffDocument? SetoffDocument { get; set; }
+        
+        /// <summary>
+        /// 來源預收付款項導航屬性 - 用於「轉沖款」類型
+        /// 指向此筆轉沖款的來源預收付款項
+        /// </summary>
+        public SetoffPrepayment? SourcePrepayment { get; set; }
         
         /// <summary>
         /// 使用記錄集合 - 此預收付款項被哪些沖款單使用的記錄

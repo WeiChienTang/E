@@ -255,5 +255,37 @@ namespace ERPCore2.Helpers
 
             return documents.OrderByDescending(d => d.DocumentDate).ToList();
         }
+
+        /// <summary>
+        /// 取得與預收付款項相關的單據（使用此預收付款項的所有沖款單）
+        /// </summary>
+        public async Task<List<RelatedDocument>> GetRelatedDocumentsForPrepaymentAsync(int prepaymentId)
+        {
+            var documents = new List<RelatedDocument>();
+
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            // 查詢使用此預收付款項的所有沖款單
+            var usageRecords = await context.SetoffPrepaymentUsages
+                .Include(u => u.SetoffDocument)
+                .Where(u => u.SetoffPrepaymentId == prepaymentId)
+                .OrderByDescending(u => u.UsageDate)
+                .ToListAsync();
+
+            foreach (var usage in usageRecords)
+            {
+                documents.Add(new RelatedDocument
+                {
+                    DocumentId = usage.SetoffDocumentId,
+                    DocumentType = RelatedDocumentType.SetoffDocument,
+                    DocumentNumber = usage.SetoffDocument.SetoffNumber,
+                    DocumentDate = usage.SetoffDocument.SetoffDate,
+                    Amount = usage.UsedAmount,  // 使用金額
+                    Remarks = usage.SetoffDocument.Remarks
+                });
+            }
+
+            return documents;
+        }
     }
 }
