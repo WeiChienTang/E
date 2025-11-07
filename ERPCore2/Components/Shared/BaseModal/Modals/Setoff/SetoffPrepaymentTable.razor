@@ -247,7 +247,7 @@
                 AvailablePrepayments = new List<SetoffPrepayment>();
             }
             
-            // ✅ 載入可用預收付款項後，自動比對並設定編輯模式下的 SourcePrepaymentId
+            //  載入可用預收付款項後，自動比對並設定編輯模式下的 SourcePrepaymentId
             MatchSourcePrepaymentIds();
         }
         catch (Exception ex)
@@ -305,12 +305,12 @@
             
             PrepaymentItems = ExistingPrepayments.Select((prepayment, index) => 
             {
-                // ✅ 直接使用 SourcePrepaymentId 欄位（不再從 Remarks 解析）
+                //  直接使用 SourcePrepaymentId 欄位（不再從 Remarks 解析）
                 var item = new SetoffPrepaymentItem
                 {
                     Id = prepayment.Id,
                     PrepaymentTypeId = prepayment.PrepaymentTypeId,
-                    SourcePrepaymentId = prepayment.SourcePrepaymentId,  // ✅ 直接使用資料庫欄位
+                    SourcePrepaymentId = prepayment.SourcePrepaymentId,  //  直接使用資料庫欄位
                     SourceDocumentCode = prepayment.SourceDocumentCode,
                     Amount = prepayment.Amount,
                     UsedAmount = prepayment.UsedAmount,
@@ -321,7 +321,7 @@
                 return item;
             }).ToList();
             
-            // ✅ 載入後立即嘗試比對 SourcePrepaymentId（如果 AvailablePrepayments 已載入）
+            //  載入後立即嘗試比對 SourcePrepaymentId（如果 AvailablePrepayments 已載入）
             if (AvailablePrepayments?.Any() == true)
             {
                 MatchSourcePrepaymentIds();
@@ -439,7 +439,7 @@
                     
                     var currentValue = prepaymentItem.SourcePrepaymentId ?? 0;
                     
-                    // ✅ 編輯模式：如果當前選中的項目不在 AvailablePrepayments 中，需要加入到選項清單
+                    //  編輯模式：如果當前選中的項目不在 AvailablePrepayments 中，需要加入到選項清單
                     // 這種情況發生在：來源預收付款項已經用完，不再顯示在可用清單中
                     if (currentValue > 0 && !options.Any(o => o.Value.Equals(currentValue)))
                     {
@@ -679,7 +679,7 @@
             if (selectedPrepayment != null)
             {
                 item.SourceDocumentCode = selectedPrepayment.SourceDocumentCode;
-                // ✅ 轉沖款類型：Amount 為來源的總金額（用於顯示），UsedAmount 為可用餘額
+                //  轉沖款類型：Amount 為來源的總金額（用於顯示），UsedAmount 為可用餘額
                 item.Amount = selectedPrepayment.Amount;  // 設定來源的總金額
                 item.UsedAmount = selectedPrepayment.AvailableBalance;
             }
@@ -732,13 +732,15 @@
                 {
                     if (amount > sourcePrepayment.AvailableBalance)
                     {
-                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {NumberFormatHelper.FormatSmart(sourcePrepayment.AvailableBalance)}");
+                        // 不允許超過可用餘額，直接設為可用餘額
                         item.UsedAmount = sourcePrepayment.AvailableBalance;
+                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {NumberFormatHelper.FormatSmart(sourcePrepayment.AvailableBalance)}");
                     }
                     else if (amount < 0)
                     {
-                        await NotificationService.ShowWarningAsync("使用金額不能小於 0");
+                        // 不允許負數
                         item.UsedAmount = 0;
+                        await NotificationService.ShowWarningAsync("使用金額不能小於 0");
                     }
                     else
                     {
@@ -755,8 +757,8 @@
                 // 預收/預付類型：輸入的是 Amount
                 if (amount < 0)
                 {
-                    await NotificationService.ShowWarningAsync("金額不能小於 0");
                     item.Amount = 0;
+                    await NotificationService.ShowWarningAsync("金額不能小於 0");
                 }
                 else
                 {
@@ -788,66 +790,29 @@
     private async Task NotifyPrepaymentsChanged()
     {
         // 只傳遞非空行的預收付款項記錄
+        // ✅ 修正：直接使用 item 的欄位值，不要從 AvailablePrepayments 重新查詢，避免資料被覆蓋
         var prepayments = PrepaymentItems
             .Where(item => !IsEmptyRow(item))
-            .Select(item =>
+            .Select(item => new SetoffPrepayment
             {
-                // 如果是轉沖款類型，從 AvailablePrepayments 取得資料
-                if (item.SourcePrepaymentId.HasValue && item.SourcePrepaymentId.Value > 0)
-                {
-                    var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == item.SourcePrepaymentId);
-                    if (sourcePrepayment == null)
-                        return null;
-                    
-                    // ✅ 轉沖款類型：只增加 UsedAmount，Amount 設為 0
-                    return new SetoffPrepayment
-                    {
-                        // ✅ 優先使用 item.Id（如果是編輯模式會有值），其次是 ExistingPrepayment?.Id
-                        Id = item.Id > 0 ? item.Id : (item.ExistingPrepayment?.Id ?? 0),
-                        SetoffDocumentId = SetoffDocumentId ?? 0,
-                        PrepaymentTypeId = item.PrepaymentTypeId ?? 0,
-                        SourceDocumentCode = sourcePrepayment.SourceDocumentCode,
-                        SourcePrepaymentId = item.SourcePrepaymentId,  // ✅ 設定來源預收付款項 ID
-                        Amount = 0,  // 轉沖款類型：Amount 為 0
-                        UsedAmount = item.UsedAmount,  // 只記錄使用金額
-                        CustomerId = sourcePrepayment.CustomerId,
-                        SupplierId = sourcePrepayment.SupplierId,
-                        Remarks = item.Remarks,  // ✅ 備註恢復正常用途，不再儲存 SOURCE_ID
-                        // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
-                        PrepaymentType = null!,
-                        Customer = null,
-                        Supplier = null,
-                        SetoffDocument = null,
-                        SourcePrepayment = null
-                    };
-                }
-                else
-                {
-                    // ✅ 預收/預付類型：只增加 Amount，UsedAmount 設為 0
-                    return new SetoffPrepayment
-                    {
-                        // ✅ 優先使用 item.Id（如果是編輯模式會有值），其次是 ExistingPrepayment?.Id
-                        Id = item.Id > 0 ? item.Id : (item.ExistingPrepayment?.Id ?? 0),
-                        SetoffDocumentId = SetoffDocumentId ?? 0,
-                        PrepaymentTypeId = item.PrepaymentTypeId ?? 0,
-                        SourceDocumentCode = item.SourceDocumentCode,
-                        SourcePrepaymentId = null,  // ✅ 預收/預付類型沒有來源
-                        Amount = item.Amount,  // 預收/預付類型：只記錄 Amount
-                        UsedAmount = 0,  // UsedAmount 為 0
-                        CustomerId = CustomerId,
-                        SupplierId = SupplierId,
-                        Remarks = item.Remarks,
-                        // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
-                        PrepaymentType = null!,
-                        Customer = null,
-                        Supplier = null,
-                        SetoffDocument = null,
-                        SourcePrepayment = null
-                    };
-                }
+                // 統一使用 ExistingPrepayment?.Id，與 SetoffPaymentTable 保持一致
+                Id = item.ExistingPrepayment?.Id ?? 0,
+                SetoffDocumentId = SetoffDocumentId ?? 0,
+                PrepaymentTypeId = item.PrepaymentTypeId ?? 0,
+                SourceDocumentCode = item.SourceDocumentCode,  // ✅ 直接使用 item 的值
+                SourcePrepaymentId = item.SourcePrepaymentId,
+                Amount = item.Amount,  // ✅ 直接使用 item 的值
+                UsedAmount = item.UsedAmount,  // ✅ 直接使用 item 的值
+                CustomerId = CustomerId,  // ✅ 使用參數傳入的值
+                SupplierId = SupplierId,  // ✅ 使用參數傳入的值
+                Remarks = item.Remarks,
+                // 重要：不設定導航屬性，避免 EF Core 追蹤衝突
+                PrepaymentType = null!,
+                Customer = null,
+                Supplier = null,
+                SetoffDocument = null,
+                SourcePrepayment = null
             })
-            .Where(p => p != null)
-            .Cast<SetoffPrepayment>()
             .ToList();
 
         await OnPrepaymentsChanged.InvokeAsync(prepayments);
@@ -903,7 +868,7 @@
             }
             else if (selectedType != null)
             {
-                // ✅ 預收/預付類型：檢查 Amount 必須大於 0
+                //  預收/預付類型：檢查 Amount 必須大於 0
                 if (item.Amount <= 0)
                 {
                     errors.Add("金額必須大於 0");

@@ -418,6 +418,21 @@
     position: static !important;
 }
 
+/* 隱藏數字輸入框的上下拉桿 (spinner) - 適用於所有瀏覽器 */
+/* 使用 ::deep 讓樣式能夠穿透到 CustomTemplate 中的 input */
+/* Chrome, Safari, Edge, Opera */
+::deep input[type="number"]::-webkit-outer-spin-button,
+::deep input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+::deep input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 /* 下拉選單在手機版的優化 */
 @media (max-width: 767px) {
     /* 下拉選單在手機版的寬度調整 */
