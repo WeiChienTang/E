@@ -1,52 +1,17 @@
 @typeparam TItem
 @using System.Reflection
 
-@if (ShowCard)
-{
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="card-title mb-0">
-                @if (!string.IsNullOrEmpty(IconClass))
-                {
-                    <i class="@IconClass me-2"></i>
-                }
-                @Label
-                <span class="badge bg-secondary ms-2">@SelectedItems.Count / @Items.Count</span>
-            </h6>
-            <div class="btn-group btn-group-sm">
-                <GenericButtonComponent Text="全選" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
-                                      OnClick="SelectAll" Title="全選" />
-                <GenericButtonComponent Text="清空" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
-                                      OnClick="ClearAll" Title="清空" />
-            </div>
-        </div>
-        <div class="card-body">
-            @RenderContent()
+<div>
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <div class="d-flex gap-2">
+            <GenericButtonComponent Text="全選" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
+                                    OnClick="SelectAll" Title="全選" />
+            <GenericButtonComponent Text="清空" Variant="ButtonVariant.Danger" Size="ButtonSize.Small" 
+                                    OnClick="ClearAll" Title="清空" />
         </div>
     </div>
-}
-else
-{
-    <div>
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">
-                @if (!string.IsNullOrEmpty(IconClass))
-                {
-                    <i class="@IconClass me-2"></i>
-                }
-                @Label
-                <span class="badge bg-secondary ms-2">@SelectedItems.Count / @Items.Count</span>
-            </h6>
-            <div class="btn-group btn-group-sm">
-                <GenericButtonComponent Text="全選" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
-                                      OnClick="SelectAll" Title="全選" />
-                <GenericButtonComponent Text="清空" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
-                                       OnClick="ClearAll" Title="清空" />
-            </div>
-        </div>
-        @RenderContent()
-    </div>
-}
+    @RenderContent()
+</div>
 
 <style>
     .bg-light-primary {
@@ -99,7 +64,7 @@ else
     
     /// <summary>列表高度</summary>
     [Parameter] 
-    public string ListHeight { get; set; } = "400px";
+    public string ListHeight { get; set; } = "200px";
     
     /// <summary>標籤和項目前的圖示 CSS 類別</summary>
     [Parameter] 
@@ -177,9 +142,10 @@ else
         builder.OpenElement(11, "input");
         builder.AddAttribute(12, "type", "text");
         builder.AddAttribute(13, "class", "form-control form-control-sm");
-        builder.AddAttribute(14, "placeholder", Placeholder);
-        builder.AddAttribute(15, "value", searchTerm);
-        builder.AddAttribute(16, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => searchTerm = e.Value?.ToString() ?? string.Empty));
+        builder.AddAttribute(14, "style", "font-size: 1rem;");
+        builder.AddAttribute(15, "placeholder", Placeholder);
+        builder.AddAttribute(16, "value", searchTerm);
+        builder.AddAttribute(17, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => searchTerm = e.Value?.ToString() ?? string.Empty));
         builder.CloseElement(); // input
         
         builder.CloseElement(); // div mb-2
@@ -197,8 +163,8 @@ else
             {
                 var currentItem = item;
                 builder.OpenElement(22, "div");
-                builder.AddAttribute(23, "class", "list-group-item list-group-item-action d-flex align-items-center py-2 px-3");
-                builder.AddAttribute(24, "style", "cursor: pointer; user-select: none;");
+                builder.AddAttribute(23, "class", "list-group-item list-group-item-action d-flex align-items-center px-3");
+                builder.AddAttribute(24, "style", "cursor: pointer; user-select: none; padding-top: 0.15rem; padding-bottom: 0.15rem;");
                 builder.AddAttribute(25, "onclick", EventCallback.Factory.Create(this, () => AddItem(currentItem)));
                 
                 builder.OpenElement(26, "span");
@@ -285,9 +251,10 @@ else
         builder.OpenElement(63, "input");
         builder.AddAttribute(64, "type", "text");
         builder.AddAttribute(65, "class", "form-control form-control-sm");
-        builder.AddAttribute(66, "placeholder", "搜尋已選項目...");
-        builder.AddAttribute(67, "value", selectedSearchTerm);
-        builder.AddAttribute(68, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => selectedSearchTerm = e.Value?.ToString() ?? string.Empty));
+        builder.AddAttribute(66, "style", "font-size: 1rem;");
+        builder.AddAttribute(67, "placeholder", "搜尋已選項目...");
+        builder.AddAttribute(68, "value", selectedSearchTerm);
+        builder.AddAttribute(69, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => selectedSearchTerm = e.Value?.ToString() ?? string.Empty));
         builder.CloseElement(); // input
         
         builder.CloseElement(); // div mb-2
@@ -305,8 +272,8 @@ else
             {
                 var currentItem = item;
                 builder.OpenElement(74, "div");
-                builder.AddAttribute(75, "class", "list-group-item list-group-item-action d-flex align-items-center py-2 px-3 bg-light-primary");
-                builder.AddAttribute(76, "style", "cursor: pointer; user-select: none;");
+                builder.AddAttribute(75, "class", "list-group-item list-group-item-action d-flex align-items-center px-3 bg-light-primary");
+                builder.AddAttribute(76, "style", "cursor: pointer; user-select: none; padding-top: 0.25rem; padding-bottom: 0.25rem;");
                 builder.AddAttribute(77, "onclick", EventCallback.Factory.Create(this, () => RemoveItem(currentItem)));
                 
                 builder.OpenElement(78, "span");

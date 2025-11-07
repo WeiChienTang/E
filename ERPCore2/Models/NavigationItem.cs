@@ -1,6 +1,22 @@
 namespace ERPCore2.Models;
 
 /// <summary>
+/// 導航項目類型
+/// </summary>
+public enum NavigationItemType
+{
+    /// <summary>
+    /// 路由導航（預設）
+    /// </summary>
+    Route,
+    
+    /// <summary>
+    /// 觸發動作（用於開啟 Modal 等）
+    /// </summary>
+    Action
+}
+
+/// <summary>
 /// 導航項目模型
 /// </summary>
 public class NavigationItem
@@ -16,9 +32,19 @@ public class NavigationItem
     public string Description { get; set; } = string.Empty;
     
     /// <summary>
-    /// 路由路徑
+    /// 路由路徑（當 ItemType 為 Route 時使用）
     /// </summary>
     public string Route { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 導航項目類型
+    /// </summary>
+    public NavigationItemType ItemType { get; set; } = NavigationItemType.Route;
+    
+    /// <summary>
+    /// 動作識別碼（當 ItemType 為 Action 時使用）
+    /// </summary>
+    public string? ActionId { get; set; }
     
     /// <summary>
     /// 圖示 CSS 類別

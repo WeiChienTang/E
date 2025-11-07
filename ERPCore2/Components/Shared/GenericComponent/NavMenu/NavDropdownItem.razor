@@ -1,12 +1,51 @@
 @* 下拉選單項目元件 *@
 @using ERPCore2.Components.Shared.GenericComponent.Auth
 @using ERPCore2.Services
+@using ERPCore2.Models
+@using Microsoft.JSInterop
 @inject INavigationPermissionCollector PermissionCollector
+@inject IJSRuntime JSRuntime
 @inject ILogger<NavDropdownItem> Logger
 
 @if (!string.IsNullOrEmpty(RequiredPermission))
 {
     <NavigationPermissionCheck Permission="@RequiredPermission">
+        @if (ItemType == NavigationItemType.Action)
+        {
+            <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" @onclick="HandleActionClickAsync">
+                @if (!string.IsNullOrEmpty(IconClass))
+                {
+                    <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+                }
+                @Text
+            </button>
+        }
+        else
+        {
+            <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
+                @if (!string.IsNullOrEmpty(IconClass))
+                {
+                    <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+                }
+                @Text
+            </a>
+        }
+    </NavigationPermissionCheck>
+}
+else
+{
+    @if (ItemType == NavigationItemType.Action)
+    {
+        <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" @onclick="HandleActionClickAsync">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+            }
+            @Text
+        </button>
+    }
+    else
+    {
         <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
             @if (!string.IsNullOrEmpty(IconClass))
             {
@@ -14,21 +53,17 @@
             }
             @Text
         </a>
-    </NavigationPermissionCheck>
-}
-else
-{
-    <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
-        @if (!string.IsNullOrEmpty(IconClass))
-        {
-            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
-        }
-        @Text
-    </a>
+    }
 }
 
 
 @code {
+    /// <summary>
+    /// NavMenu 實例（透過 CascadingParameter 注入）
+    /// </summary>
+    [CascadingParameter(Name = "NavMenuInstance")]
+    public ERPCore2.Components.Layout.NavMenu? NavMenuInstance { get; set; }
+    
     /// <summary>
     /// 下拉選單項目顯示的文字
     /// </summary>
@@ -40,9 +75,19 @@ else
     [Parameter] public string IconClass { get; set; } = "";
 
     /// <summary>
-    /// 連結的 URL
+    /// 連結的 URL（當 ItemType 為 Route 時使用）
     /// </summary>
     [Parameter] public string Url { get; set; } = "";
+    
+    /// <summary>
+    /// 導航項目類型
+    /// </summary>
+    [Parameter] public NavigationItemType ItemType { get; set; } = NavigationItemType.Route;
+    
+    /// <summary>
+    /// 動作識別碼（當 ItemType 為 Action 時使用）
+    /// </summary>
+    [Parameter] public string? ActionId { get; set; }
 
     /// <summary>
     /// 此菜單項目需要的權限（可選）
@@ -89,5 +134,34 @@ else
     {
         // 這裡可以添加任何需要的邏輯
         // JavaScript 會自動處理手機模式下的選單隱藏
+    }
+    
+    /// <summary>
+    /// 處理 Action 型項目的點擊事件
+    /// </summary>
+    private async Task HandleActionClickAsync()
+    {
+        if (string.IsNullOrEmpty(ActionId))
+        {
+            Logger.LogWarning("Action 型項目缺少 ActionId: {Text}", Text);
+            return;
+        }
+        
+        try
+        {
+            // 透過 NavMenu 觸發動作
+            if (NavMenuInstance != null)
+            {
+                await NavMenuInstance.TriggerActionAsync(ActionId);
+            }
+            else
+            {
+                Logger.LogWarning("NavMenuInstance 為 null，無法觸發 Action: {ActionId}", ActionId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "觸發 Action 失敗: ActionId={ActionId}, Text={Text}", ActionId, Text);
+        }
     }
 }

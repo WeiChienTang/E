@@ -1,4 +1,6 @@
 @using ERPCore2.Components.Shared
+@using ERPCore2.Components.Pages.Reports
+@using ERPCore2.Helpers
 @using Microsoft.JSInterop
 @inherits LayoutComponentBase
 @inject IJSRuntime JSRuntime
@@ -7,7 +9,7 @@
 
 <div class="page">    
     <div class="sidebar">
-        <NavMenu />
+        <NavMenu OnActionTriggered="@HandleNavigationAction" />
     </div>
 
     <main class="main-content">
@@ -26,6 +28,10 @@
 <ShortcutKeysModalComponent IsVisible="@showShortcutKeys"
                            IsVisibleChanged="@((bool visible) => showShortcutKeys = visible)" />
 
+@* 應收帳款報表 Modal *@
+<AccountsReceivableReportPage IsVisible="@showAccountsReceivableReport"
+                             IsVisibleChanged="@((bool visible) => showAccountsReceivableReport = visible)" />
+
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer" 
                 OnPageSearchClick="@OpenPageSearch"
@@ -39,8 +45,26 @@
     // 快捷鍵說明 Modal 狀態
     private bool showShortcutKeys = false;
     
+    // 應收帳款報表 Modal 狀態
+    private bool showAccountsReceivableReport = false;
+    
     // JavaScript 互操作
     private DotNetObjectReference<MainLayout>? dotNetReference;
+    
+    // Action 處理器註冊表
+    private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
+
+    protected override void OnInitialized()
+    {
+        // 初始化 Action 註冊表
+        actionRegistry = NavigationActionHelper.CreateRegistry();
+        
+        // 註冊所有 Action 處理器
+        actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
+        
+        // 未來可在此繼續註冊其他 Action
+        // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -50,6 +74,9 @@
             {
                 // 建立 .NET 物件參考
                 dotNetReference = DotNetObjectReference.Create(this);
+                
+                // 將參考設置為全域變數，讓 NavDropdownItem 可以訪問
+                await JSRuntime.InvokeVoidAsync("eval", "window.mainLayoutRef = arguments[0]", dotNetReference);
                 
                 // 載入 keyboard-shortcuts.js 並初始化
                 await JSRuntime.InvokeVoidAsync("eval", @"
@@ -109,6 +136,33 @@
         {
             // 忽略開啟快捷鍵說明失敗
         }
+    }
+    
+    /// <summary>
+    /// 開啟應收帳款報表 Modal
+    /// JavaScript 可呼叫此方法
+    /// </summary>
+    [JSInvokable]
+    public void OpenAccountsReceivableReport()
+    {
+        try
+        {
+            showAccountsReceivableReport = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟應收帳款報表失敗
+        }
+    }
+    
+    /// <summary>
+    /// 處理導航動作觸發
+    /// </summary>
+    private void HandleNavigationAction(string actionId)
+    {
+        // 使用 ActionHandlerRegistry 執行 Action
+        actionRegistry?.Execute(actionId);
     }
 
     /// <summary>

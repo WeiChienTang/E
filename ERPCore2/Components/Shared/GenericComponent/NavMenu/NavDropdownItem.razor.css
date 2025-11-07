@@ -13,6 +13,20 @@
     font-weight: 400;
     line-height: 1.5;
     white-space: nowrap;
+    text-align: left; /* 確保按鈕文字靠左 */
+    cursor: pointer; /* 確保滑鼠游標顯示為指標 */
+}
+
+/* btn-link 樣式重置（用於 button 元素） */
+.nav-dropdown-item.btn-link {
+    text-decoration: none;
+}
+
+.nav-dropdown-item.btn-link:hover,
+.nav-dropdown-item.btn-link:focus {
+    text-decoration: none;
+    outline: none;
+    box-shadow: none;
 }
 
 /* 沒有圖示的項目，添加額外的左側縮排 */

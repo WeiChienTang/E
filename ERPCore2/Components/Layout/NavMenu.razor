@@ -6,6 +6,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 
+<CascadingValue Value="@this" Name="NavMenuInstance">
 <div class="nav-menu-container">
     @* 手機版選單切換按鈕 - 必須在外層才能與 nav-scrollable 成為兄弟元素 *@
     <input type="checkbox" title="Navigation menu" class="navbar-toggler" id="nav-toggle" />
@@ -59,7 +60,9 @@
                             @foreach (var child in menuItem.Children)
                             {
                                 <NavDropdownItem Text="@child.Name" 
-                                               Url="@child.Route" 
+                                               Url="@child.Route"
+                                               ItemType="@child.ItemType"
+                                               ActionId="@child.ActionId"
                                                RequiredPermission="@child.RequiredPermission" 
                                                ParentMenuKey="@menuItem.MenuKey" 
                                                IconClass="@child.IconClass" />
@@ -78,9 +81,29 @@
         </nav>
     </div>
 </div>
+</CascadingValue>
 
 @code {
+    // ===== 參數 =====
+    
+    /// <summary>
+    /// 動作觸發事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnActionTriggered { get; set; }
+    
     // ===== 事件處理 =====
+    
+    /// <summary>
+    /// 觸發導航動作
+    /// </summary>
+    public async Task TriggerActionAsync(string actionId)
+    {
+        if (OnActionTriggered.HasDelegate)
+        {
+            await OnActionTriggered.InvokeAsync(actionId);
+        }
+    }
     
     private async Task ShowUnderConstructionMessage()
     {

@@ -1,0 +1,199 @@
+@* 應收帳款報表 Modal 組件 - 不使用路由，純 Modal 彈窗 *@
+@using ERPCore2.Models
+@inject ICustomerService CustomerService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+@* 批次列印篩選 Modal - 受控於外部的 IsVisible 參數 *@
+<BatchPrintFilterModalComponent IsVisible="@IsVisible"
+                               IsVisibleChanged="@HandleModalVisibilityChanged"
+                               Title="應收帳款報表列印條件"
+                               OnConfirm="@HandlePrintConfirmAsync"
+                               OnCancel="@HandlePrintCancelAsync">
+    
+    @* 區塊 1: 客戶多選篩選 *@
+    <FilterSectionComponent>
+        <MultiSelectFilterComponent TItem="Customer"
+                                   Items="@customers"
+                                   @bind-SelectedItems="@selectedCustomers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="請輸入客戶名稱搜尋..."
+                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的應收帳款"
+                                   ShowCard="false" />
+    </FilterSectionComponent>
+    
+    @* 區塊 2: 日期範圍篩選 *@
+    <FilterSectionComponent Title="統計日期" 
+                           IconClass="bi bi-calendar-range">
+        <DateRangeFilterComponent @bind-StartDate="@startDate"
+                                 @bind-EndDate="@endDate"
+                                 StartDateLabel="起始日期"
+                                 EndDateLabel="結束日期"
+                                 ShowQuickSelectors="true"
+                                 AutoValidate="true"
+                                 ShowValidationMessage="true" />
+    </FilterSectionComponent>
+    
+    @* 區塊 3: 帳款狀態篩選（可選） *@
+    <FilterSectionComponent Title="帳款狀態" 
+                           IconClass="bi bi-filter">
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="includeSettled" @bind="includeSettled">
+            <label class="form-check-label" for="includeSettled">
+                包含已結清帳款
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="includeOverdue" @bind="includeOverdue">
+            <label class="form-check-label" for="includeOverdue">
+                僅顯示逾期帳款
+            </label>
+        </div>
+    </FilterSectionComponent>
+    
+</BatchPrintFilterModalComponent>
+
+@code {
+    // ===== 參數 =====
+    
+    /// <summary>
+    /// Modal 是否顯示（由外部控制）
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+    
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    // 篩選條件
+    private List<Customer> customers = new();
+    private List<Customer> selectedCustomers = new();
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+    private bool includeSettled = false;
+    private bool includeOverdue = false;
+
+    // ===== 生命週期 =====
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當 Modal 被開啟時，初始化資料
+        if (IsVisible && !customers.Any())
+        {
+            await LoadDataAsync();
+        }
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入客戶清單
+            await LoadCustomersAsync();
+            
+            // 設定預設日期範圍（本月）
+            startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            endDate = DateTime.Now;
+            
+            // 重置篩選條件
+            selectedCustomers = new();
+            includeSettled = false;
+            includeOverdue = false;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), 
+                additionalData: "初始化應收帳款報表資料失敗");
+            await NotificationService.ShowErrorAsync("初始化應收帳款報表資料失敗");
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), 
+                additionalData: "載入客戶資料失敗");
+            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+            customers = new List<Customer>();
+        }
+    }
+
+    /// <summary>
+    /// 處理 Modal 顯示狀態變更（當使用者關閉 Modal 時）
+    /// </summary>
+    private async Task HandleModalVisibilityChanged(bool visible)
+    {
+        // 通知父組件狀態變更
+        await IsVisibleChanged.InvokeAsync(visible);
+    }
+
+    /// <summary>
+    /// 處理列印確認
+    /// </summary>
+    private async Task HandlePrintConfirmAsync()
+    {
+        try
+        {
+            // 顯示測試訊息
+            var customerNames = selectedCustomers.Any() 
+                ? string.Join(", ", selectedCustomers.Select(c => c.CompanyName).Take(3))
+                : "全部客戶";
+            
+            var dateRange = $"{startDate:yyyy-MM-dd} ~ {endDate:yyyy-MM-dd}";
+            
+            var extraCount = selectedCustomers.Count > 3 ? $" 等 {selectedCustomers.Count} 家" : "";
+            var settledStatus = includeSettled ? "是" : "否";
+            var overdueStatus = includeOverdue ? "是" : "否";
+            
+            var message = $"📊 應收帳款報表條件：\n" +
+                         $"• 客戶：{customerNames}{extraCount}\n" +
+                         $"• 日期範圍：{dateRange}\n" +
+                         $"• 包含已結清：{settledStatus}\n" +
+                         $"• 僅逾期帳款：{overdueStatus}\n\n" +
+                         $"(測試階段 - 尚未實作實際列印功能)";
+            
+            await NotificationService.ShowInfoAsync(message);
+            
+            // TODO: 實作實際的報表產生和列印邏輯
+            // 建立篩選條件物件
+            // var criteria = new AccountsReceivableCriteria { ... };
+            // 調用報表服務
+            // var report = await ReportService.GenerateAsync(criteria);
+            // 開啟列印視窗
+            // await JSRuntime.InvokeVoidAsync("window.open", reportUrl);
+            
+            // 關閉 Modal
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrintConfirmAsync), GetType(), 
+                additionalData: new {
+                    SelectedCustomersCount = selectedCustomers.Count,
+                    StartDate = startDate,
+                    EndDate = endDate
+                });
+            await NotificationService.ShowErrorAsync("產生報表失敗");
+        }
+    }
+
+    /// <summary>
+    /// 處理取消
+    /// </summary>
+    private async Task HandlePrintCancelAsync()
+    {
+        // 關閉 Modal
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}
