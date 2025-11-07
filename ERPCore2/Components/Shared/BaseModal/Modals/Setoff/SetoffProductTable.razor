@@ -309,18 +309,25 @@ else
                     var detail = setoffItem.UnsettledDetail;
                     var baseRemainingAmount = detail?.RemainingAmount ?? 0;
                     
-                    // 編輯模式下，動態計算未沖款餘額
-                    // 未沖款餘額 = 原始餘額 + 原有的本次沖款/折讓 - 現在的本次沖款/折讓
-                    decimal adjustedRemainingAmount = baseRemainingAmount;
+                    // 使用 AdjustedBalanceHelper 計算動態調整後的未沖款餘額
+                    var originalTotalUsed = 0m;
+                    var currentOtherFieldsUsed = 0m;
+                    
                     if (IsEditMode() && setoffItem.ExistingDetail != null)
                     {
-                        var originalSetoff = setoffItem.ExistingDetail.CurrentSetoffAmount;
-                        var originalAllowance = setoffItem.ExistingDetail.CurrentAllowanceAmount;
-                        var currentSetoff = setoffItem.CurrentSetoffAmount;
-                        var currentAllowance = setoffItem.CurrentAllowanceAmount;
-                        
-                        adjustedRemainingAmount = baseRemainingAmount + (originalSetoff + originalAllowance) - (currentSetoff + currentAllowance);
+                        // 原有的總使用金額（沖款 + 折讓）
+                        originalTotalUsed = setoffItem.ExistingDetail.CurrentSetoffAmount + 
+                                          setoffItem.ExistingDetail.CurrentAllowanceAmount;
+                        // 目前其他欄位的使用金額（因為這是顯示餘額，所以包含當前所有欄位）
+                        currentOtherFieldsUsed = setoffItem.CurrentSetoffAmount + 
+                                                setoffItem.CurrentAllowanceAmount;
                     }
+                    
+                    var adjustedRemainingAmount = AdjustedBalanceHelper.CalculateAdjustedBalance(
+                        baseRemainingAmount,
+                        originalTotalUsed,
+                        currentOtherFieldsUsed,
+                        IsEditMode());
                     
                     var displayAmount = detail?.IsReturn == true ? -adjustedRemainingAmount : adjustedRemainingAmount;
                     var cssClass = adjustedRemainingAmount > 0 ? "text-warning fw-bold" : 
@@ -455,32 +462,32 @@ else
 
             var baseRemainingAmount = detail.RemainingAmount;
             
-            // 編輯模式下，計算動態調整後的未沖款餘額
-            decimal adjustedRemainingAmount = baseRemainingAmount;
+            // 使用 AdjustedBalanceHelper 計算可填入的最大金額
+            var originalTotalUsed = 0m;
+            var otherFieldsUsed = item.CurrentAllowanceAmount; // 本次折讓
+            
             if (IsEditMode() && item.ExistingDetail != null)
             {
-                var originalSetoff = item.ExistingDetail.CurrentSetoffAmount;
-                var originalAllowance = item.ExistingDetail.CurrentAllowanceAmount;
-                var currentAllowance = item.CurrentAllowanceAmount;
-                
-                // 未沖款餘額 = 原始餘額 + 原有的本次沖款/折讓 - 現在的本次折讓
-                adjustedRemainingAmount = baseRemainingAmount + originalSetoff + originalAllowance - currentAllowance;
-            }
-            else
-            {
-                // 新增模式下，需要扣除當前的折讓金額
-                adjustedRemainingAmount = baseRemainingAmount - item.CurrentAllowanceAmount;
+                // 原有的總使用金額（沖款 + 折讓）
+                originalTotalUsed = item.ExistingDetail.CurrentSetoffAmount + 
+                                  item.ExistingDetail.CurrentAllowanceAmount;
             }
             
+            var maxFillableAmount = AdjustedBalanceHelper.GetMaxFillableAmount(
+                baseRemainingAmount,
+                originalTotalUsed,
+                otherFieldsUsed,
+                IsEditMode());
+            
             // 檢查是否有可填入的金額
-            if (adjustedRemainingAmount <= 0)
+            if (maxFillableAmount <= 0)
             {
                 await NotificationService.ShowInfoAsync("沒有可填入的未沖款餘額", "提示");
                 return;
             }
             
             // 填入金額（絕對值）
-            item.CurrentSetoffAmount = Math.Abs(adjustedRemainingAmount);
+            item.CurrentSetoffAmount = Math.Abs(maxFillableAmount);
             await NotifyDetailsChanged();
             StateHasChanged();
         }
@@ -521,32 +528,32 @@ else
 
             var baseRemainingAmount = detail.RemainingAmount;
             
-            // 編輯模式下，計算動態調整後的未沖款餘額
-            decimal adjustedRemainingAmount = baseRemainingAmount;
+            // 使用 AdjustedBalanceHelper 計算可填入的最大金額
+            var originalTotalUsed = 0m;
+            var otherFieldsUsed = item.CurrentSetoffAmount; // 本次沖款
+            
             if (IsEditMode() && item.ExistingDetail != null)
             {
-                var originalSetoff = item.ExistingDetail.CurrentSetoffAmount;
-                var originalAllowance = item.ExistingDetail.CurrentAllowanceAmount;
-                var currentSetoff = item.CurrentSetoffAmount;
-                
-                // 未沖款餘額 = 原始餘額 + 原有的本次沖款/折讓 - 現在的本次沖款
-                adjustedRemainingAmount = baseRemainingAmount + originalSetoff + originalAllowance - currentSetoff;
-            }
-            else
-            {
-                // 新增模式下，需要扣除當前的沖款金額
-                adjustedRemainingAmount = baseRemainingAmount - item.CurrentSetoffAmount;
+                // 原有的總使用金額（沖款 + 折讓）
+                originalTotalUsed = item.ExistingDetail.CurrentSetoffAmount + 
+                                  item.ExistingDetail.CurrentAllowanceAmount;
             }
             
+            var maxFillableAmount = AdjustedBalanceHelper.GetMaxFillableAmount(
+                baseRemainingAmount,
+                originalTotalUsed,
+                otherFieldsUsed,
+                IsEditMode());
+            
             // 檢查是否有可填入的金額
-            if (adjustedRemainingAmount <= 0)
+            if (maxFillableAmount <= 0)
             {
                 await NotificationService.ShowInfoAsync("沒有可填入的未沖款餘額", "提示");
                 return;
             }
             
             // 填入金額（絕對值）
-            item.CurrentAllowanceAmount = Math.Abs(adjustedRemainingAmount);
+            item.CurrentAllowanceAmount = Math.Abs(maxFillableAmount);
             await NotifyDetailsChanged();
             StateHasChanged();
         }
@@ -573,23 +580,26 @@ else
                 {
                     var baseRemainingAmount = item.UnsettledDetail.RemainingAmount;
                     
-                    // 編輯模式下，計算動態調整後的未沖款餘額
-                    decimal adjustedRemainingAmount = baseRemainingAmount;
+                    // 使用 AdjustedBalanceHelper 計算可填入的最大金額
+                    var originalTotalUsed = 0m;
+                    
                     if (IsEditMode() && item.ExistingDetail != null)
                     {
-                        var originalSetoff = item.ExistingDetail.CurrentSetoffAmount;
-                        var originalAllowance = item.ExistingDetail.CurrentAllowanceAmount;
-                        var currentSetoff = item.CurrentSetoffAmount;
-                        var currentAllowance = item.CurrentAllowanceAmount;
-                        
-                        adjustedRemainingAmount = baseRemainingAmount + (originalSetoff + originalAllowance) - (currentSetoff + currentAllowance);
+                        // 原有的總使用金額（沖款 + 折讓）
+                        originalTotalUsed = item.ExistingDetail.CurrentSetoffAmount + 
+                                          item.ExistingDetail.CurrentAllowanceAmount;
                     }
                     
-                    // 只有當調整後的餘額大於0時才填入
-                    if (adjustedRemainingAmount > 0)
+                    var maxFillableAmount = AdjustedBalanceHelper.GetMaxFillableAmount(
+                        baseRemainingAmount,
+                        originalTotalUsed,
+                        0, // 不考慮其他欄位，直接填滿
+                        IsEditMode());
+                    
+                    // 只有當可填入金額大於0時才填入
+                    if (maxFillableAmount > 0)
                     {
-                        // 將本次沖款設定為調整後的未沖款餘額
-                        item.CurrentSetoffAmount = adjustedRemainingAmount;
+                        item.CurrentSetoffAmount = maxFillableAmount;
                         item.CurrentAllowanceAmount = 0; // 清空折讓
                         filledCount++;
                     }

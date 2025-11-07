@@ -510,7 +510,7 @@
             new()
             {
                 Title = "可用餘額",
-                Tooltip = "預收/預付類型（編輯模式）：顯示此預收付款項的剩餘可用金額；轉沖款類型：顯示來源預收付款項的可用餘額",
+                Tooltip = "預收/預付類型（編輯模式）：顯示此預收付款項的剩餘可用金額；轉沖款類型：顯示來源預收付款項的可用餘額（編輯模式下會動態調整）",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "120px",
@@ -528,10 +528,22 @@
 
                     if (IsTransferType(selectedType.Name))
                     {
-                        // 轉沖款類型：顯示來源預收付款項的可用餘額
+                        // 轉沖款類型：使用 AdjustedBalanceHelper 計算動態調整後的可用餘額
                         var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == prepaymentItem.SourcePrepaymentId);
-                        var availableBalance = sourcePrepayment?.AvailableBalance ?? 0;
-                        return @<span class="text-primary fw-bold">@NumberFormatHelper.FormatSmart(availableBalance)</span>;
+                        if (sourcePrepayment == null)
+                            return @<span class="text-muted">-</span>;
+                        
+                        var baseAvailableBalance = sourcePrepayment.AvailableBalance;
+                        var originalUsedAmount = prepaymentItem.ExistingPrepayment?.UsedAmount ?? 0;
+                        var currentUsedAmount = prepaymentItem.UsedAmount;
+                        
+                        var adjustedBalance = AdjustedBalanceHelper.CalculateAdjustedBalance(
+                            baseAvailableBalance,
+                            originalUsedAmount,
+                            currentUsedAmount,
+                            IsEditMode());
+                        
+                        return @<span class="text-primary fw-bold">@NumberFormatHelper.FormatSmart(adjustedBalance)</span>;
                     }
                     else
                     {
@@ -726,15 +738,31 @@
         {
             if (isTransferType)
             {
-                // 轉沖款類型：輸入的是 UsedAmount，需檢查不能超過可用餘額
+                // 轉沖款類型：輸入的是 UsedAmount，使用 AdjustedBalanceHelper 驗證
                 var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == item.SourcePrepaymentId);
                 if (sourcePrepayment != null)
                 {
-                    if (amount > sourcePrepayment.AvailableBalance)
+                    var originalUsedAmount = item.ExistingPrepayment?.UsedAmount ?? 0;
+                    
+                    // 使用 AdjustedBalanceHelper 驗證金額
+                    var isValid = AdjustedBalanceHelper.ValidateAmount(
+                        amount,
+                        sourcePrepayment.AvailableBalance,
+                        originalUsedAmount,
+                        IsEditMode());
+                    
+                    if (!isValid)
                     {
-                        // 不允許超過可用餘額，直接設為可用餘額
-                        item.UsedAmount = sourcePrepayment.AvailableBalance;
-                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {NumberFormatHelper.FormatSmart(sourcePrepayment.AvailableBalance)}");
+                        // 計算最大可用金額
+                        var maxAvailable = AdjustedBalanceHelper.CalculateAdjustedBalance(
+                            sourcePrepayment.AvailableBalance,
+                            originalUsedAmount,
+                            0,
+                            IsEditMode());
+                        
+                        // 不允許超過可用餘額，直接設為最大可用金額
+                        item.UsedAmount = maxAvailable;
+                        await NotificationService.ShowWarningAsync($"使用金額不能超過可用餘額 {NumberFormatHelper.FormatSmart(maxAvailable)}");
                     }
                     else if (amount < 0)
                     {
@@ -853,11 +881,28 @@
                     continue;
                 }
                 
-                // 檢查使用金額是否超過可用餘額
+                // 使用 AdjustedBalanceHelper 檢查使用金額是否超過可用餘額
                 var sourcePrepayment = AvailablePrepayments.FirstOrDefault(p => p.Id == item.SourcePrepaymentId);
-                if (sourcePrepayment != null && item.UsedAmount > sourcePrepayment.AvailableBalance)
+                if (sourcePrepayment != null)
                 {
-                    errors.Add($"來源單號 {sourcePrepayment.SourceDocumentCode} 的使用金額超過可用餘額");
+                    var originalUsedAmount = item.ExistingPrepayment?.UsedAmount ?? 0;
+                    
+                    var isValid = AdjustedBalanceHelper.ValidateAmount(
+                        item.UsedAmount,
+                        sourcePrepayment.AvailableBalance,
+                        originalUsedAmount,
+                        IsEditMode());
+                    
+                    if (!isValid)
+                    {
+                        var maxAvailable = AdjustedBalanceHelper.CalculateAdjustedBalance(
+                            sourcePrepayment.AvailableBalance,
+                            originalUsedAmount,
+                            0,
+                            IsEditMode());
+                        
+                        errors.Add($"來源單號 {sourcePrepayment.SourceDocumentCode} 的使用金額超過可用餘額（最大可用：{NumberFormatHelper.FormatSmart(maxAvailable)}）");
+                    }
                 }
                 
                 // 轉沖款類型：檢查 UsedAmount 必須大於 0
