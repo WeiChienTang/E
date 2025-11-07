@@ -2,14 +2,6 @@
 @using System.Reflection
 
 <div>
-    <div class="d-flex justify-content-end align-items-center mb-2">
-        <div class="d-flex gap-2">
-            <GenericButtonComponent Text="全選" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" 
-                                    OnClick="SelectAll" Title="全選" />
-            <GenericButtonComponent Text="清空" Variant="ButtonVariant.Danger" Size="ButtonSize.Small" 
-                                    OnClick="ClearAll" Title="清空" />
-        </div>
-    </div>
     @RenderContent()
 </div>
 
@@ -124,20 +116,35 @@
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", "row g-3");
         
-        // 左欄：可選項目
+        // 左欄:可選項目
         builder.OpenElement(2, "div");
         builder.AddAttribute(3, "class", "col-md-6");
         
         builder.OpenElement(4, "div");
         builder.AddAttribute(5, "class", "mb-2");
         
-        builder.OpenElement(6, "label");
-        builder.AddAttribute(7, "class", "form-label fw-bold");
-        builder.OpenElement(8, "i");
-        builder.AddAttribute(9, "class", "bi bi-list-ul me-1");
+        // 標題列 (含全選按鈕)
+        builder.OpenElement(6, "div");
+        builder.AddAttribute(7, "class", "d-flex align-items-center gap-2 mb-2");
+        
+        builder.OpenElement(8, "label");
+        builder.AddAttribute(9, "class", "form-label fw-bold mb-0");
+        builder.OpenElement(10, "i");
+        builder.AddAttribute(11, "class", "bi bi-list-ul me-1");
         builder.CloseElement(); // i
-        builder.AddContent(10, "可選項目");
+        builder.AddContent(12, "可選項目");
         builder.CloseElement(); // label
+        
+        // 全選按鈕
+        builder.OpenComponent<GenericButtonComponent>(13);
+        builder.AddAttribute(14, "Text", "全選");
+        builder.AddAttribute(15, "Variant", ButtonVariant.Primary);
+        builder.AddAttribute(16, "Size", ButtonSize.Small);
+        builder.AddAttribute(17, "OnClick", EventCallback.Factory.Create(this, SelectAll));
+        builder.AddAttribute(18, "Title", "全選");
+        builder.CloseComponent(); // GenericButtonComponent
+        
+        builder.CloseElement(); // div d-flex
         
         builder.OpenElement(11, "input");
         builder.AddAttribute(12, "type", "text");
@@ -233,20 +240,35 @@
         
         builder.CloseElement(); // div col-md-6 (左欄)
         
-        // 右欄：已選項目
+        // 右欄:已選項目
         builder.OpenElement(54, "div");
         builder.AddAttribute(55, "class", "col-md-6");
         
         builder.OpenElement(56, "div");
         builder.AddAttribute(57, "class", "mb-2");
         
-        builder.OpenElement(58, "label");
-        builder.AddAttribute(59, "class", "form-label fw-bold");
-        builder.OpenElement(60, "i");
-        builder.AddAttribute(61, "class", "bi bi-check-circle me-1");
+        // 標題列 (含清空按鈕)
+        builder.OpenElement(58, "div");
+        builder.AddAttribute(59, "class", "d-flex align-items-center gap-2 mb-2");
+        
+        builder.OpenElement(60, "label");
+        builder.AddAttribute(61, "class", "form-label fw-bold mb-0");
+        builder.OpenElement(62, "i");
+        builder.AddAttribute(63, "class", "bi bi-check-circle me-1");
         builder.CloseElement(); // i
-        builder.AddContent(62, "已選項目");
+        builder.AddContent(64, "已選項目");
         builder.CloseElement(); // label
+        
+        // 清空按鈕
+        builder.OpenComponent<GenericButtonComponent>(65);
+        builder.AddAttribute(66, "Text", "清空");
+        builder.AddAttribute(67, "Variant", ButtonVariant.Danger);
+        builder.AddAttribute(68, "Size", ButtonSize.Small);
+        builder.AddAttribute(69, "OnClick", EventCallback.Factory.Create(this, ClearAll));
+        builder.AddAttribute(70, "Title", "清空");
+        builder.CloseComponent(); // GenericButtonComponent
+        
+        builder.CloseElement(); // div d-flex
         
         builder.OpenElement(63, "input");
         builder.AddAttribute(64, "type", "text");

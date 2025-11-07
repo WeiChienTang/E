@@ -19,7 +19,7 @@
                    UseWhiteCloseButton="true"
                    BodyCssClass="pt-3"
                    OnClose="@HandleClose"
-                   CloseOnEscape="false"
+                   CloseOnEscape="true"
                    CloseOnBackdropClick="true">
     
     <BodyContent>
@@ -184,17 +184,13 @@
     }
 
     /// <summary>
-    /// 處理鍵盤事件（支援 ESC 關閉、方向鍵選取、Enter 確認）
-    /// 注意：ESC 關閉功能已由 BaseModalComponent 處理，但因需自訂行為所以設定 CloseOnEscape="false"
+    /// 處理鍵盤事件（支援方向鍵選取、Enter 確認）
+    /// ESC 關閉功能由 BaseModalComponent 統一處理（透過 CloseOnEscape="true"）
     /// </summary>
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Escape")
-        {
-            // ESC 關閉 Modal（自訂行為：需清空搜尋狀態）
-            await HandleClose();
-        }
-        else if (e.Key == "ArrowDown" || e.Key == "Down")
+        // 移除 ESC 處理，改由 BaseModalComponent 統一管理
+        if (e.Key == "ArrowDown" || e.Key == "Down")
         {
             // 向下移動選取
             if (searchResults.Any())

@@ -48,9 +48,6 @@
     // 應收帳款報表 Modal 狀態
     private bool showAccountsReceivableReport = false;
     
-    // JavaScript 互操作
-    private DotNetObjectReference<MainLayout>? dotNetReference;
-    
     // Action 處理器註冊表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
 
@@ -72,30 +69,42 @@
         {
             try
             {
-                // 建立 .NET 物件參考
-                dotNetReference = DotNetObjectReference.Create(this);
-                
-                // 將參考設置為全域變數，讓 NavDropdownItem 可以訪問
-                await JSRuntime.InvokeVoidAsync("eval", "window.mainLayoutRef = arguments[0]", dotNetReference);
-                
-                // 載入 keyboard-shortcuts.js 並初始化
+                // 註冊 Alt+S 快捷鍵開啟頁面搜尋
                 await JSRuntime.InvokeVoidAsync("eval", @"
-                    if (!window.KeyboardShortcuts) {
-                        var script = document.createElement('script');
-                        script.src = '/js/keyboard-shortcuts.js';
-                        document.head.appendChild(script);
+                    if (!window.altSRegistered) {
+                        document.addEventListener('keydown', function(e) {
+                            if (e.altKey && (e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.shiftKey) {
+                                e.preventDefault();
+                                
+                                // 嘗試直接點擊頁面搜尋按鈕（如果快速功能表已展開）
+                                var pageSearchBtn = document.querySelector('.quick-action-item[title*=""頁面搜尋""]');
+                                if (pageSearchBtn) {
+                                    pageSearchBtn.click();
+                                    return;
+                                }
+                                
+                                // 如果功能表未展開，先展開再點擊頁面搜尋
+                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
+                                if (quickActionBtn) {
+                                    quickActionBtn.click();
+                                    
+                                    // 等待 DOM 更新後再點擊頁面搜尋按鈕
+                                    setTimeout(function() {
+                                        var pageSearchBtn = document.querySelector('.quick-action-item[title*=""頁面搜尋""]');
+                                        if (pageSearchBtn) {
+                                            pageSearchBtn.click();
+                                        }
+                                    }, 100);
+                                }
+                            }
+                        });
+                        window.altSRegistered = true;
                     }
                 ");
-                
-                // 等待腳本載入
-                await Task.Delay(100);
-                
-                // 初始化快捷鍵監聽
-                await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.initialize", dotNetReference);
             }
-            catch
+            catch (Exception ex)
             {
-                // 忽略初始化快捷鍵失敗
+                Console.WriteLine($"[MainLayout] 初始化快捷鍵失敗: {ex.Message}");
             }
         }
     }
@@ -174,9 +183,6 @@
         {
             // 清理 JavaScript 快捷鍵監聽器
             await JSRuntime.InvokeVoidAsync("KeyboardShortcuts.dispose");
-
-            // 清理 .NET 物件參考
-            dotNetReference?.Dispose();
         }
         catch
         {

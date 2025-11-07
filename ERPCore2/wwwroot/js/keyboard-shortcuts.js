@@ -13,7 +13,6 @@ window.KeyboardShortcuts = {
         this.dotNetHelper = dotNetHelper;
         this.handleKeyDown = this.handleKeyDown.bind(this);
         document.addEventListener('keydown', this.handleKeyDown);
-        console.log('[KeyboardShortcuts] 已初始化，快捷鍵: Alt + S');
     },
 
     /**
@@ -79,9 +78,39 @@ window.KeyboardShortcuts = {
      * @returns {boolean} 是否有 Modal 開啟
      */
     hasOpenModal: function () {
-        // 檢查 Bootstrap Modal 的開啟狀態
-        return document.querySelector('.modal.show') !== null ||
-               document.querySelector('.modal-backdrop.show') !== null;
+        // 方法 1: 檢查 body class
+        if (document.body.classList.contains('modal-open')) {
+            return true;
+        }
+        
+        // 方法 2: 檢查 .modal.show 和實際 display 狀態
+        const modalWithShow = document.querySelector('.modal.show');
+        if (modalWithShow) {
+            const style = window.getComputedStyle(modalWithShow);
+            if (style.display === 'block' || style.display === 'flex') {
+                return true;
+            }
+        }
+        
+        // 方法 3: 檢查所有 modal 的實際顯示狀態
+        const allModals = document.querySelectorAll('.modal');
+        for (let modal of allModals) {
+            const style = window.getComputedStyle(modal);
+            if (style.display !== 'none' && style.visibility !== 'hidden') {
+                return true;
+            }
+        }
+        
+        // 方法 4: 檢查 backdrop
+        const backdrop = document.querySelector('.modal-backdrop.show');
+        if (backdrop) {
+            const style = window.getComputedStyle(backdrop);
+            if (style.display !== 'none') {
+                return true;
+            }
+        }
+        
+        return false;
     },
 
     /**
@@ -92,6 +121,5 @@ window.KeyboardShortcuts = {
             document.removeEventListener('keydown', this.handleKeyDown);
         }
         this.dotNetHelper = null;
-        console.log('[KeyboardShortcuts] 已清理資源');
     }
 };

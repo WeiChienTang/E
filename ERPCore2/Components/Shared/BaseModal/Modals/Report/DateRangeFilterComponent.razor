@@ -2,7 +2,7 @@
     <div class="col-md-8">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">
+                <label class="form-label fw-bold">
                     @if (!string.IsNullOrEmpty(StartDateIconClass))
                     {
                         <i class="@StartDateIconClass me-1"></i>
@@ -22,7 +22,7 @@
                 }
             </div>
             <div class="col-md-6">
-                <label class="form-label">
+                <label class="form-label fw-bold">
                     @if (!string.IsNullOrEmpty(EndDateIconClass))
                     {
                         <i class="@EndDateIconClass me-1"></i>
@@ -47,14 +47,14 @@
     @if (ShowQuickSelectors)
     {
         <div class="col-md-4 text-end">
-            <label class="form-label d-block">快速選擇：</label>
-            <div class="btn-group btn-group-sm" role="group">
-                <GenericButtonComponent Text="今日" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetToday" />
-                <GenericButtonComponent Text="本週" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetThisWeek" />
-                <GenericButtonComponent Text="本月" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetThisMonth" />
-                <GenericButtonComponent Text="上月" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetLastMonth" />
-                <GenericButtonComponent Text="今年" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="SetThisYear" />
-                <GenericButtonComponent Text="清空" Variant="ButtonVariant.OutlineSecondary" Size="ButtonSize.Small" OnClick="ClearDates" />
+            <label class="form-label d-block fw-bold">快速選擇</label>
+            <div class="d-flex gap-2 justify-content-end">
+                <GenericButtonComponent Text="今日" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" OnClick="SetToday" />
+                <GenericButtonComponent Text="本週" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" OnClick="SetThisWeek" />
+                <GenericButtonComponent Text="本月" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" OnClick="SetThisMonth" />
+                <GenericButtonComponent Text="上月" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" OnClick="SetLastMonth" />
+                <GenericButtonComponent Text="今年" Variant="ButtonVariant.Primary" Size="ButtonSize.Small" OnClick="SetThisYear" />
+                <GenericButtonComponent Text="清空" Variant="ButtonVariant.Danger" Size="ButtonSize.Small" OnClick="ClearDates" />
             </div>
         </div>
     }
