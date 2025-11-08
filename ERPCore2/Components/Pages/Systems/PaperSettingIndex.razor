@@ -74,42 +74,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("系統管理", "/systems"),
-                new("紙張設定")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "紙張設定", "/systems", NotificationService, GetType());
 
     // 載入紙張設定資料
-    private async Task<List<PaperSetting>> LoadPaperSettingsAsync()
-    {
-        try
-        {
-            return await PaperSettingService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaperSettingsAsync), GetType(), additionalData: "載入紙張設定資料失敗");
-            await NotificationService.ShowErrorAsync("載入紙張設定資料失敗");
-            // 設定安全的預設值
-            return new List<PaperSetting>();
-        }
-    }
+    private async Task<List<PaperSetting>> LoadPaperSettingsAsync() => await DataLoaderHelper.LoadAsync(PaperSettingService.GetAllAsync, "紙張設定", NotificationService, GetType());
 
     private IQueryable<PaperSetting> ApplyPaperSettingFilters(SearchFilterModel searchModel, IQueryable<PaperSetting> query)
     {

@@ -78,42 +78,10 @@
 
     // ===== 初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("財務管理", "#"),
-                new("銀行設定")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "銀行設定", null, NotificationService, GetType());
 
     // 載入銀行資料
-    private async Task<List<Bank>> LoadDataAsync()
-    {
-        try
-        {
-            return await BankService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入銀行資料失敗");
-            await NotificationService.ShowErrorAsync("載入銀行資料失敗");
-            // 設定安全的預設值
-            return new List<Bank>();
-        }
-    }
+    private async Task<List<Bank>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(BankService.GetAllAsync, "銀行", NotificationService, GetType());
 
     private IQueryable<Bank> ApplyBankFilters(SearchFilterModel searchModel, IQueryable<Bank> query)
     {

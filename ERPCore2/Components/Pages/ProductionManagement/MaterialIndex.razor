@@ -25,152 +25,50 @@
     // 組件參考
     private GenericIndexPageComponent<Material, IMaterialService> indexComponent = default!;
     
+    // 欄位配置
+    private MaterialFieldConfiguration fieldConfiguration = default!;
+    
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<BreadcrumbItem> breadcrumbItems = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            InitializeBreadcrumbs();
-            InitializeFilters();
-            InitializeTableColumns();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(OnInitialized),
-                GetType(),
-                additionalData: "材質頁面初始化失敗");
-        }
-    }
-
-    private void InitializeBreadcrumbs()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("基礎資料", "#"),
-                new("材質管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBreadcrumbs),
-                GetType(),
-                additionalData: "初始化麵包屑導航失敗");
-        }
-    }
-
-    // 載入材質資料
-    private async Task<List<Material>> LoadMaterialsAsync()
-    {
-        try
-        {
-            return await MaterialService.GetAllAsync();
+            await InitializeBreadcrumbsAsync();
+            
+            // 建立欄位配置
+            fieldConfiguration = new MaterialFieldConfiguration(NotificationService);
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(
                 ex,
-                nameof(LoadMaterialsAsync),
+                nameof(OnInitializedAsync),
                 GetType(),
-                additionalData: "載入材質資料發生錯誤");
-            await NotificationService.ShowErrorAsync("載入材質資料失敗");
-            return new List<Material>();
+                additionalData: "材質頁面初始化失敗");
+            await NotificationService.ShowErrorAsync("初始化材質頁面失敗");
         }
     }
 
-    private void InitializeFilters()
-    {
-        try
-        {
-            // 建立篩選定義
-            filterDefinitions = new SearchFilterBuilder<SearchFilterModel>()
-                .AddText("Name", "材質名稱", "輸入材質名稱搜尋")
-                .AddText("Code", "材質代碼", "輸入材質代碼搜尋")
-                .AddText("Description", "描述", "輸入描述搜尋")
-                .Build();
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeFilters),
-                GetType(),
-                additionalData: "初始化篩選器失敗");
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "材質管理", null, NotificationService, GetType());
 
-    private void InitializeTableColumns()
-    {
-        try
-        {
-            columnDefinitions = new List<TableColumnDefinition>
-            {
-                TableColumnDefinition.Text("材質代碼", nameof(Material.Code)),
-                TableColumnDefinition.Text("材質名稱", nameof(Material.Name)),
-                TableColumnDefinition.Text("描述", nameof(Material.Description)),
-                TableColumnDefinition.Text("備註", nameof(Material.Remarks))
-            };
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeTableColumns),
-                GetType(),
-                additionalData: "初始化表格欄位失敗");
-        }
-    }
+    // 載入材質資料
+    private async Task<List<Material>> LoadMaterialsAsync() => await DataLoaderHelper.LoadAsync(MaterialService.GetAllAsync, "材質", NotificationService, GetType());
 
     // 自定義篩選邏輯
     private IQueryable<Material> ApplyMaterialFilters(SearchFilterModel searchModel, IQueryable<Material> query)
     {
-        try
+        // 確保 fieldConfiguration 已初始化（避免與 GenericIndexPageComponent 初始化的競爭條件）
+        if (fieldConfiguration == null)
         {
-            // 材質代碼篩選
-            var codeFilter = searchModel.GetFilterValue("Code")?.ToString();
-            if (!string.IsNullOrWhiteSpace(codeFilter))
-            {
-                query = query.Where(m => 
-                    m.Code != null && m.Code.Contains(codeFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 材質名稱篩選
-            var nameFilter = searchModel.GetFilterValue("Name")?.ToString();
-            if (!string.IsNullOrWhiteSpace(nameFilter))
-            {
-                query = query.Where(m => 
-                    m.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            // 描述篩選
-            var descriptionFilter = searchModel.GetFilterValue("Description")?.ToString();
-            if (!string.IsNullOrWhiteSpace(descriptionFilter))
-            {
-                query = query.Where(m => 
-                    !string.IsNullOrEmpty(m.Description) && 
-                    m.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
             return query.OrderBy(m => m.Code);
         }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(ApplyMaterialFilters),
-                GetType(),
-                additionalData: "套用材質篩選失敗");
-            return query.OrderBy(m => m.Code);
-        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyMaterialFilters), GetType());
     }
 }

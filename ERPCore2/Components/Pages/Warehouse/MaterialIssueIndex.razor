@@ -90,25 +90,7 @@
 
     // ===== 初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("庫存管理", "#"),
-                new("領料管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "領料管理", "#", NotificationService, GetType());
 
     // ===== 資料載入方法 =====
 
@@ -130,21 +112,7 @@
         }
     }
 
-    private async Task<List<MaterialIssue>> LoadDataAsync()
-    {
-        try
-        {
-            return await MaterialIssueService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入領料資料失敗");
-            await NotificationService.ShowErrorAsync("載入領料資料失敗");
-            // 設定安全的預設值
-            return new List<MaterialIssue>();
-        }
-    }
+    private Task<List<MaterialIssue>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => MaterialIssueService.GetAllAsync(), "領料", NotificationService, GetType());
 
     // ===== 篩選方法 =====
 

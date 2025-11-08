@@ -85,58 +85,13 @@
 
     // ===== 原有的初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("生產管理", "#"),
-                new("物料清單")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "物料清單", null, NotificationService, GetType());
 
     // 載入產品合成表資料
-    private async Task<List<ProductComposition>> LoadDataAsync()
-    {
-        try
-        {
-            return await ProductCompositionService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入產品合成表資料失敗");
-            await NotificationService.ShowErrorAsync("載入產品合成表資料失敗");
-            // 設定安全的預設值
-            return new List<ProductComposition>();
-        }
-    }
+    private async Task<List<ProductComposition>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(ProductCompositionService.GetAllAsync, "產品合成表", NotificationService, GetType());
 
     // 載入產品資料（用於篩選器）
-    private async Task LoadProductsAsync()
-    {
-        try
-        {
-            products = await ProductService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入產品資料失敗");
-            await NotificationService.ShowErrorAsync("載入產品資料失敗");
-            // 設定安全的預設值
-            products = new List<Product>();
-        }
-    }
+    private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(ProductService.GetAllAsync, "產品", NotificationService, GetType());
 
     private IQueryable<ProductComposition> ApplyCompositionFilters(SearchFilterModel searchModel, IQueryable<ProductComposition> query)
     {

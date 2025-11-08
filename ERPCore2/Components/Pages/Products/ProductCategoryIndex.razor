@@ -74,42 +74,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("基礎資料", "#"),
-                new("商品類型管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "商品類型管理", "#", NotificationService, GetType());
 
     // 載入產品分類資料
-    private async Task<List<ProductCategory>> LoadDataAsync()
-    {
-        try
-        {
-            return await ProductCategoryService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入產品分類資料失敗");
-            await NotificationService.ShowErrorAsync("載入產品分類資料失敗");
-            // 設定安全的預設值
-            return new List<ProductCategory>();
-        }
-    }
+    private Task<List<ProductCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => ProductCategoryService.GetAllAsync(), "產品分類", NotificationService, GetType());
 
     private IQueryable<ProductCategory> ApplyProductCategoryFilters(SearchFilterModel searchModel, IQueryable<ProductCategory> query)
     {

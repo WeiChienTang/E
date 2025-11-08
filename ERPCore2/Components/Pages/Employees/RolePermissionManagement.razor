@@ -249,7 +249,7 @@
     {
         try
         {
-            InitializeBreadcrumbs();
+            await InitializeBreadcrumbsAsync();
             InitializeColumnDefinitions();
             await LoadRolesAsync();
         }
@@ -259,15 +259,7 @@
         }
     }
 
-    private void InitializeBreadcrumbs()
-    {
-        breadcrumbItems = new List<BreadcrumbItem>
-        {
-            new("首頁", "/"),
-            new("員工管理", "#"),
-            new("角色權限管理")
-        };
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "角色權限管理", null, NotificationService, GetType());
 
     private void InitializeColumnDefinitions()
     {
@@ -289,30 +281,7 @@
         };
     }
 
-    private async Task LoadRolesAsync()
-    {
-        try
-        {
-            isLoadingRoles = true;
-            StateHasChanged();
-
-            var result = await RoleService.GetAllAsync();
-            if (result != null)
-            {
-                roles = result.OrderBy(r => r.Name).ToList();
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入角色資料時發生錯誤", "錯誤");
-        }
-        finally
-        {
-            isLoadingRoles = false;
-            StateHasChanged();
-        }
-    }
+    private async Task LoadRolesAsync() => roles = (await DataLoaderHelper.LoadAsync(RoleService.GetAllAsync, "角色", NotificationService, GetType())).OrderBy(r => r.Name).ToList();
 
     private async Task LoadPermissionsAsync()
     {

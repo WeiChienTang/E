@@ -74,42 +74,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("系統管理", "/systems"),
-                new("公司設定")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "公司設定", "/systems", NotificationService, GetType());
 
     // 載入公司資料
-    private async Task<List<Company>> LoadCompaniesAsync()
-    {
-        try
-        {
-            return await CompanyService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
-            await NotificationService.ShowErrorAsync("載入公司資料失敗");
-            // 設定安全的預設值
-            return new List<Company>();
-        }
-    }
+    private async Task<List<Company>> LoadCompaniesAsync() => await DataLoaderHelper.LoadAsync(CompanyService.GetAllAsync, "公司", NotificationService, GetType());
 
     private IQueryable<Company> ApplyCompanyFilters(SearchFilterModel searchModel, IQueryable<Company> query)
     {

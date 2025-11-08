@@ -1,5 +1,4 @@
 @page "/purchase/receiving"
-@using ERPCore2.Models
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IWarehouseService WarehouseService
@@ -132,42 +131,12 @@
     /// <summary>
     /// 初始化麵包屑導航
     /// </summary>
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("採購管理", "#"),
-                new("進貨管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "進貨管理", "#", NotificationService, GetType());
 
     /// <summary>
     /// 載入進貨單資料
     /// </summary>
-    private async Task<List<PurchaseReceiving>> LoadPurchaseReceivingsAsync()
-    {
-        try
-        {
-            return await PurchaseReceivingService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReceivingsAsync), GetType(), additionalData: "載入進貨單資料失敗");
-            await NotificationService.ShowErrorAsync("載入進貨單資料失敗");
-            return new List<PurchaseReceiving>();
-        }
-    }
+    private Task<List<PurchaseReceiving>> LoadPurchaseReceivingsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReceivingService.GetAllAsync(), "進貨單", NotificationService, GetType());
 
     /// <summary>
     /// 載入基礎資料
@@ -208,36 +177,12 @@
     /// <summary>
     /// 載入倉庫資料
     /// </summary>
-    private async Task LoadWarehousesAsync()
-    {
-        try
-        {
-            warehouses = await WarehouseService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
-            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
-            warehouses = new List<Warehouse>();
-        }
-    }
+    private async Task LoadWarehousesAsync() => warehouses = await DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
 
     /// <summary>
     /// 載入廠商資料
     /// </summary>
-    private async Task LoadSuppliersAsync()
-    {
-        try
-        {
-            suppliers = await SupplierService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入廠商資料失敗");
-            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
-            suppliers = new List<Supplier>();
-        }
-    }
+    private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => SupplierService.GetAllAsync(), "廠商", NotificationService, GetType());
 
     /// <summary>
     /// 應用進貨單篩選器

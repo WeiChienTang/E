@@ -77,42 +77,10 @@
 
     // ===== 原有的初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("員工管理", "#"),
-                new("職位設定管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "職位設定管理", "#", NotificationService, GetType());
 
     // 載入職位設定資料
-    private async Task<List<EmployeePosition>> LoadDataAsync()
-    {
-        try
-        {
-            return await EmployeePositionService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入職位設定資料失敗");
-            await NotificationService.ShowErrorAsync("載入職位設定資料失敗");
-            // 設定安全的預設值
-            return new List<EmployeePosition>();
-        }
-    }
+    private Task<List<EmployeePosition>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => EmployeePositionService.GetAllAsync(), "職位設定", NotificationService, GetType());
 
     private IQueryable<EmployeePosition> ApplyEmployeePositionFilters(SearchFilterModel searchModel, IQueryable<EmployeePosition> query)
     {

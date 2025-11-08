@@ -88,89 +88,19 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("員工")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("員工", NotificationService, GetType());
 
     // 載入員工資料
-    private async Task<List<Employee>> LoadEmployeesAsync()
-    {
-        try
-        {
-            return await EmployeeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
-            await NotificationService.ShowErrorAsync("載入員工資料失敗");
-            // 設定安全的預設值
-            return new List<Employee>();
-        }
-    }
+    private Task<List<Employee>> LoadEmployeesAsync() => DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
     // 載入部門資料
-    private async Task LoadDepartmentsAsync()
-    {
-        try
-        {
-            departments = await DepartmentService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDepartmentsAsync), GetType(), additionalData: "載入部門資料失敗");
-            await NotificationService.ShowErrorAsync("載入部門資料失敗");
-            // 設定安全的預設值
-            departments = new List<Department>();
-        }
-    }
+    private async Task LoadDepartmentsAsync() => departments = await DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllAsync(), "部門", NotificationService, GetType());
 
     // 載入角色資料
-    private async Task LoadRolesAsync()
-    {
-        try
-        {
-            roles = await RoleService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType(), additionalData: "載入角色資料失敗");
-            await NotificationService.ShowErrorAsync("載入角色資料失敗");
-            // 設定安全的預設值
-            roles = new List<Role>();
-        }
-    }
+    private async Task LoadRolesAsync() => roles = await DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "角色", NotificationService, GetType());
 
     // 載入員工職位資料
-    private async Task LoadEmployeePositionsAsync()
-    {
-        try
-        {
-            employeePositions = await EmployeePositionService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeePositionsAsync), GetType(), additionalData: "載入員工職位資料失敗");
-            await NotificationService.ShowErrorAsync("載入員工職位資料失敗");
-            // 設定安全的預設值
-            employeePositions = new List<EmployeePosition>();
-        }
-    }
+    private async Task LoadEmployeePositionsAsync() => employeePositions = await DataLoaderHelper.LoadAsync(() => EmployeePositionService.GetAllAsync(), "員工職位", NotificationService, GetType());
 
     // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
     private IQueryable<Employee> ApplyEmployeeFilters(SearchFilterModel searchModel, IQueryable<Employee> query)

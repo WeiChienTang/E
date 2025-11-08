@@ -74,42 +74,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("系統管理", "/systems"),
-                new("印表機設定")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "印表機設定", "/systems", NotificationService, GetType());
 
     // 載入印表機設定資料
-    private async Task<List<PrinterConfiguration>> LoadPrinterConfigurationsAsync()
-    {
-        try
-        {
-            return await PrinterConfigurationService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPrinterConfigurationsAsync), GetType(), additionalData: "載入印表機設定資料失敗");
-            await NotificationService.ShowErrorAsync("載入印表機設定資料失敗");
-            // 設定安全的預設值
-            return new List<PrinterConfiguration>();
-        }
-    }
+    private async Task<List<PrinterConfiguration>> LoadPrinterConfigurationsAsync() => await DataLoaderHelper.LoadAsync(PrinterConfigurationService.GetAllAsync, "印表機設定", NotificationService, GetType());
 
     private IQueryable<PrinterConfiguration> ApplyPrinterConfigurationFilters(SearchFilterModel searchModel, IQueryable<PrinterConfiguration> query)
     {

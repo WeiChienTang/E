@@ -78,42 +78,12 @@
     /// <summary>
     /// 初始化麵包屑導航
     /// </summary>
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("銷售管理", "#"),
-                new("退貨原因管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "退貨原因管理", "#", NotificationService, GetType());
 
     /// <summary>
     /// 載入銷貨退貨原因資料
     /// </summary>
-    private async Task<List<SalesReturnReason>> LoadSalesReturnReasonsAsync()
-    {
-        try
-        {
-            return await SalesReturnReasonService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesReturnReasonsAsync), GetType(), additionalData: "載入銷貨退貨原因資料失敗");
-            await NotificationService.ShowErrorAsync("載入銷貨退貨原因資料失敗");
-            return new List<SalesReturnReason>();
-        }
-    }
+    private Task<List<SalesReturnReason>> LoadSalesReturnReasonsAsync() => DataLoaderHelper.LoadAsync(() => SalesReturnReasonService.GetAllAsync(), "銷貨退貨原因", NotificationService, GetType());
 
     /// <summary>
     /// 應用銷貨退貨原因篩選器

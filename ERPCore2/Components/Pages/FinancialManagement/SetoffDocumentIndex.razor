@@ -180,25 +180,7 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("財務管理", "/financial"),
-                new("沖款單維護")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "沖款單維護", "/financial", NotificationService, GetType());
 
     // 載入沖款單資料
     private async Task<List<SetoffDocument>> LoadSetoffDocumentsAsync()
@@ -228,20 +210,7 @@
     }
 
     // 載入公司資料
-    private async Task LoadCompaniesAsync()
-    {
-        try
-        {
-            companies = await CompanyService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
-            await NotificationService.ShowErrorAsync("載入公司資料失敗");
-            // 設定安全的預設值
-            companies = new List<Company>();
-        }
-    }
+    private async Task LoadCompaniesAsync() => companies = await DataLoaderHelper.LoadAsync(CompanyService.GetAllAsync, "公司", NotificationService, GetType());
 
     private IQueryable<SetoffDocument> ApplySetoffDocumentFilters(SearchFilterModel searchModel, IQueryable<SetoffDocument> query)
     {

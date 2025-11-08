@@ -78,42 +78,10 @@
 
     // ===== 原有的初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("員工管理", "#"),
-                new("部門設定")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "部門設定", "#", NotificationService, GetType());
 
     // 載入部門資料
-    private async Task<List<Department>> LoadDataAsync()
-    {
-        try
-        {
-            return await DepartmentService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入部門資料失敗");
-            await NotificationService.ShowErrorAsync("載入部門資料失敗");
-            // 設定安全的預設值
-            return new List<Department>();
-        }
-    }
+    private Task<List<Department>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllAsync(), "部門", NotificationService, GetType());
 
     private IQueryable<Department> ApplyDepartmentFilters(SearchFilterModel searchModel, IQueryable<Department> query)
     {

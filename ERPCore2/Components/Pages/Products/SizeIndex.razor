@@ -75,42 +75,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("基礎資料", "#"),
-                new("尺寸維護")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "尺寸維護", "#", NotificationService, GetType());
 
     // 載入尺寸資料
-    private async Task<List<Size>> LoadSizesAsync()
-    {
-        try
-        {
-            return await SizeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSizesAsync), GetType(), additionalData: "載入尺寸資料失敗");
-            await NotificationService.ShowErrorAsync("載入尺寸資料失敗");
-            // 設定安全的預設值
-            return new List<Size>();
-        }
-    }
+    private Task<List<Size>> LoadSizesAsync() => DataLoaderHelper.LoadAsync(() => SizeService.GetAllAsync(), "尺寸", NotificationService, GetType());
 
     private IQueryable<Size> ApplySizeFilters(SearchFilterModel searchModel, IQueryable<Size> query)
     {

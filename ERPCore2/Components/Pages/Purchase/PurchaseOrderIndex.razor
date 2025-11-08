@@ -1,5 +1,4 @@
 @page "/purchase/orders"
-@using ERPCore2.Models
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -147,72 +146,14 @@
         }
     }    
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("採購管理", "/purchase"),
-                new("採購單管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "採購單管理", "/purchase", NotificationService, GetType());
 
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => SupplierService.GetAllAsync(), "廠商", NotificationService, GetType());
 
-    private async Task LoadSuppliersAsync()
-    {
-        try
-        {
-            suppliers = await SupplierService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入廠商資料失敗");
-            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
-            // 設定安全的預設值
-            suppliers = new List<Supplier>();
-        }
-    }
-
-    private async Task LoadCompaniesAsync()
-    {
-        try
-        {
-            companies = await CompanyService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCompaniesAsync), GetType(), additionalData: "載入公司資料失敗");
-            await NotificationService.ShowErrorAsync("載入公司資料失敗");
-            // 設定安全的預設值
-            companies = new List<Company>();
-        }
-    }
+    private async Task LoadCompaniesAsync() => companies = await DataLoaderHelper.LoadAsync(() => CompanyService.GetAllAsync(), "公司", NotificationService, GetType());
 
     // 載入採購單資料
-    private async Task<List<PurchaseOrder>> LoadPurchaseOrdersAsync()
-    {
-        try
-        {
-            return await PurchaseOrderService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseOrdersAsync), GetType(), additionalData: "載入採購單資料失敗");
-            await NotificationService.ShowErrorAsync("載入採購單資料失敗");
-            // 設定安全的預設值
-            return new List<PurchaseOrder>();
-        }
-    }
+    private Task<List<PurchaseOrder>> LoadPurchaseOrdersAsync() => DataLoaderHelper.LoadAsync(() => PurchaseOrderService.GetAllAsync(), "採購單", NotificationService, GetType());
 
     // 篩選方法 - 現在已由 FilterHelper 處理所有錯誤情況
     private IQueryable<PurchaseOrder> ApplyPurchaseOrderFilters(SearchFilterModel searchModel, IQueryable<PurchaseOrder> query)

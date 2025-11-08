@@ -98,93 +98,27 @@
     /// <summary>
     /// 初始化麵包屑導航
     /// </summary>
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("庫存管理", "#"),
-                new("庫存異動記錄")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "庫存異動記錄", "#", NotificationService, GetType());
 
     /// <summary>
     /// 載入商品資料
     /// </summary>
-    private async Task LoadProductsAsync()
-    {
-        try
-        {
-            products = await ProductService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入商品資料失敗");
-            await NotificationService.ShowErrorAsync("載入商品資料失敗");
-            products = new List<Product>();
-        }
-    }
+    private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "商品", NotificationService, GetType());
 
     /// <summary>
     /// 載入倉庫資料
     /// </summary>
-    private async Task LoadWarehousesAsync()
-    {
-        try
-        {
-            warehouses = await WarehouseService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
-            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
-            warehouses = new List<Warehouse>();
-        }
-    }
+    private async Task LoadWarehousesAsync() => warehouses = await DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
 
     /// <summary>
     /// 載入倉庫位置資料
     /// </summary>
-    private async Task LoadWarehouseLocationsAsync()
-    {
-        try
-        {
-            warehouseLocations = await WarehouseLocationService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseLocationsAsync), GetType(), additionalData: "載入倉庫位置資料失敗");
-            await NotificationService.ShowErrorAsync("載入倉庫位置資料失敗");
-            warehouseLocations = new List<WarehouseLocation>();
-        }
-    }
+    private async Task LoadWarehouseLocationsAsync() => warehouseLocations = await DataLoaderHelper.LoadAsync(() => WarehouseLocationService.GetAllAsync(), "倉庫位置", NotificationService, GetType());
 
     /// <summary>
     /// 載入庫存異動記錄資料
     /// </summary>
-    private async Task<List<InventoryTransaction>> LoadInventoryTransactionsAsync()
-    {
-        try
-        {
-            return await InventoryTransactionService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadInventoryTransactionsAsync), GetType(), additionalData: "載入庫存異動記錄資料失敗");
-            await NotificationService.ShowErrorAsync("載入庫存異動記錄資料失敗");
-            return new List<InventoryTransaction>();
-        }
-    }
+    private Task<List<InventoryTransaction>> LoadInventoryTransactionsAsync() => DataLoaderHelper.LoadAsync(() => InventoryTransactionService.GetAllAsync(), "庫存異動記錄", NotificationService, GetType());
 
     /// <summary>
     /// 應用庫存異動記錄篩選器

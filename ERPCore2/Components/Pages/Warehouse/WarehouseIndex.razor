@@ -73,42 +73,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("庫存管理"),
-                new("倉庫維護")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "倉庫維護", null, NotificationService, GetType());
 
     // 載入倉庫資料
-    private async Task<List<Warehouse>> LoadWarehousesAsync()
-    {
-        try
-        {
-            return await WarehouseService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
-            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
-            // 設定安全的預設值
-            return new List<Warehouse>();
-        }
-    }
+    private Task<List<Warehouse>> LoadWarehousesAsync() => DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
 
     // 自定義篩選邏輯
     private IQueryable<Warehouse> ApplyWarehouseFilters(SearchFilterModel searchModel, IQueryable<Warehouse> query)

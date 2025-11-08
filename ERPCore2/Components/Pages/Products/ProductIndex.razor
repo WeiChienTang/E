@@ -1,4 +1,5 @@
 @page "/products"
+@using ERPCore2.Models
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @rendermode InteractiveServer
@@ -122,105 +123,22 @@
             breadcrumbItems ??= new List<BreadcrumbItem>();
         }
     }    
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("產品管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("產品管理", NotificationService, GetType());
 
     // 載入產品資料
-    private async Task<List<Product>> LoadProductsAsync()
-    {
-        try
-        {
-            return await ProductService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入產品資料失敗");
-            await NotificationService.ShowErrorAsync("載入產品資料失敗");
-            // 設定安全的預設值
-            return new List<Product>();
-        }
-    }
+    private Task<List<Product>> LoadProductsAsync() => DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "產品", NotificationService, GetType());
 
     // 載入產品分類資料
-    private async Task LoadProductCategoriesAsync()
-    {
-        try
-        {
-            productCategories = await ProductService.GetProductCategoriesAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductCategoriesAsync), GetType(), additionalData: "載入產品分類資料失敗");
-            await NotificationService.ShowErrorAsync("載入產品分類資料失敗");
-            // 設定安全的預設值
-            productCategories = new List<ProductCategory>();
-        }
-    }
+    private async Task LoadProductCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ProductService.GetProductCategoriesAsync(), "產品分類", NotificationService, GetType());
 
     // 載入供應商資料
-    private async Task LoadSuppliersAsync()
-    {
-        try
-        {
-            suppliers = await ProductService.GetSuppliersAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入供應商資料失敗");
-            await NotificationService.ShowErrorAsync("載入供應商資料失敗");
-            // 設定安全的預設值
-            suppliers = new List<Supplier>();
-        }
-    }
+    private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => ProductService.GetSuppliersAsync(), "供應商", NotificationService, GetType());
 
     // 載入單位資料
-    private async Task LoadUnitsAsync()
-    {
-        try
-        {
-            units = await ProductService.GetUnitsAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadUnitsAsync), GetType(), additionalData: "載入單位資料失敗");
-            await NotificationService.ShowErrorAsync("載入單位資料失敗");
-            // 設定安全的預設值
-            units = new List<Unit>();
-        }
-    }
+    private async Task LoadUnitsAsync() => units = await DataLoaderHelper.LoadAsync(() => ProductService.GetUnitsAsync(), "單位", NotificationService, GetType());
 
     // 載入尺寸資料
-    private async Task LoadSizesAsync()
-    {
-        try
-        {
-            sizes = await SizeService.GetActiveSizesAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSizesAsync), GetType(), additionalData: "載入尺寸資料失敗");
-            await NotificationService.ShowErrorAsync("載入尺寸資料失敗");
-            // 設定安全的預設值
-            sizes = new List<Size>();
-        }
-    }
+    private async Task LoadSizesAsync() => sizes = await DataLoaderHelper.LoadAsync(() => SizeService.GetActiveSizesAsync(), "尺寸", NotificationService, GetType());
     
     private IQueryable<Product> ApplyProductFilters(SearchFilterModel searchModel, IQueryable<Product> query)
     {

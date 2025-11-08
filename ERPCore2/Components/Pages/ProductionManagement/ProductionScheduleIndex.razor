@@ -89,72 +89,14 @@
 
     // ===== 原有的初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("生產管理", "#"),
-                new("生產排程管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "生產排程管理", null, NotificationService, GetType());
 
     // 載入生產排程資料
-    private async Task<List<ProductionSchedule>> LoadDataAsync()
-    {
-        try
-        {
-            return await ProductionScheduleService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入生產排程資料失敗");
-            await NotificationService.ShowErrorAsync("載入生產排程資料失敗");
-            // 設定安全的預設值
-            return new List<ProductionSchedule>();
-        }
-    }
+    private async Task<List<ProductionSchedule>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(ProductionScheduleService.GetAllAsync, "生產排程", NotificationService, GetType());
 
-    private async Task LoadCustomersAsync()
-    {
-        try
-        {
-            customers = await CustomerService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
-            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
-            // 設定安全的預設值
-            customers = new List<Customer>();
-        }
-    }
+    private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(CustomerService.GetAllAsync, "客戶", NotificationService, GetType());
 
-    private async Task LoadEmployeesAsync()
-    {
-        try
-        {
-            employees = await EmployeeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
-            await NotificationService.ShowErrorAsync("載入員工資料失敗");
-            // 設定安全的預設值
-            employees = new List<Employee>();
-        }
-    }
+    private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(EmployeeService.GetAllAsync, "員工", NotificationService, GetType());
 
     private IQueryable<ProductionSchedule> ApplyProductionScheduleFilters(SearchFilterModel searchModel, IQueryable<ProductionSchedule> query)
     {

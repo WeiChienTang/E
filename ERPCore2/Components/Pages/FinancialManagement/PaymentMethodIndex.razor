@@ -76,42 +76,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("財務管理", "#"),
-                new("付款方式管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("財務管理", "付款方式管理", null, NotificationService, GetType());
 
     // 載入付款方式資料
-    private async Task<List<PaymentMethod>> LoadDataAsync()
-    {
-        try
-        {
-            return await PaymentMethodService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), additionalData: "載入付款方式資料失敗");
-            await NotificationService.ShowErrorAsync("載入付款方式資料失敗");
-            // 設定安全的預設值
-            return new List<PaymentMethod>();
-        }
-    }
+    private async Task<List<PaymentMethod>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(PaymentMethodService.GetAllAsync, "付款方式", NotificationService, GetType());
 
     private IQueryable<PaymentMethod> ApplyPaymentMethodFilters(SearchFilterModel searchModel, IQueryable<PaymentMethod> query)
     {

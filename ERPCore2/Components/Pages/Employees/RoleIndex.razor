@@ -75,42 +75,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("員工管理", "#"),
-                new("身分設定")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "身分設定", "#", NotificationService, GetType());
 
     // 載入身分資料
-    private async Task<List<Role>> LoadRolesAsync()
-    {
-        try
-        {
-            return await RoleService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType(), additionalData: "載入身分資料失敗");
-            await NotificationService.ShowErrorAsync("載入身分資料失敗");
-            // 設定安全的預設值
-            return new List<Role>();
-        }
-    }
+    private Task<List<Role>> LoadRolesAsync() => DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "身分", NotificationService, GetType());
 
     private IQueryable<Role> ApplyRoleFilters(SearchFilterModel searchModel, IQueryable<Role> query)
     {

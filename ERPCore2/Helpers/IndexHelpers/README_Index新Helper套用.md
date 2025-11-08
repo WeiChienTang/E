@@ -71,6 +71,28 @@ private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 遷移日期 | 備註 |
 |------|---------|------------------|------------------|----------|------|
 | CustomerIndex | `Components/Pages/Customers/CustomerIndex.razor` | ✅ | ✅ | 2025-11-08 | 首個範例頁面 |
+| SupplierIndex | `Components/Pages/Suppliers/SupplierIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| ProductIndex | `Components/Pages/Products/ProductIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| ProductCategoryIndex | `Components/Pages/Products/ProductCategoryIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| UnitIndex | `Components/Pages/Products/UnitIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| SizeIndex | `Components/Pages/Products/SizeIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| WarehouseIndex | `Components/Pages/Warehouse/WarehouseIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| WarehouseLocationIndex | `Components/Pages/Warehouse/WarehouseLocationIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| MaterialIssueIndex | `Components/Pages/Warehouse/MaterialIssueIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| InventoryStockIndex | `Components/Pages/Warehouse/InventoryStockIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| InventoryTransactionIndex | `Components/Pages/Warehouse/InventoryTransactionIndex.razor` | ✅ | ✅ | 2025-11-08 | 低優先級 |
+| PurchaseOrderIndex | `Components/Pages/Purchase/PurchaseOrderIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| PurchaseReceivingIndex | `Components/Pages/Purchase/PurchaseReceivingIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| PurchaseReturnIndex | `Components/Pages/Purchase/PurchaseReturnIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| QuotationIndex | `Components/Pages/Sales/QuotationIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| SalesOrderIndex | `Components/Pages/Sales/SalesOrderIndex.razor` | ✅ | ✅ | 2025-11-08 | 高優先級 |
+| SalesReturnIndex | `Components/Pages/Sales/SalesReturnIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| SalesReturnReasonIndex | `Components/Pages/Sales/SalesReturnReasonIndex.razor` | ✅ | ✅ | 2025-11-08 | 低優先級 |
+| EmployeeIndex | `Components/Pages/Employees/EmployeeIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| DepartmentIndex | `Components/Pages/Employees/DepartmentIndex.razor` | ✅ | ✅ | 2025-11-08 | 中優先級 |
+| EmployeePositionIndex | `Components/Pages/Employees/EmployeePositionIndex.razor` | ✅ | ✅ | 2025-11-08 | 低優先級 |
+| RoleIndex | `Components/Pages/Employees/RoleIndex.razor` | ✅ | ✅ | 2025-11-08 | 低優先級 |
+| PermissionIndex | `Components/Pages/Employees/PermissionIndex.razor` | ✅ | ✅ | 2025-11-08 | 低優先級 |
 
 ### 📋 待遷移頁面
 
@@ -82,48 +104,48 @@ private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(
 #### Suppliers 模組
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 優先級 |
 |------|---------|------------------|------------------|--------|
-| SupplierIndex | `Components/Pages/Suppliers/SupplierIndex.razor` | ⏳ | ⏳ | 高 |
+| SupplierIndex | `Components/Pages/Suppliers/SupplierIndex.razor` | ✅ | ✅ | 高 |
 
 #### Products 模組
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 優先級 |
 |------|---------|------------------|------------------|--------|
-| ProductIndex | `Components/Pages/Products/ProductIndex.razor` | ⏳ | ⏳ | 高 |
-| ProductCategoryIndex | `Components/Pages/Products/ProductCategoryIndex.razor` | ⏳ | ⏳ | 中 |
-| UnitIndex | `Components/Pages/Products/UnitIndex.razor` | ⏳ | ⏳ | 中 |
-| SizeIndex | `Components/Pages/Products/SizeIndex.razor` | ⏳ | ⏳ | 中 |
+| ProductIndex | `Components/Pages/Products/ProductIndex.razor` | ✅ | ✅ | 高 |
+| ProductCategoryIndex | `Components/Pages/Products/ProductCategoryIndex.razor` | ✅ | ✅ | 中 |
+| UnitIndex | `Components/Pages/Products/UnitIndex.razor` | ✅ | ✅ | 中 |
+| SizeIndex | `Components/Pages/Products/SizeIndex.razor` | ✅ | ✅ | 中 |
 
 #### Warehouse 模組
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 優先級 |
 |------|---------|------------------|------------------|--------|
-| WarehouseIndex | `Components/Pages/Warehouse/WarehouseIndex.razor` | ⏳ | ⏳ | 高 |
-| WarehouseLocationIndex | `Components/Pages/Warehouse/WarehouseLocationIndex.razor` | ⏳ | ⏳ | 中 |
-| MaterialIssueIndex | `Components/Pages/Warehouse/MaterialIssueIndex.razor` | ⏳ | ⏳ | 中 |
-| InventoryStockIndex | `Components/Pages/Warehouse/InventoryStockIndex.razor` | ⏳ | ⏳ | 中 |
-| InventoryTransactionIndex | `Components/Pages/Warehouse/InventoryTransactionIndex.razor` | ⏳ | ⏳ | 低 |
+| WarehouseIndex | `Components/Pages/Warehouse/WarehouseIndex.razor` | ✅ | ✅ | 高 |
+| WarehouseLocationIndex | `Components/Pages/Warehouse/WarehouseLocationIndex.razor` | ✅ | ✅ | 中 |
+| MaterialIssueIndex | `Components/Pages/Warehouse/MaterialIssueIndex.razor` | ✅ | ✅ | 中 |
+| InventoryStockIndex | `Components/Pages/Warehouse/InventoryStockIndex.razor` | ✅ | ✅ | 中 |
+| InventoryTransactionIndex | `Components/Pages/Warehouse/InventoryTransactionIndex.razor` | ✅ | ✅ | 低 |
 
 #### Purchase 模組
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 優先級 |
 |------|---------|------------------|------------------|--------|
-| PurchaseOrderIndex | `Components/Pages/Purchase/PurchaseOrderIndex.razor` | ⏳ | ⏳ | 高 |
-| PurchaseReceivingIndex | `Components/Pages/Purchase/PurchaseReceivingIndex.razor` | ⏳ | ⏳ | 高 |
-| PurchaseReturnIndex | `Components/Pages/Purchase/PurchaseReturnIndex.razor` | ⏳ | ⏳ | 中 |
+| PurchaseOrderIndex | `Components/Pages/Purchase/PurchaseOrderIndex.razor` | ✅ | ✅ | 高 |
+| PurchaseReceivingIndex | `Components/Pages/Purchase/PurchaseReceivingIndex.razor` | ✅ | ✅ | 高 |
+| PurchaseReturnIndex | `Components/Pages/Purchase/PurchaseReturnIndex.razor` | ✅ | ✅ | 中 |
 
 #### Sales 模組
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 優先級 |
 |------|---------|------------------|------------------|--------|
-| QuotationIndex | `Components/Pages/Sales/QuotationIndex.razor` | ⏳ | ⏳ | 高 |
-| SalesOrderIndex | `Components/Pages/Sales/SalesOrderIndex.razor` | ⏳ | ⏳ | 高 |
-| SalesReturnIndex | `Components/Pages/Sales/SalesReturnIndex.razor` | ⏳ | ⏳ | 中 |
-| SalesReturnReasonIndex | `Components/Pages/Sales/SalesReturnReasonIndex.razor` | ⏳ | ⏳ | 低 |
+| QuotationIndex | `Components/Pages/Sales/QuotationIndex.razor` | ✅ | ✅ | 高 |
+| SalesOrderIndex | `Components/Pages/Sales/SalesOrderIndex.razor` | ✅ | ✅ | 高 |
+| SalesReturnIndex | `Components/Pages/Sales/SalesReturnIndex.razor` | ✅ | ✅ | 中 |
+| SalesReturnReasonIndex | `Components/Pages/Sales/SalesReturnReasonIndex.razor` | ✅ | ✅ | 低 |
 
 #### Employees 模組
 | 頁面 | 檔案路徑 | BreadcrumbHelper | DataLoaderHelper | 優先級 |
 |------|---------|------------------|------------------|--------|
-| EmployeeIndex | `Components/Pages/Employees/EmployeeIndex.razor` | ⏳ | ⏳ | 中 |
-| DepartmentIndex | `Components/Pages/Employees/DepartmentIndex.razor` | ⏳ | ⏳ | 中 |
-| EmployeePositionIndex | `Components/Pages/Employees/EmployeePositionIndex.razor` | ⏳ | ⏳ | 低 |
-| RoleIndex | `Components/Pages/Employees/RoleIndex.razor` | ⏳ | ⏳ | 低 |
-| PermissionIndex | `Components/Pages/Employees/PermissionIndex.razor` | ⏳ | ⏳ | 低 |
+| EmployeeIndex | `Components/Pages/Employees/EmployeeIndex.razor` | ✅ | ✅ | 中 |
+| DepartmentIndex | `Components/Pages/Employees/DepartmentIndex.razor` | ✅ | ✅ | 中 |
+| EmployeePositionIndex | `Components/Pages/Employees/EmployeePositionIndex.razor` | ✅ | ✅ | 低 |
+| RoleIndex | `Components/Pages/Employees/RoleIndex.razor` | ✅ | ✅ | 低 |
+| PermissionIndex | `Components/Pages/Employees/PermissionIndex.razor` | ✅ | ✅ | 低 |
 | RolePermissionManagement | `Components/Pages/Employees/RolePermissionManagement.razor` | ⏳ | ⏳ | 低 |
 
 #### FinancialManagement 模組
@@ -157,17 +179,19 @@ private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(
 
 ### 總體進度
 - **總頁面數**: 41
-- **已完成**: 1 (2.4%)
-- **待遷移**: 40 (97.6%)
+- **已完成**: 23 (56.1%)
+- **待遷移**: 18 (43.9%)
 
 ### 按優先級統計
-- **高優先級**: 7 頁面
-- **中優先級**: 15 頁面
-- **低優先級**: 18 頁面
+- **高優先級**: 7/7 已完成 (100%)
+- **中優先級**: 10/15 已完成 (66.7%)
+- **低優先級**: 6/18 已完成 (33.3%)
 
 ### 預估效益
 以每個頁面平均簡化 31 行程式碼計算：
-- **總計可減少**: ~1,270 行程式碼
+- **已減少**: ~713 行程式碼 (23 個頁面)
+- **剩餘可減少**: ~558 行程式碼 (18 個頁面)
+- **總計可減少**: ~1,271 行程式碼
 - **維護性提升**: 錯誤處理邏輯集中管理
 - **一致性提升**: 所有頁面使用統一的模式
 

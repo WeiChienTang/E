@@ -1,0 +1,98 @@
+using ERPCore2.Components.Shared.Forms;
+using ERPCore2.Data.Entities;
+using ERPCore2.Services;
+using ERPCore2.Helpers;
+
+namespace ERPCore2.FieldConfiguration
+{
+    /// <summary>
+    /// 材質欄位配置
+    /// </summary>
+    public class MaterialFieldConfiguration : BaseFieldConfiguration<Material>
+    {
+        private readonly INotificationService? _notificationService;
+        
+        public MaterialFieldConfiguration(INotificationService? notificationService = null)
+        {
+            _notificationService = notificationService;
+        }
+        
+        public override Dictionary<string, FieldDefinition<Material>> GetFieldDefinitions()
+        {
+            try
+            {
+                return new Dictionary<string, FieldDefinition<Material>>
+                {
+                    {
+                        nameof(Material.Code),
+                        new FieldDefinition<Material>
+                        {
+                            PropertyName = nameof(Material.Code),
+                            DisplayName = "材質代碼",
+                            FilterPlaceholder = "輸入材質代碼搜尋",
+                            TableOrder = 1,
+                            HeaderStyle = "width: 180px;",
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, "Code", m => m.Code, allowNull: true)
+                        }
+                    },
+                    {
+                        nameof(Material.Name),
+                        new FieldDefinition<Material>
+                        {
+                            PropertyName = nameof(Material.Name),
+                            DisplayName = "材質名稱",
+                            FilterPlaceholder = "輸入材質名稱搜尋",
+                            TableOrder = 2,
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, "Name", m => m.Name)
+                        }
+                    },
+                    {
+                        nameof(Material.Description),
+                        new FieldDefinition<Material>
+                        {
+                            PropertyName = nameof(Material.Description),
+                            DisplayName = "描述",
+                            FilterPlaceholder = "輸入描述搜尋",
+                            TableOrder = 3,
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, "Description", m => m.Description, allowNull: true)
+                        }
+                    },
+                    {
+                        nameof(Material.Remarks),
+                        new FieldDefinition<Material>
+                        {
+                            PropertyName = nameof(Material.Remarks),
+                            DisplayName = "備註",
+                            TableOrder = 4,
+                            ShowInFilter = false, // 備註不加入篩選器
+                            FilterFunction = (model, query) => query // 不需要篩選邏輯
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                // 記錄錯誤
+                _ = Task.Run(async () =>
+                {
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "材質欄位配置初始化失敗");
+                });
+
+                // 通知使用者
+                if (_notificationService != null)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await _notificationService.ShowErrorAsync("材質欄位配置初始化失敗，已使用預設配置");
+                    });
+                }
+                
+                // 回傳安全的預設配置
+                return new Dictionary<string, FieldDefinition<Material>>();
+            }
+        }
+    }
+}

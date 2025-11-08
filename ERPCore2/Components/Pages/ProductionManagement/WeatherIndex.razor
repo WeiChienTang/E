@@ -54,27 +54,7 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("基礎資料", "#"),
-                new("天氣管理")
-            };
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            _ = ErrorHandlingHelper.HandlePageErrorAsync(
-                ex,
-                nameof(InitializeBreadcrumbsAsync),
-                GetType()
-            );
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "天氣管理", null, null, GetType());
 
     private async Task InitializeFiltersAsync()
     {

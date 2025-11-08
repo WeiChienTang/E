@@ -74,42 +74,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("系統管理", "/systems"),
-                new("報表列印配置")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("系統管理", "報表列印配置", "/systems", NotificationService, GetType());
 
     // 載入報表列印配置資料
-    private async Task<List<ReportPrintConfiguration>> LoadReportPrintConfigurationsAsync()
-    {
-        try
-        {
-            return await ReportPrintConfigurationService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadReportPrintConfigurationsAsync), GetType(), additionalData: "載入報表列印配置資料失敗");
-            await NotificationService.ShowErrorAsync("載入報表列印配置資料失敗");
-            // 設定安全的預設值
-            return new List<ReportPrintConfiguration>();
-        }
-    }
+    private async Task<List<ReportPrintConfiguration>> LoadReportPrintConfigurationsAsync() => await DataLoaderHelper.LoadAsync(ReportPrintConfigurationService.GetAllAsync, "報表列印配置", NotificationService, GetType());
 
     private IQueryable<ReportPrintConfiguration> ApplyReportPrintConfigurationFilters(SearchFilterModel searchModel, IQueryable<ReportPrintConfiguration> query)
     {

@@ -144,42 +144,12 @@
     /// <summary>
     /// 初始化麵包屑導航
     /// </summary>
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("採購管理", "#"),
-                new("進貨退出管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("採購管理", "進貨退出管理", "#", NotificationService, GetType());
 
     /// <summary>
     /// 載入進貨退出資料
     /// </summary>
-    private async Task<List<PurchaseReturn>> LoadPurchaseReturnsAsync()
-    {
-        try
-        {
-            return await PurchaseReturnService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReturnsAsync), GetType(), additionalData: "載入進貨退出資料失敗");
-            await NotificationService.ShowErrorAsync("載入進貨退出資料失敗");
-            return new List<PurchaseReturn>();
-        }
-    }
+    private Task<List<PurchaseReturn>> LoadPurchaseReturnsAsync() => DataLoaderHelper.LoadAsync(() => PurchaseReturnService.GetAllAsync(), "進貨退出", NotificationService, GetType());
 
     /// <summary>
     /// 載入基礎資料
@@ -204,19 +174,7 @@
     /// <summary>
     /// 載入廠商資料
     /// </summary>
-    private async Task LoadSuppliersAsync()
-    {
-        try
-        {
-            suppliers = await SupplierService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSuppliersAsync), GetType(), additionalData: "載入廠商資料失敗");
-            await NotificationService.ShowErrorAsync("載入廠商資料失敗");
-            suppliers = new List<Supplier>();
-        }
-    }
+    private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => SupplierService.GetAllAsync(), "廠商", NotificationService, GetType());
 
     /// <summary>
     /// 載入採購訂單資料
@@ -240,53 +198,17 @@
     /// <summary>
     /// 載入採購進貨資料
     /// </summary>
-    private async Task LoadPurchaseReceivingsAsync()
-    {
-        try
-        {
-            purchaseReceivings = await PurchaseReceivingService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseReceivingsAsync), GetType(), additionalData: "載入採購進貨資料失敗");
-            await NotificationService.ShowErrorAsync("載入採購進貨資料失敗");
-            purchaseReceivings = new List<PurchaseReceiving>();
-        }
-    }
+    private async Task LoadPurchaseReceivingsAsync() => purchaseReceivings = await DataLoaderHelper.LoadAsync(() => PurchaseReceivingService.GetAllAsync(), "採購進貨", NotificationService, GetType());
 
     /// <summary>
     /// 載入倉庫資料
     /// </summary>
-    private async Task LoadWarehousesAsync()
-    {
-        try
-        {
-            warehouses = await WarehouseService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehousesAsync), GetType(), additionalData: "載入倉庫資料失敗");
-            await NotificationService.ShowErrorAsync("載入倉庫資料失敗");
-            warehouses = new List<Warehouse>();
-        }
-    }
+    private async Task LoadWarehousesAsync() => warehouses = await DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
 
     /// <summary>
     /// 載入員工資料
     /// </summary>
-    private async Task LoadEmployeesAsync()
-    {
-        try
-        {
-            employees = await EmployeeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
-            await NotificationService.ShowErrorAsync("載入員工資料失敗");
-            employees = new List<Employee>();
-        }
-    }
+    private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
     /// <summary>
     /// 應用進貨退出篩選器

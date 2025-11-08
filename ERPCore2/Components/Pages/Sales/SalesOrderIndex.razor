@@ -1,5 +1,4 @@
 @page "/salesOrders"
-@using ERPCore2.Models
 @inject ISalesOrderService SalesOrderService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -127,74 +126,16 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("銷售管理", "#"),
-                new("銷貨管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "銷貨管理", "#", NotificationService, GetType());
 
     // 載入銷貨訂單資料
-    private async Task<List<SalesOrder>> LoadSalesOrdersAsync()
-    {
-        try
-        {
-            return await SalesOrderService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesOrdersAsync), GetType(), additionalData: "載入銷貨訂單資料失敗");
-            await NotificationService.ShowErrorAsync("載入銷貨訂單資料失敗");
-            // 設定安全的預設值
-            return new List<SalesOrder>();
-        }
-    }
+    private Task<List<SalesOrder>> LoadSalesOrdersAsync() => DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllAsync(), "銷貨訂單", NotificationService, GetType());
 
     // 載入客戶資料
-    private async Task LoadCustomersAsync()
-    {
-        try
-        {
-            customers = await CustomerService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
-            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
-            // 設定安全的預設值
-            customers = new List<Customer>();
-        }
-    }
+    private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());
 
     // 載入員工資料
-    private async Task LoadEmployeesAsync()
-    {
-        try
-        {
-            employees = await EmployeeService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
-            await NotificationService.ShowErrorAsync("載入員工資料失敗");
-            // 設定安全的預設值
-            employees = new List<Employee>();
-        }
-    }
+    private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
     private IQueryable<SalesOrder> ApplySalesOrderFilters(SearchFilterModel searchModel, IQueryable<SalesOrder> query)
     {

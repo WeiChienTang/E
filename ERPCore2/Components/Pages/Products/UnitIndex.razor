@@ -75,42 +75,10 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("基礎資料", "#"),
-                new("單位維護")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<BreadcrumbItem>();
-        }
-    }
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "單位維護", "#", NotificationService, GetType());
 
     // 載入單位資料
-    private async Task<List<Unit>> LoadUnitsAsync()
-    {
-        try
-        {
-            return await UnitService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadUnitsAsync), GetType(), additionalData: "載入單位資料失敗");
-            await NotificationService.ShowErrorAsync("載入單位資料失敗");
-            // 設定安全的預設值
-            return new List<Unit>();
-        }
-    }
+    private Task<List<Unit>> LoadUnitsAsync() => DataLoaderHelper.LoadAsync(() => UnitService.GetAllAsync(), "單位", NotificationService, GetType());
 
     private IQueryable<Unit> ApplyUnitFilters(SearchFilterModel searchModel, IQueryable<Unit> query)
     {
