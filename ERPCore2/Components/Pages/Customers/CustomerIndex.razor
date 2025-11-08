@@ -1,4 +1,5 @@
 @page "/customers"
+@using ERPCore2.Models
 @inject ICustomerService CustomerService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
@@ -44,7 +45,7 @@
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,41 +75,9 @@
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync()
-    {
-        try
-        {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-            {
-                new("首頁", "/"),
-                new("客戶管理")
-            };
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-            await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
-            // 設定安全的預設值
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
-        }
-    }
-
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("客戶管理", NotificationService, GetType());
     // 載入客戶資料
-    private async Task<List<Customer>> LoadCustomersAsync()
-    {
-        try
-        {
-            return await CustomerService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            // 記錄錯誤到資料庫並通知使用者
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex,nameof(LoadCustomersAsync),GetType(),additionalData:"載入客戶資料失敗");
-            await NotificationService.ShowErrorAsync("載入客戶資料失敗");
-            // 設定安全的預設值
-            return new List<Customer>();
-        }
-    }
+    private Task<List<Customer>> LoadCustomersAsync() => DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(),"客戶",NotificationService,GetType());
 
     private IQueryable<Customer> ApplyCustomerFilters(SearchFilterModel searchModel, IQueryable<Customer> query)
     {

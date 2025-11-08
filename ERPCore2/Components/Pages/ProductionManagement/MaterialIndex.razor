@@ -28,7 +28,7 @@
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     protected override void OnInitialized()
     {
@@ -52,7 +52,7 @@
     {
         try
         {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            breadcrumbItems = new List<BreadcrumbItem>
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),

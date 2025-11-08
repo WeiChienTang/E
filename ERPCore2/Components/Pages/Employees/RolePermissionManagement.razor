@@ -243,7 +243,7 @@
     private List<TableColumnDefinition> permissionColumnDefinitions = new();
 
     // 麵包屑導航
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -261,7 +261,7 @@
 
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        breadcrumbItems = new List<BreadcrumbItem>
         {
             new("首頁", "/"),
             new("員工管理", "#"),

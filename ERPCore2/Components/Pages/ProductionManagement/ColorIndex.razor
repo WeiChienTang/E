@@ -28,7 +28,7 @@
     private GenericIndexPageComponent<Color, IColorService> indexComponent = default!;
     
     // 設定選項
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
 
@@ -55,7 +55,7 @@
     {
         try
         {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            breadcrumbItems = new List<BreadcrumbItem>
             {
                 new("首頁", "/"),
                 new("基礎資料", "#"),

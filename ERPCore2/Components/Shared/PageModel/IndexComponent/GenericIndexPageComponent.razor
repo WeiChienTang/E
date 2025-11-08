@@ -48,6 +48,10 @@
                 OnExportPdfClick="@HandleExportPdfClick"
                 ShowBatchPrintButton="@ShowBatchPrintButton"
                 OnBatchPrintClick="@HandleBatchPrintClick"
+                ShowBarcodePrintButton="@ShowBarcodePrintButton"
+                OnBarcodePrintClick="@HandleBarcodePrintClick"
+                ShowBatchApprovalButton="@ShowBatchApprovalButton"
+                OnBatchApprovalClick="@HandleBatchApprovalClick"
                 IsLoading="@IsLoading"
                 LoadingOnRefresh="true" />
         }
@@ -168,8 +172,16 @@
     [Parameter] public bool ShowBatchPrintButton { get; set; } = false;
     [Parameter] public EventCallback OnBatchPrintClick { get; set; }
     
+    // 條碼列印功能控制
+    [Parameter] public bool ShowBarcodePrintButton { get; set; } = false;
+    [Parameter] public EventCallback OnBarcodePrintClick { get; set; }
+    
+    // 批次審核功能控制
+    [Parameter] public bool ShowBatchApprovalButton { get; set; } = false;
+    [Parameter] public EventCallback OnBatchApprovalClick { get; set; }
+    
     // 麵包屑導航
-    [Parameter] public List<GenericHeaderComponent.BreadcrumbItem> BreadcrumbItems { get; set; } = new();
+    [Parameter] public List<BreadcrumbItem> BreadcrumbItems { get; set; } = new();
     
     // 統計卡片相關參數
     [Parameter] public bool ShowStatisticsCards { get; set; } = false;
@@ -305,6 +317,22 @@
         if (OnBatchPrintClick.HasDelegate)
         {
             await OnBatchPrintClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBarcodePrintClick()
+    {
+        if (OnBarcodePrintClick.HasDelegate)
+        {
+            await OnBarcodePrintClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBatchApprovalClick()
+    {
+        if (OnBatchApprovalClick.HasDelegate)
+        {
+            await OnBatchApprovalClick.InvokeAsync();
         }
     }
       // 公開方法供外部調用

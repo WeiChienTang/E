@@ -118,7 +118,7 @@
     private string activeTab = "basic"; // 當前啟用的標籤頁
 
     // ===== 麵包屑導航 =====
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     // ===== 標籤頁定義 =====
     private List<SystemParameterTabHeader.TabDefinition> tabDefinitions = new()
@@ -159,7 +159,7 @@
     
     private void InitializeBreadcrumbs()
     {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+        breadcrumbItems = new List<BreadcrumbItem>
         {
             new("首頁", "/"),
             new("系統管理", "#"),

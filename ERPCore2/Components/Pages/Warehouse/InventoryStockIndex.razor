@@ -66,7 +66,7 @@
     private InventoryStockFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     
@@ -117,7 +117,7 @@
     {
         try
         {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            breadcrumbItems = new List<BreadcrumbItem>
             {
                 new("首頁", "/"),
                 new("倉庫管理", "#"),
@@ -129,7 +129,7 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
             await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
             // 設定安全的預設值
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+            breadcrumbItems = new List<BreadcrumbItem>();
         }
     }
 

@@ -2,37 +2,51 @@
 <div class="d-flex gap-2">
     @if (ShowAddButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="@AddButtonText" 
+        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="新增" 
                                OnClick="HandleAddClick" IsDisabled="@(IsLoading || IsAddDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnAdd)" Title="@AddButtonTitle"/>
+                               IsLoading="@(IsLoading && LoadingOnAdd)" Title="新增"/>
+    }
+
+    @if (ShowBarcodePrintButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="條碼列印" 
+                               OnClick="HandleBarcodePrintClick" IsDisabled="@(IsLoading || IsBarcodePrintDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnBarcodePrint)" Title="條碼列印"/>
+    }
+
+    @if (ShowBatchApprovalButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Warning" Text="批次審核" 
+                               OnClick="HandleBatchApprovalClick" IsDisabled="@(IsLoading || IsBatchApprovalDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnBatchApproval)" Title="批次審核"/>
     }
 
     @if (ShowBatchPrintButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Info" Text="@BatchPrintButtonText" 
+        <GenericButtonComponent Variant="ButtonVariant.Info" Text="多筆列印" 
                                OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="@BatchPrintButtonTitle"/>
+                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="多筆列印"/>
     }
 
     @if (ShowRefreshButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Success" Text="@RefreshButtonText" 
+        <GenericButtonComponent Variant="ButtonVariant.Success" Text="重整" 
                                OnClick="HandleRefreshClick" IsDisabled="@(IsLoading || IsRefreshDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnRefresh)" Title="@RefreshButtonTitle"/>
+                               IsLoading="@(IsLoading && LoadingOnRefresh)" Title="重整"/>
     }
 
     @if (ShowExportExcelButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@ExportExcelButtonText" 
+        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="匯出Excel" 
                                OnClick="HandleExportExcelClick" IsDisabled="@(IsLoading || IsExportExcelDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="@ExportExcelButtonTitle"/>
+                               IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="匯出Excel"/>
     }
 
     @if (ShowExportPdfButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="@ExportPdfButtonText" 
+        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="匯出PDF" 
                                OnClick="HandleExportPdfClick" IsDisabled="@(IsLoading || IsExportPdfDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="@ExportPdfButtonTitle"/>
+                               IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="匯出PDF"/>
     }
 
     @* 允許添加自訂按鈕 *@
@@ -40,10 +54,10 @@
 </div>
 
 @code {    
-      // 新增按鈕相關參數
+    // 新增按鈕相關參數
     [Parameter] public bool ShowAddButton { get; set; } = true;
-    [Parameter] public string AddButtonText { get; set; } = "新增";
-    [Parameter] public string AddButtonTitle { get; set; } = "";
+    [Parameter] public string AddButtonText { get; set; } = "新增"; // 保留參數但不使用，固定顯示「新增」
+    [Parameter] public string AddButtonTitle { get; set; } = ""; // 保留參數但不使用
     [Parameter] public string AddButtonIconClass { get; set; } = "fas fa-plus";
     [Parameter] public bool IsAddDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnAdd { get; set; } = false;
@@ -51,8 +65,8 @@
       
     // 重新整理按鈕相關參數
     [Parameter] public bool ShowRefreshButton { get; set; } = true;
-    [Parameter] public string RefreshButtonText { get; set; } = "重新整理";
-    [Parameter] public string RefreshButtonTitle { get; set; } = "";
+    [Parameter] public string RefreshButtonText { get; set; } = "重整"; // 保留參數但不使用，固定顯示「重整」
+    [Parameter] public string RefreshButtonTitle { get; set; } = ""; // 保留參數但不使用
     [Parameter] public string RefreshButtonIconClass { get; set; } = "fas fa-sync";
     [Parameter] public bool IsRefreshDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnRefresh { get; set; } = false;
@@ -60,8 +74,8 @@
 
     // 匯出Excel按鈕相關參數
     [Parameter] public bool ShowExportExcelButton { get; set; } = false;
-    [Parameter] public string ExportExcelButtonText { get; set; } = "匯出Excel";
-    [Parameter] public string ExportExcelButtonTitle { get; set; } = "";
+    [Parameter] public string ExportExcelButtonText { get; set; } = "匯出Excel"; // 保留參數但不使用，固定顯示「匯出Excel」
+    [Parameter] public string ExportExcelButtonTitle { get; set; } = ""; // 保留參數但不使用
     [Parameter] public string ExportExcelButtonIconClass { get; set; } = "fas fa-file-excel";
     [Parameter] public bool IsExportExcelDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnExportExcel { get; set; } = false;
@@ -69,8 +83,8 @@
 
     // 匯出PDF按鈕相關參數
     [Parameter] public bool ShowExportPdfButton { get; set; } = false;
-    [Parameter] public string ExportPdfButtonText { get; set; } = "匯出PDF";
-    [Parameter] public string ExportPdfButtonTitle { get; set; } = "";
+    [Parameter] public string ExportPdfButtonText { get; set; } = "匯出PDF"; // 保留參數但不使用，固定顯示「匯出PDF」
+    [Parameter] public string ExportPdfButtonTitle { get; set; } = ""; // 保留參數但不使用
     [Parameter] public string ExportPdfButtonIconClass { get; set; } = "fas fa-file-pdf";
     [Parameter] public bool IsExportPdfDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnExportPdf { get; set; } = false;
@@ -78,49 +92,36 @@
 
     // 多筆列印按鈕相關參數
     [Parameter] public bool ShowBatchPrintButton { get; set; } = false;
-    [Parameter] public string BatchPrintButtonText { get; set; } = "多筆列印";
-    [Parameter] public string BatchPrintButtonTitle { get; set; } = "";
+    [Parameter] public string BatchPrintButtonText { get; set; } = "多筆列印"; // 保留參數但不使用，固定顯示「多筆列印」
+    [Parameter] public string BatchPrintButtonTitle { get; set; } = ""; // 保留參數但不使用
     [Parameter] public string BatchPrintButtonIconClass { get; set; } = "fas fa-print";
     [Parameter] public bool IsBatchPrintDisabled { get; set; } = false;
     [Parameter] public bool LoadingOnBatchPrint { get; set; } = false;
     [Parameter] public EventCallback OnBatchPrintClick { get; set; }
+
+    // 條碼列印按鈕相關參數
+    [Parameter] public bool ShowBarcodePrintButton { get; set; } = false;
+    [Parameter] public string BarcodePrintButtonText { get; set; } = "條碼列印"; // 保留參數但不使用，固定顯示「條碼列印」
+    [Parameter] public string BarcodePrintButtonTitle { get; set; } = ""; // 保留參數但不使用
+    [Parameter] public string BarcodePrintButtonIconClass { get; set; } = "bi bi-upc-scan";
+    [Parameter] public bool IsBarcodePrintDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnBarcodePrint { get; set; } = false;
+    [Parameter] public EventCallback OnBarcodePrintClick { get; set; }
+
+    // 批次審核按鈕相關參數
+    [Parameter] public bool ShowBatchApprovalButton { get; set; } = false;
+    [Parameter] public string BatchApprovalButtonText { get; set; } = "批次審核"; // 保留參數但不使用，固定顯示「批次審核」
+    [Parameter] public string BatchApprovalButtonTitle { get; set; } = ""; // 保留參數但不使用
+    [Parameter] public string BatchApprovalButtonIconClass { get; set; } = "bi bi-check2-all";
+    [Parameter] public bool IsBatchApprovalDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnBatchApproval { get; set; } = false;
+    [Parameter] public EventCallback OnBatchApprovalClick { get; set; }
 
     // 通用狀態參數
     [Parameter] public bool IsLoading { get; set; } = false;
     
     // 自訂按鈕內容
     [Parameter] public RenderFragment? CustomButtons { get; set; }
-
-    protected override void OnParametersSet()
-    {
-        // 設定預設的 Title 如果沒有提供
-        if (string.IsNullOrEmpty(AddButtonTitle))
-        {
-            AddButtonTitle = AddButtonText;
-        }
-        
-        if (string.IsNullOrEmpty(RefreshButtonTitle))
-        {
-            RefreshButtonTitle = RefreshButtonText;
-        }
-        
-        if (string.IsNullOrEmpty(ExportExcelButtonTitle))
-        {
-            ExportExcelButtonTitle = ExportExcelButtonText;
-        }
-        
-        if (string.IsNullOrEmpty(ExportPdfButtonTitle))
-        {
-            ExportPdfButtonTitle = ExportPdfButtonText;
-        }
-        
-        if (string.IsNullOrEmpty(BatchPrintButtonTitle))
-        {
-            BatchPrintButtonTitle = BatchPrintButtonText;
-        }
-        
-        base.OnParametersSet();
-    }
 
     private async Task HandleAddClick()
     {
@@ -159,6 +160,22 @@
         if (OnBatchPrintClick.HasDelegate && !IsLoading && !IsBatchPrintDisabled)
         {
             await OnBatchPrintClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBarcodePrintClick()
+    {
+        if (OnBarcodePrintClick.HasDelegate && !IsLoading && !IsBarcodePrintDisabled)
+        {
+            await OnBarcodePrintClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBatchApprovalClick()
+    {
+        if (OnBatchApprovalClick.HasDelegate && !IsLoading && !IsBatchApprovalDisabled)
+        {
+            await OnBatchApprovalClick.InvokeAsync();
         }
     }
 }

@@ -1,3 +1,4 @@
+@using ERPCore2.Models
 @* 統一的頁面/卡片標題組件 - 支援多種使用場景 *@
 
 @* 麵包屑導航 - 已隱藏以節省空間 *@
@@ -26,8 +27,9 @@
 
 @* 主要標題容器 *@
 <div class="@GetContainerClass()" @attributes="AdditionalAttributes">
+    @* 標題區域 - 已隱藏以獲得更大空間
     <div class="@GetTitleWrapperClass()">
-        @* 動態標題層級 *@
+        動態標題層級
         @if (HeadingLevel.ToLower() == "h1")
         {
             <h1 class="@GetTitleClass()" aria-label="@AriaLabel">
@@ -65,8 +67,7 @@
             </h2>
         }
 
-        @* 副標題 - 已隱藏以節省空間 *@
-        @*
+        副標題 - 已隱藏以節省空間
         @if (!string.IsNullOrEmpty(Subtitle))
         {
             @if (IsCardHeader)
@@ -78,8 +79,8 @@
                 <p class="@GetSubtitleClass()">@Subtitle</p>
             }
         }
-        *@
     </div>
+    *@
     
     @* 載入狀態或動作按鈕 *@
     @if (IsLoading)
@@ -155,14 +156,14 @@
             classes.Add("mb-2"); // 縮短間距從 mb-4 改為 mb-2
         }
         
-        // 響應式佈局
+        // 響應式佈局 - 按鈕靠右對齊
         if (StackOnMobile)
         {
-            classes.Add("d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center");
+            classes.Add("d-flex flex-column flex-md-row justify-content-end align-items-start align-items-md-center");
         }
         else
         {
-            classes.Add("d-flex justify-content-between align-items-center");
+            classes.Add("d-flex justify-content-end align-items-center");
         }
         
         if (!string.IsNullOrEmpty(CssClass))
@@ -246,20 +247,4 @@
     };
 }
 
-@* 麵包屑項目類別定義 *@
-@code {
-    public class BreadcrumbItem
-    {
-        public string Text { get; set; } = string.Empty;
-        public string? Href { get; set; }
-        public bool IsActive => string.IsNullOrEmpty(Href);
-        
-        public BreadcrumbItem() { }
-        
-        public BreadcrumbItem(string text, string? href = null)
-        {
-            Text = text;
-            Href = href;
-        }
-    }
-}
+@* 麵包屑項目使用獨立的模型類別 ERPCore2.Models.BreadcrumbItem *@

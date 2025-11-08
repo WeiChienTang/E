@@ -66,60 +66,75 @@ protected override async Task OnInitializedAsync()
 ```
 
 #### InitializeBreadcrumbsAsync() - 麵包屑導航初始化
+
+**方式一：簡單的兩層麵包屑（首頁 > 頁面名稱）**
 ```csharp
 private async Task InitializeBreadcrumbsAsync()
 {
-    try
-    {
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
-        {
-            new("首頁", "/"),
-            new("客戶管理")
-        };
-    }
-    catch (Exception ex)
-    {
-        await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
-
-        // 設定安全的預設值
-        breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
-    }
+    breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync(
+        "客戶管理",
+        NotificationService,
+        GetType());
 }
 ```
+
+**方式二：三層麵包屑（首頁 > 模組 > 頁面名稱）**
+```csharp
+private async Task InitializeBreadcrumbsAsync()
+{
+    breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+        "庫存管理",      // 模組名稱
+        "倉庫維護",      // 頁面名稱
+        NotificationService,
+        GetType());
+}
+```
+
+**方式三：自訂麵包屑（完全自訂）**
+```csharp
+private async Task InitializeBreadcrumbsAsync()
+{
+    breadcrumbItems = await BreadcrumbHelper.InitializeAsync(
+        new[]
+        {
+            new BreadcrumbItem("採購管理", "#"),
+            new BreadcrumbItem("進貨退出管理")
+        },
+        NotificationService,
+        GetType());
+}
+```
+
+**注意**: BreadcrumbHelper 已內建完整的錯誤處理機制，包含錯誤記錄、通知和安全的後備值。
 
 #### LoadXXXAsync() - 資料載入方法
-```csharp
-private async Task<List<Customer>> LoadCustomersAsync()
-{
-    try
-    {
-        return await CustomerService.GetAllAsync();
-    }
-    catch (Exception ex)
-    {
-        // 記錄錯誤到資料庫並通知使用者
-        await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
-        await NotificationService.ShowErrorAsync("載入客戶資料失敗");
-        // 設定安全的預設值
-        return new List<Customer>();
-    }
-}
 
-private async Task LoadCustomerTypesAsync()
+**使用 DataLoaderHelper（推薦）**
+```csharp
+private Task<List<Customer>> LoadCustomersAsync()
 {
-    try
-    {
-        customerTypes = await CustomerService.GetCustomerTypesAsync();
-    }
-    catch (Exception ex)
-    {
-        await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomerTypesAsync), GetType(), additionalData: "載入客戶類型資料失敗");
-        await NotificationService.ShowErrorAsync("載入客戶類型資料失敗");
-        // 設定安全的預設值
-        customerTypes = new List<CustomerType>();
-    }
+    return DataLoaderHelper.LoadAsync(
+        () => CustomerService.GetAllAsync(),
+        "客戶",
+        NotificationService,
+        GetType());
 }
 ```
+
+**自訂方法名稱的版本**
+```csharp
+private Task<List<Customer>> LoadCustomersAsync()
+{
+    return DataLoaderHelper.LoadAsync(
+        () => CustomerService.GetAllAsync(),
+        "客戶",
+        NotificationService,
+        GetType(),
+        nameof(LoadCustomersAsync));  // 明確指定方法名稱
+}
+```
+
+**注意**: DataLoaderHelper 已內建完整的錯誤處理機制，包含錯誤記錄、通知和安全的後備值。
 
 #### ApplyXXXFilters() - 篩選方法 (唯一非 Async)
 
@@ -168,7 +183,7 @@ await NotificationService.ShowWarningAsync("注意事項");
 ```csharp
 // 集合類型
 return new List<Customer>();
-breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+breadcrumbItems = new List<BreadcrumbItem>();
 
 // 查詢類型
 return query.OrderBy(c => c.Code);
@@ -178,17 +193,7 @@ filterDefinitions = new List<SearchFilterDefinition>();
 columnDefinitions = new List<TableColumnDefinition>();
 ```
 
-## 使用範例：CustomerIndex 重構
-
-### 修改前的問題
-```csharp
-// 原本需要三個分離的方法，代碼重複
-private async Task InitializeFiltersAsync() { ... }      // 30+ 行
-private async Task InitializeTableColumnsAsync() { ... } // 15+ 行  
-private IQueryable<Customer> ApplyCustomerFilters() { ... } // 35+ 行
-```
-
-### 修改步驟
+## 使用範例：CustomerIndex 實作
 
 #### 1. 創建欄位配置類別
 
@@ -340,25 +345,207 @@ public class CustomerFieldConfiguration : BaseFieldConfiguration<Customer>
 - 通知使用者發生錯誤
 - 提供安全的後備機制
 
-## 代碼減少統計
+## DataLoaderHelper 輔助類別
 
-### 修改前
-```
-InitializeFiltersAsync()     : ~30 行
-InitializeTableColumnsAsync(): ~15 行
-ApplyCustomerFilters()       : ~35 行
-總計                         : ~80 行
+### 功能說明
+DataLoaderHelper 提供統一的資料載入與錯誤處理機制，大幅簡化資料載入方法的實作。
+
+### 可用方法
+
+#### LoadAsync - 標準資料載入
+```csharp
+Task<List<TEntity>> LoadAsync<TEntity>(
+    Func<Task<List<TEntity>>> loadFunc,           // 資料載入函數
+    string entityName,                             // 實體名稱（用於錯誤訊息）
+    INotificationService notificationService,      // 通知服務
+    Type callerType)                               // 呼叫者類型
+where TEntity : class
 ```
 
-### 修改後
-```
-欄位配置類別                : ~60 行 (可重用)
-OnInitializedAsync()       : ~20 行 (簡化)
-ApplyCustomerFilters()     : ~8 行 (大幅簡化)
-總計                      : ~28 行 (頁面內)
+#### LoadAsync (完整版) - 自訂方法名稱
+```csharp
+Task<List<TEntity>> LoadAsync<TEntity>(
+    Func<Task<List<TEntity>>> loadFunc,
+    string entityName,
+    INotificationService notificationService,
+    Type callerType,
+    string methodName)                             // 方法名稱（用於錯誤記錄）
+where TEntity : class
 ```
 
-**代碼減少**: ~65% (52 行)
+### 使用範例
+
+#### 範例 1: 基本使用
+```csharp
+private Task<List<Customer>> LoadCustomersAsync()
+{
+    return DataLoaderHelper.LoadAsync(
+        () => CustomerService.GetAllAsync(),
+        "客戶",
+        NotificationService,
+        GetType());
+}
+```
+
+#### 範例 2: 從不同的服務載入
+```csharp
+private Task<List<Warehouse>> LoadWarehousesAsync()
+{
+    return DataLoaderHelper.LoadAsync(
+        () => WarehouseService.GetAllAsync(),
+        "倉庫",
+        NotificationService,
+        GetType());
+}
+```
+
+#### 範例 3: 載入下拉選單資料（變數賦值）
+```csharp
+private List<CustomerType> customerTypes = new();
+
+private async Task LoadCustomerTypesAsync()
+{
+    customerTypes = await DataLoaderHelper.LoadAsync(
+        () => CustomerService.GetCustomerTypesAsync(),
+        "客戶類型",
+        NotificationService,
+        GetType(),
+        nameof(LoadCustomerTypesAsync));
+}
+```
+
+#### 範例 4: 帶參數的載入
+```csharp
+private Task<List<Product>> LoadProductsByCategoryAsync(int categoryId)
+{
+    return DataLoaderHelper.LoadAsync(
+        () => ProductService.GetByCategoryAsync(categoryId),
+        "產品",
+        NotificationService,
+        GetType(),
+        nameof(LoadProductsByCategoryAsync));
+}
+```
+
+### 內建功能
+- ✅ 完整的 try-catch 錯誤處理
+- ✅ 自動使用 ErrorHandlingHelper 記錄錯誤
+- ✅ 自動通知使用者錯誤
+- ✅ 安全的後備值（空列表）
+- ✅ 自動產生方法名稱（或可自訂）
+
+### 程式碼簡化對比
+
+**使用前（15 行）**:
+```csharp
+private async Task<List<Customer>> LoadCustomersAsync()
+{
+    try
+    {
+        return await CustomerService.GetAllAsync();
+    }
+    catch (Exception ex)
+    {
+        await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadCustomersAsync), GetType(), additionalData: "載入客戶資料失敗");
+        await NotificationService.ShowErrorAsync("載入客戶資料失敗");
+        return new List<Customer>();
+    }
+}
+```
+
+**使用後（7 行，減少 53%）**:
+```csharp
+private Task<List<Customer>> LoadCustomersAsync()
+{
+    return DataLoaderHelper.LoadAsync(
+        () => CustomerService.GetAllAsync(),
+        "客戶",
+        NotificationService,
+        GetType());
+}
+```
+
+## BreadcrumbHelper 輔助類別
+
+### 功能說明
+BreadcrumbHelper 提供三種便捷方法來建立麵包屑導航，已內建完整的錯誤處理機制。
+
+### 可用方法
+
+#### 1. CreateSimpleAsync - 兩層麵包屑
+```csharp
+Task<List<BreadcrumbItem>> CreateSimpleAsync(
+    string pageName,                      // 頁面名稱
+    INotificationService? notificationService = null,
+    Type? callerType = null)
+```
+
+**使用範例**:
+```csharp
+breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync(
+    "客戶管理",
+    NotificationService,
+    GetType());
+// 結果: 首頁 > 客戶管理
+```
+
+#### 2. CreateThreeLevelAsync - 三層麵包屑
+```csharp
+Task<List<BreadcrumbItem>> CreateThreeLevelAsync(
+    string moduleName,                    // 模組名稱
+    string pageName,                      // 頁面名稱
+    string? moduleUrl = null,             // 模組連結（可選）
+    INotificationService? notificationService = null,
+    Type? callerType = null)
+```
+
+**使用範例**:
+```csharp
+breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+    "庫存管理",
+    "倉庫維護",
+    NotificationService,
+    GetType());
+// 結果: 首頁 > 庫存管理 > 倉庫維護
+
+// 帶連結的版本
+breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+    "採購管理",
+    "進貨退出管理",
+    "#",  // 模組連結
+    NotificationService,
+    GetType());
+// 結果: 首頁 > 採購管理（可點擊） > 進貨退出管理
+```
+
+#### 3. InitializeAsync - 完全自訂
+```csharp
+Task<List<BreadcrumbItem>> InitializeAsync(
+    IEnumerable<BreadcrumbItem> items,    // 自訂項目（不含首頁）
+    INotificationService? notificationService = null,
+    Type? callerType = null)
+```
+
+**使用範例**:
+```csharp
+breadcrumbItems = await BreadcrumbHelper.InitializeAsync(
+    new[]
+    {
+        new BreadcrumbItem("系統管理", "/systems"),
+        new BreadcrumbItem("參數設定", "/systems/parameters"),
+        new BreadcrumbItem("編輯")
+    },
+    NotificationService,
+    GetType());
+// 結果: 首頁 > 系統管理 > 參數設定 > 編輯
+```
+
+### 內建功能
+- ✅ 自動添加「首頁」項目
+- ✅ 完整的錯誤處理和記錄
+- ✅ 自動通知使用者錯誤
+- ✅ 安全的後備值（確保至少有首頁）
+- ✅ 支援可選的 NotificationService 和錯誤記錄
 
 ## 應用到其他 Index 頁面
 
@@ -441,7 +628,7 @@ private XXXFieldConfiguration fieldConfiguration = default!;
 // 配置相關
 private List<SearchFilterDefinition> filterDefinitions = new();
 private List<TableColumnDefinition> columnDefinitions = new();
-private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+private List<BreadcrumbItem> breadcrumbItems = new();
 
 // Modal 相關 (如果需要)
 private ModalHandler<XXX, GenericIndexPageComponent<XXX, IXXXService>> modalHandler = default!;

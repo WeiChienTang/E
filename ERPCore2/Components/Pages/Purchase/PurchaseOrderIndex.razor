@@ -22,41 +22,13 @@
                           FilterApplier="@ApplyPurchaseOrderFilters"
                           GetEntityDisplayName="@(order => order.PurchaseOrderNumber)"
                           RequiredPermission="PurchaseOrder.Read"
-                          ShowDefaultActions="false"
+                          ShowBatchPrintButton="true"
+                          OnBatchPrintClick="@HandleBatchPrintAsync"
+                          ShowBatchApprovalButton="true"
+                          OnBatchApprovalClick="@HandleBatchApprovalAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent">
-    <CustomActionButtons>
-            @* 新增按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                               Text="新增採購單" 
-                               OnClick="@modalHandler.ShowAddModalAsync" 
-                               IsDisabled="@indexComponent.IsLoading" 
-                               Title="新增採購單資料"
-                               CssClass="index-action-btn" />
-        @* 批次列印按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Info" 
-                               Text="多筆列印" 
-                               OnClick="@HandleBatchPrintAsync" 
-                               IsDisabled="@indexComponent.IsLoading" 
-                               Title="批次列印採購單"
-                               CssClass="index-action-btn" />     
-        @* 批次審核按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Warning" 
-                               Text="批次審核" 
-                               OnClick="@HandleBatchApprovalAsync" 
-                               IsDisabled="@indexComponent.IsLoading" 
-                               Title="批次審核採購單"
-                               CssClass="index-action-btn" />       
-  
-        @* 重新整理按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Success" 
-                               Text="重新整理" 
-                               OnClick="@indexComponent.Refresh" 
-                               IsDisabled="@indexComponent.IsLoading" 
-                               Title="重新整理資料"
-                               CssClass="index-action-btn" />
-    </CustomActionButtons>
 </GenericIndexPageComponent>
 
 @* 採購單編輯 Modal *@
@@ -121,7 +93,7 @@
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     // Modal 相關狀態
     private bool showEditModal = false;
@@ -179,7 +151,7 @@
     {
         try
         {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            breadcrumbItems = new List<BreadcrumbItem>
             {
                 new("首頁", "/"),
                 new("採購管理", "/purchase"),
@@ -191,7 +163,7 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
 
             // 設定安全的預設值
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+            breadcrumbItems = new List<BreadcrumbItem>();
         }
     }
 

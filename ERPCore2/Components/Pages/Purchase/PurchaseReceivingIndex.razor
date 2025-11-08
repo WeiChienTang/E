@@ -91,7 +91,7 @@
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     // 相關資料
     private List<PurchaseOrder> purchaseOrders = new();
@@ -136,7 +136,7 @@
     {
         try
         {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            breadcrumbItems = new List<BreadcrumbItem>
             {
                 new("首頁", "/"),
                 new("採購管理", "#"),
@@ -148,7 +148,7 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
 
             // 設定安全的預設值
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+            breadcrumbItems = new List<BreadcrumbItem>();
         }
     }
 

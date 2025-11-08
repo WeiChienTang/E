@@ -18,31 +18,10 @@
                           FilterApplier="@ApplyProductFilters"
                           GetEntityDisplayName="@(product => product.Name)"
                           RequiredPermission="Product.Read"
-                          ShowDefaultActions="false"
+                          ShowBarcodePrintButton="true"
+                          OnBarcodePrintClick="@HandleBarcodePrintClick"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent">
-    <CustomActionButtons>
-        @* 新增產品按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                              Text="新增產品"
-                              Icon="bi bi-plus-circle"
-                              OnClick="@modalHandler.ShowAddModalAsync"
-                              Title="新增產品資料" />
-        
-        @* 條碼列印按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Primary" 
-                              Text="條碼列印"
-                              Icon="bi bi-upc-scan"
-                              OnClick="@HandleBarcodePrintClick"
-                              Title="批次列印產品條碼" />
-        
-        @* 重新整理按鈕 *@
-        <GenericButtonComponent Variant="ButtonVariant.Success" 
-                              Text="重新整理"
-                              Icon="bi bi-arrow-clockwise"
-                              OnClick="@(async () => await indexComponent.Refresh())"
-                              Title="重新載入產品資料" />
-    </CustomActionButtons>
 </GenericIndexPageComponent>
 
 @* 使用 ProductEditModalComponent 處理新增/編輯 *@
@@ -81,7 +60,7 @@
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
-    private List<GenericHeaderComponent.BreadcrumbItem> breadcrumbItems = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,14 +119,14 @@
             // 確保關鍵變數不會是 null
             filterDefinitions ??= new List<SearchFilterDefinition>();
             columnDefinitions ??= new List<TableColumnDefinition>();
-            breadcrumbItems ??= new List<GenericHeaderComponent.BreadcrumbItem>();
+            breadcrumbItems ??= new List<BreadcrumbItem>();
         }
     }    
     private async Task InitializeBreadcrumbsAsync()
     {
         try
         {
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>
+            breadcrumbItems = new List<BreadcrumbItem>
             {
                 new("首頁", "/"),
                 new("產品管理")
@@ -158,7 +137,7 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeBreadcrumbsAsync), GetType(), additionalData: "初始化麵包屑導航失敗");
             await NotificationService.ShowErrorAsync("初始化麵包屑導航失敗");
             // 設定安全的預設值
-            breadcrumbItems = new List<GenericHeaderComponent.BreadcrumbItem>();
+            breadcrumbItems = new List<BreadcrumbItem>();
         }
     }
 
