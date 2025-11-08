@@ -114,6 +114,10 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 8)
                     errors.Add("統一編號不可超過8個字元");
 
+                // 檢查收款日是否在 1-30 範圍內
+                if (entity.PaymentDate.HasValue && (entity.PaymentDate.Value < 1 || entity.PaymentDate.Value > 30))
+                    errors.Add("收款日必須在 1-30 之間");
+
                 // 檢查客戶代碼是否重複
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {

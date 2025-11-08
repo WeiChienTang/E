@@ -64,13 +64,32 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "職稱")]
         public string? JobTitle { get; set; }
         
-        [MaxLength(50, ErrorMessage = "付款方式不可超過50個字元")]
         [Display(Name = "付款方式")]
-        public string? PaymentMethod { get; set; }
+        public int? PaymentMethodId { get; set; }
+        
+        public PaymentMethod? PaymentMethod { get; set; }
         
         [MaxLength(100, ErrorMessage = "付款條件不可超過100個字元")]
         [Display(Name = "付款條件")]
         public string? PaymentTerms { get; set; }
+        
+        [Display(Name = "收款日期")]
+        public int? PaymentDate { get; set; }
+        
+        [MaxLength(100, ErrorMessage = "發票抬頭不可超過100個字元")]
+        [Display(Name = "發票抬頭")]
+        public string? InvoiceTitle { get; set; }
+        
+        [Display(Name = "信用額度")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? CreditLimit { get; set; }
+        
+        [Display(Name = "目前應收餘額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CurrentBalance { get; set; } = 0;
+        
+        [Display(Name = "業務負責人")]
+        public int? EmployeeId { get; set; }
         
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Customer", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得

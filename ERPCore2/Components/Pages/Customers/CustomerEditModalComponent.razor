@@ -1,5 +1,7 @@
 @* 可重用的客戶編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICustomerService CustomerService
+@inject IEmployeeService EmployeeService
+@inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @using ERPCore2.Helpers
@@ -18,14 +20,36 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
+                          AutoCompleteCollections="@GetAutoCompleteCollections()"
+                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
+                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCustomerData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CustomerId.HasValue ? "客戶更新成功" : "客戶新增成功")"
                           SaveFailureMessage="客戶儲存失敗"
                           RequiredPermission="Customer.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel">
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged">
 </GenericEditModalComponent>
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@OnEmployeeSavedWrapper"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 付款方式編輯 Modal *@
+<PaymentMethodEditModalComponent @ref="paymentMethodEditModal"
+                                IsVisible="@paymentMethodModalManager.IsModalVisible"
+                                IsVisibleChanged="@paymentMethodModalManager.HandleModalVisibilityChangedAsync"
+                                PaymentMethodId="@paymentMethodModalManager.SelectedEntityId"
+                                OnPaymentMethodSaved="@OnPaymentMethodSavedWrapper"
+                                OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
 
 @code {
     // ===== 必要參數 =====
@@ -39,12 +63,30 @@
     private GenericEditModalComponent<Customer, ICustomerService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // 選項資料
+    private List<Employee> availableEmployees = new();
+    private List<PaymentMethod> availablePaymentMethods = new();
+    
+    // 員工編輯 Modal 相關變數 - 使用泛型管理器
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    
+    // 付款方式編輯 Modal 相關變數 - 使用泛型管理器
+    private PaymentMethodEditModalComponent? paymentMethodEditModal;
+    private RelatedEntityModalManager<PaymentMethod> paymentMethodModalManager = default!;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // 初始化員工 Modal 管理器
+            InitializeEmployeeModalManager();
+            // 初始化付款方式 Modal 管理器
+            InitializePaymentMethodModalManager();
+            
+            await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
         catch (Exception)
@@ -253,13 +295,14 @@
             },
             new()
             {
-                PropertyName = nameof(Customer.PaymentMethod),
+                PropertyName = nameof(Customer.PaymentMethodId),
                 Label = "付款方式",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入付款方式",
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇付款方式",
                 IsRequired = false,
-                MaxLength = 10,
-                HelpText = "客戶的付款方式（例如：現金、支票、匯款等）"
+                MinSearchLength = 0,
+                HelpText = "客戶的付款方式（例如：現金、支票、匯款等）",
+                ActionButtons = await GetPaymentMethodActionButtonsAsync()
             },
             new()
             {
@@ -270,6 +313,56 @@
                 IsRequired = false,
                 MaxLength = 50,
                 HelpText = "付款條件說明（例如：月結30天、貨到付款等）"
+            },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Customer.PaymentDate),
+                Label = "收款日",
+                FieldType = FormFieldType.Number,
+                Placeholder = "收款日1-30，30 表示每月最後一天",
+                IsRequired = false,
+                HelpText = "每月固定收款日期 (1-30)，輸入 0 表示月底收款。例如：12 表示每月12日、30 表示每月最後一天",
+            },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Customer.InvoiceTitle),
+                Label = "發票抬頭",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入發票抬頭",
+                IsRequired = false,
+                MaxLength = 100,
+                HelpText = "開立發票時使用的抬頭名稱",
+                ActionButtons = await GetInvoiceTitleActionButtonsAsync()
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.CreditLimit),
+                Label = "信用額度",
+                FieldType = FormFieldType.Number,
+                Placeholder = "請輸入信用額度",
+                IsRequired = false,
+                HelpText = "客戶的信用額度上限"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.CurrentBalance),
+                Label = "應收餘額(系統自動計算)",
+                FieldType = FormFieldType.Number,
+                Placeholder = "應收餘額",
+                IsRequired = false,
+                IsReadOnly = true,
+                HelpText = "客戶目前的應收帳款餘額（系統自動計算）"
+            },
+            new()
+            {
+                PropertyName = nameof(Customer.EmployeeId),
+                Label = "業務負責人",
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇業務負責人",
+                IsRequired = false,
+                MinSearchLength = 0,
+                HelpText = "負責此客戶的業務人員",
+                ActionButtons = await GetEmployeeActionButtonsAsync()
             },
             new FormFieldDefinition()
             {
@@ -303,8 +396,15 @@
             { nameof(Customer.MobilePhone), "聯絡人資訊" },            
             { nameof(Customer.Email), "聯絡人資訊" },           
 
-            { nameof(Customer.PaymentMethod), "付款資訊" },
+            { nameof(Customer.PaymentMethodId), "付款資訊" },
             { nameof(Customer.PaymentTerms), "付款資訊" },
+            { nameof(Customer.PaymentDate), "付款資訊" },
+            { nameof(Customer.InvoiceTitle), "付款資訊" },            
+            { nameof(Customer.CreditLimit), "付款資訊" },
+            { nameof(Customer.CurrentBalance), "付款資訊" },
+            
+            { nameof(Customer.EmployeeId), "業務資訊" },
+            
             { nameof(Customer.Remarks), "其他資訊" }
         };
         }
@@ -317,6 +417,253 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
+    }
+    
+    /// <summary>
+    /// 初始化員工 Modal 管理器
+    /// </summary>
+    private void InitializeEmployeeModalManager()
+    {
+        employeeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Customer, Employee, ICustomerService>
+            {
+                NotificationService = NotificationService,
+                EntityDisplayName = "員工",
+                PropertyName = nameof(Customer.EmployeeId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, employeeId) => 
+                {
+                    if (entity != null) entity.EmployeeId = employeeId;
+                },
+                RefreshAutoCompleteFields = true
+            });
+    }
+    
+    /// <summary>
+    /// 初始化付款方式 Modal 管理器
+    /// </summary>
+    private void InitializePaymentMethodModalManager()
+    {
+        paymentMethodModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
+            new StandardModalManagerConfig<Customer, PaymentMethod, ICustomerService>
+            {
+                NotificationService = NotificationService,
+                EntityDisplayName = "付款方式",
+                PropertyName = nameof(Customer.PaymentMethodId),
+                GetEditModalComponent = () => editModalComponent,
+                ReloadDataCallback = LoadAdditionalDataAsync,
+                StateChangedCallback = StateHasChanged,
+                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
+                AutoSelectAction = (entity, paymentMethodId) => 
+                {
+                    if (entity != null) entity.PaymentMethodId = paymentMethodId;
+                },
+                RefreshAutoCompleteFields = true
+            });
+    }
+    
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            // 載入可選擇的員工列表
+            availableEmployees = await EmployeeService.GetAllAsync();
+            // 載入可選擇的付款方式列表
+            availablePaymentMethods = await PaymentMethodService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入客戶編輯相關資料時發生錯誤");
+            availableEmployees = new List<Employee>();
+            availablePaymentMethods = new List<PaymentMethod>();
+        }
+    }
+    
+    /// <summary>
+    /// 配置 AutoComplete 預填器
+    /// </summary>
+    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
+    {
+        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
+        {
+            {
+                nameof(Customer.EmployeeId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm
+                }
+            },
+            {
+                nameof(Customer.PaymentMethodId),
+                searchTerm => new Dictionary<string, object?>
+                {
+                    ["Name"] = searchTerm
+                }
+            }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Customer.EmployeeId), employeeModalManager },
+            { nameof(Customer.PaymentMethodId), paymentMethodModalManager }
+        };
+    }
+    
+    /// <summary>
+    /// 配置 AutoComplete 資料集合
+    /// </summary>
+    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
+    {
+        return new Dictionary<string, IEnumerable<object>>
+        {
+            { nameof(Customer.EmployeeId), availableEmployees.Cast<object>() },
+            { nameof(Customer.PaymentMethodId), availablePaymentMethods.Cast<object>() }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 顯示屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Customer.EmployeeId), "Name" },
+            { nameof(Customer.PaymentMethodId), "Name" }
+        };
+    }
+
+    /// <summary>
+    /// 配置 AutoComplete 值屬性
+    /// </summary>
+    private Dictionary<string, string> GetAutoCompleteValueProperties()
+    {
+        return new Dictionary<string, string>
+        {
+            { nameof(Customer.EmployeeId), "Id" },
+            { nameof(Customer.PaymentMethodId), "Id" }
+        };
+    }
+
+    /// <summary>
+    /// 使用統一 Helper 產生員工操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            employeeModalManager, 
+            nameof(Customer.EmployeeId)
+        );
+    }
+    
+    /// <summary>
+    /// 使用統一 Helper 產生付款方式操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetPaymentMethodActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            paymentMethodModalManager, 
+            nameof(Customer.PaymentMethodId)
+        );
+    }
+    
+    /// <summary>
+    /// 產生發票抬頭操作按鈕 - 同公司名稱
+    /// </summary>
+    private Task<List<FieldActionButton>> GetInvoiceTitleActionButtonsAsync()
+    {
+        var buttons = new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "複製",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將公司名稱複製到發票抬頭",
+                OnClick = async () => await CopyCompanyNameToInvoiceTitle(),
+                IsDisabled = false
+            }
+        };
+        
+        return Task.FromResult(buttons);
+    }
+
+    /// <summary>
+    /// 將公司名稱複製到發票抬頭欄位
+    /// </summary>
+    private async Task CopyCompanyNameToInvoiceTitle()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                // 複製公司名稱到發票抬頭
+                editModalComponent.Entity.InvoiceTitle = editModalComponent.Entity.CompanyName;
+                
+                // 通知 UI 更新
+                StateHasChanged();
+                
+                // 顯示成功訊息
+                await NotificationService.ShowSuccessAsync("已將公司名稱複製到發票抬頭");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製公司名稱時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 包裝員工儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnEmployeeSavedWrapper(Employee savedEmployee)
+    {
+        await employeeModalManager.HandleEntitySavedAsync(savedEmployee, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 包裝付款方式儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnPaymentMethodSavedWrapper(PaymentMethod savedPaymentMethod)
+    {
+        await paymentMethodModalManager.HandleEntitySavedAsync(savedPaymentMethod, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用統一 Helper 處理員工欄位變更
+            if (fieldChange.PropertyName == nameof(Customer.EmployeeId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            // 使用統一 Helper 處理付款方式欄位變更
+            else if (fieldChange.PropertyName == nameof(Customer.PaymentMethodId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    paymentMethodModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
     }
 
     /// <summary>

@@ -412,15 +412,7 @@ public static class NavigationConfig
                 SearchKeywords = new List<string> { "財務", "會計", "finance", "accounting" },
                 Children = new List<NavigationItem>
                 {
-                    NavigationActionHelper.CreateActionItem(
-                        name: "應收帳款報表",
-                        description: "查詢和列印客戶應收帳款資料",
-                        iconClass: "bi bi-caret-right-fill",
-                        actionId: "OpenAccountsReceivableReport",
-                        category: "財務管理",
-                        requiredPermission: "SetoffDocument.Read",
-                        searchKeywords: new List<string> { "應收帳款報表", "AR報表", "receivable report", "收款報表" }
-                    ),
+
                     new NavigationItem
                     {
                         Name = "應收帳款沖款",
@@ -470,7 +462,23 @@ public static class NavigationConfig
                         Category = "財務管理",
                         RequiredPermission = "SetoffDocument.Read",
                         SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" }
-                    }
+                    },
+                    
+                    // 分隔線 - 區分輸入檔與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    NavigationActionHelper.CreateActionItem(
+                        name: "應收帳款報表",
+                        description: "查詢和列印客戶應收帳款資料",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenAccountsReceivableReport",
+                        category: "財務管理",
+                        requiredPermission: "SetoffDocument.Read",
+                        searchKeywords: new List<string> { "應收帳款報表", "AR報表", "receivable report", "收款報表" }
+                    ),
                 }
             },
 

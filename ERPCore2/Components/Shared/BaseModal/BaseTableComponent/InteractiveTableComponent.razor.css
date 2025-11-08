@@ -17,7 +17,7 @@
     border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important; /* 底部邊框稍粗 */
     border-top: none !important;
-    padding: 0.2rem 0.75rem !important; /* 進一步縮小上下內邊距 */
+    padding: 0.125rem 0.75rem !important; /* 縮小上下內邊距至 0.125rem */
     font-weight: 600 !important;
     font-size: 1rem !important; /* 調整為正常大小，不再過大 */
     vertical-align: middle !important;
@@ -75,7 +75,7 @@
 
 /* 表格儲存格的 padding 設定 */
 .interactive-table tbody td {
-    padding: 0.2rem 0.75rem !important; /* 進一步縮小上下內邊距 */
+    padding: 0.125rem 0.75rem !important; /* 縮小上下內邊距至 0.125rem */
     vertical-align: middle; /* 所有儲存格內容垂直置中 */
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out; /* 添加平滑過渡效果 */
 }
@@ -108,7 +108,7 @@
 ::deep .interactive-table .form-select,
 ::deep .interactive-table tbody .form-control,
 ::deep .interactive-table tbody .form-select {
-    padding: 0.25rem 0.5rem !important; /* 從預設的 0.375rem 0.75rem 縮小 */
+    padding: 0.125rem 0.5rem !important; /* 縮小上下內邊距至 0.125rem */
     font-size: 1rem !important;
     border-radius: 0.25rem;
 }
@@ -116,7 +116,7 @@
 /* textarea 特別調整 */
 ::deep .interactive-table-container textarea.form-control,
 ::deep .interactive-table textarea.form-control {
-    padding: 0.25rem 0.5rem !important;
+    padding: 0.125rem 0.5rem !important; /* 縮小上下內邊距至 0.125rem */
     font-size: 1rem !important;
 }
 
@@ -137,7 +137,7 @@
 
 /* 按鈕在表格中的樣式調整 */
 .interactive-table-container .btn-sm {
-    padding: 0.25rem 0.5rem;
+    padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
     font-size: 1rem;
 }
 
@@ -148,7 +148,7 @@
     white-space: nowrap; /* 防止內容換行 */
     vertical-align: middle !important; /* 垂直置中 */
     text-align: center !important; /* 水平置中 */
-    padding: 0.2rem 0.25rem !important; /* 進一步縮小上下內邊距 */
+    padding: 0.125rem 0.25rem !important; /* 縮小上下內邊距至 0.125rem */
 }
 
 /* 當操作欄位有明確寬度設定時，尊重該設定 */
@@ -180,7 +180,7 @@
 @media (max-width: 767px) {
     /* 表頭在手機版的樣式調整 */
     .interactive-table thead th {
-        padding: 0.15rem 0.5rem !important; /* 進一步縮小上下內邊距 */
+        padding: 0.125rem 0.5rem !important; /* 縮小上下內邊距至 0.125rem */
         font-size: 1rem !important; /* 手機版使用稍小的字體 */
     }
     
@@ -203,7 +203,7 @@
     /* 表格儲存格在手機版的樣式調整 */
     .table-responsive .table td,
     .table-responsive .table th {
-        padding: 0.15rem 0.75rem; /* 進一步縮小上下內邊距 */
+        padding: 0.125rem 0.75rem; /* 縮小上下內邊距至 0.125rem */
         white-space: nowrap;
     }
     
@@ -217,14 +217,14 @@
     .interactive-table-container .form-control-sm,
     .interactive-table-container .form-select-sm {
         font-size: 1rem;
-        padding: 0.375rem 0.5rem;
-        min-height: 36px; /* 改善觸控體驗 */
+        padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
+        min-height: 32px; /* 調整最小高度以配合較小的 padding */
         min-width: 120px; /* 確保輸入框有足夠寬度 */
     }
     
     .interactive-table-container .btn-sm {
-        min-height: 36px;
-        padding: 0.375rem 0.5rem;
+        min-height: 32px; /* 調整最小高度以配合較小的 padding */
+        padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
         min-width: 60px; /* 確保按鈕有足夠寬度 */
         font-size: 1rem; /* 確保字體大小正常 */
     }
@@ -255,7 +255,7 @@
     .table-responsive .table .table-actions-column {
         min-width: 120px !important; /* 增加最小寬度以確保有足夠空間容納按鈕 */
         white-space: nowrap; /* 防止內容換行 */
-        padding: 0.15rem 0.75rem !important; /* 進一步縮小上下內邊距 */
+        padding: 0.125rem 0.75rem !important; /* 縮小上下內邊距至 0.125rem */
         vertical-align: middle !important; /* 垂直置中 */
         text-align: center !important; /* 水平置中 */
     }
@@ -267,11 +267,11 @@
     
     /* 操作欄位內的按鈕樣式 - 保持彈性尺寸 */
     .table-responsive .table .table-actions-column .btn {
-        padding: 0.375rem 0.5rem; /* 按鈕內邊距 */
+        padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
         font-size: 1rem; /* 按鈕字體大小 */
         margin: 0 0.125rem; /* 按鈕間距 */
-        min-width: 36px; /* 稍微增加按鈕最小寬度以改善觸控體驗 */
-        min-height: 36px; /* 稍微增加按鈕最小高度以改善觸控體驗 */
+        min-width: 32px; /* 調整最小寬度以配合較小的 padding */
+        min-height: 32px; /* 調整最小高度以配合較小的 padding */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -444,7 +444,7 @@
     
     /* 下拉選項在手機版的觸控優化 */
     .dropdown-item {
-        padding: 12px 16px !important; /* 增大觸控區域 */
+        padding: 8px 16px !important; /* 縮小上下內邊距 */
         line-height: 1.4;
     }
     

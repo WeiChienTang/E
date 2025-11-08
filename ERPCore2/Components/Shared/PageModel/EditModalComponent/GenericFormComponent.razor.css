@@ -2,18 +2,19 @@
 
 /* 區段標題樣式 - 縮短與水平線的距離 */
 .section-title-compact {
-    margin-bottom: 0.25rem !important; /* 從預設的 0.5rem 縮短到 0.25rem */
+    margin-bottom: 0.15rem !important; /* 進一步縮短間距 */
+    padding-bottom: 0.2rem !important; /* 減少底部內邊距 */
 }
 
 /* 水平線樣式 - 縮短與下方欄位的距離 */
 .section-divider-compact {
     margin-top: 0 !important;
-    margin-bottom: 0.5rem !important; /* 從預設的 1rem 縮短到 0.5rem */
+    margin-bottom: 0.3rem !important; /* 進一步縮短 */
 }
 
 /* 表單區段包裝器 */
 .form-section-wrapper {
-    margin-bottom: 1rem !important;
+    margin-bottom: 0.5rem !important; /* 從 1rem 減少到 0.5rem */
 }
 
 /* ===== Input 欄位樣式 - 縮減 Padding 和字體大小 ===== */
@@ -21,8 +22,10 @@
 /* 縮減所有 input、select 和 textarea 的內邊距和字體大小 */
 ::deep .form-control,
 ::deep .form-select {
-    padding: 0.25rem 0.5rem !important; /* 從預設的 0.375rem 0.75rem 縮小 */
-    font-size: 1rem !important; /* 14px - 縮小字體 */
+    padding: 0.2rem 0.4rem !important; /* 進一步縮小 padding */
+    font-size: 1rem !important; /* 縮小字體 */
+    height: 32px !important; /* 固定較小的高度 */
+    line-height: 1.4 !important; /* 調整行高 */
     transition: border-color 0.2s ease;
 }
 
@@ -35,8 +38,10 @@
 
 /* textarea 特別調整 */
 ::deep textarea.form-control {
-    padding: 0.25rem 0.5rem !important;
+    padding: 0.2rem 0.4rem !important;
     font-size: 1rem !important;
+    line-height: 1.4 !important;
+    min-height: 60px !important; /* 設定最小高度避免太小 */
     transition: border-color 0.2s ease;
 }
 
@@ -46,10 +51,26 @@
     background-color: var( --table-hover-bg-striped) !important;
 }
 
+/* ===== 隱藏數字輸入欄位的上下拉桿 (spinner) ===== */
+
+/* Chrome, Safari, Edge, Opera */
+::deep input[type="number"]::-webkit-outer-spin-button,
+::deep input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+/* Firefox */
+::deep input[type="number"] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
+
 /* Label 標籤字體 */
 ::deep .form-label {
-    font-size: 1rem !important; /* 14px - 與 input 一致 */
-    margin-bottom: 0 !important;
+    font-size: 1rem !important; /* 縮小 label 字體 */
+    margin-bottom: 0.15rem !important; /* 縮小 label 與 input 之間的距離 */
+    font-weight: 500 !important; /* 保持粗體以便閱讀 */
 }
 
 /* 區段標題字體 */

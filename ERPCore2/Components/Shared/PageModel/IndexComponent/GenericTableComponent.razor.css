@@ -23,7 +23,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;
-    padding: 0.25rem 0.5rem; /* 縮小上下內邊距從預設的 0.5rem 減少到 0.25rem */
+    padding: 0.125rem 0.5rem; /* 縮小上下內邊距至 0.125rem */
 }
 
 /* 允許換行的表格儲存格（特殊情況使用） */
@@ -91,7 +91,7 @@
 
 /* 操作欄位內容在表格主體的優化 */
 .table tbody .table-actions-column {
-    padding: 0.25rem 0.125rem; /* 進一步減少內邊距 */
+    padding: 0.125rem 0.125rem; /* 進一步減少內邊距 */
 }
 
 /* 操作欄位內的按鈕容器樣式 */
@@ -203,7 +203,7 @@
     /* 表格內容在手機版的優化 */
     .table td {
         min-width: 80px; /* 確保內容不會被過度壓縮 */
-        padding: 0.5rem 0.25rem; /* 調整手機版內邊距 */
+        padding: 0.125rem 0.25rem; /* 調整手機版內邊距 */
     }
     
     /* 操作欄位在手機版的優化 */
@@ -315,14 +315,14 @@
     /* 表格標題在極小螢幕的優化 */
     .table thead th {
         font-size: 1rem;
-        padding: 0.5rem 0.25rem;
+        padding: 0.125rem 0.25rem;
         line-height: 1.2;
     }
     
     /* 表格內容在極小螢幕的優化 */
     .table td {
         font-size: 1rem;
-        padding: 0.375rem 0.25rem;
+        padding: 0.125rem 0.25rem;
     }
     
     /* 操作列在極小螢幕的特別優化 */

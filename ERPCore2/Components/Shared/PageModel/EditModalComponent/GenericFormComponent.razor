@@ -28,11 +28,11 @@
             @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
             @foreach (var section in GetOrderedSections())
             {
-                <div class="mb-3 form-section-wrapper">
+                <div class="mb-2 form-section-wrapper">
                     <h6 class="text-primary fw-bold section-title-compact">@(section.Key)</h6> @* 區段標題 *@
                     
                     
-                    <div class="row g-3"> @* 內含欄位的行 *@
+                    <div class="row g-1">
                         @foreach (var fieldKvp in section)
                         {
                             var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
@@ -47,7 +47,7 @@
         }
         else
         {
-            <div class="row g-3">
+            <div class="row g-1"> @* 縮小欄位間距從 g-3 改為 g-1 *@
                 @if (FieldDefinitions != null)
                 {
                     @foreach (var field in FieldDefinitions)

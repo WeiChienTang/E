@@ -1,6 +1,7 @@
 @* 統一的頁面/卡片標題組件 - 支援多種使用場景 *@
 
-@* 麵包屑導航 *@
+@* 麵包屑導航 - 已隱藏以節省空間 *@
+@*
 @if (!IsCardHeader && BreadcrumbItems?.Any() == true)
 {
     <nav aria-label="breadcrumb" class="mb-3">
@@ -21,6 +22,7 @@
         </ol>
     </nav>
 }
+*@
 
 @* 主要標題容器 *@
 <div class="@GetContainerClass()" @attributes="AdditionalAttributes">
@@ -63,7 +65,8 @@
             </h2>
         }
 
-        @* 副標題 *@
+        @* 副標題 - 已隱藏以節省空間 *@
+        @*
         @if (!string.IsNullOrEmpty(Subtitle))
         {
             @if (IsCardHeader)
@@ -75,6 +78,7 @@
                 <p class="@GetSubtitleClass()">@Subtitle</p>
             }
         }
+        *@
     </div>
     
     @* 載入狀態或動作按鈕 *@
@@ -94,10 +98,10 @@
     }
 </div>
 
-@* 分隔線 *@
+@* 分隔線 - 縮短間距 *@
 @if (ShowDivider && !IsCardHeader)
 {
-    <hr class="mt-3 mb-4" />
+    <hr class="mt-2 mb-3" />
 }
 
 @code {    // 基本屬性
@@ -148,7 +152,7 @@
         }
         else
         {
-            classes.Add("mb-4");
+            classes.Add("mb-2"); // 縮短間距從 mb-4 改為 mb-2
         }
         
         // 響應式佈局

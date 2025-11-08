@@ -7,7 +7,11 @@
 @inject IJSRuntime JSRuntime
 @inject ILogger<NavDropdownItem> Logger
 
-@if (!string.IsNullOrEmpty(RequiredPermission))
+@if (IsDivider)
+{
+    <div class="dropdown-divider"></div>
+}
+else if (!string.IsNullOrEmpty(RequiredPermission))
 {
     <NavigationPermissionCheck Permission="@RequiredPermission">
         @if (ItemType == NavigationItemType.Action)
@@ -65,6 +69,11 @@ else
     public ERPCore2.Components.Layout.NavMenu? NavMenuInstance { get; set; }
     
     /// <summary>
+    /// 是否為分隔線
+    /// </summary>
+    [Parameter] public bool IsDivider { get; set; } = false;
+    
+    /// <summary>
     /// 下拉選單項目顯示的文字
     /// </summary>
     [Parameter] public string Text { get; set; } = "";
@@ -113,6 +122,12 @@ else
 
     private void RegisterPermission()
     {
+        // 如果是分隔線，不需要註冊權限
+        if (IsDivider)
+        {
+            return;
+        }
+        
         // 如果有權限要求且有父菜單鍵,註冊到權限收集器
         if (!string.IsNullOrEmpty(RequiredPermission) && !string.IsNullOrEmpty(ParentMenuKey))
         {

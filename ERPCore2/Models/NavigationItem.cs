@@ -80,4 +80,9 @@ public class NavigationItem
     /// 子選單項目
     /// </summary>
     public List<NavigationItem> Children { get; set; } = new();
+    
+    /// <summary>
+    /// 是否為分隔線（用於視覺分隔不同類型的選單項目）
+    /// </summary>
+    public bool IsDivider { get; set; } = false;
 }

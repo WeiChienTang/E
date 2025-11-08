@@ -37,6 +37,23 @@
                         else
                         {
                             <div class="row g-3">
+                                 @* 未設警戒線卡片 *@
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-secondary inventory-alert-card @(noWarningLevelCount > 0 ? "alert-active" : "")"
+                                         @onclick="@HandleNoWarningLevelClick"
+                                         style="cursor: pointer;">
+                                        <div class="card-body d-flex align-items-center py-3">
+                                            <i class="bi bi-gear-fill text-secondary fs-3 me-3"></i>
+                                            <GenericStatusBadgeComponent Status="EntityStatus.Inactive" 
+                                                                 CustomText="未設警戒線" 
+                                                                 CssClass="bg-secondary me-2"
+                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
+                                                                 UseCustomColor="true" />
+                                            <span class="fs-4 fw-bold text-secondary ms-auto">@noWarningLevelCount</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 @* 低庫存警戒卡片 *@
                                 <div class="col-lg-4 col-md-6">
                                     <div class="card border-warning inventory-alert-card @(lowStockCount > 0 ? "alert-active" : "")"
@@ -67,23 +84,6 @@
                                                                  Size="GenericStatusBadgeComponent.BadgeSize.Large"
                                                                  UseCustomColor="true" />
                                             <span class="fs-4 fw-bold text-info ms-auto">@overStockCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                @* 未設警戒線卡片 *@
-                                <div class="col-lg-4 col-md-6">
-                                    <div class="card border-secondary inventory-alert-card @(noWarningLevelCount > 0 ? "alert-active" : "")"
-                                         @onclick="@HandleNoWarningLevelClick"
-                                         style="cursor: pointer;">
-                                        <div class="card-body d-flex align-items-center py-3">
-                                            <i class="bi bi-gear-fill text-secondary fs-3 me-3"></i>
-                                            <GenericStatusBadgeComponent Status="EntityStatus.Inactive" 
-                                                                 CustomText="未設警戒線" 
-                                                                 CssClass="bg-secondary me-2"
-                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
-                                                                 UseCustomColor="true" />
-                                            <span class="fs-4 fw-bold text-secondary ms-auto">@noWarningLevelCount</span>
                                         </div>
                                     </div>
                                 </div>

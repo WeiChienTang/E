@@ -221,11 +221,6 @@
                     MaxLength = 100,
                     Order = 1,
                     Placeholder = "請輸入印表機名稱",
-                    ValidationRules = new List<ValidationRule>
-                    {
-                        new ValidationRule { Type = ValidationType.Required, ErrorMessage = "印表機名稱為必填" },
-                        new ValidationRule { Type = ValidationType.MaxLength, Value = 100, ErrorMessage = "印表機名稱不可超過100個字元" }
-                    }
                 },
                 new()
                 {
