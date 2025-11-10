@@ -19,6 +19,7 @@
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
+@inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 
 <GenericEditModalComponent TEntity="SalesOrder" 
@@ -35,10 +36,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesOrderData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -111,6 +112,9 @@
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // 原始資料集合（用於 AutoComplete）
     private List<Customer> availableCustomers = new();
@@ -239,7 +243,7 @@
             if (!SalesOrderId.HasValue)
             {
                 // 新增模式 - 自動產生銷貨訂單號並設定預設公司
-                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, "SO");
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, DbContext);
                 
                 var newOrder = new SalesOrder
                 {
@@ -416,6 +420,12 @@
             
             // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<SalesOrder>()
+                .AddField(nameof(SalesOrder.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(SalesOrder.EmployeeId), "Name", availableEmployees)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -586,64 +596,6 @@
     /// </summary>
     
     // ===== AutoComplete 配置方法 =====
-    
-    /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(SalesOrder.CustomerId), searchTerm => new Dictionary<string, object?>
-                {
-                    { "CompanyName", searchTerm }
-                }
-            },
-            {
-                nameof(SalesOrder.EmployeeId), searchTerm => new Dictionary<string, object?>
-                {
-                    { "Name", searchTerm }
-                }
-            }
-        };
-    }
-    
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(SalesOrder.CustomerId), availableCustomers.Cast<object>() },
-            { nameof(SalesOrder.EmployeeId), availableEmployees.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SalesOrder.CustomerId), "CompanyName" },
-            { nameof(SalesOrder.EmployeeId), "Name" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SalesOrder.CustomerId), "Id" },
-            { nameof(SalesOrder.EmployeeId), "Id" }
-        };
-    }
     
     /// <summary>
     /// 配置 Modal 管理器

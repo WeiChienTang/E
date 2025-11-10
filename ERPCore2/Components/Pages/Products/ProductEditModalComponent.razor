@@ -22,10 +22,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadProductData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -88,6 +88,9 @@
     private List<Supplier> availableSuppliers = new();
     private List<Unit> availableUnits = new();
     private List<Size> availableSizes = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // 產品供應商集合
     private List<ProductSupplier> productSuppliers = new();
@@ -284,6 +287,13 @@
                 Text = s.Name,
                 Value = s.Id.ToString()
             }).ToList();
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Product>()
+                .AddField(nameof(Product.ProductCategoryId), "Name", availableProductCategories)
+                .AddField(nameof(Product.UnitId), "Name", availableUnits)
+                .AddField(nameof(Product.SizeId), "Name", availableSizes)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -381,37 +391,6 @@
     }
 
     /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(Product.ProductCategoryId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            },
-            {
-                nameof(Product.UnitId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            },
-            {
-                nameof(Product.SizeId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            }
-        };
-    }
-
-    /// <summary>
     /// 配置 Modal 管理器
     /// </summary>
     private Dictionary<string, object> GetModalManagers()
@@ -421,45 +400,6 @@
             { nameof(Product.ProductCategoryId), productCategoryModalManager },
             { nameof(Product.UnitId), unitModalManager },
             { nameof(Product.SizeId), sizeModalManager }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(Product.ProductCategoryId), availableProductCategories.Cast<object>() },
-            { nameof(Product.SizeId), availableSizes.Cast<object>() },
-            { nameof(Product.UnitId), availableUnits.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Product.ProductCategoryId), "Name" },
-            { nameof(Product.SizeId), "Name" },
-            { nameof(Product.UnitId), "Name" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Product.ProductCategoryId), "Id" },
-            { nameof(Product.SizeId), "Id" },
-            { nameof(Product.UnitId), "Id" }
         };
     }
 

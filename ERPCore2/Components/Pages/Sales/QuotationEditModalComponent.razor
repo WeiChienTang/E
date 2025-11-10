@@ -14,6 +14,7 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ERPCore2.Data.Context.AppDbContext DbContext
 
 <GenericEditModalComponent TEntity="Quotation" 
                           TService="IQuotationService"
@@ -29,10 +30,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadQuotationData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -100,6 +101,9 @@
     private GenericEditModalComponent<Quotation, IQuotationService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // 原始資料集合（用於 AutoComplete）
     private List<Customer> availableCustomers = new();
@@ -281,7 +285,7 @@
                 // 新增模式
                 var newQuotation = new Quotation
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Quotation, IQuotationService>(QuotationService, "QT"),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Quotation, IQuotationService>(QuotationService, DbContext),
                     QuotationDate = DateTime.Today,
                     Status = EntityStatus.Active
                 };
@@ -367,6 +371,13 @@
             
             // 載入單位列表（用於明細）
             availableUnits = await UnitService.GetAllAsync();
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Quotation>()
+                .AddField(nameof(Quotation.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(Quotation.CompanyId), "CompanyName", availableCompanies)
+                .AddField(nameof(Quotation.EmployeeId), "Name", availableEmployees)
+                .Build();
         }
         catch (Exception)
         {
@@ -844,79 +855,6 @@
             .GetCustomAttribute<DisplayAttribute>();
         
         return displayAttribute?.Name ?? enumValue.ToString();
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(Quotation.CustomerId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm,
-                    ["Status"] = 1 // EntityStatus.Active
-                }
-            },
-            {
-                nameof(Quotation.CompanyId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm,
-                    ["Status"] = 1 // EntityStatus.Active
-                }
-            },
-            {
-                nameof(Quotation.EmployeeId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm,
-                    ["Status"] = 1 // EntityStatus.Active
-                }
-            }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(Quotation.CustomerId), availableCustomers.Cast<object>() },
-            { nameof(Quotation.CompanyId), availableCompanies.Cast<object>() },
-            { nameof(Quotation.EmployeeId), availableEmployees.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Quotation.CustomerId), "CompanyName" },
-            { nameof(Quotation.CompanyId), "CompanyName" },
-            { nameof(Quotation.EmployeeId), "Name" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Quotation.CustomerId), "Id" },
-            { nameof(Quotation.CompanyId), "Id" },
-            { nameof(Quotation.EmployeeId), "Id" }
-        };
     }
 
     /// <summary>

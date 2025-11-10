@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers.EditModal;
 
 namespace ERPCore2.Data.Entities
 {
@@ -10,6 +11,12 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(PurchaseOrderId), nameof(ReceiptDate))]
+    [CodeGenerationStrategy(
+        CodeGenerationStrategy.TimestampWithSequence,
+        Prefix = "PR",
+        DateFieldName = nameof(ReceiptDate),
+        SequenceDigits = 4
+    )]
     public class PurchaseReceiving : BaseEntity
     {
         [Required(ErrorMessage = "進貨日期為必填")]

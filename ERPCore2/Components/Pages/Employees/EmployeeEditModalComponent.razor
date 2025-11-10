@@ -24,10 +24,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadEmployeeData"
                           SaveHandler="@SaveEmployee"
@@ -87,6 +87,9 @@
     // 角色編輯 Modal 相關變數 - 使用泛型管理器
     private RoleEditModalComponent? roleEditModal;
     private RelatedEntityModalManager<Role> roleModalManager = default!;
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // 選項資料
     private List<Department> availableDepartments = new();
@@ -214,6 +217,21 @@
             var currentUserRole = await CurrentUserHelper.GetCurrentRoleAsync(AuthenticationStateProvider);
             var rolesResult = await RoleService.GetAssignableRolesForCurrentUserAsync(currentUserRole);
             availableRoles = rolesResult.IsSuccess ? rolesResult.Data ?? new List<Role>() : new List<Role>();
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Employee>()
+                .AddFieldWithMultipleSearchProperties<Department>(
+                    nameof(Employee.DepartmentId),
+                    "Name",
+                    availableDepartments,
+                    new[] { "Name", "DepartmentCode" })
+                .AddFieldWithMultipleSearchProperties<EmployeePosition>(
+                    nameof(Employee.EmployeePositionId),
+                    "Name",
+                    availablePositions,
+                    new[] { "Name", "PositionCode" })
+                .AddField(nameof(Employee.RoleId), "Name", availableRoles)
+                .Build();
         }
         catch (Exception)
         {
@@ -476,82 +494,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-    
-    /// <summary>
-    /// 配置 AutoComplete 預填器 - 使用整合方式
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(Employee.DepartmentId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm,
-                    // 根據搜尋詞推測部門代碼
-                    ["DepartmentCode"] = searchTerm.Contains("財務") ? "FIN" : 
-                                       searchTerm.Contains("業務") ? "SALES" :
-                                       searchTerm.Contains("人資") ? "HR" : 
-                                       searchTerm.ToUpper().Replace(" ", "")
-                }
-            },
-            {
-                nameof(Employee.EmployeePositionId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm,
-                    ["PositionCode"] = searchTerm.ToUpper().Replace(" ", "")
-                }
-            },
-            {
-                nameof(Employee.RoleId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(Employee.DepartmentId), availableDepartments.Cast<object>() },
-            { nameof(Employee.EmployeePositionId), availablePositions.Cast<object>() },
-            { nameof(Employee.RoleId), availableRoles.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Employee.DepartmentId), "Name" },
-            { nameof(Employee.EmployeePositionId), "Name" },
-            { nameof(Employee.RoleId), "Name" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Employee.DepartmentId), "Id" },
-            { nameof(Employee.EmployeePositionId), "Id" },
-            { nameof(Employee.RoleId), "Id" }
-        };
     }
     
     /// <summary>
@@ -891,6 +833,4 @@
         
         return displayAttribute?.Name ?? status.ToString();
     }
-
-
 }

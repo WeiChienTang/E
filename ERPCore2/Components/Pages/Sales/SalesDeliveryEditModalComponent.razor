@@ -13,6 +13,7 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ActionButtonHelper ActionButtonHelper
+@inject ERPCore2.Data.Context.AppDbContext DbContext
 
 <GenericEditModalComponent TEntity="SalesDelivery" 
                           TService="ISalesDeliveryService"
@@ -28,9 +29,9 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesDeliveryData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -81,6 +82,9 @@
     private List<Unit> availableUnits = new();
     private List<Warehouse> availableWarehouses = new();
     private List<SalesOrder> availableSalesOrders = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // 銷貨出貨明細
     private List<SalesDeliveryDetail> salesDeliveryDetails = new();
@@ -191,7 +195,7 @@
             if (!SalesDeliveryId.HasValue)
             {
                 // 新增模式 - 自動產生出貨單號
-                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesDelivery, ISalesDeliveryService>(SalesDeliveryService, "SD");
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesDelivery, ISalesDeliveryService>(SalesDeliveryService, DbContext);
                 
                 var newDelivery = new SalesDelivery
                 {
@@ -315,6 +319,14 @@
             
             // 載入系統稅率
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<SalesDelivery>()
+                .AddField(nameof(SalesDelivery.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(SalesDelivery.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(SalesDelivery.WarehouseId), "Name", availableWarehouses)
+                .AddField(nameof(SalesDelivery.SalesOrderId), "Code", availableSalesOrders)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -586,51 +598,6 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveDetailsAsync), GetType());
             return ServiceResult.Failure("儲存明細時發生錯誤");
         }
-    }
-
-    // ===== AutoComplete 設定 =====
-    private Dictionary<string, Func<object, object>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<object, object>>
-        {
-            { nameof(SalesDelivery.CustomerId), entity => ((SalesDelivery)entity).Customer?.CompanyName ?? "" },
-            { nameof(SalesDelivery.EmployeeId), entity => ((SalesDelivery)entity).Employee?.Name ?? "" },
-            { nameof(SalesDelivery.WarehouseId), entity => ((SalesDelivery)entity).Warehouse?.Name ?? "" },
-            { nameof(SalesDelivery.SalesOrderId), entity => ((SalesDelivery)entity).SalesOrder?.Code ?? "" }
-        };
-    }
-
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(SalesDelivery.CustomerId), availableCustomers },
-            { nameof(SalesDelivery.EmployeeId), availableEmployees },
-            { nameof(SalesDelivery.WarehouseId), availableWarehouses },
-            { nameof(SalesDelivery.SalesOrderId), availableSalesOrders }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SalesDelivery.CustomerId), nameof(Customer.CompanyName) },
-            { nameof(SalesDelivery.EmployeeId), nameof(Employee.Name) },
-            { nameof(SalesDelivery.WarehouseId), nameof(Warehouse.Name) },
-            { nameof(SalesDelivery.SalesOrderId), nameof(SalesOrder.Code) }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SalesDelivery.CustomerId), "Id" },
-            { nameof(SalesDelivery.EmployeeId), "Id" },
-            { nameof(SalesDelivery.WarehouseId), "Id" },
-            { nameof(SalesDelivery.SalesOrderId), "Id" }
-        };
     }
 
     // ===== Modal 管理器 =====

@@ -25,9 +25,9 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadMaterialIssueData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveMaterialIssueWrapper"
@@ -67,6 +67,9 @@
     private List<Department> departments = new();
     private List<SelectOption> employeeOptions = new();
     private List<SelectOption> departmentOptions = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
 
     // ===== 必要方法 =====
     protected override async Task OnParametersSetAsync()
@@ -201,6 +204,12 @@
                 Text = d.Name ?? "",
                 Value = d.Id.ToString()
             }).ToList();
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<MaterialIssue>()
+                .AddField(nameof(MaterialIssue.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(MaterialIssue.DepartmentId), "Name", availableDepartments)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -280,35 +289,6 @@
             formFields = new List<FormFieldDefinition>();
             formSections = new Dictionary<string, string>();
         }
-    }
-
-    // ===== AutoComplete 配置 =====
-
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(MaterialIssue.EmployeeId), availableEmployees },
-            { nameof(MaterialIssue.DepartmentId), availableDepartments }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(MaterialIssue.EmployeeId), nameof(Employee.Name) },
-            { nameof(MaterialIssue.DepartmentId), nameof(Department.Name) }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(MaterialIssue.EmployeeId), nameof(Employee.Id) },
-            { nameof(MaterialIssue.DepartmentId), nameof(Department.Id) }
-        };
     }
 
     // ===== 自訂模組配置 =====

@@ -15,6 +15,7 @@
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ERPCore2.Data.Context.AppDbContext DbContext
 
 <GenericEditModalComponent TEntity="PurchaseReturn" 
                           TService="IPurchaseReturnService"
@@ -30,10 +31,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReturnData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -92,6 +93,9 @@
     private List<Supplier> suppliers = new();
     private List<PurchaseReceiving> purchaseReceivings = new();
     private List<Product> products = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
@@ -305,7 +309,7 @@
                 
                 try
                 {
-                    var number = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReturn, IPurchaseReturnService>(PurchaseReturnService, "PR");                    
+                    var number = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReturn, IPurchaseReturnService>(PurchaseReturnService, DbContext);                    
                     return new PurchaseReturn
                     {
                         Code = number,
@@ -467,6 +471,12 @@
         try
         {
             products = await ProductService.GetAllAsync();
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReturn>()
+                .AddField(nameof(PurchaseReturn.SupplierId), "CompanyName", suppliers)
+                .AddField(nameof(PurchaseReturn.PurchaseReceivingId), "Code", purchaseReceivings)
+                .Build();
         }
         catch (Exception)
         {
@@ -844,59 +854,6 @@
         {
             await NotificationService.ShowErrorAsync($"更新進貨單篩選選項時發生錯誤：{ex.Message}");
         }
-    }
-
-    // ===== AutoComplete 設定 =====
-    
-    /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(PurchaseReturn.SupplierId), searchTerm => new Dictionary<string, object?>
-                {
-                    { "CompanyName", searchTerm }
-                }
-            },
-            {
-                nameof(PurchaseReturn.PurchaseReceivingId), searchTerm => new Dictionary<string, object?>
-                {
-                    { "ReceiptNumber", searchTerm }
-                }
-            }
-        };
-    }
-    
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {        
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(PurchaseReturn.SupplierId), suppliers?.Cast<object>() ?? new List<object>() },
-            { nameof(PurchaseReturn.PurchaseReceivingId), purchaseReceivings?.Cast<object>() ?? new List<object>() }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-
-        return new Dictionary<string, string>
-        {
-            { nameof(PurchaseReturn.SupplierId), nameof(Supplier.CompanyName) },
-            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Code) }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-
-        return new Dictionary<string, string>
-        {
-            { nameof(PurchaseReturn.SupplierId), nameof(Supplier.Id) },
-            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Id) }
-        };
     }
 
     // ===== Modal 管理器配置方法 =====

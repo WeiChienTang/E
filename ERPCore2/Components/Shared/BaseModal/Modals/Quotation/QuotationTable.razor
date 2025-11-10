@@ -1,8 +1,5 @@
 @* 報價單明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
 
-@using ERPCore2.Components.Shared.SubCollections
-@using ERPCore2.Helpers
-
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -364,7 +361,7 @@ else
                 var subtotal = quotationItem.SubtotalAmount;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@subtotal.ToString("N2")</span>
+                    <span class="fw-bold">@NumberFormatHelper.FormatSmart(subtotal)</span>
                 </div>;
             }
         });

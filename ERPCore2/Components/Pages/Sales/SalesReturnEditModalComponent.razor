@@ -16,6 +16,7 @@
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ERPCore2.Data.Context.AppDbContext DbContext
 @implements IDisposable
 
 @using ERPCore2.FieldConfiguration
@@ -34,10 +35,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesReturnData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -96,6 +97,9 @@
     private List<Employee> employees = new();
     private List<Product> products = new();
     private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // ===== 銷售退貨明細 =====
     private List<SalesReturnDetail> salesReturnDetails = new();
@@ -549,6 +553,11 @@
         try
         {
             returnReasons = await SalesReturnReasonService.GetActiveReasonsAsync();
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<SalesReturn>()
+                .AddField(nameof(SalesReturn.CustomerId), "CompanyName", customers)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -831,23 +840,6 @@
     }
 
     /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(SalesReturn.CustomerId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm
-                }
-            }
-        };
-    }
-
-    /// <summary>
     /// 配置 Modal 管理器
     /// </summary>
     private Dictionary<string, object> GetModalManagers()
@@ -859,46 +851,11 @@
     }
 
     /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(SalesReturn.CustomerId), customers.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SalesReturn.CustomerId), "CompanyName" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SalesReturn.CustomerId), "Id" }
-        };
-    }
-
-    /// <summary>
     /// 生成銷售退貨單號
     /// </summary>
-    private Task<string> GenerateReturnNumberAsync()
+    private async Task<string> GenerateReturnNumberAsync()
     {
-        // 簡化實作，直接使用時間戳生成
-        var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-        return Task.FromResult($"SR{timestamp}");
+        return await EntityCodeGenerationHelper.GenerateForEntity<SalesReturn, ISalesReturnService>(SalesReturnService, DbContext);
     }
 
     // ===== 銷售退貨明細管理方法 =====

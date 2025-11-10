@@ -18,9 +18,9 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadWarehouseLocationData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -52,6 +52,9 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Warehouse> warehouses = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // Modal 管理器
     private WarehouseEditModalComponent? warehouseEditModal;
@@ -159,6 +162,11 @@
         {
             // 載入倉庫清單用於下拉選單
             warehouses = await WarehouseService.GetAllAsync();
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<WarehouseLocation>()
+                .AddField(nameof(WarehouseLocation.WarehouseId), "Name", warehouses)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -284,42 +292,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    /// <summary>
-    // ===== AutoComplete 配置方法 =====
-    
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(WarehouseLocation.WarehouseId), warehouses.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(WarehouseLocation.WarehouseId), "Name" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(WarehouseLocation.WarehouseId), "Id" }
-        };
     }
 
     /// <summary>

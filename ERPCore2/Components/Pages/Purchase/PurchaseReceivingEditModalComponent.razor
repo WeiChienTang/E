@@ -17,6 +17,7 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ERPCore2.Data.Context.AppDbContext DbContext
 @implements IDisposable
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
@@ -33,10 +34,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReceivingData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -97,6 +98,10 @@
     private GenericEditModalComponent<PurchaseReceiving, IPurchaseReceivingService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+    
     private List<PurchaseOrder> purchaseOrders = new();
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
@@ -457,7 +462,7 @@
                 // 新增模式
                 var newReceiving = new PurchaseReceiving
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReceiving, IPurchaseReceivingService>(PurchaseReceivingService, "RCV"),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReceiving, IPurchaseReceivingService>(PurchaseReceivingService, DbContext),
                     ReceiptDate = DateTime.Now,
                     SupplierId = PrefilledSupplierId ?? 0,
                     PurchaseOrderId = PrefilledPurchaseOrderId
@@ -624,6 +629,12 @@
         try
         {
             products = await ProductService.GetAllAsync();
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
+                .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
+                .AddField(nameof(PurchaseReceiving.PurchaseOrderId), "Code", purchaseOrders)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -891,23 +902,6 @@
     }
 
     /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(PurchaseReceiving.SupplierId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm
-                }
-            }
-        };
-    }
-
-    /// <summary>
     /// 配置 Modal 管理器
     /// </summary>
     private Dictionary<string, object> GetModalManagers()
@@ -915,39 +909,6 @@
         return new Dictionary<string, object>
         {
             { nameof(PurchaseReceiving.SupplierId), supplierModalManager }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(PurchaseReceiving.SupplierId), suppliers.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(PurchaseReceiving.SupplierId), "CompanyName" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(PurchaseReceiving.SupplierId), "Id" }
         };
     }
 

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using ERPCore2.Helpers.EditModal;
 
 // 使用別名來避免命名衝突
 using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;
@@ -13,6 +14,12 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(ReturnDate))]
     [Index(nameof(SalesOrderId), nameof(ReturnDate))]
+    [CodeGenerationStrategy(
+        CodeGenerationStrategy.TimestampWithSequence,
+        Prefix = "SR",
+        DateFieldName = nameof(ReturnDate),
+        SequenceDigits = 4
+    )]
     public class SalesReturn : BaseEntity
     {
         [Required(ErrorMessage = "退回日期為必填")]

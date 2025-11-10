@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using ERPCore2.Helpers.EditModal;
 
 namespace ERPCore2.Data.Entities
 {
@@ -12,6 +13,12 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(DeliveryDate))]
     [Index(nameof(SalesOrderId), nameof(DeliveryDate))]
+    [CodeGenerationStrategy(
+        CodeGenerationStrategy.TimestampWithSequence,
+        Prefix = "SD",
+        DateFieldName = nameof(DeliveryDate),
+        SequenceDigits = 4
+    )]
     public class SalesDelivery : BaseEntity
     {
         [Required(ErrorMessage = "出貨日期為必填")]

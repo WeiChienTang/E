@@ -19,10 +19,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCustomerData"
                           UseGenericSave="true"
@@ -63,6 +63,9 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+    
     // 選項資料
     private List<Employee> availableEmployees = new();
     private List<PaymentMethod> availablePaymentMethods = new();
@@ -86,6 +89,13 @@
             InitializePaymentMethodModalManager();
             
             await LoadAdditionalDataAsync();
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Customer>()
+                .AddField(nameof(Customer.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(Customer.PaymentMethodId), "Name", availablePaymentMethods)
+                .Build();
+            
             await InitializeFormFieldsAsync();
         }
         catch (Exception)
@@ -472,6 +482,12 @@
             availableEmployees = await EmployeeService.GetAllAsync();
             // 載入可選擇的付款方式列表
             availablePaymentMethods = await PaymentMethodService.GetAllAsync();
+            
+            // 重新建立 AutoComplete 配置（資料更新後）
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Customer>()
+                .AddField(nameof(Customer.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(Customer.PaymentMethodId), "Name", availablePaymentMethods)
+                .Build();
         }
         catch (Exception)
         {
@@ -479,30 +495,6 @@
             availableEmployees = new List<Employee>();
             availablePaymentMethods = new List<PaymentMethod>();
         }
-    }
-    
-    /// <summary>
-    /// 配置 AutoComplete 預填器
-    /// </summary>
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(Customer.EmployeeId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            },
-            {
-                nameof(Customer.PaymentMethodId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["Name"] = searchTerm
-                }
-            }
-        };
     }
     
     /// <summary>
@@ -517,42 +509,6 @@
         };
     }
     
-    /// <summary>
-    /// 配置 AutoComplete 資料集合
-    /// </summary>
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(Customer.EmployeeId), availableEmployees.Cast<object>() },
-            { nameof(Customer.PaymentMethodId), availablePaymentMethods.Cast<object>() }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 顯示屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Customer.EmployeeId), "Name" },
-            { nameof(Customer.PaymentMethodId), "Name" }
-        };
-    }
-
-    /// <summary>
-    /// 配置 AutoComplete 值屬性
-    /// </summary>
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(Customer.EmployeeId), "Id" },
-            { nameof(Customer.PaymentMethodId), "Id" }
-        };
-    }
-
     /// <summary>
     /// 使用統一 Helper 產生員工操作按鈕
     /// </summary>

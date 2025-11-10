@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using ERPCore2.Helpers.EditModal;
 
 namespace ERPCore2.Data.Entities
 {
@@ -9,6 +10,12 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(QuotationDate))]
+    [CodeGenerationStrategy(
+        CodeGenerationStrategy.TimestampWithSequence,
+        Prefix = "QT",
+        DateFieldName = nameof(QuotationDate),
+        SequenceDigits = 4
+    )]
     public class Quotation : BaseEntity
     {
         [Required(ErrorMessage = "報價日期為必填")]

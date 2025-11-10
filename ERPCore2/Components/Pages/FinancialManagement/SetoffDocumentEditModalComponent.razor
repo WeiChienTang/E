@@ -25,10 +25,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
-                          AutoCompletePrefillers="@GetAutoCompletePrefillers()"
-                          AutoCompleteCollections="@GetAutoCompleteCollections()"
-                          AutoCompleteDisplayProperties="@GetAutoCompleteDisplayProperties()"
-                          AutoCompleteValueProperties="@GetAutoCompleteValueProperties()"
+                          AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSetoffDocumentData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -94,6 +94,9 @@
     private List<Company> companies = new();
     private List<Customer> customers = new();
     private List<Supplier> suppliers = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // 商品明細相關
     private List<SetoffProductDetail> setoffProductDetails = new();
@@ -940,6 +943,13 @@
             
             // 載入廠商列表（用於應付帳款）
             suppliers = await SupplierService.GetAllAsync();
+            
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<SetoffDocument>()
+                .AddField(nameof(SetoffDocument.CompanyId), "CompanyName", companies)
+                .AddField("CustomerId", "CompanyName", customers)
+                .AddField("SupplierId", "CompanyName", suppliers)
+                .Build();
         }
         catch (Exception)
         {
@@ -1257,65 +1267,6 @@
         {
             // 忽略錯誤
         }
-    }
-
-    // ===== AutoComplete 相關方法 =====
-    private Dictionary<string, Func<string, Dictionary<string, object?>>> GetAutoCompletePrefillers()
-    {
-        return new Dictionary<string, Func<string, Dictionary<string, object?>>>
-        {
-            {
-                nameof(SetoffDocument.CompanyId),
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm
-                }
-            },
-            {
-                "CustomerId",
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm
-                }
-            },
-            {
-                "SupplierId",
-                searchTerm => new Dictionary<string, object?>
-                {
-                    ["CompanyName"] = searchTerm
-                }
-            }
-        };
-    }
-
-    private Dictionary<string, IEnumerable<object>> GetAutoCompleteCollections()
-    {
-        return new Dictionary<string, IEnumerable<object>>
-        {
-            { nameof(SetoffDocument.CompanyId), companies.Cast<object>() },
-            { "CustomerId", customers.Cast<object>() },
-            { "SupplierId", suppliers.Cast<object>() }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteDisplayProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SetoffDocument.CompanyId), "CompanyName" },
-            { "CustomerId", "CompanyName" },
-            { "SupplierId", "CompanyName" }
-        };
-    }
-
-    private Dictionary<string, string> GetAutoCompleteValueProperties()
-    {
-        return new Dictionary<string, string>
-        {
-            { nameof(SetoffDocument.CompanyId), "Id" },
-            { "CustomerId", "Id" },
-            { "SupplierId", "Id" }
-        };
     }
 
     // ===== Modal 管理器 =====
