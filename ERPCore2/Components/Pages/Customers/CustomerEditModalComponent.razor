@@ -70,6 +70,9 @@
     private List<Employee> availableEmployees = new();
     private List<PaymentMethod> availablePaymentMethods = new();
     
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+    
     // 員工編輯 Modal 相關變數 - 使用泛型管理器
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
@@ -83,10 +86,20 @@
     {
         try
         {
-            // 初始化員工 Modal 管理器
-            InitializeEmployeeModalManager();
-            // 初始化付款方式 Modal 管理器
-            InitializePaymentMethodModalManager();
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Customer, ICustomerService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Employee>(nameof(Customer.EmployeeId), "員工")
+                .AddManager<PaymentMethod>(nameof(Customer.PaymentMethodId), "付款方式")
+                .Build();
+            
+            // 取得個別 Manager 供組件使用
+            employeeModalManager = modalManagers.Get<Employee>(nameof(Customer.EmployeeId));
+            paymentMethodModalManager = modalManagers.Get<PaymentMethod>(nameof(Customer.PaymentMethodId));
             
             await LoadAdditionalDataAsync();
             
@@ -426,52 +439,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-    
-    /// <summary>
-    /// 初始化員工 Modal 管理器
-    /// </summary>
-    private void InitializeEmployeeModalManager()
-    {
-        employeeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<Customer, Employee, ICustomerService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "員工",
-                PropertyName = nameof(Customer.EmployeeId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, employeeId) => 
-                {
-                    if (entity != null) entity.EmployeeId = employeeId;
-                },
-                RefreshAutoCompleteFields = true
-            });
-    }
-    
-    /// <summary>
-    /// 初始化付款方式 Modal 管理器
-    /// </summary>
-    private void InitializePaymentMethodModalManager()
-    {
-        paymentMethodModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<Customer, PaymentMethod, ICustomerService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "付款方式",
-                PropertyName = nameof(Customer.PaymentMethodId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, paymentMethodId) => 
-                {
-                    if (entity != null) entity.PaymentMethodId = paymentMethodId;
-                },
-                RefreshAutoCompleteFields = true
-            });
     }
     
     private async Task LoadAdditionalDataAsync()

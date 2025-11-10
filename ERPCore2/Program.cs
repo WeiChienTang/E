@@ -26,7 +26,8 @@ if (isMigrationMode || isSeedDataMode || isSetupMode)
     
     // 註冊必要的服務進行遷移
     migrationBuilder.Services.AddDbContextFactory<AppDbContext>(options => 
-        options.UseSqlServer(connectionString));
+        options.UseSqlServer(connectionString,
+            sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
     
     // 建立應用程式但不啟動 Web 服務器
     var migrationApp = migrationBuilder.Build();

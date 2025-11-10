@@ -105,6 +105,8 @@
     private SizeEditModalComponent? sizeEditModal;
     private RelatedEntityModalManager<Size> sizeModalManager = default!;
     
+    private ModalManagerCollection modalManagers = default!;
+    
     // 選項清單（向下相容）
     private List<SelectOption> productCategoryOptions = new();
     private List<SelectOption> supplierOptions = new();
@@ -116,10 +118,20 @@
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeProductCategoryModalManager();
-            InitializeUnitModalManager();
-            InitializeSizeModalManager();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Product, IProductService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<ProductCategory>(nameof(Product.ProductCategoryId), "產品類別")
+                .AddManager<Unit>(nameof(Product.UnitId), "單位")
+                .AddManager<Size>(nameof(Product.SizeId), "尺寸")
+                .Build();
+            productCategoryModalManager = modalManagers.Get<ProductCategory>(nameof(Product.ProductCategoryId));
+            unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
+            sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
         }
         catch (Exception)
         {
@@ -577,75 +589,6 @@
             await NotificationService.ShowErrorAsync($"儲存供應商資料時發生錯誤：{ex.Message}");
             // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
         }
-    }
-    
-    /// <summary>
-    /// 初始化產品分類 Modal 管理器
-    /// </summary>
-    private void InitializeProductCategoryModalManager()
-    {
-        productCategoryModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<Product, ProductCategory, IProductService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "產品分類",
-                PropertyName = nameof(Product.ProductCategoryId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, categoryId) => 
-                {
-                    if (entity != null) entity.ProductCategoryId = categoryId;
-                },
-                RefreshAutoCompleteFields = true
-            });
-    }
-
-    /// <summary>
-    /// 初始化單位 Modal 管理器 - 使用統一 Helper
-    /// </summary>
-    private void InitializeUnitModalManager()
-    {
-        unitModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<Product, Unit, IProductService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "單位",
-                PropertyName = nameof(Product.UnitId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, unitId) => 
-                {
-                    if (entity != null) entity.UnitId = unitId;
-                },
-                RefreshAutoCompleteFields = true
-            });
-    }
-
-    /// <summary>
-    /// 初始化尺寸 Modal 管理器 - 使用統一 Helper
-    /// </summary>
-    private void InitializeSizeModalManager()
-    {
-        sizeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<Product, Size, IProductService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "尺寸",
-                PropertyName = nameof(Product.SizeId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, sizeId) => 
-                {
-                    if (entity != null) entity.SizeId = sizeId;
-                },
-                RefreshAutoCompleteFields = true
-            });
     }
 
     // ===== ActionButton 產生方法 =====

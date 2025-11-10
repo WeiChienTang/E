@@ -108,6 +108,7 @@
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    private ModalManagerCollection modalManagers = default!;
     
     // ===== 相關單據 Modal =====
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
@@ -129,8 +130,16 @@
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeSupplierModalManager();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            modalManagers = ModalManagerInitHelper.CreateBuilder<PurchaseReturn, IPurchaseReturnService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Supplier>(nameof(PurchaseReturn.SupplierId), "廠商")
+                .Build();
+            supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseReturn.SupplierId));
         }
         catch (Exception ex)
         {
@@ -868,31 +877,6 @@
         {
             { nameof(PurchaseReturn.SupplierId), supplierModalManager ?? new object() }
         };
-    }
-    
-    // ===== Modal 管理器初始化方法 =====
-    
-    /// <summary>
-    /// 初始化廠商 Modal 管理器
-    /// </summary>
-    private void InitializeSupplierModalManager()
-    {
-        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<PurchaseReturn, Supplier, IPurchaseReturnService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "廠商",
-                PropertyName = nameof(PurchaseReturn.SupplierId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, supplierId) =>
-                {
-                    // 自動選擇廠商時的回調邏輯
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
     }
     
     // ===== ActionButton 產生方法 =====

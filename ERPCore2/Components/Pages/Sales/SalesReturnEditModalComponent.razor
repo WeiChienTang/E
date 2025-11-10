@@ -120,6 +120,9 @@
     private bool hasUndeletableDetails = false;
     private bool isDetailDataReady = false;
     
+    // ===== Modal Manager 集合 =====
+    private ModalManagerCollection? modalManagers;
+    
     // ===== Modal 管理器 =====
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
@@ -134,8 +137,19 @@
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeCustomerModalManager();
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            modalManagers = ModalManagerInitHelper.CreateBuilder<SalesReturn, ISalesReturnService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Customer>(nameof(SalesReturn.CustomerId), "客戶")
+                .Build();
+            
+            // 取得個別 Manager 供組件使用
+            customerModalManager = modalManagers.Get<Customer>(nameof(SalesReturn.CustomerId));
+            
             await Task.CompletedTask;
         }
         catch (Exception)
@@ -1288,34 +1302,6 @@
         }
     };
     
-    // ===== Modal 管理器初始化方法 =====
-    
-    /// <summary>
-    /// 初始化客戶 Modal 管理器
-    /// </summary>
-    private void InitializeCustomerModalManager()
-    {
-        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<SalesReturn, Customer, ISalesReturnService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "客戶",
-                PropertyName = nameof(SalesReturn.CustomerId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, customerId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.CustomerId = customerId;
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
-    }
-
     /// <summary>
     /// 產生客戶操作按鈕 - 使用統一 Helper
     /// </summary>

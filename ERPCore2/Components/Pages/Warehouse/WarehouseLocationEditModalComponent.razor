@@ -59,14 +59,23 @@
     // Modal 管理器
     private WarehouseEditModalComponent? warehouseEditModal;
     private RelatedEntityModalManager<Warehouse> warehouseModalManager = default!;
+    private ModalManagerCollection modalManagers = default!;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeWarehouseModalManager();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            modalManagers = ModalManagerInitHelper.CreateBuilder<WarehouseLocation, IWarehouseLocationService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Warehouse>(nameof(WarehouseLocation.WarehouseId), "倉庫")
+                .Build();
+            warehouseModalManager = modalManagers.Get<Warehouse>(nameof(WarehouseLocation.WarehouseId));
         }
         catch (Exception)
         {
@@ -303,31 +312,6 @@
         {
             { nameof(WarehouseLocation.WarehouseId), warehouseModalManager }
         };
-    }
-
-    // ===== Modal 管理器初始化方法 =====
-    
-    /// <summary>
-    /// 初始化倉庫 Modal 管理器
-    /// </summary>
-    private void InitializeWarehouseModalManager()
-    {
-        warehouseModalManager = new RelatedEntityManagerBuilder<Warehouse>(NotificationService, "倉庫")
-            .WithPropertyName(nameof(WarehouseLocation.WarehouseId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(warehouseId => 
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.WarehouseId = warehouseId;
-                }
-            })
-            .WithCustomPostProcess(async warehouse => 
-            {
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
     }
 
     // ===== ActionButton 產生方法 =====

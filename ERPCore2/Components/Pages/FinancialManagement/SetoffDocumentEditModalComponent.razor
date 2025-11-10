@@ -90,6 +90,8 @@
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
     
+    private ModalManagerCollection modalManagers = default!;
+    
     // 選項清單
     private List<Company> companies = new();
     private List<Customer> customers = new();
@@ -120,14 +122,21 @@
     {
         try
         {
-            // 初始化公司 Modal 管理器
-            InitializeCompanyModalManager();
-            
-            // 初始化客戶 Modal 管理器
-            InitializeCustomerModalManager();
-            
-            // 初始化廠商 Modal 管理器
-            InitializeSupplierModalManager();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            // 注意: CustomerId 和 SupplierId 是虛擬屬性,它們的 setter 會自動處理 RelatedPartyId 和 RelatedPartyType
+            modalManagers = ModalManagerInitHelper.CreateBuilder<SetoffDocument, ISetoffDocumentService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Company>(nameof(SetoffDocument.CompanyId), "公司")
+                .AddManager<Customer>("CustomerId", "客戶")  // 虛擬屬性,使用字串
+                .AddManager<Supplier>("SupplierId", "廠商")  // 虛擬屬性,使用字串
+                .Build();
+            companyModalManager = modalManagers.Get<Company>(nameof(SetoffDocument.CompanyId));
+            customerModalManager = modalManagers.Get<Customer>("CustomerId");
+            supplierModalManager = modalManagers.Get<Supplier>("SupplierId");
             
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
@@ -148,98 +157,6 @@
         }
         
         await base.OnParametersSetAsync();
-    }
-
-    /// <summary>
-    /// 初始化公司 Modal 管理器
-    /// </summary>
-    private void InitializeCompanyModalManager()
-    {
-        companyModalManager = new RelatedEntityManagerBuilder<Company>(NotificationService, "公司")
-            .WithPropertyName(nameof(SetoffDocument.CompanyId))
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .WithAutoSelectCallback(companyId => 
-            {
-                if (editModalComponent?.Entity != null)
-                {
-                    editModalComponent.Entity.CompanyId = companyId;
-                }
-            })
-            .WithCustomPostProcess(async company => 
-            {
-                // 重新初始化表單欄位以更新按鈕狀態
-                await InitializeFormFieldsAsync();
-            })
-            .Build();
-    }
-
-    /// <summary>
-    /// 初始化客戶 Modal 管理器
-    /// </summary>
-    private void InitializeCustomerModalManager()
-    {
-        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<SetoffDocument, Customer, ISetoffDocumentService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "客戶",
-                PropertyName = "CustomerId",
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, customerId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.RelatedPartyId = customerId;
-                        entity.RelatedPartyType = "Customer";
-                        
-                        // 更新 RelatedPartyName
-                        var customer = customers.FirstOrDefault(c => c.Id == customerId);
-                        if (customer != null)
-                        {
-                            entity.RelatedPartyName = customer.CompanyName ?? "";
-                        }
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
-    }
-
-    /// <summary>
-    /// 初始化廠商 Modal 管理器
-    /// </summary>
-    private void InitializeSupplierModalManager()
-    {
-        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<SetoffDocument, Supplier, ISetoffDocumentService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "廠商",
-                PropertyName = "SupplierId",
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, supplierId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.RelatedPartyId = supplierId;
-                        entity.RelatedPartyType = "Supplier";
-                        
-                        // 更新 RelatedPartyName
-                        var supplier = suppliers.FirstOrDefault(s => s.Id == supplierId);
-                        if (supplier != null)
-                        {
-                            entity.RelatedPartyName = supplier.CompanyName;
-                        }
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
     }
 
     /// <summary>

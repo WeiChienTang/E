@@ -21,7 +21,8 @@ namespace ERPCore2.Data
         {
             // Database Configuration - 使用 DbContextFactory 註冊
             services.AddDbContextFactory<AppDbContext>(options =>
-                options.UseSqlServer(connectionString));
+                options.UseSqlServer(connectionString,
+                    sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
         }
 
         /// <summary>

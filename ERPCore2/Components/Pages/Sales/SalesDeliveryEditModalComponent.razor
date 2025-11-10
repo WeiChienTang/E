@@ -92,6 +92,9 @@
     // 明細管理組件引用 (暫時註解,待開發明細表格元件)
     // private SalesDeliveryDetailTable? salesDeliveryDetailManager;
     
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+    
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
@@ -110,17 +113,25 @@
     
     // 稅率快取變數
     private decimal currentTaxRate = 5.0m;
-    
-    // ===== 鎖定狀態 =====
-    private bool isDetailDataReady = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeCustomerModalManager();
-            InitializeEmployeeModalManager();
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            modalManagers = ModalManagerInitHelper.CreateBuilder<SalesDelivery, ISalesDeliveryService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Customer>(nameof(SalesDelivery.CustomerId), "客戶")
+                .AddManager<Employee>(nameof(SalesDelivery.EmployeeId), "業務員")
+                .Build();
+            
+            // 取得個別 Manager 供組件使用
+            customerModalManager = modalManagers.Get<Customer>(nameof(SalesDelivery.CustomerId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(SalesDelivery.EmployeeId));
         }
         catch (Exception)
         {
@@ -190,8 +201,6 @@
     {
         try
         {
-            isDetailDataReady = false;
-            
             if (!SalesDeliveryId.HasValue)
             {
                 // 新增模式 - 自動產生出貨單號
@@ -222,8 +231,6 @@
                     salesDeliveryDetails.Clear();
                 }
                 
-                isDetailDataReady = true;
-                
                 return newDelivery;
             }
 
@@ -234,7 +241,6 @@
             {
                 // 載入銷貨出貨明細
                 await LoadSalesDeliveryDetails(SalesDeliveryId.Value);
-                isDetailDataReady = true;
                 StateHasChanged();
                 
                 // 重新初始化表單欄位
@@ -252,7 +258,6 @@
             }
             else
             {
-                isDetailDataReady = true;
             }
             
             return salesDelivery;
@@ -262,7 +267,6 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesDeliveryData), GetType(), 
                 additionalData: $"載入出貨單資料失敗 - ID: {SalesDeliveryId}");
             await NotificationService.ShowErrorAsync($"載入出貨單資料時發生錯誤：{ex.Message}");
-            isDetailDataReady = true;
             return null;
         }
     }
@@ -600,53 +604,6 @@
         }
     }
 
-    // ===== Modal 管理器 =====
-    private void InitializeCustomerModalManager()
-    {
-        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<SalesDelivery, Customer, ISalesDeliveryService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "客戶",
-                PropertyName = nameof(SalesDelivery.CustomerId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, customerId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.CustomerId = customerId;
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
-    }
-
-    private void InitializeEmployeeModalManager()
-    {
-        employeeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<SalesDelivery, Employee, ISalesDeliveryService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "業務員",
-                PropertyName = nameof(SalesDelivery.EmployeeId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, employeeId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.EmployeeId = employeeId;
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
-    }
-
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
     {
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
@@ -681,28 +638,7 @@
             { nameof(SalesDelivery.EmployeeId), employeeModalManager }
         };
     }
-
-    // ===== 自訂模組 =====
-    private RenderFragment? GetCustomModules()
-    {
-        if (!isDetailDataReady)
-        {
-            return null;
-        }
-
-        return builder =>
-        {
-            builder.OpenElement(0, "div");
-            builder.AddAttribute(1, "class", "custom-module");
-            
-            // TODO: 加入出貨明細表格元件
-            builder.AddMarkupContent(2, "<h5>出貨明細</h5>");
-            builder.AddMarkupContent(3, "<p class='text-muted'>明細表格元件開發中...</p>");
-            
-            builder.CloseElement();
-        };
-    }
-
+    
     // ===== 欄位變更處理 =====
     private async Task OnFieldValueChanged(string propertyName, object? newValue)
     {

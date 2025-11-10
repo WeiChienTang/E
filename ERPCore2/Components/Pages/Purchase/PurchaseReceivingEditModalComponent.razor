@@ -125,7 +125,8 @@
     
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
-    private RelatedEntityModalManager<Supplier> supplierModalManager;
+    private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    private ModalManagerCollection modalManagers = default!;
     
     // ===== 相關單據 Modal =====
     private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
@@ -144,9 +145,8 @@
     // ===== 建構函數 =====
     public PurchaseReceivingEditModalComponent()
     {
-        // 提前初始化 supplierModalManager 以避免 NullReferenceException
-        // 實際配置會在 OnInitializedAsync 中完成
-        supplierModalManager = new RelatedEntityModalManager<Supplier>();
+        // 移除原有的建構函數初始化
+        // 現在使用 ModalManagerInitHelper 在 OnInitializedAsync 中統一初始化
     }
 
     // ===== 必要方法 =====
@@ -154,11 +154,20 @@
     {
         try
         {
-            // 載入審核開關設定（優先執行，影響後續邏輯）
+            // 載入審核開關設定（優先執行,影響後續邏輯）
             isApprovalEnabled = await SystemParameterService.IsPurchaseOrderApprovalEnabledAsync();
             
-            // 初始化 Modal 管理器
-            InitializeSupplierModalManager();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            modalManagers = ModalManagerInitHelper.CreateBuilder<PurchaseReceiving, IPurchaseReceivingService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Supplier>(nameof(PurchaseReceiving.SupplierId), "廠商")
+                .Build();
+            supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseReceiving.SupplierId));
+            
         }
         catch (Exception)
         {
@@ -1507,35 +1516,7 @@
         }
     };
     
-    // ===== Modal 管理器初始化方法 =====
-    
-    /// <summary>
-    /// 初始化廠商 Modal 管理器
-    /// </summary>
-    private void InitializeSupplierModalManager()
-    {
-        supplierModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<PurchaseReceiving, Supplier, IPurchaseReceivingService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "廠商",
-                PropertyName = nameof(PurchaseReceiving.SupplierId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, supplierId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.SupplierId = supplierId;
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
-    }
-
-    /// <summary>
+    // ===== ActionButton 產生方法 =====    /// <summary>
     /// 產生廠商操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetSupplierActionButtonsAsync()

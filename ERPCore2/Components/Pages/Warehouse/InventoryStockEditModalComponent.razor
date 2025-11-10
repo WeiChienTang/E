@@ -90,14 +90,35 @@
     private RelatedEntityModalManager<Product> productModalManager = default!;
     private RelatedEntityModalManager<Warehouse> warehouseModalManager = default!;
     private RelatedEntityModalManager<WarehouseLocation> warehouseLocationModalManager = default!;
+    private ModalManagerCollection modalManagers = default!;
 
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeModalManagers();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            // 注意: InventoryStock 主檔只有 ProductId, 倉庫和庫位在明細中
+            modalManagers = ModalManagerInitHelper.CreateBuilder<InventoryStock, IInventoryStockService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Product>(nameof(InventoryStock.ProductId), "產品")
+                .Build();
+            productModalManager = modalManagers.Get<Product>(nameof(InventoryStock.ProductId));
+            
+            // 倉庫和庫位管理器仍需保留以供未來擴展使用
+            warehouseModalManager = new RelatedEntityManagerBuilder<Warehouse>(NotificationService, "倉庫")
+                .WithReloadCallback(LoadAdditionalDataAsync)
+                .WithStateChangedCallback(StateHasChanged)
+                .Build();
+            
+            warehouseLocationModalManager = new RelatedEntityManagerBuilder<WarehouseLocation>(NotificationService, "倉庫位置")
+                .WithReloadCallback(LoadAdditionalDataAsync)
+                .WithStateChangedCallback(StateHasChanged)
+                .Build();
         }
         catch (Exception)
         {
@@ -369,68 +390,6 @@
         {
             { nameof(InventoryStock.ProductId), productModalManager }
         };
-    }
-
-    // ===== Modal 管理器初始化方法 =====
-    
-    /// <summary>
-    /// 初始化所有 Modal 管理器
-    /// </summary>
-    private void InitializeModalManagers()
-    {
-        InitializeProductModalManager();
-        InitializeWarehouseModalManager();
-        InitializeWarehouseLocationModalManager();
-    }
-
-    /// <summary>
-    /// 初始化商品 Modal 管理器
-    /// </summary>
-    private void InitializeProductModalManager()
-    {
-        productModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<InventoryStock, Product, IInventoryStockService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "商品",
-                PropertyName = nameof(InventoryStock.ProductId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                AutoSelectAction = (entity, productId) =>
-                {
-                    if (entity != null)
-                    {
-                        entity.ProductId = productId;
-                    }
-                },
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                RefreshAutoCompleteFields = true
-            });
-    }
-
-    /// <summary>
-    /// 初始化倉庫 Modal 管理器
-    /// 注意：雖然 InventoryStock 主檔不包含倉庫欄位，但保留管理器以供未來擴展使用
-    /// </summary>
-    private void InitializeWarehouseModalManager()
-    {
-        warehouseModalManager = new RelatedEntityManagerBuilder<Warehouse>(NotificationService, "倉庫")
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .Build();
-    }
-
-    /// <summary>
-    /// 初始化倉庫位置 Modal 管理器
-    /// 注意：雖然 InventoryStock 主檔不包含倉庫位置欄位，但保留管理器以供未來擴展使用
-    /// </summary>
-    private void InitializeWarehouseLocationModalManager()
-    {
-        warehouseLocationModalManager = new RelatedEntityManagerBuilder<WarehouseLocation>(NotificationService, "倉庫位置")
-            .WithReloadCallback(LoadAdditionalDataAsync)
-            .WithStateChangedCallback(StateHasChanged)
-            .Build();
     }
 
     // ===== ActionButton 產生方法 =====

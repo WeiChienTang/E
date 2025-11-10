@@ -87,16 +87,27 @@
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    private ModalManagerCollection modalManagers = default!;
 
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化 Modal 管理器
-            InitializeProductModalManager();
-            InitializeCustomerModalManager();
-            InitializeEmployeeModalManager();
+            // 使用 ModalManagerInitHelper 初始化 Modal 管理器
+            modalManagers = ModalManagerInitHelper.CreateBuilder<ProductComposition, IProductCompositionService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Product>(nameof(ProductComposition.ParentProductId), "產品")
+                .AddManager<Customer>(nameof(ProductComposition.CustomerId), "客戶")
+                .AddManager<Employee>(nameof(ProductComposition.CreatedByEmployeeId), "員工")
+                .Build();
+            productModalManager = modalManagers.Get<Product>(nameof(ProductComposition.ParentProductId));
+            customerModalManager = modalManagers.Get<Customer>(nameof(ProductComposition.CustomerId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(ProductComposition.CreatedByEmployeeId));
         }
         catch (Exception)
         {
@@ -664,77 +675,6 @@
             { nameof(ProductComposition.CustomerId), customerModalManager },
             { nameof(ProductComposition.CreatedByEmployeeId), employeeModalManager }
         };
-    }
-    
-    // ===== Modal 管理器初始化方法 =====
-    
-    /// <summary>
-    /// 初始化商品 Modal 管理器 - 使用統一 Helper
-    /// </summary>
-    private void InitializeProductModalManager()
-    {
-        productModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<ProductComposition, Product, IProductCompositionService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "商品",
-                PropertyName = nameof(ProductComposition.ParentProductId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, productId) => 
-                {
-                    if (entity != null) entity.ParentProductId = productId;
-                },
-                RefreshAutoCompleteFields = true
-            });
-    }
-    
-    /// <summary>
-    /// 初始化客戶 Modal 管理器 - 使用統一 Helper
-    /// </summary>
-    private void InitializeCustomerModalManager()
-    {
-        customerModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<ProductComposition, Customer, IProductCompositionService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "客戶",
-                PropertyName = nameof(ProductComposition.CustomerId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, customerId) => 
-                {
-                    if (entity != null) entity.CustomerId = customerId;
-                },
-                RefreshAutoCompleteFields = true
-            });
-    }
-    
-    /// <summary>
-    /// 初始化員工 Modal 管理器 - 使用統一 Helper
-    /// </summary>
-    private void InitializeEmployeeModalManager()
-    {
-        employeeModalManager = RelatedEntityModalManagerHelper.CreateStandardManager(
-            new StandardModalManagerConfig<ProductComposition, Employee, IProductCompositionService>
-            {
-                NotificationService = NotificationService,
-                EntityDisplayName = "製單人員",
-                PropertyName = nameof(ProductComposition.CreatedByEmployeeId),
-                GetEditModalComponent = () => editModalComponent,
-                ReloadDataCallback = LoadAdditionalDataAsync,
-                StateChangedCallback = StateHasChanged,
-                InitializeFormFieldsCallback = InitializeFormFieldsAsync,
-                AutoSelectAction = (entity, employeeId) => 
-                {
-                    if (entity != null) entity.CreatedByEmployeeId = employeeId;
-                },
-                RefreshAutoCompleteFields = true
-            });
     }
     
     // ===== ActionButton 產生方法 =====
