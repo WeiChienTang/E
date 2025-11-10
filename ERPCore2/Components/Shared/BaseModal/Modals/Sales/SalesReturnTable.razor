@@ -1179,7 +1179,7 @@ else
         /// </summary>
         public string DisplayName => 
             SelectedProduct != null 
-                ? $"[{SelectedOrderDetail?.SalesOrder?.SalesOrderNumber ?? "N/A"}] {SelectedProduct.Code} - {SelectedProduct.Name}"
+                ? $"[{SelectedOrderDetail?.SalesOrder?.Code ?? "N/A"}] {SelectedProduct.Code} - {SelectedProduct.Name}"
                 : string.Empty;
     }
 }

@@ -118,30 +118,12 @@
                 // 新增模式 - 建立新的身分實體並設定預設值
                 var newRole = new Role
                 {
-                    Code = await GenerateRoleCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Role, IRoleService>(RoleService, "ROLE"),
                     Status = EntityStatus.Active
                 };
 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(Role).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newRole, convertedValue);
-                            }
-                            catch
-                            {
-                                // 忽略轉換失敗的情況
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newRole, PrefilledValues);
 
                 return newRole;
             }
@@ -209,15 +191,5 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateRoleCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            RoleService,
-            "ROLE",
-            (service, code, excludeId) => service.IsRoleCodeExistsAsync(code, excludeId)
-        );
     }
 }

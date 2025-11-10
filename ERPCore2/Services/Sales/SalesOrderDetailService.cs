@@ -44,7 +44,7 @@ namespace ERPCore2.Services
                     .Include(sod => sod.Product)
                     .Include(sod => sod.Unit)
                     .Where(sod => (sod.Product.Name.Contains(searchTerm) ||
-                                  sod.SalesOrder.SalesOrderNumber.Contains(searchTerm) ||
+                                  (sod.SalesOrder.Code != null && sod.SalesOrder.Code.Contains(searchTerm)) ||
                                   (!string.IsNullOrEmpty(sod.Remarks) && sod.Remarks.Contains(searchTerm))))
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
                     .ThenBy(sod => sod.Id)
@@ -443,7 +443,7 @@ namespace ERPCore2.Services
                             .Sum(srd => srd.ReturnQuantity)
                     )
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
-                    .ThenBy(sod => sod.SalesOrder.SalesOrderNumber)
+                    .ThenBy(sod => sod.SalesOrder.Code)
                     .ThenBy(sod => sod.Product.Code)
                     .ToListAsync();
             }

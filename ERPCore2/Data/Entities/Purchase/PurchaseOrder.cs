@@ -7,15 +7,10 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購訂單主檔實體 - 記錄採購訂單基本資訊
     /// </summary>
-    [Index(nameof(PurchaseOrderNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(SupplierId), nameof(OrderDate))]
     public class PurchaseOrder : BaseEntity
     {
-        [Required(ErrorMessage = "採購單號為必填")]
-        [MaxLength(30, ErrorMessage = "採購單號不可超過30個字元")]
-        [Display(Name = "採購單號")]
-        public string PurchaseOrderNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "訂單日期為必填")]
         [Display(Name = "訂單日期")]
         public DateTime OrderDate { get; set; } = DateTime.Today;

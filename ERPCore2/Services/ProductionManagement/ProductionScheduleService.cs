@@ -81,9 +81,9 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.ScheduleNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("排程單號為必填");
-                else if (entity.ScheduleNumber.Length > 30)
+                else if (entity.Code.Length > 30)
                     errors.Add("排程單號不可超過30個字元");
 
                 if (entity.ScheduleDate == default)
@@ -92,10 +92,10 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.SourceDocumentType) && entity.SourceDocumentType.Length > 50)
                     errors.Add("來源單據類型不可超過50個字元");
 
-                // 檢查排程單號是否重複
-                if (!string.IsNullOrWhiteSpace(entity.ScheduleNumber) &&
-                    await IsScheduleNumberExistsAsync(entity.ScheduleNumber, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("排程單號已存在");
+                // 檢查排程代碼是否重複
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsProductionScheduleCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                    errors.Add("排程代碼已存在");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -109,7 +109,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ScheduleNumber = entity.ScheduleNumber
+                    ScheduleNumber = entity.Code
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -127,7 +127,7 @@ namespace ERPCore2.Services
                 return await context.ProductionSchedules
                     .Include(ps => ps.CreatedByEmployee)
                     .Include(ps => ps.Customer)
-                    .Where(ps => ps.ScheduleNumber.Contains(searchTerm) ||
+                    .Where(ps => (ps.Code != null && ps.Code.Contains(searchTerm)) ||
                                 (ps.SourceDocumentType != null && ps.SourceDocumentType.Contains(searchTerm)) ||
                                 (ps.Customer != null && ps.Customer.CompanyName != null && ps.Customer.CompanyName.Contains(searchTerm)))
                     .OrderByDescending(ps => ps.ScheduleDate)
@@ -146,12 +146,12 @@ namespace ERPCore2.Services
         }
 
         // 業務特定方法
-        public async Task<bool> IsScheduleNumberExistsAsync(string scheduleNumber, int? excludeId = null)
+        public async Task<bool> IsProductionScheduleCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductionSchedules.Where(ps => ps.ScheduleNumber == scheduleNumber);
+                var query = context.ProductionSchedules.Where(ps => ps.Code == code);
 
                 if (excludeId.HasValue)
                     query = query.Where(ps => ps.Id != excludeId.Value);
@@ -160,11 +160,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsScheduleNumberExistsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductionScheduleCodeExistsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsScheduleNumberExistsAsync),
+                    Method = nameof(IsProductionScheduleCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    ScheduleNumber = scheduleNumber,
+                    Code = code,
                     ExcludeId = excludeId
                 });
                 return false;

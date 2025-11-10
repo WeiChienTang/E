@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         /// <param name="account">帳號</param>
         /// <param name="excludeEmployeeId">排除的員工ID（用於更新時檢查）</param>
         /// <returns>檢查結果</returns>
-        Task<ServiceResult<bool>> IsAccountExistsAsync(string account, int? excludeEmployeeId = null);
+        Task<bool> IsAccountExistsAsync(string account, int? excludeEmployeeId = null);
 
         /// <summary>
         /// 檢查員工編號是否已存在
@@ -36,7 +36,7 @@ namespace ERPCore2.Services
         /// <param name="employeeCode">員工編號</param>
         /// <param name="excludeEmployeeId">排除的員工ID（用於更新時檢查）</param>
         /// <returns>檢查結果</returns>
-        Task<ServiceResult<bool>> IsEmployeeCodeExistsAsync(string employeeCode, int? excludeEmployeeId = null);
+        Task<bool> IsEmployeeCodeExistsAsync(string employeeCode, int? excludeEmployeeId = null);
 
         /// <summary>
         /// 搜尋員工（根據姓名、員工編號或帳號）

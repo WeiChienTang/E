@@ -17,7 +17,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查商品分類代碼是否存在
         /// </summary>
-        Task<bool> IsCategoryCodeExistsAsync(string categoryCode, int? excludeId = null);
+        Task<bool> IsProductCategoryCodeExistsAsync(string categoryCode, int? excludeId = null);
         
         /// <summary>
         /// 根據分類名稱取得商品分類

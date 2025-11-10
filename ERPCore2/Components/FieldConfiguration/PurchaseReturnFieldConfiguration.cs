@@ -43,17 +43,16 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<PurchaseReturn>>
                 {
                     {
-                        nameof(PurchaseReturn.PurchaseReturnNumber),
+                        nameof(PurchaseReturn.Code),
                         new FieldDefinition<PurchaseReturn>
                         {
-                            PropertyName = nameof(PurchaseReturn.PurchaseReturnNumber),
+                            PropertyName = nameof(PurchaseReturn.Code),
                             DisplayName = "退回單號",
                             FilterPlaceholder = "輸入退回單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(PurchaseReturn.PurchaseReturnNumber), pr => pr.PurchaseReturnNumber)
+                                model, query, nameof(PurchaseReturn.Code), pr => pr.Code)
                         }
                     },
                     {
@@ -63,7 +62,6 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "Supplier.CompanyName",
                             DisplayName = "供應商",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入供應商名稱搜尋",
                             HeaderStyle = "width: 180px;",
@@ -80,7 +78,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
-                            FilterOrder = 3,
                             HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseReturn.ReturnDate), pr => pr.ReturnDate)
@@ -93,12 +90,11 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "PurchaseReceiving.ReceiptNumber",
                             DisplayName = "原進貨單號",
                             TableOrder = 4,
-                            FilterOrder = 4,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入原進貨單號搜尋",
                             HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, "PurchaseReceivingNumber", pr => pr.PurchaseReceiving != null ? pr.PurchaseReceiving.ReceiptNumber : "", allowNull: true)
+                                model, query, "PurchaseReceivingNumber", pr => pr.PurchaseReceiving != null ? pr.PurchaseReceiving.Code : "", allowNull: true)
                         }
                     },
                     {
@@ -151,7 +147,7 @@ namespace ERPCore2.FieldConfiguration
         protected override Func<IQueryable<PurchaseReturn>, IQueryable<PurchaseReturn>> GetDefaultSort()
         {
             return q => q.OrderByDescending(pr => pr.ReturnDate)
-                         .ThenByDescending(pr => pr.PurchaseReturnNumber);
+                         .ThenByDescending(pr => pr.Code);
         }
     }
 }

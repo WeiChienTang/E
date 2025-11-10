@@ -5,7 +5,6 @@
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
-@using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="Supplier" 
                           TService="ISupplierService"
@@ -338,7 +337,7 @@
                 // 新增模式
                 var newSupplier = new Supplier
                 {
-                    Code = await GenerateSupplierCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Supplier, ISupplierService>(SupplierService, "S"),
                     CompanyName = "",
                     ContactPerson = "",
                     TaxNumber = "",
@@ -346,26 +345,7 @@
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(Supplier).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newSupplier, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newSupplier, PrefilledValues);
                 
                 supplierProducts = new List<ProductSupplier>();
                 
@@ -401,15 +381,6 @@
                 Status = EntityStatus.Active
             };
         }
-    }
-
-    private async Task<string> GenerateSupplierCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            SupplierService,
-            "S",
-            (service, code, excludeId) => service.IsSupplierCodeExistsAsync(code, excludeId)
-        );
     }
 
     private async Task<bool> SaveSupplier(Supplier entity)

@@ -112,7 +112,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>報價單 - {quotation.QuotationNumber}</title>");
+            html.AppendLine($"    <title>報價單 - {quotation.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("    <style>");
             html.AppendLine(GetQuotationCustomStyles());
@@ -188,7 +188,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("                    </div>");
             html.AppendLine("                    <div class='quotation-date-info'>");
             html.AppendLine($"                        <div>報價日期：{quotation.QuotationDate:yyyy/MM/dd}</div>");
-            html.AppendLine($"                        <div>報價單號：{quotation.QuotationNumber}</div>");
+            html.AppendLine($"                        <div>報價單號：{quotation.Code}</div>");
             html.AppendLine("                    </div>");
             html.AppendLine("                </div>");
             

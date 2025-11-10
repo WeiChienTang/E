@@ -179,17 +179,7 @@
                 var newPrinterConfiguration = new PrinterConfiguration();
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(PrinterConfiguration).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            property.SetValue(newPrinterConfiguration, kvp.Value);
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newPrinterConfiguration, PrefilledValues);
                 
                 return newPrinterConfiguration;
             }

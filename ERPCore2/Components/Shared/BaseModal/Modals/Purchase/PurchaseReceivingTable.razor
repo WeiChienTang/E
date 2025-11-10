@@ -716,7 +716,7 @@ else
                 }
                 if (needsApproval)
                 {
-                    var poNumber = receivingItem.SelectedPurchaseDetail?.PurchaseOrder?.PurchaseOrderNumber ?? "";
+                    var poNumber = receivingItem.SelectedPurchaseDetail?.PurchaseOrder?.Code ?? "";
                     tooltipMessages.Add($"採購單 {poNumber} 尚未審核");
                 }
                 var title = tooltipMessages.Any() 
@@ -1474,7 +1474,7 @@ else
         if (detail?.Product == null) return "";
         
         var product = detail.Product;
-        var purchaseOrderNumber = detail.PurchaseOrder?.PurchaseOrderNumber ?? "N/A";
+        var purchaseOrderNumber = detail.PurchaseOrder?.Code ?? "N/A";
         
         var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
             ? $"[{product.Code}] {product.Name}"
@@ -1914,7 +1914,7 @@ else
                     var productNames = unapprovedItems
                         .Select(item => {
                             var productName = item.SelectedProduct?.Name ?? item.DisplayName;
-                            var poNumber = item.SelectedPurchaseDetail?.PurchaseOrder?.PurchaseOrderNumber ?? "N/A";
+                            var poNumber = item.SelectedPurchaseDetail?.PurchaseOrder?.Code ?? "N/A";
                             return $"• {productName} (採購單: {poNumber})";
                         })
                         .ToList();
@@ -1981,7 +1981,7 @@ else
         public PurchaseOrderDetail? SelectedPurchaseDetail { get; set; }
         
         // === 採購單相關資訊（從選中的採購明細中獲取） ===
-        public string? PurchaseOrderNumber => SelectedPurchaseDetail?.PurchaseOrder?.PurchaseOrderNumber;
+        public string? PurchaseOrderNumber => SelectedPurchaseDetail?.PurchaseOrder?.Code;
         public int? PurchaseOrderDetailId => SelectedPurchaseDetail?.Id;
         public int? PurchaseOrderId => SelectedPurchaseDetail?.PurchaseOrderId;
         public int OrderQuantity => SelectedPurchaseDetail?.OrderQuantity ?? 0;

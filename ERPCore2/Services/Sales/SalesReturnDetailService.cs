@@ -98,7 +98,7 @@ namespace ERPCore2.Services
                         .ThenInclude(sod => sod!.SalesOrder)
                     .Where(srd => ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
-                         (srd.SalesReturn != null && srd.SalesReturn.SalesReturnNumber != null && srd.SalesReturn.SalesReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
+                         (srd.SalesReturn != null && srd.SalesReturn.Code != null && srd.SalesReturn.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Customer != null && srd.SalesReturn.Customer.CompanyName != null && srd.SalesReturn.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.Remarks != null && srd.Remarks.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(srd => srd.SalesReturnId)

@@ -19,7 +19,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadPurchaseOrdersAsync"
                           FilterApplier="@ApplyPurchaseOrderFilters"
-                          GetEntityDisplayName="@(order => order.PurchaseOrderNumber)"
+                          GetEntityDisplayName="@(order => order.Code)"
                           RequiredPermission="PurchaseOrder.Read"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
@@ -223,7 +223,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSinglePurchaseOrderAsync), GetType(), 
-                additionalData: new { OrderId = order.Id, OrderNumber = order.PurchaseOrderNumber });
+                additionalData: new { OrderId = order.Id, OrderNumber = order.Code });
             return false;
         }
     }
@@ -254,7 +254,7 @@
             {
                 failCount++;
                 await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllPurchaseOrdersAsync), GetType(), 
-                    additionalData: new { OrderId = order.Id, OrderNumber = order.PurchaseOrderNumber });
+                    additionalData: new { OrderId = order.Id, OrderNumber = order.Code });
             }
         }
 

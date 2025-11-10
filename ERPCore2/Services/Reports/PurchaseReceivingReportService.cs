@@ -144,7 +144,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>進貨單 - {purchaseReceiving.ReceiptNumber}</title>");
+            html.AppendLine($"    <title>進貨單 - {purchaseReceiving.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
@@ -243,7 +243,7 @@ namespace ERPCore2.Services.Reports
         {
             var infoBuilder = new ReportInfoSectionBuilder();
             infoBuilder
-                .AddField("進貨單號", purchaseReceiving.ReceiptNumber)
+                .AddField("進貨單號", purchaseReceiving.Code)
                 .AddDateField("進貨日期", purchaseReceiving.ReceiptDate)
                 .AddField("廠商名稱", supplier?.CompanyName)
                 .AddField("聯絡人", supplier?.ContactPerson)
@@ -488,7 +488,7 @@ namespace ERPCore2.Services.Reports
             
             foreach (var receiving in purchaseReceivings)
             {
-                html.AppendLine($"                <li>{receiving.ReceiptNumber} - {receiving.Supplier?.CompanyName ?? "未指定廠商"} - {receiving.ReceiptDate:yyyy/MM/dd}</li>");
+                html.AppendLine($"                <li>{receiving.Code} - {receiving.Supplier?.CompanyName ?? "未指定廠商"} - {receiving.ReceiptDate:yyyy/MM/dd}</li>");
             }
             
             html.AppendLine("            </ol>");

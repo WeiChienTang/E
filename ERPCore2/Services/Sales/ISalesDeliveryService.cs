@@ -8,9 +8,9 @@ namespace ERPCore2.Services
     public interface ISalesDeliveryService : IGenericManagementService<SalesDelivery>
     {
         /// <summary>
-        /// 檢查出貨單號是否已存在
+        /// 檢查銷貨出貨代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        Task<bool> IsDeliveryNumberExistsAsync(string deliveryNumber, int? excludeId = null);
+        Task<bool> IsSalesDeliveryCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
         /// 根據客戶ID取得銷貨單列表

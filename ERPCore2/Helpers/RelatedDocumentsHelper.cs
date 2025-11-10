@@ -39,7 +39,7 @@ namespace ERPCore2.Helpers
                 {
                     DocumentId = detail.PurchaseReturnId,
                     DocumentType = RelatedDocumentType.ReturnDocument,
-                    DocumentNumber = detail.PurchaseReturn.PurchaseReturnNumber,
+                    DocumentNumber = detail.PurchaseReturn.Code ?? string.Empty,
                     DocumentDate = detail.PurchaseReturn.ReturnDate,
                     Quantity = detail.ReturnQuantity,
                     Remarks = detail.PurchaseReturn.Remarks
@@ -92,7 +92,7 @@ namespace ERPCore2.Helpers
                 {
                     DocumentId = detail.SalesReturnId,
                     DocumentType = RelatedDocumentType.ReturnDocument,
-                    DocumentNumber = detail.SalesReturn.SalesReturnNumber,
+                    DocumentNumber = detail.SalesReturn.Code ?? string.Empty,
                     DocumentDate = detail.SalesReturn.ReturnDate,
                     Quantity = detail.ReturnQuantity,
                     Remarks = detail.SalesReturn.Remarks
@@ -213,7 +213,7 @@ namespace ERPCore2.Helpers
                 {
                     DocumentId = detail.PurchaseReceivingId,
                     DocumentType = RelatedDocumentType.ReceivingDocument,
-                    DocumentNumber = detail.PurchaseReceiving.ReceiptNumber,
+                    DocumentNumber = detail.PurchaseReceiving.Code ?? string.Empty,
                     DocumentDate = detail.PurchaseReceiving.ReceiptDate,
                     Quantity = detail.ReceivedQuantity,
                     UnitPrice = detail.UnitPrice,
@@ -245,7 +245,7 @@ namespace ERPCore2.Helpers
                 {
                     DocumentId = detail.SalesOrderId,
                     DocumentType = RelatedDocumentType.SalesOrder,
-                    DocumentNumber = detail.SalesOrder.SalesOrderNumber,
+                    DocumentNumber = detail.SalesOrder.Code ?? string.Empty,
                     DocumentDate = detail.SalesOrder.OrderDate,
                     Quantity = detail.OrderQuantity,
                     UnitPrice = detail.UnitPrice,

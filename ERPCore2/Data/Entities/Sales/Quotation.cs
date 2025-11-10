@@ -7,15 +7,10 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 報價單主檔實體 - 記錄報價單基本資訊
     /// </summary>
-    [Index(nameof(QuotationNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(QuotationDate))]
     public class Quotation : BaseEntity
     {
-        [Required(ErrorMessage = "報價單號為必填")]
-        [MaxLength(30, ErrorMessage = "報價單號不可超過30個字元")]
-        [Display(Name = "報價單號")]
-        public string QuotationNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "報價日期為必填")]
         [Display(Name = "報價日期")]
         public DateTime QuotationDate { get; set; } = DateTime.Today;

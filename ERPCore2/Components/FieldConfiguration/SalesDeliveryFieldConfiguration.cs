@@ -38,17 +38,17 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<SalesDelivery>>
                 {
                     {
-                        nameof(SalesDelivery.DeliveryNumber),
+                        nameof(SalesDelivery.Code),
                         new FieldDefinition<SalesDelivery>
                         {
-                            PropertyName = nameof(SalesDelivery.DeliveryNumber),
+                            PropertyName = nameof(SalesDelivery.Code),
                             DisplayName = "出貨單號",
                             FilterPlaceholder = "輸入出貨單號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SalesDelivery.DeliveryNumber), sd => sd.DeliveryNumber)
+                                model, query, nameof(SalesDelivery.Code), sd => sd.Code)
                         }
                     },
                     {
@@ -100,7 +100,7 @@ namespace ERPCore2.FieldConfiguration
                             NullDisplayText = "-",
                             Options = _salesOrders.Select(so => new SelectOption
                             {
-                                Text = so.SalesOrderNumber,
+                                Text = so.Code ?? string.Empty,
                                 Value = so.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
@@ -267,7 +267,7 @@ namespace ERPCore2.FieldConfiguration
         protected override Func<IQueryable<SalesDelivery>, IQueryable<SalesDelivery>> GetDefaultSort()
         {
             return query => query.OrderByDescending(sd => sd.DeliveryDate)
-                                 .ThenByDescending(sd => sd.DeliveryNumber);
+                                 .ThenByDescending(sd => sd.Code);
         }
     }
 }

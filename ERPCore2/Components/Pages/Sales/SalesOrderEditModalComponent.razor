@@ -1,4 +1,3 @@
-@using ERPCore2.Helpers.EditModal
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
@@ -240,7 +239,7 @@
             if (!SalesOrderId.HasValue)
             {
                 // 新增模式 - 自動產生銷貨訂單號並設定預設公司
-                var generatedCode = await GenerateSalesOrderNumberAsync();
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, "SO");
                 
                 var newOrder = new SalesOrder
                 {
@@ -248,7 +247,7 @@
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
                     Status = EntityStatus.Active,
                     TotalAmount = 0,
-                    SalesOrderNumber = generatedCode
+                    Code = generatedCode
                 };
                 
                 // 如果是從報價單轉單，載入報價單資料
@@ -441,7 +440,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(SalesOrder.SalesOrderNumber),
+                    PropertyName = nameof(SalesOrder.Code),
                     Label = "銷貨單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入銷貨單號",
@@ -553,7 +552,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(SalesOrder.SalesOrderNumber), "基本資訊" },
+                { nameof(SalesOrder.Code), "基本資訊" },
                 { nameof(SalesOrder.CustomerId), "基本資訊" },
                 { nameof(SalesOrder.EmployeeId), "基本資訊" },
                 { nameof(SalesOrder.OrderDate), "基本資訊" },
@@ -585,22 +584,6 @@
     /// <summary>
     /// 生成銷貨訂單號
     /// </summary>
-    private async Task<string> GenerateSalesOrderNumberAsync()
-    {
-        try
-        {
-            // 使用 CodeGenerationHelper 生成訂單號
-            return CodeGenerationHelper.GenerateSimpleEntityCode("SO", usePreciseTimestamp: true);
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateSalesOrderNumberAsync), GetType(), 
-                additionalData: "生成銷貨訂單號失敗");
-            
-            // 如果失敗，使用簡單的時間戳記
-            return $"SO{DateTime.Now:yyyyMMddHHmmss}";
-        }
-    }
     
     // ===== AutoComplete 配置方法 =====
     
@@ -1067,7 +1050,7 @@
         // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
         var fieldsToLock = new[]
         {
-            nameof(SalesOrder.SalesOrderNumber),
+            nameof(SalesOrder.Code),
             nameof(SalesOrder.OrderDate),
             nameof(SalesOrder.ExpectedDeliveryDate),
             nameof(SalesOrder.PaymentTerms),
@@ -1278,7 +1261,7 @@
                 }
             );
             
-            await NotificationService.ShowSuccessAsync($"銷售退貨單 {savedReturn.SalesReturnNumber} 已更新，銷貨訂單明細已刷新");
+            await NotificationService.ShowSuccessAsync($"銷售退貨單 {savedReturn.Code} 已更新，銷貨訂單明細已刷新");
         }
         catch (Exception ex)
         {

@@ -10,9 +10,9 @@ namespace ERPCore2.Services
     public interface ISalesOrderService : IGenericManagementService<SalesOrder>
     {
         /// <summary>
-        /// 檢查銷貨單號是否已存在
+        /// 檢查銷貨訂單代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        Task<bool> IsSalesOrderNumberExistsAsync(string salesOrderNumber, int? excludeId = null);
+        Task<bool> IsSalesOrderCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
         /// 根據客戶ID取得銷貨訂單

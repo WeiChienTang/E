@@ -55,7 +55,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Employee)
                     .AsQueryable()
                     .OrderByDescending(so => so.OrderDate)
-                    .ThenBy(so => so.SalesOrderNumber)
+                    .ThenBy(so => so.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -105,11 +105,11 @@ namespace ERPCore2.Services
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
                     .Where(so => (
-                        so.SalesOrderNumber.ToLower().Contains(lowerSearchTerm) ||
+                        (so.Code != null && so.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (so.Customer != null && so.Customer.CompanyName != null && so.Customer.CompanyName.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderByDescending(so => so.OrderDate)
-                    .ThenBy(so => so.SalesOrderNumber)
+                    .ThenBy(so => so.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -129,7 +129,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.SalesOrderNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("銷貨單號不能為空");
 
                 if (entity.CustomerId <= 0)
@@ -138,8 +138,8 @@ namespace ERPCore2.Services
                 if (entity.OrderDate == default)
                     errors.Add("訂單日期不能為空");
 
-                if (!string.IsNullOrWhiteSpace(entity.SalesOrderNumber) &&
-                    await IsSalesOrderNumberExistsAsync(entity.SalesOrderNumber, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsSalesOrderCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("銷貨單號已存在");
 
                 if (errors.Any())
@@ -153,7 +153,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    EntityName = entity.SalesOrderNumber
+                    EntityName = entity.Code
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -163,12 +163,15 @@ namespace ERPCore2.Services
 
         #region 自定義方法
 
-        public async Task<bool> IsSalesOrderNumberExistsAsync(string salesOrderNumber, int? excludeId = null)
+        /// <summary>
+        /// 檢查銷貨訂單代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        public async Task<bool> IsSalesOrderCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesOrders.Where(so => so.SalesOrderNumber == salesOrderNumber);
+                var query = context.SalesOrders.Where(so => so.Code == code);
                 if (excludeId.HasValue)
                     query = query.Where(so => so.Id != excludeId.Value);
 
@@ -176,10 +179,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSalesOrderNumberExistsAsync), GetType(), _logger, new {
-                    Method = nameof(IsSalesOrderNumberExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSalesOrderCodeExistsAsync), GetType(), _logger, new {
+                    Method = nameof(IsSalesOrderCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    SalesOrderNumber = salesOrderNumber,
+                    Code = code,
                     ExcludeId = excludeId
                 });
                 return false;
@@ -414,7 +417,7 @@ namespace ERPCore2.Services
                     Method = nameof(CanDeleteAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    SalesOrderNumber = entity.SalesOrderNumber
+                    SalesOrderNumber = entity.Code
                 });
                 return ServiceResult.Failure("檢查刪除權限時發生錯誤");
             }
@@ -483,7 +486,7 @@ namespace ERPCore2.Services
                                     revertQuantity,
                                     InventoryTransactionTypeEnum.Return,
                                     $"SO-{id}_REVERT_{DateTime.Now:yyyyMMddHHmmss}",
-                                    $"永久刪除銷貨訂單回滾庫存 - {entity.SalesOrderNumber}"
+                                    $"永久刪除銷貨訂單回滾庫存 - {entity.Code}"
                                 );
                                 
                                 if (!revertResult.IsSuccess)
@@ -623,7 +626,7 @@ namespace ERPCore2.Services
                 // 單據編號關鍵字搜尋
                 if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
                 {
-                    query = query.Where(so => so.SalesOrderNumber.Contains(criteria.DocumentNumberKeyword));
+                    query = query.Where(so => so.Code != null && so.Code.Contains(criteria.DocumentNumberKeyword));
                 }
 
                 // 是否包含已取消的單據
@@ -637,10 +640,10 @@ namespace ERPCore2.Services
                 query = criteria.SortDirection == Models.SortDirection.Ascending
                     ? query.OrderBy(so => so.Customer.CompanyName)
                            .ThenBy(so => so.OrderDate)
-                           .ThenBy(so => so.SalesOrderNumber)
+                           .ThenBy(so => so.Code)
                     : query.OrderBy(so => so.Customer.CompanyName)
                            .ThenByDescending(so => so.OrderDate)
-                           .ThenBy(so => so.SalesOrderNumber);
+                           .ThenBy(so => so.Code);
 
                 // 限制最大筆數
                 if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)

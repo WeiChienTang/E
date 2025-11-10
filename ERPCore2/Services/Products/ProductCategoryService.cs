@@ -109,7 +109,7 @@ namespace ERPCore2.Services
                 // 驗證分類代碼唯一性（如果有提供）
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    var isDuplicate = await IsCategoryCodeExistsAsync(entity.Code, entity.Id);
+                    var isDuplicate = await IsProductCategoryCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("分類代碼已存在");
@@ -190,7 +190,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsCategoryCodeExistsAsync(string categoryCode, int? excludeId = null)
+        public async Task<bool> IsProductCategoryCodeExistsAsync(string categoryCode, int? excludeId = null)
         {
             try
             {
@@ -204,7 +204,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCategoryCodeExistsAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductCategoryCodeExistsAsync), GetType(), _logger, new { 
                     CategoryCode = categoryCode,
                     ExcludeId = excludeId
                 });

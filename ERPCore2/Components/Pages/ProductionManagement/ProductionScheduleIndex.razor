@@ -19,7 +19,7 @@
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="生產排程"
-                        GetEntityDisplayName="@(schedule => schedule.ScheduleNumber)"
+                        GetEntityDisplayName="@(schedule => schedule.Code)"
                         RequiredPermission="ProductionSchedule.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"

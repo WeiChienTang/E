@@ -79,7 +79,7 @@ namespace ERPCore2.Services
                     .Where(d =>
                         (d.Product.Name != null && d.Product.Name.Contains(searchTerm)) ||
                         (d.Product.Barcode != null && d.Product.Barcode.Contains(searchTerm)) ||
-                        d.SalesDelivery.DeliveryNumber.Contains(searchTerm))
+                        (d.SalesDelivery.Code != null && d.SalesDelivery.Code.Contains(searchTerm)))
                     .ToListAsync();
             }
             catch (Exception ex)

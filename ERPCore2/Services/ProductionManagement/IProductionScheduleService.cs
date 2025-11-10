@@ -9,9 +9,9 @@ namespace ERPCore2.Services
     public interface IProductionScheduleService : IGenericManagementService<ProductionSchedule>
     {
         /// <summary>
-        /// 檢查排程單號是否已存在
+        /// 檢查排程代碼是否已存在
         /// </summary>
-        Task<bool> IsScheduleNumberExistsAsync(string scheduleNumber, int? excludeId = null);
+        Task<bool> IsProductionScheduleCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
         /// 根據客戶取得排程列表

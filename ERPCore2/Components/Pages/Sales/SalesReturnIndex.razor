@@ -22,7 +22,7 @@
                           DataLoader="@LoadSalesReturnsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplySalesReturnFilters"
-                          GetEntityDisplayName="@(salesReturn => salesReturn.SalesReturnNumber)"
+                          GetEntityDisplayName="@(salesReturn => salesReturn.Code)"
                           RequiredPermission="SalesReturn.Read"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
@@ -190,7 +190,7 @@
         {
             // 如果配置未初始化，回傳基本排序的查詢
             return query.OrderByDescending(sr => sr.ReturnDate)
-                       .ThenByDescending(sr => sr.SalesReturnNumber);
+                       .ThenByDescending(sr => sr.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesReturnFilters), GetType());

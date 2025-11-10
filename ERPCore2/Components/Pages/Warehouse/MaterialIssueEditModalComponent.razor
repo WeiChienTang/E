@@ -145,7 +145,7 @@
                 // 新增模式：建立新的領料單實體並生成單號
                 var newMaterialIssue = new MaterialIssue
                 {
-                    Code = await GenerateMaterialIssueCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<MaterialIssue, IMaterialIssueService>(MaterialIssueService, "MI"),
                     IssueDate = DateTime.Today,
                     Status = EntityStatus.Active,
                     MaterialIssueDetails = new List<MaterialIssueDetail>()
@@ -447,14 +447,4 @@
     // ===== 輔助方法 =====
 
     /// <summary>
-    /// 生成領料單號
-    /// </summary>
-    private async Task<string> GenerateMaterialIssueCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            MaterialIssueService,
-            "MI",
-            (service, code, excludeId) => service.IsIssueNumberExistsAsync(code, excludeId)
-        );
-    }
 }

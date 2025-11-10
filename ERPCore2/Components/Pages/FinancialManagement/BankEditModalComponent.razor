@@ -103,31 +103,12 @@
                 var newBank = new Bank
                 {
                     BankName = string.Empty,
-                    Code = await GenerateBankCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Bank, IBankService>(BankService, "BANK"),
                     Status = EntityStatus.Active
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(Bank).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newBank, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newBank, PrefilledValues);
                 
                 return newBank;
             }
@@ -255,16 +236,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateBankCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            BankService,
-            "BANK",
-            (service, code, excludeId) => service.IsBankCodeExistsAsync(code, excludeId)
-        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

@@ -153,7 +153,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>銷貨退回單 - {salesReturn.SalesReturnNumber}</title>");
+            html.AppendLine($"    <title>銷貨退回單 - {salesReturn.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
@@ -253,7 +253,7 @@ namespace ERPCore2.Services.Reports
         {
             var infoBuilder = new ReportInfoSectionBuilder();
             infoBuilder
-                .AddField("退回單號", salesReturn.SalesReturnNumber)
+                .AddField("退回單號", salesReturn.Code)
                 .AddDateField("退回日期", salesReturn.ReturnDate)
                 .AddField("客戶名稱", customer?.CompanyName)
                 .AddField("聯絡人", customer?.ContactPerson)

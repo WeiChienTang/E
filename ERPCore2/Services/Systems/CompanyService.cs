@@ -95,7 +95,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
+        public async Task<bool> IsCompanyCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
@@ -114,9 +114,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCodeExistsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCompanyCodeExistsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsCodeExistsAsync),
+                    Method = nameof(IsCompanyCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = code,
                     ExcludeId = excludeId
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查代碼是否重複（排除自己）
-                if (await IsCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                if (await IsCompanyCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                 {
                     return ServiceResult.Failure("公司代碼已存在");
                 }

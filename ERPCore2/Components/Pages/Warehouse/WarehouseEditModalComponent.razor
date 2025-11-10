@@ -103,7 +103,7 @@
             if (!WarehouseId.HasValue)
             {
                 // 新增模式 - 自動產生倉庫代碼
-                var generatedCode = await GenerateWarehouseCodeAsync();
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<Warehouse, IWarehouseService>(WarehouseService, "WH");
                 return new Warehouse
                 {
                     Code = generatedCode,
@@ -219,17 +219,5 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    /// <summary>
-    /// 生成倉庫代碼
-    /// </summary>
-    private async Task<string> GenerateWarehouseCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            WarehouseService,
-            "WH",
-            (service, code, excludeId) => service.IsWarehouseCodeExistsAsync(code, excludeId)
-        );
     }
 }

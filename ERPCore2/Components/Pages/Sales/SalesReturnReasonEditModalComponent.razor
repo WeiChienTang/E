@@ -59,30 +59,12 @@
                 var newReason = new SalesReturnReason
                 {
                     Name = string.Empty,
-                    Code = await GenerateReasonCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<SalesReturnReason, ISalesReturnReasonService>(SalesReturnReasonService, "RR"),
                     Status = EntityStatus.Active
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(SalesReturnReason).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newReason, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換錯誤
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newReason, PrefilledValues);
                 
                 return newReason;
             }
@@ -153,23 +135,6 @@
             { nameof(SalesReturnReason.Name), "基本資訊" },
             { nameof(SalesReturnReason.Remarks), "額外資料" }
         };
-    }
-
-    private async Task<string> GenerateReasonCodeAsync()
-    {
-        try
-        {
-            return await CodeGenerationHelper.GenerateEntityCodeAsync(
-                SalesReturnReasonService,
-                "RR",
-                (service, code, excludeId) => service.IsSalesReturnReasonCodeExistsAsync(code, excludeId)
-            );
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GenerateReasonCodeAsync), GetType(), additionalData: "生成退貨原因代碼失敗");
-            return "RR001"; // 預設值
-        }
     }
 
     private async Task HandleSaveSuccess()

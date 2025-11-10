@@ -30,7 +30,7 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseReceiving)
                     .AsQueryable()
                     .OrderByDescending(pr => pr.ReturnDate)
-                    .ThenBy(pr => pr.PurchaseReturnNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -117,7 +117,7 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.SupplierId == supplierId)
                     .OrderByDescending(pr => pr.ReturnDate)
-                    .ThenBy(pr => pr.PurchaseReturnNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -141,7 +141,7 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.ReturnDate >= startDate && pr.ReturnDate <= endDate)
                     .OrderByDescending(pr => pr.ReturnDate)
-                    .ThenBy(pr => pr.PurchaseReturnNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -166,7 +166,7 @@ namespace ERPCore2.Services
                     .Include(pr => pr.PurchaseReceiving)
                     .Where(pr => pr.PurchaseReceivingId == purchaseReceivingId)
                     .OrderByDescending(pr => pr.ReturnDate)
-                    .ThenBy(pr => pr.PurchaseReturnNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -221,7 +221,7 @@ namespace ERPCore2.Services
                 // 單據編號關鍵字搜尋
                 if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
                 {
-                    query = query.Where(pr => pr.PurchaseReturnNumber.Contains(criteria.DocumentNumberKeyword));
+                    query = query.Where(pr => pr.Code != null && pr.Code.Contains(criteria.DocumentNumberKeyword));
                 }
 
                 // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
@@ -229,10 +229,10 @@ namespace ERPCore2.Services
                 query = criteria.SortDirection == Models.SortDirection.Ascending
                     ? query.OrderBy(pr => pr.Supplier.CompanyName)
                            .ThenBy(pr => pr.ReturnDate)
-                           .ThenBy(pr => pr.PurchaseReturnNumber)
+                           .ThenBy(pr => pr.Code)
                     : query.OrderBy(pr => pr.Supplier.CompanyName)
                            .ThenByDescending(pr => pr.ReturnDate)
-                           .ThenBy(pr => pr.PurchaseReturnNumber);
+                           .ThenBy(pr => pr.Code);
 
                 // 限制最大筆數
                 if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
@@ -264,12 +264,15 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsPurchaseReturnNumberExistsAsync(string purchaseReturnNumber, int? excludeId = null)
+        /// <summary>
+        /// 檢查退回代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        public async Task<bool> IsPurchaseReturnCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.PurchaseReturns.Where(pr => pr.PurchaseReturnNumber == purchaseReturnNumber);
+                var query = context.PurchaseReturns.Where(pr => pr.Code == code);
                 
                 if (excludeId.HasValue)
                 {
@@ -280,10 +283,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPurchaseReturnNumberExistsAsync), GetType(), _logger, new { 
-                    Method = nameof(IsPurchaseReturnNumberExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPurchaseReturnCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsPurchaseReturnCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    PurchaseReturnNumber = purchaseReturnNumber,
+                    Code = code,
                     ExcludeId = excludeId
                 });
                 return false;
@@ -298,11 +301,11 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceiving)
-                    .Where(pr => (pr.PurchaseReturnNumber.Contains(searchTerm) ||
+                    .Where(pr => (pr.Code != null && pr.Code.Contains(searchTerm)) ||
                          (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
-                         (pr.PurchaseReceiving != null && pr.PurchaseReceiving.ReceiptNumber.Contains(searchTerm))))
+                         (pr.PurchaseReceiving != null && pr.PurchaseReceiving.Code != null && pr.PurchaseReceiving.Code.Contains(searchTerm)))
                     .OrderByDescending(pr => pr.ReturnDate)
-                    .ThenBy(pr => pr.PurchaseReturnNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -323,7 +326,7 @@ namespace ERPCore2.Services
             try
             {
                 // 檢查退回單號是否已存在
-                if (await IsPurchaseReturnNumberExistsAsync(entity.PurchaseReturnNumber, entity.Id > 0 ? entity.Id : null))
+                if (await IsPurchaseReturnCodeExistsAsync(entity.Code ?? string.Empty, entity.Id > 0 ? entity.Id : null))
                 {
                     result.IsSuccess = false;
                     result.ErrorMessage = "退回單號已存在";
@@ -461,7 +464,7 @@ namespace ERPCore2.Services
 
                     var purchaseReturn = new PurchaseReturn
                     {
-                        PurchaseReturnNumber = await GenerateReturnNumberAsync(context),
+                        Code = await GenerateReturnNumberAsync(context),
                         SupplierId = purchaseReceiving.SupplierId,
                         PurchaseReceivingId = purchaseReceivingId,
                         ReturnDate = DateTime.Today,
@@ -568,16 +571,16 @@ namespace ERPCore2.Services
                 var prefix = $"RT{today:yyyyMMdd}";
                 
                 var lastReturn = await context.PurchaseReturns
-                    .Where(pr => pr.PurchaseReturnNumber.StartsWith(prefix))
-                    .OrderByDescending(pr => pr.PurchaseReturnNumber)
+                    .Where(pr => pr.Code != null && pr.Code.StartsWith(prefix))
+                    .OrderByDescending(pr => pr.Code)
                     .FirstOrDefaultAsync();
 
-                if (lastReturn == null)
+                if (lastReturn == null || lastReturn.Code == null)
                 {
                     return $"{prefix}001";
                 }
 
-                var lastNumber = lastReturn.PurchaseReturnNumber.Substring(prefix.Length);
+                var lastNumber = lastReturn.Code.Substring(prefix.Length);
                 if (int.TryParse(lastNumber, out int number))
                 {
                     return $"{prefix}{(number + 1):D3}";
@@ -697,13 +700,13 @@ namespace ERPCore2.Services
                             if (quantityDiff > 0)
                             {
                                 // 退貨數量增加，需要減少庫存
-                                operationDescription = $"採購退貨增量 - {savedEntity.PurchaseReturnNumber} (商品ID: {detail.ProductId})";
+                                operationDescription = $"採購退貨增量 - {savedEntity.Code} (商品ID: {detail.ProductId})";
                                 stockResult = await _inventoryStockService.ReduceStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
                                     quantityDiff,
                                     InventoryTransactionTypeEnum.Return,
-                                    savedEntity.PurchaseReturnNumber,
+                                    savedEntity.Code ?? string.Empty,
                                     detail.WarehouseLocationId,
                                     operationDescription
                                 );
@@ -714,13 +717,13 @@ namespace ERPCore2.Services
                             else
                             {
                                 // 退貨數量減少，需要增加庫存 (撤銷部分退貨)
-                                operationDescription = $"採購退貨撤銷 - {savedEntity.PurchaseReturnNumber} (商品ID: {detail.ProductId})";
+                                operationDescription = $"採購退貨撤銷 - {savedEntity.Code} (商品ID: {detail.ProductId})";
                                 stockResult = await _inventoryStockService.AddStockAsync(
                                     detail.ProductId,
                                     warehouseId.Value,
                                     Math.Abs(quantityDiff),
                                     InventoryTransactionTypeEnum.Return,
-                                    savedEntity.PurchaseReturnNumber,
+                                    savedEntity.Code ?? string.Empty,
                                     detail.OriginalUnitPrice,
                                     detail.WarehouseLocationId,
                                     operationDescription
@@ -982,7 +985,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(
                     ex, nameof(CanDeleteAsync), GetType(), _logger,
-                    new { EntityId = entity.Id, PurchaseReturnNumber = entity.PurchaseReturnNumber }
+                    new { EntityId = entity.Id, PurchaseReturnNumber = entity.Code }
                 );
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
@@ -1012,7 +1015,7 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到要刪除的退貨單");
                     }
                     
-                    _logger?.LogInformation("開始刪除退貨單: {ReturnNumber}, ID: {Id}", entity.PurchaseReturnNumber, entity.Id);
+                    _logger?.LogInformation("開始刪除退貨單: {ReturnNumber}, ID: {Id}", entity.Code, entity.Id);
                     
                     // 2. 檢查是否可以刪除
                     var canDeleteResult = await CanDeleteAsync(entity);
@@ -1064,10 +1067,10 @@ namespace ERPCore2.Services
                                 warehouseId.Value,
                                 detail.ReturnQuantity, // 回復退貨的數量
                                 InventoryTransactionTypeEnum.Return,
-                                $"{entity.PurchaseReturnNumber}_DEL", // 標記為刪除操作
+                                $"{entity.Code}_DEL", // 標記為刪除操作
                                 detail.OriginalUnitPrice, // 使用原始單價
                                 detail.WarehouseLocationId,
-                                $"刪除採購退貨單回復庫存 - {entity.PurchaseReturnNumber}"
+                                $"刪除採購退貨單回復庫存 - {entity.Code}"
                             );
 
                             if (!addResult.IsSuccess)
@@ -1088,7 +1091,7 @@ namespace ERPCore2.Services
                     
                     await transaction.CommitAsync();
                     
-                    _logger?.LogInformation("成功刪除退貨單: {ReturnNumber}", entity.PurchaseReturnNumber);
+                    _logger?.LogInformation("成功刪除退貨單: {ReturnNumber}", entity.Code);
                     return ServiceResult.Success();
                 }
                 catch

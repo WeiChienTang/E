@@ -48,7 +48,7 @@ namespace ERPCore2.Services
                         .ThenInclude(srd => srd.Product)
                     .AsQueryable()
                     .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
+                    .ThenBy(sr => sr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -105,10 +105,10 @@ namespace ERPCore2.Services
                     .Include(sr => sr.SalesOrder)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
-                    .Where(sr => (sr.SalesReturnNumber.ToLower().Contains(lowerSearchTerm) ||
+                    .Where(sr => ((sr.Code != null && sr.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (sr.Customer != null && sr.Customer.CompanyName != null && sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm))))
                     .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
+                    .ThenBy(sr => sr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -129,7 +129,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.SalesReturnNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("退回單號不能為空");
 
                 if (entity.ReturnDate == default)
@@ -141,8 +141,8 @@ namespace ERPCore2.Services
                 if (entity.CustomerId <= 0)
                     errors.Add("必須選擇客戶");
 
-                if (!string.IsNullOrWhiteSpace(entity.SalesReturnNumber) &&
-                    await IsSalesReturnNumberExistsAsync(entity.SalesReturnNumber, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsSalesReturnCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("退回單號已存在");
 
                 if (entity.TotalReturnAmount < 0)
@@ -163,7 +163,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    EntityNumber = entity.SalesReturnNumber
+                    EntityNumber = entity.Code
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -220,18 +220,21 @@ namespace ERPCore2.Services
                     Method = nameof(CanDeleteAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    EntityNumber = entity.SalesReturnNumber
+                    EntityNumber = entity.Code
                 });
                 return ServiceResult.Failure("檢查刪除權限時發生錯誤");
             }
         }
 
-        public async Task<bool> IsSalesReturnNumberExistsAsync(string salesReturnNumber, int? excludeId = null)
+        /// <summary>
+        /// 檢查銷貨退回代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        public async Task<bool> IsSalesReturnCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesReturns.Where(sr => sr.SalesReturnNumber == salesReturnNumber);
+                var query = context.SalesReturns.Where(sr => sr.Code == code);
                 if (excludeId.HasValue)
                     query = query.Where(sr => sr.Id != excludeId.Value);
 
@@ -239,11 +242,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSalesReturnNumberExistsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSalesReturnCodeExistsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsSalesReturnNumberExistsAsync),
+                    Method = nameof(IsSalesReturnCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    SalesReturnNumber = salesReturnNumber,
+                    Code = code,
                     ExcludeId = excludeId
                 });
                 return false;
@@ -262,7 +265,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.CustomerId == customerId)
                     .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
+                    .ThenBy(sr => sr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -289,7 +292,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.SalesOrderId == salesOrderId)
                     .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
+                    .ThenBy(sr => sr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -318,7 +321,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate)
                     .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenBy(sr => sr.SalesReturnNumber)
+                    .ThenBy(sr => sr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -363,9 +366,9 @@ namespace ERPCore2.Services
                 var prefix = $"SR{returnDate:yyyyMM}";
                 
                 var lastNumber = await context.SalesReturns
-                    .Where(sr => sr.SalesReturnNumber.StartsWith(prefix))
-                    .OrderByDescending(sr => sr.SalesReturnNumber)
-                    .Select(sr => sr.SalesReturnNumber)
+                    .Where(sr => sr.Code != null && sr.Code.StartsWith(prefix))
+                    .OrderByDescending(sr => sr.Code)
+                    .Select(sr => sr.Code)
                     .FirstOrDefaultAsync();
 
                 if (string.IsNullOrEmpty(lastNumber))
@@ -500,7 +503,7 @@ namespace ERPCore2.Services
                 // 篩選條件 5: 單據編號關鍵字搜尋
                 if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
                 {
-                    query = query.Where(sr => sr.SalesReturnNumber.Contains(criteria.DocumentNumberKeyword));
+                    query = query.Where(sr => sr.Code != null && sr.Code.Contains(criteria.DocumentNumberKeyword));
                 }
 
                 // 篩選條件 6: 是否包含已刪除的單據
@@ -512,7 +515,7 @@ namespace ERPCore2.Services
                 // 排序（按退回日期降序，再按單號）
                 query = query
                     .OrderByDescending(sr => sr.ReturnDate)
-                    .ThenByDescending(sr => sr.SalesReturnNumber);
+                    .ThenByDescending(sr => sr.Code);
 
                 // 限制結果數量（避免一次載入過多資料）
                 if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
@@ -648,10 +651,10 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     (int)Math.Ceiling(quantityDiff), // 轉為整數，向上取整
                                     InventoryTransactionTypeEnum.Return,
-                                    savedEntity.SalesReturnNumber,
+                                    savedEntity.Code ?? string.Empty,
                                     detail.OriginalUnitPrice, // 使用原始單價
                                     null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
-                                    $"銷貨退回增量 - {savedEntity.SalesReturnNumber}"
+                                    $"銷貨退回增量 - {savedEntity.Code ?? string.Empty}"
                                 );
                             }
                             else
@@ -662,9 +665,9 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     (int)Math.Ceiling(Math.Abs(quantityDiff)), // 轉為正整數
                                     InventoryTransactionTypeEnum.Return,
-                                    savedEntity.SalesReturnNumber,
+                                    savedEntity.Code ?? string.Empty,
                                     null, // 倉庫位置ID
-                                    $"銷貨退回撤銷 - {savedEntity.SalesReturnNumber}"
+                                    $"銷貨退回撤銷 - {savedEntity.Code ?? string.Empty}"
                                 );
                             }
 
@@ -914,9 +917,9 @@ namespace ERPCore2.Services
                                 warehouseId.Value,
                                 (int)Math.Ceiling(detail.ReturnQuantity), // 轉為整數，向上取整
                                 InventoryTransactionTypeEnum.Return,
-                                $"{entity.SalesReturnNumber}_DEL", // 標記為刪除操作
+                                $"{entity.Code}_DEL", // 標記為刪除操作
                                 null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
-                                $"刪除銷貨退回單回滾庫存 - {entity.SalesReturnNumber}"
+                                $"刪除銷貨退回單回滾庫存 - {entity.Code}"
                             );
                             
                             if (!reduceResult.IsSuccess)

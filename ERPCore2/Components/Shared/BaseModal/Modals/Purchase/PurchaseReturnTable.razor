@@ -823,7 +823,7 @@ else
         if (detail?.Product == null || detail.PurchaseReceiving == null) return "";
         
         var product = detail.Product;
-        var receiptNumber = detail.PurchaseReceiving.ReceiptNumber ?? "N/A";
+        var receiptNumber = detail.PurchaseReceiving.Code ?? "N/A";
         
         var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
             ? $"[{product.Code}] {product.Name}"
@@ -1089,8 +1089,8 @@ else
         /// 取得顯示用的商品名稱（包含進貨單號）
         /// </summary>
         public string DisplayName => 
-            SelectedReceivingDetail?.Product != null && !string.IsNullOrEmpty(SelectedReceivingDetail.PurchaseReceiving?.ReceiptNumber)
-                ? $"[{SelectedReceivingDetail.PurchaseReceiving.ReceiptNumber}] [{SelectedReceivingDetail.Product.Code}] {SelectedReceivingDetail.Product.Name}"
+            SelectedReceivingDetail?.Product != null && !string.IsNullOrEmpty(SelectedReceivingDetail.PurchaseReceiving?.Code)
+                ? $"[{SelectedReceivingDetail.PurchaseReceiving.Code}] [{SelectedReceivingDetail.Product.Code}] {SelectedReceivingDetail.Product.Name}"
                 : SelectedProduct != null 
                     ? $"[{SelectedProduct.Code}] {SelectedProduct.Name}" 
                     : "";

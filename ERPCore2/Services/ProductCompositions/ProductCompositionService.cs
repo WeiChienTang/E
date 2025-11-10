@@ -155,6 +155,34 @@ namespace ERPCore2.Services
 
         #region IProductCompositionService 實作
 
+        public async Task<bool> IsProductCompositionCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.ProductCompositions.Where(pc => pc.Code == code);
+
+                if (excludeId.HasValue)
+                    query = query.Where(pc => pc.Id != excludeId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductCompositionCodeExistsAsync), GetType(), _logger, new
+                {
+                    Method = nameof(IsProductCompositionCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    Code = code,
+                    ExcludeId = excludeId
+                });
+                return false;
+            }
+        }
+
         public async Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId)
         {
             try

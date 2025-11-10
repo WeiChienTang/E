@@ -457,7 +457,7 @@
                 // 新增模式
                 var newReceiving = new PurchaseReceiving
                 {
-                    ReceiptNumber = await GenerateReceiptNumberAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReceiving, IPurchaseReceivingService>(PurchaseReceivingService, "RCV"),
                     ReceiptDate = DateTime.Now,
                     SupplierId = PrefilledSupplierId ?? 0,
                     PurchaseOrderId = PrefilledPurchaseOrderId
@@ -658,7 +658,7 @@
                     options.AddRange(filteredPurchaseOrders.Select(po => new SelectOption
                     {
                         Value = po.Id.ToString(),
-                        Text = po.PurchaseOrderNumber
+                        Text = po.Code ?? string.Empty
                     }));
                 }
                 // 如果沒有選擇廠商或選擇了無效的廠商，只顯示"請選擇..."選項
@@ -715,7 +715,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(PurchaseReceiving.ReceiptNumber),
+                    PropertyName = nameof(PurchaseReceiving.Code),
                     Label = "進貨單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "系統自動產生",
@@ -801,7 +801,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(PurchaseReceiving.ReceiptNumber), "基本資訊" },
+                { nameof(PurchaseReceiving.Code), "基本資訊" },
                 { nameof(PurchaseReceiving.SupplierId), "基本資訊" },
                 { "FilterProductId", "基本資訊" },
                 { nameof(PurchaseReceiving.PurchaseOrderId), "基本資訊" },
@@ -952,17 +952,6 @@
     }
 
     /// <summary>
-    /// 生成進貨單號
-    /// </summary>
-    private async Task<string> GenerateReceiptNumberAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            PurchaseReceivingService,
-            "RCV",
-            (service, code, excludeId) => service.IsReceiptNumberExistsAsync(code, excludeId)
-        );
-    }
-
     // ===== 進貨明細管理方法 =====
     
     /// <summary>
@@ -1390,7 +1379,7 @@
                     {
                         // 新增模式：只在第一次新增時使用確認流程，避免重複更新庫存
                         // 檢查是否已經有庫存交易記錄，避免重複確認
-                        var hasExistingTransactions = await HasExistingInventoryTransactions(purchaseReceiving.ReceiptNumber);
+                        var hasExistingTransactions = await HasExistingInventoryTransactions(purchaseReceiving.Code ?? string.Empty);
                         
                         if (!hasExistingTransactions)
                         {

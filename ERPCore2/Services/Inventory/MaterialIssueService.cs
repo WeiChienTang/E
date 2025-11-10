@@ -354,7 +354,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 檢查單號唯一性
-                    var isDuplicate = await IsIssueNumberExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id);
+                    var isDuplicate = await IsMaterialIssueCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("領貨單號已存在");
@@ -395,6 +395,34 @@ namespace ERPCore2.Services
 
         #region 業務邏輯方法
 
+        public async Task<bool> IsMaterialIssueCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return false;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.MaterialIssues.Where(mi => mi.Code == code);
+
+                if (excludeId.HasValue)
+                    query = query.Where(mi => mi.Id != excludeId.Value);
+
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsMaterialIssueCodeExistsAsync), GetType(), _logger, new
+                {
+                    Method = nameof(IsMaterialIssueCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    Code = code,
+                    ExcludeId = excludeId
+                });
+                return false;
+            }
+        }
+
         public async Task<string> GenerateIssueNumberAsync()
         {
             try
@@ -433,31 +461,6 @@ namespace ERPCore2.Services
                 });
                 // 發生錯誤時返回預設單號
                 return $"MI{DateTime.Now:yyyyMMddHHmmss}";
-            }
-        }
-
-        public async Task<bool> IsIssueNumberExistsAsync(string issueNumber, int? excludeId = null)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.MaterialIssues.Where(mi => mi.Code == issueNumber);
-
-                if (excludeId.HasValue)
-                    query = query.Where(mi => mi.Id != excludeId.Value);
-
-                return await query.AnyAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsIssueNumberExistsAsync), GetType(), _logger, new
-                {
-                    Method = nameof(IsIssueNumberExistsAsync),
-                    ServiceType = GetType().Name,
-                    IssueNumber = issueNumber,
-                    ExcludeId = excludeId
-                });
-                return false;
             }
         }
 

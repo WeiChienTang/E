@@ -26,7 +26,7 @@ namespace ERPCore2.Services
         /// <param name="code">公司代碼</param>
         /// <param name="excludeId">排除的ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
-        Task<bool> IsCodeExistsAsync(string code, int? excludeId = null);
+        Task<bool> IsCompanyCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
         /// 取得所有啟用的公司

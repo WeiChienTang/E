@@ -120,7 +120,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => (
-                        d.PurchaseReceiving.ReceiptNumber.Contains(searchTerm) ||
+                        (d.PurchaseReceiving.Code != null && d.PurchaseReceiving.Code.Contains(searchTerm)) ||
                         d.Product.Name.Contains(searchTerm) ||
                         (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
                         d.Warehouse.Name.Contains(searchTerm) ||
@@ -679,7 +679,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Product)
                     .Include(t => t.Warehouse)
                     .Include(t => t.WarehouseLocation)
-                    .Where(t => (t.Remarks != null && t.Remarks.Contains(detail.PurchaseReceiving.ReceiptNumber)) &&
+                    .Where(t => (t.Remarks != null && detail.PurchaseReceiving.Code != null && t.Remarks.Contains(detail.PurchaseReceiving.Code)) &&
                                t.ProductId == detail.ProductId)
                     .OrderByDescending(t => t.CreatedAt)
                     .ToListAsync();

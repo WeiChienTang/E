@@ -23,7 +23,7 @@
                           DataLoader="@LoadPurchaseReturnsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyPurchaseReturnFilters"
-                          GetEntityDisplayName="@(returnItem => returnItem.PurchaseReturnNumber)"
+                          GetEntityDisplayName="@(returnItem => returnItem.Code)"
                           RequiredPermission="PurchaseReturn.Read"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
@@ -220,7 +220,7 @@
         {
             // 如果配置未初始化，回傳基本排序的查詢
             return query.OrderByDescending(pr => pr.ReturnDate)
-                       .ThenByDescending(pr => pr.PurchaseReturnNumber);
+                       .ThenByDescending(pr => pr.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReturnFilters), GetType());

@@ -101,11 +101,11 @@ namespace ERPCore2.Services
                     .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
-                    .Where(po => (po.PurchaseOrderNumber.Contains(searchTerm) ||
-                                po.Supplier.CompanyName.Contains(searchTerm) ||
-                                po.Company != null && po.Company.CompanyName.Contains(searchTerm) ||
-                                po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm) ||
-                                po.Remarks != null && po.Remarks.Contains(searchTerm)))
+                    .Where(po => ((po.Code != null && po.Code.Contains(searchTerm)) ||
+                                (po.Supplier != null && po.Supplier.CompanyName.Contains(searchTerm)) ||
+                                (po.Company != null && po.Company.CompanyName.Contains(searchTerm)) ||
+                                (po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm)) ||
+                                (po.Remarks != null && po.Remarks.Contains(searchTerm))))
                     .OrderByDescending(po => po.OrderDate)
                     .ToListAsync();
             }
@@ -126,7 +126,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
                 
-                if (string.IsNullOrWhiteSpace(entity.PurchaseOrderNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("採購單號不能為空");
                 
                 if (entity.SupplierId <= 0)
@@ -142,11 +142,11 @@ namespace ERPCore2.Services
                     errors.Add("預計到貨日期不能早於訂單日期");
                 
                 // 檢查採購單號是否重複
-                if (!string.IsNullOrWhiteSpace(entity.PurchaseOrderNumber))
+                if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var exists = await context.PurchaseOrders
-                        .AnyAsync(po => po.PurchaseOrderNumber == entity.PurchaseOrderNumber && 
+                        .AnyAsync(po => po.Code == entity.Code && 
                                        po.Id != entity.Id);
                     if (exists)
                         errors.Add("採購單號已存在");
@@ -163,7 +163,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    OrderNumber = entity.PurchaseOrderNumber 
+                    OrderNumber = entity.Code 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -231,7 +231,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     // 移除 PurchaseOrderDetails Include - 如需要明細資料應透過 DetailService 取得
-                    .FirstOrDefaultAsync(po => po.PurchaseOrderNumber == purchaseOrderNumber);
+                    .FirstOrDefaultAsync(po => po.Code == purchaseOrderNumber);
             }
             catch (Exception ex)
             {
@@ -321,7 +321,7 @@ namespace ERPCore2.Services
                 // 單據編號關鍵字搜尋
                 if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
                 {
-                    query = query.Where(po => po.PurchaseOrderNumber.Contains(criteria.DocumentNumberKeyword));
+                    query = query.Where(po => po.Code != null && po.Code.Contains(criteria.DocumentNumberKeyword));
                 }
 
                 // 是否包含已駁回的單據（預設不包含）
@@ -335,10 +335,10 @@ namespace ERPCore2.Services
                 query = criteria.SortDirection == SortDirection.Ascending
                     ? query.OrderBy(po => po.Supplier.CompanyName)
                            .ThenBy(po => po.OrderDate)
-                           .ThenBy(po => po.PurchaseOrderNumber)
+                           .ThenBy(po => po.Code)
                     : query.OrderBy(po => po.Supplier.CompanyName)
                            .ThenByDescending(po => po.OrderDate)
-                           .ThenBy(po => po.PurchaseOrderNumber);
+                           .ThenBy(po => po.Code);
 
                 // 限制最大筆數
                 if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)
@@ -778,16 +778,16 @@ namespace ERPCore2.Services
                 var prefix = $"PO{today:yyyyMMdd}";
                 
                 var lastOrder = await context.PurchaseOrders
-                    .Where(po => po.PurchaseOrderNumber.StartsWith(prefix))
-                    .OrderByDescending(po => po.PurchaseOrderNumber)
+                    .Where(po => po.Code != null && po.Code.StartsWith(prefix))
+                    .OrderByDescending(po => po.Code)
                     .FirstOrDefaultAsync();
                 
-                if (lastOrder == null)
+                if (lastOrder == null || lastOrder.Code == null)
                 {
                     return $"{prefix}001";
                 }
                 
-                var lastNumber = lastOrder.PurchaseOrderNumber.Substring(prefix.Length);
+                var lastNumber = lastOrder.Code.Substring(prefix.Length);
                 if (int.TryParse(lastNumber, out var number))
                 {
                     return $"{prefix}{(number + 1):D3}";
@@ -802,6 +802,38 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name 
                 });
                 return $"PO{DateTime.Today:yyyyMMdd}001";
+            }
+        }
+
+        /// <summary>
+        /// 檢查採購單代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        /// <param name="code">採購單代碼</param>
+        /// <param name="excludeId">排除的ID（用於編輯模式）</param>
+        /// <returns>是否存在</returns>
+        public async Task<bool> IsPurchaseOrderCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.PurchaseOrders.Where(po => po.Code == code);
+                
+                if (excludeId.HasValue)
+                {
+                    query = query.Where(po => po.Id != excludeId.Value);
+                }
+                
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPurchaseOrderCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsPurchaseOrderCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    Code = code,
+                    ExcludeId = excludeId
+                });
+                return false;
             }
         }
 
@@ -987,7 +1019,7 @@ namespace ERPCore2.Services
                     query = query.Where(pod => !pod.IsReceivingCompleted && pod.ReceivedQuantity < pod.OrderQuantity);
                 }
 
-                return await query.OrderBy(pod => pod.PurchaseOrder.PurchaseOrderNumber)
+                return await query.OrderBy(pod => pod.PurchaseOrder.Code)
                                 .ThenBy(pod => pod.Product.Name)
                                 .ToListAsync();
             }
@@ -1022,7 +1054,7 @@ namespace ERPCore2.Services
                                 && po.IsApproved
                                 && po.PurchaseOrderDetails.Any(pod => pod.ReceivedQuantity < pod.OrderQuantity))
                     .OrderBy(po => po.ExpectedDeliveryDate)
-                    .ThenBy(po => po.PurchaseOrderNumber)
+                    .ThenBy(po => po.Code)
                     .ToListAsync();
             }
             catch (Exception ex)

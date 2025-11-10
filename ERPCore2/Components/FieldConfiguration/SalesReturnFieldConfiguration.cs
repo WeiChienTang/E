@@ -40,16 +40,16 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<SalesReturn>>
                 {
                     {
-                        nameof(SalesReturn.SalesReturnNumber),
+                        nameof(SalesReturn.Code),
                         new FieldDefinition<SalesReturn>
                         {
-                            PropertyName = nameof(SalesReturn.SalesReturnNumber),
+                            PropertyName = nameof(SalesReturn.Code),
                             DisplayName = "退貨單號",
                             FilterPlaceholder = "輸入退貨單號搜尋",
                             TableOrder = 1,
                             HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SalesReturn.SalesReturnNumber), sr => sr.SalesReturnNumber)
+                                model, query, nameof(SalesReturn.Code), sr => sr.Code)
                         }
                     },
                     {
@@ -145,7 +145,7 @@ namespace ERPCore2.FieldConfiguration
         protected override Func<IQueryable<SalesReturn>, IQueryable<SalesReturn>> GetDefaultSort()
         {
             return q => q.OrderByDescending(sr => sr.ReturnDate)
-                         .ThenByDescending(sr => sr.SalesReturnNumber);
+                         .ThenByDescending(sr => sr.Code);
         }
     }
 }

@@ -8,15 +8,10 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 銷貨訂單主檔實體 - 記錄銷貨訂單基本資訊
     /// </summary>
-    [Index(nameof(SalesOrderNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(OrderDate))]
     public class SalesOrder : BaseEntity
     {
-        [Required(ErrorMessage = "銷貨單號為必填")]
-        [MaxLength(30, ErrorMessage = "銷貨單號不可超過30個字元")]
-        [Display(Name = "銷貨單號")]
-        public string SalesOrderNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "訂單日期為必填")]
         [Display(Name = "訂單日期")]
         public DateTime OrderDate { get; set; } = DateTime.Today;

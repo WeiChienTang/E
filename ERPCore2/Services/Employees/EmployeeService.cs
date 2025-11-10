@@ -146,13 +146,13 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查帳號是否已存在
         /// </summary>
-        public async Task<ServiceResult<bool>> IsAccountExistsAsync(string account, int? excludeEmployeeId = null)
+        public async Task<bool> IsAccountExistsAsync(string account, int? excludeEmployeeId = null)
         {
             try
             {
                 // 如果帳號為空白，直接回傳不存在（允許多個空白帳號）
                 if (string.IsNullOrWhiteSpace(account))
-                    return ServiceResult<bool>.Success(false);
+                    return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 // 只檢查非空白帳號的重複性
@@ -162,7 +162,7 @@ namespace ERPCore2.Services
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
 
                 var exists = await query.AnyAsync();
-                return ServiceResult<bool>.Success(exists);
+                return exists;
             }
             catch (Exception ex)
             {
@@ -172,19 +172,19 @@ namespace ERPCore2.Services
                     Account = account,
                     ExcludeEmployeeId = excludeEmployeeId
                 });
-                return ServiceResult<bool>.Failure($"檢查帳號時發生錯誤：{ex.Message}");
+                return false;
             }
         }
 
         /// <summary>
         /// 檢查員工編號是否已存在
         /// </summary>
-        public async Task<ServiceResult<bool>> IsEmployeeCodeExistsAsync(string Code, int? excludeEmployeeId = null)
+        public async Task<bool> IsEmployeeCodeExistsAsync(string Code, int? excludeEmployeeId = null)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(Code))
-                    return ServiceResult<bool>.Failure("員工編號不能為空");
+                    return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.Employees.Where(e => e.Code == Code);
@@ -193,7 +193,7 @@ namespace ERPCore2.Services
                     query = query.Where(e => e.Id != excludeEmployeeId.Value);
 
                 var exists = await query.AnyAsync();
-                return ServiceResult<bool>.Success(exists);
+                return exists;
             }
             catch (Exception ex)
             {
@@ -203,7 +203,7 @@ namespace ERPCore2.Services
                     Code = Code,
                     ExcludeEmployeeId = excludeEmployeeId
                 });
-                return ServiceResult<bool>.Failure($"檢查員工編號時發生錯誤：{ex.Message}");
+                return false;
             }
         }
 

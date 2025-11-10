@@ -2210,11 +2210,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("ScheduleDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ScheduleNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<int?>("SourceDocumentId")
                         .HasColumnType("int");
 
@@ -2234,6 +2229,10 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
                     b.HasIndex("CreatedByEmployeeId");
 
                     b.HasIndex("CustomerId");
@@ -2241,9 +2240,6 @@ namespace ERPCore2.Migrations
                     b.HasIndex("SalesOrderId");
 
                     b.HasIndex("ScheduleDate");
-
-                    b.HasIndex("ScheduleNumber")
-                        .IsUnique();
 
                     b.ToTable("ProductionSchedules");
                 });
@@ -2359,11 +2355,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PurchaseOrderNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("PurchasePersonnel")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -2402,10 +2393,11 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ApprovedBy");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
-                    b.HasIndex("PurchaseOrderNumber")
-                        .IsUnique();
+                    b.HasIndex("CompanyId");
 
                     b.HasIndex("WarehouseId");
 
@@ -2523,11 +2515,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("ReceiptDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ReceiptNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -2550,8 +2537,9 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReceiptNumber")
-                        .IsUnique();
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("SupplierId");
 
@@ -2667,11 +2655,6 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("PurchaseReceivingId")
                         .HasColumnType("int");
 
-                    b.Property<string>("PurchaseReturnNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -2700,10 +2683,11 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PurchaseReceivingId");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
-                    b.HasIndex("PurchaseReturnNumber")
-                        .IsUnique();
+                    b.HasIndex("PurchaseReceivingId");
 
                     b.HasIndex("SupplierId", "ReturnDate");
 
@@ -2852,11 +2836,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("QuotationDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("QuotationNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("RejectReason")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -2882,14 +2861,15 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ApprovedBy");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("ConvertedToSalesOrderId");
 
                     b.HasIndex("EmployeeId");
-
-                    b.HasIndex("QuotationNumber")
-                        .IsUnique();
 
                     b.HasIndex("CustomerId", "QuotationDate");
 
@@ -3154,11 +3134,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("DeliveryDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DeliveryNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -3216,8 +3191,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ApprovedBy");
 
-                    b.HasIndex("DeliveryNumber")
-                        .IsUnique();
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("EmployeeId");
 
@@ -3359,11 +3335,6 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("SalesOrderNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<decimal>("SalesTaxAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -3382,10 +3353,11 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmployeeId");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
-                    b.HasIndex("SalesOrderNumber")
-                        .IsUnique();
+                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("CustomerId", "OrderDate");
 
@@ -3528,11 +3500,6 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("SalesOrderId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SalesReturnNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -3548,14 +3515,15 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("ReturnReasonId");
 
                     b.HasIndex("SalesDeliveryId");
-
-                    b.HasIndex("SalesReturnNumber")
-                        .IsUnique();
 
                     b.HasIndex("CustomerId", "ReturnDate");
 

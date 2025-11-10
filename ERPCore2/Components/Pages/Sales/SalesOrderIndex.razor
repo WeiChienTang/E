@@ -18,7 +18,7 @@
                       ColumnDefinitions="@columnDefinitions"
                       DataLoader="@LoadSalesOrdersAsync"
                       FilterApplier="@ApplySalesOrderFilters"
-                      GetEntityDisplayName="@(salesOrder => salesOrder.SalesOrderNumber)"
+                      GetEntityDisplayName="@(salesOrder => salesOrder.Code)"
                       RequiredPermission="SalesOrder.Read"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"

@@ -1,5 +1,4 @@
 @* 銷售退貨編輯模態組件 *@
-@using ERPCore2.Helpers.EditModal
 @inject ISalesReturnService SalesReturnService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject ISalesOrderService SalesOrderService
@@ -361,7 +360,7 @@
                 // 新增模式：建立新的退貨單並生成退貨單號
                 var newSalesReturn = new SalesReturn
                 {
-                    SalesReturnNumber = await GenerateReturnNumberAsync(),
+                    Code = await GenerateReturnNumberAsync(),
                     ReturnDate = DateTime.Today,
                     TotalReturnAmount = 0,
                     ReturnReasonId = null // 預設為 null，選擇性填寫
@@ -596,7 +595,7 @@
             {
                 salesOrderField.Options = filteredSalesOrders.Select(so => new SelectOption
                 {
-                    Text = so.SalesOrderNumber,
+                    Text = so.Code ?? string.Empty,
                     Value = so.Id.ToString()
                 }).ToList();
                 
@@ -644,7 +643,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(SalesReturn.SalesReturnNumber),
+                    PropertyName = nameof(SalesReturn.Code),
                     Label = "退貨單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "系統自動產生",
@@ -748,7 +747,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(SalesReturn.SalesReturnNumber), "基本資訊" },
+                { nameof(SalesReturn.Code), "基本資訊" },
                 { nameof(SalesReturn.CustomerId), "基本資訊" },
                 { "FilterProductId", "基本資訊" },
                 { nameof(SalesReturn.SalesOrderId), "基本資訊" },

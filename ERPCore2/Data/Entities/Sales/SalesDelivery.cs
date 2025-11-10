@@ -9,16 +9,11 @@ namespace ERPCore2.Data.Entities
     /// 流程: 報價單 → 銷售訂單 → 出貨單 (本檔) → 銷貨退回
     /// 職責: 管理實際出貨、影響庫存減少、產生應收帳款
     /// </summary>
-    [Index(nameof(DeliveryNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(DeliveryDate))]
     [Index(nameof(SalesOrderId), nameof(DeliveryDate))]
     public class SalesDelivery : BaseEntity
     {
-        [Required(ErrorMessage = "出貨單號為必填")]
-        [MaxLength(30, ErrorMessage = "出貨單號不可超過30個字元")]
-        [Display(Name = "出貨單號")]
-        public string DeliveryNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "出貨日期為必填")]
         [Display(Name = "出貨日期")]
         public DateTime DeliveryDate { get; set; } = DateTime.Today;

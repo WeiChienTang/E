@@ -33,17 +33,17 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<SalesOrder>>
                 {
                     {
-                        nameof(SalesOrder.SalesOrderNumber),
+                        nameof(SalesOrder.Code),
                         new FieldDefinition<SalesOrder>
                         {
-                            PropertyName = nameof(SalesOrder.SalesOrderNumber),
+                            PropertyName = nameof(SalesOrder.Code),
                             DisplayName = "銷貨單號",
                             FilterPlaceholder = "輸入銷貨單號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SalesOrder.SalesOrderNumber), so => so.SalesOrderNumber)
+                                model, query, nameof(SalesOrder.Code), so => so.Code)
                         }
                     },
 

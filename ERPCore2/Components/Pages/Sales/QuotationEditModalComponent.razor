@@ -14,10 +14,6 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@using System.ComponentModel.DataAnnotations
-@using System.Reflection
-
-@using ERPCore2.Components.Shared.SubCollections
 
 <GenericEditModalComponent TEntity="Quotation" 
                           TService="IQuotationService"
@@ -285,7 +281,7 @@
                 // 新增模式
                 var newQuotation = new Quotation
                 {
-                    QuotationNumber = await GenerateQuotationNumberAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Quotation, IQuotationService>(QuotationService, "QT"),
                     QuotationDate = DateTime.Today,
                     Status = EntityStatus.Active
                 };
@@ -424,7 +420,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(Quotation.QuotationNumber),
+                    PropertyName = nameof(Quotation.Code),
                     Label = "報價單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入報價單號",
@@ -539,7 +535,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(Quotation.QuotationNumber), "基本資訊" },
+                { nameof(Quotation.Code), "基本資訊" },
                 { nameof(Quotation.CustomerId), "基本資訊" },
                 { nameof(Quotation.CompanyId), "基本資訊" },
                 { nameof(Quotation.EmployeeId), "基本資訊" },
@@ -1000,7 +996,7 @@
         // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
         var fieldsToLock = new[]
         {
-            nameof(Quotation.QuotationNumber),
+            nameof(Quotation.Code),
             nameof(Quotation.QuotationDate),
             nameof(Quotation.PaymentTerms),
             nameof(Quotation.DeliveryTerms),
@@ -1112,18 +1108,6 @@
         {
             await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
-    }
-
-    /// <summary>
-    /// 生成報價單號
-    /// </summary>
-    private async Task<string> GenerateQuotationNumberAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            QuotationService,
-            "QT",
-            (service, code, excludeId) => service.IsQuotationNumberExistsAsync(code, excludeId)
-        );
     }
 
     /// <summary>
@@ -1305,7 +1289,7 @@
                 }
             );
 
-            await NotificationService.ShowSuccessAsync($"已成功從報價單轉為銷貨訂單（訂單編號：{savedSalesOrder.SalesOrderNumber}）");
+            await NotificationService.ShowSuccessAsync($"已成功從報價單轉為銷貨訂單（訂單編號：{savedSalesOrder.Code}）");
         }
         catch (Exception ex)
         {
@@ -1342,17 +1326,7 @@
         }
     }
 
-    /// <summary>
-    /// 生成銷貨訂單號
-    /// </summary>
-    private async Task<string> GenerateSalesOrderNumberAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            SalesOrderService,
-            "SO",
-            (service, code, excludeId) => service.IsSalesOrderNumberExistsAsync(code, excludeId)
-        );
-    }
+
     
     // ===== 審核相關方法 =====
     

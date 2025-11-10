@@ -59,31 +59,12 @@
                 var newProductCategory = new ProductCategory
                 {
                     Name = string.Empty,
-                    Code = await GenerateProductCategoryCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductCategory, IProductCategoryService>(ProductCategoryService, "PCAT"),
                     Status = EntityStatus.Active
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(ProductCategory).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newProductCategory, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newProductCategory, PrefilledValues);
                 
                 return newProductCategory;
             }
@@ -217,15 +198,5 @@
     private async Task CloseModal()
     {
         await IsVisibleChanged.InvokeAsync(false);
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateProductCategoryCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            ProductCategoryService,
-            "PCAT",
-            (service, code, excludeId) => service.IsCategoryCodeExistsAsync(code, excludeId)
-        );
     }
 }

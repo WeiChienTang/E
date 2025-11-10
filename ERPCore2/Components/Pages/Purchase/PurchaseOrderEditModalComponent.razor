@@ -299,8 +299,8 @@
         {
             if (!PurchaseOrderId.HasValue)
             {
-                // 新增模式 - 自動產生採購單號並設定預設公司
-                var generatedCode = await GeneratePurchaseOrderNumberAsync();
+                // 新增模式 - 使用統一的 EntityCodeGenerationHelper 產生採購單號
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseOrder, IPurchaseOrderService>(PurchaseOrderService, "PO");
                 
                 // 取得預設公司
                 var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
@@ -311,7 +311,7 @@
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
                     Status = EntityStatus.Active,
                     TotalAmount = 0,
-                    PurchaseOrderNumber = generatedCode,
+                    Code = generatedCode,
                     CompanyId = primaryCompany?.Id ?? 1 // 設定預設公司，如果沒有主要公司則為1
                 };
                 
@@ -423,7 +423,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
+                    PropertyName = nameof(PurchaseOrder.Code),
                     Label = "採購單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入採購單號",
@@ -522,7 +522,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(PurchaseOrder.PurchaseOrderNumber), "基本資訊" },                
+                { nameof(PurchaseOrder.Code), "基本資訊" },                
                 { nameof(PurchaseOrder.SupplierId), "基本資訊" },
                 { nameof(PurchaseOrder.CompanyId), "基本資訊" },
                 { nameof(PurchaseOrder.OrderDate), "基本資訊" },
@@ -548,25 +548,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    /// <summary>
-    /// 生成採購單號
-    /// </summary>
-    private async Task<string> GeneratePurchaseOrderNumberAsync()
-    {
-        try
-        {
-            return await PurchaseOrderService.GenerateOrderNumberAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GeneratePurchaseOrderNumberAsync), GetType(), 
-                additionalData: "生成採購單號失敗");
-            
-            // 如果服務方法失敗，使用 CodeGenerationHelper 作為後備
-            return CodeGenerationHelper.GenerateSimpleEntityCode("PO", usePreciseTimestamp: true);
-        }
     }
     
     // ===== AutoComplete 配置方法 =====
@@ -797,7 +778,7 @@
         var fieldsToLock = new[]
         {
             nameof(PurchaseOrder.CompanyId),
-            nameof(PurchaseOrder.PurchaseOrderNumber),
+            nameof(PurchaseOrder.Code),
             nameof(PurchaseOrder.OrderDate),
             nameof(PurchaseOrder.ExpectedDeliveryDate),
             nameof(PurchaseOrder.Remarks),
@@ -1475,7 +1456,7 @@
             );
             
             // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync($"進貨單 {savedReceiving.ReceiptNumber} 已更新，採購明細已刷新");
+            await NotificationService.ShowSuccessAsync($"進貨單 {savedReceiving.Code} 已更新，採購明細已刷新");
         }
         catch (Exception ex)
         {

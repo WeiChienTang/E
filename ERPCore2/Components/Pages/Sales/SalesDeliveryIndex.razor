@@ -20,7 +20,7 @@
                           ColumnDefinitions="@columnDefinitions"
                           DataLoader="@LoadSalesDeliveriesAsync"
                           FilterApplier="@ApplySalesDeliveryFilters"
-                          GetEntityDisplayName="@(delivery => delivery.DeliveryNumber)"
+                          GetEntityDisplayName="@(delivery => delivery.Code)"
                           RequiredPermission="SalesDelivery.Read"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -162,7 +162,7 @@
         if (fieldConfiguration == null)
         {
             return query.OrderByDescending(sd => sd.DeliveryDate)
-                       .ThenByDescending(sd => sd.DeliveryNumber);
+                       .ThenByDescending(sd => sd.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesDeliveryFilters), GetType());

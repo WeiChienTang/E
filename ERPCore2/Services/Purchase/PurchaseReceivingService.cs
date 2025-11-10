@@ -107,7 +107,7 @@ namespace ERPCore2.Services
                         .ThenInclude(prd => prd.Warehouse)
                     .AsQueryable()
                     .OrderByDescending(pr => pr.ReceiptDate)
-                    .ThenBy(pr => pr.ReceiptNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -196,11 +196,11 @@ namespace ERPCore2.Services
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Product)
-                    .Where(pr => (pr.ReceiptNumber.Contains(searchTerm) ||
-                         pr.Supplier.CompanyName.Contains(searchTerm) ||
-                         (pr.PurchaseOrder != null && pr.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm))))
+                    .Where(pr => (pr.Code != null && pr.Code.Contains(searchTerm)) ||
+                         (pr.Supplier != null && pr.Supplier.CompanyName.Contains(searchTerm)) ||
+                         (pr.PurchaseOrder != null && pr.PurchaseOrder.Code != null && pr.PurchaseOrder.Code.Contains(searchTerm)))
                     .OrderByDescending(pr => pr.ReceiptDate)
-                    .ThenBy(pr => pr.ReceiptNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -232,7 +232,7 @@ namespace ERPCore2.Services
                 if (entity == null)
                     return ServiceResult.Failure("進貨單資料不可為空");
 
-                if (string.IsNullOrWhiteSpace(entity.ReceiptNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("進貨單號為必填");
 
                 if (entity.SupplierId <= 0)
@@ -245,12 +245,12 @@ namespace ERPCore2.Services
                 if (entity.Id == 0)
                 {
                     exists = await context.PurchaseReceivings
-                        .AnyAsync(pr => pr.ReceiptNumber == entity.ReceiptNumber);
+                        .AnyAsync(pr => pr.Code == entity.Code);
                 }
                 else
                 {
                     exists = await context.PurchaseReceivings
-                        .AnyAsync(pr => pr.ReceiptNumber == entity.ReceiptNumber && pr.Id != entity.Id);
+                        .AnyAsync(pr => pr.Code == entity.Code && pr.Id != entity.Id);
                 }
                 
                 if (exists)
@@ -292,7 +292,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity?.Id,
-                    EntityName = entity?.ReceiptNumber 
+                    EntityName = entity?.Code 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -337,9 +337,9 @@ namespace ERPCore2.Services
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Return,
-                                $"{purchaseReceiving.ReceiptNumber}_DEL",
+                                $"{purchaseReceiving.Code}_DEL",
                                 detail.WarehouseLocationId,
-                                $"刪除採購進貨單 - {purchaseReceiving.ReceiptNumber}"
+                                $"刪除採購進貨單 - {purchaseReceiving.Code}"
                             );
                             
                             if (!reduceResult.IsSuccess)
@@ -428,9 +428,9 @@ namespace ERPCore2.Services
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Return,
-                                $"{entity.ReceiptNumber}_DEL",
+                                $"{entity.Code}_DEL",
                                 detail.WarehouseLocationId,
-                                $"永久刪除採購進貨單 - {entity.ReceiptNumber}"
+                                $"永久刪除採購進貨單 - {entity.Code}"
                             );
                             
                             if (!reduceResult.IsSuccess)
@@ -585,7 +585,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(
                     ex, nameof(CanDeleteAsync), GetType(), _logger,
-                    new { EntityId = entity.Id, ReceiptNumber = entity.ReceiptNumber }
+                    new { EntityId = entity.Id, ReceiptNumber = entity.Code }
                 );
                 return ServiceResult.Failure("檢查刪除條件時發生錯誤");
             }
@@ -615,9 +615,9 @@ namespace ERPCore2.Services
                 var prefix = $"R{today:yyyyMMdd}";
                 
                 var lastNumber = await context.PurchaseReceivings
-                    .Where(pr => pr.ReceiptNumber.StartsWith(prefix))
-                    .OrderByDescending(pr => pr.ReceiptNumber)
-                    .Select(pr => pr.ReceiptNumber)
+                    .Where(pr => pr.Code != null && pr.Code.StartsWith(prefix))
+                    .OrderByDescending(pr => pr.Code)
+                    .Select(pr => pr.Code)
                     .FirstOrDefaultAsync();
 
                 int sequence = 1;
@@ -686,22 +686,18 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查進貨單號是否已存在
-        /// 功能：驗證進貨單號的唯一性，支援編輯模式排除指定ID
-        /// 用途：
-        /// - 新增時檢查單號重複
-        /// - 編輯時排除自己檢查其他記錄是否重複
+        /// 檢查進貨代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        /// <param name="receiptNumber">要檢查的進貨單號</param>
+        /// <param name="code">進貨代碼</param>
         /// <param name="excludeId">要排除的ID（編輯模式時使用）</param>
         /// <returns>true表示已存在，false表示不存在</returns>
-        public async Task<bool> IsReceiptNumberExistsAsync(string receiptNumber, int? excludeId = null)
+        public async Task<bool> IsPurchaseReceivingCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                var query = context.PurchaseReceivings.Where(pr => pr.ReceiptNumber == receiptNumber);
+                var query = context.PurchaseReceivings.Where(pr => pr.Code == code);
                 if (excludeId.HasValue)
                     query = query.Where(pr => pr.Id != excludeId.Value);
                 
@@ -709,16 +705,16 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsReceiptNumberExistsAsync), GetType(), _logger, new { 
-                    Method = nameof(IsReceiptNumberExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPurchaseReceivingCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsPurchaseReceivingCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    ReceiptNumber = receiptNumber,
-                    ExcludeId = excludeId 
+                    Code = code,
+                    ExcludeId = excludeId
                 });
                 return false;
             }
         }
-
+        
         /// <summary>
         /// 根據日期範圍查詢採購進貨單
         /// 功能：取得指定日期區間內的所有進貨單資料
@@ -744,7 +740,7 @@ namespace ERPCore2.Services
                         .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => pr.ReceiptDate >= startDate && pr.ReceiptDate <= endDate)
                     .OrderByDescending(pr => pr.ReceiptDate)
-                    .ThenBy(pr => pr.ReceiptNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -785,7 +781,7 @@ namespace ERPCore2.Services
                         .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => pr.PurchaseOrderId == purchaseOrderId)
                     .OrderByDescending(pr => pr.ReceiptDate)
-                    .ThenBy(pr => pr.ReceiptNumber)
+                    .ThenBy(pr => pr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -838,10 +834,10 @@ namespace ERPCore2.Services
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Purchase,
-                                purchaseReceiving.ReceiptNumber,
+                                purchaseReceiving.Code ?? string.Empty,
                                 detail.UnitPrice,
                                 detail.WarehouseLocationId,
-                                $"採購進貨確認 - {purchaseReceiving.ReceiptNumber}",
+                                $"採購進貨確認 - {purchaseReceiving.Code ?? string.Empty}",
                                 detail.BatchNumber,           // 傳遞批號
                                 purchaseReceiving.ReceiptDate  // 批次日期
                             );
@@ -955,8 +951,8 @@ namespace ERPCore2.Services
 
                     // 查詢所有與此進貨單相關的庫存交易記錄（包含原始、調整、回退等所有類型）
                     var existingTransactions = await context.InventoryTransactions
-                        .Where(t => (t.TransactionNumber == currentReceiving.ReceiptNumber ||
-                                   t.TransactionNumber.StartsWith(currentReceiving.ReceiptNumber + "_")))
+                        .Where(t => (t.TransactionNumber == currentReceiving.Code ||
+                                   t.TransactionNumber.StartsWith(currentReceiving.Code + "_")))
                         .ToListAsync();
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
@@ -1022,10 +1018,10 @@ namespace ERPCore2.Services
                                     warehouseId,
                                     adjustmentNeeded,
                                     InventoryTransactionTypeEnum.Purchase,
-                                    currentReceiving.ReceiptNumber + "_ADJ",
+                                    currentReceiving.Code + "_ADJ",
                                     unitPrice,
                                     locationId,
-                                    $"採購進貨編輯調增 - {currentReceiving.ReceiptNumber}"
+                                    $"採購進貨編輯調增 - {currentReceiving.Code}"
                                 );
                                 
                                 if (!addResult.IsSuccess)
@@ -1046,9 +1042,9 @@ namespace ERPCore2.Services
                                     warehouseId,
                                     Math.Abs(adjustmentNeeded),
                                     InventoryTransactionTypeEnum.Return,
-                                    currentReceiving.ReceiptNumber + "_ADJ",
+                                    currentReceiving.Code + "_ADJ",
                                     locationId,
-                                    $"採購進貨編輯調減 - {currentReceiving.ReceiptNumber}"
+                                    $"採購進貨編輯調減 - {currentReceiving.Code}"
                                 );
                                 
                                 if (!reduceResult.IsSuccess)
@@ -1109,7 +1105,7 @@ namespace ERPCore2.Services
                     Method = nameof(CreateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity?.Id,
-                    EntityName = entity?.ReceiptNumber,
+                    EntityName = entity?.Code,
                     BatchNumber = entity?.BatchNumber
                 });
                 return ServiceResult<PurchaseReceiving>.Failure("新增進貨單過程發生錯誤");
@@ -1189,7 +1185,7 @@ namespace ERPCore2.Services
                             .Sum(prt => prt.ReturnQuantity)
                     )
                     .OrderBy(prd => prd.PurchaseReceiving.ReceiptDate)
-                    .ThenBy(prd => prd.PurchaseReceiving.ReceiptNumber)
+                    .ThenBy(prd => prd.PurchaseReceiving.Code)
                     .ThenBy(prd => prd.Product.Code)
                     .ToListAsync();
             }
@@ -1245,7 +1241,7 @@ namespace ERPCore2.Services
                 // 單據編號關鍵字搜尋
                 if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
                 {
-                    query = query.Where(pr => pr.ReceiptNumber.Contains(criteria.DocumentNumberKeyword));
+                    query = query.Where(pr => pr.Code != null && pr.Code.Contains(criteria.DocumentNumberKeyword));
                 }
 
                 // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
@@ -1253,10 +1249,10 @@ namespace ERPCore2.Services
                 query = criteria.SortDirection == Models.SortDirection.Ascending
                     ? query.OrderBy(pr => pr.Supplier.CompanyName)
                            .ThenBy(pr => pr.ReceiptDate)
-                           .ThenBy(pr => pr.ReceiptNumber)
+                           .ThenBy(pr => pr.Code)
                     : query.OrderBy(pr => pr.Supplier.CompanyName)
                            .ThenByDescending(pr => pr.ReceiptDate)
-                           .ThenBy(pr => pr.ReceiptNumber);
+                           .ThenBy(pr => pr.Code);
 
                 // 限制最大筆數
                 if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)

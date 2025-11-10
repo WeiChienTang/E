@@ -8,15 +8,10 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購進貨單主檔實體 - 記錄採購進貨作業
     /// </summary>
-    [Index(nameof(ReceiptNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(PurchaseOrderId), nameof(ReceiptDate))]
     public class PurchaseReceiving : BaseEntity
     {
-        [Required(ErrorMessage = "進貨單號為必填")]
-        [MaxLength(30, ErrorMessage = "進貨單號不可超過30個字元")]
-        [Display(Name = "進貨單號")]
-        public string ReceiptNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "進貨日期為必填")]
         [Display(Name = "進貨日期")]
         public DateTime ReceiptDate { get; set; } = DateTime.Today;

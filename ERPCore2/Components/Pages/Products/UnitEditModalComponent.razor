@@ -59,31 +59,12 @@
                 var newUnit = new Unit
                 {
                     Name = string.Empty,
-                    Code = await GenerateUnitCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Unit, IUnitService>(UnitService, "UNIT"),
                     Status = EntityStatus.Active
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(Unit).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newUnit, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newUnit, PrefilledValues);
                 
                 return newUnit;
             }
@@ -198,16 +179,6 @@
         {
             await NotificationService.ShowErrorAsync($"關閉對話框時發生錯誤：{ex.Message}");
         }
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateUnitCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            UnitService,
-            "UNIT",
-            (service, code, excludeId) => service.IsUnitCodeExistsAsync(code, excludeId)
-        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

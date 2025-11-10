@@ -14,12 +14,9 @@ namespace ERPCore2.Services
     public interface ISalesReturnService : IGenericManagementService<SalesReturn>
     {
         /// <summary>
-        /// 檢查退回單號是否已存在
+        /// 檢查銷貨退回代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        /// <param name="salesReturnNumber">退回單號</param>
-        /// <param name="excludeId">排除的ID（用於編輯時檢查）</param>
-        /// <returns>是否存在</returns>
-        Task<bool> IsSalesReturnNumberExistsAsync(string salesReturnNumber, int? excludeId = null);
+        Task<bool> IsSalesReturnCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
         /// 根據客戶取得銷貨退回清單

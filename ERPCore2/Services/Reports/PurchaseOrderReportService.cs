@@ -138,7 +138,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>採購單 - {purchaseOrder.PurchaseOrderNumber}</title>");
+            html.AppendLine($"    <title>採購單 - {purchaseOrder.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
@@ -235,7 +235,7 @@ namespace ERPCore2.Services.Reports
         {
             var infoBuilder = new ReportInfoSectionBuilder();
             infoBuilder
-                .AddField("採購單號", purchaseOrder.PurchaseOrderNumber)
+                .AddField("採購單號", purchaseOrder.Code)
                 .AddDateField("採購日期", purchaseOrder.OrderDate)
                 .AddDateField("交貨日期", purchaseOrder.ExpectedDeliveryDate)
                 .AddField("廠商名稱", supplier?.CompanyName)
@@ -467,7 +467,7 @@ namespace ERPCore2.Services.Reports
             
             foreach (var order in purchaseOrders)
             {
-                html.AppendLine($"                <li>{order.PurchaseOrderNumber} - {order.Supplier?.CompanyName ?? "未指定廠商"} - {order.OrderDate:yyyy/MM/dd}</li>");
+                html.AppendLine($"                <li>{order.Code} - {order.Supplier?.CompanyName ?? "未指定廠商"} - {order.OrderDate:yyyy/MM/dd}</li>");
             }
             
             html.AppendLine("            </ol>");

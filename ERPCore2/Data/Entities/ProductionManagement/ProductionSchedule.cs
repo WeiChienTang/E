@@ -8,16 +8,10 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 生產排程主檔 - 記錄生產計劃與排程資訊
     /// </summary>
-    [Index(nameof(ScheduleNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(ScheduleDate))]
     public class ProductionSchedule : BaseEntity
     {
-        // 基本識別資訊
-        [Required(ErrorMessage = "排程單號為必填")]
-        [MaxLength(30, ErrorMessage = "排程單號不可超過30個字元")]
-        [Display(Name = "排程單號")]
-        public string ScheduleNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "排程日期為必填")]
         [Display(Name = "排程日期")]
         public DateTime ScheduleDate { get; set; } = DateTime.Today;

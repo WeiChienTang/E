@@ -34,16 +34,16 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<PurchaseReceiving>>
                 {
                     {
-                        nameof(PurchaseReceiving.ReceiptNumber),
+                        nameof(PurchaseReceiving.Code),
                         new FieldDefinition<PurchaseReceiving>
                         {
-                            PropertyName = nameof(PurchaseReceiving.ReceiptNumber),
+                            PropertyName = nameof(PurchaseReceiving.Code),
                             DisplayName = "進貨單號",
                             FilterPlaceholder = "輸入進貨單號搜尋",
                             TableOrder = 1,
                             HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(PurchaseReceiving.ReceiptNumber), pr => pr.ReceiptNumber)
+                                model, query, nameof(PurchaseReceiving.Code), pr => pr.Code)
                         }
                     },
                     {
@@ -133,7 +133,7 @@ namespace ERPCore2.FieldConfiguration
         protected override Func<IQueryable<PurchaseReceiving>, IQueryable<PurchaseReceiving>> GetDefaultSort()
         {
             return q => q.OrderByDescending(pr => pr.ReceiptDate)
-                         .ThenByDescending(pr => pr.ReceiptNumber);
+                         .ThenByDescending(pr => pr.Code);
         }
     }
 }

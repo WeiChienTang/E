@@ -212,7 +212,7 @@ namespace ERPCore2.Services
                     {
                         SourceDetailType = SetoffDetailType.SalesOrderDetail,
                         SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.SalesOrder.SalesOrderNumber,
+                        SourceDocumentNumber = d.SalesOrder.Code ?? string.Empty,
                         ProductId = d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
@@ -234,7 +234,7 @@ namespace ERPCore2.Services
                     {
                         SourceDetailType = SetoffDetailType.SalesReturnDetail,
                         SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.SalesReturn.SalesReturnNumber,
+                        SourceDocumentNumber = d.SalesReturn.Code ?? string.Empty,
                         ProductId = d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
@@ -302,7 +302,7 @@ namespace ERPCore2.Services
                     {
                         SourceDetailType = SetoffDetailType.PurchaseReceivingDetail,
                         SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.PurchaseReceiving.ReceiptNumber,
+                        SourceDocumentNumber = d.PurchaseReceiving.Code ?? string.Empty,
                         ProductId = d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
@@ -324,7 +324,7 @@ namespace ERPCore2.Services
                     {
                         SourceDetailType = SetoffDetailType.PurchaseReturnDetail,
                         SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.PurchaseReturn.PurchaseReturnNumber,
+                        SourceDocumentNumber = d.PurchaseReturn.Code ?? string.Empty,
                         ProductId = d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
@@ -399,7 +399,7 @@ namespace ERPCore2.Services
                             {
                                 SourceDetailType = SetoffDetailType.SalesOrderDetail,
                                 SourceDetailId = salesDetail.Id,
-                                SourceDocumentNumber = salesDetail.SalesOrder.SalesOrderNumber,
+                                SourceDocumentNumber = salesDetail.SalesOrder.Code ?? string.Empty,
                                 ProductId = salesDetail.ProductId,
                                 ProductName = salesDetail.Product.Name,
                                 ProductCode = salesDetail.Product.Code ?? string.Empty,
@@ -423,7 +423,7 @@ namespace ERPCore2.Services
                             {
                                 SourceDetailType = SetoffDetailType.SalesReturnDetail,
                                 SourceDetailId = salesReturnDetail.Id,
-                                SourceDocumentNumber = salesReturnDetail.SalesReturn.SalesReturnNumber,
+                                SourceDocumentNumber = salesReturnDetail.SalesReturn.Code ?? string.Empty,
                                 ProductId = salesReturnDetail.ProductId,
                                 ProductName = salesReturnDetail.Product.Name,
                                 ProductCode = salesReturnDetail.Product.Code ?? string.Empty,
@@ -447,7 +447,7 @@ namespace ERPCore2.Services
                             {
                                 SourceDetailType = SetoffDetailType.PurchaseReceivingDetail,
                                 SourceDetailId = purchaseDetail.Id,
-                                SourceDocumentNumber = purchaseDetail.PurchaseReceiving.ReceiptNumber,
+                                SourceDocumentNumber = purchaseDetail.PurchaseReceiving.Code ?? string.Empty,
                                 ProductId = purchaseDetail.ProductId,
                                 ProductName = purchaseDetail.Product.Name,
                                 ProductCode = purchaseDetail.Product.Code ?? string.Empty,
@@ -471,7 +471,7 @@ namespace ERPCore2.Services
                             {
                                 SourceDetailType = SetoffDetailType.PurchaseReturnDetail,
                                 SourceDetailId = purchaseReturnDetail.Id,
-                                SourceDocumentNumber = purchaseReturnDetail.PurchaseReturn.PurchaseReturnNumber,
+                                SourceDocumentNumber = purchaseReturnDetail.PurchaseReturn.Code ?? string.Empty,
                                 ProductId = purchaseReturnDetail.ProductId,
                                 ProductName = purchaseReturnDetail.Product.Name,
                                 ProductCode = purchaseReturnDetail.Product.Code ?? string.Empty,

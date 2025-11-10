@@ -61,7 +61,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
+        public async Task<bool> IsCurrencyCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
@@ -77,9 +77,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCodeExistsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCurrencyCodeExistsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsCodeExistsAsync),
+                    Method = nameof(IsCurrencyCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = code,
                     ExcludeId = excludeId
@@ -99,7 +99,7 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("貨幣名稱為必填欄位");
 
-                if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCurrencyCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("貨幣代碼已存在");
 
                 if (errors.Any())

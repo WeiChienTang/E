@@ -948,7 +948,7 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.Cascade);
 
                         // 設定索引
-                        entity.HasIndex(e => e.ScheduleNumber)
+                        entity.HasIndex(e => e.Code)
                               .IsUnique();
                         entity.HasIndex(e => e.ScheduleDate);
                   });

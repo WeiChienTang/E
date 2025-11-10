@@ -19,7 +19,7 @@
                       ColumnDefinitions="@columnDefinitions"
                       DataLoader="@LoadQuotationsAsync"
                       FilterApplier="@ApplyQuotationFilters"
-                      GetEntityDisplayName="@(quotation => quotation.QuotationNumber)"
+                      GetEntityDisplayName="@(quotation => quotation.Code)"
                       RequiredPermission="Quotation.Read"
                       ShowBatchPrintButton="true"
                       OnBatchPrintClick="@HandleBatchPrintAsync"
@@ -165,7 +165,7 @@
         if (fieldConfiguration == null)
         {
             // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(q => q.QuotationDate).ThenBy(q => q.QuotationNumber);
+            return query.OrderByDescending(q => q.QuotationDate).ThenBy(q => q.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyQuotationFilters), GetType());
@@ -226,7 +226,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveSingleQuotationAsync), GetType(), 
-                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+                additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.Code });
             return false;
         }
     }
@@ -257,7 +257,7 @@
             {
                 failCount++;
                 await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ApproveAllQuotationsAsync), GetType(), 
-                    additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.QuotationNumber });
+                    additionalData: new { QuotationId = quotation.Id, QuotationNumber = quotation.Code });
             }
         }
 

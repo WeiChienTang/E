@@ -10,16 +10,11 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 銷貨退回主檔實體 - 記錄銷貨退回基本資訊
     /// </summary>
-    [Index(nameof(SalesReturnNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(ReturnDate))]
     [Index(nameof(SalesOrderId), nameof(ReturnDate))]
     public class SalesReturn : BaseEntity
     {
-        [Required(ErrorMessage = "退回單號為必填")]
-        [MaxLength(30, ErrorMessage = "退回單號不可超過30個字元")]
-        [Display(Name = "退回單號")]
-        public string SalesReturnNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "退回日期為必填")]
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;

@@ -1,4 +1,3 @@
-@using ERPCore2.Helpers.EditModal
 @inject ISalesDeliveryService SalesDeliveryService
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject ISalesOrderService SalesOrderService
@@ -22,9 +21,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           Id="@SalesDeliveryId"
                           Service="@SalesDeliveryService"
-                          EntityName="銷貨/出貨單"
-                          EntityNamePlural="銷貨/出貨單"
-                          ModalTitle="@(SalesDeliveryId.HasValue ? "編輯銷貨/出貨單" : "新增銷貨/出貨單")"
+                          EntityName="出貨單"
+                          EntityNamePlural="出貨單"
+                          ModalTitle="@(SalesDeliveryId.HasValue ? "編輯出貨單" : "新增出貨單")"
                           Size="GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
@@ -35,8 +34,8 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesDeliveryData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
-                          SaveSuccessMessage="@(SalesDeliveryId.HasValue ? "銷貨/出貨單更新成功" : "銷貨/出貨單新增成功")"
-                          SaveFailureMessage="銷貨/出貨單儲存失敗"
+                          SaveSuccessMessage="@(SalesDeliveryId.HasValue ? "出貨單更新成功" : "出貨單新增成功")"
+                          SaveFailureMessage="出貨單儲存失敗"
                           RequiredPermission="SalesDelivery.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel">
@@ -121,7 +120,7 @@
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("初始化銷貨/出貨單編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化出貨單編輯組件時發生錯誤");
         }
     }
 
@@ -147,7 +146,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "銷貨/出貨單編輯Modal儲存成功處理失敗");
+                additionalData: "出貨單編輯Modal儲存成功處理失敗");
         }
     }
 
@@ -163,7 +162,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
-                additionalData: "銷貨/出貨單編輯Modal取消處理失敗");
+                additionalData: "出貨單編輯Modal取消處理失敗");
         }
     }
 
@@ -179,7 +178,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
-                additionalData: "銷貨/出貨單編輯Modal關閉失敗");
+                additionalData: "出貨單編輯Modal關閉失敗");
         }
     }
 
@@ -192,14 +191,14 @@
             if (!SalesDeliveryId.HasValue)
             {
                 // 新增模式 - 自動產生出貨單號
-                var generatedCode = await GenerateDeliveryNumberAsync();
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesDelivery, ISalesDeliveryService>(SalesDeliveryService, "SD");
                 
                 var newDelivery = new SalesDelivery
                 {
                     DeliveryDate = DateTime.Today,
                     Status = EntityStatus.Active,
                     TotalAmount = 0,
-                    DeliveryNumber = generatedCode,
+                    Code = generatedCode,
                     IsShipped = false,
                     IsApproved = false
                 };
@@ -257,8 +256,8 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesDeliveryData), GetType(), 
-                additionalData: $"載入銷貨/出貨單資料失敗 - ID: {SalesDeliveryId}");
-            await NotificationService.ShowErrorAsync($"載入銷貨/出貨單資料時發生錯誤：{ex.Message}");
+                additionalData: $"載入出貨單資料失敗 - ID: {SalesDeliveryId}");
+            await NotificationService.ShowErrorAsync($"載入出貨單資料時發生錯誤：{ex.Message}");
             isDetailDataReady = true;
             return null;
         }
@@ -304,7 +303,7 @@
             salesOrderOptions = salesOrders.Where(so => so.Status == EntityStatus.Active)
                 .Select(so => new SelectOption
                 {
-                    Text = so.SalesOrderNumber,
+                    Text = so.Code ?? string.Empty,
                     Value = so.Id.ToString()
                 }).ToList();
 
@@ -320,7 +319,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), 
-                additionalData: "銷貨/出貨單編輯Modal載入額外資料失敗");
+                additionalData: "出貨單編輯Modal載入額外資料失敗");
             
             customerOptions = new List<SelectOption>();
             employeeOptions = new List<SelectOption>();
@@ -339,13 +338,13 @@
             {
                 new()
                 {
-                    PropertyName = nameof(SalesDelivery.DeliveryNumber),
+                    PropertyName = nameof(SalesDelivery.Code),
                     Label = "出貨單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入出貨單號",
                     IsRequired = true,
                     MaxLength = 30,
-                    HelpText = "銷貨/出貨單的唯一編號，新增時系統會自動產生，也可手動修改"
+                    HelpText = "出貨單的唯一編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
@@ -395,7 +394,7 @@
                     Label = "出貨日期",
                     FieldType = FormFieldType.Date,
                     IsRequired = true,
-                    HelpText = "銷貨/出貨日期"
+                    HelpText = "出貨日期"
                 },
                 new()
                 {
@@ -445,7 +444,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(SalesDelivery.DeliveryNumber), "基本資訊" },
+                { nameof(SalesDelivery.Code), "基本資訊" },
                 { nameof(SalesDelivery.CustomerId), "基本資訊" },
                 { nameof(SalesDelivery.SalesOrderId), "基本資訊" },
                 { nameof(SalesDelivery.EmployeeId), "基本資訊" },
@@ -465,19 +464,6 @@
     }
 
     // ===== 自動產生單號 =====
-    private async Task<string> GenerateDeliveryNumberAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeWithServiceResultAsync(
-            SalesDeliveryService,
-            "SD",
-            async (service, code, excludeId) => 
-            {
-                var exists = await service.IsDeliveryNumberExistsAsync(code, excludeId);
-                return ServiceResult<bool>.Success(exists);
-            },
-            null);
-    }
-
     // ===== 從銷售訂單載入資料 =====
     private async Task LoadDataFromSalesOrder(SalesDelivery delivery, int salesOrderId)
     {
@@ -509,7 +495,7 @@
                 }
             }
 
-            await NotificationService.ShowSuccessAsync($"已從訂單 {salesOrder.SalesOrderNumber} 載入資料");
+            await NotificationService.ShowSuccessAsync($"已從訂單 {salesOrder.Code} 載入資料");
         }
         catch (Exception ex)
         {
@@ -610,7 +596,7 @@
             { nameof(SalesDelivery.CustomerId), entity => ((SalesDelivery)entity).Customer?.CompanyName ?? "" },
             { nameof(SalesDelivery.EmployeeId), entity => ((SalesDelivery)entity).Employee?.Name ?? "" },
             { nameof(SalesDelivery.WarehouseId), entity => ((SalesDelivery)entity).Warehouse?.Name ?? "" },
-            { nameof(SalesDelivery.SalesOrderId), entity => ((SalesDelivery)entity).SalesOrder?.SalesOrderNumber ?? "" }
+            { nameof(SalesDelivery.SalesOrderId), entity => ((SalesDelivery)entity).SalesOrder?.Code ?? "" }
         };
     }
 
@@ -632,7 +618,7 @@
             { nameof(SalesDelivery.CustomerId), nameof(Customer.CompanyName) },
             { nameof(SalesDelivery.EmployeeId), nameof(Employee.Name) },
             { nameof(SalesDelivery.WarehouseId), nameof(Warehouse.Name) },
-            { nameof(SalesDelivery.SalesOrderId), nameof(SalesOrder.SalesOrderNumber) }
+            { nameof(SalesDelivery.SalesOrderId), nameof(SalesOrder.Code) }
         };
     }
 

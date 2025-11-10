@@ -8,15 +8,10 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購退回主檔實體 - 記錄採購退回基本資訊
     /// </summary>
-    [Index(nameof(PurchaseReturnNumber), IsUnique = true)]
+    [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(SupplierId), nameof(ReturnDate))]
     public class PurchaseReturn : BaseEntity
     {
-        [Required(ErrorMessage = "退回單號為必填")]
-        [MaxLength(30, ErrorMessage = "退回單號不可超過30個字元")]
-        [Display(Name = "退回單號")]
-        public string PurchaseReturnNumber { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "退回日期為必填")]
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;

@@ -95,7 +95,7 @@ namespace ERPCore2.Services
                     .Where(qd => (
                         qd.Product.Name.ToLower().Contains(lowerSearchTerm) ||
                         (qd.Product.Code != null && qd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        qd.Quotation.QuotationNumber.ToLower().Contains(lowerSearchTerm)
+                        (qd.Quotation.Code != null && qd.Quotation.Code.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderBy(qd => qd.QuotationId)
                     .ThenBy(qd => qd.Id)

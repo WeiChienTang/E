@@ -46,7 +46,7 @@ namespace ERPCore2.Services
                     .Include(q => q.Employee)
                     .AsQueryable()
                     .OrderByDescending(q => q.QuotationDate)
-                    .ThenBy(q => q.QuotationNumber)
+                    .ThenBy(q => q.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -97,12 +97,12 @@ namespace ERPCore2.Services
                     .Include(q => q.Customer)
                     .Include(q => q.Employee)
                     .Where(q => (
-                        q.QuotationNumber.ToLower().Contains(lowerSearchTerm) ||
+                        (q.Code != null && q.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (q.Customer != null && q.Customer.CompanyName != null && q.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
                         (q.Remarks != null && q.Remarks.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderByDescending(q => q.QuotationDate)
-                    .ThenBy(q => q.QuotationNumber)
+                    .ThenBy(q => q.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -122,7 +122,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.QuotationNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("報價單號不能為空");
 
                 if (entity.CustomerId <= 0)
@@ -131,8 +131,8 @@ namespace ERPCore2.Services
                 if (entity.QuotationDate == default)
                     errors.Add("報價日期不能為空");
 
-                if (!string.IsNullOrWhiteSpace(entity.QuotationNumber) &&
-                    await IsQuotationNumberExistsAsync(entity.QuotationNumber, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsQuotationCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("報價單號已存在");
 
                 if (errors.Any())
@@ -146,7 +146,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    EntityName = entity.QuotationNumber
+                    EntityName = entity.Code
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -156,12 +156,15 @@ namespace ERPCore2.Services
 
         #region 自定義方法
 
-        public async Task<bool> IsQuotationNumberExistsAsync(string quotationNumber, int? excludeId = null)
+        /// <summary>
+        /// 檢查報價代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        public async Task<bool> IsQuotationCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.Quotations.Where(q => q.QuotationNumber == quotationNumber);
+                var query = context.Quotations.Where(q => q.Code == code);
                 if (excludeId.HasValue)
                     query = query.Where(q => q.Id != excludeId.Value);
 
@@ -169,10 +172,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsQuotationNumberExistsAsync), GetType(), _logger, new {
-                    Method = nameof(IsQuotationNumberExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsQuotationCodeExistsAsync), GetType(), _logger, new {
+                    Method = nameof(IsQuotationCodeExistsAsync),
                     ServiceType = GetType().Name,
-                    QuotationNumber = quotationNumber,
+                    Code = code,
                     ExcludeId = excludeId
                 });
                 return false;
@@ -393,7 +396,7 @@ namespace ERPCore2.Services
                     Method = nameof(CanDeleteAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    QuotationNumber = entity.QuotationNumber
+                    QuotationNumber = entity.Code
                 });
                 return ServiceResult.Failure("檢查刪除權限時發生錯誤");
             }
@@ -504,17 +507,17 @@ namespace ERPCore2.Services
                 // 單據編號關鍵字搜尋
                 if (!string.IsNullOrWhiteSpace(criteria.DocumentNumberKeyword))
                 {
-                    query = query.Where(q => q.QuotationNumber.Contains(criteria.DocumentNumberKeyword));
+                    query = query.Where(q => q.Code != null && q.Code.Contains(criteria.DocumentNumberKeyword));
                 }
 
                 // 排序：先按客戶分組，同客戶內再按日期和單據編號排序
                 query = criteria.SortDirection == Models.SortDirection.Ascending
                     ? query.OrderBy(q => q.Customer.CompanyName)
                            .ThenBy(q => q.QuotationDate)
-                           .ThenBy(q => q.QuotationNumber)
+                           .ThenBy(q => q.Code)
                     : query.OrderBy(q => q.Customer.CompanyName)
                            .ThenByDescending(q => q.QuotationDate)
-                           .ThenBy(q => q.QuotationNumber);
+                           .ThenBy(q => q.Code);
 
                 // 限制最大筆數
                 if (criteria.MaxResults.HasValue && criteria.MaxResults.Value > 0)

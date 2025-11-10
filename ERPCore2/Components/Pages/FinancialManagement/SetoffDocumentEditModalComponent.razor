@@ -810,10 +810,12 @@
             
             if (!SetoffDocumentId.HasValue)
             {
-                // 新增模式 - 使用 DefaultSetoffType 或預設為應收帳款
+                // 新增模式 - 根據類型決定前綴
+                var typePrefix = (DefaultSetoffType ?? SetoffType.AccountsReceivable) == SetoffType.AccountsReceivable ? "SO" : "PO";
+                
                 setoffDocument = new SetoffDocument
                 {
-                    SetoffNumber = await GenerateSetoffNumberAsync(DefaultSetoffType),
+                    SetoffNumber = await EntityCodeGenerationHelper.GenerateForEntity<SetoffDocument, ISetoffDocumentService>(SetoffDocumentService, typePrefix),
                     SetoffDate = DateTime.Today,
                     SetoffType = DefaultSetoffType ?? SetoffType.AccountsReceivable,
                     TotalSetoffAmount = 0,
@@ -1166,50 +1168,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    /// <summary>
-    /// 產生沖款單號
-    /// </summary>
-    /// <remarks>
-    /// 單號格式:
-    /// - 應收帳款: SO-YYYYMMDD-001 (Sales Offset - 銷貨沖款)
-    /// - 應付帳款: PO-YYYYMMDD-001 (Purchase Offset - 進貨沖款)
-    /// </remarks>
-    private async Task<string> GenerateSetoffNumberAsync(SetoffType? setoffType = null)
-    {
-        try
-        {
-            // 根據沖款類型決定前綴
-            // 應收帳款使用 SO (Sales Offset), 應付帳款使用 PO (Purchase Offset)
-            var currentSetoffType = setoffType ?? editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
-            var typePrefix = currentSetoffType == SetoffType.AccountsReceivable ? "SO" : "PO";
-            
-            var today = DateTime.Today;
-            var prefix = $"{typePrefix}-{today:yyyyMMdd}";
-            
-            var allSetoffDocs = await SetoffDocumentService.GetAllAsync();
-            var todaySetoffDocs = allSetoffDocs
-                .Where(s => s.SetoffNumber.StartsWith(prefix))
-                .ToList();
-            
-            var maxNumber = todaySetoffDocs.Any()
-                ? todaySetoffDocs.Max(s =>
-                {
-                    var parts = s.SetoffNumber.Split('-');
-                    return parts.Length == 3 && int.TryParse(parts[2], out var num) ? num : 0;
-                })
-                : 0;
-            
-            return $"{prefix}-{(maxNumber + 1):D3}";
-        }
-        catch (Exception)
-        {
-            // 例外處理時也根據類型決定前綴
-            var currentSetoffType = setoffType ?? editModalComponent?.Entity?.SetoffType ?? DefaultSetoffType ?? SetoffType.AccountsReceivable;
-            var typePrefix = currentSetoffType == SetoffType.AccountsReceivable ? "SO" : "PO";
-            return $"{typePrefix}-{DateTime.Today:yyyyMMdd}-001";
-        }
     }
 
     /// <summary>

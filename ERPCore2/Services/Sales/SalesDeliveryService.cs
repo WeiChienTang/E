@@ -38,7 +38,7 @@ namespace ERPCore2.Services
                     .Include(sd => sd.SalesOrder)
                     .Include(sd => sd.Warehouse)
                     .OrderByDescending(sd => sd.DeliveryDate)
-                    .ThenBy(sd => sd.DeliveryNumber)
+                    .ThenBy(sd => sd.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -89,7 +89,7 @@ namespace ERPCore2.Services
                     .Include(sd => sd.Employee)
                     .Include(sd => sd.SalesOrder)
                     .Where(sd =>
-                        sd.DeliveryNumber.Contains(searchTerm) ||
+                        (sd.Code != null && sd.Code.Contains(searchTerm)) ||
                         (sd.Customer.CompanyName != null && sd.Customer.CompanyName.Contains(searchTerm)) ||
                         (sd.Employee != null && sd.Employee.Name != null && sd.Employee.Name.Contains(searchTerm)) ||
                         (sd.DeliveryAddress != null && sd.DeliveryAddress.Contains(searchTerm)))
@@ -117,7 +117,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.DeliveryNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("出貨單號不能為空");
 
                 if (entity.CustomerId <= 0)
@@ -126,8 +126,8 @@ namespace ERPCore2.Services
                 if (entity.DeliveryDate == default)
                     errors.Add("出貨日期不能為空");
 
-                if (!string.IsNullOrWhiteSpace(entity.DeliveryNumber) &&
-                    await IsDeliveryNumberExistsAsync(entity.DeliveryNumber, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsSalesDeliveryCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("出貨單號已存在");
 
                 if (errors.Any())
@@ -141,7 +141,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    EntityName = entity.DeliveryNumber
+                    EntityName = entity.Code
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -151,12 +151,15 @@ namespace ERPCore2.Services
 
         #region 自訂方法
 
-        public async Task<bool> IsDeliveryNumberExistsAsync(string deliveryNumber, int? excludeId = null)
+        /// <summary>
+        /// 檢查銷貨出貨代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        public async Task<bool> IsSalesDeliveryCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SalesDeliveries.Where(sd => sd.DeliveryNumber == deliveryNumber);
+                var query = context.SalesDeliveries.Where(sd => sd.Code == code);
                 if (excludeId.HasValue)
                     query = query.Where(sd => sd.Id != excludeId.Value);
 
@@ -164,9 +167,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsDeliveryNumberExistsAsync), GetType(), _logger, new {
-                    Method = nameof(IsDeliveryNumberExistsAsync),
-                    DeliveryNumber = deliveryNumber,
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSalesDeliveryCodeExistsAsync), GetType(), _logger, new {
+                    Method = nameof(IsSalesDeliveryCodeExistsAsync),
+                    Code = code,
                     ExcludeId = excludeId
                 });
                 return false;

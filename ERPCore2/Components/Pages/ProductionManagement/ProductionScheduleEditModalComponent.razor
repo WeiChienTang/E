@@ -126,33 +126,13 @@
                 // 新增模式：建立新的排程實體並生成代碼
                 var newSchedule = new ProductionSchedule
                 {
-                    ScheduleNumber = await GenerateScheduleNumberAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductionSchedule, IProductionScheduleService>(ProductionScheduleService, "PS"),
                     ScheduleDate = DateTime.Today,
-                    Code = await GenerateScheduleCodeAsync(),
                     Status = EntityStatus.Active
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(ProductionSchedule).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newSchedule, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newSchedule, PrefilledValues);
                 
                 return newSchedule;
             }
@@ -178,7 +158,6 @@
             return new ProductionSchedule
             {
                 Code = "ERROR",
-                ScheduleNumber = "ERROR",
                 ScheduleDate = DateTime.Today,
                 Status = EntityStatus.Active
             };
@@ -215,15 +194,6 @@
                     Placeholder = "請輸入排程代碼",
                     IsRequired = true,
                     HelpText = "排程的唯一識別代碼，新增時系統會自動產生，也可手動修改"
-                },
-                new()
-                {
-                    PropertyName = nameof(ProductionSchedule.ScheduleNumber),
-                    Label = "排程單號",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入排程單號",
-                    IsRequired = true,
-                    HelpText = "排程單號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
@@ -276,7 +246,6 @@
             formSections = new Dictionary<string, string>
             {
                 { nameof(ProductionSchedule.Code), "基本資訊" },
-                { nameof(ProductionSchedule.ScheduleNumber), "基本資訊" },
                 { nameof(ProductionSchedule.ScheduleDate), "基本資訊" },
                 { nameof(ProductionSchedule.CustomerId), "基本資訊" },
                 { nameof(ProductionSchedule.CreatedByEmployeeId), "基本資訊" },
@@ -294,25 +263,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateScheduleNumberAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            ProductionScheduleService,
-            "PS",
-            (service, code, excludeId) => service.IsScheduleNumberExistsAsync(code, excludeId)
-        );
-    }
-
-    private async Task<string> GenerateScheduleCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            ProductionScheduleService,
-            "PS",
-            (service, code, excludeId) => service.IsScheduleNumberExistsAsync(code, excludeId)
-        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

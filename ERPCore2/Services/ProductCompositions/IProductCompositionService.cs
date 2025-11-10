@@ -8,6 +8,14 @@ namespace ERPCore2.Services
     public interface IProductCompositionService : IGenericManagementService<ProductComposition>
     {
         /// <summary>
+        /// 檢查產品合成代碼是否已存在
+        /// </summary>
+        /// <param name="code">產品合成代碼</param>
+        /// <param name="excludeId">排除的產品合成ID</param>
+        /// <returns>是否已存在</returns>
+        Task<bool> IsProductCompositionCodeExistsAsync(string code, int? excludeId = null);
+
+        /// <summary>
         /// 取得指定產品的所有配方
         /// </summary>
         /// <param name="productId">產品 ID</param>

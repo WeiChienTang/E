@@ -10,12 +10,9 @@ namespace ERPCore2.Services
     public interface IQuotationService : IGenericManagementService<Quotation>
     {
         /// <summary>
-        /// 檢查報價單號是否已存在
+        /// 檢查報價代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        /// <param name="quotationNumber">報價單號</param>
-        /// <param name="excludeId">排除的ID（用於編輯時排除自己）</param>
-        /// <returns>是否存在</returns>
-        Task<bool> IsQuotationNumberExistsAsync(string quotationNumber, int? excludeId = null);
+        Task<bool> IsQuotationCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
         /// 根據客戶ID取得報價單列表

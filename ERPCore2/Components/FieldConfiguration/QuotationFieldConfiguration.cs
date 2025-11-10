@@ -38,16 +38,16 @@ namespace ERPCore2.FieldConfiguration
                 var fields = new Dictionary<string, FieldDefinition<Quotation>>
                 {
                     {
-                        nameof(Quotation.QuotationNumber),
+                        nameof(Quotation.Code),
                         new FieldDefinition<Quotation>
                         {
-                            PropertyName = nameof(Quotation.QuotationNumber),
+                            PropertyName = nameof(Quotation.Code),
                             DisplayName = "報價單號",
                             FilterPlaceholder = "輸入報價單號搜尋",
                             TableOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Quotation.QuotationNumber), q => q.QuotationNumber)
+                                model, query, nameof(Quotation.Code), q => q.Code)
                         }
                     },
                     {

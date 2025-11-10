@@ -146,7 +146,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>銷貨單 - {salesOrder.SalesOrderNumber}</title>");
+            html.AppendLine($"    <title>銷貨單 - {salesOrder.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
@@ -245,7 +245,7 @@ namespace ERPCore2.Services.Reports
         {
             var infoBuilder = new ReportInfoSectionBuilder();
             infoBuilder
-                .AddField("銷貨單號", salesOrder.SalesOrderNumber)
+                .AddField("銷貨單號", salesOrder.Code)
                 .AddDateField("訂單日期", salesOrder.OrderDate)
                 .AddField("客戶名稱", customer?.CompanyName)
                 .AddField("聯絡人", customer?.ContactPerson)
@@ -507,7 +507,7 @@ namespace ERPCore2.Services.Reports
             
             foreach (var order in salesOrders)
             {
-                html.AppendLine($"                <li>{order.SalesOrderNumber} - {order.Customer?.CompanyName ?? "未指定客戶"} - {order.OrderDate:yyyy/MM/dd}</li>");
+                html.AppendLine($"                <li>{order.Code} - {order.Customer?.CompanyName ?? "未指定客戶"} - {order.OrderDate:yyyy/MM/dd}</li>");
             }
             
             html.AppendLine("            </ol>");

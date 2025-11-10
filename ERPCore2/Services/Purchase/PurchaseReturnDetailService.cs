@@ -227,7 +227,7 @@ namespace ERPCore2.Services
                     .Where(prd => (
                         (prd.Product.Name != null && prd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.Product.Code != null && prd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        (prd.PurchaseReturn.PurchaseReturnNumber != null && prd.PurchaseReturn.PurchaseReturnNumber.ToLower().Contains(lowerSearchTerm)) ||
+                        (prd.PurchaseReturn.Code != null && prd.PurchaseReturn.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.BatchNumber != null && prd.BatchNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.Remarks != null && prd.Remarks.ToLower().Contains(lowerSearchTerm))
                     ))
@@ -504,13 +504,13 @@ namespace ERPCore2.Services
                     var warehouseId = entity.PurchaseReceivingDetail?.WarehouseId;
                     if (warehouseId.HasValue)
                     {
-                        var operationDescription = $"撤銷採購退回 - {entity.PurchaseReturn?.PurchaseReturnNumber} (明細ID: {entity.Id})";
+                        var operationDescription = $"撤銷採購退回 - {entity.PurchaseReturn?.Code} (明細ID: {entity.Id})";
                         var stockResult = await _inventoryStockService.AddStockAsync(
                             entity.ProductId,
                             warehouseId.Value,
                             entity.ReturnQuantity,
                             InventoryTransactionTypeEnum.Return,
-                            entity.PurchaseReturn?.PurchaseReturnNumber ?? $"DELETED-{entity.Id}",
+                            entity.PurchaseReturn?.Code ?? $"DELETED-{entity.Id}",
                             entity.OriginalUnitPrice,
                             entity.WarehouseLocationId,
                             operationDescription

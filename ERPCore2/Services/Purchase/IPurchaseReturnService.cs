@@ -17,7 +17,11 @@ namespace ERPCore2.Services
 
         Task<List<PurchaseReturn>> GetByPurchaseReceivingIdAsync(int purchaseReceivingId);
         Task<PurchaseReturn?> GetWithDetailsAsync(int id);
-        Task<bool> IsPurchaseReturnNumberExistsAsync(string purchaseReturnNumber, int? excludeId = null);
+        
+        /// <summary>
+        /// 檢查退回代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        Task<bool> IsPurchaseReturnCodeExistsAsync(string code, int? excludeId = null);
 
         // 業務邏輯
         Task<ServiceResult> CalculateTotalsAsync(int id);

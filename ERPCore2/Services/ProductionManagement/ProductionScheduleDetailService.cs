@@ -149,7 +149,7 @@ namespace ERPCore2.Services
                     .Include(psd => psd.Warehouse)
                     .Where(psd => psd.ComponentProduct.Name.Contains(searchTerm) ||
                                  (psd.ComponentProduct.Code != null && psd.ComponentProduct.Code.Contains(searchTerm)) ||
-                                 psd.ProductionSchedule.ScheduleNumber.Contains(searchTerm))
+                                 (psd.ProductionSchedule.Code != null && psd.ProductionSchedule.Code.Contains(searchTerm)))
                     .OrderBy(psd => psd.ProductionScheduleId)
                     .ToListAsync();
             }

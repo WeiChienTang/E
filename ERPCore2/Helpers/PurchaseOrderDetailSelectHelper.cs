@@ -65,7 +65,7 @@ namespace ERPCore2.Helpers
             if (detail?.Product == null || detail.PurchaseOrder == null) return "";
             
             var product = detail.Product;
-            var purchaseOrderNumber = detail.PurchaseOrder.PurchaseOrderNumber ?? "N/A";
+            var purchaseOrderNumber = detail.PurchaseOrder.Code ?? "N/A";
             var remaining = detail.OrderQuantity - detail.ReceivedQuantity;
             
             var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
@@ -95,7 +95,7 @@ namespace ERPCore2.Helpers
             var nameMatch = product.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
             
             // 採購單號搜尋
-            var purchaseOrderMatch = purchaseOrder?.PurchaseOrderNumber?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
+            var purchaseOrderMatch = purchaseOrder?.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) == true;
             
             return codeMatch || nameMatch || purchaseOrderMatch;
         }

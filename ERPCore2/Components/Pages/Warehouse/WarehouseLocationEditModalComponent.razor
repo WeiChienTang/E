@@ -135,7 +135,7 @@
             if (!WarehouseLocationId.HasValue)
             {
                 // 新增模式 - 自動產生庫位代碼
-                var generatedCode = await GenerateWarehouseLocationCodeAsync();
+                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<WarehouseLocation, IWarehouseLocationService>(WarehouseLocationService, "WL");
                 return new WarehouseLocation
                 {
                     Code = generatedCode,
@@ -287,17 +287,6 @@
     }
 
     /// <summary>
-    /// 生成庫位代碼
-    /// </summary>
-    private async Task<string> GenerateWarehouseLocationCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            WarehouseLocationService,
-            "WL",
-            (service, code, excludeId) => service.IsWarehouseLocationCodeExistsAsync(code, excludeId)
-        );
-    }
-
     // ===== AutoComplete 配置方法 =====
     
     /// <summary>

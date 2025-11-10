@@ -8,18 +8,18 @@ namespace ERPCore2.Services
     public interface IMaterialIssueService : IGenericManagementService<MaterialIssue>
     {
         /// <summary>
+        /// 檢查領貨代碼是否已存在
+        /// </summary>
+        /// <param name="code">領貨代碼</param>
+        /// <param name="excludeId">排除的ID（用於編輯模式）</param>
+        /// <returns>是否存在</returns>
+        Task<bool> IsMaterialIssueCodeExistsAsync(string code, int? excludeId = null);
+
+        /// <summary>
         /// 生成領貨單號
         /// </summary>
         /// <returns>領貨單號 (格式: MI + yyyyMMdd + 流水號)</returns>
         Task<string> GenerateIssueNumberAsync();
-
-        /// <summary>
-        /// 檢查領貨單號是否已存在
-        /// </summary>
-        /// <param name="issueNumber">領貨單號</param>
-        /// <param name="excludeId">排除的ID（用於編輯模式）</param>
-        /// <returns>是否存在</returns>
-        Task<bool> IsIssueNumberExistsAsync(string issueNumber, int? excludeId = null);
 
         /// <summary>
         /// 取得領貨單及其明細

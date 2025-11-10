@@ -36,15 +36,16 @@ namespace ERPCore2.FieldConfiguration
                 var fields = new Dictionary<string, FieldDefinition<PurchaseOrder>>
                 {
                     {
-                        nameof(PurchaseOrder.PurchaseOrderNumber),
+                        nameof(PurchaseOrder.Code),
                         new FieldDefinition<PurchaseOrder>
                         {
-                            PropertyName = nameof(PurchaseOrder.PurchaseOrderNumber),
+                            PropertyName = nameof(PurchaseOrder.Code),
                             DisplayName = "單號",
                             FilterPlaceholder = "輸入採購單號搜尋",
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(PurchaseOrder.PurchaseOrderNumber), po => po.PurchaseOrderNumber)
+
+                                model, query, nameof(PurchaseOrder.Code), po => po.Code)
                         }
                     },
                     {

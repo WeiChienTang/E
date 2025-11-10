@@ -82,7 +82,7 @@ namespace ERPCore2.Services
                     errors.Add("職位名稱已存在");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 
-                    await IsCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                    await IsEmployeePositionCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("職位代碼已存在");
                 
                 if (errors.Any())
@@ -102,7 +102,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
+        public async Task<bool> IsEmployeePositionCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
@@ -118,8 +118,8 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCodeExistsAsync), GetType(), _logger, new { 
-                    Method = nameof(IsCodeExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsEmployeePositionCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsEmployeePositionCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = code,
                     ExcludeId = excludeId 

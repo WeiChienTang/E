@@ -103,33 +103,14 @@
                 var newCurrency = new Currency
                 {
                     Name = string.Empty,
-                    Code = await GenerateCurrencyCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Currency, ICurrencyService>(CurrencyService, "CUR"),
                     Status = EntityStatus.Active,
                     IsBaseCurrency = false,
                     ExchangeRate = 1m
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(Currency).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newCurrency, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newCurrency, PrefilledValues);
                 
                 return newCurrency;
             }
@@ -241,16 +222,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateCurrencyCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            CurrencyService,
-            "CUR",
-            (service, code, excludeId) => service.IsCodeExistsAsync(code, excludeId)
-        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

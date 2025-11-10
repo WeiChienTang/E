@@ -581,7 +581,7 @@
                 
                 var newEmployee = new Employee
                 {
-                    Code = await GenerateEmployeeCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Employee, IEmployeeService>(EmployeeService, "EMP"),
                     Name = string.Empty,
                     IsSystemUser = false,
                     RoleId = defaultRole?.Id,
@@ -623,15 +623,6 @@
         }
     }
 
-    private async Task<string> GenerateEmployeeCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeWithServiceResultAsync(
-            EmployeeService,
-            "EMP",
-            (service, code, excludeId) => service.IsEmployeeCodeExistsAsync(code, excludeId)
-        );
-    }
-
     private async Task<bool> SaveEmployee(Employee entity)
     {
         try
@@ -662,8 +653,8 @@
             }
 
             // 檢查員工代碼是否重複
-            var employeeCodeExistsResult = await EmployeeService.IsEmployeeCodeExistsAsync(entity.Code, EmployeeId);
-            if (employeeCodeExistsResult.IsSuccess && employeeCodeExistsResult.Data)
+            var employeeCodeExists = await EmployeeService.IsEmployeeCodeExistsAsync(entity.Code, EmployeeId);
+            if (employeeCodeExists)
             {
                 await NotificationService.ShowErrorAsync($"員工代碼 '{entity.Code}' 已存在，請使用其他代碼");
                 return false;
@@ -673,8 +664,8 @@
             if (hasAccount)
             {
                 // 檢查帳號是否重複
-                var accountExistsResult = await EmployeeService.IsAccountExistsAsync(entity.Account!, EmployeeId);
-                if (accountExistsResult.IsSuccess && accountExistsResult.Data)
+                var accountExists = await EmployeeService.IsAccountExistsAsync(entity.Account!, EmployeeId);
+                if (accountExists)
                 {
                     await NotificationService.ShowErrorAsync($"帳號 '{entity.Account}' 已存在，請使用其他帳號");
                     return false;

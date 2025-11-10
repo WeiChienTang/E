@@ -40,6 +40,14 @@ namespace ERPCore2.Services
         // 自動產生編號
         Task<string> GenerateOrderNumberAsync();
         
+        /// <summary>
+        /// 檢查採購單代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// </summary>
+        /// <param name="code">採購單代碼</param>
+        /// <param name="excludeId">排除的ID（用於編輯模式）</param>
+        /// <returns>是否存在</returns>
+        Task<bool> IsPurchaseOrderCodeExistsAsync(string code, int? excludeId = null);
+        
         // 訂單明細管理
         Task<List<PurchaseOrderDetail>> GetOrderDetailsAsync(int purchaseOrderId);
         Task<ServiceResult> AddOrderDetailAsync(PurchaseOrderDetail detail);

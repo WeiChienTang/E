@@ -104,31 +104,12 @@
                 var newPosition = new EmployeePosition
                 {
                     Name = string.Empty,
-                    Code = await GenerateEmployeePositionCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<EmployeePosition, IEmployeePositionService>(EmployeePositionService, "POS"),
                     Status = EntityStatus.Active
                 };
                 
                 // 應用預填值
-                if (PrefilledValues != null)
-                {
-                    foreach (var kvp in PrefilledValues)
-                    {
-                        var property = typeof(EmployeePosition).GetProperty(kvp.Key);
-                        if (property != null && property.CanWrite && kvp.Value != null)
-                        {
-                            try
-                            {
-                                // 轉換值的類型
-                                var convertedValue = Convert.ChangeType(kvp.Value, property.PropertyType);
-                                property.SetValue(newPosition, convertedValue);
-                            }
-                            catch (Exception)
-                            {
-                                // 忽略轉換失敗的值
-                            }
-                        }
-                    }
-                }
+                PrefilledValueHelper.ApplyPrefilledValues(newPosition, PrefilledValues);
                 
                 return newPosition;
             }
@@ -205,16 +186,6 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
-    }
-
-    // ===== 輔助方法 =====
-    private async Task<string> GenerateEmployeePositionCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            EmployeePositionService,
-            "POS",
-            (service, code, excludeId) => service.IsCodeExistsAsync(code, excludeId)
-        );
     }
 
     // ===== 公開方法 (供父組件調用) =====

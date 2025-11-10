@@ -130,7 +130,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>進貨退出單 - {purchaseReturn.PurchaseReturnNumber}</title>");
+            html.AppendLine($"    <title>進貨退出單 - {purchaseReturn.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
@@ -227,7 +227,7 @@ namespace ERPCore2.Services.Reports
         {
             var infoBuilder = new ReportInfoSectionBuilder();
             infoBuilder
-                .AddField("退回單號", purchaseReturn.PurchaseReturnNumber)
+                .AddField("退回單號", purchaseReturn.Code)
                 .AddDateField("退回日期", purchaseReturn.ReturnDate)
                 .AddField("廠商名稱", supplier?.CompanyName)
                 .AddField("聯絡人", supplier?.ContactPerson)
@@ -460,7 +460,7 @@ namespace ERPCore2.Services.Reports
             
             foreach (var purchaseReturn in purchaseReturns)
             {
-                html.AppendLine($"                <li>{purchaseReturn.PurchaseReturnNumber} - {purchaseReturn.Supplier?.CompanyName ?? "未指定廠商"} - {purchaseReturn.ReturnDate:yyyy/MM/dd}</li>");
+                html.AppendLine($"                <li>{purchaseReturn.Code} - {purchaseReturn.Supplier?.CompanyName ?? "未指定廠商"} - {purchaseReturn.ReturnDate:yyyy/MM/dd}</li>");
             }
             
             html.AppendLine("            </ol>");

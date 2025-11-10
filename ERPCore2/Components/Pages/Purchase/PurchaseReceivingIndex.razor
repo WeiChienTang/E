@@ -20,7 +20,7 @@
                           DataLoader="@LoadPurchaseReceivingsAsync"
                           InitializeBasicData="@LoadBasicDataAsync"
                           FilterApplier="@ApplyPurchaseReceivingFilters"
-                          GetEntityDisplayName="@(receipt => receipt.ReceiptNumber)"
+                          GetEntityDisplayName="@(receipt => receipt.Code)"
                           RequiredPermission="PurchaseReceiving.Read"
                           ShowBatchPrintButton="true"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
@@ -194,7 +194,7 @@
         {
             // 如果配置未初始化，回傳基本排序的查詢
             return query.OrderByDescending(pr => pr.ReceiptDate)
-                       .ThenByDescending(pr => pr.ReceiptNumber);
+                       .ThenByDescending(pr => pr.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyPurchaseReceivingFilters), GetType());

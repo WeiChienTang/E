@@ -305,10 +305,10 @@
                 
                 try
                 {
-                    var number = await GeneratePurchaseReturnNumberAsync();                    
+                    var number = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReturn, IPurchaseReturnService>(PurchaseReturnService, "PR");                    
                     return new PurchaseReturn
                     {
-                        PurchaseReturnNumber = number,
+                        Code = number,
                         ReturnDate = DateTime.Today,
                         Status = EntityStatus.Active,
                         SupplierId = PrefilledSupplierId ?? 0,
@@ -483,7 +483,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(PurchaseReturn.PurchaseReturnNumber),
+                    PropertyName = nameof(PurchaseReturn.Code),
                     Label = "退回單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入退回單號",
@@ -575,7 +575,7 @@
 
             formSections = new Dictionary<string, string>
             {
-                { nameof(PurchaseReturn.PurchaseReturnNumber), "基本資訊" },
+                { nameof(PurchaseReturn.Code), "基本資訊" },
                 { nameof(PurchaseReturn.SupplierId), "基本資訊" },
                 { "FilterProductId", "基本資訊" },
                 { nameof(PurchaseReturn.PurchaseReceivingId), "基本資訊" },
@@ -633,7 +633,7 @@
         // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
         var fieldsToLock = new[]
         {
-            nameof(PurchaseReturn.PurchaseReturnNumber),
+            nameof(PurchaseReturn.Code),
             "FilterProductId",
             nameof(PurchaseReturn.PurchaseReceivingId),
             nameof(PurchaseReturn.ReturnDate),
@@ -757,7 +757,7 @@
                 options.AddRange(supplierReceivings.Select(pr => new SelectOption
                 {
                     Value = pr.Id.ToString(),
-                    Text = pr.ReceiptNumber
+                    Text = pr.Code ?? string.Empty
                 }));
             }
             
@@ -827,7 +827,7 @@
                     options.AddRange(supplierReceivings.Select(pr => new SelectOption
                     {
                         Value = pr.Id.ToString(),
-                        Text = pr.ReceiptNumber
+                        Text = pr.Code ?? string.Empty
                     }));
                 }
                 
@@ -885,7 +885,7 @@
         return new Dictionary<string, string>
         {
             { nameof(PurchaseReturn.SupplierId), nameof(Supplier.CompanyName) },
-            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.ReceiptNumber) }
+            { nameof(PurchaseReturn.PurchaseReceivingId), nameof(PurchaseReceiving.Code) }
         };
     }
 
@@ -1081,14 +1081,6 @@
     }
 
     // ===== 輔助方法 =====
-    private async Task<string> GeneratePurchaseReturnNumberAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            PurchaseReturnService,
-            "PR",
-            (service, code, excludeId) => service.IsPurchaseReturnNumberExistsAsync(code, excludeId)
-        );
-    }
 
     /// <summary>
     /// 配置自訂模組

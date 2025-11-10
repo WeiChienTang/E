@@ -31,17 +31,16 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<ProductionSchedule>>
                 {
                     {
-                        nameof(ProductionSchedule.ScheduleNumber),
+                        nameof(ProductionSchedule.Code),
                         new FieldDefinition<ProductionSchedule>
                         {
-                            PropertyName = nameof(ProductionSchedule.ScheduleNumber),
+                            PropertyName = nameof(ProductionSchedule.Code),
                             DisplayName = "排程單號",
                             FilterPlaceholder = "輸入排程單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductionSchedule.ScheduleNumber), ps => ps.ScheduleNumber)
+                                model, query, nameof(ProductionSchedule.Code), ps => ps.Code)
                         }
                     },
                     {
@@ -52,7 +51,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "排程日期",
                             FilterType = SearchFilterType.Date,
                             TableOrder = 2,
-                            FilterOrder = 2,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(ProductionSchedule.ScheduleDate), ps => ps.ScheduleDate),
@@ -72,7 +70,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "客戶",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            FilterOrder = 3,
                             HeaderStyle = "width: 200px;",
                             Options = _customers.Select(c => new SelectOption
                             {
@@ -93,7 +90,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "製單人員",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            FilterOrder = 4,
                             HeaderStyle = "width: 150px;",
                             Options = _employees.Select(e => new SelectOption
                             {
@@ -133,7 +129,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "來源單據類型",
                             FilterPlaceholder = "輸入來源單據類型搜尋",
                             TableOrder = 5,
-                            FilterOrder = 5,
                             HeaderStyle = "width: 150px;",
                             ShowInFilter = false, // 通常不需要篩選
                             NullDisplayText = "-",

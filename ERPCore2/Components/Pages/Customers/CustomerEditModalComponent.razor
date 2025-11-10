@@ -4,7 +4,6 @@
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
-@using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="Customer" 
                           TService="ICustomerService"
@@ -135,7 +134,7 @@
                 // 新增模式
                 var newCustomer = new Customer
                 {
-                    Code = await GenerateCustomerCodeAsync(),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Customer, ICustomerService>(CustomerService, "CUST"),
                     Status = EntityStatus.Active
                 };
 
@@ -666,15 +665,4 @@
         }
     }
 
-    /// <summary>
-    /// 生成客戶代碼
-    /// </summary>
-    private async Task<string> GenerateCustomerCodeAsync()
-    {
-        return await CodeGenerationHelper.GenerateEntityCodeAsync(
-            CustomerService,
-            "CUST",
-            (service, code, excludeId) => service.IsCustomerCodeExistsAsync(code, excludeId)
-        );
-    }
 }

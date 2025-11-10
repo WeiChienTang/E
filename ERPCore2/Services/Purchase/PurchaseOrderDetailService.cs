@@ -98,10 +98,10 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseReceiving)
                     .Where(d => (
-                        d.PurchaseOrder.PurchaseOrderNumber.Contains(searchTerm) ||
-                        d.Product.Name.Contains(searchTerm) ||
-                        (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
-                        d.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm)
+                        (d.PurchaseOrder != null && d.PurchaseOrder.Code != null && d.PurchaseOrder.Code.Contains(searchTerm)) ||
+                        (d.Product != null && d.Product.Name.Contains(searchTerm)) ||
+                        (d.Product != null && d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
+                        (d.PurchaseOrder != null && d.PurchaseOrder.Supplier != null && d.PurchaseOrder.Supplier.CompanyName.Contains(searchTerm))
                     ))
                     .OrderByDescending(d => d.CreatedAt)
                     .ThenBy(d => d.Id)
