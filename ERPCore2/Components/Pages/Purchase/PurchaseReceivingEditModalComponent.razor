@@ -58,13 +58,16 @@
                           OnPrint="@HandlePrint" />
 
 @* 廠商編輯 Modal *@
-<SupplierEditModalComponent @ref="supplierEditModal"
-                           IsVisible="@supplierModalManager.IsModalVisible"
-                           IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
-                           SupplierId="@supplierModalManager.SelectedEntityId"
-                           PrefilledValues="@supplierModalManager.PrefilledValues"
-                           OnSupplierSaved="@OnSupplierSavedWrapper"
-                           OnCancel="@supplierModalManager.HandleModalCancelAsync" />
+@if (supplierModalManager != null)
+{
+    <SupplierEditModalComponent @ref="supplierEditModal"
+                               IsVisible="@supplierModalManager.IsModalVisible"
+                               IsVisibleChanged="@supplierModalManager.HandleModalVisibilityChangedAsync"
+                               SupplierId="@supplierModalManager.SelectedEntityId"
+                               PrefilledValues="@supplierModalManager.PrefilledValues"
+                               OnSupplierSaved="@OnSupplierSavedWrapper"
+                               OnCancel="@supplierModalManager.HandleModalCancelAsync" />
+}
 
 @* 進貨退出編輯 Modal *@
 <PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"

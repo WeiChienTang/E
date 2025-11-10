@@ -55,11 +55,13 @@ namespace ERPCore2.Helpers
 
             foreach (var detail in setoffDetails)
             {
+                if (detail.SetoffDocument == null) continue;
+                
                 documents.Add(new RelatedDocument
                 {
                     DocumentId = detail.SetoffDocumentId,
                     DocumentType = RelatedDocumentType.SetoffDocument,
-                    DocumentNumber = detail.SetoffDocument.SetoffNumber,
+                    DocumentNumber = detail.SetoffDocument.Code ?? string.Empty,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
                     CurrentAmount = detail.CurrentSetoffAmount,
@@ -108,11 +110,13 @@ namespace ERPCore2.Helpers
 
             foreach (var detail in setoffDetails)
             {
+                if (detail.SetoffDocument == null) continue;
+                
                 documents.Add(new RelatedDocument
                 {
                     DocumentId = detail.SetoffDocumentId,
                     DocumentType = RelatedDocumentType.SetoffDocument,
-                    DocumentNumber = detail.SetoffDocument.SetoffNumber,
+                    DocumentNumber = detail.SetoffDocument.Code ?? string.Empty,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
                     CurrentAmount = detail.CurrentSetoffAmount,
@@ -142,11 +146,13 @@ namespace ERPCore2.Helpers
 
             foreach (var detail in setoffDetails)
             {
+                if (detail.SetoffDocument == null) continue;
+                
                 documents.Add(new RelatedDocument
                 {
                     DocumentId = detail.SetoffDocumentId,
                     DocumentType = RelatedDocumentType.SetoffDocument,
-                    DocumentNumber = detail.SetoffDocument.SetoffNumber,
+                    DocumentNumber = detail.SetoffDocument.Code ?? string.Empty,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
                     CurrentAmount = detail.CurrentSetoffAmount,
@@ -176,11 +182,13 @@ namespace ERPCore2.Helpers
 
             foreach (var detail in setoffDetails)
             {
+                if (detail.SetoffDocument == null) continue;
+                
                 documents.Add(new RelatedDocument
                 {
                     DocumentId = detail.SetoffDocumentId,
                     DocumentType = RelatedDocumentType.SetoffDocument,
-                    DocumentNumber = detail.SetoffDocument.SetoffNumber,
+                    DocumentNumber = detail.SetoffDocument.Code ?? string.Empty,
                     DocumentDate = detail.SetoffDocument.SetoffDate,
                     Amount = detail.CurrentSetoffAmount,
                     CurrentAmount = detail.CurrentSetoffAmount,
@@ -274,11 +282,13 @@ namespace ERPCore2.Helpers
 
             foreach (var usage in usageRecords)
             {
+                if (usage.SetoffDocument == null) continue;
+                
                 documents.Add(new RelatedDocument
                 {
                     DocumentId = usage.SetoffDocumentId,
                     DocumentType = RelatedDocumentType.SetoffDocument,
-                    DocumentNumber = usage.SetoffDocument.SetoffNumber,
+                    DocumentNumber = usage.SetoffDocument.Code ?? string.Empty,
                     DocumentDate = usage.SetoffDocument.SetoffDate,
                     Amount = usage.UsedAmount,  // 使用金額
                     Remarks = usage.SetoffDocument.Remarks

@@ -33,7 +33,7 @@ namespace ERPCore2.Services
                 var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.SetoffNumber)
+                    .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
                 // 載入關聯方名稱
@@ -100,10 +100,10 @@ namespace ERPCore2.Services
                 var setoffDocuments = await context.SetoffDocuments
                     .Include(s => s.Company)
                     .Where(s =>
-                        s.SetoffNumber.ToLower().Contains(searchTermLower) ||
+                        (s.Code != null && s.Code.ToLower().Contains(searchTermLower)) ||
                         s.Company.CompanyName.ToLower().Contains(searchTermLower))
                     .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.SetoffNumber)
+                    .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
                 // 載入關聯方名稱
@@ -140,7 +140,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.SetoffNumber))
+                if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("沖款單號不能為空");
 
                 if (entity.SetoffDate == default)
@@ -155,8 +155,8 @@ namespace ERPCore2.Services
                 if (entity.CompanyId <= 0)
                     errors.Add("公司為必填");
 
-                if (!string.IsNullOrWhiteSpace(entity.SetoffNumber) &&
-                    await IsSetoffNumberExistsAsync(entity.SetoffNumber, entity.Id == 0 ? null : entity.Id))
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
+                    await IsSetoffNumberExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("沖款單號已存在");
 
                 if (errors.Any())
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    SetoffNumber = entity.SetoffNumber
+                    SetoffNumber = entity.Code
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -185,7 +185,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.SetoffDocuments.Where(s => s.SetoffNumber == setoffNumber);
+                var query = context.SetoffDocuments.Where(s => s.Code == setoffNumber);
                 if (excludeId.HasValue)
                     query = query.Where(s => s.Id != excludeId.Value);
 
@@ -205,6 +205,15 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 檢查沖款單代碼是否已存在（別名方法，供 EntityCodeGenerationHelper 使用）
+        /// </summary>
+        public async Task<bool> IsSetoffDocumentCodeExistsAsync(string code, int? excludeId = null)
+        {
+            // 直接調用 IsSetoffNumberExistsAsync
+            return await IsSetoffNumberExistsAsync(code, excludeId);
+        }
+
+        /// <summary>
         /// 根據沖款類型取得沖款單列表
         /// </summary>
         public async Task<List<SetoffDocument>> GetBySetoffTypeAsync(SetoffType setoffType)
@@ -216,7 +225,7 @@ namespace ERPCore2.Services
                     .Include(s => s.Company)
                     .Where(s => s.SetoffType == setoffType)
                     .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.SetoffNumber)
+                    .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
                 await LoadRelatedPartyNamesAsync(context, setoffDocuments);
@@ -252,7 +261,7 @@ namespace ERPCore2.Services
 
                 var setoffDocuments = await query
                     .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.SetoffNumber)
+                    .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
                 await LoadRelatedPartyNamesAsync(context, setoffDocuments);
@@ -284,7 +293,7 @@ namespace ERPCore2.Services
                     .Include(s => s.Company)
                     .Where(s => s.CompanyId == companyId)
                     .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.SetoffNumber)
+                    .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
                 await LoadRelatedPartyNamesAsync(context, setoffDocuments);
@@ -315,7 +324,7 @@ namespace ERPCore2.Services
                     .Include(s => s.Company)
                     .Where(s => s.SetoffDate >= startDate && s.SetoffDate <= endDate)
                     .OrderByDescending(s => s.SetoffDate)
-                    .ThenByDescending(s => s.SetoffNumber)
+                    .ThenByDescending(s => s.Code)
                     .ToListAsync();
 
                 await LoadRelatedPartyNamesAsync(context, setoffDocuments);
@@ -425,7 +434,7 @@ namespace ERPCore2.Services
                 }
 
                 // 🔄 【關鍵步驟】先回朔所有來源 Detail 的累計金額
-                _logger?.LogInformation("開始回朔沖款單 {SetoffNumber} 的來源明細累計金額", document.SetoffNumber);
+                _logger?.LogInformation("開始回朔沖款單 {SetoffNumber} 的來源明細累計金額", document.Code);
                 
                 foreach (var detail in document.SetoffProductDetails)
                 {
@@ -441,7 +450,7 @@ namespace ERPCore2.Services
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger?.LogInformation("成功刪除沖款單 {SetoffNumber} (Id={Id})", document.SetoffNumber, id);
+                _logger?.LogInformation("成功刪除沖款單 {SetoffNumber} (Id={Id})", document.Code, id);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

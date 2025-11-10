@@ -27,16 +27,16 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<SetoffDocument>>
                 {
                     {
-                        nameof(SetoffDocument.SetoffNumber),
+                        nameof(SetoffDocument.Code),
                         new FieldDefinition<SetoffDocument>
                         {
-                            PropertyName = nameof(SetoffDocument.SetoffNumber),
+                            PropertyName = nameof(SetoffDocument.Code),
                             DisplayName = "沖款單號",
                             FilterPlaceholder = "輸入沖款單號搜尋",
                             TableOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SetoffDocument.SetoffNumber), s => s.SetoffNumber)
+                                model, query, nameof(SetoffDocument.Code), s => s.Code)
                         }
                     },
                     {
@@ -129,7 +129,7 @@ namespace ERPCore2.FieldConfiguration
         {
             return query => query
                 .OrderByDescending(s => s.SetoffDate)
-                .ThenByDescending(s => s.SetoffNumber);
+                .ThenByDescending(s => s.Code);
         }
     }
 }

@@ -831,7 +831,7 @@ namespace ERPCore2.Services
                     .Include(d => d.SetoffDocument)
                     .Include(d => d.Product)
                     .Where(d =>
-                        d.SetoffDocument.SetoffNumber.ToLower().Contains(searchTermLower) ||
+                        (d.SetoffDocument.Code != null && d.SetoffDocument.Code.ToLower().Contains(searchTermLower)) ||
                         d.Product.Name.ToLower().Contains(searchTermLower) ||
                         (d.Product.Code != null && d.Product.Code.ToLower().Contains(searchTermLower)))
                     .OrderByDescending(d => d.CreatedAt)

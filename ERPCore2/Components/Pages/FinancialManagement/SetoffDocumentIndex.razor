@@ -17,7 +17,7 @@
                       ColumnDefinitions="@columnDefinitions"
                       DataLoader="@LoadSetoffDocumentsAsync"
                       FilterApplier="@ApplySetoffDocumentFilters"
-                      GetEntityDisplayName="@(setoffDoc => setoffDoc.SetoffNumber)"
+                      GetEntityDisplayName="@(setoffDoc => setoffDoc.Code)"
                       RequiredPermission="SetoffDocument.Read"
                       OnAddClick="@modalHandler.ShowAddModalAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
@@ -225,7 +225,7 @@
         if (fieldConfiguration == null)
         {
             // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderByDescending(s => s.SetoffDate).ThenByDescending(s => s.SetoffNumber);
+            return query.OrderByDescending(s => s.SetoffDate).ThenByDescending(s => s.Code);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySetoffDocumentFilters), GetType());

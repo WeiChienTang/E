@@ -71,7 +71,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [NotMapped]
         [Display(Name = "沖款單號")]
-        public string SetoffDocumentNumber => SetoffDocument?.SetoffNumber ?? string.Empty;
+        public string SetoffDocumentNumber => SetoffDocument?.Code ?? string.Empty;
         
         /// <summary>
         /// 預收付款項來源單號（計算屬性）- 方便顯示用

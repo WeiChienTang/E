@@ -90,7 +90,7 @@ namespace ERPCore2.Services
                     .Include(u => u.SetoffPrepayment)
                     .Include(u => u.SetoffDocument)
                     .Where(u => (u.SetoffPrepayment != null && u.SetoffPrepayment.SourceDocumentCode != null && u.SetoffPrepayment.SourceDocumentCode.Contains(searchTerm)) ||
-                               (u.SetoffDocument != null && u.SetoffDocument.SetoffNumber != null && u.SetoffDocument.SetoffNumber.Contains(searchTerm)))
+                               (u.SetoffDocument != null && u.SetoffDocument.Code != null && u.SetoffDocument.Code.Contains(searchTerm)))
                     .OrderByDescending(u => u.UsageDate)
                     .ToListAsync();
             }

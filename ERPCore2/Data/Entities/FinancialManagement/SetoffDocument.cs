@@ -8,7 +8,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 沖款單實體 - 統一處理應收/應付帳款沖款作業
     /// </summary>
-    [Index(nameof(SetoffNumber))]
+    [Index(nameof(Code))]
     [Index(nameof(SetoffType))]
     [Index(nameof(RelatedPartyId))]
     [Index(nameof(CompanyId))]
@@ -21,14 +21,6 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "沖款類型為必填")]
         [Display(Name = "沖款類型")]
         public SetoffType SetoffType { get; set; }
-
-        /// <summary>
-        /// 沖款單號
-        /// </summary>
-        [Required(ErrorMessage = "沖款單號為必填")]
-        [MaxLength(50, ErrorMessage = "沖款單號不可超過50個字元")]
-        [Display(Name = "沖款單號")]
-        public string SetoffNumber { get; set; } = string.Empty;
 
         /// <summary>
         /// 沖款日期

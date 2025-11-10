@@ -610,7 +610,7 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(18, 2);
 
                         // 設定唯一索引
-                        entity.HasIndex(e => e.SetoffNumber)
+                        entity.HasIndex(e => e.Code)
                               .IsUnique();
 
                         // 設定其他索引

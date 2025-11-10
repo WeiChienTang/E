@@ -559,7 +559,7 @@
                         SetoffDocumentId = entity.Id,
                         UsedAmount = prepayment.UsedAmount,
                         UsageDate = DateTime.Now,
-                        Remarks = $"沖款單 {entity.SetoffNumber} 使用"
+                        Remarks = $"沖款單 {entity.Code} 使用"
                     };
                     
                     var usageResult = await SetoffPrepaymentUsageService.CreateAsync(usage);
@@ -735,7 +735,7 @@
                 
                 setoffDocument = new SetoffDocument
                 {
-                    SetoffNumber = await EntityCodeGenerationHelper.GenerateForEntity<SetoffDocument, ISetoffDocumentService>(SetoffDocumentService, typePrefix),
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<SetoffDocument, ISetoffDocumentService>(SetoffDocumentService, typePrefix),
                     SetoffDate = DateTime.Today,
                     SetoffType = DefaultSetoffType ?? SetoffType.AccountsReceivable,
                     TotalSetoffAmount = 0,
@@ -888,7 +888,7 @@
             {
                 new()
                 {
-                    PropertyName = nameof(SetoffDocument.SetoffNumber),
+                    PropertyName = nameof(SetoffDocument.Code),
                     Label = "沖款單號",
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入沖款單號",
@@ -1049,7 +1049,7 @@
             // 動態設定表單區段 - 使用有序列表以控制欄位順序
             var sectionList = new List<KeyValuePair<string, string>>
             {
-                new(nameof(SetoffDocument.SetoffNumber), "基本資訊")
+                new(nameof(SetoffDocument.Code), "基本資訊")
             };
 
             // 根據沖款類型加入對應的關聯方區段(插入在沖款單號之後)
@@ -1368,7 +1368,7 @@
                                                        SetoffType="@editModalComponent.Entity.SetoffType"
                                                        CustomerId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsReceivable ? editModalComponent.Entity.RelatedPartyId : null)"
                                                        SupplierId="@(editModalComponent.Entity.SetoffType == SetoffType.AccountsPayable ? editModalComponent.Entity.RelatedPartyId : null)"
-                                                       SetoffDocumentNumber="@editModalComponent.Entity.SetoffNumber"
+                                                       SetoffDocumentNumber="@editModalComponent.Entity.Code"
                                                        ExistingPrepayments="@setoffPrepayments"
                                                        OnPrepaymentsChanged="@HandlePrepaymentsChanged"
                                                        OnOpenRelatedDocument="@HandleOpenRelatedDocument"
