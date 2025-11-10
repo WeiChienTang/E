@@ -35,6 +35,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "來源單據ID")]
         public int? SourceDocumentId { get; set; }
 
+        [Display(Name = "來源銷售訂單")]
+        [ForeignKey(nameof(SalesOrder))]
+        public int? SalesOrderId { get; set; }
+
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
         public int? CustomerId { get; set; }
@@ -49,6 +53,11 @@ namespace ERPCore2.Data.Entities
         /// 客戶
         /// </summary>
         public Customer? Customer { get; set; }
+
+        /// <summary>
+        /// 來源銷售訂單
+        /// </summary>
+        public SalesOrder? SalesOrder { get; set; }
 
         /// <summary>
         /// 排程明細列表

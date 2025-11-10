@@ -51,10 +51,15 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SalesOrderDetail))]
         public int? SalesOrderDetailId { get; set; }
 
+        [Display(Name = "原始銷貨/出貨明細")]
+        [ForeignKey(nameof(SalesDeliveryDetail))]
+        public int? SalesDeliveryDetailId { get; set; }
+
 
         // Navigation Properties
         public SalesReturn SalesReturn { get; set; } = null!;
         public Product Product { get; set; } = null!;
         public SalesOrderDetail? SalesOrderDetail { get; set; }
+        public SalesDeliveryDetail? SalesDeliveryDetail { get; set; }
     }
 }

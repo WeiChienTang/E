@@ -96,6 +96,9 @@ namespace ERPCore2.Data
             services.AddScoped<ISalesOrderService, SalesOrderService>();
             services.AddScoped<ISalesOrderDetailService, SalesOrderDetailService>();
 
+            services.AddScoped<ISalesDeliveryService, SalesDeliveryService>();
+            services.AddScoped<ISalesDeliveryDetailService, SalesDeliveryDetailService>();
+
             services.AddScoped<ISalesReturnService, SalesReturnService>();
             services.AddScoped<ISalesReturnDetailService, SalesReturnDetailService>();
             services.AddScoped<ISalesReturnReasonService, SalesReturnReasonService>();

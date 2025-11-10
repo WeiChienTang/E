@@ -368,13 +368,23 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "銷貨",
-                        Description = "管理銷貨訂單",
+                        Name = "訂單管理",
+                        Description = "管理訂單",
                         Route = "/salesOrders",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "銷售管理",
                         RequiredPermission = "SalesOrder.Read",
-                        SearchKeywords = new List<string> { "銷貨單", "銷售單", "sales order", "SO" }
+                        SearchKeywords = new List<string> { "訂單", "sales order", "SO" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "出貨單管理",
+                        Description = "管理銷貨出貨單",
+                        Route = "/salesDeliveries",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "銷售管理",
+                        RequiredPermission = "SalesDelivery.Read",
+                        SearchKeywords = new List<string> { "出貨單", "銷貨單", "delivery", "出貨" }
                     },
                     new NavigationItem
                     {

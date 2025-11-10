@@ -52,6 +52,10 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SalesOrder))]
         public int? SalesOrderId { get; set; }
 
+        [Display(Name = "原始銷貨/出貨單")]
+        [ForeignKey(nameof(SalesDelivery))]
+        public int? SalesDeliveryId { get; set; }
+
         [Display(Name = "處理員工")]
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
@@ -63,6 +67,7 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public Customer Customer { get; set; } = null!;
         public SalesOrder? SalesOrder { get; set; }
+        public SalesDelivery? SalesDelivery { get; set; }
         public Employee? Employee { get; set; }
         public EntitySalesReturnReason? ReturnReason { get; set; }
         public ICollection<SalesReturnDetail> SalesReturnDetails { get; set; } = new List<SalesReturnDetail>();

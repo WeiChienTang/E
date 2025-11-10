@@ -5,15 +5,17 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 銷貨訂單明細實體 - 記錄銷貨訂單的商品明細
+    /// 銷貨/出貨單明細實體 - 記錄實際出貨的商品明細
+    /// 職責: 記錄出貨商品、數量、價格,並關聯來源訂單明細
     /// </summary>
-    [Index(nameof(SalesOrderId), nameof(ProductId))]
-    public class SalesOrderDetail : BaseEntity
+    [Index(nameof(SalesDeliveryId), nameof(ProductId))]
+    [Index(nameof(SalesOrderDetailId))]
+    public class SalesDeliveryDetail : BaseEntity
     {
-        [Required(ErrorMessage = "訂單數量為必填")]
-        [Display(Name = "訂單數量")]
+        [Required(ErrorMessage = "出貨數量為必填")]
+        [Display(Name = "出貨數量")]
         [Column(TypeName = "decimal(18,3)")]
-        public decimal OrderQuantity { get; set; } = 0;
+        public decimal DeliveryQuantity { get; set; } = 0;
 
         [Required(ErrorMessage = "單價為必填")]
         [Display(Name = "單價")]
@@ -26,15 +28,7 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "小計")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal SubtotalAmount => Math.Round(OrderQuantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
-
-        [Display(Name = "已出貨數量")]
-        [Column(TypeName = "decimal(18,3)")]
-        public decimal DeliveredQuantity { get; set; } = 0;
-
-        [Display(Name = "待出貨數量")]
-        [Column(TypeName = "decimal(18,3)")]
-        public decimal PendingDeliveryQuantity => OrderQuantity - DeliveredQuantity;
+        public decimal SubtotalAmount => Math.Round(DeliveryQuantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
 
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]
@@ -45,14 +39,14 @@ namespace ERPCore2.Data.Entities
         public decimal TotalReceivedAmount { get; set; } = 0;
 
         // Foreign Keys
-        [Required(ErrorMessage = "銷貨訂單為必填")]
-        [Display(Name = "銷貨訂單")]
-        [ForeignKey(nameof(SalesOrder))]
-        public int SalesOrderId { get; set; }
+        [Required(ErrorMessage = "銷貨單為必填")]
+        [Display(Name = "銷貨單")]
+        [ForeignKey(nameof(SalesDelivery))]
+        public int SalesDeliveryId { get; set; }
 
-        [Display(Name = "來源報價單明細")]
-        [ForeignKey(nameof(QuotationDetail))]
-        public int? QuotationDetailId { get; set; }
+        [Display(Name = "來源訂單明細")]
+        [ForeignKey(nameof(SalesOrderDetail))]
+        public int? SalesOrderDetailId { get; set; }
 
         [Required(ErrorMessage = "商品為必填")]
         [Display(Name = "商品")]
@@ -72,12 +66,12 @@ namespace ERPCore2.Data.Entities
         public int? WarehouseLocationId { get; set; }
 
         // Navigation Properties
-        public SalesOrder SalesOrder { get; set; } = null!;
-        public QuotationDetail? QuotationDetail { get; set; }
+        public SalesDelivery SalesDelivery { get; set; } = null!;
+        public SalesOrderDetail? SalesOrderDetail { get; set; }
         public Product Product { get; set; } = null!;
         public Unit? Unit { get; set; }
         public Warehouse? Warehouse { get; set; }
         public WarehouseLocation? WarehouseLocation { get; set; }
-        public ICollection<SalesDeliveryDetail> SalesDeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();
+        public ICollection<SalesReturnDetail> SalesReturnDetails { get; set; } = new List<SalesReturnDetail>();
     }
 }
