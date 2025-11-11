@@ -935,6 +935,14 @@
             {
                 new()
                 {
+                    PropertyName = nameof(SetoffDocument.SetoffDate),
+                    Label = "沖款日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "沖款單的建立日期"
+                },
+                new()
+                {
                     PropertyName = nameof(SetoffDocument.CompanyId),
                     Label = "公司",
                     FieldType = FormFieldType.AutoComplete,
@@ -959,14 +967,6 @@
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "篩選該日期之前的銷貨、銷貨退回、入庫、入庫退出單據"
-                },
-                new()
-                {
-                    PropertyName = nameof(SetoffDocument.SetoffDate),
-                    Label = "沖款日期",
-                    FieldType = FormFieldType.Date,
-                    IsRequired = true,
-                    HelpText = "沖款單的建立日期"
                 }
             });
 
@@ -1048,15 +1048,9 @@
             
             // 動態設定表單區段 - 使用 FormSectionHelper
             var helper = FormSectionHelper<SetoffDocument>.Create()
-                .AddToSection(FormSectionNames.BasicInfo,
-                    sd => sd.Code,
-                    sd => sd.CompanyId,
-                    sd => sd.SetoffDate)
-                .AddCustomFields(FormSectionNames.BasicInfo, 
-                    "FilterStartDate", 
-                    "FilterEndDate");
+                .AddToSection(FormSectionNames.BasicInfo, sd => sd.Code);
             
-            // 根據沖款類型動態加入客戶或廠商欄位
+            // 根據沖款類型動態加入客戶或廠商欄位（在單號之後）
             if (currentSetoffType == SetoffType.AccountsReceivable)
             {
                 helper.AddCustomFields(FormSectionNames.BasicInfo, "CustomerId");
@@ -1065,6 +1059,13 @@
             {
                 helper.AddCustomFields(FormSectionNames.BasicInfo, "SupplierId");
             }
+            
+            // 加入公司欄位、日期篩選欄位和沖款日期
+            helper.AddToSection(FormSectionNames.BasicInfo, sd => sd.CompanyId)
+                .AddCustomFields(FormSectionNames.BasicInfo, 
+                    "FilterStartDate", 
+                    "FilterEndDate")
+                .AddToSection(FormSectionNames.BasicInfo, sd => sd.SetoffDate);
             
             // 加入金額相關區段
             formSections = helper
