@@ -21,6 +21,7 @@
                           RequiredPermission="Product.Read"
                           ShowBarcodePrintButton="true"
                           OnBarcodePrintClick="@HandleBarcodePrintClick"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
