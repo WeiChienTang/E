@@ -458,20 +458,23 @@
                 }
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(SalesDelivery.Code), "基本資訊" },
-                { nameof(SalesDelivery.CustomerId), "基本資訊" },
-                { nameof(SalesDelivery.SalesOrderId), "基本資訊" },
-                { nameof(SalesDelivery.EmployeeId), "基本資訊" },
-                { nameof(SalesDelivery.WarehouseId), "基本資訊" },
-                { nameof(SalesDelivery.DeliveryDate), "基本資訊" },
-                { nameof(SalesDelivery.IsShipped), "出貨狀態" },
-                { nameof(SalesDelivery.IsApproved), "出貨狀態" },
-                { nameof(SalesDelivery.TotalAmount), "金額資訊" },
-                { nameof(SalesDelivery.DeliveryAddress), "其他資訊" },
-                { nameof(SalesDelivery.Remarks), "其他資訊" }
-            };
+            formSections = FormSectionHelper<SalesDelivery>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    sd => sd.Code,
+                    sd => sd.CustomerId,
+                    sd => sd.SalesOrderId,
+                    sd => sd.EmployeeId,
+                    sd => sd.WarehouseId,
+                    sd => sd.DeliveryDate)
+                .AddCustomFields("出貨狀態",
+                    nameof(SalesDelivery.IsShipped),
+                    nameof(SalesDelivery.IsApproved))
+                .AddToSection(FormSectionNames.AmountInfo,
+                    sd => sd.TotalAmount)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    sd => sd.DeliveryAddress,
+                    sd => sd.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

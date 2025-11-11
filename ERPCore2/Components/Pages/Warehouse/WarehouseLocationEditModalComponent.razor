@@ -274,18 +274,19 @@
                 FormFieldConfigurationHelper.CreateRemarksField<WarehouseLocation>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(WarehouseLocation.Code), "基本資訊" },
-                { nameof(WarehouseLocation.Name), "基本資訊" },
-                { nameof(WarehouseLocation.WarehouseId), "基本資訊" },
-                { nameof(WarehouseLocation.Zone), "基本資訊" },
-                { nameof(WarehouseLocation.Aisle), "基本資訊" },
-                { nameof(WarehouseLocation.Level), "基本資訊" },
-                { nameof(WarehouseLocation.Position), "基本資訊" },
-                { nameof(WarehouseLocation.MaxCapacity), "基本資訊" },
-                { nameof(WarehouseLocation.Remarks), "額外資訊" }
-            };
+            formSections = FormSectionHelper<WarehouseLocation>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    wl => wl.Code,
+                    wl => wl.Name,
+                    wl => wl.WarehouseId,
+                    wl => wl.Zone,
+                    wl => wl.Aisle,
+                    wl => wl.Level,
+                    wl => wl.Position,
+                    wl => wl.MaxCapacity)
+                .AddToSection(FormSectionNames.AdditionalInfo,
+                    wl => wl.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

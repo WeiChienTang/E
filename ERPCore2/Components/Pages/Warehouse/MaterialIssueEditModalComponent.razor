@@ -273,14 +273,15 @@
                 FormFieldConfigurationHelper.CreateRemarksField<MaterialIssue>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(MaterialIssue.Code), "基本資訊" },
-                { nameof(MaterialIssue.IssueDate), "基本資訊" },
-                { nameof(MaterialIssue.EmployeeId), "基本資訊" },
-                { nameof(MaterialIssue.DepartmentId), "基本資訊" },
-                { nameof(MaterialIssue.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<MaterialIssue>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    mi => mi.Code,
+                    mi => mi.IssueDate,
+                    mi => mi.EmployeeId,
+                    mi => mi.DepartmentId)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    mi => mi.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

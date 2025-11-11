@@ -243,16 +243,18 @@
                 FormFieldConfigurationHelper.CreateRemarksField<ProductionSchedule>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(ProductionSchedule.Code), "基本資訊" },
-                { nameof(ProductionSchedule.ScheduleDate), "基本資訊" },
-                { nameof(ProductionSchedule.CustomerId), "基本資訊" },
-                { nameof(ProductionSchedule.CreatedByEmployeeId), "基本資訊" },
-                { nameof(ProductionSchedule.SourceDocumentType), "來源資訊" },
-                { nameof(ProductionSchedule.SourceDocumentId), "來源資訊" },
-                { nameof(ProductionSchedule.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<ProductionSchedule>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    ps => ps.Code,
+                    ps => ps.ScheduleDate,
+                    ps => ps.CustomerId,
+                    ps => ps.CreatedByEmployeeId)
+                .AddCustomFields("來源資訊",
+                    nameof(ProductionSchedule.SourceDocumentType),
+                    nameof(ProductionSchedule.SourceDocumentId))
+                .AddToSection(FormSectionNames.AdditionalData,
+                    ps => ps.Remarks)
+                .Build();
         }
         catch (Exception)
         {

@@ -481,20 +481,22 @@
                 )
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Quotation.Code), "基本資訊" },
-                { nameof(Quotation.CustomerId), "基本資訊" },
-                { nameof(Quotation.CompanyId), "基本資訊" },
-                { nameof(Quotation.EmployeeId), "基本資訊" },
-                { nameof(Quotation.ProjectName), "基本資訊" },
-                { nameof(Quotation.QuotationDate), "基本資訊" },
-                { nameof(Quotation.PaymentTerms), "交易條件" },
-                { nameof(Quotation.DeliveryTerms), "交易條件" },
-                { nameof(Quotation.TotalAmount), "金額資訊" },
-                { nameof(Quotation.DiscountAmount), "金額資訊" },
-                { "Remarks", "其他資訊" }
-            };
+            formSections = FormSectionHelper<Quotation>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    q => q.Code,
+                    q => q.CustomerId,
+                    q => q.CompanyId,
+                    q => q.EmployeeId,
+                    q => q.ProjectName,
+                    q => q.QuotationDate)
+                .AddToSection(FormSectionNames.TradingTerms,
+                    q => q.PaymentTerms,
+                    q => q.DeliveryTerms)
+                .AddToSection(FormSectionNames.AmountInfo,
+                    q => q.TotalAmount,
+                    q => q.DiscountAmount)
+                .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
+                .Build();
         }
         catch (Exception)
         {

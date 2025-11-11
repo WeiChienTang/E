@@ -215,17 +215,19 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Bank>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Bank.Code), "基本資訊" },
-                { nameof(Bank.BankName), "基本資訊" },
-                { nameof(Bank.BankNameEn), "基本資訊" },
-                { nameof(Bank.SwiftCode), "基本資訊" },
-                { nameof(Bank.Phone), "聯絡資訊" },
-                { nameof(Bank.Fax), "聯絡資訊" },
-                { nameof(Bank.Address), "聯絡資訊" },
-                { nameof(Bank.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<Bank>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    b => b.Code,
+                    b => b.BankName,
+                    b => b.BankNameEn,
+                    b => b.SwiftCode)
+                .AddToSection(FormSectionNames.ContactInfo,
+                    b => b.Phone,
+                    b => b.Fax,
+                    b => b.Address)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    b => b.Remarks)
+                .Build();
         }
         catch (Exception)
         {

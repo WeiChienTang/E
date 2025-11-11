@@ -1046,45 +1046,38 @@
 
 
             
-            // 動態設定表單區段 - 使用有序列表以控制欄位順序
-            var sectionList = new List<KeyValuePair<string, string>>
-            {
-                new(nameof(SetoffDocument.Code), "基本資訊")
-            };
-
-            // 根據沖款類型加入對應的關聯方區段(插入在沖款單號之後)
+            // 動態設定表單區段 - 使用 FormSectionHelper
+            var helper = FormSectionHelper<SetoffDocument>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    sd => sd.Code,
+                    sd => sd.CompanyId,
+                    sd => sd.SetoffDate)
+                .AddCustomFields(FormSectionNames.BasicInfo, 
+                    "FilterStartDate", 
+                    "FilterEndDate");
+            
+            // 根據沖款類型動態加入客戶或廠商欄位
             if (currentSetoffType == SetoffType.AccountsReceivable)
             {
-                sectionList.Add(new("CustomerId", "基本資訊"));
+                helper.AddCustomFields(FormSectionNames.BasicInfo, "CustomerId");
             }
             else if (currentSetoffType == SetoffType.AccountsPayable)
             {
-                sectionList.Add(new("SupplierId", "基本資訊"));
+                helper.AddCustomFields(FormSectionNames.BasicInfo, "SupplierId");
             }
-
-            // 繼續加入其他基本資訊欄位
-            sectionList.AddRange(new[]
-            {
-                new KeyValuePair<string, string>(nameof(SetoffDocument.CompanyId), "基本資訊"),
-                new KeyValuePair<string, string>("FilterStartDate", "基本資訊"),
-                new KeyValuePair<string, string>("FilterEndDate", "基本資訊"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.SetoffDate), "基本資訊")
-            });
-
+            
             // 加入金額相關區段
-            sectionList.AddRange(new[]
-            {
-                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalSetoffAmount), "金額資訊(系統自動計算)"),    
-                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalCollectionAmount), "金額資訊(系統自動計算)"),            
-                new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentSetoffAmount), "金額資訊(系統自動計算)"),                
-                new KeyValuePair<string, string>(nameof(SetoffDocument.TotalAllowanceAmount), "金額資訊(系統自動計算)"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.CurrentPrepaymentAmount), "金額資訊(系統自動計算)"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.PrepaymentSetoffAmount), "金額資訊(系統自動計算)"),
-                new KeyValuePair<string, string>(nameof(SetoffDocument.Remarks), "其他資訊")
-            });
-
-            // 轉換為 Dictionary
-            formSections = sectionList.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            formSections = helper
+                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                    sd => sd.TotalSetoffAmount,
+                    sd => sd.TotalCollectionAmount,
+                    sd => sd.CurrentSetoffAmount,
+                    sd => sd.TotalAllowanceAmount,
+                    sd => sd.CurrentPrepaymentAmount,
+                    sd => sd.PrepaymentSetoffAmount)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    sd => sd.Remarks)
+                .Build();
         }
         catch (Exception)
         {

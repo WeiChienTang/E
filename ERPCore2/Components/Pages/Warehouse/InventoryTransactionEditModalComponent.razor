@@ -317,23 +317,26 @@
                 FormFieldConfigurationHelper.CreateRemarksField<InventoryTransaction>(readOnly:true)
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(InventoryTransaction.TransactionNumber), "基本資訊" },
-                { nameof(InventoryTransaction.TransactionType), "基本資訊" },
-                { nameof(InventoryTransaction.TransactionDate), "基本資訊" },
-                { nameof(InventoryTransaction.ProductId), "基本資訊" },
-                { nameof(InventoryTransaction.WarehouseId), "庫存資訊" },
-                { nameof(InventoryTransaction.WarehouseLocationId), "庫存資訊" },
-                { nameof(InventoryTransaction.Quantity), "庫存資訊" },
-                { nameof(InventoryTransaction.UnitCost), "庫存資訊" },
-                { nameof(InventoryTransaction.StockBefore), "庫存資訊" },
-                { nameof(InventoryTransaction.StockAfter), "庫存資訊" },
-                { nameof(InventoryTransaction.TransactionBatchNumber), "批號管理" },
-                { nameof(InventoryTransaction.TransactionBatchDate), "批號管理" },
-                { nameof(InventoryTransaction.TransactionExpiryDate), "批號管理" },
-                { nameof(InventoryTransaction.Remarks), "其他資料" }
-            };
+            formSections = FormSectionHelper<InventoryTransaction>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    it => it.TransactionNumber,
+                    it => it.TransactionType,
+                    it => it.TransactionDate,
+                    it => it.ProductId)
+                .AddCustomFields("庫存資訊",
+                    nameof(InventoryTransaction.WarehouseId),
+                    nameof(InventoryTransaction.WarehouseLocationId),
+                    nameof(InventoryTransaction.Quantity),
+                    nameof(InventoryTransaction.UnitCost),
+                    nameof(InventoryTransaction.StockBefore),
+                    nameof(InventoryTransaction.StockAfter))
+                .AddCustomFields("批號管理",
+                    nameof(InventoryTransaction.TransactionBatchNumber),
+                    nameof(InventoryTransaction.TransactionBatchDate),
+                    nameof(InventoryTransaction.TransactionExpiryDate))
+                .AddCustomFields("其他資料",
+                    nameof(InventoryTransaction.Remarks))
+                .Build();
         }
         catch (Exception ex)
         {

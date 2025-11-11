@@ -170,12 +170,13 @@
             };
 
             // 設定表單區段
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Role.Code), "基本資訊" },
-                { nameof(Role.Name), "基本資訊" },
-                { nameof(Role.Remarks), "額外資訊" }
-            };
+            formSections = FormSectionHelper<Role>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    r => r.Code,
+                    r => r.Name)
+                .AddToSection(FormSectionNames.AdditionalInfo,
+                    r => r.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

@@ -120,12 +120,13 @@
             FormFieldConfigurationHelper.CreateRemarksField<Size>()
         };
 
-        formSections = new Dictionary<string, string>
-        {
-            { nameof(Size.Code), "基本資訊" },
-            { nameof(Size.Name), "基本資訊" },
-            { nameof(Size.Remarks), "額外資訊" }
-        };
+        formSections = FormSectionHelper<Size>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                s => s.Code,
+                s => s.Name)
+            .AddToSection(FormSectionNames.AdditionalInfo,
+                s => s.Remarks)
+            .Build();
     }
 
     private List<FormFieldDefinition> GetFormFields()

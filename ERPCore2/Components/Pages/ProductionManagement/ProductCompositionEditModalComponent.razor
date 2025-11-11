@@ -394,16 +394,17 @@
                 FormFieldConfigurationHelper.CreateRemarksField<ProductComposition>(containerCssClass:"col-6")
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(ProductComposition.Code), "基本資訊" },
-                { nameof(ProductComposition.ParentProductId), "基本資訊" },
-                { nameof(ProductComposition.CompositionType), "基本資訊" },
-                { nameof(ProductComposition.CustomerId), "基本資訊" },
-                { nameof(ProductComposition.CreatedByEmployeeId), "基本資訊" },
-                { nameof(ProductComposition.Specification), "額外資料" },
-                { nameof(ProductComposition.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<ProductComposition>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    pc => pc.Code,
+                    pc => pc.ParentProductId,
+                    pc => pc.CompositionType,
+                    pc => pc.CustomerId,
+                    pc => pc.CreatedByEmployeeId)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    pc => pc.Specification,
+                    pc => pc.Remarks)
+                .Build();
         }
         catch (Exception)
         {

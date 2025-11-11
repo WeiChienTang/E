@@ -176,13 +176,14 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Permission>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Permission.Code), "基本資訊" },
-                { nameof(selectedAction), "基本資訊" },
-                { nameof(Permission.Name), "基本資訊" },
-                { nameof(Permission.Remarks), "額外資訊" }
-            };
+            formSections = FormSectionHelper<Permission>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    p => p.Code,
+                    p => p.Name)
+                .AddCustomFields(FormSectionNames.BasicInfo, nameof(selectedAction))
+                .AddToSection(FormSectionNames.AdditionalInfo,
+                    p => p.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

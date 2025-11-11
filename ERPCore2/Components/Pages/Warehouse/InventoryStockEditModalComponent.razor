@@ -363,12 +363,13 @@
                 FormFieldConfigurationHelper.CreateRemarksField<InventoryStock>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(InventoryStock.ProductId), "基本資訊" },             
-                { nameof(InventoryStock.TotalCurrentStock), "基本資訊" },
-                { nameof(InventoryStock.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<InventoryStock>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    ist => ist.ProductId,
+                    ist => ist.TotalCurrentStock)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    ist => ist.Remarks)
+                .Build();
         }
         catch (Exception)
         {

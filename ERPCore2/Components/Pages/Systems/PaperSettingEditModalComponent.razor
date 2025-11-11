@@ -229,18 +229,19 @@
                 )
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(PaperSetting.Code), "基本資訊" },
-                { nameof(PaperSetting.Name), "基本資訊" },
-                { nameof(PaperSetting.Width), "基本資訊" },
-                { nameof(PaperSetting.Height), "基本資訊" },
-                { nameof(PaperSetting.TopMargin), "基本資訊" },
-                { nameof(PaperSetting.BottomMargin), "基本資訊" },
-                { nameof(PaperSetting.LeftMargin), "基本資訊" },
-                { nameof(PaperSetting.RightMargin), "基本資訊" },
-                { nameof(PaperSetting.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<PaperSetting>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    ps => ps.Code,
+                    ps => ps.Name,
+                    ps => ps.Width,
+                    ps => ps.Height,
+                    ps => ps.TopMargin,
+                    ps => ps.BottomMargin,
+                    ps => ps.LeftMargin,
+                    ps => ps.RightMargin)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    ps => ps.Remarks)
+                .Build();
         }
         catch (Exception)
         {

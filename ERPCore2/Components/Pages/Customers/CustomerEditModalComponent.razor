@@ -400,35 +400,35 @@
             FormFieldConfigurationHelper.CreateRemarksField<Customer>()
         };
 
-        formSections = new Dictionary<string, string>
-        {
-            { nameof(Customer.Code), "基本資訊" },
-            { nameof(Customer.CompanyName), "基本資訊" },
-            { nameof(Customer.ResponsiblePerson), "基本資訊" },       
-            { nameof(Customer.CompanyContactPhone), "基本資訊" },
-            { nameof(Customer.TaxNumber), "基本資訊" },         
-            { nameof(Customer.Fax), "基本資訊" },   
-            { nameof(Customer.Website), "基本資訊" },
-            { nameof(Customer.ContactAddress), "基本資訊" },
-            { nameof(Customer.ShippingAddress), "基本資訊" },
-            
-            { nameof(Customer.ContactPerson), "聯絡人資訊" },
-            { nameof(Customer.JobTitle), "聯絡人資訊" },
-            { nameof(Customer.ContactPhone), "聯絡人資訊" },
-            { nameof(Customer.MobilePhone), "聯絡人資訊" },            
-            { nameof(Customer.Email), "聯絡人資訊" },           
-
-            { nameof(Customer.PaymentMethodId), "付款資訊" },
-            { nameof(Customer.PaymentTerms), "付款資訊" },
-            { nameof(Customer.PaymentDate), "付款資訊" },
-            { nameof(Customer.InvoiceTitle), "付款資訊" },            
-            { nameof(Customer.CreditLimit), "付款資訊" },
-            { nameof(Customer.CurrentBalance), "付款資訊" },
-            
-            { nameof(Customer.EmployeeId), "業務資訊" },
-            
-            { nameof(Customer.Remarks), "其他資訊" }
-        };
+        formSections = FormSectionHelper<Customer>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                c => c.Code,
+                c => c.CompanyName,
+                c => c.ResponsiblePerson,
+                c => c.CompanyContactPhone,
+                c => c.TaxNumber,
+                c => c.Fax,
+                c => c.Website,
+                c => c.ContactAddress,
+                c => c.ShippingAddress)
+            .AddToSection(FormSectionNames.ContactPersonInfo,
+                c => c.ContactPerson,
+                c => c.JobTitle,
+                c => c.ContactPhone,
+                c => c.MobilePhone,
+                c => c.Email)
+            .AddToSection(FormSectionNames.PaymentInfo,
+                c => c.PaymentMethodId,
+                c => c.PaymentTerms,
+                c => c.PaymentDate,
+                c => c.InvoiceTitle,
+                c => c.CreditLimit,
+                c => c.CurrentBalance)
+            .AddToSection(FormSectionNames.SalesInfo,
+                c => c.EmployeeId)
+            .AddToSection(FormSectionNames.OtherInfo,
+                c => c.Remarks)
+            .Build();
         }
         catch (Exception)
         {

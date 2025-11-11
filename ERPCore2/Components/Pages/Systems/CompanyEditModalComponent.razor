@@ -284,27 +284,30 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Company>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Company.Code), "基本資訊" },
-                { nameof(Company.CompanyName), "基本資訊" },
-                { nameof(Company.CompanyNameEn), "基本資訊" },
-                { nameof(Company.ShortName), "基本資訊" },
-                { nameof(Company.ShortNameEn), "基本資訊" },
-                { nameof(Company.TaxId), "基本資訊" },
-                { nameof(Company.InvoiceTitle), "基本資訊" },
-                { nameof(Company.EstablishedDate), "公司資料" },
-                { nameof(Company.CapitalAmount), "公司資料" },
-                { nameof(Company.Representative), "公司資料" },
-                { nameof(Company.Status), "基本資訊" },
-                { nameof(Company.Address), "聯絡資訊" },
-                { nameof(Company.Phone), "聯絡資訊" },
-                { nameof(Company.Fax), "聯絡資訊" },
-                { nameof(Company.Email), "聯絡資訊" },
-                { nameof(Company.Website), "聯絡資訊" },
-                { nameof(Company.Description), "額外資料" },
-                { nameof(Company.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<Company>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    c => c.Code,
+                    c => c.CompanyName,
+                    c => c.CompanyNameEn,
+                    c => c.ShortName,
+                    c => c.ShortNameEn,
+                    c => c.TaxId,
+                    c => c.InvoiceTitle,
+                    c => c.Status)
+                .AddToSection(FormSectionNames.CompanyData,
+                    c => c.EstablishedDate,
+                    c => c.CapitalAmount,
+                    c => c.Representative)
+                .AddToSection(FormSectionNames.ContactInfo,
+                    c => c.Address,
+                    c => c.Phone,
+                    c => c.Fax,
+                    c => c.Email,
+                    c => c.Website)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    c => c.Description,
+                    c => c.Remarks)
+                .Build();
         }
         catch (Exception)
         {

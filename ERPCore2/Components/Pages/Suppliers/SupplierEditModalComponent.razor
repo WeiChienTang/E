@@ -269,28 +269,29 @@
             };
 
             // 更新表單區段定義
-            formSections = new Dictionary<string, string>
-            {
-            { nameof(Supplier.Code), "基本資訊" },
-            { nameof(Supplier.CompanyName), "基本資訊" },
-            { nameof(Supplier.ResponsiblePerson), "基本資訊" },       
-            { nameof(Supplier.SupplierContactPhone), "基本資訊" },
-            { nameof(Supplier.TaxNumber), "基本資訊" },         
-            { nameof(Supplier.Fax), "基本資訊" },   
-            { nameof(Supplier.Website), "基本資訊" },
-            { nameof(Supplier.ContactAddress), "基本資訊" },
-            { nameof(Supplier.SupplierAddress), "基本資訊" },
-            
-            { nameof(Supplier.ContactPerson), "聯絡人資訊" },
-            { nameof(Supplier.JobTitle), "聯絡人資訊" },
-            { nameof(Supplier.ContactPhone), "聯絡人資訊" },
-            { nameof(Supplier.MobilePhone), "聯絡人資訊" },            
-            { nameof(Supplier.Email), "聯絡人資訊" },           
-
-            { nameof(Supplier.PaymentMethod), "付款資訊" },
-            { nameof(Supplier.PaymentTerms), "付款資訊" },
-            { nameof(Supplier.Remarks), "其他資訊" }
-            };
+            formSections = FormSectionHelper<Supplier>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    s => s.Code,
+                    s => s.CompanyName,
+                    s => s.ResponsiblePerson,
+                    s => s.SupplierContactPhone,
+                    s => s.TaxNumber,
+                    s => s.Fax,
+                    s => s.Website,
+                    s => s.ContactAddress,
+                    s => s.SupplierAddress)
+                .AddToSection(FormSectionNames.ContactPersonInfo,
+                    s => s.ContactPerson,
+                    s => s.JobTitle,
+                    s => s.ContactPhone,
+                    s => s.MobilePhone,
+                    s => s.Email)
+                .AddToSection(FormSectionNames.PaymentInfo,
+                    s => s.PaymentMethod,
+                    s => s.PaymentTerms)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    s => s.Remarks)
+                .Build();
         }
         catch (Exception)
         {

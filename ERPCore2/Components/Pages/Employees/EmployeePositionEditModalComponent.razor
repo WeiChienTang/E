@@ -170,12 +170,13 @@
                 FormFieldConfigurationHelper.CreateRemarksField<EmployeePosition>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(EmployeePosition.Code), "基本資訊" },
-                { nameof(EmployeePosition.Name), "基本資訊" },
-                { nameof(EmployeePosition.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<EmployeePosition>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    ep => ep.Code,
+                    ep => ep.Name)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    ep => ep.Remarks)
+                .Build();
         }
         catch (Exception)
         {

@@ -245,16 +245,17 @@
                 }
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(ReportPrintConfiguration.Code), "基本資訊" },
-                { nameof(ReportPrintConfiguration.ReportType), "基本資訊" },
-                { nameof(ReportPrintConfiguration.ReportName), "基本資訊" },                
-                { nameof(ReportPrintConfiguration.Status), "基本資訊" },
-                { nameof(ReportPrintConfiguration.PrinterConfigurationId), "基本資訊" },
-                { nameof(ReportPrintConfiguration.PaperSettingId), "基本資訊" },
-                { nameof(ReportPrintConfiguration.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<ReportPrintConfiguration>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    rpc => rpc.Code,
+                    rpc => rpc.ReportType,
+                    rpc => rpc.ReportName,
+                    rpc => rpc.Status,
+                    rpc => rpc.PrinterConfigurationId,
+                    rpc => rpc.PaperSettingId)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    rpc => rpc.Remarks)
+                .Build();
         }
         catch (Exception)
         {

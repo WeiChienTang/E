@@ -397,32 +397,32 @@
             formFields.Add(FormFieldConfigurationHelper.CreateRemarksField<Employee>());
 
             // 更新表單區段定義
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Employee.Code), "基本資訊" },
-                { nameof(Employee.Name), "基本資訊" },
-                { nameof(Employee.Gender), "基本資訊" },
-                { nameof(Employee.BirthDate), "基本資訊" },
-                { nameof(Employee.IdNumber), "基本資訊" },
-                { nameof(Employee.Mobile), "聯絡資訊" },
-                { nameof(Employee.Email), "聯絡資訊" },
-                { nameof(Employee.EmergencyContact), "聯絡資訊" },
-                { nameof(Employee.EmergencyPhone), "聯絡資訊" },
-                { nameof(Employee.DepartmentId), "組織架構" },
-                { nameof(Employee.EmployeePositionId), "組織架構" },
-                { nameof(Employee.HireDate), "任職資訊" },
-                { nameof(Employee.ResignationDate), "任職資訊" },
-                { nameof(Employee.EmploymentStatus), "任職資訊" },
-                { nameof(Employee.Remarks), "額外資料" }
-            };
-
-            // 只有有權限的使用者才加入帳號相關區段
-            if (hasAccountPasswordPermission)
-            {
-                formSections.Add(nameof(Employee.Account), "帳號資訊");
-                formSections.Add(nameof(Employee.Password), "帳號資訊");
-                formSections.Add(nameof(Employee.RoleId), "帳號資訊");                
-            }
+            formSections = FormSectionHelper<Employee>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    e => e.Code,
+                    e => e.Name,
+                    e => e.Gender,
+                    e => e.BirthDate,
+                    e => e.IdNumber)
+                .AddToSection(FormSectionNames.ContactInfo,
+                    e => e.Mobile,
+                    e => e.Email,
+                    e => e.EmergencyContact,
+                    e => e.EmergencyPhone)
+                .AddToSection(FormSectionNames.OrganizationStructure,
+                    e => e.DepartmentId,
+                    e => e.EmployeePositionId)
+                .AddToSection(FormSectionNames.EmploymentInfo,
+                    e => e.HireDate,
+                    e => e.ResignationDate,
+                    e => e.EmploymentStatus)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    e => e.Remarks)
+                .AddIf(hasAccountPasswordPermission, FormSectionNames.AccountInfo,
+                    e => e.Account,
+                    e => e.Password,
+                    e => e.RoleId)
+                .Build();
         }
         catch (Exception)
         {

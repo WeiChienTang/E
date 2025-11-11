@@ -195,15 +195,16 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Warehouse>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(Warehouse.Code), "基本資訊" },
-                { nameof(Warehouse.Name), "基本資訊" },
-                { nameof(Warehouse.ContactPerson), "基本資訊" },
-                { nameof(Warehouse.Phone), "基本資訊" },
-                { nameof(Warehouse.Address), "基本資訊" },
-                { nameof(Warehouse.Remarks), "額外資料" }
-            };
+            formSections = FormSectionHelper<Warehouse>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    w => w.Code,
+                    w => w.Name,
+                    w => w.ContactPerson,
+                    w => w.Phone,
+                    w => w.Address)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    w => w.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

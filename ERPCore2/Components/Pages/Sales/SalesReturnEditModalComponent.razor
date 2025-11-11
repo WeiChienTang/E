@@ -768,19 +768,21 @@
                 )
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(SalesReturn.Code), "基本資訊" },
-                { nameof(SalesReturn.CustomerId), "基本資訊" },
-                { "FilterProductId", "基本資訊" },
-                { nameof(SalesReturn.SalesOrderId), "基本資訊" },
-                { nameof(SalesReturn.ReturnDate), "基本資訊" },
-                { nameof(SalesReturn.ReturnReasonId), "基本資訊" },
-                { nameof(SalesReturn.TotalReturnAmount), "金額資訊(系統自動計算)" },
-                { nameof(SalesReturn.ReturnTaxAmount), "金額資訊(系統自動計算)" },
-                { nameof(SalesReturn.TotalReturnAmountWithTax), "金額資訊(系統自動計算)" },
-                { nameof(BaseEntity.Remarks), "其他資訊" }
-            };
+            formSections = FormSectionHelper<SalesReturn>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    sr => sr.Code,
+                    sr => sr.CustomerId,
+                    sr => sr.SalesOrderId,
+                    sr => sr.ReturnDate,
+                    sr => sr.ReturnReasonId)
+                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                    sr => sr.TotalReturnAmount,
+                    sr => sr.ReturnTaxAmount,
+                    sr => sr.TotalReturnAmountWithTax)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    sr => sr.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

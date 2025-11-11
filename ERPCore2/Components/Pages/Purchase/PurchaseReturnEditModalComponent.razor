@@ -166,7 +166,7 @@
             }
             else
             {
-                // 🔑 Modal 關閉時重置自動載入相關標記
+                //  Modal 關閉時重置自動載入相關標記
                 shouldAutoLoadReturnable = false;
             }
             
@@ -356,7 +356,7 @@
                         purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
                     }
                     
-                    // 🔑 關鍵：載入明細相關資料（沖款記錄）
+                    //  關鍵：載入明細相關資料（沖款記錄）
                     await LoadDetailRelatedDataAsync();
                     isDetailDataReady = true;
                     StateHasChanged();
@@ -592,18 +592,20 @@
                 ),
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(PurchaseReturn.Code), "基本資訊" },
-                { nameof(PurchaseReturn.SupplierId), "基本資訊" },
-                { "FilterProductId", "基本資訊" },
-                { nameof(PurchaseReturn.PurchaseReceivingId), "基本資訊" },
-                { nameof(PurchaseReturn.ReturnDate), "基本資訊" },
-                { nameof(PurchaseReturn.TotalReturnAmount), "金額資訊(系統自動計算)" },
-                { nameof(PurchaseReturn.ReturnTaxAmount), "金額資訊(系統自動計算)" },
-                { nameof(PurchaseReturn.TotalReturnAmountWithTax), "金額資訊(系統自動計算)" },
-                { nameof(PurchaseReturn.Remarks), "額外資訊" }
-            };
+            formSections = FormSectionHelper<PurchaseReturn>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    pr => pr.Code,
+                    pr => pr.SupplierId,
+                    pr => pr.PurchaseReceivingId,
+                    pr => pr.ReturnDate)
+                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                    pr => pr.TotalReturnAmount,
+                    pr => pr.ReturnTaxAmount,
+                    pr => pr.TotalReturnAmountWithTax)
+                .AddToSection(FormSectionNames.AdditionalInfo,
+                    pr => pr.Remarks)
+                .Build();
             
         }
         catch (Exception)
@@ -969,7 +971,7 @@
                 await UpdateFilterProductOptions(supplierId);
                 await UpdateFilterPurchaseReceivingOptions(supplierId);
                 
-                // 🔑 關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
                 if (!hasUndeletableDetails)
                 {
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
@@ -1278,7 +1280,7 @@
                     PurchaseReturnId = null;
                     PrefilledSupplierId = supplierId;
                     PrefilledPurchaseReceivingId = purchaseReceivingId;
-                    // 🔑 立即設定篩選ID（確保明細管理器渲染時就能使用正確的篩選參數）
+                    //  立即設定篩選ID（確保明細管理器渲染時就能使用正確的篩選參數）
                     filterPurchaseReceivingId = purchaseReceivingId;
                     shouldAutoLoadReturnable = true;
                 },

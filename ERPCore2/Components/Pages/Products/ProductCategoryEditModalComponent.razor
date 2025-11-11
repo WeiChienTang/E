@@ -145,13 +145,14 @@
             FormFieldConfigurationHelper.CreateRemarksField<ProductCategory>()
         };
 
-        formSections = new Dictionary<string, string>
-        {            
-            { nameof(ProductCategory.Code), "基本資訊" },
-            { nameof(ProductCategory.Name), "基本資訊" },
-            { nameof(ProductCategory.IsSaleable), "基本資訊" },
-            { nameof(ProductCategory.Remarks), "額外資訊" }
-        };
+        formSections = FormSectionHelper<ProductCategory>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                pc => pc.Code,
+                pc => pc.Name,
+                pc => pc.IsSaleable)
+            .AddToSection(FormSectionNames.AdditionalInfo,
+                pc => pc.Remarks)
+            .Build();
     }
 
     private List<FormFieldDefinition> GetFormFields()

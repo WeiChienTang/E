@@ -182,12 +182,13 @@
                 FormFieldConfigurationHelper.CreateRemarksField<PaymentMethod>()
             };
 
-            formSections = new Dictionary<string, string>
-            {
-                { nameof(PaymentMethod.Code), "基本資訊" },
-                { nameof(PaymentMethod.Name), "基本資訊" },
-                { nameof(PaymentMethod.Remarks), "其他資訊" }
-            };
+            formSections = FormSectionHelper<PaymentMethod>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    pm => pm.Code,
+                    pm => pm.Name)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    pm => pm.Remarks)
+                .Build();
         }
         catch (Exception ex)
         {

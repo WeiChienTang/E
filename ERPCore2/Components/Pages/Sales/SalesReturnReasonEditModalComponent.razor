@@ -129,12 +129,13 @@
     {
         formFields = GetFormFields();
         
-        formSections = new Dictionary<string, string>
-        {
-            { nameof(SalesReturnReason.Code), "基本資訊" },
-            { nameof(SalesReturnReason.Name), "基本資訊" },
-            { nameof(SalesReturnReason.Remarks), "額外資料" }
-        };
+        formSections = FormSectionHelper<SalesReturnReason>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                srr => srr.Code,
+                srr => srr.Name)
+            .AddToSection(FormSectionNames.AdditionalData,
+                srr => srr.Remarks)
+            .Build();
     }
 
     private async Task HandleSaveSuccess()
