@@ -101,11 +101,11 @@ namespace ERPCore2.FieldConfiguration
         }
         
         /// <summary>
-        /// 取得預設排序
+        /// 取得預設排序 - 預設按照 ID 降序排列(最新的在前面)
         /// </summary>
         protected virtual Func<IQueryable<TEntity>, IQueryable<TEntity>> GetDefaultSort()
         {
-            return q => q.OrderBy(e => e.Code);
+            return q => q.OrderByDescending(e => e.Id);
         }
         
         /// <summary>

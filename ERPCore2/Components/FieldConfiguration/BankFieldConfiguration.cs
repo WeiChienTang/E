@@ -31,7 +31,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "銀行名稱",
                             FilterPlaceholder = "輸入銀行名稱搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.BankName), b => b.BankName)
@@ -45,7 +44,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "英文名稱",
                             FilterPlaceholder = "輸入英文名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             HeaderStyle = "width: 200px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -60,7 +58,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "SWIFT代碼",
                             FilterPlaceholder = "輸入SWIFT代碼搜尋",
                             TableOrder = 3,
-                            FilterOrder = 3,
                             HeaderStyle = "width: 150px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -75,7 +72,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "電話",
                             FilterPlaceholder = "輸入電話搜尋",
                             TableOrder = 4,
-                            FilterOrder = 4,
                             HeaderStyle = "width: 150px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

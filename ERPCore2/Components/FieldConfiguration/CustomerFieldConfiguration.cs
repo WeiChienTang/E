@@ -31,7 +31,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "客戶代碼",
                             FilterPlaceholder = "輸入客戶代碼搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.Code), c => c.Code)
@@ -45,7 +44,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "公司名稱",
                             FilterPlaceholder = "輸入公司名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.CompanyName), c => c.CompanyName)
                         }
@@ -58,7 +56,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "聯絡人",
                             FilterPlaceholder = "輸入聯絡人姓名搜尋",
                             TableOrder = 3,
-                            FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.ContactPerson), c => c.ContactPerson)
                         }
@@ -71,7 +68,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "統一編號",
                             FilterPlaceholder = "輸入統一編號搜尋",
                             TableOrder = 4,
-                            FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true)
                         }

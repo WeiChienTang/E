@@ -959,7 +959,7 @@
                 return false;
             }
 
-            // 🔑 修改：審核通過後仍允許儲存（用於更新「完成進貨」等執行狀態）
+            //  修改：審核通過後仍允許儲存（用於更新「完成進貨」等執行狀態）
             // 不使用 ApprovalConfigHelper.CanSaveWhenApproved 的限制
             // 因為明細中的「完成進貨」欄位需要在審核後仍可修改
             
@@ -1385,7 +1385,7 @@
                 invokeAsync: InvokeAsync,
                 additionalActions: async () =>
                 {
-                    // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                    //  關鍵修復：呼叫 Table 組件的公開刷新方法
                     // 因為父 Modal 沒有關閉，Table 組件不會自動重新載入
                     // 需要主動呼叫刷新方法來更新 UI 顯示
                     if (purchaseOrderDetailManager != null)

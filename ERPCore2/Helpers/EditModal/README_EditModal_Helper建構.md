@@ -1986,92 +1986,6 @@ public static class FormSectionNames
 
 ---
 
-### 10. ValidationMessageHelper - 驗證訊息統一處理
-
-**🎯 目標**: 統一處理表單驗證和錯誤訊息
-
-**📊 影響範圍**: 30+ 個 EditModal  
-**🔄 重複度**: ⭐⭐⭐ (60%)
-
-#### 建議實作
-
-```csharp
-public class ValidationMessageHelper<TEntity>
-{
-    private readonly TEntity _entity;
-    private readonly INotificationService _notificationService;
-    private readonly List<Func<Task<bool>>> _validators = new();
-    
-    public ValidationMessageHelper<TEntity> RequireNotEmpty(
-        Expression<Func<TEntity, string?>> propertySelector,
-        string displayName)
-    {
-        _validators.Add(async () =>
-        {
-            var property = ((MemberExpression)propertySelector.Body).Member as PropertyInfo;
-            var value = property?.GetValue(_entity) as string;
-            
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                await _notificationService.ShowErrorAsync($"{displayName}為必填");
-                return false;
-            }
-            return true;
-        });
-        
-        return this;
-    }
-    
-    public ValidationMessageHelper<TEntity> RequireGreaterThan<TValue>(
-        Expression<Func<TEntity, TValue>> propertySelector,
-        TValue minValue,
-        string displayName)
-        where TValue : IComparable
-    {
-        _validators.Add(async () =>
-        {
-            var property = ((MemberExpression)propertySelector.Body).Member as PropertyInfo;
-            var value = (TValue?)property?.GetValue(_entity);
-            
-            if (value == null || value.CompareTo(minValue) <= 0)
-            {
-                await _notificationService.ShowErrorAsync($"{displayName}為必選");
-                return false;
-            }
-            return true;
-        });
-        
-        return this;
-    }
-    
-    public async Task<bool> ValidateAsync()
-    {
-        foreach (var validator in _validators)
-        {
-            if (!await validator())
-                return false;
-        }
-        return true;
-    }
-}
-
-// 使用方式
-private async Task<bool> SaveCustomer(Customer entity)
-{
-    var validator = new ValidationMessageHelper<Customer>(entity, NotificationService)
-        .RequireNotEmpty(e => e.Code, "客戶代碼")
-        .RequireNotEmpty(e => e.CompanyName, "公司名稱")
-        .RequireGreaterThan(e => e.EmployeeId, 0, "業務員");
-    
-    if (!await validator.ValidateAsync())
-        return false;
-    
-    // 繼續儲存邏輯...
-}
-```
-
----
-
 ## 📊 Helper 總結與統計
 
 ### 已實作 Helper (8 個)
@@ -2087,12 +2001,11 @@ private async Task<bool> SaveCustomer(Customer entity)
 | AutoCompleteConfigHelper | 15 個 | ~794 行 | ⭐⭐⭐⭐⭐ 100% | 2025-11-10 | ✅ 完成 |
 | **ModalManagerInitHelper** | **14 個** | **~700-800 行** | **⭐⭐⭐⭐⭐ 100%** | **2025-11-10** | **✅ 完成** |
 
-### 建議新增 Helper (2 個)
+### 建議新增 Helper (1 個)
 
 | Helper | 影響範圍 | 預估減少 | 重複度 | 優先級 |
 |--------|---------|---------|--------|-------|
 | FormSectionHelper | 40+ 個 | ~400-600 行 | ⭐⭐⭐ 70% | 🟡 中 |
-| ValidationMessageHelper | 30+ 個 | ~300-500 行 | ⭐⭐⭐ 60% | 🟡 中 |
 
 ### 總體效益統計
 
