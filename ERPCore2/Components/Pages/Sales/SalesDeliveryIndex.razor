@@ -12,9 +12,9 @@
                           TService="ISalesDeliveryService"
                           Service="@SalesDeliveryService"
                           EntityBasePath="/sales-deliveries"
-                          PageTitle="銷貨/出貨單管理"
-                          PageSubtitle="管理所有銷貨/出貨單資料與明細資訊"
-                          EntityName="銷貨/出貨單"
+                          PageTitle="銷貨單管理"
+                          PageSubtitle="管理所有銷貨單資料與明細資訊"
+                          EntityName="銷貨單"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -26,7 +26,7 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
-@* 銷貨/出貨單編輯 Modal *@
+@* 銷貨單編輯 Modal *@
 <SalesDeliveryEditModalComponent IsVisible="@showEditModal"
                                 IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                 SalesDeliveryId="@editingSalesDeliveryId"
@@ -92,8 +92,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化銷貨/出貨單頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化銷貨/出貨單頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化銷貨單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化銷貨單頁面失敗");
         }
     }
 
@@ -101,7 +101,7 @@
     {
         breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
             "銷貨管理",
-            "銷貨/出貨單",
+            "銷貨單",
             null,
             NotificationService,
             GetType());
@@ -111,7 +111,7 @@
     {
         return DataLoaderHelper.LoadAsync<SalesDelivery>(
             () => SalesDeliveryService.GetAllAsync(),
-            "銷貨/出貨單",
+            "銷貨單",
             NotificationService,
             GetType());
     }

@@ -7,6 +7,7 @@
 @inject IEmployeeService EmployeeService
 @inject IUnitService UnitService
 @inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject NavigationManager NavigationManager
@@ -35,11 +36,16 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesDeliveryData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          UseGenericSave="true"
+                          CustomValidator="@ValidateSalesDeliveryDetailsAsync"
+                          AfterSave="@SaveSalesDeliveryDetailsAsync"
                           SaveSuccessMessage="@(SalesDeliveryId.HasValue ? "出貨單更新成功" : "出貨單新增成功")"
                           SaveFailureMessage="出貨單儲存失敗"
                           RequiredPermission="SalesDelivery.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
-                          OnCancel="@HandleCancel">
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomModules="@GetCustomModules()">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -89,8 +95,8 @@
     // 銷貨出貨明細
     private List<SalesDeliveryDetail> salesDeliveryDetails = new();
     
-    // 明細管理組件引用 (暫時註解,待開發明細表格元件)
-    // private SalesDeliveryDetailTable? salesDeliveryDetailManager;
+    // 明細管理組件引用
+    private SalesDeliveryTable<SalesDelivery, SalesDeliveryDetail>? salesDeliveryDetailManager;
     
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
@@ -105,6 +111,7 @@
     private List<Customer> customers = new();
     private List<Employee> employees = new();
     private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
     private List<SalesOrder> salesOrders = new();
     private List<SelectOption> customerOptions = new();
     private List<SelectOption> employeeOptions = new();
@@ -240,7 +247,7 @@
             if (salesDelivery != null)
             {
                 // 載入銷貨出貨明細
-                await LoadSalesDeliveryDetails(SalesDeliveryId.Value);
+                await LoadSalesDeliveryDetailsInternal(SalesDeliveryId.Value);
                 StateHasChanged();
                 
                 // 重新初始化表單欄位
@@ -304,6 +311,9 @@
                     Text = w.Name,
                     Value = w.Id.ToString()
                 }).ToList();
+
+            // 載入倉庫位置選項
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
 
             // 載入銷售訂單
             salesOrders = await SalesOrderService.GetAllAsync();
@@ -375,16 +385,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesDelivery.SalesOrderId),
-                    Label = "來源訂單",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇來源訂單",
-                    IsRequired = false,
-                    MinSearchLength = 0,
-                    HelpText = "選擇對應的銷售訂單"
-                },
-                new()
-                {
                     PropertyName = nameof(SalesDelivery.EmployeeId),
                     Label = "業務員",
                     FieldType = FormFieldType.AutoComplete,
@@ -393,16 +393,6 @@
                     MinSearchLength = 0,
                     HelpText = "選擇負責此出貨的業務員",
                     ActionButtons = await GetEmployeeActionButtonsAsync()
-                },
-                new()
-                {
-                    PropertyName = nameof(SalesDelivery.WarehouseId),
-                    Label = "出貨倉庫",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇出貨倉庫",
-                    IsRequired = false,
-                    MinSearchLength = 0,
-                    HelpText = "選擇出貨的倉庫"
                 },
                 new()
                 {
@@ -422,53 +412,16 @@
                     IsReadOnly = true,
                     HelpText = "系統自動計算，由明細金額總和得出"
                 },
-                new()
-                {
-                    PropertyName = nameof(SalesDelivery.IsShipped),
-                    Label = "已出貨",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "勾選表示已實際出貨"
-                },
-                new()
-                {
-                    PropertyName = nameof(SalesDelivery.IsApproved),
-                    Label = "已核准",
-                    FieldType = FormFieldType.Checkbox,
-                    HelpText = "勾選表示已核准出貨"
-                },
-                new()
-                {
-                    PropertyName = nameof(SalesDelivery.DeliveryAddress),
-                    Label = "送貨地址",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入送貨地址",
-                    IsRequired = false,
-                    Rows = 2,
-                    HelpText = "送貨目的地地址"
-                },
-                new()
-                {
-                    PropertyName = nameof(SalesDelivery.Remarks),
-                    Label = "備註",
-                    FieldType = FormFieldType.TextArea,
-                    Placeholder = "請輸入備註",
-                    IsRequired = false,
-                    Rows = 3,
-                    HelpText = "其他補充說明"
-                }
+                    FormFieldConfigurationHelper.CreateRemarksField<SalesDelivery>()
             };
+
 
             formSections = FormSectionHelper<SalesDelivery>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
                     sd => sd.CustomerId,
-                    sd => sd.SalesOrderId,
                     sd => sd.EmployeeId,
-                    sd => sd.WarehouseId,
                     sd => sd.DeliveryDate)
-                .AddCustomFields("出貨狀態",
-                    nameof(SalesDelivery.IsShipped),
-                    nameof(SalesDelivery.IsApproved))
                 .AddToSection(FormSectionNames.AmountInfo,
                     sd => sd.TotalAmount)
                 .AddToSection(FormSectionNames.OtherInfo,
@@ -523,8 +476,9 @@
         }
     }
 
+    
     // ===== 載入明細 =====
-    private async Task LoadSalesDeliveryDetails(int salesDeliveryId)
+    private async Task LoadSalesDeliveryDetailsInternal(int salesDeliveryId)
     {
         try
         {
@@ -532,78 +486,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesDeliveryDetails), GetType());
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesDeliveryDetailsInternal), GetType());
             salesDeliveryDetails = new List<SalesDeliveryDetail>();
-        }
-    }
-
-    // ===== 儲存包裝器 =====
-    private async Task<ServiceResult<SalesDelivery>> SaveSalesDeliveryWrapper(SalesDelivery delivery)
-    {
-        try
-        {
-            // 儲存主檔
-            ServiceResult<SalesDelivery> result;
-            if (delivery.Id == 0)
-            {
-                result = await SalesDeliveryService.CreateAsync(delivery);
-            }
-            else
-            {
-                result = await SalesDeliveryService.UpdateAsync(delivery);
-            }
-
-            if (!result.IsSuccess || result.Data == null)
-            {
-                return result;
-            }
-
-            // 儲存明細
-            var detailResult = await SaveDetailsAsync(result.Data.Id);
-            if (!detailResult.IsSuccess)
-            {
-                return ServiceResult<SalesDelivery>.Failure(detailResult.ErrorMessage);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesDeliveryWrapper), GetType());
-            return ServiceResult<SalesDelivery>.Failure("儲存時發生錯誤");
-        }
-    }
-
-    private async Task<ServiceResult> SaveDetailsAsync(int deliveryId)
-    {
-        try
-        {
-            foreach (var detail in salesDeliveryDetails)
-            {
-                detail.SalesDeliveryId = deliveryId;
-                
-                ServiceResult<SalesDeliveryDetail> result;
-                if (detail.Id == 0)
-                {
-                    result = await SalesDeliveryDetailService.CreateAsync(detail);
-                }
-                else
-                {
-                    result = await SalesDeliveryDetailService.UpdateAsync(detail);
-                }
-
-                if (!result.IsSuccess)
-                {
-                    return ServiceResult.Failure(result.ErrorMessage);
-                }
-            }
-
-            return ServiceResult.Success();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveDetailsAsync), GetType());
-            return ServiceResult.Failure("儲存明細時發生錯誤");
         }
     }
 
@@ -643,14 +527,14 @@
     }
     
     // ===== 欄位變更處理 =====
-    private async Task OnFieldValueChanged(string propertyName, object? newValue)
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
     {
         try
         {
             // 客戶變更時，自動載入地址
-            if (propertyName == nameof(SalesDelivery.CustomerId) && newValue != null)
+            if (fieldChange.PropertyName == nameof(SalesDelivery.CustomerId) && fieldChange.Value != null)
             {
-                await HandleCustomerChanged((int)newValue);
+                await HandleCustomerChanged((int)fieldChange.Value);
             }
         }
         catch (Exception ex)
@@ -675,4 +559,160 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCustomerChanged), GetType());
         }
     }
+
+    // ===== 出貨明細管理方法 =====
+    
+    /// <summary>
+    /// 載入出貨明細
+    /// </summary>
+    private async Task LoadSalesDeliveryDetails(int salesDeliveryId)
+    {
+        try
+        {
+            salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDeliveryId);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesDeliveryDetails), GetType());
+            salesDeliveryDetails = new List<SalesDeliveryDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 處理出貨明細變更 - 自動計算總金額
+    /// </summary>
+    private Task HandleDeliveryDetailsChanged(List<SalesDeliveryDetail> details)
+    {
+        salesDeliveryDetails = details;
+        
+        if (editModalComponent?.Entity != null)
+        {
+            // 計算總金額
+            var totalAmount = salesDeliveryDetails.Sum(d => d.SubtotalAmount);
+            editModalComponent.Entity.TotalAmount = totalAmount;
+            
+            StateHasChanged();
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 處理已刪除的出貨明細ID
+    /// </summary>
+    private async Task HandleDeletedDetailsChanged(List<int> deletedDetailIds)
+    {
+        try
+        {
+            foreach (var detailId in deletedDetailIds)
+            {
+                var detailToDelete = await SalesDeliveryDetailService.GetByIdAsync(detailId);
+                if (detailToDelete != null)
+                {
+                    await SalesDeliveryDetailService.DeleteAsync(detailId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDeletedDetailsChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 驗證出貨明細 - 在儲存主檔之前執行
+    /// </summary>
+    private async Task<bool> ValidateSalesDeliveryDetailsAsync(SalesDelivery salesDelivery)
+    {
+        if (salesDeliveryDetailManager == null)
+            return true;
+
+        return await salesDeliveryDetailManager.ValidateAsync();
+    }
+
+    /// <summary>
+    /// AfterSave 回調方法 - 在主檔儲存後處理明細
+    /// </summary>
+    private async Task SaveSalesDeliveryDetailsAsync(SalesDelivery salesDelivery)
+    {
+        try
+        {
+            // 儲存有效的明細資料（有選擇商品的記錄）
+            var validDetails = salesDeliveryDetails
+                .Where(d => d.ProductId > 0 && d.DeliveryQuantity > 0)
+                .ToList();
+
+            foreach (var detail in validDetails)
+            {
+                detail.SalesDeliveryId = salesDelivery.Id;
+                
+                if (detail.Id == 0)
+                {
+                    await SalesDeliveryDetailService.CreateAsync(detail);
+                }
+                else
+                {
+                    await SalesDeliveryDetailService.UpdateAsync(detail);
+                }
+            }
+
+            // 更新主檔總金額
+            var totalAmount = validDetails.Sum(d => d.SubtotalAmount);
+            if (salesDelivery.TotalAmount != totalAmount)
+            {
+                salesDelivery.TotalAmount = totalAmount;
+                await SalesDeliveryService.UpdateAsync(salesDelivery);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesDeliveryDetailsAsync), GetType());
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 配置自訂模組
+    /// </summary>
+    private List<GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule> GetCustomModules()
+    {
+        return new List<GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule>
+        {
+            new GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.CustomModule
+            {
+                Title = "",
+                Order = 1,
+                Content = CreateDeliveryDetailManagerContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建出貨明細管理器內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateDeliveryDetailManagerContent() => __builder =>
+    {
+        <SalesDeliveryTable @ref="salesDeliveryDetailManager"
+                           TMainEntity="SalesDelivery"
+                           TDetailEntity="SalesDeliveryDetail"
+                           MainEntity="@editModalComponent?.Entity"
+                           ExistingDetails="@salesDeliveryDetails"
+                           OnDetailsChanged="@HandleDeliveryDetailsChanged"
+                           OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                           Products="@availableProducts"
+                           Warehouses="@warehouses"
+                           WarehouseLocations="@warehouseLocations"
+                           SelectedCustomerId="@editModalComponent?.Entity?.CustomerId"
+                           MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
+                           QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
+                           UnitPricePropertyName="@nameof(SalesDeliveryDetail.UnitPrice)"
+                           RemarksPropertyName="@nameof(SalesDeliveryDetail.Remarks)"
+                           WarehouseIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseId)"
+                           WarehouseLocationIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseLocationId)"
+                           ShowWarehouse="true"
+                           ShowWarehouseLocation="false"
+                           IsReadOnly="false" />
+    };
+    
+    // ===== ActionButton 產生方法 =====
 }

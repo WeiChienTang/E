@@ -45,7 +45,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "出貨單號",
                             FilterPlaceholder = "輸入出貨單號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesDelivery.Code), sd => sd.Code)
@@ -60,7 +59,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 2,
-                            FilterOrder = 2,
                             HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(SalesDelivery.DeliveryDate), sd => sd.DeliveryDate)
@@ -87,27 +85,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(SalesDelivery.SalesOrderId),
-                        new FieldDefinition<SalesDelivery>
-                        {
-                            PropertyName = "SalesOrder.SalesOrderNumber",
-                            FilterPropertyName = nameof(SalesDelivery.SalesOrderId),
-                            DisplayName = "來源訂單",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 4,
-                            FilterOrder = 4,
-                            HeaderStyle = "width: 150px;",
-                            NullDisplayText = "-",
-                            Options = _salesOrders.Select(so => new SelectOption
-                            {
-                                Text = so.Code ?? string.Empty,
-                                Value = so.Id.ToString()
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(SalesDelivery.SalesOrderId), sd => sd.SalesOrderId)
-                        }
-                    },
-                    {
                         nameof(SalesDelivery.EmployeeId),
                         new FieldDefinition<SalesDelivery>
                         {
@@ -116,7 +93,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "業務人員",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            FilterOrder = 5,
                             HeaderStyle = "width: 120px;",
                             NullDisplayText = "-",
                             Options = _employees.Select(e => new SelectOption
@@ -129,27 +105,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(SalesDelivery.WarehouseId),
-                        new FieldDefinition<SalesDelivery>
-                        {
-                            PropertyName = "Warehouse.Name",
-                            FilterPropertyName = nameof(SalesDelivery.WarehouseId),
-                            DisplayName = "出貨倉庫",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 6,
-                            FilterOrder = 6,
-                            HeaderStyle = "width: 120px;",
-                            NullDisplayText = "-",
-                            Options = _warehouses.Select(w => new SelectOption
-                            {
-                                Text = w.Name,
-                                Value = w.Id.ToString()
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(SalesDelivery.WarehouseId), sd => sd.WarehouseId)
-                        }
-                    },
-                    {
                         nameof(SalesDelivery.TotalAmount),
                         new FieldDefinition<SalesDelivery>
                         {
@@ -158,40 +113,8 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Currency,
                             TableOrder = 7,
-                            FilterOrder = 7,
                             HeaderStyle = "width: 120px; text-align: right;",
                             ShowInFilter = false // 金額欄位暫時不提供篩選功能
-                        }
-                    },
-                    {
-                        nameof(SalesDelivery.IsShipped),
-                        new FieldDefinition<SalesDelivery>
-                        {
-                            PropertyName = nameof(SalesDelivery.IsShipped),
-                            DisplayName = "已出貨",
-                            FilterType = SearchFilterType.Select,
-                            ColumnType = ColumnDataType.Boolean,
-                            TableOrder = 8,
-                            FilterOrder = 8,
-                            HeaderStyle = "width: 100px; text-align: center;",
-                            Options = new List<SelectOption>
-                            {
-                                new SelectOption { Text = "全部", Value = "" },
-                                new SelectOption { Text = "已出貨", Value = "true" },
-                                new SelectOption { Text = "未出貨", Value = "false" }
-                            },
-                            FilterFunction = (model, query) => 
-                            {
-                                if (!string.IsNullOrWhiteSpace(model.TextFilters.GetValueOrDefault(nameof(SalesDelivery.IsShipped))))
-                                {
-                                    var value = model.TextFilters[nameof(SalesDelivery.IsShipped)];
-                                    if (bool.TryParse(value, out bool isShipped))
-                                    {
-                                        query = query.Where(sd => sd.IsShipped == isShipped);
-                                    }
-                                }
-                                return query;
-                            }
                         }
                     },
                     {
@@ -225,21 +148,6 @@ namespace ERPCore2.FieldConfiguration
                             }
                         }
                     },
-                    {
-                        nameof(SalesDelivery.DeliveryAddress),
-                        new FieldDefinition<SalesDelivery>
-                        {
-                            PropertyName = nameof(SalesDelivery.DeliveryAddress),
-                            DisplayName = "送貨地址",
-                            FilterPlaceholder = "輸入送貨地址搜尋",
-                            TableOrder = 10,
-                            FilterOrder = 10,
-                            HeaderStyle = "width: 250px;",
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(SalesDelivery.DeliveryAddress), sd => sd.DeliveryAddress)
-                        }
-                    }
                 };
             }
             catch (Exception ex)
