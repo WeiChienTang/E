@@ -1,5 +1,6 @@
 @* 報價單明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
 
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
 @inject IProductService ProductService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -158,15 +159,15 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var selectedValue = quotationItem.SelectedProduct?.Id.ToString() ?? "";
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
+                var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+                var isFieldReadOnly = IsReadOnly || (!canDelete && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示商品名稱
                 if (isFieldReadOnly && quotationItem.SelectedProduct != null)
                 {
                     var displayText = quotationItem.DisplayName;
-                    var title = hasConverted ? "此商品已轉銷貨，無法修改商品選擇" : "";
+                    var title = !canDelete ? "此商品已轉銷貨，無法修改商品選擇" : "";
                     return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
                         <span class="text-muted" title="@title">@displayText</span>
                     </div>;
@@ -201,15 +202,15 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var selectedUnitId = quotationItem.SelectedUnit?.Id.ToString() ?? "";
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                var isFieldReadOnly = IsReadOnly || (hasConverted && !isEmptyRow);
+                var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+                var isFieldReadOnly = IsReadOnly || (!canDelete && !isEmptyRow);
                 
                 // 如果是唯讀狀態，直接顯示 span
                 if (isFieldReadOnly)
                 {
                     var displayText = quotationItem.SelectedUnit?.Name ?? "無";
-                    var title = hasConverted ? "此商品已轉銷貨，無法修改單位" : "";
+                    var title = !canDelete ? "此商品已轉銷貨，無法修改單位" : "";
                     return @<div class="d-flex align-items-center" style="min-height: 31px;">
                         <span class="text-muted" title="@title">@displayText</span>
                     </div>;
@@ -242,16 +243,14 @@ else
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                return hasConverted && !isEmptyRow;
+                return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                if (hasConverted && !isEmptyRow)
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改數量";
                 return "輸入報價數量";
             },
@@ -293,16 +292,14 @@ else
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                return hasConverted && !isEmptyRow;
+                return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                if (hasConverted && !isEmptyRow)
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改單價";
                 return "輸入報價單價";
             },
@@ -327,16 +324,14 @@ else
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                return hasConverted && !isEmptyRow;
+                return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var hasConverted = quotationItem.ConvertedQuantity > 0;
                 var isEmptyRow = IsEmptyRow(quotationItem);
-                if (hasConverted && !isEmptyRow)
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改折扣";
                 return "輸入折扣百分比";
             },
@@ -402,8 +397,8 @@ else
     private RenderFragment<QuotationItem> GetCustomActionsTemplate => item => __builder =>
     {
         var quotationItem = (QuotationItem)item;
-        var hasConverted = quotationItem.ConvertedQuantity > 0;
         var isEmptyRow = IsEmptyRow(quotationItem);
+        var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
         
         if (IsReadOnly)
         {
@@ -416,7 +411,7 @@ else
                                    StopPropagation="true"
                                    CssClass="btn-square" />
         }
-        else if (!hasConverted || isEmptyRow)
+        else if (canDelete || isEmptyRow)
         {
             // 可編輯模式且未轉銷貨（或是空行）：顯示刪除按鈕
             <GenericButtonComponent Variant="ButtonVariant.Danger"

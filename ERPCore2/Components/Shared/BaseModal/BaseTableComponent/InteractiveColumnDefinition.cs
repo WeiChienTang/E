@@ -296,6 +296,28 @@ namespace ERPCore2.Components.Shared.SubCollections
         public RenderFragment<object>? CustomTemplate { get; set; }
         #endregion
 
+        #region 自動空行檢測專用屬性
+        /// <summary>
+        /// 用於空行檢測的屬性名稱
+        /// 當 ColumnType 為 Custom 且 PropertyName 為空時，指定要檢查的實際屬性
+        /// 例如：商品選擇欄位的 PropertyName 是空的，但實際要檢查 "SelectedProduct"
+        /// </summary>
+        public string? EmptyCheckPropertyName { get; set; }
+        
+        /// <summary>
+        /// 是否從空行檢測中排除此欄位
+        /// 設為 true 表示此欄位不參與空行判斷（例如：備註、唯讀欄位）
+        /// </summary>
+        public bool ExcludeFromEmptyCheck { get; set; } = false;
+        
+        /// <summary>
+        /// 當此欄位從空值變為有值時，自動觸發新增空行
+        /// 設為 true 表示這是「關鍵欄位」，填入值後就應該準備下一個空行
+        /// 例如：商品選擇欄位，選了商品就算一筆，應該立即新增空行
+        /// </summary>
+        public bool TriggerEmptyRowOnFilled { get; set; } = false;
+        #endregion
+
         #region 鍵盤導航專用屬性
         /// <summary>
         /// 是否啟用鍵盤導航（適用於下拉選單相關欄位）

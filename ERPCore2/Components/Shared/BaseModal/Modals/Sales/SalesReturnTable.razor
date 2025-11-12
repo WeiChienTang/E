@@ -1,5 +1,6 @@
 @* 銷售退貨商品明細管理元件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
@@ -277,16 +278,10 @@ else
     /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
     private bool CanDeleteItem(ReturnItem item, out string reason)
     {
-        // 檢查：沖款記錄
-        if (HasPaymentRecord(item))
-        {
-            var paidAmount = GetPaidAmount(item);
-            reason = $"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元），無法刪除";
-            return false;
-        }
-        
-        reason = string.Empty;
-        return true;
+        return DetailLockHelper.CanDeleteItem(
+            item.ExistingDetailEntity, 
+            out reason, 
+            checkPayment: true);
     }
     
     /// <summary>

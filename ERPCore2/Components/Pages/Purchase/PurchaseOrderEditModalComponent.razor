@@ -644,8 +644,8 @@
                                                    IsReceivingCompletedPropertyName="IsReceivingCompleted"
                                                    IsReadOnly="false"
                                                    IsApproved="@(editModalComponent.Entity.IsApproved)"
-                                                   OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
-                                                   OnOpenRelatedDocument="@HandleOpenRelatedDocument" />
+                                                   OnHasUndeletableDetailsChanged="@(async (hasUndeletable) => await HandleHasUndeletableDetailsChanged(hasUndeletable))"
+                                                   OnOpenRelatedDocument="@(async (doc) => await HandleOpenRelatedDocument(doc))" />
                     }
                     else
                     {
@@ -910,7 +910,7 @@
             // 如果明細管理組件存在，執行驗證
             if (purchaseOrderDetailManager != null)
             {
-                return await purchaseOrderDetailManager.ValidateAsync();
+                @* return await purchaseOrderDetailManager.ValidateAsync(); *@
             }
             
             // 如果組件不存在，檢查是否有有效的明細（至少選擇了商品）
@@ -1385,13 +1385,13 @@
                 invokeAsync: InvokeAsync,
                 additionalActions: async () =>
                 {
-                    //  關鍵修復：呼叫 Table 組件的公開刷新方法
+                    // 關鍵修復：呼叫 Table 組件的公開刷新方法
                     // 因為父 Modal 沒有關閉，Table 組件不會自動重新載入
                     // 需要主動呼叫刷新方法來更新 UI 顯示
-                    if (purchaseOrderDetailManager != null)
+                    @* if (purchaseOrderDetailManager != null)
                     {
                         await purchaseOrderDetailManager.RefreshDetailsAsync();
-                    }
+                    } *@
                 }
             );
             

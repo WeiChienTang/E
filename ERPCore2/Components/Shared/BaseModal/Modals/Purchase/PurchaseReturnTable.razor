@@ -1,5 +1,6 @@
 @* 採購退回明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
 @inject IProductService ProductService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
@@ -149,7 +150,7 @@ else
     private bool HasLockedDetails()
     {
         return ReturnItems.Any(item => 
-            !IsEmptyRow(item) && HasPaymentRecord(item));
+            !IsEmptyRow(item) && !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkPayment: true));
     }
 
     protected override async Task OnInitializedAsync()
@@ -208,16 +209,10 @@ else
     /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
     private bool CanDeleteItem(ReturnItem item, out string reason)
     {
-        // 檢查：沖款記錄
-        if (HasPaymentRecord(item))
-        {
-            var receivedAmount = GetReceivedAmount(item);
-            reason = $"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元），無法刪除";
-            return false;
-        }
-        
-        reason = string.Empty;
-        return true;
+        return DetailLockHelper.CanDeleteItem(
+            item.ExistingDetailEntity, 
+            out reason, 
+            checkPayment: true);
     }
 
     /// <summary>

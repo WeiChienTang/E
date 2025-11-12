@@ -1,5 +1,6 @@
 @* 採購入庫明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
@@ -193,7 +194,7 @@ else
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
     
     // ===== 退貨數量管理 =====
-    private Dictionary<int, int> _returnedQuantities = new(); // Key: PurchaseReceivingDetailId, Value: 已退貨數量
+    private Dictionary<int, decimal> _returnedQuantities = new(); // Key: PurchaseReceivingDetailId, Value: 已退貨數量
 
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -222,7 +223,7 @@ else
     {
         return ReceivingItems.Any(item => 
             !IsEmptyRow(item) && 
-            (HasReturnRecord(item) || HasPaymentRecord(item)));
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkPayment: true, checkReturn: true, returnedQuantities: _returnedQuantities));
     }
 
     /// <summary>
@@ -303,7 +304,7 @@ else
     /// <summary>
     /// 取得指定進貨明細項目的已退貨數量
     /// </summary>
-    private int GetReturnedQuantity(ReceivingItem item)
+    private decimal GetReturnedQuantity(ReceivingItem item)
     {
         if (item.ExistingDetailEntity is PurchaseReceivingDetail detail && detail.Id > 0)
         {
@@ -365,24 +366,12 @@ else
     /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
     private bool CanDeleteItem(ReceivingItem item, out string reason)
     {
-        // 檢查 1：退貨記錄
-        if (HasReturnRecord(item))
-        {
-            var returnedQty = GetReturnedQuantity(item);
-            reason = $"此商品已有退貨記錄（已退貨 {returnedQty} 個），無法刪除";
-            return false;
-        }
-        
-        // 檢查 2：沖款記錄
-        if (HasPaymentRecord(item))
-        {
-            var paidAmount = GetPaidAmount(item);
-            reason = $"此商品已有沖款記錄（已沖款 {paidAmount:N0} 元），無法刪除";
-            return false;
-        }
-        
-        reason = string.Empty;
-        return true;
+        return DetailLockHelper.CanDeleteItem(
+            item.ExistingDetailEntity, 
+            out reason, 
+            checkPayment: true, 
+            checkReturn: true, 
+            returnedQuantities: _returnedQuantities);
     }
 
     /// <summary>
@@ -476,7 +465,7 @@ else
         {
             // 如果有退貨記錄，保留已退貨的數量作為最小值
             var returnedQty = GetReturnedQuantity(item);
-            item.ReceivedQuantity = returnedQty;
+            item.ReceivedQuantity = (int)returnedQty;
         }
         
         var message = $"已清空 {unlocked.Count} 項明細的進貨數量";
@@ -1513,7 +1502,7 @@ else
                     $"進貨數量不可低於已退貨數量 {returnedQty}",
                     "數量限制"
                 );
-                item.ReceivedQuantity = returnedQty; // 自動調整為最小允許值
+                item.ReceivedQuantity = (int)returnedQty; // 自動調整為最小允許值
             }
             else
             {
