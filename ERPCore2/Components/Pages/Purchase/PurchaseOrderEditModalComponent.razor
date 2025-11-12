@@ -1383,7 +1383,7 @@
                 notificationMessage: null, // 稍後手動顯示通知
                 stateHasChanged: StateHasChanged,
                 invokeAsync: InvokeAsync,
-                additionalActions: async () =>
+                additionalActions: () =>
                 {
                     // 關鍵修復：呼叫 Table 組件的公開刷新方法
                     // 因為父 Modal 沒有關閉，Table 組件不會自動重新載入
@@ -1392,6 +1392,7 @@
                     {
                         await purchaseOrderDetailManager.RefreshDetailsAsync();
                     } *@
+                    return Task.CompletedTask;
                 }
             );
             

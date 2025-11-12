@@ -362,6 +362,7 @@
     // 自動空行管理參數
     [Parameter] public bool EnableAutoEmptyRow { get; set; } = false;
     [Parameter] public Func<TItem>? CreateEmptyItem { get; set; }
+    [Parameter] public bool DataLoadCompleted { get; set; } = true;  // 資料是否已載入完成(預設 true 保持向下兼容)
     
     // 表格樣式設定
     [Parameter] public bool ShowHeader { get; set; } = true;
@@ -410,6 +411,12 @@
     // 記錄最後一個空行的參考
     private TItem? _lastEmptyRow = default;
     
+    // 標記是否已經執行過首次空行檢查
+    private bool _hasInitializedEmptyRow = false;
+    
+    // 記錄上一次的 DataLoadCompleted 狀態,用於偵測狀態變化
+    private bool _previousDataLoadCompleted = false;
+    
     #endregion
 
     #region 生命週期方法
@@ -418,10 +425,37 @@
     {
         base.OnInitialized();
         
-        // 只在初始化時檢查一次
-        if (EnableAutoEmptyRow)
+        //  不在這裡檢查空行，改到 OnAfterRenderAsync
+        // 避免在父組件載入資料之前就新增空行
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        
+        //  不再使用 firstRender,改為監控 DataLoadCompleted 狀態變化
+        if (EnableAutoEmptyRow && DataLoadCompleted && !_previousDataLoadCompleted)
         {
-            CheckAndAddEmptyRowIfNeeded();
+            _previousDataLoadCompleted = DataLoadCompleted;
+            
+            // 使用 InvokeAsync 確保在正確的同步上下文中執行
+            await InvokeAsync(() =>
+            {
+                CheckAndAddEmptyRowIfNeeded();
+                StateHasChanged();
+            });
+        }
+        else if (firstRender && EnableAutoEmptyRow && DataLoadCompleted && !_hasInitializedEmptyRow)
+        {
+            //  向下兼容:如果父組件沒有控制 DataLoadCompleted(預設 true),使用原有邏輯
+            _hasInitializedEmptyRow = true;
+            _previousDataLoadCompleted = DataLoadCompleted;
+
+            await InvokeAsync(() =>
+            {
+                CheckAndAddEmptyRowIfNeeded();
+                StateHasChanged();
+            });
         }
     }
     
@@ -730,16 +764,14 @@
     {
         if (item == null || ColumnDefinitions == null) return true;
         
-        // 🔑 優先檢查是否有設定 TriggerEmptyRowOnFilled 的欄位
+        //  優先檢查是否有設定 TriggerEmptyRowOnFilled 的欄位
         var triggerFields = ColumnDefinitions
             .Where(c => c.TriggerEmptyRowOnFilled)
             .ToList();
         
         if (triggerFields.Any())
         {
-            Console.WriteLine($"[IsRowEmpty] 使用 TriggerEmptyRowOnFilled 模式，檢查 {triggerFields.Count} 個觸發欄位");
-            
-            // 🔑 檢查所有觸發欄位：必須所有觸發欄位都有值，才不是空行
+            //  檢查所有觸發欄位：必須所有觸發欄位都有值，才不是空行
             foreach (var field in triggerFields)
             {
                 var propertyName = !string.IsNullOrEmpty(field.EmptyCheckPropertyName)
@@ -748,34 +780,26 @@
                 
                 if (string.IsNullOrEmpty(propertyName))
                 {
-                    Console.WriteLine($"[IsRowEmpty] 跳過: {field.Title} (無屬性名稱)");
                     continue;
                 }
                 
                 var value = GetPropertyValue(item, propertyName);
                 var isEmpty = IsValueNullOrEmpty(value);
                 
-                Console.WriteLine($"[IsRowEmpty] 觸發欄位 {field.Title}: value={value}, isEmpty={isEmpty}");
-                
-                // 🔑 只要有一個觸發欄位是空的，整行就是空行
+                //  只要有一個觸發欄位是空的，整行就是空行
                 if (isEmpty)
                 {
-                    Console.WriteLine($"[IsRowEmpty] Result: true (觸發欄位 {field.Title} 是空的)");
                     return true;
                 }
             }
             
-            // 🔑 所有觸發欄位都有值，才不是空行
-            Console.WriteLine($"[IsRowEmpty] Result: false (所有觸發欄位都有值)");
             return false;
         }
         
-        // 🔑 沒有觸發欄位，使用原有邏輯：檢查所有可編輯且未排除的欄位
+        //  沒有觸發欄位，使用原有邏輯：檢查所有可編輯且未排除的欄位
         var columnsToCheck = ColumnDefinitions
             .Where(c => !c.IsReadOnly && !c.ExcludeFromEmptyCheck)
             .ToList();
-        
-        Console.WriteLine($"[IsRowEmpty] 使用傳統模式，檢查 {columnsToCheck.Count} 個欄位");
         
         // 沒有可檢查的欄位，視為非空行
         if (!columnsToCheck.Any()) return false;
@@ -794,13 +818,10 @@
             // 只要有一個欄位有值，就不是空行
             if (!IsValueNullOrEmpty(value))
             {
-                Console.WriteLine($"[IsRowEmpty] Result: false ({column.Title} 有值)");
                 return false;
             }
         }
         
-        // 所有欄位都空，才是空行
-        Console.WriteLine($"[IsRowEmpty] Result: true (所有欄位都空)");
         return true;
     }
     
@@ -839,7 +860,7 @@
     
     /// <summary>
     /// 統一的空行檢查和新增方法
-    /// 核心邏輯：確保始終至少有一個空行
+    /// 核心邏輯：確保始終至少有一個空行,且空行永遠在最後
     /// </summary>
     private void CheckAndAddEmptyRowIfNeeded()
     {
@@ -848,14 +869,30 @@
             return;
         }
         
-        // 🔑 簡化邏輯：只檢查是否存在空行，不存在就新增
-        if (!HasEmptyRow())
+        //  找出所有空行
+        var emptyRows = Items.Where(IsRowEmpty).ToList();
+        
+        if (emptyRows.Count == 0)
         {
-            Console.WriteLine($"[CheckAndAddEmptyRowIfNeeded] 無空行，新增一個 - Items.Count={Items.Count}");
+            var newEmptyRow = CreateEmptyItem();
+            Items.Add(newEmptyRow);
+            _lastEmptyRow = newEmptyRow;
+        }
+        else if (emptyRows.Count > 1 || !Equals(Items.Last(), emptyRows[0]))
+        {      
+            foreach (var emptyRow in emptyRows)
+            {
+                Items.Remove(emptyRow);
+            }
             
             var newEmptyRow = CreateEmptyItem();
             Items.Add(newEmptyRow);
-            _lastEmptyRow = newEmptyRow; // 記錄最後一個空行的參考（用於其他可能的檢查）
+            _lastEmptyRow = newEmptyRow;
+        }
+        else
+        {
+            // 只有一個空行且在最後,不需要處理
+            _lastEmptyRow = emptyRows[0];
         }
     }
     
@@ -887,8 +924,6 @@
     {
         if (!EnableAutoEmptyRow) return;
         
-        Console.WriteLine($"[RefreshEmptyRow] 被呼叫 - Items.Count={Items?.Count ?? 0}");
-        
         // 重置最後空行的參考
         _lastEmptyRow = default;
         
@@ -910,9 +945,6 @@
         var fieldWasEmpty = EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled 
             ? IsValueNullOrEmpty(GetPropertyValue(item, column.PropertyName)) 
             : false;
-        
-        Console.WriteLine($"[HandleInputChange] Column={column.Title}, Value={value}, wasEmpty={wasEmpty}, fieldWasEmpty={fieldWasEmpty}, TriggerOnFilled={column.TriggerEmptyRowOnFilled}");
-        
         await ValidateField(item, column, value);
         SetPropertyValue(item, column.PropertyName, value);
         
@@ -921,16 +953,14 @@
             await column.OnInputChanged.Value.InvokeAsync((item!, value));
         }
         
-        // 🔑 新邏輯：如果這個欄位設定為觸發欄位，優先使用欄位級別的觸發
+        //  新邏輯：如果這個欄位設定為觸發欄位，優先使用欄位級別的觸發
         if (EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled)
         {
             var fieldHasValueNow = !IsValueNullOrEmpty(value);
-            Console.WriteLine($"[HandleInputChange] TriggerMode: fieldHasValueNow={fieldHasValueNow}, willTrigger={wasEmpty && fieldWasEmpty && fieldHasValueNow}");
-            
+
             // 整行原本是空的 && 這個欄位原本是空的 && 這個欄位現在有值 → 觸發新增空行
             if (wasEmpty && fieldWasEmpty && fieldHasValueNow)
             {
-                Console.WriteLine($"[HandleInputChange] ✅ 觸發 AutoAddEmptyRowIfNeeded (欄位觸發模式)");
                 AutoAddEmptyRowIfNeeded();
                 return;
             }
@@ -938,12 +968,10 @@
         
         // 檢查變更後的整行狀態
         var isEmptyNow = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
-        Console.WriteLine($"[HandleInputChange] NormalMode: isEmptyNow={isEmptyNow}, willAddRow={wasEmpty && !isEmptyNow}");
         
-        // 🔑 原有邏輯：整行從空變非空時，檢查是否需要新增空行
+        //  原有邏輯：整行從空變非空時，檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !isEmptyNow)
         {
-            Console.WriteLine($"[HandleInputChange] ✅ 觸發 AutoAddEmptyRowIfNeeded (整行觸發模式)");
             AutoAddEmptyRowIfNeeded();
         }
     }
@@ -963,7 +991,7 @@
             await column.OnSelectionChanged.Value.InvokeAsync((item!, value));
         }
         
-        // 🔑 如果這個欄位設定為觸發欄位，優先使用欄位級別的觸發
+        //  如果這個欄位設定為觸發欄位，優先使用欄位級別的觸發
         if (EnableAutoEmptyRow && column.TriggerEmptyRowOnFilled)
         {
             var fieldHasValueNow = !IsValueNullOrEmpty(value);
@@ -976,7 +1004,7 @@
             }
         }
         
-        // 🔑 原有邏輯：整行從空變非空時，檢查是否需要新增空行
+        //  原有邏輯：整行從空變非空時，檢查是否需要新增空行
         var isEmptyNow = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         if (EnableAutoEmptyRow && wasEmpty && !isEmptyNow)
         {
@@ -986,7 +1014,7 @@
 
     private async Task HandleCheckboxChange(InteractiveColumnDefinition column, TItem item, object? value)
     {
-        // 🔑 記錄變更前的狀態
+        //  記錄變更前的狀態
         var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         
         var isChecked = value is bool boolValue && boolValue;
@@ -997,7 +1025,7 @@
             await column.OnCheckboxChanged.Value.InvokeAsync((item!, isChecked));
         }
         
-        // 🔑 只有當這一行從空變非空時，才檢查是否需要新增空行
+        //  只有當這一行從空變非空時，才檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
             AutoAddEmptyRowIfNeeded();
@@ -1133,7 +1161,7 @@
     #region SearchableSelect 事件處理方法
     private async Task HandleSearchableSelectInput(InteractiveColumnDefinition column, TItem item, string? value)
     {
-        // 🔑 記錄變更前的狀態
+        //  記錄變更前的狀態
         var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         
         // 優先使用 Action 委託（來自 SearchableSelectHelper）
@@ -1150,7 +1178,7 @@
             await column.OnSearchInputChanged.Value.InvokeAsync((item!, value));
         }
         
-        // 🔑 只有當這一行從空變非空時，才檢查是否需要新增空行
+        //  只有當這一行從空變非空時，才檢查是否需要新增空行
         // 注意：SearchableSelect 通常不會在輸入時就改變空行狀態，而是在選擇項目時
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
@@ -1194,7 +1222,7 @@
     
     private async Task HandleSearchableSelectItemClick(InteractiveColumnDefinition column, TItem item, object selectedItem)
     {
-        // 🔑 記錄變更前的狀態
+        //  記錄變更前的狀態
         var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
         
         // 優先使用 Action 委託（來自 SearchableSelectHelper）
@@ -1211,7 +1239,7 @@
             await column.OnItemSelected.Value.InvokeAsync((item!, selectedItem));
         }
         
-        // 🔑 只有當這一行從空變非空時，才檢查是否需要新增空行
+        //  只有當這一行從空變非空時，才檢查是否需要新增空行
         if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
         {
             AutoAddEmptyRowIfNeeded();
