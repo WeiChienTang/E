@@ -30,7 +30,7 @@ else
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
                                       ShowRowNumbers="false"
-                                      EmptyMessage="@EmptyMessage"
+                                      EmptyMessage="尚未新增商品"
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       ActionsColumnWidth = "60px"
@@ -88,15 +88,7 @@ else
     [Parameter] public string UnitPricePropertyName { get; set; } = "UnitPrice";
     [Parameter] public string RemarksPropertyName { get; set; } = "Remarks";
     [Parameter] public string? UnitIdPropertyName { get; set; }
-    [Parameter] public string? IsReceivingCompletedPropertyName { get; set; }    
-    
-    // ===== 顯示設定 =====
-    [Parameter] public string Title { get; set; } = "商品資訊";
-    [Parameter] public string Subtitle { get; set; } = "";
-    [Parameter] public string Icon { get; set; } = "box";
-    [Parameter] public string ItemDisplayName { get; set; } = "商品";
-    [Parameter] public string EmptyIcon { get; set; } = "box-open";
-    [Parameter] public string EmptyMessage { get; set; } = "尚未新增商品";
+    [Parameter] public string? IsReceivingCompletedPropertyName { get; set; }        
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
@@ -157,31 +149,69 @@ else
         //  商品選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
         columns.Add(new() 
         { 
-            Title = "商品", 
-            PropertyName = "SelectedProductId",  // 綁定商品 ID
+            Title = "商品編號/名稱", 
+            PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
             TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
-            ColumnType = InteractiveColumnType.Select,
-            Width = "150px",
-            Tooltip = "選擇要採購的商品。已有進貨記錄的商品將無法變更",
-            Options = GetProductSelectOptions(),
+            ColumnType = InteractiveColumnType.SearchableSelect,
+            Width = "250px",
+            Tooltip = "搜尋並選擇商品（輸入編號或名稱）。已有進貨記錄的商品將無法變更",
+            Placeholder = "請輸入商品編號或名稱",
+            SearchValuePropertyName = nameof(ProductItem.ProductSearchValue),
+            FilteredItemsPropertyName = nameof(ProductItem.FilteredProducts),
+            ShowDropdownPropertyName = nameof(ProductItem.ShowProductDropdown),
+            SelectedIndexPropertyName = nameof(ProductItem.ProductSelectedIndex),
+            ItemDisplayFormatter = (item) =>
+            {
+                var product = (Product)item;
+                return $"[{product.Code}] {product.Name}";
+            },
             IsDisabledFunc = item =>
             {
                 var productItem = (ProductItem)item;
-                var hasReceiving = productItem.ReceivedQuantity > 0;
-                return IsReadOnly || hasReceiving;
+                return IsReadOnly || !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
             },
             TooltipFunc = item =>
             {
                 var productItem = (ProductItem)item;
-                var hasReceiving = productItem.ReceivedQuantity > 0;
-                return hasReceiving ? "此商品已有進貨記錄，無法修改商品選擇" : null;
+                return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true) 
+                    ? "此商品已有進貨記錄，無法修改商品選擇" : null;
             },
-            OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+            OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
-                var (item, value) = args;
-                await OnProductSelectionChanged((ProductItem)item, value);
-            })
+                var (item, searchValue) = tuple;
+                OnProductSearchChanged((ProductItem)item, searchValue);
+            }),
+            OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
+            {
+                var (item, selectedItem) = tuple;
+                await OnProductSelected((ProductItem)item, (Product?)selectedItem);
+            }),
+            OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                var productItem = (ProductItem)item;
+                var availableProducts = GetAvailableProducts();
+                productItem.FilteredProducts = availableProducts.Take(20).ToList();
+                productItem.ShowProductDropdown = true;
+                productItem.ProductSelectedIndex = -1;
+                StateHasChanged();
+            }),
+            OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                Task.Delay(200).ContinueWith(_ =>
+                {
+                    var productItem = (ProductItem)item;
+                    productItem.ShowProductDropdown = false;
+                    InvokeAsync(StateHasChanged);
+                });
+            }),
+            EnableKeyboardNavigation = true,
+            GetDropdownItems = (item) => ((ProductItem)item).FilteredProducts,
+            GetSelectedIndex = (item) => ((ProductItem)item).ProductSelectedIndex,
+            SetSelectedIndex = (item, index) => ((ProductItem)item).ProductSelectedIndex = index,
+            GetShowDropdown = (item) => ((ProductItem)item).ShowProductDropdown,
+            SetShowDropdown = (item, show) => ((ProductItem)item).ShowProductDropdown = show,
+            MaxDisplayItems = 20
         });
         
         // 數量欄位
@@ -190,7 +220,7 @@ else
             Title = "數量", 
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
-            Width = "120px",
+            Width = "80px",
             Tooltip = "採購的商品數量。已有進貨記錄的商品將無法修改數量",
             IsDisabledFunc = item =>
             {
@@ -213,11 +243,12 @@ else
         // 入庫量欄位 (只讀)
         columns.Add(new() 
         { 
-            Title = "入庫量", 
+            Title = "已入庫", 
             PropertyName = "ReceivedQuantity",
-            ColumnType = InteractiveColumnType.Number,
-            Width = "120px",
+            ColumnType = InteractiveColumnType.Display,
+            Width = "80px",
             Tooltip = "已入庫的累計數量（唯讀）",
+            TextAlign = "right",
             IsReadOnly = true
         });
 
@@ -247,43 +278,36 @@ else
             })
         });
 
-        // 只有在已核准的狀態下才顯示「完成進貨」欄位
-        if (IsApproved)
-        {
-            columns.Add(new() 
-            { 
-                Title = "完成進貨", 
-                PropertyName = "IsReceivingCompleted",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "120px",
-                Tooltip = "手動標記此商品已完成所有進貨作業（即使數量未完全入庫）\n核准後仍可修改此狀態",
-                CustomTemplate = item => 
-                {
-                    var productItem = (ProductItem)item;
-                    
-                    // 「完成進貨」是執行狀態，不受核准鎖定影響
-                    var isFieldReadOnly = IsReadOnly;
-                    
-                    // 檢查是否已經完全進貨（入庫 >= 採購）
-                    var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity;
-                    
-                    // 如果已完全進貨，只能勾選完成，不能取消
-                    var canToggle = !isFullyReceived || !productItem.IsReceivingCompleted;                    
-                    
-                    return @<div class="text-center">
-                        <div class="form-check form-switch d-flex justify-content-center">
-                            <input class="form-check-input" 
-                                   type="checkbox" 
-                                   checked="@productItem.IsReceivingCompleted"
-                                   disabled="@(!canToggle)"
-                                   @onclick="() => OnIsReceivingCompletedChanged(productItem)"
-                                   title="@(canToggle ? "標記為完成進貨" : "已完全進貨，無法取消")" />
-                        </div>
-                    </div>;
-                }
-            });
-        }
-        
+        // 完成進貨欄位
+        columns.Add(new() 
+        { 
+            Title = "結清", 
+            PropertyName = "IsReceivingCompleted",
+            ColumnType = InteractiveColumnType.Checkbox,
+            Width = "40px",
+            Tooltip = "手動標記此商品已完成所有進貨作業（即使數量未完全入庫）\n核准後仍可修改此狀態",
+            IsDisabledFunc = item =>
+            {
+                var productItem = (ProductItem)item;
+                // 檢查是否已經完全進貨（入庫 >= 採購）
+                var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity;
+                // 如果已完全進貨且已標記完成，則禁用（不能取消）
+                return IsReadOnly || (isFullyReceived && productItem.IsReceivingCompleted);
+            },
+            TooltipFunc = item =>
+            {
+                var productItem = (ProductItem)item;
+                var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity;
+                if (isFullyReceived && productItem.IsReceivingCompleted)
+                    return "已完全進貨，無法取消";
+                return null;
+            },
+            OnCheckboxChanged = EventCallback.Factory.Create<(object, bool)>(this, async args =>
+            {
+                var (item, newValue) = args;
+                await OnIsReceivingCompletedChanged((ProductItem)item, newValue);
+            })
+        });
 
         // 備註欄位 - 核准後仍可編輯（用於記錄執行狀況）
         columns.Add(new() 
@@ -291,7 +315,7 @@ else
             Title = "備註", 
             PropertyName = "Remarks",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "150px",
+            Width = "300px",
             HideOnMobile = true,
             ExcludeFromEmptyCheck = true,  // 備註不參與空行檢查
             Tooltip = "選填。可記錄採購相關的備註資訊（核准後仍可編輯）",
@@ -397,6 +421,7 @@ else
                 {
                     SelectedProduct = product,
                     SelectedProductId = productId,  //  同步設定 ID
+                    ProductSearchValue = $"[{product.Code}] {product.Name}",  // 設定搜尋顯示值
                     Quantity = Convert.ToInt32(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0),
                     ReceivedQuantity = Convert.ToInt32(GetPropertyValue<object>(detail, ReceivedQuantityPropertyName) ?? 0),
                     Price = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
@@ -444,11 +469,12 @@ else
                 {
                     SetPropertyValue(detail, MainEntityIdPropertyName, MainEntity.Id);
                 }
-                
-                if (item.SelectedProduct != null)
-                {
-                    SetPropertyValue(detail, "ProductId", item.SelectedProduct.Id);
-                }
+            }
+            
+            // 無論是新增或編輯，都要更新 ProductId（允許更換商品）
+            if (item.SelectedProduct != null)
+            {
+                SetPropertyValue(detail, "ProductId", item.SelectedProduct.Id);
             }
             
             SetPropertyValue(detail, QuantityPropertyName, item.Quantity);
@@ -541,70 +567,60 @@ else
 
     // ===== 商品選擇事件處理 =====
 
-    // ===== 欄位變更事件處理（簡化版 - 移除舊式空行控制） =====
-    
     /// <summary>
-    /// 取得商品下拉選單選項
+    /// 商品搜尋輸入變更事件（SearchableSelect）
     /// </summary>
-    private List<InteractiveSelectOption> GetProductSelectOptions()
+    private void OnProductSearchChanged(ProductItem item, string? searchValue)
     {
-        var options = new List<InteractiveSelectOption>
-        {
-            new() { Value = "", Text = "請選擇商品" }
-        };
+        item.ProductSearchValue = searchValue ?? string.Empty;
         
         var availableProducts = GetAvailableProducts();
-        foreach (var product in availableProducts)
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
         {
-            options.Add(new InteractiveSelectOption
-            {
-                Value = product.Id.ToString(),
-                Text = $"[{product.Code}] {product.Name}"
-            });
+            // 空白搜尋：顯示前20筆
+            item.FilteredProducts = availableProducts.Take(20).ToList();
+        }
+        else
+        {
+            // 篩選符合的商品（編號或名稱包含搜尋字串）
+            item.FilteredProducts = availableProducts
+                .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                           (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                .Take(20)
+                .ToList();
         }
         
-        return options;
+        item.ShowProductDropdown = true;
+        item.ProductSelectedIndex = -1;
+        StateHasChanged();
     }
     
     /// <summary>
-    /// 商品選擇變更事件（使用 InteractiveTableComponent 的 Select 類型）
+    /// 商品選擇事件（SearchableSelect）
     /// </summary>
-    private async Task OnProductSelectionChanged(ProductItem item, object? value)
+    private async Task OnProductSelected(ProductItem item, Product? selectedProduct)
     {
-        var productIdStr = value?.ToString();
-        if (string.IsNullOrEmpty(productIdStr))
+        if (selectedProduct != null)
+        {
+            item.SelectedProduct = selectedProduct;
+            item.SelectedProductId = selectedProduct.Id;
+            item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
+        }
+        else
         {
             item.SelectedProduct = null;
             item.SelectedProductId = null;
+            item.ProductSearchValue = string.Empty;
         }
-        else if (int.TryParse(productIdStr, out var productId))
-        {
-            var product = GetAvailableProducts().FirstOrDefault(p => p.Id == productId);
-            item.SelectedProduct = product;
-            item.SelectedProductId = productId;
-        }
+        
+        item.ShowProductDropdown = false;
+        item.ProductSelectedIndex = -1;
         
         await NotifyDetailsChanged();
     }
-    
-    /// <summary>
-    /// 舊版商品選擇事件（保留供參考）
-    /// </summary>
-    private async Task OnProductChanged(ProductItem item, object? value)
-    {
-        var productIdStr = value?.ToString();
-        if (string.IsNullOrEmpty(productIdStr))
-        {
-            item.SelectedProduct = null;
-        }
-        else if (int.TryParse(productIdStr, out var productId))
-        {
-            var product = GetAvailableProducts().FirstOrDefault(p => p.Id == productId);
-            item.SelectedProduct = product;
-        }
-        
-        await NotifyDetailsChanged();
-    }
+
+    // ===== 欄位變更事件處理 =====
 
     private async Task OnQuantityInput(ProductItem item, string? value)
     {
@@ -640,20 +656,19 @@ else
         await NotifyDetailsChanged();
     }
 
-    private async Task OnIsReceivingCompletedChanged(ProductItem item)
+    private async Task OnIsReceivingCompletedChanged(ProductItem item, bool newValue)
     {
         // 檢查是否已經完全進貨
         var isFullyReceived = item.ReceivedQuantity >= item.Quantity;
         
-        // 如果已完全進貨且已標記完成，不允許取消
-        if (isFullyReceived && item.IsReceivingCompleted)
+        // 如果已完全進貨且嘗試取消完成狀態，不允許
+        if (isFullyReceived && item.IsReceivingCompleted && !newValue)
         {
             await NotificationService.ShowWarningAsync("此商品已全數入庫，無法取消完成狀態");
             return;
         }
         
-        // 切換狀態
-        var newValue = !item.IsReceivingCompleted;
+        // 設定新狀態
         item.IsReceivingCompleted = newValue;
         
         // 記錄操作者和時間（只在標記為完成時記錄）
@@ -821,6 +836,7 @@ else
                 {
                     SelectedProduct = detail.Product,
                     SelectedProductId = detail.Product?.Id,  //  同步設定 ID
+                    ProductSearchValue = detail.Product != null ? $"[{detail.Product.Code}] {detail.Product.Name}" : string.Empty,  // 設定搜尋顯示值
                     Quantity = detail.OrderQuantity,  // 使用上次的採購數量
                     Price = detail.UnitPrice,         // 使用上次的採購單價
                     ReceivedQuantity = 0,             // 新訂單的已收貨數量從0開始
@@ -963,5 +979,11 @@ else
         
         // 標記是否已被入庫單使用（避免重複查詢）
         public bool? HasUsageRecordCache { get; set; } = null;
+        
+        // SearchableSelect 支援屬性
+        public string ProductSearchValue { get; set; } = string.Empty;
+        public List<Product> FilteredProducts { get; set; } = new();
+        public bool ShowProductDropdown { get; set; } = false;
+        public int ProductSelectedIndex { get; set; } = -1;
     }
 }

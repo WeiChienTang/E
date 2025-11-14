@@ -69,6 +69,17 @@
                                OnCancel="@supplierModalManager.HandleModalCancelAsync" />
 }
 
+@* 產品編輯 Modal *@
+@if (productModalManager != null)
+{
+    <ProductEditModalComponent @ref="productEditModal"
+                              IsVisible="@productModalManager.IsModalVisible"
+                              IsVisibleChanged="@productModalManager.HandleModalVisibilityChangedAsync"
+                              ProductId="@productModalManager.SelectedEntityId"
+                              OnProductSaved="@OnProductSavedWrapper"
+                              OnCancel="@productModalManager.HandleModalCancelAsync" />
+}
+
 @* 進貨退出編輯 Modal *@
 <PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
                                  IsVisible="@showPurchaseReturnModal"
@@ -128,8 +139,11 @@
     
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
+    private ProductEditModalComponent? productEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
+    private RelatedEntityModalManager<Product> productModalManager = default!;
     private ModalManagerCollection modalManagers = default!;
+    
     
     // ===== 相關單據 Modal =====
     private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
@@ -168,8 +182,11 @@
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
                 .AddManager<Supplier>(nameof(PurchaseReceiving.SupplierId), "廠商")
+                .AddManager<Product>("FilterProductId", "產品")
                 .Build();
             supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseReceiving.SupplierId));
+            productModalManager = modalManagers.Get<Product>("FilterProductId");
+
             
         }
         catch (Exception)
@@ -191,7 +208,7 @@
                 if (PrefilledSupplierId.HasValue && PrefilledSupplierId.Value > 0)
                 {
                     await UpdatePurchaseOrderOptions(PrefilledSupplierId.Value);
-                    await UpdateFilterProductOptions(PrefilledSupplierId.Value);
+                    await UpdateFilterProductCollection(PrefilledSupplierId.Value);
                     StateHasChanged(); // 強制更新 UI
                 }
             }
@@ -510,7 +527,7 @@
                 if (purchaseReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(purchaseReceiving.SupplierId);
-                    await UpdateFilterProductOptions(purchaseReceiving.SupplierId);
+                    await UpdateFilterProductCollection(purchaseReceiving.SupplierId);
                 }
                 
                 // 載入對應的採購單明細
@@ -554,6 +571,18 @@
             
             // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
+            
+            // 🔑 在所有資料載入完成後建立 AutoComplete 配置
+            // 確保 suppliers、purchaseOrders 和 products 都已載入
+            autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
+                .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
+                .AddField(nameof(PurchaseReceiving.PurchaseOrderId), "Code", purchaseOrders)
+                .AddFieldWithMultipleSearchProperties(
+                    "FilterProductId", 
+                    "Name",  // 主要顯示欄位
+                    products,
+                    new[] { "Code", "Name" })  // 可搜尋的欄位
+                .Build();
         }
         catch (Exception ex)
         {
@@ -641,12 +670,6 @@
         try
         {
             products = await ProductService.GetAllAsync();
-            
-            // 使用 AutoCompleteConfigHelper 建立配置
-            autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
-                .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
-                .AddField(nameof(PurchaseReceiving.PurchaseOrderId), "Code", purchaseOrders)
-                .Build();
         }
         catch (Exception ex)
         {
@@ -763,20 +786,23 @@
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位
                     Label = "篩選產品",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇產品",
                     IsRequired = false,
-                    Options = await GetFilterProductOptions(),
-                    HelpText = "選擇特定產品進行篩選，或留空顯示所有產品",
+                    MinSearchLength = 0,
+                    HelpText = "輸入產品代碼或名稱進行搜尋，或直接選擇",
+                    ActionButtons = await GetProductActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
                     Label = "篩選採購單",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇採購單",
                     IsRequired = false,  // 改為非必填，支援多採購單模式
-                    HelpText = "可選擇特定採購單進行篩選，或留空使用多採購單模式",
-                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                    MinSearchLength = 0,
+                    HelpText = "輸入採購單號進行搜尋，或留空使用多採購單模式"
                 },
                 new()
                 {
@@ -844,62 +870,60 @@
     }
 
     /// <summary>
-    /// 取得產品篩選選項 - 根據選擇的廠商篩選
+    /// 更新產品篩選的 AutoComplete 資料集合
+    /// 根據選擇的廠商，動態更新可選擇的商品列表
     /// </summary>
-    private async Task<List<SelectOption>> GetFilterProductOptions()
+    private async Task UpdateFilterProductCollection(int? supplierId = null)
     {
         try
         {
-            var options = new List<SelectOption> {};
+            if (autoCompleteConfig?.Collections == null)
+                return;
             
-            // 如果有選擇廠商，只顯示該廠商的產品
-            if (editModalComponent?.Entity?.SupplierId > 0)
-            {
-                var supplierProducts = await ProductService.GetBySupplierAsync(editModalComponent.Entity.SupplierId);
-                options.AddRange(supplierProducts.Select(p => new SelectOption
-                {
-                    Value = p.Id.ToString(),
-                    Text = $"{p.Code} - {p.Name}"
-                }));
-            }
+            List<Product> filteredProducts;
             
-            return options;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入產品選項時發生錯誤：{ex.Message}");
-            return new List<SelectOption> {};
-        }
-    }
-
-    /// <summary>
-    /// 更新產品篩選選項 - 當廠商變更時調用
-    /// </summary>
-    private async Task UpdateFilterProductOptions(int? supplierId = null)
-    {
-        try
-        {
-            // 找到產品篩選欄位並更新其選項
-            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-            if (filterProductField != null)
+            if (supplierId.HasValue && supplierId.Value > 0)
             {
-                var options = new List<SelectOption> {};
+                // 取得該廠商的所有採購訂單
+                var supplierOrders = purchaseOrders
+                    .Where(po => po.SupplierId == supplierId.Value)
+                    .ToList();
                 
-                if (supplierId.HasValue && supplierId.Value > 0)
+                // 從採購訂單明細中提取已採購的商品ID（去重）
+                var productIds = new HashSet<int>();
+                foreach (var order in supplierOrders)
                 {
-                    var supplierProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
-                    options.AddRange(supplierProducts.Select(p => new SelectOption
+                    if (order.PurchaseOrderDetails != null)
                     {
-                        Value = p.Id.ToString(),
-                        Text = $"{p.Code} - {p.Name}"
-                    }));
+                        foreach (var detail in order.PurchaseOrderDetails)
+                        {
+                            productIds.Add(detail.ProductId);
+                        }
+                    }
                 }
                 
-                filterProductField.Options = options;
-                
-                // 清空目前的產品篩選選擇
-                filterProductId = null;
+                // 篩選出該廠商的商品
+                filteredProducts = products
+                    .Where(p => productIds.Contains(p.Id))
+                    .OrderBy(p => p.Code)
+                    .ToList();
             }
+            else
+            {
+                // 沒有選擇廠商時，顯示全部商品
+                filteredProducts = products;
+            }
+            
+            // 更新 AutoComplete 的資料集合
+            if (autoCompleteConfig.Collections.ContainsKey("FilterProductId"))
+            {
+                autoCompleteConfig.Collections["FilterProductId"] = filteredProducts.Cast<object>().ToList();
+            }
+            
+            // 清空目前的產品篩選選擇
+            filterProductId = null;
+            
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -922,7 +946,8 @@
     {
         return new Dictionary<string, object>
         {
-            { nameof(PurchaseReceiving.SupplierId), supplierModalManager }
+            { nameof(PurchaseReceiving.SupplierId), supplierModalManager },
+            { "FilterProductId", productModalManager }
         };
     }
 
@@ -1098,8 +1123,6 @@
         // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
         var fieldsToLock = new[]
         {
-            nameof(PurchaseReceiving.PurchaseOrderId),
-            "FilterProductId",
             nameof(PurchaseReceiving.ReceiptDate),
             nameof(BaseEntity.Remarks)
         };
@@ -1131,6 +1154,25 @@
                 actionButtonsGetter: GetSupplierActionButtonsAsync
             );
         }
+        
+        // 特殊處理產品篩選欄位（需要 ActionButtons）
+        if (hasUndeletableDetails)
+        {
+            FormFieldLockHelper.LockField(
+                formFields,
+                "FilterProductId",
+                isLocked: true
+            );
+        }
+        else
+        {
+            FormFieldLockHelper.LockField(
+                formFields,
+                "FilterProductId",
+                isLocked: false,
+                actionButtonsGetter: GetProductActionButtonsAsync
+            );
+        }
     }
 
     /// <summary>
@@ -1160,19 +1202,16 @@
                 
                 await UpdatePurchaseOrderOptions(supplierId);
                 
-                // 更新產品篩選選項
-                await UpdateFilterProductOptions(supplierId);
+                // 更新產品篩選的 AutoComplete 資料集合
+                await UpdateFilterProductCollection(supplierId);
                 
-                // 更新廠商欄位的操作按鈕 - 只有在沒有不可刪除明細時才更新
-                if (!hasUndeletableDetails)
-                {
-                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                        supplierModalManager, 
-                        formFields, 
-                        nameof(PurchaseReceiving.SupplierId), 
-                        fieldChange.Value
-                    );
-                }
+                // 更新廠商欄位的操作按鈕
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    supplierModalManager, 
+                    formFields, 
+                    nameof(PurchaseReceiving.SupplierId), 
+                    fieldChange.Value
+                );
                 
                 StateHasChanged();
             }
@@ -1197,6 +1236,15 @@
                 {
                     filterProductId = null;
                 }
+                
+                // 更新產品欄位的操作按鈕
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    productModalManager, 
+                    formFields, 
+                    "FilterProductId", 
+                    fieldChange.Value
+                );
+                
                 StateHasChanged();
             }
         }
@@ -1480,9 +1528,6 @@
                                                                UnitPricePropertyName="UnitPrice"
                                                                RemarksPropertyName="InspectionRemarks"
                                                                PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
-                                                               ReceivedQuantityLabel="進貨數量"
-                                                               PriceLabel="單價"
-                                                               RemarksLabel="備註"
                                                                ShowWarehouse="true"
                                                                ShowWarehouseLocation="true"
                                                                WarehouseIdPropertyName="WarehouseId"
@@ -1534,11 +1579,31 @@
     }
 
     /// <summary>
+    /// 產生產品操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetProductActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            productModalManager, 
+            "FilterProductId"
+        );
+    }
+
+    /// <summary>
     /// 包裝廠商儲存事件
     /// </summary>
     private async Task OnSupplierSavedWrapper(Supplier savedSupplier)
     {
         await supplierModalManager.HandleEntitySavedAsync(savedSupplier, shouldAutoSelect: true);
+    }
+
+    /// <summary>
+    /// 包裝產品儲存事件
+    /// </summary>
+    private async Task OnProductSavedWrapper(Product savedProduct)
+    {
+        await productModalManager.HandleEntitySavedAsync(savedProduct, shouldAutoSelect: true);
     }
 
     /// <summary>

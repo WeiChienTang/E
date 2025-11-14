@@ -69,7 +69,7 @@
                         @foreach (var column in ColumnDefinitions ?? new List<InteractiveColumnDefinition>())
                         {
                             <td class="@column.CellCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")"
-                                style="@(GetColumnWidthStyle(column))"
+                                style="@(GetCellStyle(column))"
                                 @onclick:stopPropagation="@(column.ColumnType != InteractiveColumnType.Display)">
                                 
                                 @* 根據欄位類型渲染不同的控件 *@
@@ -87,12 +87,24 @@
                                     {
                                         displayText = column.DisplayFormatter(value);
                                     }
+                                    // 智能數字格式化：整數不顯示小數點，有小數才顯示
+                                    else if (column.SmartDecimalDisplay && decimal.TryParse(value.ToString(), out var decimalValue))
+                                    {
+                                        displayText = decimalValue % 1 == 0 
+                                            ? decimalValue.ToString("N0") 
+                                            : decimalValue.ToString(column.NumberFormat ?? "N2");
+                                    }
+                                    // 一般數字格式化
+                                    else if (!string.IsNullOrEmpty(column.NumberFormat) && decimal.TryParse(value.ToString(), out var numValue))
+                                    {
+                                        displayText = numValue.ToString(column.NumberFormat);
+                                    }
                                     else
                                     {
                                         displayText = HttpUtility.HtmlEncode(value.ToString() ?? "");
                                     }
 
-                                    <span style="font-size: 0.875rem;">@((MarkupString)displayText)</span>
+                                    <span>@((MarkupString)displayText)</span>
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Input)
                                 {
@@ -183,15 +195,16 @@
                                     var filteredItems = GetPropertyValue(item, column.FilteredItemsPropertyName ?? "") as IEnumerable<object> ?? new List<object>();
                                     var showDropdown = GetPropertyValue(item, column.ShowDropdownPropertyName ?? "") is bool showValue && showValue;
                                     var selectedIndex = GetPropertyValue(item, column.SelectedIndexPropertyName ?? "") is int indexValue ? indexValue : -1;
-                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var isDisabled = IsReadOnly || column.IsDisabled || (column.IsDisabledFunc?.Invoke(item!) ?? false);
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
+                                    var tooltip = column.TooltipFunc?.Invoke(item!) ?? column.Tooltip;
                                     
                                     <div class="position-relative">
                                         <input type="text" 
                                                class="form-control @validationClass" 
                                                value="@searchValue"
                                                placeholder="@column.Placeholder"
-                                               title="@column.Tooltip"
+                                               title="@tooltip"
                                                disabled="@isDisabled"
                                                readonly="@column.IsReadOnly"
                                                @oninput="async (e) => await HandleSearchableSelectInput(column, item, e.Value?.ToString())"
@@ -433,9 +446,12 @@
     {
         await base.OnAfterRenderAsync(firstRender);
         
+        Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - firstRender: {firstRender}, EnableAutoEmptyRow: {EnableAutoEmptyRow}, DataLoadCompleted: {DataLoadCompleted}, _previousDataLoadCompleted: {_previousDataLoadCompleted}");
+        
         //  不再使用 firstRender,改為監控 DataLoadCompleted 狀態變化
         if (EnableAutoEmptyRow && DataLoadCompleted && !_previousDataLoadCompleted)
         {
+            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - 偵測到 DataLoadCompleted 從 false 變為 true，觸發空行檢查");
             _previousDataLoadCompleted = DataLoadCompleted;
             
             // 使用 InvokeAsync 確保在正確的同步上下文中執行
@@ -447,6 +463,7 @@
         }
         else if (firstRender && EnableAutoEmptyRow && DataLoadCompleted && !_hasInitializedEmptyRow)
         {
+            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - firstRender 且 DataLoadCompleted=true，觸發空行檢查");
             //  向下兼容:如果父組件沒有控制 DataLoadCompleted(預設 true),使用原有邏輯
             _hasInitializedEmptyRow = true;
             _previousDataLoadCompleted = DataLoadCompleted;
@@ -456,6 +473,10 @@
                 CheckAndAddEmptyRowIfNeeded();
                 StateHasChanged();
             });
+        }
+        else
+        {
+            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - 不觸發空行檢查");
         }
     }
     
@@ -506,6 +527,25 @@
     private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
     {
         return !string.IsNullOrEmpty(column.Width) ? $"width: {column.Width};" : null;
+    }
+
+    private string? GetCellStyle(InteractiveColumnDefinition column)
+    {
+        var styles = new List<string>();
+        
+        // 寬度設定
+        if (!string.IsNullOrEmpty(column.Width))
+        {
+            styles.Add($"width: {column.Width}");
+        }
+        
+        // 文字對齊設定 (只對 Display 類型有效)
+        if (column.ColumnType == InteractiveColumnType.Display && !string.IsNullOrEmpty(column.TextAlign))
+        {
+            styles.Add($"text-align: {column.TextAlign}");
+        }
+        
+        return styles.Any() ? string.Join("; ", styles) + ";" : null;
     }
 
     private string? GetActionsColumnStyle()
@@ -864,22 +904,31 @@
     /// </summary>
     private void CheckAndAddEmptyRowIfNeeded()
     {
+        Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded 開始 - EnableAutoEmptyRow: {EnableAutoEmptyRow}, CreateEmptyItem != null: {CreateEmptyItem != null}, Items != null: {Items != null}");
+        
         if (!EnableAutoEmptyRow || CreateEmptyItem == null || Items == null) 
         {
+            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 條件不滿足，退出");
             return;
         }
         
+        Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 目前 Items 數量: {Items.Count()}");
+        
         //  找出所有空行
         var emptyRows = Items.Where(IsRowEmpty).ToList();
+        Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 找到 {emptyRows.Count} 個空行");
         
         if (emptyRows.Count == 0)
         {
+            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 沒有空行，新增一個");
             var newEmptyRow = CreateEmptyItem();
             Items.Add(newEmptyRow);
             _lastEmptyRow = newEmptyRow;
+            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 已新增空行，目前 Items 數量: {Items.Count()}");
         }
         else if (emptyRows.Count > 1 || !Equals(Items.Last(), emptyRows[0]))
-        {      
+        {
+            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 有多個空行或空行不在最後，重新整理");
             foreach (var emptyRow in emptyRows)
             {
                 Items.Remove(emptyRow);
@@ -888,10 +937,12 @@
             var newEmptyRow = CreateEmptyItem();
             Items.Add(newEmptyRow);
             _lastEmptyRow = newEmptyRow;
+            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 已重新整理空行，目前 Items 數量: {Items.Count()}");
         }
         else
         {
             // 只有一個空行且在最後,不需要處理
+            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 已有一個空行在最後，不需處理");
             _lastEmptyRow = emptyRows[0];
         }
     }
@@ -1114,10 +1165,40 @@
                 if (selectedIndex >= 0 && selectedIndex < dropdownItems.Count)
                 {
                     var selectedItem = dropdownItems[selectedIndex];
+                    
+                    //  記錄變更前的狀態（用於自動空行檢查）
+                    var wasEmpty = EnableAutoEmptyRow ? IsRowEmpty(item) : false;
+                    
+                    // 優先使用 OnDropdownItemSelected（向下兼容）
                     if (column.OnDropdownItemSelected.HasValue)
                     {
                         await column.OnDropdownItemSelected.Value.InvokeAsync((item!, selectedItem));
                     }
+                    // SearchableSelect 使用 OnItemSelected
+                    else if (column.ItemSelectedAction != null)
+                    {
+                        column.ItemSelectedAction(item!, selectedItem);
+                    }
+                    else if (column.ItemSelectedCallback.HasValue)
+                    {
+                        await column.ItemSelectedCallback.Value.InvokeAsync((item!, selectedItem));
+                    }
+                    else if (column.OnItemSelected.HasValue)
+                    {
+                        await column.OnItemSelected.Value.InvokeAsync((item!, selectedItem));
+                    }
+                    
+                    // 關閉下拉選單
+                    column.SetShowDropdown(item!, false);
+                    column.SetSelectedIndex(item!, -1);
+                    
+                    //  只有當這一行從空變非空時，才檢查是否需要新增空行
+                    if (EnableAutoEmptyRow && wasEmpty && !IsRowEmpty(item))
+                    {
+                        AutoAddEmptyRowIfNeeded();
+                    }
+                    
+                    StateHasChanged();
                 }
                 break;
                 

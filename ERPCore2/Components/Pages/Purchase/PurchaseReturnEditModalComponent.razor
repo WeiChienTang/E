@@ -508,7 +508,6 @@
                     Placeholder = "請輸入退回單號",
                     IsRequired = true,
                     MaxLength = 30,
-                    Order = 1,
                     HelpText = "系統自動生成的唯一退回單號，也可手動修改",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
@@ -520,7 +519,6 @@
                     Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
                     MinSearchLength = 0,
-                    Order = 2,
                     HelpText = "輸入廠商名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetSupplierActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
@@ -531,7 +529,6 @@
                     Label = "篩選商品",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Order = 3,
                     Options = await GetFilterProductOptions(),
                     HelpText = "選擇特定商品進行篩選，或留空顯示所有商品",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
@@ -542,7 +539,6 @@
                     Label = "篩選進貨單",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
-                    Order = 4,
                     Options = await GetFilterPurchaseReceivingOptions(),
                     HelpText = "選擇特定進貨單進行篩選，或留空顯示所有進貨單",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
@@ -552,8 +548,6 @@
                     PropertyName = nameof(PurchaseReturn.ReturnDate),
                     Label = "退回日期",
                     FieldType = FormFieldType.Date,
-                    IsRequired = true,
-                    Order = 5,
                     HelpText = "請選擇退回日期",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
@@ -564,7 +558,6 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
-                    Order = 7,
                     HelpText = "系統自動計算的退回總金額"
                 },
                 new()
@@ -574,7 +567,6 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
-                    Order = 8,
                     HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("退回單", currentTaxRate)
                 },
                 new()
@@ -584,7 +576,6 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
-                    Order = 9,
                     HelpText = "系統自動計算的退回含稅總金額"
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<PurchaseReturn>(
@@ -606,6 +597,13 @@
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     pr => pr.Remarks)
                 .Build();
+            
+            // 關鍵：如果實體已經載入且有廠商ID，立即更新商品和進貨單選項
+            if (editModalComponent?.Entity?.SupplierId > 0)
+            {
+                await UpdateFilterProductOptions(editModalComponent.Entity.SupplierId);
+                await UpdateFilterPurchaseReceivingOptions(editModalComponent.Entity.SupplierId);
+            }
             
         }
         catch (Exception)
@@ -732,17 +730,50 @@
 
     /// <summary>
     /// 取得商品篩選選項 - 根據選擇的廠商篩選
+    /// 只顯示該廠商有入庫記錄的商品（從 PurchaseReceivingDetail 中提取）
     /// </summary>
     private async Task<List<SelectOption>> GetFilterProductOptions()
     {
         try
         {
-            var options = new List<SelectOption> {};
+            var options = new List<SelectOption>();
             
-            // 如果有選擇廠商，只顯示該廠商的產品
-            if (editModalComponent?.Entity?.SupplierId > 0)
+            // 如果沒有選擇廠商，顯示全部商品
+            if (editModalComponent?.Entity?.SupplierId == null || editModalComponent.Entity.SupplierId <= 0)
             {
-                var supplierProducts = await ProductService.GetBySupplierAsync(editModalComponent.Entity.SupplierId);
+                options.AddRange(products.Select(p => new SelectOption
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Code} - {p.Name}"
+                }));
+            }
+            else
+            {
+                // 如果有選擇廠商，只顯示該廠商有入庫記錄的商品
+                // 取得該廠商的所有進貨單
+                var supplierReceivings = purchaseReceivings
+                    .Where(pr => pr.SupplierId == editModalComponent.Entity.SupplierId)
+                    .ToList();
+                
+                // 從進貨單明細中提取已入庫的商品ID（去重）
+                var productIds = new HashSet<int>();
+                foreach (var receiving in supplierReceivings)
+                {
+                    if (receiving.PurchaseReceivingDetails != null)
+                    {
+                        foreach (var detail in receiving.PurchaseReceivingDetails)
+                        {
+                            productIds.Add(detail.ProductId);
+                        }
+                    }
+                }
+                
+                // 根據商品ID從 products 列表中找出對應的商品
+                var supplierProducts = products
+                    .Where(p => productIds.Contains(p.Id))
+                    .OrderBy(p => p.Code)
+                    .ToList();
+                
                 options.AddRange(supplierProducts.Select(p => new SelectOption
                 {
                     Value = p.Id.ToString(),
@@ -755,7 +786,7 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入商品選項時發生錯誤：{ex.Message}");
-            return new List<SelectOption> {};
+            return new List<SelectOption>();
         }
     }
 
@@ -793,6 +824,7 @@
 
     /// <summary>
     /// 更新商品篩選選項 - 當廠商變更時調用
+    /// 只顯示該廠商有入庫記錄的商品（從 PurchaseReceivingDetail 中提取）
     /// </summary>
     private async Task UpdateFilterProductOptions(int? supplierId = null)
     {
@@ -802,11 +834,34 @@
             var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
             if (filterProductField != null)
             {
-                var options = new List<SelectOption> {};
+                var options = new List<SelectOption>();
                 
                 if (supplierId.HasValue && supplierId.Value > 0)
                 {
-                    var supplierProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
+                    // 取得該廠商的所有進貨單
+                    var supplierReceivings = purchaseReceivings
+                        .Where(pr => pr.SupplierId == supplierId.Value)
+                        .ToList();
+                    
+                    // 從進貨單明細中提取已入庫的商品ID（去重）
+                    var productIds = new HashSet<int>();
+                    foreach (var receiving in supplierReceivings)
+                    {
+                        if (receiving.PurchaseReceivingDetails != null)
+                        {
+                            foreach (var detail in receiving.PurchaseReceivingDetails)
+                            {
+                                productIds.Add(detail.ProductId);
+                            }
+                        }
+                    }
+                    
+                    // 根據商品ID從 products 列表中找出對應的商品
+                    var supplierProducts = products
+                        .Where(p => productIds.Contains(p.Id))
+                        .OrderBy(p => p.Code)
+                        .ToList();
+                    
                     options.AddRange(supplierProducts.Select(p => new SelectOption
                     {
                         Value = p.Id.ToString(),

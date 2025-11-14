@@ -410,6 +410,7 @@
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseOrder>()
                 .AddField(nameof(PurchaseOrder.SupplierId), "CompanyName", availableSuppliers)
+                .AddField(nameof(PurchaseOrder.CompanyId), "CompanyName", availableCompanies)
                 .Build();
 
             // 初始化狀態選項

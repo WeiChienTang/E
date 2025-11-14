@@ -200,6 +200,26 @@ namespace ERPCore2.Components.Shared.SubCollections
         /// 空值顯示文字
         /// </summary>
         public string? NullDisplayText { get; set; }
+        
+        /// <summary>
+        /// 文字對齊方式 (left, center, right)，預設為 left
+        /// </summary>
+        public string TextAlign { get; set; } = "left";
+        
+        /// <summary>
+        /// 數字格式化字串（例如："N0" 整數千分位、"N2" 兩位小數、"C" 貨幣、"P" 百分比等）
+        /// 參考：https://docs.microsoft.com/zh-tw/dotnet/standard/base-types/standard-numeric-format-strings
+        /// </summary>
+        public string? NumberFormat { get; set; }
+        
+        /// <summary>
+        /// 是否智能顯示小數點（整數不顯示小數點，有小數才顯示）
+        /// 當設為 true 時：
+        /// - 整數（如 100）顯示為 "100"
+        /// - 小數（如 100.50）顯示為 "100.50" 或根據 NumberFormat 設定顯示
+        /// 優先級：DisplayFormatter > SmartDecimalDisplay > NumberFormat > 預設顯示
+        /// </summary>
+        public bool SmartDecimalDisplay { get; set; } = false;
         #endregion
 
         #region SearchableSelect 專用屬性
