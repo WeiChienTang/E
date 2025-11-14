@@ -23,6 +23,10 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCompositionData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
@@ -73,6 +77,10 @@
     private ProductCompositionTable? detailManager;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+    
     private List<Product> availableProducts = new();
     private List<Unit> availableUnits = new();
     private List<Customer> availableCustomers = new();
@@ -135,8 +143,7 @@
                 await OnCompositionSaved.InvokeAsync(editModalComponent.Entity);
             }
 
-            // 關閉 Modal
-            await CloseModal();
+            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {
@@ -187,6 +194,11 @@
             
             // 載入員工列表
             availableEmployees = await EmployeeService.GetAllAsync();
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<ProductComposition>()
+                .AddField(nameof(ProductComposition.ParentProductId), "Name", availableProducts)
+                .Build();
             
             // 如果是編輯模式，載入現有的明細資料
             if (CompositionId.HasValue && CompositionId.Value > 0)
@@ -290,17 +302,6 @@
     {
         try
         {
-            // 準備產品選項（所有產品）
-            var productOptions = new List<SelectOption>
-            {
-                new SelectOption { Text = "請選擇", Value = "" }
-            };
-            productOptions.AddRange(availableProducts.Select(p => new SelectOption
-            {
-                Text = $"{p.Code} - {p.Name}".Trim(),
-                Value = p.Id.ToString()
-            }));
-
             // 準備合成類型選項
             var compositionTypeOptions = Enum.GetValues<CompositionType>()
                 .Select(ct => new SelectOption
@@ -341,10 +342,10 @@
                 {
                     PropertyName = nameof(ProductComposition.ParentProductId),
                     Label = "產品",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇產品",
-                    Options = productOptions,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇產品",
                     IsRequired = true,
+                    MinSearchLength = 0,
                     HelpText = "選擇此合成要生產的產品",
                     ActionButtons = await GetProductActionButtonsAsync()
                 },

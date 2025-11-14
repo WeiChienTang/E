@@ -96,9 +96,9 @@ namespace ERPCore2.Helpers
         {
             try
             {
-                // 關閉 Modal
-                setModalVisible(false);
-                setEditingId(null);
+                // 不自動關閉 Modal，讓開發者透過 CloseOnSave 參數自行決定
+                // setModalVisible(false);
+                // setEditingId(null);
 
                 // 重新載入資料（如果組件支援 Refresh 方法）
                 if (indexComponent != null)

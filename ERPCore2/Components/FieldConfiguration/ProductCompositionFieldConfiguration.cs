@@ -50,7 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "成品",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 180px;",
+                            HeaderStyle = "width: 200px;",
                             Options = _products.Select(p => new SelectOption 
                             { 
                                 Text = $"{p.Code} - {p.Name}", 
@@ -97,7 +97,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "配方類型",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px;",
+                            HeaderStyle = "width: 100px;",
                             Options = Enum.GetValues<CompositionType>()
                                 .Select(ct => new SelectOption
                                 {
@@ -142,7 +142,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "組件數",
                             ShowInFilter = false,
                             TableOrder = 5,
-                            HeaderStyle = "width: 100px; text-align: center;",
+                            HeaderStyle = "width: 80px; text-align: center;",
                             CustomTemplate = item => builder =>
                             {
                                 var composition = (ProductComposition)item;

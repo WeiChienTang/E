@@ -199,7 +199,7 @@
         {
             await OnQuotationSaved.InvokeAsync(editModalComponent.Entity);
         }
-        await CloseModal();
+        // CloseModal 已由 GenericEditModalComponent 統一控制
     }
 
     private async Task HandleCancel()

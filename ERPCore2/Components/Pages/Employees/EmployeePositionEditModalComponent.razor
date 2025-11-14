@@ -59,8 +59,7 @@
                 await OnEmployeePositionSaved.InvokeAsync(editModalComponent.Entity);
             }
 
-            // 關閉 Modal
-            await CloseModal();
+            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {

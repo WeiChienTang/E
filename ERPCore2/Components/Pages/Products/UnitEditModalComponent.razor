@@ -143,7 +143,7 @@
                 // 傳遞實際儲存的實體資料
                 await OnUnitSaved.InvokeAsync(editModalComponent?.Entity ?? new Unit());
             }
-            await CloseModal();
+            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {

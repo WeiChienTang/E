@@ -134,7 +134,7 @@
         {
             await OnCustomerSaved.InvokeAsync(editModalComponent.Entity);
         }
-        await CloseModal();
+        // CloseModal 已由 GenericEditModalComponent 統一控制
     }
 
     private async Task HandleCancel()
@@ -313,7 +313,8 @@
                 IsRequired = false,
                 MaxLength = 50,
                 HelpText = "貨物運送地址",
-                ContainerCssClass = "col-4"
+                ContainerCssClass = "col-4",
+                ActionButtons = await GetShippingAddressActionButtonsAsync()
             },
             new()
             {
@@ -520,6 +521,27 @@
         
         return Task.FromResult(buttons);
     }
+    
+    /// <summary>
+    /// 產生貨運地址操作按鈕 - 同聯絡地址
+    /// </summary>
+    private Task<List<FieldActionButton>> GetShippingAddressActionButtonsAsync()
+    {
+        var buttons = new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "複製",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將聯絡地址複製到貨運地址",
+                OnClick = async () => await CopyContactAddressToShippingAddress(),
+                IsDisabled = false
+            }
+        };
+        
+        return Task.FromResult(buttons);
+    }
 
     /// <summary>
     /// 將公司名稱複製到發票抬頭欄位
@@ -543,6 +565,31 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"複製公司名稱時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 將聯絡地址複製到貨運地址欄位
+    /// </summary>
+    private async Task CopyContactAddressToShippingAddress()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                // 複製聯絡地址到貨運地址
+                editModalComponent.Entity.ShippingAddress = editModalComponent.Entity.ContactAddress;
+                
+                // 通知 UI 更新
+                StateHasChanged();
+                
+                // 顯示成功訊息
+                await NotificationService.ShowSuccessAsync("已將聯絡地址複製到貨運地址");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製聯絡地址時發生錯誤：{ex.Message}");
         }
     }
     

@@ -187,7 +187,7 @@
             {
                 await OnPurchaseReturnSaved.InvokeAsync(editModalComponent.Entity);
             }
-            // 不需要手動關閉 Modal，GenericEditModalComponent 會處理
+            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {

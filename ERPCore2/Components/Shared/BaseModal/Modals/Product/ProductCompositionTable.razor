@@ -191,23 +191,6 @@
                         }
                     </select>;
                 }
-            },
-            
-            // 組件成本 - 唯讀顯示
-            new() 
-            { 
-                Title = "組件成本", 
-                Tooltip = "此材料的成本金額（自動計算）",
-                PropertyName = nameof(ProductCompositionDetail.ComponentCost),
-                ColumnType = InteractiveColumnType.Custom,
-                CustomTemplate = item => 
-                {
-                    var detail = (ProductCompositionDetail)item;
-                    var cost = detail.ComponentCost ?? 0;
-                    var formattedCost = cost > 0 ? $"${cost:N2}" : "-";
-                    
-                    return @<div class="text-end px-2">@formattedCost</div>;
-                }
             }
         };
     }
@@ -284,6 +267,9 @@
         {
             detail.Quantity = 0;
         }
+        
+        // 數量變更時，不需要重新計算 ComponentCost（單位成本），
+        // 因為顯示時會自動用 ComponentCost × Quantity 計算總成本
         
         // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
         AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
@@ -370,13 +356,6 @@
             if (invalidQuantities.Any())
             {
                 errors.Add("所有材料的數量必須大於 0");
-            }
-            
-            // 檢查是否選擇了單位
-            var missingUnits = nonEmptyItems.Where(item => !item.UnitId.HasValue || item.UnitId.Value <= 0).ToList();
-            if (missingUnits.Any())
-            {
-                errors.Add("所有材料都必須選擇單位");
             }
         }
           

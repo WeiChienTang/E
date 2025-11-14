@@ -101,7 +101,7 @@
                 // 如果有指定儲存成功回調，則執行
                 await OnWarehouseLocationSaved.InvokeAsync(editModalComponent.Entity);
             }
-            await CloseModal();
+            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {
