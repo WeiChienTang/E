@@ -678,6 +678,56 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得第一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        public virtual async Task<int?> GetFirstIdAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                // 查找最小的 Id
+                var firstId = await dbSet
+                    .OrderBy(x => x.Id)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                
+                return firstId > 0 ? firstId : null;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetFirstIdAsync), GetType(), _logger, null);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 取得最後一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        public virtual async Task<int?> GetLastIdAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                // 查找最大的 Id
+                var lastId = await dbSet
+                    .OrderByDescending(x => x.Id)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                
+                return lastId > 0 ? lastId : null;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastIdAsync), GetType(), _logger, null);
+                return null;
+            }
+        }
+
         #endregion
     }
 }

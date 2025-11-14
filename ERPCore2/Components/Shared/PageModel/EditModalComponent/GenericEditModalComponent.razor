@@ -98,14 +98,14 @@
                     <GenericButtonComponent Text="上筆" 
                                           Variant="ButtonVariant.Success" 
                                           OnClick="HandlePrevious"
-                                          IsDisabled="@(!_hasPrevious || IsSubmitting || IsLoading)"
-                                          Title="@(_hasPrevious ? $"切換到上一筆{EntityName}" : "沒有上一筆記錄")" />
+                                          IsDisabled="@(IsSubmitting || IsLoading)"
+                                          Title="@GetPreviousButtonTitle()" />
                     
                     <GenericButtonComponent Text="下筆" 
                                           Variant="ButtonVariant.Success"
                                           OnClick="HandleNext"
-                                          IsDisabled="@(!_hasNext || IsSubmitting || IsLoading)"
-                                          Title="@(_hasNext ? $"切換到下一筆{EntityName}" : "沒有下一筆記錄")" />
+                                          IsDisabled="@(IsSubmitting || IsLoading)"
+                                          Title="@GetNextButtonTitle()" />
                 }
                 
                 @if (ShowPrintButton)
@@ -412,8 +412,8 @@
     // 記錄導航狀態
     private int? _previousId = null;
     private int? _nextId = null;
-    private bool _hasPrevious => _previousId.HasValue;
-    private bool _hasNext => _nextId.HasValue;
+    private int? _firstId = null;  // 第一筆記錄的 ID
+    private int? _lastRecordId = null;   // 最後一筆記錄的 ID
     
     // ===== Modal 尺寸列舉 =====
     
@@ -1755,7 +1755,7 @@
     #region 記錄導航處理
     
     /// <summary>
-    /// 載入導航狀態（上一筆和下一筆的 ID）
+    /// 載入導航狀態（上一筆和下一筆的 ID，支援循環導航）
     /// </summary>
     private async Task LoadNavigationStateAsync()
     {
@@ -1763,17 +1763,22 @@
         {
             _previousId = null;
             _nextId = null;
+            _firstId = null;
+            _lastRecordId = null;
             return;
         }
         
         try
         {
-            // 使用反射調用服務的 GetPreviousIdAsync 和 GetNextIdAsync 方法
+            // 使用反射調用服務的導航方法
             var serviceType = Service.GetType();
             
             var getPreviousMethod = serviceType.GetMethod("GetPreviousIdAsync");
             var getNextMethod = serviceType.GetMethod("GetNextIdAsync");
+            var getFirstMethod = serviceType.GetMethod("GetFirstIdAsync");
+            var getLastMethod = serviceType.GetMethod("GetLastIdAsync");
             
+            // 載入上一筆 ID
             if (getPreviousMethod != null)
             {
                 var previousTask = getPreviousMethod.Invoke(Service, new object[] { Id.Value }) as Task<int?>;
@@ -1783,6 +1788,7 @@
                 }
             }
             
+            // 載入下一筆 ID
             if (getNextMethod != null)
             {
                 var nextTask = getNextMethod.Invoke(Service, new object[] { Id.Value }) as Task<int?>;
@@ -1791,25 +1797,65 @@
                     _nextId = await nextTask;
                 }
             }
+            
+            // 載入第一筆 ID（用於循環導航）
+            if (getFirstMethod != null)
+            {
+                var firstTask = getFirstMethod.Invoke(Service, new object[] { }) as Task<int?>;
+                if (firstTask != null)
+                {
+                    _firstId = await firstTask;
+                }
+            }
+            
+            // 載入最後一筆 ID（用於循環導航）
+            if (getLastMethod != null)
+            {
+                var lastTask = getLastMethod.Invoke(Service, new object[] { }) as Task<int?>;
+                if (lastTask != null)
+                {
+                    _lastRecordId = await lastTask;
+                }
+            }
+            
+            // 循環邏輯：如果沒有上一筆，設為最後一筆；如果沒有下一筆，設為第一筆
+            if (!_previousId.HasValue && _lastRecordId.HasValue)
+            {
+                _previousId = _lastRecordId.Value;
+            }
+            
+            if (!_nextId.HasValue && _firstId.HasValue)
+            {
+                _nextId = _firstId.Value;
+            }
         }
         catch (Exception ex)
         {
             LogError("LoadNavigationStateAsync", ex);
             _previousId = null;
             _nextId = null;
+            _firstId = null;
+            _lastRecordId = null;
         }
     }
     
     /// <summary>
-    /// 處理上一筆按鈕點擊
+    /// 處理上一筆按鈕點擊（支援循環導航）
     /// </summary>
     private async Task HandlePrevious()
     {
-        if (!_previousId.HasValue || IsLoading || IsSubmitting) return;
+        if (IsLoading || IsSubmitting) return;
         
         try
         {
-            await NavigateToRecordAsync(_previousId.Value);
+            if (_previousId.HasValue)
+            {
+                await NavigateToRecordAsync(_previousId.Value);
+            }
+            else
+            {
+                await ShowErrorMessage($"無法切換到上一筆{EntityName}");
+            }
         }
         catch (Exception ex)
         {
@@ -1819,15 +1865,22 @@
     }
     
     /// <summary>
-    /// 處理下一筆按鈕點擊
+    /// 處理下一筆按鈕點擊（支援循環導航）
     /// </summary>
     private async Task HandleNext()
     {
-        if (!_nextId.HasValue || IsLoading || IsSubmitting) return;
+        if (IsLoading || IsSubmitting) return;
         
         try
         {
-            await NavigateToRecordAsync(_nextId.Value);
+            if (_nextId.HasValue)
+            {
+                await NavigateToRecordAsync(_nextId.Value);
+            }
+            else
+            {
+                await ShowErrorMessage($"無法切換到下一筆{EntityName}");
+            }
         }
         catch (Exception ex)
         {
@@ -1912,6 +1965,36 @@
             IsLoading = false;
             StateHasChanged();
         }
+    }
+    
+    /// <summary>
+    /// 取得上一筆按鈕的提示文字
+    /// </summary>
+    private string GetPreviousButtonTitle()
+    {
+        if (!_previousId.HasValue)
+            return $"沒有上一筆{EntityName}";
+        
+        // 判斷是否為循環導航（當前是第一筆，上一筆是最後一筆）
+        if (_firstId.HasValue && Id.HasValue && Id.Value == _firstId.Value)
+            return $"切換到最後一筆{EntityName}（循環）";
+        
+        return $"切換到上一筆{EntityName}";
+    }
+    
+    /// <summary>
+    /// 取得下一筆按鈕的提示文字
+    /// </summary>
+    private string GetNextButtonTitle()
+    {
+        if (!_nextId.HasValue)
+            return $"沒有下一筆{EntityName}";
+        
+        // 判斷是否為循環導航（當前是最後一筆，下一筆是第一筆）
+        if (_lastRecordId.HasValue && Id.HasValue && Id.Value == _lastRecordId.Value)
+            return $"切換到第一筆{EntityName}（循環）";
+        
+        return $"切換到下一筆{EntityName}";
     }
     
     #endregion

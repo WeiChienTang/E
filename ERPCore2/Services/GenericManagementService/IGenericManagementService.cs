@@ -140,6 +140,18 @@ namespace ERPCore2.Services
         /// <returns>下一筆記錄的 ID，如果沒有則返回 null</returns>
         Task<int?> GetNextIdAsync(int currentId);
         
+        /// <summary>
+        /// 取得第一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        /// <returns>第一筆記錄的 ID，如果沒有則返回 null</returns>
+        Task<int?> GetFirstIdAsync();
+        
+        /// <summary>
+        /// 取得最後一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        /// <returns>最後一筆記錄的 ID，如果沒有則返回 null</returns>
+        Task<int?> GetLastIdAsync();
+        
         #endregion
     }
 }
