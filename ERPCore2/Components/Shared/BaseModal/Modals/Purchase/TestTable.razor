@@ -52,15 +52,11 @@
     // ===== 生命週期 =====
     protected override void OnInitialized()
     {
-        Console.WriteLine("=== PurchaseOrderTable OnInitialized ===");
-        Console.WriteLine($"ProductItems.Count = {ProductItems.Count}");
     }
 
     // ===== 建立空項目（關鍵方法） =====
     private ProductItem CreateNewEmptyItem()
     {
-        var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-        Console.WriteLine($"[{timestamp}] CreateNewEmptyItem 被呼叫 | 當前數量: {ProductItems.Count}");
         return new ProductItem();
     }
 

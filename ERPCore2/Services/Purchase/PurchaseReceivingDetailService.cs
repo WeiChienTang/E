@@ -731,8 +731,6 @@ namespace ERPCore2.Services
                         // 減少已進貨數量
                         purchaseOrderDetail.ReceivedQuantity = Math.Max(0, purchaseOrderDetail.ReceivedQuantity - entity.ReceivedQuantity);
                         purchaseOrderDetail.UpdatedAt = DateTime.UtcNow;
-                        
-                        _logger?.LogInformation($"已回滾採購訂單明細 - 訂單明細ID: {purchaseOrderDetail.Id}, 商品ID: {entity.ProductId}, 回滾數量: {entity.ReceivedQuantity}");
                     }
                 }
 
@@ -755,8 +753,6 @@ namespace ERPCore2.Services
                         await transaction.RollbackAsync();
                         return ServiceResult.Failure($"庫存回滾失敗: {stockResult.ErrorMessage}");
                     }
-                    
-                    _logger?.LogInformation($"已回滾庫存 - 商品ID: {entity.ProductId}, 倉庫ID: {entity.WarehouseId}, 扣減數量: {entity.ReceivedQuantity}");
                 }
 
                 // 執行實際刪除

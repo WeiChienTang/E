@@ -52,7 +52,6 @@ namespace ERPCore2.Controllers.Reports
         {
             try
             {
-                _logger.LogInformation("開始生成{ReportName}報表 - ID: {Id}, Format: {Format}", reportName, id, format);
 
                 // 載入列印配置
                 var printConfig = await LoadPrintConfigurationAsync(configId, reportType);
@@ -67,17 +66,14 @@ namespace ERPCore2.Controllers.Reports
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到{ReportName} - ID: {Id}", reportName, id);
                 return NotFound(new { message = ex.Message });
             }
             catch (NotImplementedException ex)
             {
-                _logger.LogWarning(ex, "不支援的報表格式 - Format: {Format}", format);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成{ReportName}報表時發生錯誤 - ID: {Id}", reportName, id);
                 return StatusCode(500, new { message = $"生成{reportName}報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -96,7 +92,6 @@ namespace ERPCore2.Controllers.Reports
         {
             try
             {
-                _logger.LogInformation("開始生成{ReportName}列印報表 - ID: {Id}", reportName, id);
 
                 // 載入列印配置
                 var printConfig = await LoadPrintConfigurationAsync(configId, reportType);
@@ -111,12 +106,10 @@ namespace ERPCore2.Controllers.Reports
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到{ReportName} - ID: {Id}", reportName, id);
                 return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成{ReportName}列印報表時發生錯誤 - ID: {Id}", reportName, id);
                 return StatusCode(500, new { message = $"生成{reportName}列印報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -135,13 +128,11 @@ namespace ERPCore2.Controllers.Reports
         {
             try
             {
-                _logger.LogInformation("開始批次生成{ReportName}報表 - 條件: {Criteria}", reportName, criteria.GetSummary());
 
                 // 驗證篩選條件
                 var validation = criteria.Validate();
                 if (!validation.IsValid)
                 {
-                    _logger.LogWarning("批次列印條件驗證失敗 - 錯誤: {Errors}", validation.GetAllErrors());
                     return BadRequest(new { message = "篩選條件驗證失敗", errors = validation.Errors });
                 }
 
@@ -155,12 +146,10 @@ namespace ERPCore2.Controllers.Reports
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "批次列印{ReportName}條件錯誤", reportName);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次生成{ReportName}報表時發生錯誤", reportName);
                 return StatusCode(500, new { message = $"批次生成{reportName}報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -179,7 +168,6 @@ namespace ERPCore2.Controllers.Reports
         {
             try
             {
-                _logger.LogInformation("開始批次列印{ReportName}（自動列印） - 條件: {Criteria}", reportName, criteria.GetSummary());
 
                 // 先生成報表
                 var response = await BatchReportAsync(service, generateFunc, criteria, configId, reportType, reportName);
@@ -198,7 +186,6 @@ namespace ERPCore2.Controllers.Reports
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次列印{ReportName}時發生錯誤", reportName);
                 return StatusCode(500, new { message = $"批次列印{reportName}報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -238,9 +225,8 @@ namespace ERPCore2.Controllers.Reports
 
                 return null;
             }
-            catch (Exception ex)
+            catch
             {
-                _logger.LogWarning(ex, "載入列印配置失敗 - ConfigId: {ConfigId}, ReportType: {ReportType}", configId, reportType);
                 return null;
             }
         }

@@ -47,28 +47,23 @@ namespace ERPCore2.Services
 
                 if (employee == null)
                 {
-                    _logger?.LogWarning("Login attempt with invalid account: {Account}", account);
                     return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
                 }
 
                 // 檢查帳號是否為系統使用者
                 if (!employee.IsSystemUser)
                 {
-                    _logger?.LogWarning("Login attempt for non-system user: {Account}", account);
                     return ServiceResult<Employee>.Failure("該帳號無法登入系統");
                 }
 
                 // 驗證密碼
                 if (!VerifyPassword(password, employee.Password))
                 {
-                    _logger?.LogWarning("Login attempt with invalid password for user: {Account}", account);
                     return ServiceResult<Employee>.Failure("帳號或密碼錯誤");
                 }
 
                 // 更新最後登入時間
                 await UpdateLastLoginAsync(employee.Id);
-
-                _logger?.LogInformation("User {Account} logged in successfully", account);
                 return ServiceResult<Employee>.Success(employee);
             }
             catch (Exception ex)
@@ -85,7 +80,6 @@ namespace ERPCore2.Services
         {
             try
             {
-                _logger?.LogInformation("User {EmployeeId} logged out", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -129,8 +123,6 @@ namespace ERPCore2.Services
                 employee.UpdatedBy = $"Employee_{employeeId}";
 
                 await context.SaveChangesAsync();
-
-                _logger?.LogInformation("Password changed for employee {EmployeeId}", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -168,8 +160,6 @@ namespace ERPCore2.Services
                 employee.UpdatedBy = "System";
 
                 await context.SaveChangesAsync();
-
-                _logger?.LogInformation("Password reset for employee {EmployeeId}", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -328,8 +318,6 @@ namespace ERPCore2.Services
                 employee.UpdatedBy = "System";
 
                 await context.SaveChangesAsync();
-
-                _logger?.LogInformation("Lock user request for employee {EmployeeId} - but IsLocked property has been removed", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -359,8 +347,6 @@ namespace ERPCore2.Services
                 employee.UpdatedBy = "System";
 
                 await context.SaveChangesAsync();
-
-                _logger?.LogInformation("Unlock user request for employee {EmployeeId} - but IsLocked property has been removed", employeeId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

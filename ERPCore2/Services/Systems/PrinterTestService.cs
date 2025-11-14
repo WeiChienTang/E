@@ -221,8 +221,6 @@ namespace ERPCore2.Services
 
                         // 給印表機一些時間處理資料
                         await Task.Delay(2000);
-
-                        _logger?.LogInformation($"已使用 {format.Key} 格式發送 {format.Value.Length} 位元組的列印資料到 {printerConfiguration.IpAddress}:9100");
                         
                         printSuccess = true;
                         break; // 成功發送，跳出迴圈
@@ -230,12 +228,10 @@ namespace ERPCore2.Services
                     catch (SocketException ex)
                     {
                         lastError = $"網路連接錯誤: {ex.Message}";
-                        _logger?.LogWarning($"使用 {format.Key} 格式列印失敗: {ex.Message}");
                     }
                     catch (Exception ex)
                     {
                         lastError = $"發送 {format.Key} 格式時發生錯誤: {ex.Message}";
-                        _logger?.LogWarning($"使用 {format.Key} 格式列印失敗: {ex.Message}");
                     }
                 }
 
@@ -274,15 +270,12 @@ namespace ERPCore2.Services
             {
                 var testContent = GenerateTestPageContent(printerConfiguration);
                 var usbPort = printerConfiguration.UsbPort ?? "LPT1";
-                
-                _logger?.LogInformation($"嘗試使用 USB 埠 '{usbPort}' 進行列印測試");
 
                 // 首先嘗試找到使用指定埠的印表機
                 var printer = FindPrinterByPort(usbPort);
                 
                 if (printer != null)
                 {
-                    _logger?.LogInformation($"找到印表機 '{printer.Name}' 使用埠 '{printer.PortName}'");
                     
                     // 方法 1: 優先使用 System.Drawing.Printing (更可靠)
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -290,12 +283,10 @@ namespace ERPCore2.Services
                         var systemDrawingResult = await PrintUsingSystemDrawing(printer.Name, testContent);
                         if (systemDrawingResult.IsSuccess)
                         {
-                            _logger?.LogInformation("使用 System.Drawing.Printing 列印成功");
                             return ServiceResult.Success();
                         }
                         else
                         {
-                            _logger?.LogWarning($"System.Drawing.Printing 失敗: {systemDrawingResult.ErrorMessage}");
                         }
                     }
                     
@@ -306,12 +297,10 @@ namespace ERPCore2.Services
                     
                     if (apiResult.IsSuccess)
                     {
-                        _logger?.LogInformation("使用改進的 Windows API 列印成功");
                         return ServiceResult.Success();
                     }
                     else
                     {
-                        _logger?.LogWarning($"Windows API 失敗: {apiResult.ErrorMessage}");
                     }
                     
                     return ServiceResult.Failure($"所有列印方法都失敗。最後錯誤: {apiResult.ErrorMessage}");
@@ -328,7 +317,6 @@ namespace ERPCore2.Services
                     if (usbPrinters.Any())
                     {
                         var suggestedPorts = string.Join(", ", usbPrinters.Select(p => $"'{p.PortName}' ({p.Name})"));
-                        _logger?.LogWarning($"找不到使用埠 '{usbPort}' 的印表機。可用的本機印表機埠: {suggestedPorts}");
                         return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機。可用埠: {suggestedPorts}");
                     }
                     else
@@ -337,7 +325,6 @@ namespace ERPCore2.Services
                         var defaultPrinter = availablePrinters.FirstOrDefault(p => p.IsDefault);
                         if (defaultPrinter != null)
                         {
-                            _logger?.LogInformation($"找不到指定埠的印表機，嘗試使用預設印表機: {defaultPrinter.Name}");
                             
                             // 優先使用 System.Drawing.Printing
                             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -433,16 +420,12 @@ namespace ERPCore2.Services
             try
             {
                 var usbPort = printerConfiguration.UsbPort ?? "LPT1";
-                
-                _logger?.LogInformation($"檢查 USB 埠 '{usbPort}' 的印表機連接");
 
                 // 檢查是否有印表機使用指定的埠
                 var printer = FindPrinterByPort(usbPort);
                 
                 if (printer != null)
                 {
-                    _logger?.LogInformation($"找到印表機 '{printer.Name}' 使用埠 '{printer.PortName}'");
-                    _logger?.LogInformation($"印表機詳細資訊: 驅動程式={printer.DriverName}, 狀態={printer.Status}, 預設={printer.IsDefault}");
                     return ServiceResult.Success();
                 }
                 else
@@ -457,12 +440,10 @@ namespace ERPCore2.Services
                     if (localPrinters.Any())
                     {
                         var availablePorts = string.Join(", ", localPrinters.Select(p => $"'{p.PortName}' ({p.Name})"));
-                        _logger?.LogWarning($"找不到使用埠 '{usbPort}' 的印表機。可用的本機印表機: {availablePorts}");
                         return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機。可用埠: {availablePorts}");
                     }
                     else
                     {
-                        _logger?.LogWarning($"系統中沒有找到任何本機印表機");
                         return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機，且系統中沒有其他本機印表機");
                     }
                 }
@@ -627,7 +608,6 @@ namespace ERPCore2.Services
                 // 檢查是否為 Windows 平台
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    _logger?.LogWarning("非 Windows 平台，無法使用 WMI 查詢印表機");
                     return printers;
                 }
 
@@ -646,12 +626,10 @@ namespace ERPCore2.Services
                     };
                     
                     printers.Add(printerInfo);
-                    _logger?.LogDebug($"發現印表機: {printerInfo.Name}, 埠: {printerInfo.PortName}");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogError(ex, "取得印表機清單時發生錯誤");
             }
             
             return printers;
@@ -685,7 +663,6 @@ namespace ERPCore2.Services
 
                 // 重要改變：根據印表機類型選擇正確的 DataType
                 string dataType = DetermineDataType(printerName);
-                _logger?.LogInformation($"使用 DataType: {dataType} 為印表機 '{printerName}'");
 
                 // 設定文件資訊
                 var docInfo = new DOC_INFO_1
@@ -719,8 +696,6 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure($"無法寫入列印資料: 錯誤碼 {error}");
                 }
 
-                _logger?.LogInformation($"已寫入 {bytesWritten} 位元組到印表機佇列");
-
                 // 結束頁面
                 if (!EndPagePrinter(hPrinter))
                 {
@@ -735,8 +710,6 @@ namespace ERPCore2.Services
                     var error = Marshal.GetLastWin32Error();
                     return ServiceResult.Failure($"無法結束列印文件: 錯誤碼 {error}");
                 }
-
-                _logger?.LogInformation($"文件已送到印表機佇列 '{printerName}'");
                 
                 // 等待較長時間讓印表機處理
                 await Task.Delay(3000);
@@ -745,7 +718,6 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, $"使用 Windows API 列印時發生錯誤");
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
             finally
@@ -846,8 +818,6 @@ namespace ERPCore2.Services
                 // 執行列印
                 printDocument.Print();
                 
-                _logger?.LogInformation($"已使用 System.Drawing.Printing 送出列印工作到 '{printerName}'");
-                
                 // 等待列印處理
                 await Task.Delay(2000);
                 
@@ -855,7 +825,6 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "使用 System.Drawing.Printing 列印時發生錯誤");
                 return ServiceResult.Failure($"列印失敗: {ex.Message}");
             }
         }

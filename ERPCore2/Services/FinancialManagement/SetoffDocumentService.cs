@@ -434,14 +434,11 @@ namespace ERPCore2.Services
                 }
 
                 // 🔄 【關鍵步驟】先回朔所有來源 Detail 的累計金額
-                _logger?.LogInformation("開始回朔沖款單 {SetoffNumber} 的來源明細累計金額", document.Code);
                 
                 foreach (var detail in document.SetoffProductDetails)
                 {
                     await RollbackSourceDetailAmountAsync(context, detail);
                 }
-
-                _logger?.LogInformation("已完成 {Count} 筆來源明細的金額回朔", document.SetoffProductDetails.Count);
 
                 // 🗑️ 刪除沖款單（級聯刪除所有關聯明細）
                 context.SetoffDocuments.Remove(document);
@@ -449,8 +446,6 @@ namespace ERPCore2.Services
                 // 💾 儲存變更
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                _logger?.LogInformation("成功刪除沖款單 {SetoffNumber} (Id={Id})", document.Code, id);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -498,12 +493,6 @@ namespace ERPCore2.Services
                         {
                             purchaseDetail.TotalPaidAmount = newTotalSetoff;
                             purchaseDetail.IsSettled = newTotalSetoff >= purchaseDetail.SubtotalAmount;
-                            
-                            _logger?.LogDebug(
-                                "回朔 PurchaseReceivingDetail Id={Id}: TotalPaidAmount {Old} → {New}",
-                                purchaseDetail.Id,
-                                purchaseDetail.TotalPaidAmount + detailToDelete.TotalSetoffAmount,
-                                newTotalSetoff);
                         }
                         break;
 
@@ -514,12 +503,6 @@ namespace ERPCore2.Services
                         {
                             salesDetail.TotalReceivedAmount = newTotalSetoff;
                             salesDetail.IsSettled = newTotalSetoff >= salesDetail.SubtotalAmount;
-                            
-                            _logger?.LogDebug(
-                                "回朔 SalesOrderDetail Id={Id}: TotalReceivedAmount {Old} → {New}",
-                                salesDetail.Id,
-                                salesDetail.TotalReceivedAmount + detailToDelete.TotalSetoffAmount,
-                                newTotalSetoff);
                         }
                         break;
 
@@ -530,12 +513,6 @@ namespace ERPCore2.Services
                         {
                             salesReturnDetail.TotalPaidAmount = newTotalSetoff;
                             salesReturnDetail.IsSettled = newTotalSetoff >= salesReturnDetail.ReturnSubtotalAmount;
-                            
-                            _logger?.LogDebug(
-                                "回朔 SalesReturnDetail Id={Id}: TotalPaidAmount {Old} → {New}",
-                                salesReturnDetail.Id,
-                                salesReturnDetail.TotalPaidAmount + detailToDelete.TotalSetoffAmount,
-                                newTotalSetoff);
                         }
                         break;
 
@@ -546,28 +523,15 @@ namespace ERPCore2.Services
                         {
                             purchaseReturnDetail.TotalReceivedAmount = newTotalSetoff;
                             purchaseReturnDetail.IsSettled = newTotalSetoff >= purchaseReturnDetail.ReturnSubtotalAmount;
-                            
-                            _logger?.LogDebug(
-                                "回朔 PurchaseReturnDetail Id={Id}: TotalReceivedAmount {Old} → {New}",
-                                purchaseReturnDetail.Id,
-                                purchaseReturnDetail.TotalReceivedAmount + detailToDelete.TotalSetoffAmount,
-                                newTotalSetoff);
                         }
                         break;
 
                     default:
-                        _logger?.LogWarning(
-                            "未知的來源明細類型: {SourceDetailType}",
-                            detailToDelete.SourceDetailType);
                         break;
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogError(ex, 
-                    "回朔來源明細金額時發生錯誤 SourceType={SourceType} SourceId={SourceId}",
-                    detailToDelete.SourceDetailType,
-                    detailToDelete.SourceDetailId);
                 throw; // 重新拋出例外，讓 Transaction 回滾
             }
         }
@@ -598,8 +562,6 @@ namespace ERPCore2.Services
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                _logger?.LogInformation("成功重建 {Count} 筆快取資料", rebuiltCount);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

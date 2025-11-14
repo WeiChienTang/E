@@ -58,7 +58,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始生成採購單報表 - ID: {Id}, Format: {Format}", id, format);
 
                 // 載入列印配置
                 ReportPrintConfiguration? printConfig = null;
@@ -90,17 +89,14 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到採購單 - ID: {Id}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (NotImplementedException ex)
             {
-                _logger.LogWarning(ex, "不支援的報表格式 - Format: {Format}", format);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成採購單報表時發生錯誤 - ID: {Id}", id);
                 return StatusCode(500, new { message = "生成報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -120,7 +116,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始生成採購單列印報表 - ID: {Id}", id);
 
                 // 載入列印配置
                 ReportPrintConfiguration? printConfig = null;
@@ -155,12 +150,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到採購單 - ID: {Id}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成採購單列印報表時發生錯誤 - ID: {Id}", id);
                 return StatusCode(500, new { message = "生成列印報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -180,7 +173,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始生成採購單預覽報表 - ID: {Id}", id);
 
                 // 載入列印配置
                 ReportPrintConfiguration? printConfig = null;
@@ -203,12 +195,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到採購單 - ID: {Id}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成採購單預覽報表時發生錯誤 - ID: {Id}", id);
                 return StatusCode(500, new { message = "生成預覽報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -228,13 +218,11 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始批次生成採購單報表 - 條件: {Criteria}", criteria.GetSummary());
 
                 // 驗證篩選條件
                 var validation = criteria.Validate();
                 if (!validation.IsValid)
                 {
-                    _logger.LogWarning("批次列印條件驗證失敗 - 錯誤: {Errors}", validation.GetAllErrors());
                     return BadRequest(new { message = "篩選條件驗證失敗", errors = validation.Errors });
                 }
 
@@ -263,12 +251,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "批次列印條件錯誤");
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次生成採購單報表時發生錯誤");
                 return StatusCode(500, new { message = "批次生成報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -288,7 +274,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始批次列印採購單（自動列印） - 條件: {Criteria}", criteria.GetSummary());
 
                 // 先生成報表
                 var response = await BatchPrintPurchaseOrders(criteria, configId, reportType);
@@ -316,7 +301,6 @@ namespace ERPCore2.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次列印採購單時發生錯誤");
                 return StatusCode(500, new { message = "批次列印報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -340,7 +324,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始生成進貨單報表 - ID: {Id}, Format: {Format}", id, format);
 
                 // 載入列印配置
                 ReportPrintConfiguration? printConfig = null;
@@ -372,17 +355,14 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到進貨單 - ID: {Id}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (NotImplementedException ex)
             {
-                _logger.LogWarning(ex, "不支援的報表格式 - Format: {Format}", format);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成進貨單報表時發生錯誤 - ID: {Id}", id);
                 return StatusCode(500, new { message = "生成報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -402,7 +382,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始生成進貨單列印報表 - ID: {Id}", id);
 
                 // 載入列印配置
                 ReportPrintConfiguration? printConfig = null;
@@ -437,12 +416,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到進貨單 - ID: {Id}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成進貨單列印報表時發生錯誤 - ID: {Id}", id);
                 return StatusCode(500, new { message = "生成列印報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -462,7 +439,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始生成進貨單預覽報表 - ID: {Id}", id);
 
                 // 載入列印配置
                 ReportPrintConfiguration? printConfig = null;
@@ -485,12 +461,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "找不到進貨單 - ID: {Id}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成進貨單預覽報表時發生錯誤 - ID: {Id}", id);
                 return StatusCode(500, new { message = "生成預覽報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -510,13 +484,11 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始批次生成進貨單報表 - 條件: {Criteria}", criteria.GetSummary());
 
                 // 驗證篩選條件
                 var validation = criteria.Validate();
                 if (!validation.IsValid)
                 {
-                    _logger.LogWarning("批次列印條件驗證失敗 - 錯誤: {Errors}", validation.GetAllErrors());
                     return BadRequest(new { message = "篩選條件驗證失敗", errors = validation.Errors });
                 }
 
@@ -545,12 +517,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "批次列印條件錯誤");
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次生成進貨單報表時發生錯誤");
                 return StatusCode(500, new { message = "批次生成報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -570,7 +540,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始批次列印進貨單（自動列印） - 條件: {Criteria}", criteria.GetSummary());
 
                 // 先生成報表
                 var response = await BatchPrintPurchaseReceivings(criteria, configId, reportType);
@@ -598,7 +567,6 @@ namespace ERPCore2.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次列印進貨單時發生錯誤");
                 return StatusCode(500, new { message = "批次列印報表時發生錯誤", detail = ex.Message });
             }
         }
@@ -618,7 +586,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                _logger.LogInformation("開始批次列印產品條碼 - 條件: {Criteria}", criteria.GetSummary());
 
                 // 生成條碼報表
                 var reportHtml = await _productBarcodeReportService.GenerateBarcodeReportAsync(criteria);
@@ -627,12 +594,10 @@ namespace ERPCore2.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "條碼列印條件驗證失敗");
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "批次列印產品條碼時發生錯誤");
                 return StatusCode(500, new { message = "批次列印條碼時發生錯誤", detail = ex.Message });
             }
         }

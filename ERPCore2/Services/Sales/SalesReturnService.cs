@@ -637,7 +637,6 @@ namespace ERPCore2.Services
                             // 如果還是沒有倉庫ID，跳過此明細並記錄警告
                             if (!warehouseId.HasValue)
                             {
-                                _logger?.LogWarning("退回明細 ID:{DetailId} 無法取得倉庫ID，跳過庫存更新", detail.Id);
                                 continue;
                             }
 

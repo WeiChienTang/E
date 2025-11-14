@@ -76,7 +76,6 @@ public static class NavigationActionHelper
 
             if (_handlers.ContainsKey(actionId))
             {
-                _logger?.LogWarning("ActionId '{ActionId}' 已存在，將被覆蓋", actionId);
             }
 
             _handlers[actionId] = handler;
@@ -91,25 +90,21 @@ public static class NavigationActionHelper
         {
             if (string.IsNullOrWhiteSpace(actionId))
             {
-                _logger?.LogWarning("嘗試執行空的 ActionId");
                 return false;
             }
 
             if (!_handlers.TryGetValue(actionId, out var handler))
             {
-                _logger?.LogWarning("找不到 ActionId '{ActionId}' 對應的處理器", actionId);
                 return false;
             }
 
             try
             {
                 handler.Invoke();
-                _logger?.LogDebug("成功執行 Action '{ActionId}'", actionId);
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogError(ex, "執行 Action '{ActionId}' 時發生錯誤", actionId);
                 return false;
             }
         }

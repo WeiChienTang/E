@@ -160,7 +160,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"[PurchaseReturnTable] OnInitializedAsync 開始");
         // 初始化時記錄當前供應商ID，避免 OnParametersSetAsync 誤判為變更
         _previousSelectedSupplierId = EffectiveSupplierId;
         _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
@@ -168,7 +167,6 @@ else
         
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
-        Console.WriteLine($"[PurchaseReturnTable] OnInitializedAsync 完成");
     }
 
     // ===== 沖款記錄管理方法 =====
@@ -395,12 +393,9 @@ else
         bool purchaseReceivingChanged = _previousSelectedPurchaseReceivingId != EffectivePurchaseReceivingId;
         bool productFilterChanged = _previousFilterProductId != EffectiveFilterProductId;
         
-        Console.WriteLine($"[PurchaseReturnTable] OnParametersSetAsync - SupplierChanged: {supplierChanged}, PurchaseReceivingChanged: {purchaseReceivingChanged}, ProductFilterChanged: {productFilterChanged}");
-        
         // 如果廠商變更，需要重新載入所有資料
         if (supplierChanged)
         {
-            Console.WriteLine($"[PurchaseReturnTable] 廠商變更處理開始");
             
             _previousSelectedSupplierId = EffectiveSupplierId;
             _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
@@ -432,7 +427,6 @@ else
     /// </summary>
     private ReturnItem CreateNewEmptyItem()
     {
-        Console.WriteLine($"[PurchaseReturnTable] CreateNewEmptyItem 被調用");
         return new ReturnItem();
     }
     
@@ -721,23 +715,17 @@ else
 
     private async Task LoadExistingDetailsAsync()
     {
-        Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync 開始 - ExistingReturnDetails?.Any(): {ExistingReturnDetails?.Any()}");
-        
         _dataLoadCompleted = false; // 開始載入數據時禁止自動空行
-        Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync - 設定 _dataLoadCompleted = false");
         
         if (ExistingReturnDetails?.Any() != true) 
         {
-            Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync - 沒有現有明細，準備設定 _dataLoadCompleted = true");
             // 通知父組件沒有不可刪除的明細
             await NotifyHasUndeletableDetailsChanged();
             _dataLoadCompleted = true; // 數據載入完成,啟用自動空行
-            Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync - 已設定 _dataLoadCompleted = true, ReturnItems 數量: {ReturnItems.Count}");
             return;
         }
 
         ReturnItems.Clear();
-        Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync - 有現有明細，ReturnItems 已清空");
         
         foreach (var detail in ExistingReturnDetails)
         {
@@ -771,9 +759,7 @@ else
             ReturnItems.Add(item);
         }
         
-        Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync - 已載入 {ReturnItems.Count} 個明細項目");
         _dataLoadCompleted = true; // 數據載入完成,啟用自動空行
-        Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync - 已設定 _dataLoadCompleted = true");
         
         // 通知父組件是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();

@@ -136,8 +136,6 @@ else
         else if (!string.IsNullOrEmpty(RequiredPermission) || !string.IsNullOrEmpty(ParentMenuKey))
         {
             // 只有在部分設定的情況下才警告(表示可能是遺漏了某個參數)
-            Logger.LogWarning("無法註冊權限: Text={Text}, RequiredPermission={RequiredPermission}, ParentMenuKey={ParentMenuKey}", 
-                Text, RequiredPermission, ParentMenuKey);
         }
         // 如果兩者都沒設定,則視為不需要權限控制的項目,不發出警告
     }
@@ -158,7 +156,6 @@ else
     {
         if (string.IsNullOrEmpty(ActionId))
         {
-            Logger.LogWarning("Action 型項目缺少 ActionId: {Text}", Text);
             return;
         }
         
@@ -171,12 +168,10 @@ else
             }
             else
             {
-                Logger.LogWarning("NavMenuInstance 為 null，無法觸發 Action: {ActionId}", ActionId);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Logger.LogError(ex, "觸發 Action 失敗: ActionId={ActionId}, Text={Text}", ActionId, Text);
         }
     }
 }

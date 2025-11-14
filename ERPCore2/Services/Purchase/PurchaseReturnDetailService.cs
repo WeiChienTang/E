@@ -519,13 +519,8 @@ namespace ERPCore2.Services
                         if (!stockResult.IsSuccess)
                         {
                             await transaction.RollbackAsync();
-                            _logger?.LogError("刪除退回明細時庫存回滾失敗 - 明細ID: {DetailId}, 錯誤: {Error}", 
-                                            id, stockResult.ErrorMessage);
                             return ServiceResult.Failure($"庫存回滾失敗：{stockResult.ErrorMessage}");
                         }
-
-                        _logger?.LogInformation("刪除退回明細成功回滾庫存 - 明細ID: {DetailId}, 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
-                                              id, entity.ProductId, warehouseId.Value, entity.ReturnQuantity);
                     }
                 }
 

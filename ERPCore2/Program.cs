@@ -195,10 +195,9 @@ using (var scope = app.Services.CreateScope())
         // 初始化種子資料（包含認證系統資料）
         await SeedData.InitializeAsync(services);
     }
-    catch (Exception ex)
+    catch
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred seeding the DB.");
     }
 }
 

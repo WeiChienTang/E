@@ -689,7 +689,6 @@ namespace ERPCore2.Services
                             // 如果還是沒有倉庫ID，跳過此明細並記錄警告
                             if (!warehouseId.HasValue)
                             {
-                                _logger?.LogWarning("退貨明細 ID:{DetailId} 無法取得倉庫ID，跳過庫存更新", detail.Id);
                                 continue;
                             }
 
@@ -710,9 +709,6 @@ namespace ERPCore2.Services
                                     detail.WarehouseLocationId,
                                     operationDescription
                                 );
-                                
-                                _logger?.LogInformation("執行庫存扣減 - 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
-                                                      detail.ProductId, warehouseId.Value, quantityDiff);
                             }
                             else
                             {
@@ -728,15 +724,10 @@ namespace ERPCore2.Services
                                     detail.WarehouseLocationId,
                                     operationDescription
                                 );
-                                
-                                _logger?.LogInformation("執行庫存回復 - 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
-                                                      detail.ProductId, warehouseId.Value, Math.Abs(quantityDiff));
                             }
 
                             if (!stockResult.IsSuccess)
                             {
-                                _logger?.LogError("庫存更新失敗 - 商品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量差異: {QuantityDiff}, 錯誤: {Error}", 
-                                                detail.ProductId, warehouseId.Value, quantityDiff, stockResult.ErrorMessage);
                                 await transaction.RollbackAsync();
                                 return ServiceResult<PurchaseReturn>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
                             }
@@ -820,16 +811,12 @@ namespace ERPCore2.Services
                                     };
                                     
                                     quantityChanges.Add((originalProductDetail, -existingDetail.ReturnQuantity));
-                                    _logger?.LogInformation("檢測到退貨明細商品變更 - 明細ID: {DetailId}, 原商品: {OldProductId}, 新商品: {NewProductId}, 回滾數量: {Quantity}", 
-                                                          detail.Id, existingDetail.ProductId, detail.ProductId, existingDetail.ReturnQuantity);
                                 }
                                 
                                 // 2. 扣減新商品的庫存（減少新的退回數量）
                                 if (detail.ReturnQuantity > 0)
                                 {
                                     quantityChanges.Add((detail, detail.ReturnQuantity));
-                                    _logger?.LogInformation("商品變更後新增庫存扣減 - 明細ID: {DetailId}, 新商品: {ProductId}, 扣減數量: {Quantity}", 
-                                                          detail.Id, detail.ProductId, detail.ReturnQuantity);
                                 }
                             }
                             else
@@ -839,8 +826,6 @@ namespace ERPCore2.Services
                                 if (quantityDiff != 0)
                                 {
                                     quantityChanges.Add((detail, quantityDiff));
-                                    _logger?.LogInformation("退貨明細數量變更 - 明細ID: {DetailId}, 商品: {ProductId}, 數量差異: {QuantityDiff}", 
-                                                          detail.Id, detail.ProductId, quantityDiff);
                                 }
                             }
                             
@@ -870,9 +855,6 @@ namespace ERPCore2.Services
                     
                     // 實際從資料庫刪除明細（硬刪除）
                     context.PurchaseReturnDetails.Remove(detailToDelete);
-                    
-                    _logger?.LogInformation("刪除退貨明細 - 明細ID: {DetailId}, 商品ID: {ProductId}, 數量: {Quantity}", 
-                                          detailToDelete.Id, detailToDelete.ProductId, detailToDelete.ReturnQuantity);
                 }
 
                 foreach (var (existing, updated) in updatedDetailsToUpdate)
@@ -1015,8 +997,6 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到要刪除的退貨單");
                     }
                     
-                    _logger?.LogInformation("開始刪除退貨單: {ReturnNumber}, ID: {Id}", entity.Code, entity.Id);
-                    
                     // 2. 檢查是否可以刪除
                     var canDeleteResult = await CanDeleteAsync(entity);
                     if (!canDeleteResult.IsSuccess)
@@ -1028,7 +1008,6 @@ namespace ERPCore2.Services
                     if (_inventoryStockService != null)
                     {
                         var eligibleDetails = entity.PurchaseReturnDetails.Where(d => d.ReturnQuantity > 0).ToList();
-                        _logger?.LogInformation("需要回復庫存的明細數量: {Count}", eligibleDetails.Count);
                         
                         foreach (var detail in eligibleDetails)
                         {
@@ -1054,12 +1033,8 @@ namespace ERPCore2.Services
                             // 如果還是沒有倉庫ID，跳過此明細並記錄警告
                             if (!warehouseId.HasValue)
                             {
-                                _logger?.LogWarning("退貨明細 ID:{DetailId} 無法取得倉庫ID，跳過庫存回復", detail.Id);
                                 continue;
                             }
-
-                            _logger?.LogInformation("回復庫存 - 產品ID: {ProductId}, 倉庫ID: {WarehouseId}, 數量: {Quantity}", 
-                                detail.ProductId, warehouseId.Value, detail.ReturnQuantity);
 
                             // 刪除退貨單時需要增加庫存（回復之前扣減的數量）
                             var addResult = await _inventoryStockService.AddStockAsync(
@@ -1082,7 +1057,6 @@ namespace ERPCore2.Services
                     }
                     else
                     {
-                        _logger?.LogWarning("庫存服務未注入，無法回復庫存");
                     }
 
                     // 4. 執行實體刪除
@@ -1090,8 +1064,6 @@ namespace ERPCore2.Services
                     await context.SaveChangesAsync();
                     
                     await transaction.CommitAsync();
-                    
-                    _logger?.LogInformation("成功刪除退貨單: {ReturnNumber}", entity.Code);
                     return ServiceResult.Success();
                 }
                 catch

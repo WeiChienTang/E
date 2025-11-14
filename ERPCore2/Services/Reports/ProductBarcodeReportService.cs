@@ -48,7 +48,6 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "生成條碼報表時發生錯誤");
                 return GenerateErrorPage($"生成報表時發生錯誤：{ex.Message}");
             }
         }

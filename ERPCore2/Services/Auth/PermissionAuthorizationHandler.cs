@@ -27,7 +27,6 @@ namespace ERPCore2.Services
                 var employeeIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(employeeIdClaim) || !int.TryParse(employeeIdClaim, out int employeeId))
                 {
-                    _logger.LogWarning("無法解析員工ID，權限檢查失敗");
                     context.Fail();
                     return;
                 }
@@ -41,7 +40,6 @@ namespace ERPCore2.Services
                 }
                 else
                 {
-                    _logger.LogWarning($"員工 {employeeId} 沒有權限 {requirement.Permission}");
                     context.Fail();
                 }
             }

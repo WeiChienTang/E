@@ -237,8 +237,6 @@ namespace ERPCore2.Services
                     // 5. 儲存變更
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
-
-                    _logger?.LogInformation($"永久刪除記錄成功：資料表={tableName}, 記錄ID={recordId}, 刪除記錄ID={deletedRecordId}");
                     return ServiceResult.Success();
                 }
                 catch (Exception)
@@ -271,7 +269,6 @@ namespace ERPCore2.Services
                 var dbSetProperty = FindDbSetProperty(context, tableName);
                 if (dbSetProperty == null)
                 {
-                    _logger?.LogWarning($"未找到對應的 DbSet：{tableName}");
                     throw new NotSupportedException($"不支援永久刪除資料表：{tableName}");
                 }
 
@@ -279,7 +276,6 @@ namespace ERPCore2.Services
                 var dbSet = dbSetProperty.GetValue(context);
                 if (dbSet == null)
                 {
-                    _logger?.LogWarning($"DbSet 為 null：{tableName}");
                     throw new InvalidOperationException($"DbSet 為 null：{tableName}");
                 }
 
@@ -293,17 +289,13 @@ namespace ERPCore2.Services
                     // 使用反射調用 Remove 方法
                     var removeMethod = dbSetProperty.PropertyType.GetMethod("Remove");
                     removeMethod?.Invoke(dbSet, new[] { entity });
-                    
-                    _logger?.LogInformation($"成功標記實體刪除：資料表={tableName}, 記錄ID={recordId}");
                 }
                 else
                 {
-                    _logger?.LogWarning($"未找到已軟刪除的記錄：資料表={tableName}, 記錄ID={recordId}");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogError(ex, $"刪除原始記錄失敗：資料表={tableName}, 記錄ID={recordId}");
                 throw;
             }
         }
@@ -361,7 +353,6 @@ namespace ERPCore2.Services
                 // 確認實體類型繼承自 BaseEntity
                 if (!typeof(BaseEntity).IsAssignableFrom(entityType))
                 {
-                    _logger?.LogWarning($"實體類型不繼承 BaseEntity：{entityType.Name}");
                     return null;
                 }
 
@@ -371,7 +362,6 @@ namespace ERPCore2.Services
                 
                 if (set == null) 
                 {
-                    _logger?.LogWarning($"無法獲取 DbSet：{entityType.Name}");
                     return null;
                 }
 
@@ -382,9 +372,8 @@ namespace ERPCore2.Services
 
                 return entity;
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogError(ex, $"動態查找實體失敗：類型={entityType.Name}, ID={recordId}");
                 return null;
             }
         }

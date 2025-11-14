@@ -25,7 +25,6 @@ namespace ERPCore2.Services
         {
             if (string.IsNullOrEmpty(menuKey) || string.IsNullOrEmpty(permission))
             {
-                _logger.LogWarning("RegisterPermission 被調用但參數無效: menuKey={MenuKey}, permission={Permission}", menuKey, permission);
                 return;
             }
 
@@ -47,7 +46,6 @@ namespace ERPCore2.Services
         {
             if (string.IsNullOrEmpty(menuKey))
             {
-                _logger.LogWarning("GetPermissions 被調用但 menuKey 為空");
                 return new string[0];
             }
 

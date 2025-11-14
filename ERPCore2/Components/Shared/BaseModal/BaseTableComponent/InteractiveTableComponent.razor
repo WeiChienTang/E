@@ -458,12 +458,9 @@
             // 計算非空行的數量
             var nonEmptyCount = Items.Count(item => !IsRowEmpty(item));
             
-            Console.WriteLine($"[InteractiveTableComponent] OnParametersSet - Items.Count: {Items.Count()}, nonEmptyCount: {nonEmptyCount}, _previousNonEmptyCount: {_previousNonEmptyCount}");
-            
             //  檢測到非空行數量增加（表示父組件載入了資料）
             if (nonEmptyCount > _previousNonEmptyCount)
             {
-                Console.WriteLine($"[InteractiveTableComponent] OnParametersSet - 偵測到資料載入（非空行從 {_previousNonEmptyCount} 增加到 {nonEmptyCount}），標記需要檢查空行");
                 _needsEmptyRowCheck = true;
             }
             
@@ -475,12 +472,9 @@
     {
         await base.OnAfterRenderAsync(firstRender);
         
-        Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - firstRender: {firstRender}, EnableAutoEmptyRow: {EnableAutoEmptyRow}, DataLoadCompleted: {DataLoadCompleted}, _previousDataLoadCompleted: {_previousDataLoadCompleted}, _needsEmptyRowCheck: {_needsEmptyRowCheck}");
-        
         //  優先處理：如果標記了需要檢查空行（Items 集合變化觸發）
         if (EnableAutoEmptyRow && _needsEmptyRowCheck)
         {
-            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - 偵測到 _needsEmptyRowCheck=true，觸發空行檢查");
             _needsEmptyRowCheck = false;
             
             await InvokeAsync(() =>
@@ -494,7 +488,6 @@
         //  不再使用 firstRender,改為監控 DataLoadCompleted 狀態變化
         if (EnableAutoEmptyRow && DataLoadCompleted && !_previousDataLoadCompleted)
         {
-            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - 偵測到 DataLoadCompleted 從 false 變為 true，觸發空行檢查");
             _previousDataLoadCompleted = DataLoadCompleted;
             
             // 使用 InvokeAsync 確保在正確的同步上下文中執行
@@ -506,7 +499,6 @@
         }
         else if (firstRender && EnableAutoEmptyRow && DataLoadCompleted && !_hasInitializedEmptyRow)
         {
-            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - firstRender 且 DataLoadCompleted=true，觸發空行檢查");
             //  向下兼容:如果父組件沒有控制 DataLoadCompleted(預設 true),使用原有邏輯
             _hasInitializedEmptyRow = true;
             _previousDataLoadCompleted = DataLoadCompleted;
@@ -516,10 +508,6 @@
                 CheckAndAddEmptyRowIfNeeded();
                 StateHasChanged();
             });
-        }
-        else
-        {
-            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - 不觸發空行檢查");
         }
     }
     
@@ -947,31 +935,22 @@
     /// </summary>
     private void CheckAndAddEmptyRowIfNeeded()
     {
-        Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded 開始 - EnableAutoEmptyRow: {EnableAutoEmptyRow}, CreateEmptyItem != null: {CreateEmptyItem != null}, Items != null: {Items != null}");
-        
         if (!EnableAutoEmptyRow || CreateEmptyItem == null || Items == null) 
         {
-            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 條件不滿足，退出");
             return;
         }
         
-        Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 目前 Items 數量: {Items.Count()}");
-        
         //  找出所有空行
         var emptyRows = Items.Where(IsRowEmpty).ToList();
-        Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 找到 {emptyRows.Count} 個空行");
         
         if (emptyRows.Count == 0)
         {
-            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 沒有空行，新增一個");
             var newEmptyRow = CreateEmptyItem();
             Items.Add(newEmptyRow);
             _lastEmptyRow = newEmptyRow;
-            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 已新增空行，目前 Items 數量: {Items.Count()}");
         }
         else if (emptyRows.Count > 1 || !Equals(Items.Last(), emptyRows[0]))
         {
-            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 有多個空行或空行不在最後，重新整理");
             foreach (var emptyRow in emptyRows)
             {
                 Items.Remove(emptyRow);
@@ -980,12 +959,10 @@
             var newEmptyRow = CreateEmptyItem();
             Items.Add(newEmptyRow);
             _lastEmptyRow = newEmptyRow;
-            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 已重新整理空行，目前 Items 數量: {Items.Count()}");
         }
         else
         {
             // 只有一個空行且在最後,不需要處理
-            Console.WriteLine($"[InteractiveTableComponent] CheckAndAddEmptyRowIfNeeded - 已有一個空行在最後，不需處理");
             _lastEmptyRow = emptyRows[0];
         }
     }

@@ -32,7 +32,6 @@ namespace ERPCore2.Helpers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "發生未處理的例外");
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -61,16 +60,14 @@ namespace ERPCore2.Helpers
 
                 errorId = await errorLogService.LogErrorAsync(exception, additionalData);
             }
-            catch (Exception logEx)
+            catch
             {
-                _logger.LogError(logEx, "記錄錯誤時發生例外");
                 errorId = Guid.NewGuid().ToString("N")[..8].ToUpper();
             }
 
             // 避免重複設定回應
             if (context.Response.HasStarted)
             {
-                _logger.LogWarning("回應已開始，無法設定錯誤回應");
                 return;
             }
 
