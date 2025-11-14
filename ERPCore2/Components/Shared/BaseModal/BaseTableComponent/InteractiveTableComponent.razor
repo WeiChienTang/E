@@ -430,6 +430,12 @@
     // 記錄上一次的 DataLoadCompleted 狀態,用於偵測狀態變化
     private bool _previousDataLoadCompleted = false;
     
+    // 記錄上一次的非空行數量，用於偵測資料載入
+    private int _previousNonEmptyCount = 0;
+    
+    // 標記是否需要在下次渲染後檢查空行（Items 集合變化時設定）
+    private bool _needsEmptyRowCheck = false;
+    
     #endregion
 
     #region 生命週期方法
@@ -442,11 +448,48 @@
         // 避免在父組件載入資料之前就新增空行
     }
     
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        
+        //  監控 Items 集合的變化
+        if (EnableAutoEmptyRow && Items != null)
+        {
+            // 計算非空行的數量
+            var nonEmptyCount = Items.Count(item => !IsRowEmpty(item));
+            
+            Console.WriteLine($"[InteractiveTableComponent] OnParametersSet - Items.Count: {Items.Count()}, nonEmptyCount: {nonEmptyCount}, _previousNonEmptyCount: {_previousNonEmptyCount}");
+            
+            //  檢測到非空行數量增加（表示父組件載入了資料）
+            if (nonEmptyCount > _previousNonEmptyCount)
+            {
+                Console.WriteLine($"[InteractiveTableComponent] OnParametersSet - 偵測到資料載入（非空行從 {_previousNonEmptyCount} 增加到 {nonEmptyCount}），標記需要檢查空行");
+                _needsEmptyRowCheck = true;
+            }
+            
+            _previousNonEmptyCount = nonEmptyCount;
+        }
+    }
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
         
-        Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - firstRender: {firstRender}, EnableAutoEmptyRow: {EnableAutoEmptyRow}, DataLoadCompleted: {DataLoadCompleted}, _previousDataLoadCompleted: {_previousDataLoadCompleted}");
+        Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - firstRender: {firstRender}, EnableAutoEmptyRow: {EnableAutoEmptyRow}, DataLoadCompleted: {DataLoadCompleted}, _previousDataLoadCompleted: {_previousDataLoadCompleted}, _needsEmptyRowCheck: {_needsEmptyRowCheck}");
+        
+        //  優先處理：如果標記了需要檢查空行（Items 集合變化觸發）
+        if (EnableAutoEmptyRow && _needsEmptyRowCheck)
+        {
+            Console.WriteLine($"[InteractiveTableComponent] OnAfterRenderAsync - 偵測到 _needsEmptyRowCheck=true，觸發空行檢查");
+            _needsEmptyRowCheck = false;
+            
+            await InvokeAsync(() =>
+            {
+                CheckAndAddEmptyRowIfNeeded();
+                StateHasChanged();
+            });
+            return;
+        }
         
         //  不再使用 firstRender,改為監控 DataLoadCompleted 狀態變化
         if (EnableAutoEmptyRow && DataLoadCompleted && !_previousDataLoadCompleted)

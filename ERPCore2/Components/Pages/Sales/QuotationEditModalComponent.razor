@@ -220,11 +220,15 @@
             if (!QuotationId.HasValue)
             {
                 // 新增模式
+                // 取得預設公司
+                var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+                
                 var newQuotation = new Quotation
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<Quotation, IQuotationService>(QuotationService, DbContext),
                     QuotationDate = DateTime.Today,
-                    Status = EntityStatus.Active
+                    Status = EntityStatus.Active,
+                    CompanyId = primaryCompany?.Id ?? 0 // 設定預設公司
                 };
 
                 // 初始化空的子集合
@@ -394,11 +398,10 @@
                     PropertyName = nameof(Quotation.CompanyId),
                     Label = "公司",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇公司",
+                    Placeholder = "請選擇公司",
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "輸入公司名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetCompanyActionButtonsAsync(),
+                    HelpText = "選擇進行此次報價的公司",
                     IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
                 new()

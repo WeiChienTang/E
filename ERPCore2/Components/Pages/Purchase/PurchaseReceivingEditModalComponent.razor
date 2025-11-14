@@ -784,6 +784,16 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
+                    Label = "篩選採購單",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇採購單",
+                    IsRequired = false,  // 改為非必填，支援多採購單模式
+                    MinSearchLength = 0,
+                    HelpText = "輸入採購單號進行搜尋，或留空使用多採購單模式"
+                },
+                new()
+                {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位
                     Label = "篩選產品",
                     FieldType = FormFieldType.AutoComplete,
@@ -793,16 +803,6 @@
                     HelpText = "輸入產品代碼或名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetProductActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
-                },
-                new()
-                {
-                    PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
-                    Label = "篩選採購單",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇採購單",
-                    IsRequired = false,  // 改為非必填，支援多採購單模式
-                    MinSearchLength = 0,
-                    HelpText = "輸入採購單號進行搜尋，或留空使用多採購單模式"
                 },
                 new()
                 {
@@ -851,10 +851,12 @@
             formSections = FormSectionHelper<PurchaseReceiving>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
-                    pr => pr.SupplierId,
-                    pr => pr.PurchaseOrderId,
-                    pr => pr.ReceiptDate)
+                    pr => pr.SupplierId)
                 .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddToSection(FormSectionNames.BasicInfo,
+                    pr => pr.PurchaseOrderId)
+                .AddToSection(FormSectionNames.BasicInfo,
+                    pr => pr.ReceiptDate)
                 .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
                     pr => pr.TotalAmount,
                     pr => pr.PurchaseReceivingTaxAmount,

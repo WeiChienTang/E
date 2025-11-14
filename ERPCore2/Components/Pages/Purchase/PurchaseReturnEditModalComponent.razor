@@ -586,10 +586,11 @@
             formSections = FormSectionHelper<PurchaseReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
-                    pr => pr.SupplierId,
+                    pr => pr.SupplierId)
+                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.PurchaseReceivingId,
                     pr => pr.ReturnDate)
-                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
                 .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
                     pr => pr.TotalReturnAmount,
                     pr => pr.ReturnTaxAmount,

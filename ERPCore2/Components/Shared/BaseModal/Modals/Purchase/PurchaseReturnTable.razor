@@ -161,9 +161,13 @@ else
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine($"[PurchaseReturnTable] OnInitializedAsync 開始");
+        // 初始化時記錄當前供應商ID，避免 OnParametersSetAsync 誤判為變更
+        _previousSelectedSupplierId = EffectiveSupplierId;
+        _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
+        _previousFilterProductId = EffectiveFilterProductId;
+        
         await LoadAvailableProductsAsync();
-        // 不在這裡調用 LoadExistingDetailsAsync()，因為它依賴參數
-        // 參數的處理應該在 OnParametersSetAsync 中進行
+        await LoadExistingDetailsAsync();
         Console.WriteLine($"[PurchaseReturnTable] OnInitializedAsync 完成");
     }
 
@@ -391,15 +395,12 @@ else
         bool purchaseReceivingChanged = _previousSelectedPurchaseReceivingId != EffectivePurchaseReceivingId;
         bool productFilterChanged = _previousFilterProductId != EffectiveFilterProductId;
         
-        // 首次進入標記（用於確保首次進入時也會載入資料）
-        bool isFirstLoad = _previousSelectedSupplierId == null && _previousSelectedPurchaseReceivingId == null && _previousFilterProductId == null;
+        Console.WriteLine($"[PurchaseReturnTable] OnParametersSetAsync - SupplierChanged: {supplierChanged}, PurchaseReceivingChanged: {purchaseReceivingChanged}, ProductFilterChanged: {productFilterChanged}");
         
-        Console.WriteLine($"[PurchaseReturnTable] OnParametersSetAsync - SupplierChanged: {supplierChanged}, IsFirstLoad: {isFirstLoad}, SupplierId: {EffectiveSupplierId}, DataLoadCompleted: {_dataLoadCompleted}");
-        
-        // 如果廠商變更或首次載入，需要重新載入所有資料
-        if (supplierChanged || isFirstLoad)
+        // 如果廠商變更，需要重新載入所有資料
+        if (supplierChanged)
         {
-            Console.WriteLine($"[PurchaseReturnTable] 廠商變更/首次載入處理開始 - 目前 ReturnItems 數量: {ReturnItems.Count}");
+            Console.WriteLine($"[PurchaseReturnTable] 廠商變更處理開始");
             
             _previousSelectedSupplierId = EffectiveSupplierId;
             _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
@@ -408,26 +409,18 @@ else
             await LoadAvailableProductsAsync();
             
             // 廠商變更時清空現有選項並重新載入
-            _dataLoadCompleted = false; // 開始處理廠商變更，先禁止自動空行
-            Console.WriteLine($"[PurchaseReturnTable] 設定 _dataLoadCompleted = false");
-            
             ReturnItems.Clear();
-            Console.WriteLine($"[PurchaseReturnTable] ReturnItems 已清空");
-            
             await LoadExistingDetailsAsync();
-            Console.WriteLine($"[PurchaseReturnTable] LoadExistingDetailsAsync 完成 - ReturnItems 數量: {ReturnItems.Count}, DataLoadCompleted: {_dataLoadCompleted}");
-            // LoadExistingDetailsAsync 會設置 _dataLoadCompleted = true
             return;
         }
         
-        // 如果只是進貨單或商品篩選變更，只需要更新篩選狀態並重新渲染
+        // 如果只是進貨單或商品篩選變更，只需要更新篩選狀態
+        // ✅ 篩選邏輯會在 GetAvailableReceivingDetails() 中自動套用，不需要重新載入或渲染
         if (purchaseReceivingChanged || productFilterChanged)
         {
             _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
             _previousFilterProductId = EffectiveFilterProductId;
-            
-            // 觸發重新渲染以套用新的篩選
-            StateHasChanged();
+            // ✅ 不需要 StateHasChanged()，篩選會在下次渲染時自動生效
             return;
         }
     }
@@ -862,7 +855,7 @@ else
         
         item.ShowReceivingDetailDropdown = true;
         item.ReceivingDetailSelectedIndex = -1;
-        StateHasChanged();
+        // ✅ 移除 StateHasChanged()，InteractiveTableComponent 會自動處理重新渲染
     }
     
     /// <summary>
@@ -882,7 +875,7 @@ else
         item.FilteredReceivingDetails = availableDetails.Take(20).ToList();
         item.ShowReceivingDetailDropdown = true;
         item.ReceivingDetailSelectedIndex = -1;
-        StateHasChanged();
+        // ✅ 移除 StateHasChanged()，InteractiveTableComponent 會自動處理
     }
     
     /// <summary>
@@ -928,7 +921,7 @@ else
         returnItem.ReceivingDetailSelectedIndex = -1;
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ✅ 移除 StateHasChanged()，NotifyDetailsChanged 已經觸發更新，避免重複渲染
     }
 
     private async Task OnReturnQuantityInput(ReturnItem returnItem, string? value)
