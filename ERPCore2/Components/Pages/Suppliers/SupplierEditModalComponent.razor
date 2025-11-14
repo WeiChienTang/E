@@ -1,8 +1,6 @@
 @* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
 @inject ISupplierService SupplierService
 @inject IProductSupplierService ProductSupplierService
-@inject IProductService ProductService
-@inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -29,8 +27,7 @@
                           SaveHandler="@SaveSupplier"
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Supplier.Read"
-                          OnCancel="@OnCancel"
-                          AdditionalSections="@GetAdditionalSections()" />
+                          OnCancel="@OnCancel" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -77,23 +74,20 @@
         await base.OnParametersSetAsync();
     }
 
-    private async Task LoadAdditionalDataAsync()
+    private Task LoadAdditionalDataAsync()
     {
         try
         {
-            // 載入產品和單位選項
-            availableProducts = await ProductService.GetActiveProductsAsync();
-            availableUnits = await UnitService.GetActiveAsync();
-            
             // 配置 AutoComplete (目前廠商沒有 AutoComplete 欄位,保留空配置以便未來擴充)
             autoCompleteConfig = new AutoCompleteConfigBuilder<Supplier>()
                 .Build();
+            
+            return Task.CompletedTask;
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("載入廠商編輯相關資料時發生錯誤");
-            availableProducts = new List<Product>();
-            availableUnits = new List<Unit>();
+            return Task.CompletedTask;
         }
     }
 
@@ -323,8 +317,6 @@
                 // 應用預填值
                 PrefilledValueHelper.ApplyPrefilledValues(newSupplier, PrefilledValues);
                 
-                supplierProducts = new List<ProductSupplier>();
-                
                 return newSupplier;
             }
 
@@ -336,9 +328,6 @@
                 return null;
             }
             
-            // 載入供應商產品資訊
-            supplierProducts = await ProductSupplierService.GetBySupplierId(SupplierId.Value);
-            
             return supplier;
         }
         catch (Exception)
@@ -346,8 +335,6 @@
             _ = NotificationService.ShowErrorAsync("載入廠商資料時發生錯誤");
             
             // 設定安全的預設值，確保程式不會崩潰
-            supplierProducts = new List<ProductSupplier>();
-            
             return new Supplier
             {
                 Code = "",
@@ -377,21 +364,11 @@
             {
                 // 更新現有廠商
                 result = await SupplierService.UpdateAsync(entity);
-                if (result.IsSuccess)
-                {
-                    // 更新產品關聯
-                    await UpdateSupplierProductsAsync(entity.Id);
-                }
             }
             else
             {
                 // 新增廠商
                 result = await SupplierService.CreateAsync(entity);
-                if (result.IsSuccess)
-                {
-                    // 更新產品關聯
-                    await UpdateSupplierProductsAsync(entity.Id);
-                }
             }
 
             // 讓 GenericEditModalComponent 處理通用的成功/失敗訊息
@@ -404,93 +381,7 @@
         }
     }
 
-    /// <summary>
-    /// 更新供應商產品關聯
-    /// </summary>
-    private async Task UpdateSupplierProductsAsync(int supplierId)
-    {
-        try
-        {            
-            // 確保我們有最新的供應商資料
-            if (supplierId <= 0)
-            {
-                await NotificationService.ShowWarningAsync("供應商ID無效，跳過產品關聯儲存");
-                return; 
-            }
 
-            // 使用 AutoEmptyRowHelper 過濾掉空行項目，只儲存有效的產品關聯
-            var validSupplierProducts = AutoEmptyRowHelper.For<ProductSupplier>.GetNonEmptyItems(
-                supplierProducts, 
-                item => item.ProductId <= 0
-            );
-
-            // 使用 ProductSupplierService 的更新產品關聯方法
-            if (validSupplierProducts.Any())
-            {
-                // 設定每個產品關聯的 SupplierId
-                foreach (var supplierProduct in validSupplierProducts)
-                {
-                    supplierProduct.SupplierId = supplierId;
-                }
-                
-                // 取得產品ID列表並更新關聯
-                var productIds = validSupplierProducts.Select(sp => sp.ProductId).Where(id => id > 0).ToList();
-                var result = await ProductSupplierService.BatchSetSupplierProductsAsync(supplierId, productIds);
-                if (!result.IsSuccess)
-                {
-                    await NotificationService.ShowErrorAsync($"儲存產品關聯時發生錯誤：{result.ErrorMessage}");
-                }
-                
-                // 更新詳細資訊（價格、交期等）
-                foreach (var supplierProduct in validSupplierProducts)
-                {
-                    if (supplierProduct.ProductId > 0)
-                    {
-                        var existingRelation = await ProductSupplierService.GetByProductAndSupplierAsync(
-                            supplierProduct.ProductId, supplierId);
-                        
-                        if (existingRelation != null)
-                        {
-                            // 更新價格資訊
-                            if (supplierProduct.SupplierPrice.HasValue || !string.IsNullOrEmpty(supplierProduct.SupplierProductCode))
-                            {
-                                await ProductSupplierService.UpdateSupplierPriceAsync(
-                                    existingRelation.Id, 
-                                    supplierProduct.SupplierPrice,
-                                    supplierProduct.SupplierProductCode);
-                            }
-                            
-                            // 更新交期資訊
-                            if (supplierProduct.LeadTime.HasValue || supplierProduct.MinOrderQuantity.HasValue)
-                            {
-                                await ProductSupplierService.UpdateDeliveryInfoAsync(
-                                    existingRelation.Id,
-                                    supplierProduct.LeadTime,
-                                    supplierProduct.MinOrderQuantity);
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // 如果沒有有效的產品關聯，清空所有關聯
-                var result = await ProductSupplierService.BatchSetSupplierProductsAsync(supplierId, new List<int>());
-                if (!result.IsSuccess)
-                {
-                    await NotificationService.ShowErrorAsync($"清空產品關聯時發生錯誤：{result.ErrorMessage}");
-                }
-            }
-
-            // 重新載入產品關聯資料以更新UI顯示
-            supplierProducts = await ProductSupplierService.GetBySupplierId(supplierId);
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"儲存產品關聯時發生錯誤：{ex.Message}");
-            // 記錄錯誤但不中斷流程，因為主要實體已經儲存成功
-        }
-    }
 
     private async Task OnSaveSuccess()
     {
@@ -507,149 +398,13 @@
         }
     }
 
-    /// <summary>
-    /// 處理已刪除的供應商產品ID - 實際從資料庫刪除
-    /// </summary>
-    private async Task HandleDeletedSupplierProductsChanged(List<int> deletedProductSupplierIds)
-    {
-        try
-        {
-            if (deletedProductSupplierIds?.Any() == true)
-            {
-                foreach (var productSupplierId in deletedProductSupplierIds)
-                {
-                    await ProductSupplierService.DeleteAsync(productSupplierId);
-                }
-                
-                // 顯示成功通知
-                await NotificationService.ShowSuccessAsync($"已刪除 {deletedProductSupplierIds.Count} 個供應商產品");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"刪除供應商產品時發生錯誤：{ex.Message}");
-        }
-    }
 
-    /// <summary>
-    /// 處理供應商產品變更事件
-    /// </summary>
-    private Task OnSupplierProductsChanged(List<ProductSupplier> updatedProducts)
-    {
-        try
-        {
-            supplierProducts = updatedProducts;
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("更新產品資料時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
 
-    /// <summary>
-    /// 處理供應商產品新增事件
-    /// </summary>
-    private Task OnSupplierProductAdded(ProductSupplier addedProduct)
-    {
-        try
-        {
-            // 可以在這裡添加額外的邏輯
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("新增產品時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
 
-    /// <summary>
-    /// 處理供應商產品移除事件
-    /// </summary>
-    private Task OnSupplierProductRemoved(ProductSupplier removedProduct)
-    {
-        try
-        {
-            // 可以在這裡添加額外的邏輯
-            StateHasChanged();
-            return Task.CompletedTask;
-        }
-        catch (Exception)
-        {
-            _ = NotificationService.ShowErrorAsync("移除產品時發生錯誤");
-            return Task.CompletedTask;
-        }
-    }
 
-    /// <summary>
-    /// 取得額外區段內容（產品管理）
-    /// </summary>
-    private RenderFragment? GetAdditionalSections()
-    {
-        return @<div class="mt-4">
-            <div class="row">
-                <div class="col-12">
-                    <SupplierProductTable TProductSupplierEntity="ProductSupplier"
-                                                   TProductEntity="Product"
-                                                   TSupplierEntity="Supplier"
-                                                   Items="@supplierProducts"
-                                                   ProductOptions="@availableProducts"
-                                                   UnitOptions="@availableUnits"
-                                                   ParentEntityId="@(SupplierId ?? editModalComponent?.Entity?.Id ?? 0)"
-                                                   IsReadOnly="@false"
-                                                   Title="產品資訊"
-                                                   ItemDisplayName="產品"
-                                                   EmptyMessage="尚未新增產品"
-                                                   GetProductId="@GetProductIdDelegate"
-                                                   GetSupplierProductCode="@GetSupplierProductCodeDelegate"
-                                                   GetSupplierPrice="@GetSupplierPriceDelegate"
-                                                   GetLeadTime="@GetLeadTimeDelegate"
-                                                   GetMinOrderQuantity="@GetMinOrderQuantityDelegate"
-                                                   GetUnitId="@GetUnitIdDelegate"
-                                                   GetProductOptionId="@GetProductOptionIdDelegate"
-                                                   GetProductOptionDisplayText="@GetProductOptionDisplayTextDelegate"
-                                                   GetUnitOptionId="@GetUnitOptionIdDelegate"
-                                                   GetUnitOptionDisplayText="@GetUnitOptionDisplayTextDelegate"
-                                                   SetProductId="@SetProductIdDelegate"
-                                                   SetSupplierProductCode="@SetSupplierProductCodeDelegate"
-                                                   SetSupplierPrice="@SetSupplierPriceDelegate"
-                                                   SetLeadTime="@SetLeadTimeDelegate"
-                                                   SetMinOrderQuantity="@SetMinOrderQuantityDelegate"
-                                                   SetUnitId="@SetUnitIdDelegate"
-                                                   SetSupplierId="@SetSupplierIdDelegate"
-                                                   ItemsChanged="@OnSupplierProductsChanged"
-                                                   ItemAdded="@OnSupplierProductAdded"
-                                                   ItemRemoved="@OnSupplierProductRemoved"
-                                                   OnDeletedDetailsChanged="@HandleDeletedSupplierProductsChanged" />
-                </div>
-            </div>
-        </div>;
-    }
 
-    // ===== SupplierProductManagerComponent 委派屬性 =====
-    
-    // Getter 委派
-    private Func<ProductSupplier, int?> GetProductIdDelegate => item => item.ProductId > 0 ? item.ProductId : (int?)null;
-    private Func<ProductSupplier, string?> GetSupplierProductCodeDelegate => item => item.SupplierProductCode;
-    private Func<ProductSupplier, decimal?> GetSupplierPriceDelegate => item => item.SupplierPrice;
-    private Func<ProductSupplier, int?> GetLeadTimeDelegate => item => item.LeadTime;
-    private Func<ProductSupplier, int?> GetMinOrderQuantityDelegate => item => item.MinOrderQuantity;
-    private Func<ProductSupplier, int?> GetUnitIdDelegate => item => item.UnitId;
-    private Func<Product, int> GetProductOptionIdDelegate => product => product.Id;
-    private Func<Product, string> GetProductOptionDisplayTextDelegate => product => $"{product.Code} - {product.Name}";
-    private Func<Unit, int> GetUnitOptionIdDelegate => unit => unit.Id;
-    private Func<Unit, string> GetUnitOptionDisplayTextDelegate => unit => unit.Name;
-    
-    // Setter 委派
-    private Action<ProductSupplier, int?> SetProductIdDelegate => (item, value) => item.ProductId = value ?? 0;
-    private Action<ProductSupplier, string?> SetSupplierProductCodeDelegate => (item, value) => item.SupplierProductCode = value;
-    private Action<ProductSupplier, decimal?> SetSupplierPriceDelegate => (item, value) => item.SupplierPrice = value;
-    private Action<ProductSupplier, int?> SetLeadTimeDelegate => (item, value) => item.LeadTime = value;
-    private Action<ProductSupplier, int?> SetMinOrderQuantityDelegate => (item, value) => item.MinOrderQuantity = value;
-    private Action<ProductSupplier, int?> SetUnitIdDelegate => (item, value) => item.UnitId = value;
-    private Action<ProductSupplier, int> SetSupplierIdDelegate => (item, supplierId) => item.SupplierId = supplierId;
+
+
+
+
 }

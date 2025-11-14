@@ -32,6 +32,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "商品分類")]
         [ForeignKey(nameof(ProductCategory))]
         public int? ProductCategoryId { get; set; }
+
+        [Display(Name = "規格說明")]
+        [MaxLength(100, ErrorMessage = "規格說明不可超過100個字元")]
+        public string? Specification { get; set; }
         
         // Navigation Properties
         public Unit? Unit { get; set; }

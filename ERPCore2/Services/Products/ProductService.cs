@@ -89,7 +89,8 @@ namespace ERPCore2.Services
                     .Include(p => p.Size)
                     .Where(p => ((p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Code != null && p.Code.Contains(searchTerm)) ||
-                                (p.Barcode != null && p.Barcode.Contains(searchTerm))))
+                                (p.Barcode != null && p.Barcode.Contains(searchTerm)) ||
+                                (p.Specification != null && p.Specification.Contains(searchTerm))))
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }

@@ -261,24 +261,6 @@ else
             })
         });
 
-        // 已轉數量欄位 (唯讀)
-        columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = "已轉數量", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
-            Tooltip = "已轉為銷貨訂單的累計數量（唯讀）",
-            CustomTemplate = item => 
-            {
-                var quotationItem = (QuotationItem)item;
-                
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="text-muted">@quotationItem.ConvertedQuantity.ToString("F0")</span>
-                </div>;
-            }
-        });
-
         // 單價欄位
         columns.Add(new InteractiveColumnDefinition
         { 

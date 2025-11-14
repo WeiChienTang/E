@@ -301,7 +301,7 @@
                 Value = p.Id.ToString()
             }));
 
-            // 準備配方類型選項
+            // 準備合成類型選項
             var compositionTypeOptions = Enum.GetValues<CompositionType>()
                 .Select(ct => new SelectOption
                 {
@@ -331,32 +331,31 @@
                 new()
                 {
                     PropertyName = nameof(ProductComposition.Code),
-                    Label = "配方代碼",
+                    Label = "合成代碼",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入配方代碼",
+                    Placeholder = "請輸入合成代碼",
                     IsRequired = false,
-                    HelpText = "配方的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "合成的唯一識別代碼，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
                     PropertyName = nameof(ProductComposition.ParentProductId),
-                    Label = "商品",
+                    Label = "產品",
                     FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇商品",
+                    Placeholder = "請選擇產品",
                     Options = productOptions,
                     IsRequired = true,
-                    HelpText = "選擇此配方要生產的商品",
+                    HelpText = "選擇此合成要生產的產品",
                     ActionButtons = await GetProductActionButtonsAsync()
                 },
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CompositionType),
-                    Label = "配方類型",
+                    Label = "合成類型",
                     FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇配方類型",
+                    Placeholder = "請選擇合成類型",
                     Options = compositionTypeOptions,
-                    IsRequired = true,
-                    HelpText = "選擇配方的類型（標準、替代、簡化或客製）"
+                    HelpText = "選擇合成的類型（標準、替代、簡化或客製）"
                 },
                 new()
                 {
@@ -366,7 +365,7 @@
                     Placeholder = "請選擇客戶",
                     Options = customerOptions,
                     IsRequired = false,
-                    HelpText = "選擇此配方的客戶（選填）",
+                    HelpText = "選擇此合成的客戶（選填）",
                     ActionButtons = await GetCustomerActionButtonsAsync()
                 },
                 new()
@@ -377,7 +376,7 @@
                     Placeholder = "請選擇製單人員",
                     Options = employeeOptions,
                     IsRequired = false,
-                    HelpText = "選擇建立此配方的員工（選填）",
+                    HelpText = "選擇建立此合成的員工（選填）",
                     ActionButtons = await GetEmployeeActionButtonsAsync()
                 },
                 new()
@@ -422,10 +421,10 @@
     {
         return type switch
         {
-            CompositionType.Standard => "標準配方",
-            CompositionType.Alternative => "替代配方",
-            CompositionType.Simplified => "簡化配方",
-            CompositionType.Custom => "客製配方",
+            CompositionType.Standard => "標準合成",
+            CompositionType.Alternative => "替代合成",
+            CompositionType.Simplified => "簡化合成",
+            CompositionType.Custom => "客製合成",
             _ => "未知"
         };
     }

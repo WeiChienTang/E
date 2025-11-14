@@ -210,13 +210,13 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "物料清單",
+                        Name = "產品合成表",
                         Description = "管理產品的配方和組件結構",
                         Route = "/product-compositions",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "產品管理",
                         RequiredPermission = "ProductComposition.Read",
-                        SearchKeywords = new List<string> { "物料清單", "BOM", "物料清單", "Bill of Materials" }
+                        SearchKeywords = new List<string> { "產品合成", "BOM", "合成表", "Bill of Materials" }
                     },
                     new NavigationItem
                     {
