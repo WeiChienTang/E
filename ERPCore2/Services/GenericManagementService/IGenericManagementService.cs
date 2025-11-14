@@ -123,5 +123,23 @@ namespace ERPCore2.Services
         Task<bool> IsNameExistsAsync(string name, int? excludeId = null);
         
         #endregion
+
+        #region 記錄導航
+        
+        /// <summary>
+        /// 取得上一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        /// <param name="currentId">當前記錄的 ID</param>
+        /// <returns>上一筆記錄的 ID，如果沒有則返回 null</returns>
+        Task<int?> GetPreviousIdAsync(int currentId);
+        
+        /// <summary>
+        /// 取得下一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        /// <param name="currentId">當前記錄的 ID</param>
+        /// <returns>下一筆記錄的 ID，如果沒有則返回 null</returns>
+        Task<int?> GetNextIdAsync(int currentId);
+        
+        #endregion
     }
 }

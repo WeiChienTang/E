@@ -623,5 +623,61 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 記錄導航
+
+        /// <summary>
+        /// 取得上一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        public virtual async Task<int?> GetPreviousIdAsync(int currentId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                // 查找 Id 小於當前 Id 的最大 Id
+                var previousId = await dbSet
+                    .Where(x => x.Id < currentId)
+                    .OrderByDescending(x => x.Id)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                
+                return previousId > 0 ? previousId : null;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPreviousIdAsync), GetType(), _logger, new { CurrentId = currentId });
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 取得下一筆記錄的 ID（按 ID 排序）
+        /// </summary>
+        public virtual async Task<int?> GetNextIdAsync(int currentId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<T>();
+                
+                // 查找 Id 大於當前 Id 的最小 Id
+                var nextId = await dbSet
+                    .Where(x => x.Id > currentId)
+                    .OrderBy(x => x.Id)
+                    .Select(x => x.Id)
+                    .FirstOrDefaultAsync();
+                
+                return nextId > 0 ? nextId : null;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetNextIdAsync), GetType(), _logger, new { CurrentId = currentId });
+                return null;
+            }
+        }
+
+        #endregion
     }
 }

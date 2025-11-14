@@ -123,6 +123,9 @@
     
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有進貨記錄）
+    
+    // ===== 轉單狀態 =====
+    private bool canCreateReceiving = false; // 是否可以轉進貨單（新增模式需先儲存，編輯模式直接為 true）
 
     // ===== 建構函數 =====
     public PurchaseOrderEditModalComponent()
@@ -340,10 +343,14 @@
                 //  新增模式時,重置鎖定狀態為 false
                 hasUndeletableDetails = false;
                 
+                // 新增模式：必須先儲存才能轉單
+                canCreateReceiving = false;
+                
                 return newOrder;
             }
 
             // 編輯模式 - 載入採購單和明細
+            canCreateReceiving = true; // 編輯模式：可以直接轉單
             var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
             
             if (purchaseOrder != null)
@@ -943,7 +950,15 @@
             return false;
         }
         
-        return await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
+        var result = await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
+        
+        // 儲存成功後允許轉進貨
+        if (result)
+        {
+            canCreateReceiving = true;
+        }
+        
+        return result;
     }
 
     /// <summary>
@@ -1278,7 +1293,7 @@
     /// </summary>
     private RenderFragment? CustomActionButtons => __builder =>
     {
-        @* 轉進貨單按鈕 - 編輯模式下始終顯示，驗證邏輯在點擊時執行 *@
+        @* 轉進貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
             <GenericButtonComponent Text="轉進貨" 
                                   Variant="ButtonVariant.Success" 
                                   OnClick="HandleCreateReceivingFromOrder" />        
@@ -1392,82 +1407,38 @@
     }
     
     /// <summary>
-    /// 從採購單轉進貨單
+    /// 從採購單轉進貨單 - 簡化版本，所有業務驗證交給進貨單 Modal 處理
     /// </summary>
     private async Task HandleCreateReceivingFromOrder()
     {
         try
         {
-            // 第一步：檢查採購單是否已儲存到資料庫
-            if (!PurchaseOrderId.HasValue || PurchaseOrderId.Value <= 0)
+            // 唯一檢查：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
+            if (!canCreateReceiving)
             {
                 await NotificationService.ShowWarningAsync("請先儲存採購單後，才能轉進貨單");
                 return;
             }
             
-            // 第二步：檢查實體資料是否存在
+            // 安全檢查：確保 Entity 已載入（canCreateReceiving = true 時理論上一定有值）
             if (editModalComponent?.Entity == null)
             {
                 await NotificationService.ShowWarningAsync("採購單資料載入失敗，請重新整理頁面");
                 return;
             }
             
-            // 第三步：檢查採購單是否真的存在於資料庫中
-            // 這個檢查很重要，因為可能在編輯模式下資料已被其他用戶刪除
-            var existingOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
-            if (existingOrder == null)
-            {
-                await NotificationService.ShowErrorAsync($"採購單 (ID: {PurchaseOrderId.Value}) 不存在於資料庫中，可能已被刪除");
-                return;
-            }
-            
-            // 移除審核檢查：改為在載入明細時根據審核開關過濾
-            // 如果啟用審核，只會載入已審核的採購單明細
-            // 如果未啟用審核，載入所有採購單明細
-            
-            // 第四步：檢查是否有廠商資料
-            if (editModalComponent.Entity.SupplierId <= 0)
-            {
-                await NotificationService.ShowWarningAsync("採購單缺少廠商資訊，無法轉進貨單");
-                return;
-            }
-
-            // 第五步：檢查是否有明細資料
-            if (!purchaseOrderDetails.Any())
-            {
-                await NotificationService.ShowWarningAsync("採購單沒有明細資料，無法轉進貨單");
-                return;
-            }
-            
-            // 第六步：檢查是否所有明細都已完成進貨
-            var hasIncompleteDetails = purchaseOrderDetails.Any(detail => 
-                detail.ReceivedQuantity < detail.OrderQuantity
+            // 直接開啟進貨單 Modal，使用 Entity.Id 作為採購單 ID（最可靠的來源）
+            // 所有業務驗證（廠商、明細、完成進貨等）交給 Modal 內部處理
+            await purchaseReceivingEditModal!.ShowAddModalWithPrefilledOrder(
+                editModalComponent.Entity.SupplierId,
+                editModalComponent.Entity.Id  // 使用 Entity.Id 而非 PurchaseOrderId 參數
             );
-            
-            if (!hasIncompleteDetails)
-            {
-                await NotificationService.ShowWarningAsync("採購單所有明細皆已完成進貨，無需再轉進貨單");
-                return;
-            }
-            
-            // 所有驗證通過，開啟進貨單 Modal
-            if (purchaseReceivingEditModal != null)
-            {
-                await purchaseReceivingEditModal.ShowAddModalWithPrefilledOrder(
-                    editModalComponent.Entity.SupplierId,
-                    PurchaseOrderId.Value
-                );
-            }
-            else
-            {
-                await NotificationService.ShowWarningAsync("進貨單組件未初始化，請重新整理頁面");
-            }
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReceivingFromOrder), GetType(), 
-                additionalData: $"轉進貨單失敗 - OrderId: {PurchaseOrderId}");
-            await NotificationService.ShowErrorAsync("轉進貨單時發生錯誤");
+                additionalData: $"轉進貨單失敗 - OrderId: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync($"轉進貨單時發生錯誤: {ex.Message}");
         }
     }
 }

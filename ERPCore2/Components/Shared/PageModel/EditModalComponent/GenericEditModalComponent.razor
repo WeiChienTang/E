@@ -27,7 +27,7 @@
                    Size="@ConvertToBaseModalSize(Size)"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    CloseOnEscape="true"
-                   CloseOnBackdropClick="true"
+                   CloseOnBackdropClick="false"
                    ShowCloseButton="true"
                    IsLoading="@IsLoading"
                    LoadingMessage="@LoadingMessage"
@@ -83,11 +83,6 @@
             
             @* 右側：原有的主要操作按鈕 *@
             <div class="d-flex gap-2">
-                @* 不論審核狀態，都顯示取消和儲存按鈕 *@
-                <GenericButtonComponent Text="@CancelButtonText" 
-                                      Variant="ButtonVariant.Secondary" 
-                                      OnClick="HandleCancel" 
-                                      IsDisabled="@IsSubmitting" />
                 @if (ShowSaveButton)
                 {
                     <GenericButtonComponent Text="@SaveButtonText" 
@@ -95,6 +90,22 @@
                                           OnClick="HandleSave" 
                                           IsDisabled="@(IsSubmitting || IsLoading)" 
                                           IsLoading="@IsSubmitting" />
+                }
+                
+                @* 記錄導航按鈕（在儲存按鈕右側，只在編輯模式顯示） *@
+                @if (EnableNavigation && Entity != null && Entity.Id > 0)
+                {
+                    <GenericButtonComponent Text="上筆" 
+                                          Variant="ButtonVariant.Success" 
+                                          OnClick="HandlePrevious"
+                                          IsDisabled="@(!_hasPrevious || IsSubmitting || IsLoading)"
+                                          Title="@(_hasPrevious ? $"切換到上一筆{EntityName}" : "沒有上一筆記錄")" />
+                    
+                    <GenericButtonComponent Text="下筆" 
+                                          Variant="ButtonVariant.Success"
+                                          OnClick="HandleNext"
+                                          IsDisabled="@(!_hasNext || IsSubmitting || IsLoading)"
+                                          Title="@(_hasNext ? $"切換到下一筆{EntityName}" : "沒有下一筆記錄")" />
                 }
                 
                 @if (ShowPrintButton)
@@ -261,6 +272,11 @@
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     
     /// <summary>
+    /// 是否啟用記錄導航功能（上一筆/下一筆按鈕）
+    /// </summary>
+    [Parameter] public bool EnableNavigation { get; set; } = true;
+    
+    /// <summary>
     /// 是否在儲存成功後自動關閉 Modal（預設為 false，不關閉）
     /// </summary>
     [Parameter] public bool CloseOnSave { get; set; } = false;
@@ -392,6 +408,12 @@
     
     // AutoComplete 版本號機制 - 用於強制刷新 AutoComplete 欄位顯示
     private int _autoCompleteVersion = 0;
+    
+    // 記錄導航狀態
+    private int? _previousId = null;
+    private int? _nextId = null;
+    private bool _hasPrevious => _previousId.HasValue;
+    private bool _hasNext => _nextId.HasValue;
     
     // ===== Modal 尺寸列舉 =====
     
@@ -533,6 +555,12 @@
             
             // 載入狀態訊息資料
             await LoadStatusMessageData();
+            
+            // 載入導航狀態（編輯模式時）
+            if (Id.HasValue && Id.Value > 0)
+            {
+                await LoadNavigationStateAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -1723,6 +1751,170 @@
             return null;
         }
     }
+    
+    #region 記錄導航處理
+    
+    /// <summary>
+    /// 載入導航狀態（上一筆和下一筆的 ID）
+    /// </summary>
+    private async Task LoadNavigationStateAsync()
+    {
+        if (!EnableNavigation || !Id.HasValue || Service == null)
+        {
+            _previousId = null;
+            _nextId = null;
+            return;
+        }
+        
+        try
+        {
+            // 使用反射調用服務的 GetPreviousIdAsync 和 GetNextIdAsync 方法
+            var serviceType = Service.GetType();
+            
+            var getPreviousMethod = serviceType.GetMethod("GetPreviousIdAsync");
+            var getNextMethod = serviceType.GetMethod("GetNextIdAsync");
+            
+            if (getPreviousMethod != null)
+            {
+                var previousTask = getPreviousMethod.Invoke(Service, new object[] { Id.Value }) as Task<int?>;
+                if (previousTask != null)
+                {
+                    _previousId = await previousTask;
+                }
+            }
+            
+            if (getNextMethod != null)
+            {
+                var nextTask = getNextMethod.Invoke(Service, new object[] { Id.Value }) as Task<int?>;
+                if (nextTask != null)
+                {
+                    _nextId = await nextTask;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogError("LoadNavigationStateAsync", ex);
+            _previousId = null;
+            _nextId = null;
+        }
+    }
+    
+    /// <summary>
+    /// 處理上一筆按鈕點擊
+    /// </summary>
+    private async Task HandlePrevious()
+    {
+        if (!_previousId.HasValue || IsLoading || IsSubmitting) return;
+        
+        try
+        {
+            await NavigateToRecordAsync(_previousId.Value);
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"切換到上一筆{EntityName}時發生錯誤");
+            LogError("HandlePrevious", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 處理下一筆按鈕點擊
+    /// </summary>
+    private async Task HandleNext()
+    {
+        if (!_nextId.HasValue || IsLoading || IsSubmitting) return;
+        
+        try
+        {
+            await NavigateToRecordAsync(_nextId.Value);
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"切換到下一筆{EntityName}時發生錯誤");
+            LogError("HandleNext", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 導航到指定的記錄
+    /// </summary>
+    private async Task NavigateToRecordAsync(int targetId)
+    {
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+            
+            // 更新 Id 參數
+            Id = targetId;
+            _lastId = targetId;
+            
+            // 使用 Service 直接載入新的實體資料（不依賴 DataLoader）
+            if (Service != null)
+            {
+                // 使用反射調用 Service.GetByIdAsync 方法
+                var serviceType = Service.GetType();
+                var getByIdMethod = serviceType.GetMethod("GetByIdAsync");
+                
+                if (getByIdMethod != null)
+                {
+                    var getByIdTask = getByIdMethod.Invoke(Service, new object[] { targetId }) as Task<TEntity>;
+                    if (getByIdTask != null)
+                    {
+                        var loadedEntity = await getByIdTask;
+                        if (loadedEntity != null)
+                        {
+                            Entity = loadedEntity;
+                            editContext = new EditContext(Entity);
+                            
+                            // 重新載入額外資料
+                            if (AdditionalDataLoader != null)
+                            {
+                                await AdditionalDataLoader();
+                            }
+                            
+                            // 遞增版本號，強制重新渲染表單（包括 AutoComplete 和自訂模組）
+                            _autoCompleteVersion++;
+                            
+                            // 更新 ActionButtons
+                            UpdateAllActionButtons();
+                            
+                            // 重新載入狀態訊息
+                            await LoadStatusMessageData();
+                            
+                            // 重新載入導航狀態
+                            await LoadNavigationStateAsync();
+                        }
+                        else
+                        {
+                            await ShowErrorMessage($"找不到指定的{EntityName}");
+                        }
+                    }
+                }
+            }
+            else if (DataLoader != null)
+            {
+                // 後備方案：如果沒有 Service，嘗試使用 DataLoader
+                // 但這可能不會正確載入新 ID 的資料
+                await LoadAllData();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"導航時發生錯誤：{ex.Message}");
+            LogError("NavigateToRecordAsync", ex);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    #endregion
     
     // ===== 清理資源 =====
     
