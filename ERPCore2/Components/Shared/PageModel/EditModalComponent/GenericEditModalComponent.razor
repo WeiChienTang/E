@@ -92,8 +92,19 @@
                                           IsLoading="@IsSubmitting" />
                 }
                 
+                @* 返回上一筆按鈕（只在新增模式且有最後一筆記錄時顯示） *@
+                @if (ShowReturnToLastButton && !Id.HasValue && _lastRecordId.HasValue)
+                {
+                    <GenericButtonComponent Text="@ReturnToLastButtonText" 
+                                          Variant="ButtonVariant.Success" 
+                                          OnClick="HandleReturnToLast" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)"
+                                          Title="返回到最後一筆資料（剛才儲存的記錄）" />
+                }
+                
                 @* 記錄導航按鈕（在儲存按鈕右側，只在編輯模式顯示） *@
-                @if (EnableNavigation && Entity != null && Entity.Id > 0)
+                @* 目前此功能存在很大的問題，詳情可以看 Readme_上下筆失敗測試，為將來如果要繼續測試可以嘗試修改*@
+                @* @if (EnableNavigation && Entity != null && Entity.Id > 0)
                 {
                     <GenericButtonComponent Text="上筆" 
                                           Variant="ButtonVariant.Success" 
@@ -106,7 +117,7 @@
                                           OnClick="HandleNext"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="@GetNextButtonTitle()" />
-                }
+                } *@
                 
                 @if (ShowPrintButton)
                 {
@@ -270,6 +281,8 @@
     [Parameter] public bool ShowSaveButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
+    [Parameter] public bool ShowReturnToLastButton { get; set; } = true;
+    [Parameter] public string ReturnToLastButtonText { get; set; } = "返回上一筆";
     
     /// <summary>
     /// 是否啟用記錄導航功能（上一筆/下一筆按鈕）
@@ -689,6 +702,25 @@
             if (success)
             {
                 await ShowSuccessMessage(SaveSuccessMessage);
+                
+                // 🔑 關鍵修復：檢測從新增模式轉為編輯模式
+                // 當儲存成功且是從新增（Id 為 null）變為編輯（Entity.Id > 0）時
+                // 自動更新 Id 參數並重新載入所有資料，確保 Modal 狀態正確
+                bool wasNewRecord = !Id.HasValue;
+                if (wasNewRecord && Entity != null && Entity.Id > 0)
+                {
+                    // 更新 Id 參數（觸發模式轉換）
+                    Id = Entity.Id;
+                    _lastId = Entity.Id;
+                    
+                    // 重新載入所有資料（包含明細、狀態訊息、導航狀態等）
+                    // 這確保了：
+                    // 1. Modal 標題從「新增」變為「編輯」
+                    // 2. 明細資料正確載入並顯示鎖定狀態
+                    // 3. 審核按鈕、刪除按鈕等正確顯示
+                    // 4. 相關單據的操作按鈕可以正常使用
+                    await LoadAllData();
+                }
                 
                 if (OnSaveSuccess.HasDelegate)
                 {
@@ -1836,6 +1868,31 @@
             _nextId = null;
             _firstId = null;
             _lastRecordId = null;
+        }
+    }
+    
+    /// <summary>
+    /// 處理返回上一筆按鈕點擊（新增模式專用，返回到最後一筆記錄）
+    /// </summary>
+    private async Task HandleReturnToLast()
+    {
+        if (IsLoading || IsSubmitting) return;
+        
+        try
+        {
+            if (_lastRecordId.HasValue)
+            {
+                await NavigateToRecordAsync(_lastRecordId.Value);
+            }
+            else
+            {
+                await ShowErrorMessage($"找不到最後一筆{EntityName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"返回上一筆{EntityName}時發生錯誤");
+            LogError("HandleReturnToLast", ex);
         }
     }
     

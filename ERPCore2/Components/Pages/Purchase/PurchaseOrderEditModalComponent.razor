@@ -126,6 +126,9 @@
     
     // ===== 轉單狀態 =====
     private bool canCreateReceiving = false; // 是否可以轉進貨單（新增模式需先儲存，編輯模式直接為 true）
+    
+    // ===== 列印狀態 =====
+    private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
 
     // ===== 建構函數 =====
     public PurchaseOrderEditModalComponent()
@@ -210,33 +213,41 @@
         }
     }
 
+    /// <summary>
+    /// 處理列印 - 簡化版本，套用「A單轉B單簡化修改」的設計模式
+    /// </summary>
     private async Task HandlePrint()
     {
         try
         {
-            // 使用通用 Helper 進行完整驗證（實體、ID、核准狀態）
-            // 根據系統參數決定是否需要審核才能列印
-            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
-                entity: editModalComponent?.Entity,
-                entityId: PurchaseOrderId,
-                isApproved: editModalComponent?.Entity?.IsApproved ?? false,
-                entityName: "採購單",
-                requireApproval: isApprovalEnabled  // 使用系統參數而非固定值
-            );
-            
-            if (!isValid)
+            // 第一步：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
+            if (!canPrint)
             {
-                await NotificationService.ShowWarningAsync(errorMessage);
+                await NotificationService.ShowWarningAsync("請先儲存採購單後再進行列印");
                 return;
             }
             
-            // 直接執行列印，使用預設設定
+            // 第二步：安全檢查 - 確保 Entity 已載入
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("採購單資料載入失敗，請重新整理頁面");
+                return;
+            }
+            
+            // 第三步：根據系統參數檢查是否需要審核才能列印
+            if (isApprovalEnabled && !editModalComponent.Entity.IsApproved)
+            {
+                await NotificationService.ShowWarningAsync("採購單需審核通過後才能列印");
+                return;
+            }
+            
+            // 直接執行列印，使用 Entity.Id（最可靠的來源）
             await HandleDirectPrint(null);
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
-                additionalData: $"採購單列印處理失敗 - ID: {PurchaseOrderId}");
+                additionalData: $"採購單列印處理失敗 - ID: {editModalComponent?.Entity?.Id}");
             await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
         }
     }
@@ -248,9 +259,10 @@
     {
         try
         {
-            if (!PurchaseOrderId.HasValue)
+            // 安全檢查：確保 Entity 已載入
+            if (editModalComponent?.Entity == null)
             {
-                await NotificationService.ShowWarningAsync("無法列印：採購單ID不存在");
+                await NotificationService.ShowWarningAsync("無法列印：採購單資料不存在");
                 return;
             }
 
@@ -263,10 +275,11 @@
             }
 
             // 使用通用 Helper 建立列印 URL（新版路由）
+            // 使用 Entity.Id 而非 PurchaseOrderId 參數（最可靠的來源）
             var printUrl = ReportPrintHelper.BuildPrintUrl(
                 baseUrl: NavigationManager.BaseUri,
                 reportType: "purchase-report/order",
-                documentId: PurchaseOrderId.Value,
+                documentId: editModalComponent.Entity.Id,
                 configuration: printConfig,
                 autoprint: true
             );
@@ -291,7 +304,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
-                additionalData: $"採購單直接列印失敗 - ID: {PurchaseOrderId}, Config: {printConfig?.ReportName}");
+                additionalData: $"採購單直接列印失敗 - ID: {editModalComponent?.Entity?.Id}, Config: {printConfig?.ReportName}");
             await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
         }
     }
@@ -343,14 +356,16 @@
                 //  新增模式時,重置鎖定狀態為 false
                 hasUndeletableDetails = false;
                 
-                // 新增模式：必須先儲存才能轉單
+                // 新增模式：必須先儲存才能轉單和列印
                 canCreateReceiving = false;
+                canPrint = false;
                 
                 return newOrder;
             }
 
             // 編輯模式 - 載入採購單和明細
             canCreateReceiving = true; // 編輯模式：可以直接轉單
+            canPrint = true; // 編輯模式：可以直接列印
             var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
             
             if (purchaseOrder != null)
@@ -952,10 +967,11 @@
         
         var result = await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
         
-        // 儲存成功後允許轉進貨
+        // 儲存成功後允許轉進貨和列印
         if (result)
         {
             canCreateReceiving = true;
+            canPrint = true;
         }
         
         return result;
