@@ -1974,8 +1974,9 @@
             // 🔑 關鍵修復：設置導航標記，防止 LoadAllData 呼叫 DataLoader 覆蓋資料
             _isNavigating = true;
             
-            IsLoading = true;
-            StateHasChanged();
+            // 🔑 優化：不使用 IsLoading，避免顯示載入動畫造成閃爍
+            // IsLoading = true;
+            // StateHasChanged();  // 移除此處的 StateHasChanged，減少重繪次數
             
             // 🔑 關鍵修復：使用內部變數 _currentId 追蹤導航後的 ID
             // 因為 Id 是 [Parameter]，無法在組件內部直接修改
@@ -1997,6 +1998,7 @@
                         var loadedEntity = await getByIdTask;
                         if (loadedEntity != null)
                         {
+                            // 🔑 優化：先完成所有資料更新，最後才觸發一次 UI 重繪
                             Entity = loadedEntity;
                             editContext = new EditContext(Entity);
                             
@@ -2021,6 +2023,9 @@
                             
                             // 重新載入導航狀態（基於新的 Id）
                             await LoadNavigationStateAsync();
+                            
+                            // 🔑 優化：所有資料更新完成後，只觸發一次 UI 重繪
+                            StateHasChanged();
                         }
                         else
                         {
@@ -2035,8 +2040,6 @@
                 // 但這可能不會正確載入新 ID 的資料
                 await LoadAllData();
             }
-            
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -2045,9 +2048,9 @@
         }
         finally
         {
-            IsLoading = false;
+            // IsLoading = false;  // 不使用 IsLoading
             _isNavigating = false;  // 🔑 清除導航標記
-            StateHasChanged();
+            // StateHasChanged();  // 移除此處的 StateHasChanged，已在成功載入後觸發
         }
     }
     

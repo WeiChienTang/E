@@ -11,7 +11,7 @@
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          Id="@InventoryStockId"
+                          @bind-Id="@InventoryStockId"
                           Service="@InventoryStockService"
                           EntityName="庫存"
                           EntityNamePlural="庫存"

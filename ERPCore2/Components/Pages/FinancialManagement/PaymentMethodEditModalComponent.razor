@@ -7,7 +7,7 @@
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          Id="@PaymentMethodId"
+                          @bind-Id="@PaymentMethodId"
                           Service="@PaymentMethodService"
                           EntityName="付款方式"
                           EntityNamePlural="付款方式"
