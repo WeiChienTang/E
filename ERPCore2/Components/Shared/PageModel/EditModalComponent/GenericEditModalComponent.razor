@@ -104,7 +104,7 @@
                 
                 @* 記錄導航按鈕（在儲存按鈕右側，只在編輯模式顯示） *@
                 @* 目前此功能存在很大的問題，詳情可以看 Readme_上下筆失敗測試，為將來如果要繼續測試可以嘗試修改*@
-                @* @if (EnableNavigation && Entity != null && Entity.Id > 0)
+                @if (EnableNavigation && Entity != null && Entity.Id > 0)
                 {
                     <GenericButtonComponent Text="上筆" 
                                           Variant="ButtonVariant.Success" 
@@ -117,7 +117,7 @@
                                           OnClick="HandleNext"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="@GetNextButtonTitle()" />
-                } *@
+                }
                 
                 @if (ShowPrintButton)
                 {
@@ -153,7 +153,7 @@
         @if (UseGenericForm && FormFields.Any())
         {
             <div class="edit-form-container px-3">
-                <GenericFormComponent @key="@_autoCompleteVersion"
+                <GenericFormComponent @key="@(Entity?.Id ?? 0)"
                                     TModel="TEntity"
                                     Model="@Entity"
                                     FieldDefinitions="@GetProcessedFormFields()"
@@ -265,6 +265,7 @@
     
     // 核心參數
     [Parameter] public int? Id { get; set; }
+    [Parameter] public EventCallback<int?> IdChanged { get; set; }
     [Parameter] public TEntity Entity { get; set; } = new();
     [Parameter] public TService Service { get; set; } = default!;
     
@@ -401,6 +402,7 @@
     private int? _lastId = null;
     private bool _lastVisible = false;
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
+    private bool _isNavigating = false;  // 標記是否正在執行導航操作
     private EditContext? editContext;
     
     // 審核狀態
@@ -423,6 +425,7 @@
     private int _autoCompleteVersion = 0;
     
     // 記錄導航狀態
+    private int? _currentId = null;  // 內部追蹤的當前 ID（支援導航時的 ID 變更）
     private int? _previousId = null;
     private int? _nextId = null;
     private int? _firstId = null;  // 第一筆記錄的 ID
@@ -467,6 +470,12 @@
     
     protected override async Task OnParametersSetAsync()
     {
+        // 同步 _currentId 與 Id（除非正在導航中）
+        if (!_isNavigating)
+        {
+            _currentId = Id;
+        }
+        
         // 只有當 Modal 顯示且 Id 參數真的變化時才重新載入
         if (IsVisible && !_lastVisible)
         {
@@ -552,7 +561,8 @@
             }
             
             // 載入實體資料
-            if (DataLoader != null)
+            // 🔑 關鍵修復：如果正在導航，跳過 DataLoader（Entity 已由 NavigateToRecordAsync 直接載入）
+            if (!_isNavigating && DataLoader != null)
             {
                 var loadedEntity = await DataLoader();
                 if (loadedEntity != null)
@@ -564,6 +574,11 @@
                     // 方案三：主動更新所有 ActionButtons，確保按鈕狀態與實體資料同步
                     UpdateAllActionButtons();
                 }
+            }
+            else if (_isNavigating)
+            {
+                // 導航模式：Entity 已由 NavigateToRecordAsync 載入，只需更新 ActionButtons
+                UpdateAllActionButtons();
             }
             
             // 載入狀態訊息資料
@@ -709,9 +724,9 @@
                 bool wasNewRecord = !Id.HasValue;
                 if (wasNewRecord && Entity != null && Entity.Id > 0)
                 {
-                    // 更新 Id 參數（觸發模式轉換）
-                    Id = Entity.Id;
+                    // 🔑 關鍵：先更新 _lastId，避免觸發 OnParametersSetAsync 的重複載入
                     _lastId = Entity.Id;
+                    Id = Entity.Id;
                     
                     // 重新載入所有資料（包含明細、狀態訊息、導航狀態等）
                     // 這確保了：
@@ -1791,7 +1806,10 @@
     /// </summary>
     private async Task LoadNavigationStateAsync()
     {
-        if (!EnableNavigation || !Id.HasValue || Service == null)
+        // 使用 _currentId（導航時的實際 ID）或 Id（參數）
+        var currentId = _currentId ?? Id;
+        
+        if (!EnableNavigation || !currentId.HasValue || Service == null)
         {
             _previousId = null;
             _nextId = null;
@@ -1813,7 +1831,7 @@
             // 載入上一筆 ID
             if (getPreviousMethod != null)
             {
-                var previousTask = getPreviousMethod.Invoke(Service, new object[] { Id.Value }) as Task<int?>;
+                var previousTask = getPreviousMethod.Invoke(Service, new object[] { currentId.Value }) as Task<int?>;
                 if (previousTask != null)
                 {
                     _previousId = await previousTask;
@@ -1823,7 +1841,7 @@
             // 載入下一筆 ID
             if (getNextMethod != null)
             {
-                var nextTask = getNextMethod.Invoke(Service, new object[] { Id.Value }) as Task<int?>;
+                var nextTask = getNextMethod.Invoke(Service, new object[] { currentId.Value }) as Task<int?>;
                 if (nextTask != null)
                 {
                     _nextId = await nextTask;
@@ -1953,12 +1971,16 @@
     {
         try
         {
+            // 🔑 關鍵修復：設置導航標記，防止 LoadAllData 呼叫 DataLoader 覆蓋資料
+            _isNavigating = true;
+            
             IsLoading = true;
             StateHasChanged();
             
-            // 更新 Id 參數
-            Id = targetId;
+            // 🔑 關鍵修復：使用內部變數 _currentId 追蹤導航後的 ID
+            // 因為 Id 是 [Parameter]，無法在組件內部直接修改
             _lastId = targetId;
+            _currentId = targetId;  // 使用內部變數追蹤
             
             // 使用 Service 直接載入新的實體資料（不依賴 DataLoader）
             if (Service != null)
@@ -1978,22 +2000,26 @@
                             Entity = loadedEntity;
                             editContext = new EditContext(Entity);
                             
-                            // 重新載入額外資料
-                            if (AdditionalDataLoader != null)
+                            // 🔑 觸發 IdChanged 事件，通知父組件 ID 已變更（雙向綁定）
+                            if (IdChanged.HasDelegate)
                             {
-                                await AdditionalDataLoader();
+                                await IdChanged.InvokeAsync(targetId);
                             }
                             
-                            // 遞增版本號，強制重新渲染表單（包括 AutoComplete 和自訂模組）
-                            _autoCompleteVersion++;
+                            // 🔑 重要：不需要遞增 _autoCompleteVersion
+                            // 因為 @key="@(Entity?.Id ?? 0)"，Entity.Id 變化時組件會自動重新創建
                             
-                            // 更新 ActionButtons
+                            // 🔑 重要：不呼叫 AdditionalDataLoader
+                            // 導航時資料已經載入，重複呼叫可能導致 JavaScript 重複初始化錯誤
+                            // AdditionalDataLoader 主要用於 Modal 首次開啟時載入選項資料
+                            
+                            // 更新 ActionButtons（基於新的 Entity 資料）
                             UpdateAllActionButtons();
                             
                             // 重新載入狀態訊息
                             await LoadStatusMessageData();
                             
-                            // 重新載入導航狀態
+                            // 重新載入導航狀態（基於新的 Id）
                             await LoadNavigationStateAsync();
                         }
                         else
@@ -2020,6 +2046,7 @@
         finally
         {
             IsLoading = false;
+            _isNavigating = false;  // 🔑 清除導航標記
             StateHasChanged();
         }
     }
