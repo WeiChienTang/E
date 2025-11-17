@@ -22,12 +22,18 @@
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       IsReadOnly="@IsReadOnly"
                                       OnItemDelete="@HandleItemDelete"
-                                      CssClass="mb-0" />
+                                      CssClass="mb-0"
+                                      EnableAutoEmptyRow="true"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      CreateEmptyItem="@CreateEmptyItem" />
         </div>
     </div>
 
 
 @code {
+    // ===== 私有欄位 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 基本參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
@@ -102,35 +108,19 @@
         // 特殊處理：當都是新增模式(null)但ExistingDetails已清空時，也要重置明細
         if (!SelectedInventoryStockId.HasValue && 
             (ExistingDetails == null || !ExistingDetails.Any()) && 
-            StockDetailItems.Any(item => !IsEmptyRow(item)))
+            StockDetailItems.Any(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0))
         {
             StockDetailItems.Clear();
             await LoadExistingDetailsAsync();
             return;
         }
-        
-        EnsureOneEmptyRow();
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    
-    private bool IsEmptyRow(StockDetailItem item)
-    {
-        return !item.SelectedWarehouseId.HasValue || item.SelectedWarehouseId.Value <= 0;
-    }
+    // ===== 建立空項目方法 =====
     
     private StockDetailItem CreateEmptyItem()
     {
         return new StockDetailItem();
-    }
-    
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.EnsureOneEmptyRow(
-            StockDetailItems, 
-            IsEmptyRow, 
-            CreateEmptyItem
-        );
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -283,7 +273,6 @@
     {
         if (ExistingDetails?.Any() != true) 
         {
-            EnsureOneEmptyRow();
             return;
         }
 
@@ -313,7 +302,6 @@
             StockDetailItems.Add(item);
         }
         
-        EnsureOneEmptyRow();
         await Task.CompletedTask;
     }
 
@@ -321,7 +309,7 @@
     {
         var details = new List<TDetailEntity>();
         
-        foreach (var item in StockDetailItems.Where(x => !IsEmptyRow(x)))
+        foreach (var item in StockDetailItems.Where(x => x.SelectedWarehouseId.HasValue && x.SelectedWarehouseId.Value > 0))
         {
             TDetailEntity detail;
             
@@ -421,8 +409,6 @@
 
     private async Task OnWarehouseChanged(StockDetailItem item, object? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         var warehouseIdStr = value?.ToString();
         if (string.IsNullOrEmpty(warehouseIdStr))
         {
@@ -435,17 +421,12 @@
             item.SelectedWarehouseLocationId = null;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnWarehouseLocationChanged(StockDetailItem item, object? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         var locationIdStr = value?.ToString();
         if (string.IsNullOrEmpty(locationIdStr))
         {
@@ -456,17 +437,12 @@
             item.SelectedWarehouseLocationId = locationId;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnCurrentStockInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.CurrentStock = 0;
@@ -476,17 +452,12 @@
             item.CurrentStock = stock;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnReservedStockInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.ReservedStock = 0;
@@ -496,17 +467,12 @@
             item.ReservedStock = stock;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnInTransitStockInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.InTransitStock = 0;
@@ -516,17 +482,12 @@
             item.InTransitStock = stock;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnAverageCostInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.AverageCost = null;
@@ -536,17 +497,12 @@
             item.AverageCost = cost;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnMinStockLevelInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.MinStockLevel = null;
@@ -556,17 +512,12 @@
             item.MinStockLevel = level;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnMaxStockLevelInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.MaxStockLevel = null;
@@ -576,20 +527,13 @@
             item.MaxStockLevel = level;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnBatchNumberInput(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
         item.BatchNumber = value ?? string.Empty;
-        
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -597,8 +541,6 @@
 
     private async Task OnBatchDateChanged(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.BatchDate = null;
@@ -608,17 +550,12 @@
             item.BatchDate = date;
         }
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnExpiryDateChanged(StockDetailItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.ExpiryDate = null;
@@ -627,9 +564,6 @@
         {
             item.ExpiryDate = date;
         }
-        
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleInputChange(
-            StockDetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -641,8 +575,7 @@
         
         var removedItem = StockDetailItems[index];
         
-        AutoEmptyRowHelper.ForAny<StockDetailItem>.HandleItemRemove(
-            StockDetailItems, removedItem, IsEmptyRow, CreateEmptyItem);
+        StockDetailItems.Remove(removedItem);
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -660,27 +593,27 @@
 
     private int GetValidItemCount()
     {
-        return StockDetailItems.Count(item => !IsEmptyRow(item));
+        return StockDetailItems.Count(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0);
     }
 
     private int GetTotalCurrentStock()
     {
         return StockDetailItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0)
             .Sum(item => item.CurrentStock);
     }
 
     private int GetTotalAvailableStock()
     {
         return StockDetailItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0)
             .Sum(item => item.CurrentStock - item.ReservedStock);
     }
 
     private int GetTotalInTransitStock()
     {
         return StockDetailItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0)
             .Sum(item => item.InTransitStock);
     }
 
@@ -688,14 +621,16 @@
     {
         var errors = new List<string>();
         
-        if (!AutoEmptyRowHelper.ForAny<StockDetailItem>.HasSufficientItems(StockDetailItems, IsEmptyRow, 1))
+        var nonEmptyItems = StockDetailItems
+            .Where(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0)
+            .ToList();
+        
+        if (nonEmptyItems.Count == 0)
         {
             errors.Add("至少需要一筆庫存明細");
         }
         else
         {
-            var nonEmptyItems = AutoEmptyRowHelper.ForAny<StockDetailItem>.GetNonEmptyItems(StockDetailItems, IsEmptyRow);
-            
             // 檢查是否有重複的倉庫+庫位組合
             var duplicates = nonEmptyItems
                 .GroupBy(item => new { item.SelectedWarehouseId, item.SelectedWarehouseLocationId })
@@ -743,7 +678,6 @@
     private async Task ClearAllDetails()
     {
         StockDetailItems.Clear();
-        EnsureOneEmptyRow();
         
         await OnStockDetailItemsChanged.InvokeAsync(StockDetailItems);
         await NotifyDetailsChanged();
@@ -756,7 +690,9 @@
     /// </summary>
     public (bool HasDuplicates, List<string> DuplicateInfo) CheckForDuplicates()
     {
-        var nonEmptyItems = StockDetailItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = StockDetailItems
+            .Where(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0)
+            .ToList();
         
         var duplicates = nonEmptyItems
             .GroupBy(item => new { item.SelectedWarehouseId, item.SelectedWarehouseLocationId })
@@ -796,7 +732,9 @@
     {
         try
         {
-            var nonEmptyItems = StockDetailItems.Where(item => !IsEmptyRow(item)).ToList();
+            var nonEmptyItems = StockDetailItems
+                .Where(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0)
+                .ToList();
             
             // 找出所有重複的組合
             var groupedItems = nonEmptyItems
@@ -845,7 +783,6 @@
             {
                 StockDetailItems.Clear();
                 StockDetailItems.AddRange(mergedItems);
-                EnsureOneEmptyRow();
                 
                 await NotifyDetailsChanged();
                 StateHasChanged();

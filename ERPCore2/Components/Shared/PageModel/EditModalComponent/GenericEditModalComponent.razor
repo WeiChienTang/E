@@ -344,6 +344,12 @@
     [Parameter] public EventCallback OnPrint { get; set; }
     [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
     
+    /// <summary>
+    /// 實體載入完成事件（導航切換時觸發）
+    /// 參數為已載入的實體 ID，用於通知父組件重新載入相關資料（如明細）
+    /// </summary>
+    [Parameter] public EventCallback<int> OnEntityLoaded { get; set; }
+    
     // === 通用刪除功能相關參數 ===
     [Parameter] public Func<TEntity, string> GetEntityDisplayName { get; set; } = entity => entity.Id.ToString();
     [Parameter] public string DeleteSuccessMessage { get; set; } = "";
@@ -2023,6 +2029,12 @@
                             
                             // 重新載入導航狀態（基於新的 Id）
                             await LoadNavigationStateAsync();
+                            
+                            // 🔑 新增：觸發實體載入完成事件，通知父組件重新載入明細資料
+                            if (OnEntityLoaded.HasDelegate)
+                            {
+                                await OnEntityLoaded.InvokeAsync(targetId);
+                            }
                             
                             // 🔑 優化：所有資料更新完成後，只觸發一次 UI 重繪
                             StateHasChanged();

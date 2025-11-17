@@ -41,7 +41,8 @@ else
     
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="SalesItem" 
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="SalesItem" 
                                       Items="SalesItems"
                                       ColumnDefinitions="GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -51,7 +52,10 @@ else
                                       ShowBuiltInDeleteButton="false"
                                       CustomActionsTemplate="GetCustomActionsTemplate"
                                       ActionsColumnWidth = "60px"
-                                      OnItemDelete="HandleItemDelete"/>
+                                      OnItemDelete="HandleItemDelete"
+                                      EnableAutoEmptyRow="true"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      CreateEmptyItem="@(() => new SalesItem())"/>
         </div>
 
         <div class="card-footer">
@@ -84,6 +88,12 @@ else
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<SalesItem>? tableComponent;
+    
+    // ===== 資料載入完成標記 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<SalesItem>> OnSalesItemsChanged { get; set; }
@@ -179,7 +189,7 @@ else
     private bool HasLockedDetails()
     {
         return SalesItems.Any(item => 
-            !IsEmptyRow(item) && 
+            item.SelectedProduct != null &&
             (HasReturnRecord(item) || HasPaymentRecord(item)));
     }
     
@@ -192,7 +202,7 @@ else
             return 0;
         
         return SalesItems
-            .Where(item => !IsEmptyRow(item) && 
+            .Where(item => item.SelectedProduct != null &&
                           item.SourceQuotationId.HasValue &&
                           !(item.IsQuotationApproved ?? false))
             .Count();
@@ -385,7 +395,7 @@ else
     private bool HasUndeletableDetails()
     {
         return SalesItems.Any(item => 
-            !IsEmptyRow(item) && !CanDeleteItem(item, out _));
+            item.SelectedProduct != null && !CanDeleteItem(item, out _));
     }
 
     /// <summary>
@@ -400,26 +410,8 @@ else
         }
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    private bool IsEmptyRow(SalesItem item)
-    {
-        return item.SelectedProduct == null;
-    }
+    // ===== 建立空項目方法 =====
     
-    private SalesItem CreateEmptyItem()
-    {
-        return new SalesItem();
-    }
-    
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.ForAny<SalesItem>.EnsureOneEmptyRow(
-            SalesItems, 
-            IsEmptyRow, 
-            CreateEmptyItem
-        );
-    }
-
     private Task LoadAvailableProductsAsync()
     {
         try
@@ -445,14 +437,26 @@ else
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadExistingDetailsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
+    }
+    
     private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
-            EnsureOneEmptyRow();
             return;
         }
 
+        // 🔑 開始載入資料
+        _dataLoadCompleted = false;
+        
         SalesItems.Clear();
         
         foreach (var detail in ExistingDetails)
@@ -556,14 +560,16 @@ else
         // 載入所有項目的庫存量（已在上面單獨處理，這裡可以移除或保留作為備用）
         // await LoadAllStockQuantitiesAsync();
         
-        EnsureOneEmptyRow();
+        // 🔑 資料載入完成
+        _dataLoadCompleted = true;
+        StateHasChanged();
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()
     {
         var details = new List<TDetailEntity>();
         
-        foreach (var item in SalesItems.Where(x => !IsEmptyRow(x) && x.SelectedProduct != null))
+        foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
         {
             TDetailEntity detail;
             
@@ -1159,7 +1165,7 @@ else
     private decimal GetTotalAmount()
     {
         return SalesItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.SelectedProduct != null)
             .Sum(item => item.Subtotal);
     }
 
@@ -1237,8 +1243,6 @@ else
             return;
         }
         
-        var wasEmpty = IsEmptyRow(item);
-        
         var productIdStr = value?.ToString();
         if (string.IsNullOrEmpty(productIdStr))
         {
@@ -1267,10 +1271,6 @@ else
             }
         }
         
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
@@ -1288,8 +1288,6 @@ else
             return;
         }
         
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.OrderQuantity = 0;
@@ -1300,9 +1298,6 @@ else
         }
         
         item.CalculateSubtotal();
-        
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -1321,8 +1316,6 @@ else
             return;
         }
         
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.UnitPrice = 0;
@@ -1333,9 +1326,6 @@ else
         }
         
         item.CalculateSubtotal();
-        
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -1354,8 +1344,6 @@ else
             return;
         }
         
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrEmpty(value))
         {
             item.DiscountPercentage = 0;
@@ -1368,9 +1356,6 @@ else
         
         // 重新計算小計（會根據折扣百分比計算）
         item.CalculateSubtotal();
-        
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         // 通知父組件資料已變更（這會觸發 HandleDetailsChanged）
         await NotifyDetailsChanged();
@@ -1389,8 +1374,6 @@ else
             await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
             return;
         }
-        
-        var wasEmpty = IsEmptyRow(item);
         
         if (value == null || !int.TryParse(value.ToString(), out int detailId))
         {
@@ -1413,20 +1396,13 @@ else
             }
         }
         
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnRemarksInput(SalesItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
         item.DetailRemarks = value ?? string.Empty;
-        
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleInputChange(
-            SalesItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -1454,8 +1430,7 @@ else
             await OnItemRemoved.InvokeAsync(removedItem);
         }
         
-        AutoEmptyRowHelper.ForAny<SalesItem>.HandleItemRemove(
-            SalesItems, removedItem, IsEmptyRow, CreateEmptyItem);
+        SalesItems.RemoveAt(index);
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -1516,7 +1491,7 @@ else
     {
         var tasks = new List<Task>();
         
-        foreach (var item in SalesItems.Where(x => !IsEmptyRow(x)))
+        foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
         {
             if (item.SelectedProduct != null && item.SelectedWarehouse != null)
             {
@@ -1543,7 +1518,7 @@ else
         
         try
         {
-            var nonEmptyItems = SalesItems.Where(item => !IsEmptyRow(item)).ToList();
+            var nonEmptyItems = SalesItems.Where(item => item.SelectedProduct != null).ToList();
             
             if (!nonEmptyItems.Any())
             {
@@ -1588,9 +1563,6 @@ else
                 SalesItems.Remove(item);
             }
             
-            // 確保有一個空行
-            EnsureOneEmptyRow();
-            
             await NotifyDetailsChanged();
             
             var message = $"已移除 {unlocked.Count} 項明細";
@@ -1617,7 +1589,7 @@ else
         try
         {
             // 檢查是否有現有資料
-            var hasExistingData = SalesItems.Any(item => !IsEmptyRow(item));
+            var hasExistingData = SalesItems.Any(item => item.SelectedProduct != null);
             
             if (hasExistingData)
             {
@@ -1660,9 +1632,6 @@ else
             
             // 載入所有項目的庫存量
             await LoadAllStockQuantitiesAsync();
-
-            // 確保有空行
-            EnsureOneEmptyRow();
             
             await NotifyDetailsChanged();
             await NotificationService.ShowSuccessAsync($"已載入 {lastSalesDetails.Count} 項商品作為參考", "智能下單完成");
@@ -1734,13 +1703,10 @@ else
                 SalesItems.Add(salesItem);
             }
             
-            // 確保有空行
-            EnsureOneEmptyRow();
-            
             await NotifyDetailsChanged();
             
             // 計算實際載入的明細數量
-            var loadedCount = SalesItems.Count(item => !IsEmptyRow(item));
+            var loadedCount = SalesItems.Count(item => item.SelectedProduct != null);
             if (loadedCount > 0)
             {
                 await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 項未轉完的報價明細", "載入成功");
@@ -1784,7 +1750,8 @@ else
     {
         var errors = new List<string>();
         
-        if (!AutoEmptyRowHelper.ForAny<SalesItem>.HasSufficientItems(SalesItems, IsEmptyRow, 1))
+        // 檢查是否至少有一項非空明細
+        if (!SalesItems.Any(item => item.SelectedProduct != null))
         {
             errors.Add("至少需要一項銷貨明細");
         }
@@ -1794,7 +1761,7 @@ else
             if (IsApprovalEnabled)
             {
                 var unapprovedItems = SalesItems
-                    .Where(item => !IsEmptyRow(item) && 
+                    .Where(item => item.SelectedProduct != null &&
                                   item.SourceQuotationId.HasValue &&
                                   !(item.IsQuotationApproved ?? false))
                     .ToList();
@@ -1806,7 +1773,7 @@ else
             }
             
             var lineNumber = 1;
-            foreach (var item in SalesItems.Where(x => !IsEmptyRow(x)))
+            foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
             {
                 if (item.SelectedProduct == null)
                 {

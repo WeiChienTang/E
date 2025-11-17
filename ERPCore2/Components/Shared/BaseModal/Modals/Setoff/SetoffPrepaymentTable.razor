@@ -18,7 +18,10 @@
                                 ShowBuiltInDeleteButton="false"
                                 CustomActionsTemplate="@GetCustomActionsTemplate"
                                 OnItemDelete="@HandleRemovePrepaymentRecord"
-                                ActionsColumnWidth = "60px" />
+                                ActionsColumnWidth = "60px"
+                                EnableAutoEmptyRow="true"
+                                DataLoadCompleted="@_dataLoadCompleted"
+                                CreateEmptyItem="@CreateEmptyItem" />
 </div>
 
 <!-- 相關單據查看 Modal -->
@@ -30,6 +33,9 @@
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
+    // ===== 私有欄位 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 參數定義 =====
     [Parameter] public int? SetoffDocumentId { get; set; }
     [Parameter] public int? CustomerId { get; set; }
@@ -69,7 +75,7 @@
     /// 取得總金額（預收/預付類型的 Amount + 轉沖款類型的 UsedAmount）
     /// </summary>
     private decimal TotalUsedAmount => PrepaymentItems
-        .Where(p => !IsEmptyRow(p))
+        .Where(p => p.PrepaymentTypeId.HasValue && p.PrepaymentTypeId.Value > 0)
         .Sum(p =>
         {
             // 判斷是否為轉沖款類型
@@ -122,27 +128,10 @@
             _previousExistingPrepaymentsCount = currentCount;
         }
         
-        // 總是確保有一行空行可以輸入（這不會覆蓋現有資料）
-        EnsureOneEmptyRow();
-        
         await base.OnParametersSetAsync();
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    
-    /// <summary>
-    /// 檢查是否為空行
-    /// 業務邏輯：只要選擇了預收付類型，就算是有效的一行，不再是空行
-    /// </summary>
-    private bool IsEmptyRow(SetoffPrepaymentItem item)
-    {
-        // 檢查預收付類型是否為空（null 或 0 都算空）
-        var isEmpty = !item.PrepaymentTypeId.HasValue || item.PrepaymentTypeId.Value <= 0;
-        
-        // 只要預收付類型有值（大於0），就不是空行
-        // 預收付類型是核心欄位，其他欄位可以後續填寫
-        return isEmpty;
-    }
+    // ===== 建立空項目方法 =====
     
     /// <summary>
     /// 創建空的預收付款項記錄項目
@@ -160,21 +149,6 @@
             Remarks = null,
             ExistingPrepayment = null
         };
-    }
-    
-    /// <summary>
-    /// 確保有一行空行
-    /// </summary>
-    private void EnsureOneEmptyRow()
-    {
-        // 確保有一行空行可以輸入
-        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.EnsureOneEmptyRow(
-            PrepaymentItems, 
-            IsEmptyRow, 
-            CreateEmptyItem, 
-            null, 
-            SetoffDocumentId ?? 0
-        );
     }
 
     // ===== 資料載入方法 =====
@@ -359,7 +333,6 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPrepaymentItem)itemObj;
-                    var wasEmpty = IsEmptyRow(item);
                     
                     if (value != null && int.TryParse(value.ToString(), out int typeId) && typeId > 0)
                     {
@@ -383,10 +356,6 @@
                         item.Amount = 0;
                         item.UsedAmount = 0;
                     }
-                    
-                    // 使用 AutoEmptyRowHelper 處理自動空行
-                    AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
-                        PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, null, SetoffDocumentId ?? 0);
                     
                     await NotifyPrepaymentsChanged();
                     StateHasChanged();
@@ -608,13 +577,8 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPrepaymentItem)itemObj;
-                    var wasEmpty = IsEmptyRow(item);
                     
                     item.Remarks = value;
-                    
-                    // 使用 AutoEmptyRowHelper 處理自動空行
-                    AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
-                        PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, null, SetoffDocumentId ?? 0);
                     
                     // 備註變更時也需要通知父組件，以便正確追蹤變更
                     await NotifyPrepaymentsChanged();
@@ -713,9 +677,7 @@
     {
         if (IsReadOnly) return;
         
-        // 使用 AutoEmptyRowHelper 處理移除，自動確保空行
-        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleItemRemove(
-            PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, null, SetoffDocumentId ?? 0);
+        PrepaymentItems.Remove(item);
         
         await NotificationService.ShowInfoAsync("已移除預收付款項記錄");
         await NotifyPrepaymentsChanged();
@@ -724,8 +686,6 @@
 
     private async Task OnAmountInput(SetoffPrepaymentItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         // 判斷是否為轉沖款類型
         bool isTransferType = false;
         if (item.PrepaymentTypeId.HasValue)
@@ -807,10 +767,6 @@
             }
         }
         
-        // 使用 AutoEmptyRowHelper 處理自動空行
-        AutoEmptyRowHelper.For<SetoffPrepaymentItem>.HandleInputChangeAdvanced(
-            PrepaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, null, SetoffDocumentId ?? 0);
-        
         await NotifyPrepaymentsChanged();
         StateHasChanged();
     }
@@ -820,7 +776,7 @@
         // 只傳遞非空行的預收付款項記錄
         // ✅ 修正：直接使用 item 的欄位值，不要從 AvailablePrepayments 重新查詢，避免資料被覆蓋
         var prepayments = PrepaymentItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.PrepaymentTypeId.HasValue && item.PrepaymentTypeId.Value > 0)
             .Select(item => new SetoffPrepayment
             {
                 // 統一使用 ExistingPrepayment?.Id，與 SetoffPaymentTable 保持一致
@@ -860,7 +816,9 @@
     {
         var errors = new List<string>();
         
-        var nonEmptyItems = PrepaymentItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = PrepaymentItems
+            .Where(item => item.PrepaymentTypeId.HasValue && item.PrepaymentTypeId.Value > 0)
+            .ToList();
         
         foreach (var item in nonEmptyItems)
         {

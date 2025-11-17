@@ -56,6 +56,7 @@
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           OnPrint="@HandlePrint"
+                          OnEntityLoaded="@HandleEntityLoaded"
                           >
 
 </GenericEditModalComponent>
@@ -858,6 +859,33 @@
     }
 
     // ===== 銷貨明細管理方法 =====
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時，重新載入對應的明細資料
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 重新載入明細資料
+            await LoadSalesOrderDetails(loadedEntityId);
+            
+            // 觸發 Table 元件刷新
+            if (salesOrderDetailManager != null)
+            {
+                await salesOrderDetailManager.RefreshDetailsAsync();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
+    }
     
     /// <summary>
     /// 載入銷貨訂單明細

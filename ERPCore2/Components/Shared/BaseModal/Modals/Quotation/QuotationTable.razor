@@ -28,7 +28,10 @@ else
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
-                                      ActionsColumnWidth = "60px"/>
+                                      ActionsColumnWidth = "60px"
+                                      EnableAutoEmptyRow="true"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      CreateEmptyItem="@CreateEmptyItem" />
         </div>
 
         <div class="card-footer">
@@ -51,6 +54,9 @@ else
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
+    // ===== 私有欄位 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public List<Unit> Units { get; set; } = new List<Unit>();
@@ -97,7 +103,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadExistingDetailsAsync();
-        EnsureOneEmptyRow();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -117,29 +122,13 @@ else
             await LoadExistingDetailsAsync();
             return;
         }
-        
-        // 總是確保有一行空行可以輸入
-        EnsureOneEmptyRow();
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    private bool IsEmptyRow(QuotationItem item)
-    {
-        return item.SelectedProduct == null;
-    }
+    // ===== 建立空項目方法 =====
     
     private QuotationItem CreateEmptyItem()
     {
         return new QuotationItem();
-    }
-    
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.ForAny<QuotationItem>.EnsureOneEmptyRow(
-            QuotationItems, 
-            IsEmptyRow, 
-            CreateEmptyItem
-        );
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -159,7 +148,7 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var selectedValue = quotationItem.SelectedProduct?.Id.ToString() ?? "";
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
                 var isFieldReadOnly = IsReadOnly || (!canDelete && !isEmptyRow);
                 
@@ -202,7 +191,7 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var selectedUnitId = quotationItem.SelectedUnit?.Id.ToString() ?? "";
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
                 var isFieldReadOnly = IsReadOnly || (!canDelete && !isEmptyRow);
                 
@@ -243,13 +232,13 @@ else
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改數量";
                 return "輸入報價數量";
@@ -274,13 +263,13 @@ else
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改單價";
                 return "輸入報價單價";
@@ -306,13 +295,13 @@ else
             IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var isEmptyRow = IsEmptyRow(quotationItem);
+                var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改折扣";
                 return "輸入折扣百分比";
@@ -379,7 +368,7 @@ else
     private RenderFragment<QuotationItem> GetCustomActionsTemplate => item => __builder =>
     {
         var quotationItem = (QuotationItem)item;
-        var isEmptyRow = IsEmptyRow(quotationItem);
+        var isEmptyRow = quotationItem.SelectedProduct == null;
         var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
         
         if (IsReadOnly)
@@ -498,7 +487,6 @@ else
     {
         if (ExistingDetails?.Any() != true) 
         {
-            EnsureOneEmptyRow();
             return Task.CompletedTask;
         }
 
@@ -560,7 +548,6 @@ else
             }
         }
         
-        EnsureOneEmptyRow();
         return Task.CompletedTask;
     }
 
@@ -569,8 +556,7 @@ else
         var details = new List<TDetailEntity>();
         
         // 只處理非空行、有選擇商品且數量大於 0 的項目
-        foreach (var item in QuotationItems.Where(x => !IsEmptyRow(x) && 
-                                                        x.SelectedProduct != null &&
+        foreach (var item in QuotationItems.Where(x => x.SelectedProduct != null &&
                                                         x.Quantity > 0))
         {
             TDetailEntity detail;
@@ -698,10 +684,8 @@ else
     {
         // 檢查全域唯讀或個別明細已轉銷貨
         var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = IsEmptyRow(item);
+        var isEmptyRow = item.SelectedProduct == null;
         if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
-        
-        var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(productIdStr) || !int.TryParse(productIdStr, out var productId))
         {
@@ -723,10 +707,6 @@ else
             }
         }
         
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
-            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
@@ -735,10 +715,8 @@ else
     {
         // 檢查全域唯讀或個別明細已轉銷貨
         var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = IsEmptyRow(item);
+        var isEmptyRow = item.SelectedProduct == null;
         if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
-        
-        var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(unitIdStr) || !int.TryParse(unitIdStr, out var unitId))
         {
@@ -749,9 +727,6 @@ else
             item.SelectedUnit = Units.FirstOrDefault(u => u.Id == unitId);
         }
         
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
-            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
@@ -760,10 +735,8 @@ else
     {
         // 檢查全域唯讀或個別明細已轉銷貨
         var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = IsEmptyRow(item);
+        var isEmptyRow = item.SelectedProduct == null;
         if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
-        
-        var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
         {
@@ -774,9 +747,6 @@ else
             item.Quantity = quantity;
         }
         
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
-            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
@@ -785,10 +755,8 @@ else
     {
         // 檢查全域唯讀或個別明細已轉銷貨
         var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = IsEmptyRow(item);
+        var isEmptyRow = item.SelectedProduct == null;
         if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
-        
-        var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
         {
@@ -799,9 +767,6 @@ else
             item.UnitPrice = unitPrice;
         }
         
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
-            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
@@ -810,10 +775,8 @@ else
     {
         // 檢查全域唯讀或個別明細已轉銷貨
         var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = IsEmptyRow(item);
+        var isEmptyRow = item.SelectedProduct == null;
         if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
-        
-        var wasEmpty = IsEmptyRow(item);
         
         if (string.IsNullOrEmpty(value))
         {
@@ -833,20 +796,13 @@ else
             }
         }
         
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
-            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
 
     private async Task OnRemarksInput(QuotationItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
         item.Remarks = value ?? string.Empty;
-        
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleInputChange(
-            QuotationItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(item));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -881,8 +837,7 @@ else
             await OnItemRemoved.InvokeAsync(removedItem);
         }
         
-        AutoEmptyRowHelper.ForAny<QuotationItem>.HandleItemRemove(
-            QuotationItems, removedItem, IsEmptyRow, CreateEmptyItem);
+        QuotationItems.Remove(removedItem);
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -911,7 +866,7 @@ else
     private async Task ClearAllDetails()
     {
         // 只清除未轉銷貨的項目
-        var nonEmptyItems = QuotationItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = QuotationItems.Where(item => item.SelectedProduct != null).ToList();
         var itemsToRemove = nonEmptyItems.Where(item => item.ConvertedQuantity == 0).ToList();
         var convertedItems = nonEmptyItems.Where(item => item.ConvertedQuantity > 0).ToList();
         
@@ -953,9 +908,6 @@ else
             QuotationItems.Remove(item);
         }
         
-        // 確保有一個空行
-        EnsureOneEmptyRow();
-        
         await NotifyDetailsChanged();
         
         var message = $"已清除 {itemsToRemove.Count} 項明細";
@@ -970,14 +922,16 @@ else
     {
         var errors = new List<string>();
         
-        if (!AutoEmptyRowHelper.ForAny<QuotationItem>.HasSufficientItems(QuotationItems, IsEmptyRow, 1))
+        var nonEmptyItems = QuotationItems
+            .Where(item => item.SelectedProduct != null)
+            .ToList();
+        
+        if (nonEmptyItems.Count == 0)
         {
             errors.Add("至少需要一個報價商品");
         }
         else
         {
-            var nonEmptyItems = AutoEmptyRowHelper.ForAny<QuotationItem>.GetNonEmptyItems(QuotationItems, IsEmptyRow);
-            
             // 檢查是否有選擇商品
             var itemsWithoutProduct = nonEmptyItems.Where(item => item.SelectedProduct == null).ToList();
             if (itemsWithoutProduct.Any())

@@ -51,7 +51,8 @@
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
                           ShowPrintButton="true"
-                          OnPrint="@HandlePrint" />
+                          OnPrint="@HandlePrint"
+                          OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"
@@ -104,6 +105,49 @@
     // ===== 退貨明細 =====
     private List<PurchaseReturnDetail> purchaseReturnDetails = new();
     private PurchaseReturnTable? purchaseReturnDetailManager;
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時，重新載入對應的明細資料
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 1. 從 Service 直接載入完整實體（含明細）
+            var purchaseReturn = await PurchaseReturnService.GetWithDetailsAsync(loadedEntityId);
+            if (purchaseReturn?.PurchaseReturnDetails != null)
+            {
+                purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
+            }
+            else
+            {
+                purchaseReturnDetails = new List<PurchaseReturnDetail>();
+            }
+            
+            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
+            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
+            StateHasChanged();
+            
+            // 2. 載入明細相關資料（沖款記錄）並檢查不可刪除狀態
+            await LoadDetailRelatedDataAsync();
+            
+            // 3. 觸發 Table 元件刷新（此時 ExistingReturnDetails 已經是新的資料）
+            if (purchaseReturnDetailManager != null)
+            {
+                await purchaseReturnDetailManager.RefreshDetailsAsync();
+            }
+            
+            // 4. 最後再次更新 UI（確保所有變更都反映在畫面上）
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
+    }
     
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;

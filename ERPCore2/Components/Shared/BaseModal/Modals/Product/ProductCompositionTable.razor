@@ -16,13 +16,17 @@
                                   EmptyMessage="@EmptyMessage"
                                   ShowBuiltInActions="true"
                                   ShowBuiltInDeleteButton="true"
-                                  OnItemDelete="@HandleItemDelete" />
+                                  OnItemDelete="@HandleItemDelete"
+                                  EnableAutoEmptyRow="true"
+                                  DataLoadCompleted="@_dataLoadCompleted"
+                                  CreateEmptyItem="@CreateEmptyItem" />
     </div>
 </div>
 
 @code {
     // ===== 私有欄位 =====
     private readonly HashSet<int> _deletedDetailIds = new HashSet<int>();
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
 
     // ===== 基本參數 =====
     [Parameter] public List<ProductCompositionDetail> Items { get; set; } = new();
@@ -51,9 +55,6 @@
         
         // 載入可用的產品和單位清單
         await LoadAvailableDataAsync();
-        
-        // 總是確保有一行空行可以輸入
-        EnsureOneEmptyRow();
     }
 
     // ===== 資料載入 =====
@@ -77,21 +78,7 @@
         }
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    
-    /// <summary>
-    /// 檢查是否為空行
-    /// 業務邏輯：只要選擇了材料產品，就算是有效的一行，不再是空行
-    /// </summary>
-    private bool IsEmptyRow(ProductCompositionDetail item)
-    {
-        // 檢查材料產品ID是否為空（null 或 0 都算空）
-        var isEmpty = item.ComponentProductId <= 0;
-        
-        // 只要材料產品有值（大於0），就不是空行
-        // 材料產品是核心欄位，其他欄位可以後續填寫
-        return isEmpty;
-    }
+    // ===== 建立空項目方法 =====
     
     /// <summary>
     /// 創建空的明細項目
@@ -107,20 +94,6 @@
         };
         return newItem;
     }
-    
-    /// <summary>
-    /// 確保有一行空行
-    /// </summary>
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.For<ProductCompositionDetail>.EnsureOneEmptyRow(
-            Items, 
-            IsEmptyRow, 
-            CreateEmptyItem, 
-            (item, parentId) => item.ProductCompositionId = parentId,
-            ParentEntityId
-        );
-    }
 
     // ===== InteractiveTableComponent 方法 =====
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
@@ -133,23 +106,18 @@
                 Title = "材料名稱", 
                 Tooltip = "選擇配方所需的材料或半成品",
                 PropertyName = nameof(ProductCompositionDetail.ComponentProductId),
-                ColumnType = InteractiveColumnType.Custom,
-                CustomTemplate = item => 
+                TriggerEmptyRowOnFilled = true,  // 設定為觸發欄位
+                ColumnType = InteractiveColumnType.Select,
+                Options = AvailableProducts.Select(p => new InteractiveSelectOption 
+                { 
+                    Value = p.Id.ToString(), 
+                    Text = GetProductDisplayText(p) 
+                }).ToList(),
+                Placeholder = "請選擇材料",
+                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
                 {
-                    var detail = (ProductCompositionDetail)item;
-                    var selectedValue = detail.ComponentProductId > 0 ? detail.ComponentProductId.ToString() : "";
-                    
-                    return @<select class="form-select" 
-                                    value="@selectedValue"
-                                    disabled="@IsReadOnly"
-                                    @onchange="@(async (e) => await OnProductChanged((detail, e.Value)))">
-                        <option value="">請選擇材料</option>
-                        @foreach (var product in AvailableProducts)
-                        {
-                            <option value="@product.Id">@GetProductDisplayText(product)</option>
-                        }
-                    </select>;
-                }
+                    await OnProductChanged(args);
+                })
             },
             
             // 所需數量 - 數字輸入
@@ -216,12 +184,11 @@
     private async Task OnProductChanged((object item, object? value) args)
     {
         var detail = (ProductCompositionDetail)args.item;
-        var wasEmpty = IsEmptyRow(detail);
     
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
         {
             // 檢查是否已存在相同材料
-            var existingProductIds = Items.Where(i => i != detail && !IsEmptyRow(i)).Select(i => i.ComponentProductId);
+            var existingProductIds = Items.Where(i => i != detail && i.ComponentProductId > 0).Select(i => i.ComponentProductId);
             if (existingProductIds.Any(id => id == productId))
             {
                 await NotificationService.ShowErrorAsync("此材料已存在，請選擇其他材料");
@@ -238,11 +205,6 @@
                     detail.UnitId = selectedProduct.UnitId;
                 }
                 
-                // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-                AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
-                    Items, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, 
-                    (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
-                
                 await ItemsChanged.InvokeAsync(Items);
             }
         }
@@ -257,7 +219,6 @@
     private async Task OnQuantityChanged((object item, string? value) args)
     {
         var detail = (ProductCompositionDetail)args.item;
-        var wasEmpty = IsEmptyRow(detail);
         
         if (!string.IsNullOrWhiteSpace(args.value) && decimal.TryParse(args.value, out var quantity))
         {
@@ -268,14 +229,6 @@
             detail.Quantity = 0;
         }
         
-        // 數量變更時，不需要重新計算 ComponentCost（單位成本），
-        // 因為顯示時會自動用 ComponentCost × Quantity 計算總成本
-        
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
-            Items, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, 
-            (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
-        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -283,7 +236,6 @@
     private async Task OnUnitChanged((object item, object? value) args)
     {
         var detail = (ProductCompositionDetail)args.item;
-        var wasEmpty = IsEmptyRow(detail);
         
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var unitId) && unitId > 0)
         {
@@ -293,11 +245,6 @@
         {
             detail.UnitId = null;
         }
-        
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleInputChangeAdvanced(
-            Items, detail, IsEmptyRow, CreateEmptyItem, wasEmpty, 
-            (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
         
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
@@ -316,10 +263,7 @@
             _deletedDetailIds.Add(removedItem.Id);
         }
         
-        // 使用 Helper 處理移除，自動確保空行
-        AutoEmptyRowHelper.For<ProductCompositionDetail>.HandleItemRemove(
-            Items, removedItem, IsEmptyRow, CreateEmptyItem, 
-            (item, parentId) => item.ProductCompositionId = parentId, ParentEntityId);
+        Items.Remove(removedItem);
         
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
@@ -334,16 +278,15 @@
     {
         var errors = new List<string>();
         
-        // 使用 Helper 檢查是否有足夠的非空項目
-        if (!AutoEmptyRowHelper.For<ProductCompositionDetail>.HasSufficientItems(Items, IsEmptyRow, 1))
+        // 取得非空的項目
+        var nonEmptyItems = Items.Where(item => item.ComponentProductId > 0).ToList();
+        
+        if (!nonEmptyItems.Any())
         {
             errors.Add("至少需要一個材料");
         }
         else
         {
-            // 取得非空的項目進行檢查
-            var nonEmptyItems = AutoEmptyRowHelper.For<ProductCompositionDetail>.GetNonEmptyItems(Items, IsEmptyRow);
-            
             // 檢查重複材料
             var productIds = nonEmptyItems.Select(item => item.ComponentProductId).ToList();
             if (productIds.Count != productIds.Distinct().Count())
@@ -386,7 +329,7 @@
     /// </summary>
     public List<ProductCompositionDetail> GetNonEmptyItems()
     {
-        return AutoEmptyRowHelper.For<ProductCompositionDetail>.GetNonEmptyItems(Items, IsEmptyRow);
+        return Items.Where(item => item.ComponentProductId > 0).ToList();
     }
     
     /// <summary>

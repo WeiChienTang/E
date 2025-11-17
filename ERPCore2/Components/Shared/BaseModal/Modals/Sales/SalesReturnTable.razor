@@ -24,7 +24,8 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="ReturnItem" 
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="ReturnItem" 
                                       Items="@ReturnItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -33,7 +34,10 @@ else
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"     
-                                      ActionsColumnWidth = "60px"/>
+                                      ActionsColumnWidth = "60px"
+                                      EnableAutoEmptyRow="true"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      CreateEmptyItem="@(() => new ReturnItem())"/>
         </div>
 
         <div class="card-footer">
@@ -75,6 +79,12 @@ else
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<ReturnItem>? tableComponent;
+    
+    // ===== 資料載入完成標記 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ReturnItem>> OnReturnItemsChanged { get; set; }
@@ -157,14 +167,13 @@ else
     private bool HasLockedDetails()
     {
         return ReturnItems.Any(item => 
-            !IsEmptyRow(item) && HasPaymentRecord(item));
+            item.SelectedProduct != null && HasPaymentRecord(item));
     }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAvailableProductsAsync();
         LoadExistingDetailsAsync();
-        EnsureOneEmptyRow();
         
         // 🔑 初始化後通知父組件是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();
@@ -204,29 +213,17 @@ else
             StateHasChanged();
             return;
         }
-        
-        // 總是確保有一行空行可以輸入，不論是否已有資料
-        EnsureOneEmptyRow();
-    }
-
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    private bool IsEmptyRow(ReturnItem item)
-    {
-        return item.SelectedOrderDetail == null && item.SelectedProduct == null;
     }
     
-    private ReturnItem CreateEmptyItem()
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
     {
-        return new ReturnItem();
-    }
-    
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.ForAny<ReturnItem>.EnsureOneEmptyRow(
-            ReturnItems, 
-            IsEmptyRow, 
-            CreateEmptyItem
-        );
+        await LoadAvailableProductsAsync();
+        LoadExistingDetailsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
 
     // ===== 沖款記錄檢查方法 =====
@@ -290,7 +287,7 @@ else
     private bool HasUndeletableDetails()
     {
         return ReturnItems.Any(item => 
-            !IsEmptyRow(item) && !CanDeleteItem(item, out _));
+            item.SelectedProduct != null && !CanDeleteItem(item, out _));
     }
 
     /// <summary>
@@ -655,10 +652,12 @@ else
         if (ExistingReturnDetails?.Any() != true) 
         {
             ReturnItems.Clear();
-            EnsureOneEmptyRow();
             return;
         }
 
+        // 🔑 開始載入資料
+        _dataLoadCompleted = false;
+        
         ReturnItems.Clear();
         
         foreach (var detail in ExistingReturnDetails)
@@ -684,7 +683,9 @@ else
             ReturnItems.Add(item);
         }
         
-        EnsureOneEmptyRow();
+        // 🔑 資料載入完成
+        _dataLoadCompleted = true;
+        StateHasChanged();
     }
 
     private List<SalesOrderDetail> GetAvailableOrderDetails()
@@ -731,8 +732,6 @@ else
 
     private async Task OnOrderDetailChanged(ReturnItem returnItem, object? value)
     {
-        var wasEmpty = IsEmptyRow(returnItem);
-        
         var orderDetailIdStr = value?.ToString();
         if (string.IsNullOrEmpty(orderDetailIdStr))
         {
@@ -758,10 +757,6 @@ else
                 returnItem.DiscountPercentage = detail.DiscountPercentage;
             }
         }
-        
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<ReturnItem>.HandleInputChange(
-            ReturnItems, returnItem, IsEmptyRow, CreateEmptyItem, wasEmpty, !IsEmptyRow(returnItem));
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -822,13 +817,9 @@ else
                 if (ReturnItems.Any(item => item.SelectedOrderDetail?.Id == orderDetail.Id))
                     continue;
                 
-                // 找到第一個空行或創建新行
-                var emptyItem = ReturnItems.FirstOrDefault(IsEmptyRow);
-                if (emptyItem == null)
-                {
-                    emptyItem = CreateEmptyItem();
-                    ReturnItems.Add(emptyItem);
-                }
+                // 創建新行
+                var emptyItem = new ReturnItem();
+                ReturnItems.Add(emptyItem);
                 
                 // 設置明細資訊
                 emptyItem.SelectedOrderDetail = orderDetail;
@@ -839,7 +830,6 @@ else
                 emptyItem.DiscountPercentage = orderDetail.DiscountPercentage; // 複製折扣
             }
             
-            EnsureOneEmptyRow();
             await NotifyDetailsChanged();
             await NotificationService.ShowSuccessAsync($"已載入 {availableDetails.Count} 項可退貨商品");
         }
@@ -868,21 +858,20 @@ else
             }
             
             ReturnItems.RemoveAt(index);
-            EnsureOneEmptyRow();
             await NotifyDetailsChanged();
         }
     }
 
     private decimal GetTotalAmount()
     {
-        return ReturnItems.Where(item => !IsEmptyRow(item))
+        return ReturnItems.Where(item => item.SelectedProduct != null)
                           .Sum(item => item.ReturnSubtotalAmount);
     }
 
     private async Task NotifyDetailsChanged()
     {
         // 轉換為 SalesReturnDetail 實體（只包含有退貨數量的明細）
-        var details = ReturnItems.Where(item => !IsEmptyRow(item) && item.ReturnQuantity > 0)
+        var details = ReturnItems.Where(item => item.SelectedProduct != null && item.ReturnQuantity > 0)
                                  .Select(item => ConvertToEntity(item))
                                  .Where(entity => entity != null)
                                  .ToList();
@@ -960,7 +949,7 @@ else
     /// </summary>
     private async Task FillAllQuantities()
     {
-        var nonEmptyItems = ReturnItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
         
         if (!nonEmptyItems.Any())
         {
@@ -1003,7 +992,7 @@ else
     /// </summary>
     private async Task ClearAllQuantities()
     {
-        var nonEmptyItems = ReturnItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
         
         if (!nonEmptyItems.Any())
         {
@@ -1042,7 +1031,7 @@ else
     /// </summary>
     private async Task ClearAllDetails()
     {
-        var nonEmptyItems = ReturnItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
         
         if (!nonEmptyItems.Any())
         {
@@ -1083,9 +1072,6 @@ else
             ReturnItems.Remove(item);
         }
         
-        // 確保有一個空行
-        EnsureOneEmptyRow();
-        
         await NotifyDetailsChanged();
         
         var message = $"已移除 {unlocked.Count} 項明細";
@@ -1104,7 +1090,7 @@ else
             var errors = new List<string>();
             
             // 檢查是否有退貨項目
-            var potentialItems = ReturnItems.Where(item => !IsEmptyRow(item) && item.ReturnQuantity > 0).ToList();
+            var potentialItems = ReturnItems.Where(item => item.SelectedProduct != null && item.ReturnQuantity > 0).ToList();
             if (!potentialItems.Any())
             {
                 errors.Add("至少需要一個退貨項目");

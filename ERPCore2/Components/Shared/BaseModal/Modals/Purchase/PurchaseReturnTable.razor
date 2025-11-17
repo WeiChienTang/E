@@ -20,7 +20,8 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="ReturnItem" 
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="ReturnItem" 
                                       Items="@ReturnItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       EnableAutoEmptyRow="true"
@@ -70,6 +71,9 @@ else
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<ReturnItem>? tableComponent;
+    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ReturnItem>> OnReturnItemsChanged { get; set; }
@@ -713,6 +717,16 @@ else
         }
     }
 
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadExistingDetailsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
+    }
+    
     private async Task LoadExistingDetailsAsync()
     {
         _dataLoadCompleted = false; // 開始載入數據時禁止自動空行

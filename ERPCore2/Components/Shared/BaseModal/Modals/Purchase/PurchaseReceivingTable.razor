@@ -40,7 +40,8 @@ else
     
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="ReceivingItem" 
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="ReceivingItem" 
                                       Items="@ReceivingItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       EnableAutoEmptyRow="true"
@@ -122,6 +123,9 @@ else
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<ReceivingItem>? tableComponent;
+    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ReceivingItem>> OnReceivingItemsChanged { get; set; }
@@ -1065,6 +1069,16 @@ else
         }
     }
 
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadExistingDetailsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
+    }
+
     private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
@@ -1164,10 +1178,11 @@ else
         
         // 🔑 資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
-        StateHasChanged();
         
-        // 載入退貨數量資訊
+        // 載入退貨數量資訊（必須在 UI 渲染前完成）
         await LoadReturnedQuantitiesAsync();
+        
+        StateHasChanged();
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()

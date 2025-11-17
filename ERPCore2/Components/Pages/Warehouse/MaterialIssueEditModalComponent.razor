@@ -38,7 +38,8 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidateMaterialIssueDetailsAsync"
-                          CustomModules="@GetCustomModules()">
+                          CustomModules="@GetCustomModules()"
+                          OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
 @code {
@@ -81,6 +82,41 @@
             
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
+        }
+    }
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時，重新載入對應的明細資料
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 重新載入明細資料（領料單的明細在 LoadMaterialIssueData 中直接載入）
+            var materialIssue = await MaterialIssueService.GetByIdAsync(loadedEntityId);
+            if (materialIssue?.MaterialIssueDetails != null)
+            {
+                materialIssueDetails = materialIssue.MaterialIssueDetails.ToList();
+            }
+            else
+            {
+                materialIssueDetails = new List<MaterialIssueDetail>();
+            }
+            
+            // 觸發 Table 元件刷新
+            if (detailManagerComponent != null)
+            {
+                await detailManagerComponent.RefreshDetailsAsync();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
         }
     }
 

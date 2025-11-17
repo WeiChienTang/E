@@ -16,13 +16,17 @@
                                   EmptyMessage="@EmptyMessage"
                                   ShowBuiltInActions="true"
                                   ShowBuiltInDeleteButton="true"
-                                  OnItemDelete="@HandleItemDelete" />
+                                  OnItemDelete="@HandleItemDelete"
+                                  EnableAutoEmptyRow="true"
+                                  DataLoadCompleted="@_dataLoadCompleted"
+                                  CreateEmptyItem="@CreateEmptyItem" />
     </div>
 </div>
 
 @code {
     // ===== 私有欄位 =====
     private readonly HashSet<int> _deletedDetailIds = new HashSet<int>();
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
 
     // ===== 基本參數 =====
     [Parameter] public List<TProductSupplierEntity> Items { get; set; } = new();
@@ -92,32 +96,9 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        
-        var emptyCount = Items.Count(IsEmptyRow);
-        
-        // 總是確保有一行空行可以輸入
-        // 不論是否已有資料，都應該保持有空行供使用者新增
-        EnsureOneEmptyRow();
-        
-        var emptyCountAfter = Items.Count(IsEmptyRow);
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    
-    /// <summary>
-    /// 檢查是否為空行
-    /// 業務邏輯：只要選擇了產品，就算是有效的一行，不再是空行
-    /// </summary>
-    private bool IsEmptyRow(TProductSupplierEntity item)
-    {
-        var productId = GetProductId(item);
-        // 檢查產品ID是否為空（null 或 0 都算空）
-        var isEmpty = !productId.HasValue || productId.Value <= 0;
-        
-        // 只要產品有值（大於0），就不是空行
-        // 產品是核心欄位，其他欄位可以後續填寫
-        return isEmpty;
-    }
+    // ===== 建立空項目方法 =====
     
     /// <summary>
     /// 創建空的供應商產品項目
@@ -127,20 +108,6 @@
         var newItem = new TProductSupplierEntity();
         SetSupplierId(newItem, ParentEntityId); // 設定供應商ID
         return newItem;
-    }
-    
-    /// <summary>
-    /// 確保有一行空行
-    /// </summary>
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.EnsureOneEmptyRow(
-            Items, 
-            IsEmptyRow, 
-            CreateEmptyItem, 
-            SetSupplierId, 
-            ParentEntityId
-        );
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -339,9 +306,7 @@
     private async Task OnProductChanged((object item, object? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
-        var wasEmpty = IsEmptyRow(productSupplier);
     
-        
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
         {
             // 檢查是否已存在相同產品
@@ -353,12 +318,7 @@
             }
             else
             {
-                SetProductId(productSupplier, productId);                
-                
-                // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-                var added = AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
-                    Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
-                
+                SetProductId(productSupplier, productId);
                 await ItemsChanged.InvokeAsync(Items);
             }
         }
@@ -373,13 +333,8 @@
     private async Task OnSupplierProductCodeChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
-        var wasEmpty = IsEmptyRow(productSupplier);
         
         SetSupplierProductCode(productSupplier, args.value);
-        
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
-            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
         
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
@@ -388,7 +343,6 @@
     private async Task OnSupplierPriceChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
-        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (string.IsNullOrEmpty(args.value))
         {
@@ -399,10 +353,6 @@
             SetSupplierPrice(productSupplier, (decimal)price);
         }
         
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
-            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
-        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -410,7 +360,6 @@
     private async Task OnLeadTimeChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
-        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (string.IsNullOrEmpty(args.value))
         {
@@ -421,10 +370,6 @@
             SetLeadTime(productSupplier, leadTime);
         }
         
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
-            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
-        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -432,7 +377,6 @@
     private async Task OnMinOrderQuantityChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
-        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (string.IsNullOrEmpty(args.value))
         {
@@ -443,10 +387,6 @@
             SetMinOrderQuantity(productSupplier, quantity);
         }
         
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
-            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
-        
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
     }
@@ -454,7 +394,6 @@
     private async Task OnUnitChanged((object item, object? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
-        var wasEmpty = IsEmptyRow(productSupplier);
         
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var unitId))
         {
@@ -464,10 +403,6 @@
         {
             SetUnitId(productSupplier, null);
         }
-        
-        // 使用更精確的自動空行處理（在設定值後檢查整行狀態）
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleInputChangeAdvanced(
-            Items, productSupplier, IsEmptyRow, CreateEmptyItem, wasEmpty, SetSupplierId, ParentEntityId);
         
         await ItemsChanged.InvokeAsync(Items);
         StateHasChanged();
@@ -486,9 +421,7 @@
             _deletedDetailIds.Add(removedItem.Id);
         }
         
-        // 使用 Helper 處理移除，自動確保空行
-        AutoEmptyRowHelper.For<TProductSupplierEntity>.HandleItemRemove(
-            Items, removedItem, IsEmptyRow, CreateEmptyItem, SetSupplierId, ParentEntityId);
+        Items.Remove(removedItem);
         
         await ItemRemoved.InvokeAsync(removedItem);
         await ItemsChanged.InvokeAsync(Items);
@@ -503,15 +436,19 @@
     {
         var errors = new List<string>();
         
-        // 使用 Helper 檢查是否有足夠的非空項目
-        if (!AutoEmptyRowHelper.For<TProductSupplierEntity>.HasSufficientItems(Items, IsEmptyRow, 1))
+        // 取得非空的項目
+        var nonEmptyItems = Items.Where(item => {
+            var productId = GetProductId(item);
+            return productId.HasValue && productId.Value > 0;
+        }).ToList();
+        
+        if (!nonEmptyItems.Any())
         {
             errors.Add("至少需要一個產品");
         }
         else
         {
-            // 取得非空的項目進行重複檢查
-            var nonEmptyItems = AutoEmptyRowHelper.For<TProductSupplierEntity>.GetNonEmptyItems(Items, IsEmptyRow);
+            // 檢查重複產品
             var productIds = nonEmptyItems.Select(item => GetProductId(item)).Where(id => id.HasValue).ToList();
             if (productIds.Count != productIds.Distinct().Count())
             {

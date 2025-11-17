@@ -15,10 +15,16 @@
                                 ShowBuiltInActions="@(!IsEditMode())"
                                 ShowBuiltInDeleteButton="@(!IsEditMode())"
                                 OnItemDelete="@HandleRemovePaymentRecord"
-                                ActionsColumnWidth = "60px" />
+                                ActionsColumnWidth = "60px"
+                                EnableAutoEmptyRow="true"
+                                DataLoadCompleted="@_dataLoadCompleted"
+                                CreateEmptyItem="@CreateEmptyItem" />
 </div>
 
 @code {
+    // ===== 私有欄位 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 參數定義 =====
     [Parameter] public int? SetoffDocumentId { get; set; }
     
@@ -39,11 +45,11 @@
 
     // ===== 計算屬性 =====
     private decimal TotalReceivedAmount => PaymentItems
-        .Where(p => !IsEmptyRow(p))
+        .Where(p => p.PaymentMethodId.HasValue && p.PaymentMethodId.Value > 0)
         .Sum(p => p.ReceivedAmount);
     
     private decimal TotalAllowanceAmount => PaymentItems
-        .Where(p => !IsEmptyRow(p))
+        .Where(p => p.PaymentMethodId.HasValue && p.PaymentMethodId.Value > 0)
         .Sum(p => p.AllowanceAmount);
 
     // ===== 生命週期方法 =====
@@ -58,28 +64,10 @@
         // 當 ExistingPayments 參數變更時，重新載入資料
         LoadExistingPayments();
         
-        // 總是確保有一行空行可以輸入
-        EnsureOneEmptyRow();
-        
         await base.OnParametersSetAsync();
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    
-    /// <summary>
-    /// 檢查是否為空行
-    /// 業務邏輯：只要選擇了付款方式，就算是有效的一行，不再是空行
-    /// </summary>
-    private bool IsEmptyRow(SetoffPaymentItem item)
-    {
-        var paymentMethodId = item.PaymentMethodId;
-        // 檢查付款方式ID是否為空（null 或 0 都算空）
-        var isEmpty = !paymentMethodId.HasValue || paymentMethodId.Value <= 0;
-        
-        // 只要付款方式有值（大於0），就不是空行
-        // 付款方式是核心欄位，其他欄位可以後續填寫
-        return isEmpty;
-    }
+    // ===== 建立空項目方法 =====
     
     /// <summary>
     /// 創建空的收款記錄項目
@@ -98,29 +86,6 @@
             Remarks = null,
             ExistingPayment = null
         };
-    }
-    
-    /// <summary>
-    /// 設定父實體ID（收款記錄不需要此操作，但為了統一介面保留）
-    /// </summary>
-    private void SetParentId(SetoffPaymentItem item, int parentId)
-    {
-        // SetoffPayment 的 SetoffDocumentId 會在 NotifyPaymentsChanged 時設定
-        // 這裡不需要額外操作
-    }
-    
-    /// <summary>
-    /// 確保有一行空行
-    /// </summary>
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.For<SetoffPaymentItem>.EnsureOneEmptyRow(
-            PaymentItems, 
-            IsEmptyRow, 
-            CreateEmptyItem, 
-            SetParentId, 
-            SetoffDocumentId ?? 0
-        );
     }
 
     // ===== 資料載入方法 =====
@@ -194,7 +159,6 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
-                    var wasEmpty = IsEmptyRow(item);
                     
                     if (value != null && int.TryParse(value.ToString(), out int methodId))
                     {
@@ -204,10 +168,6 @@
                     {
                         item.PaymentMethodId = null;
                     }
-                    
-                    // 使用 AutoEmptyRowHelper 處理自動空行
-                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
                     // 付款方式變更時也需要通知父組件，以便正確追蹤變更
                     _ = NotifyPaymentsChanged();
@@ -276,7 +236,6 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
-                    var wasEmpty = IsEmptyRow(item);
                     
                     if (value != null && int.TryParse(value.ToString(), out int bankId))
                     {
@@ -286,10 +245,6 @@
                     {
                         item.BankId = null;
                     }
-                    
-                    // 使用 AutoEmptyRowHelper 處理自動空行
-                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
                     // 銀行別變更時也需要通知父組件，以便正確追蹤變更
                     _ = NotifyPaymentsChanged();
@@ -308,13 +263,8 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
-                    var wasEmpty = IsEmptyRow(item);
                     
                     item.CheckNumber = value;
-                    
-                    // 使用 AutoEmptyRowHelper 處理自動空行
-                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
                     // 支票號碼變更時也需要通知父組件，以便正確追蹤變更
                     _ = NotifyPaymentsChanged();
@@ -370,13 +320,8 @@
                 {
                     var (itemObj, value) = args;
                     var item = (SetoffPaymentItem)itemObj;
-                    var wasEmpty = IsEmptyRow(item);
                     
                     item.Remarks = value;
-                    
-                    // 使用 AutoEmptyRowHelper 處理自動空行
-                    AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-                        PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
                     
                     // 備註變更時也需要通知父組件，以便正確追蹤變更
                     _ = NotifyPaymentsChanged();
@@ -393,9 +338,7 @@
     {
         if (IsReadOnly) return;
         
-        // 使用 AutoEmptyRowHelper 處理移除，自動確保空行
-        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleItemRemove(
-            PaymentItems, item, IsEmptyRow, CreateEmptyItem, SetParentId, SetoffDocumentId ?? 0);
+        PaymentItems.Remove(item);
         
         await NotificationService.ShowInfoAsync("已移除收款記錄");
         await NotifyPaymentsChanged();
@@ -404,8 +347,6 @@
 
     private async Task OnReceivedAmountInput(SetoffPaymentItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (decimal.TryParse(value, out var amount))
         {
             item.ReceivedAmount = amount;
@@ -416,18 +357,12 @@
             item.ReceivedAmount = 0;
         }
         
-        // 使用 AutoEmptyRowHelper 處理自動空行
-        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-            PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
-        
         await NotifyPaymentsChanged();
         StateHasChanged();
     }
 
     private async Task OnAllowanceAmountInput(SetoffPaymentItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (decimal.TryParse(value, out var amount))
         {
             item.AllowanceAmount = amount;
@@ -438,18 +373,12 @@
             item.AllowanceAmount = 0;
         }
         
-        // 使用 AutoEmptyRowHelper 處理自動空行
-        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-            PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
-        
         await NotifyPaymentsChanged();
         StateHasChanged();
     }
 
     private async Task OnDueDateChanged(SetoffPaymentItem item, string? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (DateTime.TryParse(value, out var dueDate))
         {
             item.DueDate = dueDate;
@@ -458,10 +387,6 @@
         {
             item.DueDate = null;
         }
-        
-        // 使用 AutoEmptyRowHelper 處理自動空行
-        AutoEmptyRowHelper.For<SetoffPaymentItem>.HandleInputChangeAdvanced(
-            PaymentItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, SetParentId, SetoffDocumentId ?? 0);
         
         // 到期日變更時也需要通知父組件，以便正確追蹤變更
         await NotifyPaymentsChanged();
@@ -472,7 +397,7 @@
     {
         // 只傳遞非空行的收款記錄
         var payments = PaymentItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.PaymentMethodId.HasValue && item.PaymentMethodId.Value > 0)
             .Select(item => new SetoffPayment
             {
                 Id = item.ExistingPayment?.Id ?? 0,

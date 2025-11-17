@@ -20,7 +20,8 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="DeliveryItem"
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="DeliveryItem"
                                       Items="@DeliveryItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       ShowHeader="true"
@@ -31,12 +32,21 @@ else
                                       DeleteButtonTitle="刪除"
                                       EmptyMessage="@EmptyMessage"
                                       OnItemDelete="@HandleItemDelete"
-                                      CustomActionsTemplate="@GetCustomActionsTemplate" />
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
+                                      EnableAutoEmptyRow="true"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      CreateEmptyItem="@(() => new DeliveryItem())" />
         </div>
     </div>
 }
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<DeliveryItem>? tableComponent;
+    
+    // ===== 資料載入完成標記 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<DeliveryItem>> OnDeliveryItemsChanged { get; set; }
@@ -89,7 +99,6 @@ else
     {
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
-        EnsureOneEmptyRow();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -100,24 +109,15 @@ else
             await LoadAvailableProductsAsync();
         }
     }
-
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    private bool IsEmptyRow(DeliveryItem item)
-    {
-        return item.ProductId <= 0 && item.DeliveryQuantity == 0;
-    }
     
-    private DeliveryItem CreateEmptyItem()
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
     {
-        return new DeliveryItem();
-    }
-    
-    private void EnsureOneEmptyRow()
-    {
-        if (!DeliveryItems.Any(IsEmptyRow))
-        {
-            DeliveryItems.Add(CreateEmptyItem());
-        }
+        await LoadAvailableProductsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -308,7 +308,6 @@ else
             }
             
             DeliveryItems.RemoveAt(index);
-            EnsureOneEmptyRow();
             await NotifyDetailsChanged();
         }
     }
@@ -336,6 +335,9 @@ else
             return Task.CompletedTask;
         }
 
+        // 🔑 開始載入資料
+        _dataLoadCompleted = false;
+        
         DeliveryItems.Clear();
         foreach (var detail in ExistingDetails)
         {
@@ -371,12 +373,16 @@ else
             DeliveryItems.Add(deliveryItem);
         }
         
+        // 🔑 資料載入完成
+        _dataLoadCompleted = true;
+        StateHasChanged();
+        
         return Task.CompletedTask;
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()
     {
-        var validItems = DeliveryItems.Where(item => !IsEmptyRow(item)).ToList();
+        var validItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
         var detailEntities = new List<TDetailEntity>();
 
         foreach (var item in validItems)
@@ -494,8 +500,6 @@ else
                 
                 // 載入該商品的庫存資訊
                 await LoadStockQuantityAsync(item);
-                
-                EnsureOneEmptyRow();
             }
             
             await NotifyDetailsChanged();
@@ -504,8 +508,6 @@ else
 
     private async Task OnWarehouseLocationChanged(DeliveryItem item, object? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (value == null || !int.TryParse(value.ToString(), out int detailId))
         {
             item.WarehouseId = null;
@@ -524,11 +526,6 @@ else
                 item.InventoryStockDetailId = detailId;
                 item.CurrentStockQuantity = selectedDetail.AvailableStock;
             }
-        }
-        
-        if (wasEmpty && !IsEmptyRow(item))
-        {
-            EnsureOneEmptyRow();
         }
         
         await NotifyDetailsChanged();
@@ -667,13 +664,13 @@ else
     private decimal GetTotalAmount()
     {
         return DeliveryItems
-            .Where(item => !IsEmptyRow(item))
+            .Where(item => item.ProductId > 0)
             .Sum(item => item.SubtotalAmount);
     }
 
     public async Task<bool> ValidateAsync()
     {
-        var nonEmptyItems = DeliveryItems.Where(item => !IsEmptyRow(item)).ToList();
+        var nonEmptyItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
         
         if (!nonEmptyItems.Any())
         {

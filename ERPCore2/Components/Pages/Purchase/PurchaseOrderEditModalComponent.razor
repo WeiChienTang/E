@@ -49,7 +49,8 @@
                           OnApprove="@HandlePurchaseOrderApprove"
                           OnRejectWithReason="@HandlePurchaseOrderRejectWithReason"
                           FormHeaderContent="@WarningMessage"
-                          CustomActionButtons="@CustomActionButtons">
+                          CustomActionButtons="@CustomActionButtons"
+                          OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
 @* 廠商編輯 Modal *@
@@ -842,6 +843,33 @@
     }
 
     // ===== 採購明細管理方法 =====
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時，重新載入對應的明細資料
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 重新載入明細資料
+            await LoadPurchaseOrderDetails(loadedEntityId);
+            
+            // 觸發 Table 元件刷新
+            if (purchaseOrderDetailManager != null)
+            {
+                await purchaseOrderDetailManager.RefreshDetailsAsync();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
+    }
     
     /// <summary>
     /// 處理有不可刪除明細的狀態變更

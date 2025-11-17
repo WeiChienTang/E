@@ -35,7 +35,8 @@
     <!-- 明細表格 -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="DetailItem"
+            <InteractiveTableComponent @ref="tableComponent"
+                                     TItem="DetailItem"
                                      Items="@DetailItems"
                                      ColumnDefinitions="@GetColumnDefinitions()"
                                      IsReadOnly="@IsReadOnly"
@@ -44,12 +45,21 @@
                                      ShowBuiltInActions="true"
                                      ShowBuiltInDeleteButton="false"
                                      ActionsColumnWidth="80px"
-                                     CustomActionsTemplate="@GetCustomActionsTemplate" />
+                                     CustomActionsTemplate="@GetCustomActionsTemplate"
+                                     EnableAutoEmptyRow="true"
+                                     DataLoadCompleted="@_dataLoadCompleted"
+                                     CreateEmptyItem="@CreateEmptyItem" />
         </div>
     </div>
 </div>
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<DetailItem>? tableComponent;
+    
+    // ===== 資料載入完成標記 =====
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
     // ===== 參數 =====
     [Parameter] public List<MaterialIssueDetail> Details { get; set; } = new();
     [Parameter] public EventCallback<List<MaterialIssueDetail>> DetailsChanged { get; set; }
@@ -92,7 +102,6 @@
         {
             await LoadRelatedDataAsync();
             await LoadExistingDetailsAsync();
-            EnsureOneEmptyRow();
         }
         catch (Exception ex)
         {
@@ -135,10 +144,23 @@
         }
     }
 
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadExistingDetailsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
+    }
+    
     private async Task LoadExistingDetailsAsync()
     {
         try
         {
+            // 🔑 開始載入資料
+            _dataLoadCompleted = false;
+            
             DetailItems.Clear();
             
             foreach (var detail in Details)
@@ -179,10 +201,13 @@
                 DetailItems.Add(item);
             }
             
-            EnsureOneEmptyRow();
+            // 🔑 資料載入完成
+            _dataLoadCompleted = true;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
+            _dataLoadCompleted = true;  // 這裡也要設為 true
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadExistingDetailsAsync), GetType(), 
                 additionalData: "載入現有明細失敗");
             DetailItems = new List<DetailItem>();
@@ -199,7 +224,9 @@
         columns.Add(new()
         {
             Title = "商品",
-            PropertyName = "ProductSearchValue",
+            PropertyName = "ProductId",
+            EmptyCheckPropertyName = "SelectedProduct",
+            TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
             Tooltip = "搜尋並選擇商品",
@@ -366,18 +393,8 @@
                 AvailableWarehouseLocations = availableLocations
             };
 
-            // 移除現有的空行
-            var emptyRow = DetailItems.FirstOrDefault(IsEmptyRow);
-            if (emptyRow != null)
-            {
-                DetailItems.Remove(emptyRow);
-            }
-
-            // 將新項目加到列表最後
+            // 將新項目加到列表
             DetailItems.Add(newItem);
-            
-            // 確保最後有一個空行
-            EnsureOneEmptyRow();
             
             await SyncToDetails();
             await NotificationService.ShowSuccessAsync($"已新增商品: {product.Name}");
@@ -396,8 +413,6 @@
 
     private void OnProductSearchChanged(DetailItem item, string? searchValue)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         item.ProductSearchValue = searchValue ?? "";
         
         if (string.IsNullOrWhiteSpace(searchValue))
@@ -418,18 +433,12 @@
         item.ShowProductDropdown = true;
         item.ProductSelectedIndex = -1;
         
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<DetailItem>.HandleInputChange(
-            DetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, hasValueNow: !string.IsNullOrWhiteSpace(searchValue));
-        
         StateHasChanged();
     }
 
     private async Task OnProductSelected(DetailItem item, Product? product)
     {
         if (product == null) return;
-
-        var wasEmpty = IsEmptyRow(item);
 
         item.ProductId = product.Id;
         item.SelectedProduct = product;
@@ -446,18 +455,12 @@
         item.WarehouseLocationId = null;
         item.AvailableStock = null;
         
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<DetailItem>.HandleInputChange(
-            DetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, hasValueNow: product != null);
-        
         await SyncToDetails();
         StateHasChanged();
     }
 
     private async Task OnWarehouseLocationChanged(DetailItem item, object? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (value == null || !int.TryParse(value.ToString(), out int detailId))
         {
             item.InventoryStockDetailId = null;
@@ -479,18 +482,12 @@
             }
         }
         
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<DetailItem>.HandleInputChange(
-            DetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, hasValueNow: item.WarehouseId.HasValue);
-        
         await SyncToDetails();
         StateHasChanged();
     }
 
     private async Task OnIssueQuantityChanged(DetailItem item, object? value)
     {
-        var wasEmpty = IsEmptyRow(item);
-        
         if (string.IsNullOrWhiteSpace(value?.ToString()))
         {
             item.IssueQuantity = 0;
@@ -499,10 +496,6 @@
         {
             item.IssueQuantity = quantity;
         }
-        
-        // 處理自動空行邏輯
-        AutoEmptyRowHelper.ForAny<DetailItem>.HandleInputChange(
-            DetailItems, item, IsEmptyRow, CreateEmptyItem, wasEmpty, hasValueNow: item.IssueQuantity > 0);
         
         await SyncToDetails();
         StateHasChanged();
@@ -514,8 +507,7 @@
         {
             if (IsReadOnly) return;
             
-            AutoEmptyRowHelper.ForAny<DetailItem>.HandleItemRemove(
-                DetailItems, item, IsEmptyRow, CreateEmptyItem);
+            DetailItems.Remove(item);
             
             await SyncToDetails();
             StateHasChanged();
@@ -528,12 +520,7 @@
         }
     }
 
-    // ===== AutoEmptyRowHelper 相關方法 =====
-    
-    private bool IsEmptyRow(DetailItem item)
-    {
-        return item.ProductId == null || item.ProductId == 0;
-    }
+    // ===== 建立空項目方法 =====
     
     private DetailItem CreateEmptyItem()
     {
@@ -542,17 +529,11 @@
             FilteredProducts = new List<Product>()
         };
     }
-    
-    private void EnsureOneEmptyRow()
-    {
-        AutoEmptyRowHelper.ForAny<DetailItem>.EnsureOneEmptyRow(
-            DetailItems, IsEmptyRow, CreateEmptyItem);
-    }
 
     private RenderFragment<DetailItem> GetCustomActionsTemplate => item => __builder =>
     {
         // 如果是空行，不顯示刪除按鈕
-        if (!IsEmptyRow(item))
+        if (item.SelectedProduct != null)
         {
             <GenericButtonComponent 
                 IconClass="bi bi-trash text-white"
