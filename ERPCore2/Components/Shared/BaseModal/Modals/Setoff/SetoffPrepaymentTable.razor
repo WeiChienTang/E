@@ -275,8 +275,10 @@
     {
         if (ExistingPrepayments?.Any() == true)
         {
-            // 編輯模式：載入已存在的預收付款項記錄
+            //  編輯模式：載入已存在的預收付款項記錄
+            _dataLoadCompleted = false;  // 開始載入
             
+            PrepaymentItems.Clear();
             PrepaymentItems = ExistingPrepayments.Select((prepayment, index) => 
             {
                 //  直接使用 SourcePrepaymentId 欄位（不再從 Remarks 解析）
@@ -295,17 +297,16 @@
                 return item;
             }).ToList();
             
+            _dataLoadCompleted = true;  // 載入完成，觸發空行檢查
+            
             //  載入後立即嘗試比對 SourcePrepaymentId（如果 AvailablePrepayments 已載入）
             if (AvailablePrepayments?.Any() == true)
             {
                 MatchSourcePrepaymentIds();
             }
         }
-        else
-        {
-            // 新增模式：初始化為空列表
-            PrepaymentItems = new List<SetoffPrepaymentItem>();
-        }
+        // 🔑 新增模式：不做任何事，讓 InteractiveTableComponent 自動產生第一行空行
+        // 不呼叫 Clear()，避免清除已自動產生的空行（時序問題）
     }
 
     // ===== InteractiveTable 欄位定義 =====
@@ -320,6 +321,7 @@
                 PropertyName = nameof(SetoffPrepaymentItem.PrepaymentTypeId),
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
+                TriggerEmptyRowOnFilled = true,  //  觸發欄位：選擇後自動新增空行
                 Options = new List<InteractiveSelectOption> 
                 { 
                     new InteractiveSelectOption { Value = 0, Text = "請選擇類型.." } 

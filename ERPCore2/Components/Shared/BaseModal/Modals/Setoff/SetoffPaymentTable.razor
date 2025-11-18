@@ -42,6 +42,9 @@
     private List<SetoffPaymentItem> PaymentItems { get; set; } = new();
     private List<Bank> Banks { get; set; } = new();
     private List<PaymentMethod> PaymentMethods { get; set; } = new();
+    
+    // 用於追蹤參數變更，避免不必要的重新載入
+    private int _previousExistingPaymentsCount;
 
     // ===== 計算屬性 =====
     private decimal TotalReceivedAmount => PaymentItems
@@ -57,12 +60,20 @@
     {
         await LoadBanksAndPaymentMethodsAsync();
         LoadExistingPayments();
+        
+        // 初始化追蹤變數
+        _previousExistingPaymentsCount = ExistingPayments?.Count ?? 0;
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 當 ExistingPayments 參數變更時，重新載入資料
-        LoadExistingPayments();
+        // 只有當 ExistingPayments 真正變更時（數量不同），才重新載入資料
+        var currentCount = ExistingPayments?.Count ?? 0;
+        if (_previousExistingPaymentsCount != currentCount)
+        {
+            LoadExistingPayments();
+            _previousExistingPaymentsCount = currentCount;
+        }
         
         await base.OnParametersSetAsync();
     }
@@ -108,7 +119,10 @@
     {
         if (ExistingPayments?.Any() == true)
         {
-            // 編輯模式：載入已存在的收款記錄
+            // 🔑 編輯模式：載入已存在的收款記錄
+            _dataLoadCompleted = false;  // 開始載入
+            
+            PaymentItems.Clear();
             PaymentItems = ExistingPayments.Select(payment => new SetoffPaymentItem
             {
                 Id = payment.Id,
@@ -121,12 +135,11 @@
                 Remarks = payment.Remarks,
                 ExistingPayment = payment
             }).ToList();
+            
+            _dataLoadCompleted = true;  // 載入完成，觸發空行檢查
         }
-        else
-        {
-            // 新增模式：初始化為空列表
-            PaymentItems = new List<SetoffPaymentItem>();
-        }
+        // 🔑 新增模式：不做任何事，讓 InteractiveTableComponent 自動產生第一行空行
+        // 不呼叫 Clear()，避免清除已自動產生的空行（時序問題）
     }
 
     // ===== InteractiveTable 欄位定義 =====
@@ -146,6 +159,7 @@
                 ColumnType = InteractiveColumnType.Select,
                 Width = "180px",
                 IsRequired = false,
+                TriggerEmptyRowOnFilled = true,  // 🔑 觸發欄位：選擇後自動新增空行
                 Options = new List<InteractiveSelectOption> 
                 { 
                     new InteractiveSelectOption { Value = 0, Text = "請選擇.." } 

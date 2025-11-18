@@ -37,6 +37,7 @@
                           SaveFailureMessage="沖款單儲存失敗"
                           RequiredPermission="SetoffDocument.Read"
                           CustomValidator="@ValidateBeforeSave"
+                          AfterSave="@SaveSetoffDocumentDetailsAsync"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
@@ -368,19 +369,17 @@
     }
 
     /// <summary>
-    /// 儲存成功後處理（在主表單儲存成功之後執行）
+    /// 儲存明細資料（在主表單儲存成功之後執行）
     /// </summary>
-    private async Task HandleSaveSuccess()
+    private async Task SaveSetoffDocumentDetailsAsync(SetoffDocument entity)
     {
         try
         {
-            if (editModalComponent?.Entity == null)
+            if (entity == null || entity.Id <= 0)
             {
-                await NotificationService.ShowErrorAsync("沒有可儲存的資料");
+                await NotificationService.ShowErrorAsync("主檔資料無效，無法儲存明細");
                 return;
             }
-
-            var entity = editModalComponent.Entity;
 
             // 儲存商品明細（過濾掉本次沖款和折讓都為 0 的項目）
             var validDetails = setoffProductDetails
@@ -570,13 +569,29 @@
                     }
                 }
             }
-
-            await OnSetoffDocumentSaved.InvokeAsync(entity);
-            await CloseModal();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存商品明細時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"儲存明細時發生錯誤：{ex.Message}");
+            throw; // 重新拋出例外，讓 GenericEditModalComponent 知道儲存失敗
+        }
+    }
+    
+    /// <summary>
+    /// 儲存成功後處理（通知父組件）
+    /// </summary>
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null && OnSetoffDocumentSaved.HasDelegate)
+            {
+                await OnSetoffDocumentSaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"通知父組件時發生錯誤：{ex.Message}");
         }
     }
     
