@@ -35,7 +35,8 @@
                           RequiredPermission="Product.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnFieldChanged="@OnFieldValueChanged" />
+                          OnFieldChanged="@OnFieldValueChanged"
+                          OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 產品分類編輯 Modal *@
 <ProductCategoryEditModalComponent @ref="productCategoryEditModal"
@@ -131,6 +132,24 @@
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化產品編輯組件時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
     

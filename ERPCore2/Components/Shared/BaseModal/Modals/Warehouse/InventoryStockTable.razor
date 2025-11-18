@@ -12,7 +12,8 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="StockDetailItem" 
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="StockDetailItem" 
                                       Items="@StockDetailItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       ShowHeader="true"
@@ -31,6 +32,9 @@
 
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<StockDetailItem>? tableComponent;
+    
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
     
@@ -133,24 +137,16 @@
         { 
             Title = "倉庫", 
             PropertyName = "SelectedWarehouseId",
-            ColumnType = InteractiveColumnType.Custom,
+            ColumnType = InteractiveColumnType.Select,
+            TriggerEmptyRowOnFilled = true,
             Width = "150px",
-            CustomTemplate = item => 
+            Placeholder = "請選擇...",
+            Options = GetWarehouseOptions(),
+            OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
             {
-                var stockItem = (StockDetailItem)item;
-                var selectedValue = stockItem.SelectedWarehouseId?.ToString() ?? "";
-                
-                return @<select class="form-select form-select-sm"
-                                value="@selectedValue"
-                                @onchange="@(e => OnWarehouseChanged(stockItem, e.Value))"
-                                disabled="@IsReadOnly">
-                    <option value="">-- 選擇倉庫 --</option>
-                    @foreach (var warehouse in Warehouses)
-                    {
-                        <option value="@warehouse.Id">@warehouse.Name</option>
-                    }
-                </select>;
-            }
+                var (item, value) = args;
+                await OnWarehouseChanged((StockDetailItem)item, value);
+            })
         });
         
         // 庫位選擇欄位
@@ -168,9 +164,9 @@
                 
                 return @<select class="form-select form-select-sm"
                                 value="@selectedValue"
-                                @onchange="@(e => OnWarehouseLocationChanged(stockItem, e.Value))"
+                                @onchange="@(async e => await OnWarehouseLocationChanged(stockItem, e.Value))"
                                 disabled="@isDisabled">
-                    <option value="">-- 選擇庫位(選填) --</option>
+                    <option value="">請選擇...</option>
                     @foreach (var location in GetAvailableLocations(stockItem.SelectedWarehouseId))
                     {
                         <option value="@location.Id">@location.Name</option>
@@ -276,6 +272,9 @@
             return;
         }
 
+        // 🔑 開始載入資料 - 設定為未完成
+        _dataLoadCompleted = false;
+        
         StockDetailItems.Clear();
         
         foreach (var detail in ExistingDetails)
@@ -301,6 +300,9 @@
             
             StockDetailItems.Add(item);
         }
+        
+        // 🔑 資料載入完成 - 觸發空行檢查
+        _dataLoadCompleted = true;
         
         await Task.CompletedTask;
     }
@@ -581,6 +583,22 @@
         StateHasChanged();
     }
 
+    private List<InteractiveSelectOption> GetWarehouseOptions()
+    {
+        var options = new List<InteractiveSelectOption>();
+        
+        foreach (var warehouse in Warehouses)
+        {
+            options.Add(new InteractiveSelectOption
+            {
+                Value = warehouse.Id,
+                Text = warehouse.Name
+            });
+        }
+        
+        return options;
+    }
+
     private List<WarehouseLocation> GetAvailableLocations(int? warehouseId)
     {
         if (!warehouseId.HasValue || warehouseId.Value <= 0)
@@ -829,6 +847,16 @@
         
         // 多個批號，用逗號連接
         return string.Join(", ", validBatchNumbers);
+    }
+
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadExistingDetailsAsync();
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
 
     public class StockDetailItem

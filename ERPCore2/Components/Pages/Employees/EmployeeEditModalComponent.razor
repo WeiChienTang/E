@@ -35,7 +35,8 @@
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Employee.Read"
                           OnCancel="@OnCancel"
-                          OnFieldChanged="@OnFieldValueChanged" />
+                          OnFieldChanged="@OnFieldValueChanged"
+                          OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 部門編輯 Modal *@
 <DepartmentEditModalComponent @ref="departmentEditModal"
@@ -101,6 +102,24 @@
     // 注意：搜尋關鍵字追蹤已整合到 GenericEditModalComponent 中，不再需要手動追蹤
     // private string lastDepartmentSearchTerm = string.Empty;  // 已移除
     // private string lastPositionSearchTerm = string.Empty;    // 已移除
+
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

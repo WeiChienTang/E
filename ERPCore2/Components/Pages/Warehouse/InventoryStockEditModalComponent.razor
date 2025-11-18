@@ -34,7 +34,8 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
-                          CustomModules="@GetCustomModules()" />
+                          CustomModules="@GetCustomModules()"
+                          OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 商品編輯 Modal *@
 <ProductEditModalComponent @ref="productEditModal"
@@ -139,6 +140,37 @@
     }
 
     // ===== 事件處理 =====
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時，重新載入對應的明細資料
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 1. 重新載入明細資料
+            await LoadInventoryStockDetails(loadedEntityId);
+            
+            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
+            StateHasChanged();
+            
+            // 2. 觸發 Table 元件刷新（此時 ExistingDetails 已經是新的資料）
+            if (inventoryStockDetailManager != null)
+            {
+                await inventoryStockDetailManager.RefreshDetailsAsync();
+            }
+            
+            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入明細資料時發生錯誤：{ex.Message}");
+        }
+    }
+    
     private async Task HandleSaveSuccess()
     {
         try
@@ -273,6 +305,31 @@
             availableProducts = new List<Product>();
             availableWarehouses = new List<Warehouse>();
             availableWarehouseLocations = new List<WarehouseLocation>();
+        }
+    }
+    
+    /// <summary>
+    /// 載入庫存明細（用於上下筆切換）
+    /// </summary>
+    private async Task LoadInventoryStockDetails(int inventoryStockId)
+    {
+        try
+        {
+            var inventoryStock = await InventoryStockService.GetByIdAsync(inventoryStockId);
+            
+            if (inventoryStock?.InventoryStockDetails != null && inventoryStock.InventoryStockDetails.Any())
+            {
+                inventoryStockDetails = inventoryStock.InventoryStockDetails.ToList();
+            }
+            else
+            {
+                inventoryStockDetails = new List<InventoryStockDetail>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入庫存明細時發生錯誤：{ex.Message}");
+            inventoryStockDetails = new List<InventoryStockDetail>();
         }
     }
 
