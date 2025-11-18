@@ -1330,6 +1330,10 @@
         @* 審核通過的訊息 *@
         <GenericLockedFieldMessage IsVisible="@(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)"
                                   Message="採購單已審核通過，主檔欄位已鎖定。您仍可修改明細的「完成進貨」狀態並儲存。" />
+        
+        @* 明細有其他動作的訊息 *@
+        <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
+                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。" />
     };
     
     /// <summary>
