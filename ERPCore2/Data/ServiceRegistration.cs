@@ -108,6 +108,7 @@ namespace ERPCore2.Data
             services.AddScoped<IWeatherService, WeatherService>();
             services.AddScoped<IColorService, ColorService>();
             services.AddScoped<IMaterialService, MaterialService>();
+            services.AddScoped<ICompositionCategoryService, CompositionCategoryService>();
             
             // 產品合成（BOM）服務
             services.AddScoped<IProductCompositionService, ProductCompositionService>();

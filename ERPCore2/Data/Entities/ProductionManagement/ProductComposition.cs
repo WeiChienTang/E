@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -29,9 +28,9 @@ namespace ERPCore2.Data.Entities
         public int? CreatedByEmployeeId { get; set; }
 
         // 設定
-        [Required(ErrorMessage = "合成類型為必填")]
-        [Display(Name = "合成類型")]
-        public CompositionType CompositionType { get; set; } = CompositionType.Standard;
+        [Display(Name = "合成表類型")]
+        [ForeignKey(nameof(CompositionCategory))]
+        public int? CompositionCategoryId { get; set; }
 
         // Navigation Properties
         /// <summary>
@@ -48,6 +47,11 @@ namespace ERPCore2.Data.Entities
         /// 製單人員
         /// </summary>
         public Employee? CreatedByEmployee { get; set; }
+
+        /// <summary>
+        /// 合成表類型
+        /// </summary>
+        public CompositionCategory? CompositionCategory { get; set; }
 
         /// <summary>
         /// 合成明細列表

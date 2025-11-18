@@ -1,6 +1,5 @@
 using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 
@@ -12,13 +11,16 @@ namespace ERPCore2.FieldConfiguration
     public class ProductCompositionFieldConfiguration : BaseFieldConfiguration<ProductComposition>
     {
         private readonly List<Product> _products;
+        private readonly List<CompositionCategory> _compositionCategories;
         private readonly INotificationService? _notificationService;
         
         public ProductCompositionFieldConfiguration(
-            List<Product> products, 
+            List<Product> products,
+            List<CompositionCategory> compositionCategories,
             INotificationService? notificationService = null)
         {
             _products = products;
+            _compositionCategories = compositionCategories;
             _notificationService = notificationService;
         }
         
@@ -90,28 +92,28 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ProductComposition.CompositionType),
+                        nameof(ProductComposition.CompositionCategoryId),
                         new FieldDefinition<ProductComposition>
                         {
-                            PropertyName = nameof(ProductComposition.CompositionType),
+                            PropertyName = "CompositionCategory.Name",
+                            FilterPropertyName = nameof(ProductComposition.CompositionCategoryId),
                             DisplayName = "配方類型",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            HeaderStyle = "width: 100px;",
-                            Options = Enum.GetValues<CompositionType>()
-                                .Select(ct => new SelectOption
-                                {
-                                    Text = GetCompositionTypeDisplayName(ct),
-                                    Value = ((int)ct).ToString()
-                                }).ToList(),
+                            HeaderStyle = "width: 150px;",
+                            Options = _compositionCategories.Select(cc => new SelectOption
+                            {
+                                Text = cc.Name,
+                                Value = cc.Id.ToString()
+                            }).ToList(),
                             FilterFunction = (model, query) =>
                             {
-                                var filterValue = model.GetFilterValue(nameof(ProductComposition.CompositionType));
+                                var filterValue = model.GetFilterValue(nameof(ProductComposition.CompositionCategoryId));
                                 if (!string.IsNullOrWhiteSpace(filterValue?.ToString()))
                                 {
-                                    if (int.TryParse(filterValue.ToString(), out int typeValue))
+                                    if (int.TryParse(filterValue.ToString(), out int categoryId))
                                     {
-                                        query = query.Where(pc => (int)pc.CompositionType == typeValue);
+                                        query = query.Where(pc => pc.CompositionCategoryId == categoryId);
                                     }
                                 }
                                 return query;
@@ -119,18 +121,14 @@ namespace ERPCore2.FieldConfiguration
                             CustomTemplate = item => builder =>
                             {
                                 var composition = (ProductComposition)item;
-                                var badgeClass = composition.CompositionType switch
+                                if (composition.CompositionCategory != null)
                                 {
-                                    CompositionType.Standard => "bg-primary",
-                                    CompositionType.Alternative => "bg-warning",
-                                    CompositionType.Simplified => "bg-info",
-                                    CompositionType.Custom => "bg-secondary",
-                                    _ => "bg-secondary"
-                                };
-                                builder.OpenElement(0, "span");
-                                builder.AddAttribute(1, "class", $"badge {badgeClass}");
-                                builder.AddContent(2, GetCompositionTypeDisplayName(composition.CompositionType));
-                                builder.CloseElement();
+                                    var badgeClass = GetBadgeClassByName(composition.CompositionCategory.Name);
+                                    builder.OpenElement(0, "span");
+                                    builder.AddAttribute(1, "class", $"badge {badgeClass}");
+                                    builder.AddContent(2, composition.CompositionCategory.Name);
+                                    builder.CloseElement();
+                                }
                             }
                         }
                     },
@@ -181,17 +179,17 @@ namespace ERPCore2.FieldConfiguration
         }
 
         /// <summary>
-        /// 取得配方類型顯示名稱
+        /// 根據名稱取得 Badge 樣式
         /// </summary>
-        private static string GetCompositionTypeDisplayName(CompositionType type)
+        private static string GetBadgeClassByName(string name)
         {
-            return type switch
+            return name switch
             {
-                CompositionType.Standard => "標準配方",
-                CompositionType.Alternative => "替代配方",
-                CompositionType.Simplified => "簡化配方",
-                CompositionType.Custom => "客製配方",
-                _ => "未知"
+                "標準配方" => "bg-primary",
+                "替代配方" => "bg-warning",
+                "簡化配方" => "bg-info",
+                "客製配方" => "bg-secondary",
+                _ => "bg-secondary"
             };
         }
     }

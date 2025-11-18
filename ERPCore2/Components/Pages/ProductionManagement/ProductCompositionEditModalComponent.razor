@@ -6,6 +6,7 @@
 @inject IUnitService UnitService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
+@inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -37,7 +38,7 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()" />
 
 @* 商品編輯 Modal *@
@@ -86,6 +87,7 @@
     private List<Unit> availableUnits = new();
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
+    private List<CompositionCategory> availableCompositionCategories = new();
     private List<ProductCompositionDetail> compositionDetails = new();
     private bool isDetailDataReady = false;
     
@@ -102,15 +104,27 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
+    /// 當上下筆切換時，重新載入對應的明細資料
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            // 1. 重新載入明細資料
+            await LoadCompositionDetailsAsync();
+            
+            // 🔑 關鍵：立即觸發 UI 更新，確保 Table 元件收到新的參數
+            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
-            await Task.CompletedTask;
+            
+            // 2. 觸發 Table 元件刷新
+            if (detailManager != null)
+            {
+                await detailManager.RefreshDetailsAsync();
+            }
+            
+            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -215,6 +229,9 @@
             // 載入員工列表
             availableEmployees = await EmployeeService.GetAllAsync();
             
+            // 載入合成表類型列表
+            availableCompositionCategories = await CompositionCategoryService.GetAllAsync();
+            
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<ProductComposition>()
                 .AddField(nameof(ProductComposition.ParentProductId), "Name", availableProducts)
@@ -239,6 +256,7 @@
             availableUnits = new List<Unit>();
             availableCustomers = new List<Customer>();
             availableEmployees = new List<Employee>();
+            availableCompositionCategories = new List<CompositionCategory>();
             compositionDetails = new List<ProductCompositionDetail>();
             isDetailDataReady = true;
         }
@@ -280,7 +298,6 @@
                 var newComposition = new ProductComposition
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(ProductCompositionService, "BOM"),
-                    CompositionType = CompositionType.Standard,
                     Status = EntityStatus.Active
                 };
                 
@@ -297,8 +314,7 @@
                 // 如果找不到產品合成表，建立新的預設實體
                 return new ProductComposition
                 {
-                    Status = EntityStatus.Active,
-                    CompositionType = CompositionType.Standard
+                    Status = EntityStatus.Active
                 };
             }
             return composition;
@@ -311,8 +327,7 @@
             return new ProductComposition
             {
                 Code = "ERROR",
-                Status = EntityStatus.Active,
-                CompositionType = CompositionType.Standard
+                Status = EntityStatus.Active
             };
         }
     }
@@ -323,12 +338,11 @@
         try
         {
             // 準備合成類型選項
-            var compositionTypeOptions = Enum.GetValues<CompositionType>()
-                .Select(ct => new SelectOption
-                {
-                    Text = GetCompositionTypeDisplayName(ct),
-                    Value = ((int)ct).ToString()
-                }).ToList();
+            var compositionCategoryOptions = availableCompositionCategories.Select(cc => new SelectOption
+            {
+                Text = cc.Name,
+                Value = cc.Id.ToString()
+            }).ToList();
 
             // 準備客戶選項
             var customerOptions = new List<SelectOption>();
@@ -371,12 +385,12 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.CompositionType),
-                    Label = "合成類型",
+                    PropertyName = nameof(ProductComposition.CompositionCategoryId),
+                    Label = "合成表類型",
                     FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇合成類型",
-                    Options = compositionTypeOptions,
-                    HelpText = "選擇合成的類型（標準、替代、簡化或客製）"
+                    Placeholder = "請選擇合成表類型",
+                    Options = compositionCategoryOptions,
+                    HelpText = "選擇合成的類型"
                 },
                 new()
                 {
@@ -418,7 +432,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     pc => pc.Code,
                     pc => pc.ParentProductId,
-                    pc => pc.CompositionType,
+                    pc => pc.CompositionCategoryId,
                     pc => pc.CustomerId,
                     pc => pc.CreatedByEmployeeId)
                 .AddToSection(FormSectionNames.AdditionalData,
@@ -437,19 +451,6 @@
         return formFields;
     }
 
-    // ===== 輔助方法 =====
-    private static string GetCompositionTypeDisplayName(CompositionType type)
-    {
-        return type switch
-        {
-            CompositionType.Standard => "標準合成",
-            CompositionType.Alternative => "替代合成",
-            CompositionType.Simplified => "簡化合成",
-            CompositionType.Custom => "客製合成",
-            _ => "未知"
-        };
-    }
-    
     // ===== 自訂模組 =====
     private List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule> GetCustomModules()
     {
@@ -609,10 +610,15 @@
             {
                 var validDetails = detailManager.GetNonEmptyItems();
                 
-                // 設定主檔ID
+                // 設定主檔ID 並清除 Navigation Properties（避免 EF Core 追蹤錯誤）
                 foreach (var detail in validDetails)
                 {
                     detail.ProductCompositionId = savedComposition.Id;
+                    
+                    // 清除 Navigation Properties，只保留外鍵 ID
+                    detail.ProductComposition = null!;
+                    detail.ComponentProduct = null!;
+                    detail.Unit = null;
                 }
                 
                 // 刪除已標記刪除的明細

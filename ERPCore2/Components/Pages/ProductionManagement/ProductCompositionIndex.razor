@@ -1,6 +1,7 @@
 @page "/product-compositions"
 @inject IProductCompositionService ProductCompositionService
 @inject IProductService ProductService
+@inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 
 @rendermode InteractiveServer
@@ -51,6 +52,7 @@
     
     // 相關資料
     private List<Product> products = new();
+    private List<CompositionCategory> compositionCategories = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,9 +70,10 @@
             
             // 載入相關資料
             await LoadProductsAsync();
+            await LoadCompositionCategoriesAsync();
             
             // 建立欄位配置（傳遞 NotificationService）
-            fieldConfiguration = new ProductCompositionFieldConfiguration(products, NotificationService);
+            fieldConfiguration = new ProductCompositionFieldConfiguration(products, compositionCategories, NotificationService);
             
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
@@ -92,6 +95,9 @@
 
     // 載入產品資料（用於篩選器）
     private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(ProductService.GetAllAsync, "產品", NotificationService, GetType());
+
+    // 載入合成表類型資料（用於篩選器）
+    private async Task LoadCompositionCategoriesAsync() => compositionCategories = await DataLoaderHelper.LoadAsync(CompositionCategoryService.GetAllAsync, "合成表類型", NotificationService, GetType());
 
     private IQueryable<ProductComposition> ApplyCompositionFilters(SearchFilterModel searchModel, IQueryable<ProductComposition> query)
     {

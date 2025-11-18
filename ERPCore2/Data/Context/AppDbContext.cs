@@ -64,6 +64,7 @@ namespace ERPCore2.Data.Context
       public DbSet<Weather> Weathers { get; set; }
       public DbSet<Color> Colors { get; set; }
       public DbSet<Size> Sizes { get; set; }      
+      public DbSet<CompositionCategory> CompositionCategories { get; set; }
       public DbSet<ProductComposition> ProductCompositions { get; set; }
       public DbSet<ProductCompositionDetail> ProductCompositionDetails { get; set; }
       public DbSet<ProductionSchedule> ProductionSchedules { get; set; }
@@ -882,6 +883,15 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.Code).IsUnique();
                   });
 
+                  // Composition Category Management
+                  modelBuilder.Entity<CompositionCategory>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 設定索引
+                        entity.HasIndex(e => e.Name);
+                  });
+
                   // Product Composition (BOM) Management
                   modelBuilder.Entity<ProductComposition>(entity =>
                   {
@@ -892,6 +902,11 @@ namespace ERPCore2.Data.Context
                               .WithMany(p => p.ProductCompositions)
                               .HasForeignKey(pc => pc.ParentProductId)
                               .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(pc => pc.CompositionCategory)
+                              .WithMany(cc => cc.ProductCompositions)
+                              .HasForeignKey(pc => pc.CompositionCategoryId)
+                              .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasMany(pc => pc.CompositionDetails)
                               .WithOne(pcd => pcd.ProductComposition)

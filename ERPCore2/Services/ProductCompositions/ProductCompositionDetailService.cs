@@ -30,6 +30,113 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
+        public override async Task<ServiceResult<ProductCompositionDetail>> CreateAsync(ProductCompositionDetail entity)
+        {
+            try
+            {
+                // 驗證實體
+                var validationResult = await ValidateAsync(entity);
+                if (!validationResult.IsSuccess)
+                {
+                    return ServiceResult<ProductCompositionDetail>.Failure(validationResult.ErrorMessage);
+                }
+
+                // 設定建立資訊
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.UpdatedAt = DateTime.UtcNow;
+                
+                if (entity.Status == default)
+                {
+                    entity.Status = EntityStatus.Active;
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 清除 Navigation Properties，只保留外鍵 ID（避免 EF Core 追蹤錯誤）
+                entity.ProductComposition = null!;
+                entity.ComponentProduct = null!;
+                entity.Unit = null;
+                
+                var dbSet = context.Set<ProductCompositionDetail>();
+                dbSet.Add(entity);
+                await context.SaveChangesAsync();
+
+                return ServiceResult<ProductCompositionDetail>.Success(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger, new
+                {
+                    ProductCompositionId = entity.ProductCompositionId,
+                    ComponentProductId = entity.ComponentProductId,
+                    Quantity = entity.Quantity,
+                    UnitId = entity.UnitId
+                });
+                
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return ServiceResult<ProductCompositionDetail>.Failure($"建立資料時發生錯誤: {innerMessage}");
+            }
+        }
+
+        public override async Task<ServiceResult<ProductCompositionDetail>> UpdateAsync(ProductCompositionDetail entity)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var dbSet = context.Set<ProductCompositionDetail>();
+                
+                // 檢查實體是否存在
+                var existingEntity = await dbSet
+                    .FirstOrDefaultAsync(x => x.Id == entity.Id);
+                    
+                if (existingEntity == null)
+                {
+                    return ServiceResult<ProductCompositionDetail>.Failure("找不到要更新的資料");
+                }
+
+                // 驗證實體
+                var validationResult = await ValidateAsync(entity);
+                if (!validationResult.IsSuccess)
+                {
+                    return ServiceResult<ProductCompositionDetail>.Failure(validationResult.ErrorMessage);
+                }
+
+                // 保持原建立資訊
+                entity.CreatedAt = existingEntity.CreatedAt;
+                entity.CreatedBy = existingEntity.CreatedBy;
+                
+                // 更新時間
+                entity.UpdatedAt = DateTime.UtcNow;
+
+                // 清除 Navigation Properties，只保留外鍵 ID（避免 EF Core 追蹤錯誤）
+                entity.ProductComposition = null!;
+                entity.ComponentProduct = null!;
+                entity.Unit = null;
+
+                // 分離舊實體並附加新實體
+                context.Entry(existingEntity).State = EntityState.Detached;
+                context.Entry(entity).State = EntityState.Modified;
+                
+                await context.SaveChangesAsync();
+
+                return ServiceResult<ProductCompositionDetail>.Success(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, new
+                {
+                    Id = entity.Id,
+                    ProductCompositionId = entity.ProductCompositionId,
+                    ComponentProductId = entity.ComponentProductId,
+                    Quantity = entity.Quantity,
+                    UnitId = entity.UnitId
+                });
+                
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return ServiceResult<ProductCompositionDetail>.Failure($"更新資料時發生錯誤: {innerMessage}");
+            }
+        }
+
         public override async Task<List<ProductCompositionDetail>> GetAllAsync()
         {
             try
