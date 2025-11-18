@@ -450,6 +450,16 @@
     public decimal GetTotalAmount() => TotalReceivedAmount + TotalAllowanceAmount;
     
     /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        LoadExistingPayments();
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+    
+    /// <summary>
     /// 判斷是否為編輯模式（編輯模式下不允許刪除明細）
     /// </summary>
     private bool IsEditMode()

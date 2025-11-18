@@ -123,19 +123,92 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
+    /// 當上下筆切換時，重新載入對應的三個明細資料（商品明細、收款記錄、預收付款項）
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            // 1. 重新載入三個明細資料（從資料庫）
+            await LoadSetoffDocumentDetails(loadedEntityId);
+            
+            // 🔑 關鍵：立即觸發 UI 更新，讓 Table 元件收到新的參數
             StateHasChanged();
-            await Task.CompletedTask;
+            
+            // 2. 觸發三個 Table 元件刷新
+            if (setoffProductDetailManager != null)
+            {
+                await setoffProductDetailManager.RefreshDetailsAsync();
+            }
+            if (setoffPaymentTable != null)
+            {
+                await setoffPaymentTable.RefreshDetailsAsync();
+            }
+            if (setoffPrepaymentDetailManager != null)
+            {
+                await setoffPrepaymentDetailManager.RefreshDetailsAsync();
+            }
+            
+            // 3. 最後再次更新 UI
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 載入沖款單的三個明細資料（商品明細、收款記錄、預收付款項）
+    /// 用於上下筆切換時重新載入明細
+    /// </summary>
+    private async Task LoadSetoffDocumentDetails(int setoffDocumentId)
+    {
+        // 1. 載入商品明細
+        setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
+        
+        // 2. 載入收款記錄
+        setoffPayments = await SetoffPaymentService.GetBySetoffDocumentIdAsync(setoffDocumentId);
+        
+        // 3. 載入預收付款項（包含主記錄和使用記錄）
+        setoffPrepayments = new List<SetoffPrepayment>();
+        
+        // 3.1 載入預收/預付主記錄（Amount > 0）
+        var prepaymentRecords = await SetoffPrepaymentService.GetBySetoffDocumentIdAsync(setoffDocumentId);
+        setoffPrepayments.AddRange(prepaymentRecords);
+        
+        // 3.2 載入轉沖款使用記錄（UsedAmount > 0），轉換為 SetoffPrepayment 格式供前端顯示
+        var usageRecords = await SetoffPrepaymentUsageService.GetBySetoffDocumentIdAsync(setoffDocumentId);
+        
+        // 取得所有預收付類型，用於查詢「轉沖款」類型ID
+        var allPrepaymentTypes = await PrepaymentTypeService.GetAllAsync();
+        
+        foreach (var usage in usageRecords)
+        {
+            // 根據來源預收付款項的類型，判斷應該使用哪個「轉沖款」類型
+            var sourceType = usage.SetoffPrepayment.PrepaymentType?.Name ?? string.Empty;
+            var transferTypeName = sourceType.Contains("預收") ? "預收轉沖款" : "預付轉沖款";
+            var transferType = allPrepaymentTypes.FirstOrDefault(pt => pt.Name == transferTypeName);
+            
+            if (transferType != null)
+            {
+                // 轉換為 SetoffPrepayment 格式，讓前端組件可以統一處理
+                setoffPrepayments.Add(new SetoffPrepayment
+                {
+                    Id = 0,
+                    PrepaymentTypeId = transferType.Id,
+                    SourceDocumentCode = usage.SourcePrepaymentCode ?? usage.SetoffPrepayment.SourceDocumentCode,
+                    SourcePrepaymentId = usage.SetoffPrepaymentId,
+                    Amount = usage.SetoffPrepayment.Amount,
+                    UsedAmount = usage.UsedAmount,
+                    CustomerId = usage.SetoffPrepayment.CustomerId,
+                    SupplierId = usage.SetoffPrepayment.SupplierId,
+                    SetoffDocumentId = setoffDocumentId,
+                    Remarks = string.Empty
+                });
+            }
         }
     }
     
@@ -768,6 +841,9 @@
                 // 新增模式 - 根據類型決定前綴
                 var typePrefix = (DefaultSetoffType ?? SetoffType.AccountsReceivable) == SetoffType.AccountsReceivable ? "SO" : "PO";
                 
+                // 取得預設公司
+                var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+                
                 setoffDocument = new SetoffDocument
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<SetoffDocument, ISetoffDocumentService>(SetoffDocumentService, typePrefix),
@@ -775,7 +851,8 @@
                     SetoffType = DefaultSetoffType ?? SetoffType.AccountsReceivable,
                     TotalSetoffAmount = 0,
                     CurrentPrepaymentAmount = 0,
-                    PrepaymentSetoffAmount = 0
+                    PrepaymentSetoffAmount = 0,
+                    CompanyId = primaryCompany?.Id ?? 0 // 設定預設公司
                 };
                 
                 // 新增模式：清空商品明細、收款記錄和預收付款項
@@ -981,8 +1058,8 @@
                     PropertyName = nameof(SetoffDocument.CompanyId),
                     Label = "公司",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇公司",
-                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
+                    Placeholder = companies.Count == 1 ? companies.First().CompanyName : "請輸入或選擇公司",
+                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項（當只有一筆時會自動顯示）
                     IsRequired = true,
                     HelpText = "選擇沖款單所屬的公司",
                     ActionButtons = await GetCompanyActionButtonsAsync()

@@ -42,7 +42,10 @@ public static class AdjustedBalanceHelper
         bool isEditMode)
     {
         if (!isEditMode)
-            return baseBalance;
+        {
+            // 新增模式：可用餘額 = 原始餘額 - 目前使用金額
+            return baseBalance - currentUsedAmount;
+        }
         
         // 編輯模式：可用餘額 = 原始餘額 + 原有使用金額 - 目前使用金額
         return baseBalance + originalUsedAmount - currentUsedAmount;

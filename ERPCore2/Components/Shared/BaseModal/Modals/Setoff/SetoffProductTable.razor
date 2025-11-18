@@ -315,13 +315,14 @@ else
                     
                     if (IsEditMode() && setoffItem.ExistingDetail != null)
                     {
-                        // 原有的總使用金額（沖款 + 折讓）
+                        // 編輯模式：原有的總使用金額（沖款 + 折讓）
                         originalTotalUsed = setoffItem.ExistingDetail.CurrentSetoffAmount + 
                                           setoffItem.ExistingDetail.CurrentAllowanceAmount;
-                        // 目前其他欄位的使用金額（因為這是顯示餘額，所以包含當前所有欄位）
-                        currentOtherFieldsUsed = setoffItem.CurrentSetoffAmount + 
-                                                setoffItem.CurrentAllowanceAmount;
                     }
+                    
+                    // 無論新增或編輯模式，都計算當前使用金額以動態顯示未沖款餘額
+                    currentOtherFieldsUsed = setoffItem.CurrentSetoffAmount + 
+                                            setoffItem.CurrentAllowanceAmount;
                     
                     var adjustedRemainingAmount = AdjustedBalanceHelper.CalculateAdjustedBalance(
                         baseRemainingAmount,
@@ -762,6 +763,16 @@ else
                 // 如果是退貨單據，金額取負值
                 return item.UnsettledDetail?.IsReturn == true ? -amount : amount;
             });
+    }
+    
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadUnsettledDetailsAsync();
+        LoadExistingDetails();
+        StateHasChanged();
     }
     
     /// <summary>
