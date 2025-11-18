@@ -92,14 +92,14 @@
                                           IsLoading="@IsSubmitting" />
                 }
                 
-                @* 返回上一筆按鈕（只在新增模式且有最後一筆記錄時顯示） *@
+                @* 返回編輯按鈕（只在新增模式且有最後一筆記錄時顯示） *@
                 @if (ShowReturnToLastButton && !Id.HasValue && _lastRecordId.HasValue)
                 {
                     <GenericButtonComponent Text="@ReturnToLastButtonText" 
                                           Variant="ButtonVariant.Success" 
                                           OnClick="HandleReturnToLast" 
                                           IsDisabled="@(IsSubmitting || IsLoading)"
-                                          Title="返回到最後一筆資料（剛才儲存的記錄）" />
+                                          Title="返回到最後一筆儲存的資料" />
                 }
                 
                 @* 記錄導航按鈕（在儲存按鈕右側，只在編輯模式顯示） *@
@@ -283,7 +283,7 @@
     [Parameter] public bool ShowPrintButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowReturnToLastButton { get; set; } = true;
-    [Parameter] public string ReturnToLastButtonText { get; set; } = "返回上一筆";
+    [Parameter] public string ReturnToLastButtonText { get; set; } = "返回編輯";
     
     /// <summary>
     /// 是否啟用記錄導航功能（上一筆/下一筆按鈕）
@@ -556,6 +556,8 @@
         await _loadingSemaphore.WaitAsync();
         try
         {
+            Console.WriteLine($"[LoadAllData] 開始 - _isNavigating: {_isNavigating}, Id: {Id}");
+            
             IsLoading = true;
             ErrorMessage = string.Empty;
             StateHasChanged();
@@ -570,6 +572,7 @@
             // 🔑 關鍵修復：如果正在導航，跳過 DataLoader（Entity 已由 NavigateToRecordAsync 直接載入）
             if (!_isNavigating && DataLoader != null)
             {
+                Console.WriteLine($"[LoadAllData] 調用 DataLoader");
                 var loadedEntity = await DataLoader();
                 if (loadedEntity != null)
                 {
@@ -583,18 +586,22 @@
             }
             else if (_isNavigating)
             {
+                Console.WriteLine($"[LoadAllData] 導航模式，跳過 DataLoader");
                 // 導航模式：Entity 已由 NavigateToRecordAsync 載入，只需更新 ActionButtons
                 UpdateAllActionButtons();
+            }
+            else
+            {
+                Console.WriteLine($"[LoadAllData] DataLoader 為 null");
             }
             
             // 載入狀態訊息資料
             await LoadStatusMessageData();
             
-            // 載入導航狀態（編輯模式時）
-            if (Id.HasValue && Id.Value > 0)
-            {
-                await LoadNavigationStateAsync();
-            }
+            // 載入導航狀態
+            // 新增模式：只載入 _lastRecordId（用於返回編輯按鈕）
+            // 編輯模式：載入完整導航資訊（上一筆、下一筆等）
+            await LoadNavigationStateAsync();
         }
         catch (Exception ex)
         {
@@ -733,6 +740,13 @@
                     // 🔑 關鍵：先更新 _lastId，避免觸發 OnParametersSetAsync 的重複載入
                     _lastId = Entity.Id;
                     Id = Entity.Id;
+                    
+                    // 🔑 修復：觸發 IdChanged 事件，更新父組件的綁定參數（如 PurchaseOrderId）
+                    // 這確保父組件可以正確判斷模式（新增/編輯）
+                    if (IdChanged.HasDelegate)
+                    {
+                        await IdChanged.InvokeAsync(Entity.Id);
+                    }
                     
                     // 重新載入所有資料（包含明細、狀態訊息、導航狀態等）
                     // 這確保了：
@@ -1809,13 +1823,17 @@
     
     /// <summary>
     /// 載入導航狀態（上一筆和下一筆的 ID，支援循環導航）
+    /// 新增模式：只載入最後一筆 ID
+    /// 編輯模式：載入完整導航資訊
     /// </summary>
     private async Task LoadNavigationStateAsync()
     {
         // 使用 _currentId（導航時的實際 ID）或 Id（參數）
         var currentId = _currentId ?? Id;
         
-        if (!EnableNavigation || !currentId.HasValue || Service == null)
+        // 🔑 重要修正：即使在新增模式（currentId 為 null）也需要載入 _lastRecordId
+        // 因為返回編輯按鈕需要 _lastRecordId 來判斷是否顯示
+        if (!EnableNavigation || Service == null)
         {
             _previousId = null;
             _nextId = null;
@@ -1829,10 +1847,31 @@
             // 使用反射調用服務的導航方法
             var serviceType = Service.GetType();
             
+            // 新增模式：只載入最後一筆 ID（用於返回編輯按鈕）
+            if (!currentId.HasValue)
+            {
+                var getLastMethod = serviceType.GetMethod("GetLastIdAsync");
+                if (getLastMethod != null)
+                {
+                    var lastTask = getLastMethod.Invoke(Service, new object[] { }) as Task<int?>;
+                    if (lastTask != null)
+                    {
+                        _lastRecordId = await lastTask;
+                    }
+                }
+                
+                // 清空其他導航狀態
+                _previousId = null;
+                _nextId = null;
+                _firstId = null;
+                return;
+            }
+            
+            // 編輯模式：載入完整導航資訊
             var getPreviousMethod = serviceType.GetMethod("GetPreviousIdAsync");
             var getNextMethod = serviceType.GetMethod("GetNextIdAsync");
             var getFirstMethod = serviceType.GetMethod("GetFirstIdAsync");
-            var getLastMethod = serviceType.GetMethod("GetLastIdAsync");
+            var getLastMethod2 = serviceType.GetMethod("GetLastIdAsync");
             
             // 載入上一筆 ID
             if (getPreviousMethod != null)
@@ -1865,9 +1904,9 @@
             }
             
             // 載入最後一筆 ID（用於循環導航）
-            if (getLastMethod != null)
+            if (getLastMethod2 != null)
             {
-                var lastTask = getLastMethod.Invoke(Service, new object[] { }) as Task<int?>;
+                var lastTask = getLastMethod2.Invoke(Service, new object[] { }) as Task<int?>;
                 if (lastTask != null)
                 {
                     _lastRecordId = await lastTask;
@@ -1896,7 +1935,7 @@
     }
     
     /// <summary>
-    /// 處理返回上一筆按鈕點擊（新增模式專用，返回到最後一筆記錄）
+    /// 處理返回編輯按鈕點擊（新增模式專用，返回到最後一筆記錄）
     /// </summary>
     private async Task HandleReturnToLast()
     {
@@ -1915,7 +1954,7 @@
         }
         catch (Exception ex)
         {
-            await ShowErrorMessage($"返回上一筆{EntityName}時發生錯誤");
+            await ShowErrorMessage($"返回編輯{EntityName}時發生錯誤");
             LogError("HandleReturnToLast", ex);
         }
     }

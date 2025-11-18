@@ -1,4 +1,5 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
+
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -330,6 +331,8 @@
     {
         try
         {
+            ConsoleHelper.WriteInfo($"[LoadData] 開始 - PurchaseOrderId: {PurchaseOrderId}");
+            
             if (!PurchaseOrderId.HasValue)
             {
                 // 新增模式 - 使用統一的 EntityCodeGenerationHelper 產生採購單號（支援 Attribute 配置）
@@ -361,12 +364,16 @@
                 canCreateReceiving = false;
                 canPrint = false;
                 
+                ConsoleHelper.WriteWarning($"[LoadData] 新增模式 - canCreateReceiving: {canCreateReceiving}");
+                
                 return newOrder;
             }
 
             // 編輯模式 - 載入採購單和明細
             canCreateReceiving = true; // 編輯模式：可以直接轉單
             canPrint = true; // 編輯模式：可以直接列印
+            
+            ConsoleHelper.WriteSuccess($"[LoadData] 編輯模式 - PurchaseOrderId: {PurchaseOrderId}, canCreateReceiving: {canCreateReceiving}");
             var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
             
             if (purchaseOrder != null)
@@ -852,6 +859,14 @@
     {
         try
         {
+            // 🔑 關鍵修復：導航到已存在的記錄時，允許轉單和列印
+            // 因為 NavigateToRecordAsync 不會呼叫 LoadPurchaseOrderData，
+            // 所以需要在這裡手動設置狀態
+            canCreateReceiving = true;
+            canPrint = true;
+            
+            ConsoleHelper.WriteSuccess($"[HandleEntityLoaded] 載入實體後 - EntityId: {loadedEntityId}, canCreateReceiving: {canCreateReceiving}");
+            
             // 重新載入明細資料
             await LoadPurchaseOrderDetails(loadedEntityId);
             
@@ -987,6 +1002,8 @@
     /// </summary>
     private async Task<bool> SavePurchaseOrderWrapper(PurchaseOrder purchaseOrder)
     {
+        ConsoleHelper.WriteTitle($"[SaveWrapper] 開始 - PurchaseOrderId: {PurchaseOrderId}, Entity.Id: {purchaseOrder?.Id}, canCreateReceiving: {canCreateReceiving}");
+        
         // 先執行自訂驗證
         if (!await ValidatePurchaseOrderDetailsAsync(purchaseOrder))
         {
@@ -1000,6 +1017,11 @@
         {
             canCreateReceiving = true;
             canPrint = true;
+            ConsoleHelper.WriteSuccess($"[SaveWrapper] 成功 - PurchaseOrderId: {PurchaseOrderId}, Entity.Id: {purchaseOrder?.Id}, canCreateReceiving: {canCreateReceiving}");
+        }
+        else
+        {
+            ConsoleHelper.WriteError($"[SaveWrapper] 失敗");
         }
         
         return result;
@@ -1034,6 +1056,8 @@
             ServiceResult<PurchaseOrder> result;
             bool isNewRecord = !PurchaseOrderId.HasValue;
             
+            ConsoleHelper.WriteInfo($"[SaveWithDetails] 儲存前 - isNewRecord: {isNewRecord}, PurchaseOrderId: {PurchaseOrderId}, Entity.Id: {purchaseOrder.Id}");
+            
             if (PurchaseOrderId.HasValue)
             {
                 result = await PurchaseOrderService.UpdateAsync(purchaseOrder);
@@ -1051,11 +1075,19 @@
                 return false;
             }
 
-            // 關鍵修復：如果是新增模式，更新 PurchaseOrderId 參數
-            // 這樣儲存後「轉進貨」按鈕就能正常使用
+            ConsoleHelper.WriteInfo($"[SaveWithDetails] 儲存後(更新前) - result.Data.Id: {result.Data.Id}, Entity.Id: {purchaseOrder.Id}");
+
+            // 關鍵修復：如果是新增模式，更新實體的 ID 和參數
+            // 確保 GenericEditModalComponent 能正確偵測到從新增轉為編輯模式
             if (isNewRecord && result.Data.Id > 0)
             {
+                // 🔑 修復1：更新傳入的實體物件 ID（讓 GenericEditModalComponent 能偵測到）
+                purchaseOrder.Id = result.Data.Id;
+                
+                // 🔑 修復2：更新組件參數（用於後續判斷模式）
                 PurchaseOrderId = result.Data.Id;
+                
+                ConsoleHelper.WriteSuccess($"[SaveWithDetails] 儲存後(更新後) - PurchaseOrderId: {PurchaseOrderId}, Entity.Id: {purchaseOrder.Id}");
             }
 
             // 儲存明細
@@ -1461,9 +1493,12 @@
     {
         try
         {
+            ConsoleHelper.WriteTitle($"[轉進貨] 檢查 - canCreateReceiving: {canCreateReceiving}, PurchaseOrderId: {PurchaseOrderId}, Entity?.Id: {editModalComponent?.Entity?.Id}");
+            
             // 唯一檢查：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
             if (!canCreateReceiving)
             {
+                ConsoleHelper.WriteError($"[轉進貨] 失敗 - canCreateReceiving 為 false");
                 await NotificationService.ShowWarningAsync("請先儲存採購單後，才能轉進貨單");
                 return;
             }
@@ -1471,9 +1506,12 @@
             // 安全檢查：確保 Entity 已載入（canCreateReceiving = true 時理論上一定有值）
             if (editModalComponent?.Entity == null)
             {
+                ConsoleHelper.WriteError($"[轉進貨] 失敗 - Entity 為 null");
                 await NotificationService.ShowWarningAsync("採購單資料載入失敗，請重新整理頁面");
                 return;
             }
+            
+            ConsoleHelper.WriteSuccess($"[轉進貨] 通過檢查，準備開啟進貨單 Modal - SupplierId: {editModalComponent.Entity.SupplierId}, OrderId: {editModalComponent.Entity.Id}");
             
             // 直接開啟進貨單 Modal，使用 Entity.Id 作為採購單 ID（最可靠的來源）
             // 所有業務驗證（廠商、明細、完成進貨等）交給 Modal 內部處理
