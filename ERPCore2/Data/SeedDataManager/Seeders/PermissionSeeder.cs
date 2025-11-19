@@ -59,6 +59,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new Permission { Code = "Product.Read", Name = "檢視產品", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視產品基本資料與規格" },
                 new Permission { Code = "ProductCategory.Read", Name = "檢視產品分類", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視產品分類階層與設定" },
                 new Permission { Code = "ProductComposition.Read", Name = "檢視產品合成", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視產品合成（BOM）結構與明細" },
+                new Permission { Code = "CompositionCategory.Read", Name = "檢視合成表類型", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視產品合成表的類型分類" },
                 new Permission { Code = "ProductionSchedule.Read", Name = "檢視生產排程", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視生產排程的詳細資料" },
 
                 // 產品定價管理權限

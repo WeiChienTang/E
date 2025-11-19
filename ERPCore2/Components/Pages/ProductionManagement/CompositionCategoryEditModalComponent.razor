@@ -1,0 +1,237 @@
+@* 可重用的合成表類型編輯組件 - 可在任何頁面中嵌入 *@
+@inject ICompositionCategoryService CompositionCategoryService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="CompositionCategory" 
+                          TService="ICompositionCategoryService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@CompositionCategoryId"
+                          Service="@CompositionCategoryService"
+                          EntityName="合成表類型"
+                          EntityNamePlural="合成表類型"
+                          ModalTitle="@(CompositionCategoryId.HasValue ? "編輯合成表類型" : "新增合成表類型")"
+                          Size="GenericEditModalComponent<CompositionCategory, ICompositionCategoryService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadCompositionCategoryData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CompositionCategoryId.HasValue ? "合成表類型更新成功" : "合成表類型新增成功")"
+                          SaveFailureMessage="合成表類型儲存失敗"
+                          RequiredPermission="CompositionCategory.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnEntityLoaded="@HandleEntityLoaded" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CompositionCategoryId { get; set; }
+    [Parameter] public EventCallback<CompositionCategory> OnCompositionCategorySaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<CompositionCategory, ICompositionCategoryService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // ===== 生命週期 =====
+    
+    /// <summary>
+    /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
+    /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
+    /// </summary>
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+            await Task.CompletedTask;
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            // 如果父組件需要知道合成表類型已儲存
+            if (OnCompositionCategorySaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnCompositionCategorySaved.InvokeAsync(editModalComponent.Entity);
+            }
+
+            // CloseModal 已由 GenericEditModalComponent 統一控制
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task<CompositionCategory?> LoadCompositionCategoryData()
+    {
+        try
+        {
+            if (!CompositionCategoryId.HasValue) 
+            {
+                // 新增模式：建立新的合成表類型實體並生成代碼
+                var newCategory = new CompositionCategory
+                {
+                    Name = string.Empty,
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<CompositionCategory, ICompositionCategoryService>(CompositionCategoryService, "CC"),
+                    Status = EntityStatus.Active
+                };
+                
+                // 應用預填值
+                PrefilledValueHelper.ApplyPrefilledValues(newCategory, PrefilledValues);
+                
+                return newCategory;
+            }
+
+            var category = await CompositionCategoryService.GetByIdAsync(CompositionCategoryId.Value);            
+            
+            if (category == null)
+            {
+                // 如果找不到合成表類型，建立新的預設實體
+                return new CompositionCategory
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            return category;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入合成表類型資料時發生錯誤：{ex.Message}");
+            
+            // 設定安全的預設值，確保程式不會崩潰
+            return new CompositionCategory
+            {
+                Name = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                // 基本資訊區段
+                
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(CompositionCategory.Code),
+                    Label = "類型代碼",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入合成表類型代碼",
+                    IsRequired = true,
+                    HelpText = "合成表類型的唯一代碼，例如：STD、ALT、SIM、CUST，系統會自動產生，也可手動修改"
+                },
+
+                new()
+                {
+                    PropertyName = nameof(CompositionCategory.Name),
+                    Label = "類型名稱",
+                    FieldType = FormFieldType.Text,
+                    Placeholder = "請輸入合成表類型名稱",
+                    IsRequired = true,
+                    HelpText = "合成表類型的名稱，例如：標準配方、替代配方、簡化配方、客製配方"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<CompositionCategory>()
+            };
+
+            formSections = FormSectionHelper<CompositionCategory>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    cc => cc.Code,
+                    cc => cc.Name)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    cc => cc.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 公開方法 (供父組件調用) =====
+
+    /// <summary>
+    /// 開啟新增合成表類型 Modal
+    /// </summary>
+    public async Task ShowAddModal()
+    {
+        CompositionCategoryId = null;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+
+    /// <summary>
+    /// 開啟編輯合成表類型 Modal
+    /// </summary>
+    public async Task ShowEditModal(int categoryId)
+    {
+        CompositionCategoryId = categoryId;
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(true);
+        }
+    }
+}

@@ -50,7 +50,8 @@ namespace ERPCore2.Services
                     return await GetAllAsync();
 
                 return await context.CompositionCategories
-                    .Where(cc => cc.Name.Contains(searchTerm))
+                    .Where(cc => ((cc.Name != null && cc.Name.Contains(searchTerm)) ||
+                         (cc.Code != null && cc.Code.Contains(searchTerm))))
                     .OrderBy(cc => cc.Name)
                     .ToListAsync();
             }
@@ -76,20 +77,19 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
                 
+                if (string.IsNullOrWhiteSpace(entity.Code))
+                    errors.Add("合成表類型代碼不能為空");
+                
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("名稱為必填欄位");
                 
-                // 檢查名稱是否重複
-                if (!string.IsNullOrWhiteSpace(entity.Name))
-                {
-                    using var context = await _contextFactory.CreateDbContextAsync();
-                    var exists = await context.CompositionCategories
-                        .Where(cc => cc.Name == entity.Name && cc.Id != entity.Id)
-                        .AnyAsync();
-                    
-                    if (exists)
-                        errors.Add("此名稱已存在");
-                }
+                if (!string.IsNullOrWhiteSpace(entity.Code) && 
+                    await IsCompositionCategoryCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
+                    errors.Add("合成表類型代碼已存在");
+                
+                if (!string.IsNullOrWhiteSpace(entity.Name) && 
+                    await IsCompositionCategoryNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
+                    errors.Add("此名稱已存在");
                 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
@@ -105,6 +105,52 @@ namespace ERPCore2.Services
                     EntityName = entity.Name 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
+            }
+        }
+
+        public async Task<bool> IsCompositionCategoryCodeExistsAsync(string code, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.CompositionCategories.Where(cc => cc.Code == code);
+                if (excludeId.HasValue)
+                    query = query.Where(cc => cc.Id != excludeId.Value);
+                
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCompositionCategoryCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsCompositionCategoryCodeExistsAsync),
+                    ServiceType = GetType().Name,
+                    Code = code,
+                    ExcludeId = excludeId 
+                });
+                return false;
+            }
+        }
+
+        public async Task<bool> IsCompositionCategoryNameExistsAsync(string name, int? excludeId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var query = context.CompositionCategories.Where(cc => cc.Name == name);
+                if (excludeId.HasValue)
+                    query = query.Where(cc => cc.Id != excludeId.Value);
+                
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsCompositionCategoryNameExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsCompositionCategoryNameExistsAsync),
+                    ServiceType = GetType().Name,
+                    Name = name,
+                    ExcludeId = excludeId 
+                });
+                return false;
             }
         }
     }

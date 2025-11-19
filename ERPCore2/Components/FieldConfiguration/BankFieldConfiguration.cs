@@ -24,6 +24,19 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<Bank>>
                 {
                     {
+                      nameof(Bank.Code),
+                        new FieldDefinition<Bank>
+                        {
+                            PropertyName = nameof(Bank.Code),
+                            DisplayName = "銀行代碼",
+                            FilterPlaceholder = "輸入銀行代碼搜尋",
+                            TableOrder = 0,
+                            HeaderStyle = "width: 100px;",
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, nameof(Bank.Code), b => b.Code)
+                        }  
+                    },
+                    {
                         nameof(Bank.BankName),
                         new FieldDefinition<Bank>
                         {

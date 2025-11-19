@@ -220,6 +220,16 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
+                        Name = "合成表類型",
+                        Description = "管理產品合成表的類型分類",
+                        Route = "/composition-categories",
+                        IconClass = "",
+                        Category = "產品管理",
+                        RequiredPermission = "CompositionCategory.Read",
+                        SearchKeywords = new List<string> { "合成表類型", "BOM類型", "category" }
+                    },
+                    new NavigationItem
+                    {
                         Name = "生產排程管理",
                         Description = "管理生產排程的詳細資料",
                         Route = "/production-schedules",

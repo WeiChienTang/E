@@ -39,6 +39,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 new CompositionCategory
                 {
+                    Code = "STD",
                     Name = "標準配方",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1,
@@ -46,6 +47,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new CompositionCategory
                 {
+                    Code = "ALT",
                     Name = "替代配方",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt2,
@@ -53,6 +55,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new CompositionCategory
                 {
+                    Code = "SIM",
                     Name = "簡化配方",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt3,
@@ -60,6 +63,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new CompositionCategory
                 {
+                    Code = "CUST",
                     Name = "客製配方",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt4,
