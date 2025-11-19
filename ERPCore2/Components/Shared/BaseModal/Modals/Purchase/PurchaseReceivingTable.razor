@@ -182,6 +182,7 @@ else
     private int? _previousSelectedPurchaseOrderId = null;
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
+    private int _previousExistingDetailsCount = 0;  // 追蹤 ExistingDetails 數量變化
     
     // ===== 資料載入狀態控制 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
@@ -238,6 +239,7 @@ else
     {
         // 初始化時記錄當前供應商ID，避免 OnParametersSetAsync 誤判為變更
         _previousSelectedSupplierId = SelectedSupplierId;
+        _previousExistingDetailsCount = ExistingDetails?.Count ?? 0;
         
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
@@ -607,13 +609,17 @@ else
         bool supplierChanged = _previousSelectedSupplierId != SelectedSupplierId;
         bool purchaseOrderChanged = _previousSelectedPurchaseOrderId != SelectedPurchaseOrderId;
         bool productFilterChanged = _previousFilterProductId != FilterProductId;
+        int currentExistingDetailsCount = ExistingDetails?.Count ?? 0;
+        bool existingDetailsChanged = _previousExistingDetailsCount != currentExistingDetailsCount;
         
-        // 如果廠商變更，需要重新載入所有資料
-        if (supplierChanged)
+        // 🔑 關鍵：如果 ExistingDetails 有變化（例如從編輯模式返回），不要清空資料
+        // 只在真正的廠商變更時才重新載入
+        if (supplierChanged && !existingDetailsChanged)
         {
             _previousSelectedSupplierId = SelectedSupplierId;
             _previousSelectedPurchaseOrderId = SelectedPurchaseOrderId;
             _previousFilterProductId = FilterProductId;
+            _previousExistingDetailsCount = currentExistingDetailsCount;
             
             await LoadAvailableProductsAsync();
             
@@ -621,6 +627,12 @@ else
             ReceivingItems.Clear();
             await LoadExistingDetailsAsync();
             return;
+        }
+        
+        // 更新追蹤變數
+        if (existingDetailsChanged)
+        {
+            _previousExistingDetailsCount = currentExistingDetailsCount;
         }
         
         // 如果只是採購單或商品篩選變更，只需要更新篩選狀態並重新渲染
@@ -1083,6 +1095,9 @@ else
     {
         if (ExistingDetails?.Any() != true) 
         {
+            ReceivingItems.Clear();
+            _dataLoadCompleted = true;
+            StateHasChanged();
             return;
         }
 

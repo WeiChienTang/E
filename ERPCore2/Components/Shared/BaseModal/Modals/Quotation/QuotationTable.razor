@@ -136,87 +136,106 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位
+        // 商品選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "項目名稱/規格", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "ProductSearchValue",
+            EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
+            TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
+            ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "300px",
-            Tooltip = "選擇報價商品",
-            CustomTemplate = item => 
+            Tooltip = "搜尋並選擇商品（輸入編號或名稱）。已轉銷貨的商品將無法變更",
+            Placeholder = "請輸入商品編號或名稱",
+            SearchValuePropertyName = nameof(QuotationItem.ProductSearchValue),
+            FilteredItemsPropertyName = nameof(QuotationItem.FilteredProducts),
+            ShowDropdownPropertyName = nameof(QuotationItem.ShowProductDropdown),
+            SelectedIndexPropertyName = nameof(QuotationItem.ProductSelectedIndex),
+            ItemDisplayFormatter = (item) =>
+            {
+                var product = (Product)item;
+                return $"[{product.Code}] {product.Name}";
+            },
+            IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var selectedValue = quotationItem.SelectedProduct?.Id.ToString() ?? "";
-                var isEmptyRow = quotationItem.SelectedProduct == null;
-                var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
-                var isFieldReadOnly = IsReadOnly || (!canDelete && !isEmptyRow);
-                
-                // 如果是唯讀狀態，直接顯示商品名稱
-                if (isFieldReadOnly && quotationItem.SelectedProduct != null)
+                return IsReadOnly || !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) 
+                    ? "此商品已轉銷貨，無法修改商品選擇" : null;
+            },
+            OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
+            {
+                var (item, searchValue) = tuple;
+                OnProductSearchChanged((QuotationItem)item, searchValue);
+            }),
+            OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
+            {
+                var (item, selectedItem) = tuple;
+                await OnProductSelected((QuotationItem)item, (Product?)selectedItem);
+            }),
+            OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                var quotationItem = (QuotationItem)item;
+                quotationItem.FilteredProducts = Products.Take(20).ToList();
+                quotationItem.ShowProductDropdown = true;
+                quotationItem.ProductSelectedIndex = -1;
+                StateHasChanged();
+            }),
+            OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                Task.Delay(200).ContinueWith(_ =>
                 {
-                    var displayText = quotationItem.DisplayName;
-                    var title = !canDelete ? "此商品已轉銷貨，無法修改商品選擇" : "";
-                    return @<div class="position-relative d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示下拉選單
-                return @<select class="form-select form-select-sm" 
-                            value="@selectedValue"
-                            disabled="@isFieldReadOnly"
-                            @onchange="@(async (e) => await OnProductSelectionChanged(quotationItem, e.Value?.ToString()))">
-                    <option value="">請選擇商品</option>
-                    @foreach (var product in Products)
-                    {
-                        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
-                            ? $"[{product.Code}] {product.Name}"
-                            : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? "");
-                        <option value="@product.Id">@productDisplay</option>
-                    }
-                </select>;
-            }
+                    var quotationItem = (QuotationItem)item;
+                    quotationItem.ShowProductDropdown = false;
+                    InvokeAsync(StateHasChanged);
+                });
+            }),
+            EnableKeyboardNavigation = true,
+            GetDropdownItems = (item) => ((QuotationItem)item).FilteredProducts,
+            GetSelectedIndex = (item) => ((QuotationItem)item).ProductSelectedIndex,
+            SetSelectedIndex = (item, index) => ((QuotationItem)item).ProductSelectedIndex = index,
+            GetShowDropdown = (item) => ((QuotationItem)item).ShowProductDropdown,
+            SetShowDropdown = (item, show) => ((QuotationItem)item).ShowProductDropdown = show,
+            MaxDisplayItems = 20
         });
 
         // 單位欄位
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單位", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "UnitId",
+            ColumnType = InteractiveColumnType.Select,
             Width = "100px",
+            Placeholder = "請選擇單位",
             Tooltip = "選擇報價單位",
-            CustomTemplate = item => 
+            Options = Units.Select(u => new InteractiveSelectOption 
+            { 
+                Value = u.Id.ToString(), 
+                Text = u.Name ?? "" 
+            }).ToList(),
+            IsDisabledFunc = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var selectedUnitId = quotationItem.SelectedUnit?.Id.ToString() ?? "";
                 var isEmptyRow = quotationItem.SelectedProduct == null;
-                var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
-                var isFieldReadOnly = IsReadOnly || (!canDelete && !isEmptyRow);
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (isFieldReadOnly)
-                {
-                    var displayText = quotationItem.SelectedUnit?.Name ?? "無";
-                    var title = !canDelete ? "此商品已轉銷貨，無法修改單位" : "";
-                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted" title="@title">@displayText</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示下拉選單
-                return @<select class="form-select form-select-sm"
-                               value="@selectedUnitId"
-                               disabled="@isFieldReadOnly"
-                               @onchange="(e) => OnUnitSelectionChanged(quotationItem, e.Value?.ToString())">
-                    <option value="">請選擇</option>
-                    @foreach (var unit in Units)
-                    {
-                        <option value="@unit.Id">@unit.Name</option>
-                    }
-                </select>;
-            }
+                return IsReadOnly || (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow);
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                var isEmptyRow = quotationItem.SelectedProduct == null;
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
+                    return "此商品已轉銷貨，無法修改單位";
+                return "選擇報價單位";
+            },
+            OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
+            {
+                var (item, value) = args;
+                await OnUnitSelectionChanged((QuotationItem)item, value?.ToString());
+            })
         });
 
         // 數量欄位
@@ -317,18 +336,19 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "總價", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "SubtotalAmount",
+            ColumnType = InteractiveColumnType.Display,
             Width = "120px",
             Tooltip = "自動計算的小計金額",
-            CustomTemplate = item => 
+            TextAlign = "right",
+            IsReadOnly = true,
+            DisplayFormatter = (value) =>
             {
-                var quotationItem = (QuotationItem)item;
-                var subtotal = quotationItem.SubtotalAmount;
-                
-                return @<div class="d-flex align-items-center justify-content-end">
-                    <span class="fw-bold">@NumberFormatHelper.FormatSmart(subtotal)</span>
-                </div>;
+                if (value is decimal amount)
+                {
+                    return NumberFormatHelper.FormatSmart(amount);
+                }
+                return "0";
             }
         });
 
@@ -503,6 +523,10 @@ else
                     SelectedProduct = quotationDetail.Product,
                     SelectedUnit = quotationDetail.Unit,
                     
+                    // 設定搜尋顯示值（修正編輯模式顯示問題）
+                    ProductSearchValue = quotationDetail.Product != null ? 
+                        $"[{quotationDetail.Product.Code}] {quotationDetail.Product.Name}" : string.Empty,
+                    
                     // 直接使用屬性值
                     Quantity = quotationDetail.Quantity,
                     UnitPrice = quotationDetail.UnitPrice,
@@ -525,6 +549,7 @@ else
                     var item = new QuotationItem
                     {
                         SelectedProduct = product,
+                        ProductSearchValue = $"[{product.Code}] {product.Name}",  // 設定搜尋顯示值
                         Quantity = Convert.ToDecimal(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0m),
                         UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
                         DiscountPercentage = Convert.ToDecimal(GetPropertyValue<object>(detail, DiscountPercentagePropertyName) ?? 0m),
@@ -680,35 +705,60 @@ else
 
     // ===== 事件處理方法 =====
 
-    private async Task OnProductSelectionChanged(QuotationItem item, string? productIdStr)
+    /// <summary>
+    /// 商品搜尋輸入變更事件（SearchableSelect）
+    /// </summary>
+    private void OnProductSearchChanged(QuotationItem item, string? searchValue)
     {
-        // 檢查全域唯讀或個別明細已轉銷貨
-        var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = item.SelectedProduct == null;
-        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
+        item.ProductSearchValue = searchValue ?? string.Empty;
         
-        if (string.IsNullOrEmpty(productIdStr) || !int.TryParse(productIdStr, out var productId))
+        if (string.IsNullOrWhiteSpace(searchValue))
         {
-            item.SelectedProduct = null;
-            item.SelectedUnit = null;
+            // 空白搜尋：顯示前20筆
+            item.FilteredProducts = Products.Take(20).ToList();
         }
         else
         {
-            var product = Products.FirstOrDefault(p => p.Id == productId);
-            if (product != null)
-            {
-                item.SelectedProduct = product;
-                
-                // 自動設定預設單位（如果商品有預設單位）
-                if (product.Unit != null)
-                {
-                    item.SelectedUnit = product.Unit;
-                }
-            }
+            // 篩選符合的商品（編號或名稱包含搜尋字串）
+            item.FilteredProducts = Products
+                .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                           (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                .Take(20)
+                .ToList();
         }
         
-        await NotifyDetailsChanged();
+        item.ShowProductDropdown = true;
+        item.ProductSelectedIndex = -1;
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 商品選擇事件（SearchableSelect）
+    /// </summary>
+    private async Task OnProductSelected(QuotationItem item, Product? selectedProduct)
+    {
+        if (selectedProduct != null)
+        {
+            item.SelectedProduct = selectedProduct;
+            item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
+            
+            // 自動設定預設單位（如果商品有預設單位）
+            if (selectedProduct.Unit != null)
+            {
+                item.SelectedUnit = selectedProduct.Unit;
+            }
+        }
+        else
+        {
+            item.SelectedProduct = null;
+            item.ProductSearchValue = string.Empty;
+            item.SelectedUnit = null;
+        }
+        
+        item.ShowProductDropdown = false;
+        item.ProductSelectedIndex = -1;
+        
+        await NotifyDetailsChanged();
     }
 
     private async Task OnUnitSelectionChanged(QuotationItem item, string? unitIdStr)
@@ -970,29 +1020,52 @@ else
         return true;
     }
 
-    public class QuotationItem
+        public class QuotationItem
     {
         public Product? SelectedProduct { get; set; }
         public Unit? SelectedUnit { get; set; }
         public decimal Quantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
+        public decimal ConvertedQuantity { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
-        // === 追蹤已轉銷貨數量 ===
-        public decimal ConvertedQuantity { get; set; } = 0;
-        
-        // === 計算屬性 ===
-        public decimal SubtotalAmount => Math.Round(Quantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
-        
-        // === SearchableSelect 相關屬性 ===
+        // SearchableSelect 支援屬性
         public string ProductSearchValue { get; set; } = string.Empty;
         public List<Product> FilteredProducts { get; set; } = new();
         public bool ShowProductDropdown { get; set; } = false;
-        public int SelectedProductIndex { get; set; } = -1;
+        public int ProductSelectedIndex { get; set; } = -1;
         
-        // === 顯示名稱 ===
+        // Select 欄位綁定的 ID 屬性
+        public string? UnitId
+        {
+            get => SelectedUnit?.Id.ToString();
+            set
+            {
+                // 這個 setter 主要用於 InteractiveTableComponent 的 Select 綁定
+                // 實際的 SelectedUnit 物件會在 OnUnitSelectionChanged 中設定
+            }
+        }
+        
+        /// <summary>
+        /// 計算屬性：小計金額（數量 × 單價 × 折扣）
+        /// </summary>
+        public decimal SubtotalAmount => Quantity * UnitPrice * (1 - DiscountPercentage / 100);
+        
+        /// <summary>
+        /// 計算屬性：未轉單數量
+        /// </summary>
+        public decimal RemainingQuantity => Quantity - ConvertedQuantity;
+        
+        /// <summary>
+        /// 計算屬性：是否已完全轉單
+        /// </summary>
+        public bool IsFullyConverted => ConvertedQuantity >= Quantity;
+        
+        /// <summary>
+        /// 計算屬性：顯示名稱（用於唯讀模式）
+        /// </summary>
         public string DisplayName
         {
             get
@@ -1000,8 +1073,10 @@ else
                 if (SelectedProduct == null) return string.Empty;
                 
                 var parts = new List<string>();
+                
                 if (!string.IsNullOrEmpty(SelectedProduct.Code))
                     parts.Add($"[{SelectedProduct.Code}]");
+                
                 if (!string.IsNullOrEmpty(SelectedProduct.Name))
                     parts.Add(SelectedProduct.Name);
                 
