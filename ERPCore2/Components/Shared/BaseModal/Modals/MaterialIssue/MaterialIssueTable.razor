@@ -19,7 +19,7 @@
                         <i class="bi bi-upc-scan me-2"></i>條碼掃描
                     </label>
                     <input type="text" 
-                           class="form-control form-control-lg" 
+                           class="form-control form-control" 
                            placeholder="請掃描或輸入商品條碼，按 Enter 新增..."
                            @bind="barcodeInput"
                            @bind:event="oninput"
@@ -231,7 +231,6 @@
             Width = "250px",
             Tooltip = "搜尋並選擇商品",
             Placeholder = "請輸入商品編號或名稱",
-            IsRequired = true,
             SearchValuePropertyName = nameof(DetailItem.ProductSearchValue),
             FilteredItemsPropertyName = nameof(DetailItem.FilteredProducts),
             ShowDropdownPropertyName = nameof(DetailItem.ShowProductDropdown),

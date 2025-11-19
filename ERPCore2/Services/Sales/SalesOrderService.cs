@@ -476,13 +476,13 @@ namespace ERPCore2.Services
                         // 對每筆交易記錄進行庫存回退
                         foreach (var transaction_record in inventoryTransactions)
                         {
-                            if (transaction_record.InventoryStockId.HasValue && transaction_record.Quantity < 0)
+                            if (transaction_record.InventoryStockDetailId.HasValue && transaction_record.Quantity < 0)
                             {
                                 // 原始扣減是負數，回滾時要加回正數
                                 var revertQuantity = Math.Abs(transaction_record.Quantity);
                                 
                                 var revertResult = await _inventoryStockService.RevertStockToOriginalAsync(
-                                    transaction_record.InventoryStockId.Value,
+                                    transaction_record.InventoryStockDetailId.Value,
                                     revertQuantity,
                                     InventoryTransactionTypeEnum.Return,
                                     $"SO-{id}_REVERT_{DateTime.Now:yyyyMMddHHmmss}",
