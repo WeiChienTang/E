@@ -52,7 +52,8 @@
                             }
 
                             @* 審核流程設定 *@
-                            @if (activeTab == "approval")
+                            // 先暫時關閉，等完善後再開啟
+                            @* @if (activeTab == "approval")
                             {
                                 <SystemParameterTabContainer IsLoading="@isLoading" 
                                                             ErrorMessage="@errorMessage"
@@ -68,7 +69,7 @@
                                         <ApprovalSettingsTab Model="@systemParameter" />
                                     </SystemParameterTabWrapper>
                                 </SystemParameterTabContainer>
-                            }
+                            } *@
 
                             @* 外觀設定 *@
                             @if (activeTab == "appearance")
@@ -124,7 +125,8 @@
     private List<SystemParameterTabHeader.TabDefinition> tabDefinitions = new()
     {
         new("basic", "系統基本設定", ""),
-        new("approval", "審核流程設定", ""),
+        // 先暫時關閉，等完善後再開啟
+        @* new("approval", "審核流程設定", ""), *@
 
         // 因還尚未確定該顯示什麼，先不顯示
 

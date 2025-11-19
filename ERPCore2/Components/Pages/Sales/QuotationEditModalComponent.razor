@@ -144,6 +144,9 @@
     
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有轉單記錄）
+    
+    // ===== 明細載入狀態 =====
+    private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -192,6 +195,11 @@
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
+        else
+        {
+            // 🔑 Modal 關閉時重置明細資料準備狀態
+            isDetailDataReady = false;
+        }
     }
 
     private async Task HandleSaveSuccess()
@@ -237,6 +245,9 @@
                 
                 // 新增模式時,重置鎖定狀態為 false
                 hasUndeletableDetails = false;
+                
+                // 新增模式下直接標記為準備就緒（沒有明細需要載入）
+                isDetailDataReady = true;
 
                 return newQuotation;
             }
@@ -252,6 +263,9 @@
                 // 檢查明細是否有已轉單的記錄（與 PurchaseOrderEditModalComponent 邏輯一致）
                 var hasConvertedDetails = quotationDetails.Any(d => d.ConvertedQuantity > 0);
                 hasUndeletableDetails = hasConvertedDetails;
+                
+                // 🔑 標記明細資料已準備就緒
+                isDetailDataReady = true;
                 
                 // 如果已轉單或已審核，需要鎖定欄位
                 if (hasUndeletableDetails || quotation.IsApproved)
@@ -993,12 +1007,21 @@
 
     /// <summary>
     /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
-    /// 當報價單已審核通過時，顯示鎖定警告訊息
+    /// 當報價單已審核通過或有明細已轉單時，顯示鎖定警告訊息
     /// </summary>
     private RenderFragment? WarningMessage => __builder =>
     {
+        // 只在資料準備就緒後才顯示訊息
+        if (!isDetailDataReady)
+            return;
+        
+        // 審核通過的警告訊息
         <GenericLockedFieldMessage IsVisible="@(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true)"
                                   Message="報價單已審核通過，主檔欄位已鎖定。" />
+        
+        // 明細已轉單的警告訊息
+        <GenericLockedFieldMessage IsVisible="@(hasUndeletableDetails && !(isApprovalEnabled && editModalComponent?.Entity?.IsApproved == true))"
+                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。"/>
     };
     
     /// <summary>
@@ -1125,15 +1148,9 @@
                 savedSalesOrderId: savedSalesOrder.Id,
                 updateEntity: async () =>
                 {
-                    if (editModalComponent?.Entity != null)
-                    {
-                        editModalComponent.Entity.ConvertedToSalesOrderId = savedSalesOrder.Id;
-                        var updateResult = await QuotationService.UpdateAsync(editModalComponent.Entity);
-                        if (!updateResult.IsSuccess)
-                        {
-                            await NotificationService.ShowWarningAsync($"報價單轉單狀態更新失敗：{updateResult.ErrorMessage}");
-                        }
-                    }
+                    // 不需要更新報價單的轉單狀態（已移除 ConvertedToSalesOrderId 欄位）
+                    // 銷貨訂單透過 QuotationId 關聯到報價單即可
+                    await Task.CompletedTask;
                 },
                 reloadQuotation: async () =>
                 {
@@ -1142,16 +1159,6 @@
                     if (QuotationId.HasValue)
                     {
                         await LoadQuotationDetails(QuotationId.Value);
-                        
-                        // 同時更新主檔實體的銷貨訂單關聯
-                        if (editModalComponent?.Entity != null)
-                        {
-                            var updatedQuotation = await QuotationService.GetWithDetailsAsync(QuotationId.Value);
-                            if (updatedQuotation != null)
-                            {
-                                editModalComponent.Entity.SalesOrder = updatedQuotation.SalesOrder;
-                            }
-                        }
                     }
                 },
                 checkUndeletable: () => quotationDetails.Any(d => d.ConvertedQuantity > 0),

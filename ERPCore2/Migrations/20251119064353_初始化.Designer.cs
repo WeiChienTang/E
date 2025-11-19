@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251110035112_移除Code")]
-    partial class 移除Code
+    [Migration("20251119064353_初始化")]
+    partial class 初始化
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -239,6 +239,51 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.ToTable("Companies");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CompositionCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("CompositionCategories");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Currency", b =>
@@ -1907,6 +1952,10 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("SizeId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Specification")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -2002,7 +2051,7 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("CompositionType")
+                    b.Property<int?>("CompositionCategoryId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -2040,6 +2089,8 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompositionCategoryId");
 
                     b.HasIndex("CreatedByEmployeeId");
 
@@ -2358,11 +2409,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PurchaseOrderNumber")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
                     b.Property<string>("PurchasePersonnel")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -2401,10 +2447,11 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ApprovedBy");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
-                    b.HasIndex("PurchaseOrderNumber")
-                        .IsUnique();
+                    b.HasIndex("CompanyId");
 
                     b.HasIndex("WarehouseId");
 
@@ -2806,9 +2853,6 @@ namespace ERPCore2.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ConvertedToSalesOrderId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2873,8 +2917,6 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("ConvertedToSalesOrderId");
 
                     b.HasIndex("EmployeeId");
 
@@ -3338,6 +3380,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("QuotationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -3367,6 +3412,8 @@ namespace ERPCore2.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("CustomerId", "OrderDate");
+
+                    b.HasIndex("QuotationId", "OrderDate");
 
                     b.ToTable("SalesOrders");
                 });
@@ -3704,11 +3751,6 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("SetoffDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("SetoffNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<int>("SetoffType")
                         .HasColumnType("int");
 
@@ -3734,14 +3776,15 @@ namespace ERPCore2.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
+
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("RelatedPartyId");
 
                     b.HasIndex("SetoffDate");
-
-                    b.HasIndex("SetoffNumber")
-                        .IsUnique();
 
                     b.HasIndex("SetoffType");
 
@@ -5090,6 +5133,11 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductComposition", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.CompositionCategory", "CompositionCategory")
+                        .WithMany("ProductCompositions")
+                        .HasForeignKey("CompositionCategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ERPCore2.Data.Entities.Employee", "CreatedByEmployee")
                         .WithMany()
                         .HasForeignKey("CreatedByEmployeeId");
@@ -5103,6 +5151,8 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("ParentProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CompositionCategory");
 
                     b.Navigation("CreatedByEmployee");
 
@@ -5415,11 +5465,6 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
-                        .WithMany()
-                        .HasForeignKey("ConvertedToSalesOrderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -5438,8 +5483,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Employee");
-
-                    b.Navigation("SalesOrder");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.QuotationDetail", b =>
@@ -5595,9 +5638,16 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ERPCore2.Data.Entities.Quotation", "Quotation")
+                        .WithMany("SalesOrders")
+                        .HasForeignKey("QuotationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Customer");
 
                     b.Navigation("Employee");
+
+                    b.Navigation("Quotation");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrderDetail", b =>
@@ -5930,6 +5980,11 @@ namespace ERPCore2.Migrations
                     b.Navigation("Warehouse");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.CompositionCategory", b =>
+                {
+                    b.Navigation("ProductCompositions");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Department", b =>
                 {
                     b.Navigation("Employees");
@@ -6029,6 +6084,8 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.Quotation", b =>
                 {
                     b.Navigation("QuotationDetails");
+
+                    b.Navigation("SalesOrders");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.QuotationDetail", b =>

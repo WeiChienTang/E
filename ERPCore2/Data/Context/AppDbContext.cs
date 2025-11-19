@@ -461,6 +461,11 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasKey(so => so.Id);
 
+                        entity.HasOne(so => so.Quotation)
+                        .WithMany(q => q.SalesOrders)
+                        .HasForeignKey(so => so.QuotationId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
                         entity.HasOne(so => so.Customer)
                         .WithMany()
                         .HasForeignKey(so => so.CustomerId)
@@ -566,11 +571,6 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(q => q.ApprovedBy)
                         .OnDelete(DeleteBehavior.Restrict);
-
-                        entity.HasOne(q => q.SalesOrder)
-                        .WithMany()
-                        .HasForeignKey(q => q.ConvertedToSalesOrderId)
-                        .OnDelete(DeleteBehavior.SetNull);
                   });
 
                   modelBuilder.Entity<QuotationDetail>(entity =>

@@ -16,9 +16,10 @@
 
     @if (ShowBatchApprovalButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Warning" Text="批次審核" 
+        // 先暫時關閉，等完善後再開啟
+        @* <GenericButtonComponent Variant="ButtonVariant.Warning" Text="批次審核" 
                                OnClick="HandleBatchApprovalClick" IsDisabled="@(IsLoading || IsBatchApprovalDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnBatchApproval)" Title="批次審核"/>
+                               IsLoading="@(IsLoading && LoadingOnBatchApproval)" Title="批次審核"/> *@
     }
 
     @if (ShowBatchPrintButton)

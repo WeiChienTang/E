@@ -1348,17 +1348,9 @@
 
             var isEditMode = SalesOrderId.HasValue;
             
-            // 2. 儲存前檢查倉庫選擇和庫存（僅在新增模式下進行）
-            // 編輯模式下會先進行庫存回滾，所以不需要事前驗證
-            if (!isEditMode)
-            {
-                var stockValidationResult = await SalesOrderService.ValidateWarehouseInventoryStockAsync(salesOrderDetails);
-                if (!stockValidationResult.IsSuccess)
-                {
-                    await NotificationService.ShowErrorAsync($"驗證失敗，無法儲存：\n{stockValidationResult.ErrorMessage}");
-                    return false;
-                }
-            }
+            // 2. 💡 銷貨訂單不影響庫存，無需驗證倉庫庫存
+            // 倉庫選擇和庫存驗證應在「銷貨出貨單」階段進行
+            
             List<SalesOrderDetail> originalDetails = new();
             
             // 在編輯模式下，先取得原始明細資料
@@ -1387,11 +1379,8 @@
             // 儲存明細
             await SaveSalesOrderDetails(result.Data.Id, isEditMode, isEditMode ? originalDetails : new List<SalesOrderDetail>());
             
-            // 只有新增模式才需要進行庫存扣減（編輯模式的庫存由 SalesOrderDetailService.UpdateDetailsWithInventoryAsync 處理）
-            if (!isEditMode)
-            {
-                await ReduceInventoryWithFIFOAsync(result.Data.Id);
-            }
+            // 💡 銷貨訂單不影響庫存，無需扣減庫存
+            // 庫存扣減應發生在「銷貨出貨單」階段，而非「銷貨訂單」階段
 
             return true;
         }

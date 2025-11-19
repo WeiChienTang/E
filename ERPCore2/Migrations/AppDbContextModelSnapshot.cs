@@ -2850,9 +2850,6 @@ namespace ERPCore2.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ConvertedToSalesOrderId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2917,8 +2914,6 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("ConvertedToSalesOrderId");
 
                     b.HasIndex("EmployeeId");
 
@@ -3382,6 +3377,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("QuotationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -3411,6 +3409,8 @@ namespace ERPCore2.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("CustomerId", "OrderDate");
+
+                    b.HasIndex("QuotationId", "OrderDate");
 
                     b.ToTable("SalesOrders");
                 });
@@ -5462,11 +5462,6 @@ namespace ERPCore2.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
-                        .WithMany()
-                        .HasForeignKey("ConvertedToSalesOrderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -5485,8 +5480,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Employee");
-
-                    b.Navigation("SalesOrder");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.QuotationDetail", b =>
@@ -5642,9 +5635,16 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ERPCore2.Data.Entities.Quotation", "Quotation")
+                        .WithMany("SalesOrders")
+                        .HasForeignKey("QuotationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Customer");
 
                     b.Navigation("Employee");
+
+                    b.Navigation("Quotation");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrderDetail", b =>
@@ -6081,6 +6081,8 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.Quotation", b =>
                 {
                     b.Navigation("QuotationDetails");
+
+                    b.Navigation("SalesOrders");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.QuotationDetail", b =>

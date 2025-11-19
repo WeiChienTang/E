@@ -71,16 +71,12 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Employee))]
         public int? EmployeeId { get; set; }
 
-        [Display(Name = "轉換成銷貨訂單")]
-        [ForeignKey(nameof(SalesOrder))]
-        public int? ConvertedToSalesOrderId { get; set; }
-
         // Navigation Properties
         public Company Company { get; set; } = null!;
         public Customer Customer { get; set; } = null!;
         public Employee? Employee { get; set; }
         public Employee? ApprovedByUser { get; set; }
-        public SalesOrder? SalesOrder { get; set; }
         public ICollection<QuotationDetail> QuotationDetails { get; set; } = new List<QuotationDetail>();
+        public ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
     }
 }

@@ -467,36 +467,8 @@ namespace ERPCore2.Services
                         return canDeleteResult;
                     }
                     
-                    // 3. 檢查是否有庫存服務可用並進行庫存回滾
-                    if (_inventoryStockService != null)
-                    {
-                        // 查找該銷貨訂單相關的庫存交易記錄
-                        var inventoryTransactions = await _inventoryStockService.GetInventoryTransactionsBySalesOrderAsync(id);
-                        
-                        // 對每筆交易記錄進行庫存回退
-                        foreach (var transaction_record in inventoryTransactions)
-                        {
-                            if (transaction_record.InventoryStockDetailId.HasValue && transaction_record.Quantity < 0)
-                            {
-                                // 原始扣減是負數，回滾時要加回正數
-                                var revertQuantity = Math.Abs(transaction_record.Quantity);
-                                
-                                var revertResult = await _inventoryStockService.RevertStockToOriginalAsync(
-                                    transaction_record.InventoryStockDetailId.Value,
-                                    revertQuantity,
-                                    InventoryTransactionTypeEnum.Return,
-                                    $"SO-{id}_REVERT_{DateTime.Now:yyyyMMddHHmmss}",
-                                    $"永久刪除銷貨訂單回滾庫存 - {entity.Code}"
-                                );
-                                
-                                if (!revertResult.IsSuccess)
-                                {
-                                    await transaction.RollbackAsync();
-                                    return ServiceResult.Failure($"庫存回退失敗：{revertResult.ErrorMessage}");
-                                }
-                            }
-                        }
-                    }
+                    // 3. 💡 銷貨訂單不影響庫存，無需回滾庫存
+                    // 庫存扣減應發生在「銷貨出貨單」階段，而非「銷貨訂單」階段
 
                     // 4. 更新報價單明細的已轉銷貨數量，並清空報價單主檔的轉單關聯
                     var detailsToDelete = await context.SalesOrderDetails
@@ -530,22 +502,8 @@ namespace ERPCore2.Services
                             }
                         }
                         
-                        // 清空相關報價單的轉單關聯（因為銷貨訂單已被刪除）
-                        if (relatedQuotationIds.Any())
-                        {
-                            foreach (var quotationId in relatedQuotationIds)
-                            {
-                                var quotation = await context.Quotations.FindAsync(quotationId);
-                                if (quotation != null)
-                                {
-                                    if (quotation.ConvertedToSalesOrderId == id)
-                                    {
-                                        quotation.ConvertedToSalesOrderId = null;
-                                        quotation.UpdatedAt = DateTime.Now;
-                                    }
-                                }
-                            }
-                        }
+                        // 不需要清空報價單的轉單關聯（已移除 ConvertedToSalesOrderId 欄位）
+                        // 銷貨訂單透過 QuotationId 關聯到報價單，刪除訂單時會自動解除關聯
                         
                         context.SalesOrderDetails.RemoveRange(detailsToDelete);
                     }
