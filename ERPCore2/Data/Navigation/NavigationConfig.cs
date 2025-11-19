@@ -70,16 +70,15 @@ public static class NavigationConfig
                         RequiredPermission = "EmployeePosition.Read",
                         SearchKeywords = new List<string> { "職位", "職稱", "position" }
                     },
-                    new NavigationItem
-                    {
-                        Name = "身分權限",
-                        Description = "管理角色與權限關係",
-                        Route = "/employees/role-permission-management",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "人力資源管理",
-                        RequiredPermission = "Role.Read",
-                        SearchKeywords = new List<string> { "身分權限", "角色權限", "role permission" }
-                    },
+                    NavigationActionHelper.CreateActionItem(
+                        name: "身分權限",
+                        description: "管理角色與權限關係",
+                        iconClass: "bi bi-shield-lock",
+                        actionId: "OpenRolePermissionManagement",
+                        category: "人力資源管理",
+                        requiredPermission: "Role.Read",
+                        searchKeywords: new List<string> { "身分權限", "角色權限", "role permission", "權限設定" }
+                    ),
                     new NavigationItem
                     {
                         Name = "身分",

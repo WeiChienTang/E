@@ -1,5 +1,6 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Pages.Reports
+@using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Helpers
 @using Microsoft.JSInterop
 @inherits LayoutComponentBase
@@ -32,6 +33,10 @@
 <AccountsReceivableReportPage IsVisible="@showAccountsReceivableReport"
                              IsVisibleChanged="@((bool visible) => showAccountsReceivableReport = visible)" />
 
+@* 角色權限管理 Modal *@
+<RolePermissionManagement IsVisible="@showRolePermissionManagement"
+                         IsVisibleChanged="@((bool visible) => showRolePermissionManagement = visible)" />
+
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer" 
                 OnPageSearchClick="@OpenPageSearch"
@@ -48,6 +53,9 @@
     // 應收帳款報表 Modal 狀態
     private bool showAccountsReceivableReport = false;
     
+    // 角色權限管理 Modal 狀態
+    private bool showRolePermissionManagement = false;
+    
     // Action 處理器註冊表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
 
@@ -58,6 +66,7 @@
         
         // 註冊所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
+        actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);
         
         // 未來可在此繼續註冊其他 Action
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
@@ -162,6 +171,24 @@
         catch
         {
             // 忽略開啟應收帳款報表失敗
+        }
+    }
+    
+    /// <summary>
+    /// 開啟角色權限管理 Modal
+    /// JavaScript 可呼叫此方法
+    /// </summary>
+    [JSInvokable]
+    public void OpenRolePermissionManagement()
+    {
+        try
+        {
+            showRolePermissionManagement = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟角色權限管理失敗
         }
     }
     
