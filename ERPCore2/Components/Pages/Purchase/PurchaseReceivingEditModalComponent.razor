@@ -801,9 +801,7 @@
                     Placeholder = "請輸入或選擇產品",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "輸入產品代碼或名稱進行搜尋，或直接選擇",
-                    ActionButtons = await GetProductActionButtonsAsync(),
-                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                    HelpText = "輸入產品代碼或名稱進行搜尋，或直接選擇"
                 },
                 new()
                 {
@@ -949,8 +947,7 @@
     {
         return new Dictionary<string, object>
         {
-            { nameof(PurchaseReceiving.SupplierId), supplierModalManager },
-            { "FilterProductId", productModalManager }
+            { nameof(PurchaseReceiving.SupplierId), supplierModalManager }
         };
     }
 
@@ -1193,24 +1190,6 @@
             );
         }
         
-        // 特殊處理產品篩選欄位（需要 ActionButtons）
-        if (hasUndeletableDetails)
-        {
-            FormFieldLockHelper.LockField(
-                formFields,
-                "FilterProductId",
-                isLocked: true
-            );
-        }
-        else
-        {
-            FormFieldLockHelper.LockField(
-                formFields,
-                "FilterProductId",
-                isLocked: false,
-                actionButtonsGetter: GetProductActionButtonsAsync
-            );
-        }
     }
 
     /// <summary>
@@ -1274,14 +1253,6 @@
                 {
                     filterProductId = null;
                 }
-                
-                // 更新產品欄位的操作按鈕
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    productModalManager, 
-                    formFields, 
-                    "FilterProductId", 
-                    fieldChange.Value
-                );
                 
                 StateHasChanged();
             }

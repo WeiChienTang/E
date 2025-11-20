@@ -59,12 +59,11 @@ else
         <div class="card-footer">
             <div class="d-flex justify-content-between">
                 <div>
-                    @if (CanLoadAllUnreceived)
-                    {
-                        <GenericButtonComponent Text="載入未入庫"
-                                              Variant="ButtonVariant.Info"
-                                              OnClick="LoadAllUnreceivedItems" />
-                    }
+                    <GenericButtonComponent Text="載入未入庫"
+                                          Variant="ButtonVariant.Info"
+                                          IsDisabled="@(!CanLoadAllUnreceived)"
+                                          Title="@GetLoadAllUnreceivedTooltip()"
+                                          OnClick="LoadAllUnreceivedItems" />
                 </div>
                 <div class="d-flex gap-2">
                     @* 統一倉庫下拉選單 *@
@@ -99,10 +98,10 @@ else
                         </ul>
                     </div>
                 
-                    <GenericButtonComponent Text="進貨全填"
+                    <GenericButtonComponent Text="入庫量全填"
                                           Variant="ButtonVariant.Primary"
                                           OnClick="FillAllQuantities" />
-                    <GenericButtonComponent Text="進貨清空"
+                    <GenericButtonComponent Text="入庫量全清"
                                           Variant="ButtonVariant.Danger"
                                           OnClick="ClearAllQuantities" />
                     <GenericButtonComponent Text="清除明細"
@@ -209,6 +208,23 @@ else
         SelectedSupplierId.Value > 0 && 
         GetAvailablePurchaseDetails().Any() &&
         !(ExistingDetails?.Any() == true); // 編輯模式（有現有明細）時隱藏
+    
+    /// <summary>
+    /// 取得「載入未入庫」按鈕的提示訊息
+    /// </summary>
+    private string GetLoadAllUnreceivedTooltip()
+    {
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+            return "請先選擇廠商";
+        
+        if (!GetAvailablePurchaseDetails().Any())
+            return "該廠商沒有未完成入庫的採購單明細";
+        
+        if (ExistingDetails?.Any() == true)
+            return "編輯模式下無法載入未入庫項目，以避免覆蓋現有資料";
+        
+        return "載入該廠商所有未完成入庫的採購明細";
+    }
     
     /// <summary>
     /// 檢查是否有被鎖定的明細（有退貨或沖款記錄的明細）
@@ -734,7 +750,7 @@ else
             Title = "採購數量", 
             PropertyName = "OrderQuantity",
             ColumnType = InteractiveColumnType.Display,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "原始採購單上的訂購數量（唯讀）",
             IsReadOnly = true,
             TextAlign = "right",
@@ -746,7 +762,7 @@ else
             Title = "入庫數量", 
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "實際入庫的數量。已退貨或已沖款的商品將無法修改數量",
             CellCssClass = "text-end",
             MinValue = 0,
@@ -797,6 +813,23 @@ else
             IsReadOnly = true
         });
 
+        // 小計欄位
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "小計",
+            Tooltip = "入庫數量 × 單價的總計",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var subtotal = receivingItem.ReceivedQuantity * receivingItem.UnitPrice;
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                return @<div class="text-end fw-bold text-success">@displayValue</div>;
+            }
+        });
+        
         // 倉庫欄位 (條件顯示)
         if (ShowWarehouse)
         {

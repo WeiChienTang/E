@@ -278,6 +278,23 @@ else
             })
         });
 
+        // 小計欄位
+        columns.Add(new()
+        {
+            Title = "小計",
+            Tooltip = "數量 × 單價的總計",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item =>
+            {
+                var productItem = (ProductItem)item;
+                var subtotal = productItem.Quantity * productItem.Price;
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                return @<div class="text-end fw-bold text-success">@displayValue</div>;
+            }
+        });
+
         // 完成進貨欄位
         columns.Add(new() 
         { 

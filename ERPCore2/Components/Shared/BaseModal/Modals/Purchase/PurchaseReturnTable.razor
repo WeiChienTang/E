@@ -39,12 +39,11 @@ else
         <div class="card-footer">
             <div class="d-flex justify-content-between">
                 <div>
-                    @if (CanLoadAllReturnable)
-                    {
-                        <GenericButtonComponent Text="載入可退回"
-                                              Variant="ButtonVariant.Primary"
-                                              OnClick="LoadAllReturnableItems" />
-                    }
+                    <GenericButtonComponent Text="載入可退回"
+                                          Variant="ButtonVariant.Primary"
+                                          IsDisabled="@(!CanLoadAllReturnable)"
+                                          Title="@GetLoadAllReturnableTooltip()"
+                                          OnClick="LoadAllReturnableItems" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="退回全填"
@@ -145,13 +144,34 @@ else
     /// 規則：
     /// 1. 必須選擇廠商
     /// 2. 必須有可載入的進貨明細
-    /// 3. 編輯模式（有現有明細）時隱藏（避免覆蓋現有資料）
+    /// 3. 編輯模式下或已有明細時禁用此按鈕（避免覆蓋現有資料）
     /// </summary>
     private bool CanLoadAllReturnable => 
         EffectiveSupplierId.HasValue && 
         EffectiveSupplierId.Value > 0 && 
         GetAvailableReceivingDetails().Any() &&
-        !(ExistingReturnDetails?.Any() == true); // 編輯模式（有現有明細）時隱藏
+        !(ExistingReturnDetails?.Any() == true) && // 編輯模式（有現有明細）時禁用
+        !ReturnItems.Any(x => x.SelectedReceivingDetail != null); // 已載入明細時禁用
+    
+    /// <summary>
+    /// 取得「載入可退回」按鈕的提示訊息
+    /// </summary>
+    private string GetLoadAllReturnableTooltip()
+    {
+        if (!EffectiveSupplierId.HasValue || EffectiveSupplierId.Value <= 0)
+            return "請先選擇廠商";
+        
+        if (!GetAvailableReceivingDetails().Any())
+            return "該廠商沒有可退回的進貨明細";
+        
+        if (ExistingReturnDetails?.Any() == true)
+            return "編輯模式下無法載入可退回項目，以避免覆蓋現有資料";
+        
+        if (ReturnItems.Any(x => x.SelectedReceivingDetail != null))
+            return "已有明細項目，無法再次載入以避免覆蓋現有資料";
+        
+        return "載入該廠商所有可退回的進貨明細";
+    }
     
     /// <summary>
     /// 檢查是否有被鎖定的明細（有沖款記錄的明細）
@@ -502,7 +522,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "原始進貨數量", 
-            PropertyName = "",
+            PropertyName = nameof(ReturnItem.OriginalQuantity),
             ColumnType = InteractiveColumnType.Display,
             Width = "120px",
             Tooltip = "當初進貨時的原始數量（唯讀）",
@@ -551,17 +571,21 @@ else
             IsReadOnly = true
         });
 
-        // 小計欄位 (只讀顯示) - 使用貨幣格式
+        // 小計欄位
         columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = "小計", 
-            PropertyName = nameof(ReturnItem.ReturnSubtotal),
-            ColumnType = InteractiveColumnType.Display,
+        {
+            Title = "小計",
+            Tooltip = "退回數量 × 單價的總計",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "退回金額小計（退回數量 × 單價）",
-            NumberFormat = "C",  // 貨幣格式
-            TextAlign = "right",
-            IsReadOnly = true
+            CustomTemplate = item =>
+            {
+                var returnItem = (ReturnItem)item;
+                var subtotal = returnItem.ReturnQuantity * returnItem.OriginalUnitPrice;
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                return @<div class="text-end fw-bold text-success">@displayValue</div>;
+            }
         });
 
         // 備註欄位
@@ -982,6 +1006,7 @@ else
             
             await NotifyDetailsChanged();
             await NotificationService.ShowSuccessAsync($"已載入 {availableDetails.Count} 項可退回商品");
+            StateHasChanged(); // 強制更新 UI，確保按鈕狀態正確更新
         }
         catch (Exception ex)
         {

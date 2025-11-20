@@ -990,21 +990,20 @@ else
         });
         
 
-        // 小計欄位 (只讀顯示)
+        // 小計欄位
         columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = "小計", 
+        {
+            Title = "小計",
+            Tooltip = "訂單金額小計（數量 × 單價 × (1 - 折扣%)）",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "訂單金額小計（數量 × 單價 × (1 - 折扣%)）",
-            CustomTemplate = item => 
+            CustomTemplate = item =>
             {
                 var salesItem = (SalesItem)item;
-                
-                return @<div class="text-end fw-bold text-success">
-                    @salesItem.Subtotal.ToString("C")
-                </div>;
+                var subtotal = salesItem.Subtotal;
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
         });
 

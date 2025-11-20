@@ -241,11 +241,11 @@ else
         // 數量欄位
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "報價數量", 
+            Title = "數量", 
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
-            Tooltip = "輸入報價數量",
+            Tooltip = "輸入數量",
             CellCssClass = "text-end",
             MinValue = 0,
             IsDisabledFunc = item =>
@@ -260,7 +260,7 @@ else
                 var isEmptyRow = quotationItem.SelectedProduct == null;
                 if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
                     return "此商品已轉銷貨，無法修改數量";
-                return "輸入報價數量";
+                return "輸入數量";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -332,23 +332,20 @@ else
             })
         });
 
-        // 總價欄位 (計算欄位，唯讀)
+        // 小計欄位
         columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = "總價", 
-            PropertyName = "SubtotalAmount",
-            ColumnType = InteractiveColumnType.Display,
+        {
+            Title = "小計",
+            Tooltip = "數量 × 單價的總計",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "自動計算的小計金額",
-            TextAlign = "right",
-            IsReadOnly = true,
-            DisplayFormatter = (value) =>
+            CustomTemplate = item =>
             {
-                if (value is decimal amount)
-                {
-                    return NumberFormatHelper.FormatSmart(amount);
-                }
-                return "0";
+                var quotationItem = (QuotationItem)item;
+                var subtotal = quotationItem.Quantity * quotationItem.UnitPrice;
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
         });
 
