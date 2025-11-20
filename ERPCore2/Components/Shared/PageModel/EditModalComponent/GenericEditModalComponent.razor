@@ -556,8 +556,6 @@
         await _loadingSemaphore.WaitAsync();
         try
         {
-            Console.WriteLine($"[LoadAllData] 開始 - _isNavigating: {_isNavigating}, Id: {Id}");
-            
             IsLoading = true;
             ErrorMessage = string.Empty;
             StateHasChanged();
@@ -572,7 +570,6 @@
             // 🔑 關鍵修復：如果正在導航，跳過 DataLoader（Entity 已由 NavigateToRecordAsync 直接載入）
             if (!_isNavigating && DataLoader != null)
             {
-                Console.WriteLine($"[LoadAllData] 調用 DataLoader");
                 var loadedEntity = await DataLoader();
                 if (loadedEntity != null)
                 {
@@ -586,13 +583,8 @@
             }
             else if (_isNavigating)
             {
-                Console.WriteLine($"[LoadAllData] 導航模式，跳過 DataLoader");
                 // 導航模式：Entity 已由 NavigateToRecordAsync 載入，只需更新 ActionButtons
                 UpdateAllActionButtons();
-            }
-            else
-            {
-                Console.WriteLine($"[LoadAllData] DataLoader 為 null");
             }
             
             // 載入狀態訊息資料

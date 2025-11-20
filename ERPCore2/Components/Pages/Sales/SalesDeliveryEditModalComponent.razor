@@ -160,6 +160,20 @@
     {
         try
         {
+            // 重新載入剛儲存的明細資料
+            if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
+            {
+                await LoadSalesDeliveryDetailsInternal(editModalComponent.Entity.Id);
+                
+                // 刷新 Table 元件
+                if (salesDeliveryDetailManager != null)
+                {
+                    await salesDeliveryDetailManager.RefreshDetailsAsync();
+                }
+                
+                StateHasChanged();
+            }
+            
             if (OnSalesDeliverySaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 await OnSalesDeliverySaved.InvokeAsync(editModalComponent.Entity);
@@ -169,7 +183,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "出貨單編輯Modal儲存成功處理失敗");
+                additionalData: "處理出貨單儲存成功事件時發生錯誤");
         }
     }
 
@@ -384,6 +398,16 @@
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetCustomerActionButtonsAsync()
                 },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesDelivery.SalesOrderId),
+                    Label = "銷售訂單",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇銷售訂單",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇關聯的銷售訂單（可選）"
+                },
                 new()
                 {
                     PropertyName = nameof(SalesDelivery.EmployeeId),
@@ -421,6 +445,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
                     sd => sd.CustomerId,
+                    sd => sd.SalesOrderId,
                     sd => sd.EmployeeId,
                     sd => sd.DeliveryDate)
                 .AddToSection(FormSectionNames.AmountInfo,
@@ -538,12 +563,12 @@
 
     private async Task OnCustomerSavedWrapper(Customer customer)
     {
-        await customerModalManager.HandleEntitySavedAsync(customer);
+        await customerModalManager.HandleEntitySavedAsync(customer, shouldAutoSelect: true);
     }
 
     private async Task OnEmployeeSavedWrapper(Employee employee)
     {
-        await employeeModalManager.HandleEntitySavedAsync(employee);
+        await employeeModalManager.HandleEntitySavedAsync(employee, shouldAutoSelect: true);
     }
 
     private Dictionary<string, object> GetModalManagers()
@@ -560,11 +585,44 @@
     {
         try
         {
-            // 客戶變更時，自動載入地址
-            if (fieldChange.PropertyName == nameof(SalesDelivery.CustomerId) && fieldChange.Value != null)
+            // 客戶變更時，自動載入地址並更新 ActionButtons
+            if (fieldChange.PropertyName == nameof(SalesDelivery.CustomerId))
             {
-                await HandleCustomerChanged((int)fieldChange.Value);
+                if (fieldChange.Value != null)
+                {
+                    await HandleCustomerChanged((int)fieldChange.Value);
+                }
+                
+                // 更新客戶欄位的操作按鈕
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    customerModalManager, 
+                    formFields, 
+                    nameof(SalesDelivery.CustomerId), 
+                    fieldChange.Value
+                );
+                
+                // ✅ 只在客戶變更時才觸發重新渲染
+                StateHasChanged();
+                return; // ✅ 重要：處理完就返回，避免繼續執行
             }
+            
+            // 業務員變更時，更新 ActionButtons
+            if (fieldChange.PropertyName == nameof(SalesDelivery.EmployeeId))
+            {
+                // 更新業務員欄位的操作按鈕
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    employeeModalManager, 
+                    formFields, 
+                    nameof(SalesDelivery.EmployeeId), 
+                    fieldChange.Value
+                );
+                
+                // ✅ 只在業務員變更時才觸發重新渲染
+                StateHasChanged();
+                return; // ✅ 重要：處理完就返回，避免繼續執行
+            }
+            
+            // ✅ 其他欄位變更不需要 StateHasChanged
         }
         catch (Exception ex)
         {
@@ -666,27 +724,39 @@
     {
         try
         {
+            // 只有在出貨單ID存在時才處理明細（新增出貨單時可能ID還是0）
+            if (salesDelivery.Id <= 0)
+            {
+                return; // 新增的出貨單，ID可能還沒設定，跳過明細儲存
+            }
+
             // 儲存有效的明細資料（有選擇商品的記錄）
             var validDetails = salesDeliveryDetails
                 .Where(d => d.ProductId > 0 && d.DeliveryQuantity > 0)
                 .ToList();
 
-            foreach (var detail in validDetails)
+            if (validDetails.Any())
             {
-                detail.SalesDeliveryId = salesDelivery.Id;
-                
-                if (detail.Id == 0)
+                foreach (var detail in validDetails)
                 {
-                    await SalesDeliveryDetailService.CreateAsync(detail);
+                    detail.SalesDeliveryId = salesDelivery.Id;
+                    
+                    if (detail.Id == 0)
+                    {
+                        await SalesDeliveryDetailService.CreateAsync(detail);
+                    }
+                    else
+                    {
+                        await SalesDeliveryDetailService.UpdateAsync(detail);
+                    }
                 }
-                else
-                {
-                    await SalesDeliveryDetailService.UpdateAsync(detail);
-                }
+
+                // 🔑 關鍵：重新載入明細資料以更新UI顯示
+                salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDelivery.Id);
             }
 
             // 更新主檔總金額
-            var totalAmount = validDetails.Sum(d => d.SubtotalAmount);
+            var totalAmount = salesDeliveryDetails.Sum(d => d.SubtotalAmount);
             if (salesDelivery.TotalAmount != totalAmount)
             {
                 salesDelivery.TotalAmount = totalAmount;
@@ -721,26 +791,64 @@
     /// </summary>
     private RenderFragment CreateDeliveryDetailManagerContent() => __builder =>
     {
-        <SalesDeliveryTable @ref="salesDeliveryDetailManager"
-                           TMainEntity="SalesDelivery"
-                           TDetailEntity="SalesDeliveryDetail"
-                           MainEntity="@editModalComponent?.Entity"
-                           ExistingDetails="@salesDeliveryDetails"
-                           OnDetailsChanged="@HandleDeliveryDetailsChanged"
-                           OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
-                           Products="@availableProducts"
-                           Warehouses="@warehouses"
-                           WarehouseLocations="@warehouseLocations"
-                           SelectedCustomerId="@editModalComponent?.Entity?.CustomerId"
-                           MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
-                           QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
-                           UnitPricePropertyName="@nameof(SalesDeliveryDetail.UnitPrice)"
-                           RemarksPropertyName="@nameof(SalesDeliveryDetail.Remarks)"
-                           WarehouseIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseId)"
-                           WarehouseLocationIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseLocationId)"
-                           ShowWarehouse="true"
-                           ShowWarehouseLocation="false"
-                           IsReadOnly="false" />
+        try
+        {
+            @if (editModalComponent?.Entity != null)
+            {
+                // 只有選擇客戶後才顯示明細管理器
+                @if (editModalComponent.Entity.CustomerId > 0)
+                {
+                    try
+                    {
+                        <SalesDeliveryTable @ref="salesDeliveryDetailManager"
+                                           TMainEntity="SalesDelivery"
+                                           TDetailEntity="SalesDeliveryDetail"
+                                           MainEntity="@editModalComponent.Entity"
+                                           ExistingDetails="@salesDeliveryDetails"
+                                           OnDetailsChanged="@HandleDeliveryDetailsChanged"
+                                           OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                                           Products="@availableProducts"
+                                           Warehouses="@warehouses"
+                                           WarehouseLocations="@warehouseLocations"
+                                           SelectedCustomerId="@editModalComponent.Entity.CustomerId"
+                                           MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
+                                           QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
+                                           UnitPricePropertyName="@nameof(SalesDeliveryDetail.UnitPrice)"
+                                           RemarksPropertyName="@nameof(SalesDeliveryDetail.Remarks)"
+                                           WarehouseIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseId)"
+                                           WarehouseLocationIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseLocationId)"
+                                           ShowWarehouse="true"
+                                           ShowWarehouseLocation="false"
+                                           IsReadOnly="false" />
+                    }
+                    catch
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            載入明細管理器時發生錯誤，請重新整理頁面。
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-info text-center" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        請先選擇客戶後再進行出貨明細管理
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <span class="text-muted">請先選擇客戶後再管理出貨明細</span>
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細管理器時發生錯誤，請重新整理頁面。
+            </div>
+        }
     };
     
     // ===== ActionButton 產生方法 =====

@@ -535,6 +535,54 @@ namespace ERPCore2.Services
 
         #endregion
 
+        #region 出貨明細查詢
+
+        /// <summary>
+        /// 取得客戶的出貨明細（可篩選是否包含已完成和是否檢查審核）
+        /// 此方法用於載入該客戶所有未完成出貨的銷貨訂單明細
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="includeCompleted">是否包含已完成的明細</param>
+        /// <param name="checkApproval">是否檢查審核狀態（銷貨訂單無審核機制，此參數保留以保持介面一致性）</param>
+        public async Task<List<SalesOrderDetail>> GetDeliveryDetailsByCustomerAsync(int customerId, bool includeCompleted, bool checkApproval = true)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var query = context.SalesOrderDetails
+                    .Include(sod => sod.SalesOrder)
+                        .ThenInclude(so => so.Customer)
+                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Warehouse)
+                    .Where(sod => sod.SalesOrder.CustomerId == customerId);
+
+                // 注意：銷貨訂單沒有審核機制，checkApproval 參數保留但不使用
+                // 此參數僅為保持與採購訂單 API 一致性
+
+                if (!includeCompleted)
+                {
+                    // 只包含未完成的明細：既未結清，且數量未滿
+                    query = query.Where(sod => !sod.IsSettled && sod.DeliveredQuantity < sod.OrderQuantity);
+                }
+
+                return await query.OrderBy(sod => sod.SalesOrder.Code)
+                                .ThenBy(sod => sod.Product.Name)
+                                .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetDeliveryDetailsByCustomerAsync), GetType(), _logger, new { 
+                    CustomerId = customerId,
+                    IncludeCompleted = includeCompleted,
+                    CheckApproval = checkApproval
+                });
+                return new List<SalesOrderDetail>();
+            }
+        }
+
+        #endregion
+
         #region 批次列印查詢
 
         /// <summary>

@@ -1,6 +1,7 @@
 @* 銷貨出貨明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
 
 @inject IProductService ProductService
+@inject ISalesOrderService SalesOrderService
 @inject INotificationService NotificationService
 @inject IInventoryStockService InventoryStockService
 
@@ -35,7 +36,28 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       EnableAutoEmptyRow="true"
                                       DataLoadCompleted="@_dataLoadCompleted"
-                                      CreateEmptyItem="@(() => new DeliveryItem())" />
+                                      CreateEmptyItem="@CreateNewEmptyItem" />
+        </div>
+
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <GenericButtonComponent Text="載入訂單"
+                                          Variant="ButtonVariant.Info"
+                                          IconClass="bi bi-box-arrow-in-down"
+                                          IsDisabled="@(!CanLoadAllUndelivered)"
+                                          Title="@GetLoadAllUndeliveredTooltip()"
+                                          OnClick="LoadAllUndeliveredItems" />
+                </div>
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Text="明細清除"
+                                          Variant="ButtonVariant.Warning"
+                                          IconClass="bi bi-trash"
+                                          IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0))"
+                                          Title="@(IsReadOnly ? "唯讀模式" : DeliveryItems.Any(item => item.ProductId > 0) ? "清除所有出貨明細" : "沒有可清除的明細項目")"
+                                          OnClick="ClearAllDetails" />
+                </div>
+            </div>
         </div>
     </div>
 }
@@ -46,6 +68,12 @@ else
     
     // ===== 資料載入完成標記 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
+    // ===== 建立空項目方法 =====
+    private DeliveryItem CreateNewEmptyItem()
+    {
+        return new DeliveryItem();  // 🔑 返回新的空物件，所有屬性都是預設值（null）
+    }
     
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
@@ -74,7 +102,7 @@ else
     [Parameter] public bool ShowWarehouseLocation { get; set; } = true;
     
     // ===== 顯示標籤參數 =====
-    [Parameter] public string QuantityLabel { get; set; } = "出貨數量";
+    [Parameter] public string QuantityLabel { get; set; } = "數量";
     [Parameter] public string PriceLabel { get; set; } = "單價";
     [Parameter] public string RemarksLabel { get; set; } = "備註";
     [Parameter] public string WarehouseLabel { get; set; } = "倉庫";
@@ -93,20 +121,83 @@ else
 
     private List<DeliveryItem> DeliveryItems { get; set; } = new List<DeliveryItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
+    private List<SalesOrderDetail> AvailableSalesDetails { get; set; } = new List<SalesOrderDetail>();
+    private int? _previousSelectedCustomerId = null;
+    private int _previousExistingDetailsCount = 0;  // 追蹤 ExistingDetails 數量變化
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
+
+    // ===== 計算屬性 =====
+    /// <summary>
+    /// 判斷是否可以使用「載入訂單」功能
+    /// 規則：
+    /// 1. 必須選擇客戶
+    /// 2. 必須有可載入的訂單明細
+    /// 3. 編輯模式下隱藏此按鈕（避免覆蓋現有資料）
+    /// </summary>
+    private bool CanLoadAllUndelivered => 
+        SelectedCustomerId.HasValue && 
+        SelectedCustomerId.Value > 0 && 
+        GetAvailableSalesDetails().Any() &&
+        !(ExistingDetails?.Any() == true); // 編輯模式（有現有明細）時隱藏
+    
+    /// <summary>
+    /// 取得「載入訂單」按鈕的提示訊息
+    /// </summary>
+    private string GetLoadAllUndeliveredTooltip()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+            return "請先選擇客戶";
+        
+        if (!GetAvailableSalesDetails().Any())
+            return "該客戶沒有未完成出貨的訂單明細";
+        
+        if (ExistingDetails?.Any() == true)
+            return "編輯模式下無法載入訂單項目，以避免覆蓋現有資料";
+        
+        return "載入該客戶所有未完成出貨的訂單明細";
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        // 初始化時記錄當前客戶ID和明細數量，避免 OnParametersSetAsync 誤判為變更
+        _previousSelectedCustomerId = SelectedCustomerId;
+        _previousExistingDetailsCount = ExistingDetails?.Count ?? 0;
+        
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 客戶變更時重新載入可用商品
-        if (SelectedCustomerId.HasValue)
+        base.OnParametersSet();
+        
+        // 檢查篩選參數是否變更
+        bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
+        int currentExistingDetailsCount = ExistingDetails?.Count ?? 0;
+        bool existingDetailsChanged = _previousExistingDetailsCount != currentExistingDetailsCount;
+        
+        // 🔑 關鍵：如果 ExistingDetails 有變化（例如從編輯模式返回），重新載入明細
+        if (existingDetailsChanged)
         {
+            _previousExistingDetailsCount = currentExistingDetailsCount;
+            
+            // 🔑 重新載入明細以顯示最新資料
+            await LoadExistingDetailsAsync();
+            return;
+        }
+        
+        // 只在真正的客戶變更時才重新載入
+        if (customerChanged)
+        {
+            _previousSelectedCustomerId = SelectedCustomerId;
+            _previousExistingDetailsCount = currentExistingDetailsCount;
+            
             await LoadAvailableProductsAsync();
+            
+            // 客戶變更時清空現有選項並重新載入
+            DeliveryItems.Clear();
+            await LoadExistingDetailsAsync();
+            return;
         }
     }
     
@@ -115,7 +206,7 @@ else
     /// </summary>
     public async Task RefreshDetailsAsync()
     {
-        await LoadAvailableProductsAsync();
+        await LoadExistingDetailsAsync();
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
     }
@@ -123,64 +214,96 @@ else
     // ===== InteractiveTableComponent 方法 =====
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
-        var columns = new List<InteractiveColumnDefinition>
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 訂單明細選擇欄位 - 使用 SearchableSelect 類型
+        columns.Add(new InteractiveColumnDefinition
         {
-            // 商品選擇欄位
-            new InteractiveColumnDefinition
+            Title = "訂單單號/商品編號/名稱",
+            PropertyName = "SalesDetailSearchValue",
+            EmptyCheckPropertyName = "SelectedSalesDetail",
+            TriggerEmptyRowOnFilled = true,
+            ColumnType = InteractiveColumnType.SearchableSelect,
+            Width = "300px",
+            Tooltip = "搜尋並選擇要出貨的訂單商品",
+            Placeholder = "請輸入訂單單號或商品名稱",
+            SearchValuePropertyName = nameof(DeliveryItem.SalesDetailSearchValue),
+            FilteredItemsPropertyName = nameof(DeliveryItem.FilteredSalesDetails),
+            ShowDropdownPropertyName = nameof(DeliveryItem.ShowSalesDetailDropdown),
+            SelectedIndexPropertyName = nameof(DeliveryItem.SalesDetailSelectedIndex),
+            ItemDisplayFormatter = (item) =>
             {
-                PropertyName = nameof(DeliveryItem.ProductId),
-                Title = "商品名稱",
-                ColumnType = InteractiveColumnType.Select,
-                Width = "250px",
-                IsRequired = true,
-                Options = GetProductOptions(),
-                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, 
-                    async args => await OnProductChanged((DeliveryItem)args.Item1, args.Item2))
+                var detail = (SalesOrderDetail)item;
+                return FormatSalesDetailDisplayText(detail);
             },
-            
-            // 出貨數量欄位
-            new InteractiveColumnDefinition
+            IsDisabledFunc = item => IsReadOnly,
+            OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
-                PropertyName = nameof(DeliveryItem.DeliveryQuantity),
-                Title = QuantityLabel,
-                ColumnType = InteractiveColumnType.Number,
-                Width = "120px",
-                IsRequired = true,
-                MinValue = 0,
-                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
-                    async args => await OnQuantityInput((DeliveryItem)args.Item1, args.Item2))
-            },
-            
-            // 單價欄位
-            new InteractiveColumnDefinition
+                var (item, searchValue) = tuple;
+                OnSalesDetailSearchInput((DeliveryItem)item, searchValue);
+            }),
+            OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
             {
-                PropertyName = nameof(DeliveryItem.UnitPrice),
-                Title = PriceLabel,
-                ColumnType = InteractiveColumnType.Number,
-                Width = "120px",
-                IsRequired = true,
-                MinValue = 0,
-                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
-                    async args => await OnUnitPriceInput((DeliveryItem)args.Item1, args.Item2))
-            },
-            
-            // 小計欄位（唯讀）
-            new InteractiveColumnDefinition
+                var (item, selectedItem) = tuple;
+                await OnSalesDetailSelectItem((DeliveryItem)item, (SalesOrderDetail?)selectedItem);
+            }),
+            OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
             {
-                PropertyName = nameof(DeliveryItem.SubtotalAmount),
-                Title = "小計",
-                ColumnType = InteractiveColumnType.Display,
-                Width = "120px",
-                DisplayFormatter = item =>
-                {
-                    if (item is DeliveryItem deliveryItem)
-                    {
-                        return deliveryItem.SubtotalAmount.ToString("N2");
-                    }
-                    return "0.00";
-                }
+                OnSalesDetailFocus((DeliveryItem)item);
+            }),
+            OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
+            {
+                OnSalesDetailBlur((DeliveryItem)item);
+            }),
+            EnableKeyboardNavigation = true,
+            GetDropdownItems = (item) => ((DeliveryItem)item).FilteredSalesDetails,
+            GetSelectedIndex = (item) => ((DeliveryItem)item).SalesDetailSelectedIndex,
+            SetSelectedIndex = (item, index) => ((DeliveryItem)item).SalesDetailSelectedIndex = index,
+            GetShowDropdown = (item) => ((DeliveryItem)item).ShowSalesDetailDropdown,
+            SetShowDropdown = (item, show) => ((DeliveryItem)item).ShowSalesDetailDropdown = show,
+            MaxDisplayItems = 20
+        });
+
+        // 數量欄位
+        columns.Add(new InteractiveColumnDefinition
+        {
+            PropertyName = nameof(DeliveryItem.DeliveryQuantity),
+            Title = QuantityLabel,
+            ColumnType = InteractiveColumnType.Number,
+            Width = "120px",
+            MinValue = 0,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
+                async args => await OnQuantityInput((DeliveryItem)args.Item1, args.Item2))
+        });
+            
+        // 單價欄位
+        columns.Add(new InteractiveColumnDefinition
+        {
+            PropertyName = nameof(DeliveryItem.UnitPrice),
+            Title = PriceLabel,
+            ColumnType = InteractiveColumnType.Number,
+            Width = "120px",
+            MinValue = 0,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
+                async args => await OnUnitPriceInput((DeliveryItem)args.Item1, args.Item2))
+        });
+        
+        // 小計欄位（唯讀）
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "小計",
+            Tooltip = "數量 × 單價的總計",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            CustomTemplate = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var subtotal = (deliveryItem.DeliveryQuantity ?? 0) * (deliveryItem.UnitPrice ?? 0);
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
-        };
+        });
 
         // 倉庫 - 庫位選擇欄位（合併顯示，僅顯示有庫存的位置）
         columns.Add(new InteractiveColumnDefinition
@@ -313,18 +436,56 @@ else
     }
 
     // ===== 內部方法 =====
-    private Task LoadAvailableProductsAsync()
+    private async Task LoadAvailableProductsAsync()
     {
-        if (SelectedCustomerId.HasValue && SelectedCustomerId.Value > 0)
+        try
+        {
+            if (SelectedCustomerId.HasValue && SelectedCustomerId.Value > 0)
+            {
+                // 載入該客戶的未出貨訂單明細
+                AvailableSalesDetails = await SalesOrderService.GetDeliveryDetailsByCustomerAsync(
+                    SelectedCustomerId.Value, 
+                    includeCompleted: false,
+                    checkApproval: false); // 永遠傳 false，載入所有明細
+                
+                // 從訂單明細中提取商品清單
+                var productsFromOrders = AvailableSalesDetails
+                    .Where(sod => sod.Product != null)
+                    .Select(sod => sod.Product!)
+                    .Distinct()
+                    .ToList();
+                
+                // 合併所有可用商品
+                AvailableProducts = Products
+                    .Where(p => p.Status == EntityStatus.Active)
+                    .Union(productsFromOrders)
+                    .Distinct()
+                    .ToList();
+            }
+            else
+            {
+                AvailableProducts = Products.Where(p => p.Status == EntityStatus.Active).ToList();
+                AvailableSalesDetails = new List<SalesOrderDetail>();
+            }
+        }
+        catch (Exception)
         {
             AvailableProducts = Products.Where(p => p.Status == EntityStatus.Active).ToList();
+            AvailableSalesDetails = new List<SalesOrderDetail>();
         }
-        else
+    }
+
+    /// <summary>
+    /// 取得可用的訂單明細清單
+    /// </summary>
+    private List<SalesOrderDetail> GetAvailableSalesDetails()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
         {
-            AvailableProducts = new List<Product>();
+            return new List<SalesOrderDetail>();
         }
         
-        return Task.CompletedTask;
+        return AvailableSalesDetails;
     }
 
     private Task LoadExistingDetailsAsync()
@@ -332,13 +493,16 @@ else
         if (ExistingDetails == null || !ExistingDetails.Any())
         {
             DeliveryItems.Clear();
+            _dataLoadCompleted = true;
+            StateHasChanged();
             return Task.CompletedTask;
         }
 
-        // 🔑 開始載入資料
+        // 🔑 開始載入資料 - 設定為未完成
         _dataLoadCompleted = false;
         
         DeliveryItems.Clear();
+        
         foreach (var detail in ExistingDetails)
         {
             var productId = GetPropertyValue<int>(detail, nameof(DeliveryItem.ProductId));
@@ -352,15 +516,23 @@ else
                 ? GetPropertyValue<int?>(detail, WarehouseLocationIdPropertyName) 
                 : null;
 
+            var product = Products.FirstOrDefault(p => p.Id == productId);
+            
             var deliveryItem = new DeliveryItem
             {
                 ProductId = productId,
+                SelectedProduct = product,  // 🔑 設定 SelectedProduct
                 DeliveryQuantity = quantity,
                 UnitPrice = unitPrice,
                 Remarks = remarks ?? string.Empty,
                 WarehouseId = warehouseId,
                 WarehouseLocationId = warehouseLocationId,
-                ExistingDetailEntity = detail
+                ExistingDetailEntity = detail,
+                SalesDetailSearchValue = product != null 
+                    ? (!string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+                        ? $"[{product.Code}] {product.Name}"
+                        : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? ""))
+                    : string.Empty
             };
 
             // 非同步載入庫存資訊（不等待，讓 UI 先顯示）
@@ -373,7 +545,7 @@ else
             DeliveryItems.Add(deliveryItem);
         }
         
-        // 🔑 資料載入完成
+        // 🔑 資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
         StateHasChanged();
         
@@ -402,10 +574,10 @@ else
             SetPropertyValue(detailEntity, nameof(DeliveryItem.ProductId), item.ProductId);
             
             // 設定數量
-            SetPropertyValue(detailEntity, QuantityPropertyName, item.DeliveryQuantity);
+            SetPropertyValue(detailEntity, QuantityPropertyName, item.DeliveryQuantity ?? 0);
             
             // 設定單價
-            SetPropertyValue(detailEntity, UnitPricePropertyName, item.UnitPrice);
+            SetPropertyValue(detailEntity, UnitPricePropertyName, item.UnitPrice ?? 0);
             
             // 設定備註
             SetPropertyValue(detailEntity, RemarksPropertyName, item.Remarks);
@@ -481,31 +653,7 @@ else
     }
 
     // ===== 事件處理方法 =====
-    private async Task OnProductChanged(DeliveryItem item, object? value)
-    {
-        if (value != null && int.TryParse(value.ToString(), out var productId))
-        {
-            item.ProductId = productId;
-            
-            // 載入商品預設資訊
-            if (productId > 0)
-            {
-                var product = Products.FirstOrDefault(p => p.Id == productId);
-                if (product != null)
-                {
-                    // 注意：Product 實體沒有 SalesPrice 屬性，這裡暫時設為 0
-                    // 實際應該從價格歷史或其他地方取得銷售價格
-                    item.UnitPrice = 0;
-                }
-                
-                // 載入該商品的庫存資訊
-                await LoadStockQuantityAsync(item);
-            }
-            
-            await NotifyDetailsChanged();
-        }
-    }
-
+    
     private async Task OnWarehouseLocationChanged(DeliveryItem item, object? value)
     {
         if (value == null || !int.TryParse(value.ToString(), out int detailId))
@@ -579,20 +727,28 @@ else
 
     private async Task OnQuantityInput(DeliveryItem item, string? value)
     {
-        if (decimal.TryParse(value, out var quantity))
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            item.DeliveryQuantity = null;
+        }
+        else if (decimal.TryParse(value, out var quantity))
         {
             item.DeliveryQuantity = quantity;
-            await NotifyDetailsChanged();
         }
+        await NotifyDetailsChanged();
     }
 
     private async Task OnUnitPriceInput(DeliveryItem item, string? value)
     {
-        if (decimal.TryParse(value, out var price))
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            item.UnitPrice = null;
+        }
+        else if (decimal.TryParse(value, out var price))
         {
             item.UnitPrice = price;
-            await NotifyDetailsChanged();
         }
+        await NotifyDetailsChanged();
     }
 
     private async Task OnWarehouseChanged(DeliveryItem item, object? value)
@@ -615,20 +771,125 @@ else
         return AvailableProducts;
     }
 
-    private List<InteractiveSelectOption> GetProductOptions()
+    // ===== 訂單明細選擇事件處理（SearchableSelect）=====
+
+    /// <summary>
+    /// 訂單明細搜尋輸入事件
+    /// </summary>
+    private void OnSalesDetailSearchInput(DeliveryItem item, string? searchValue)
     {
-        var options = new List<InteractiveSelectOption>
-        {
-            new InteractiveSelectOption { Text = "-- 請選擇商品 --", Value = 0 }
-        };
+        item.SalesDetailSearchValue = searchValue ?? string.Empty;
         
-        options.AddRange(GetAvailableProducts().Select(p => new InteractiveSelectOption
-        {
-            Text = p.Name,
-            Value = p.Id
-        }));
+        var availableDetails = GetAvailableSalesDetails();
         
-        return options;
+        // 確保當前選中的明細也在列表中
+        if (item.SelectedSalesDetail != null && 
+            !availableDetails.Any(d => d.Id == item.SelectedSalesDetail.Id))
+        {
+            availableDetails = new List<SalesOrderDetail>(availableDetails) { item.SelectedSalesDetail };
+        }
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            item.FilteredSalesDetails = availableDetails.Take(20).ToList();
+        }
+        else
+        {
+            item.FilteredSalesDetails = availableDetails
+                .Where(d => 
+                    (d.SalesOrder?.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (d.Product?.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (d.Product?.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
+                .Take(20)
+                .ToList();
+        }
+        
+        item.ShowSalesDetailDropdown = true;
+        item.SalesDetailSelectedIndex = -1;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 訂單明細輸入框獲得焦點
+    /// </summary>
+    private void OnSalesDetailFocus(DeliveryItem item)
+    {
+        var availableDetails = GetAvailableSalesDetails();
+        
+        // 確保當前選中的明細也在列表中
+        if (item.SelectedSalesDetail != null && 
+            !availableDetails.Any(d => d.Id == item.SelectedSalesDetail.Id))
+        {
+            availableDetails = new List<SalesOrderDetail>(availableDetails) { item.SelectedSalesDetail };
+        }
+        
+        item.FilteredSalesDetails = availableDetails.Take(20).ToList();
+        item.ShowSalesDetailDropdown = true;
+        item.SalesDetailSelectedIndex = -1;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 訂單明細輸入框失去焦點
+    /// </summary>
+    private void OnSalesDetailBlur(DeliveryItem item)
+    {
+        Task.Delay(200).ContinueWith(_ =>
+        {
+            item.ShowSalesDetailDropdown = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+    
+    /// <summary>
+    /// 選擇訂單明細項目
+    /// </summary>
+    private async Task OnSalesDetailSelectItem(DeliveryItem deliveryItem, SalesOrderDetail? selectedDetail)
+    {
+        if (selectedDetail == null)
+        {
+            deliveryItem.SelectedSalesDetail = null;
+            deliveryItem.SelectedProduct = null;
+            deliveryItem.SalesDetailSearchValue = string.Empty;
+            deliveryItem.ShowSalesDetailDropdown = false;
+            deliveryItem.SalesDetailSelectedIndex = -1;
+            deliveryItem.ProductId = 0;
+            await NotifyDetailsChanged();
+            return;
+        }
+        
+        deliveryItem.SelectedSalesDetail = selectedDetail;
+        deliveryItem.SelectedProduct = selectedDetail.Product;
+        deliveryItem.ProductId = selectedDetail.ProductId;
+        deliveryItem.SalesDetailSearchValue = FormatSalesDetailDisplayText(selectedDetail);
+        deliveryItem.UnitPrice = selectedDetail.UnitPrice;
+        deliveryItem.DeliveryQuantity = selectedDetail.OrderQuantity - selectedDetail.DeliveredQuantity; // 未出貨數量
+        deliveryItem.WarehouseId = selectedDetail.WarehouseId;
+        deliveryItem.ShowSalesDetailDropdown = false;
+        deliveryItem.SalesDetailSelectedIndex = -1;
+        
+        // 載入該商品的庫存資訊
+        await LoadStockQuantityAsync(deliveryItem);
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 格式化訂單明細顯示文字（用於下拉選單）
+    /// </summary>
+    private string FormatSalesDetailDisplayText(SalesOrderDetail detail)
+    {
+        if (detail?.Product == null) return "";
+        
+        var product = detail.Product;
+        var salesOrderNumber = detail.SalesOrder?.Code ?? "N/A";
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"[{product.Code}] {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? "");
+        
+        return $"[{salesOrderNumber}] {productDisplay}";
     }
 
     private List<InteractiveSelectOption> GetWarehouseOptions()
@@ -668,6 +929,120 @@ else
             .Sum(item => item.SubtotalAmount);
     }
 
+    // ===== 明細清除方法 =====
+    /// <summary>
+    /// 清除所有明細
+    /// </summary>
+    private async Task ClearAllDetails()
+    {
+        var nonEmptyItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
+        
+        if (!nonEmptyItems.Any())
+        {
+            await NotificationService.ShowWarningAsync("沒有可清除的明細項目", "提示");
+            return;
+        }
+        
+        // 記錄所有要刪除的現有明細 ID
+        foreach (var item in nonEmptyItems.Where(item => item.ExistingDetailEntity != null))
+        {
+            var entityId = GetExistingDetailId(item.ExistingDetailEntity!);
+            if (entityId > 0 && !_deletedDetailIds.Contains(entityId))
+            {
+                _deletedDetailIds.Add(entityId);
+            }
+        }
+        
+        // 清空所有項目
+        DeliveryItems.Clear();
+        
+        await NotifyDetailsChanged();
+        await NotifyDeletedDetailsChanged();
+        
+        await NotificationService.ShowSuccessAsync($"已清除 {nonEmptyItems.Count} 項明細");
+    }
+
+    // ===== 載入訂單方法 =====
+    
+    /// <summary>
+    /// 載入所有未出貨訂單的主要方法（公開方法，供父組件調用）
+    /// </summary>
+    public async Task LoadAllUndeliveredItems()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+        {
+            await NotificationService.ShowWarningAsync("請先選擇客戶後再載入訂單");
+            return;
+        }
+
+        var availableDetails = GetAvailableSalesDetails();
+        
+        if (!availableDetails.Any())
+        {
+            await NotificationService.ShowInfoAsync("目前沒有符合條件的未出貨訂單");
+            return;
+        }
+
+        // 檢查是否有現有資料
+        var hasExistingData = DeliveryItems.Any(item => item.ProductId > 0);
+        
+        if (hasExistingData)
+        {
+            // 簡單確認（實際可使用更好的對話框）
+            await NotificationService.ShowWarningAsync(
+                $"此操作將清空現有的出貨明細並載入 {availableDetails.Count} 項未出貨訂單。",
+                "載入確認");
+        }
+
+        await LoadUndeliveredItemsInternal(availableDetails);
+    }
+
+    /// <summary>
+    /// 內部方法：載入未出貨項目
+    /// </summary>
+    private async Task LoadUndeliveredItemsInternal(List<SalesOrderDetail> details)
+    {
+        try
+        {
+            // 清空現有項目
+            DeliveryItems.Clear();
+
+            // 載入所有未出貨項目
+            foreach (var detail in details)
+            {
+                var deliveryItem = new DeliveryItem
+                {
+                    ProductId = detail.ProductId,
+                    SelectedProduct = detail.Product,
+                    DeliveryQuantity = detail.OrderQuantity - detail.DeliveredQuantity, // 未出貨數量
+                    UnitPrice = detail.UnitPrice,
+                    WarehouseId = detail.WarehouseId, // 使用訂單明細的倉庫
+                    Remarks = string.Empty
+                };
+
+                // 載入庫存資訊（非同步）
+                _ = Task.Run(async () =>
+                {
+                    await LoadStockQuantityAsync(deliveryItem);
+                    await InvokeAsync(StateHasChanged);
+                });
+
+                DeliveryItems.Add(deliveryItem);
+            }
+            
+            // 通知變更
+            await NotifyDetailsChanged();
+            
+            await NotificationService.ShowSuccessAsync(
+                $"成功載入 {details.Count} 項未出貨訂單"
+            );
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入未出貨訂單失敗：{ex.Message}");
+        }
+    }
+
     public async Task<bool> ValidateAsync()
     {
         var nonEmptyItems = DeliveryItems.Where(item => item.ProductId > 0).ToList();
@@ -686,15 +1061,47 @@ else
                 return false;
             }
 
-            if (item.DeliveryQuantity <= 0)
+            if (!item.DeliveryQuantity.HasValue || item.DeliveryQuantity.Value <= 0)
             {
-                await NotificationService.ShowWarningAsync("出貨數量必須大於 0");
+                await NotificationService.ShowWarningAsync("數量必須大於 0");
                 return false;
             }
 
-            if (item.UnitPrice < 0)
+            if (!item.UnitPrice.HasValue || item.UnitPrice.Value < 0)
             {
                 await NotificationService.ShowWarningAsync("單價不能為負數");
+                return false;
+            }
+
+            //  檢查是否已選擇倉庫
+            if (!item.WarehouseId.HasValue || item.WarehouseId.Value <= 0)
+            {
+                var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
+                var productName = product?.Name ?? $"商品ID: {item.ProductId}";
+                await NotificationService.ShowWarningAsync($"商品「{productName}」尚未選擇倉庫，請選擇出貨倉庫");
+                return false;
+            }
+
+            //  檢查庫存數量是否足夠
+            if (!item.CurrentStockQuantity.HasValue)
+            {
+                var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
+                var productName = product?.Name ?? $"商品ID: {item.ProductId}";
+                await NotificationService.ShowWarningAsync($"商品「{productName}」的庫存資料載入中，請稍後再試");
+                return false;
+            }
+
+            if (item.CurrentStockQuantity.Value < item.DeliveryQuantity.Value)
+            {
+                var product = Products.FirstOrDefault(p => p.Id == item.ProductId);
+                var productName = product?.Name ?? $"商品ID: {item.ProductId}";
+                var warehouse = Warehouses.FirstOrDefault(w => w.Id == item.WarehouseId);
+                var warehouseName = warehouse?.Name ?? "選定倉庫";
+                
+                await NotificationService.ShowWarningAsync(
+                    $"商品「{productName}」在「{warehouseName}」的庫存不足！\n" +
+                    $"目前可用庫存: {item.CurrentStockQuantity.Value:N0}，" +
+                    $"出貨數量: {item.DeliveryQuantity.Value:N0}");
                 return false;
             }
         }
@@ -704,13 +1111,44 @@ else
 
     public class DeliveryItem
     {
+        /// <summary>
+        /// 商品ID（用於 Select 綁定）
+        /// </summary>
         public int ProductId { get; set; }
-        public decimal DeliveryQuantity { get; set; }
-        public decimal UnitPrice { get; set; }
+        
+        /// <summary>
+        /// 選擇的商品物件（用於空行檢查）
+        /// </summary>
+        public Product? SelectedProduct { get; set; }
+        
+        // === 訂單明細相關屬性 ===
+        public SalesOrderDetail? SelectedSalesDetail { get; set; }
+        
+        // === SearchableSelect 支援屬性 ===
+        public string SalesDetailSearchValue { get; set; } = string.Empty;
+        public List<SalesOrderDetail> FilteredSalesDetails { get; set; } = new();
+        public bool ShowSalesDetailDropdown { get; set; } = false;
+        public int SalesDetailSelectedIndex { get; set; } = -1;
+        
+        /// <summary>
+        /// 數量（nullable，預設 null）
+        /// </summary>
+        public decimal? DeliveryQuantity { get; set; }
+        
+        /// <summary>
+        /// 單價（nullable，預設 null）
+        /// </summary>
+        public decimal? UnitPrice { get; set; }
+        
         public string Remarks { get; set; } = string.Empty;
         public int? WarehouseId { get; set; }
         public int? WarehouseLocationId { get; set; }
-        public decimal SubtotalAmount => DeliveryQuantity * UnitPrice;
+        
+        /// <summary>
+        /// 小計金額（計算屬性）
+        /// </summary>
+        public decimal SubtotalAmount => (DeliveryQuantity ?? 0) * (UnitPrice ?? 0);
+        
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
         /// <summary>

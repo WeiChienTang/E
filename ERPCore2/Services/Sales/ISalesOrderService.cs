@@ -47,5 +47,14 @@ namespace ERPCore2.Services
         /// <param name="criteria">批次列印篩選條件</param>
         /// <returns>符合條件的銷貨訂單列表</returns>
         Task<List<SalesOrder>> GetByBatchCriteriaAsync(BatchPrintCriteria criteria);
+
+        /// <summary>
+        /// 取得客戶的出貨明細（可篩選是否包含已完成和是否檢查審核）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="includeCompleted">是否包含已完成的明細</param>
+        /// <param name="checkApproval">是否檢查審核狀態（true=只載入已審核，false=不檢查審核）</param>
+        /// <returns>符合條件的銷貨訂單明細列表</returns>
+        Task<List<SalesOrderDetail>> GetDeliveryDetailsByCustomerAsync(int customerId, bool includeCompleted, bool checkApproval = true);
     }
 }
