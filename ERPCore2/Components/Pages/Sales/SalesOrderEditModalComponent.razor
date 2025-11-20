@@ -85,6 +85,14 @@
                               OnSalesReturnSaved="@HandleSalesReturnSaved"
                               OnCancel="@(() => showSalesReturnModal = false)" />
 
+@* 銷貨出貨單編輯 Modal *@
+<SalesDeliveryEditModalComponent @ref="salesDeliveryEditModal"
+                                IsVisible="@showSalesDeliveryModal"
+                                IsVisibleChanged="@(value => showSalesDeliveryModal = value)"
+                                SalesDeliveryId="@selectedSalesDeliveryId"
+                                OnSalesDeliverySaved="@HandleSalesDeliverySaved"
+                                OnCancel="@(() => showSalesDeliveryModal = false)" />
+
 @* 沖款單編輯 Modal *@
 <SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
                                  IsVisible="@showSetoffDocumentModal"
@@ -147,6 +155,16 @@
     private bool showSetoffDocumentModal = false;
     private int? selectedSalesReturnId = null;
     private int? selectedSetoffDocumentId = null;
+    
+    // 銷貨出貨單 Modal
+    private SalesDeliveryEditModalComponent? salesDeliveryEditModal;
+    private bool showSalesDeliveryModal = false;
+    private int? selectedSalesDeliveryId = null;
+    
+    // ===== 轉單狀態 =====
+    private bool canCreateDelivery = false; 
+    // 是否可以轉銷貨出貨單（新增模式需先儲存，編輯模式直接為 true）
+    
     // 下拉選單選項（向下相容）
     private List<Customer> customers = new();
     private List<Company> companies = new();
@@ -260,6 +278,9 @@
                 // 新增模式 - 自動產生銷貨訂單號並設定預設公司
                 var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, DbContext);
                 
+                // 新增模式：必須先儲存才能轉銷貨
+                canCreateDelivery = false;
+                
                 var newOrder = new SalesOrder
                 {
                     OrderDate = DateTime.Today,
@@ -291,6 +312,9 @@
                 return newOrder;
             }
 
+            // 編輯模式：可以直接轉銷貨
+            canCreateDelivery = true;
+            
             // 編輯模式 - 載入銷貨訂單和明細
             var salesOrder = await SalesOrderService.GetWithDetailsAsync(SalesOrderId.Value);
             
@@ -1093,13 +1117,13 @@
     /// </summary>
     private RenderFragment? GetCustomActionButtons() => __builder =>
     {
-        @* 轉銷售退貨單按鈕 - 只在銷貨訂單已儲存時顯示 *@
+        @* 轉銷貨出貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
         @if (editModalComponent?.Entity != null && 
             SalesOrderId.HasValue)
         {
-            <GenericButtonComponent Text="轉銷貨退回" 
-                                  Variant="ButtonVariant.Warning" 
-                                  OnClick="HandleCreateReturnFromOrder" />
+            <GenericButtonComponent Text="轉銷貨" 
+                                  Variant="ButtonVariant.Success" 
+                                  OnClick="HandleCreateDeliveryFromOrder" />
         }
     };
 
@@ -1163,6 +1187,91 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromOrder), GetType(), 
                 additionalData: $"轉銷售退貨單失敗 - OrderId: {SalesOrderId}");
             await NotificationService.ShowErrorAsync("轉銷售退貨單時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 從銷貨訂單轉銷貨出貨單 - 簡化版本，所有業務驗證交給銷貨出貨單 Modal 處理
+    /// </summary>
+    private async Task HandleCreateDeliveryFromOrder()
+    {
+        try
+        {
+            // 唯一檢查：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
+            if (!canCreateDelivery)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存銷貨訂單後，才能轉銷貨出貨單");
+                return;
+            }
+            
+            // 安全檢查：確保 Entity 已載入（canCreateDelivery = true 時理論上一定有值）
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單資料載入失敗，請重新整理頁面");
+                return;
+            }
+            
+            // 直接開啟銷貨出貨單 Modal，使用 Entity.Id 作為銷貨訂單 ID（最可靠的來源）
+            // 所有業務驗證（客戶、明細、已出貨等）交給 Modal 內部處理
+            await salesDeliveryEditModal!.ShowAddModalWithPrefilledOrder(
+                editModalComponent.Entity.CustomerId,
+                editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesOrderId 參數
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateDeliveryFromOrder), GetType(), 
+                additionalData: $"轉銷貨出貨單失敗 - OrderId: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync($"轉銷貨出貨單時發生錯誤: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理銷貨出貨單儲存後的事件
+    /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯
+    /// </summary>
+    private async Task HandleSalesDeliverySaved(SalesDelivery savedDelivery)
+    {
+        try
+        {
+            await ChildDocumentRefreshHelper.HandleChildDocumentSavedAsync(
+                closeModal: () =>
+                {
+                    showSalesDeliveryModal = false;
+                    selectedSalesDeliveryId = null;
+                },
+                reloadDetails: async () =>
+                {
+                    if (SalesOrderId.HasValue)
+                    {
+                        await LoadSalesOrderDetails(SalesOrderId.Value);
+                        
+                        // 重新計算總金額和稅額
+                        if (editModalComponent?.Entity != null)
+                        {
+                            await HandleDetailsChanged(salesOrderDetails);
+                        }
+                    }
+                },
+                detailManager: salesOrderDetailManager,
+                notificationMessage: null,
+                stateHasChanged: StateHasChanged,
+                invokeAsync: InvokeAsync,
+                additionalActions: async () =>
+                {
+                    // 🔑 重新載入出貨數量資訊
+                    // 注意：SalesOrderTable 目前沒有 LoadDeliveredQuantitiesAsync 方法
+                    // 未來如需重新載入出貨數量，需要在 SalesOrderTable 中實作此方法
+                    await Task.CompletedTask;
+                }
+            );
+            
+            await NotificationService.ShowSuccessAsync($"銷貨出貨單 {savedDelivery.Code} 已更新，銷貨訂單明細已刷新");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesDeliverySaved), GetType(), 
+                additionalData: $"處理銷貨出貨單儲存事件失敗 - DeliveryId: {savedDelivery?.Id}");
         }
     }
 
@@ -1299,7 +1408,15 @@
     /// </summary>
     private async Task<bool> SaveSalesOrderWrapper(SalesOrder salesOrder)
     {
-        return await SaveSalesOrderWithDetails(salesOrder);
+        var result = await SaveSalesOrderWithDetails(salesOrder);
+        
+        // 儲存成功後允許轉銷貨
+        if (result)
+        {
+            canCreateDelivery = true;
+        }
+        
+        return result;
     }
 
     /// <summary>

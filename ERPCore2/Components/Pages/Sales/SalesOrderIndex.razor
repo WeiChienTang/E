@@ -11,8 +11,8 @@
                       Service="@SalesOrderService"
                       EntityBasePath="/sales-orders"
                       PageTitle="銷貨管理"
-                      PageSubtitle="管理所有銷貨訂單資料與明細資訊"
-                      EntityName="銷貨訂單"
+                      PageSubtitle="管理所有訂單資料與明細資訊"
+                      EntityName="訂單"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
                       ColumnDefinitions="@columnDefinitions"
@@ -26,7 +26,7 @@
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />
 
-@* 銷貨訂單編輯 Modal *@
+@* 訂單編輯 Modal *@
 <SalesOrderEditModalComponent IsVisible="@showEditModal"
                            IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                            SalesOrderId="@editingSalesOrderId"
@@ -36,7 +36,7 @@
 @* 批次列印篩選 Modal - 使用新架構 *@
 <BatchPrintFilterModalComponent IsVisible="@showBatchPrintModal"
                                IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
-                               Title="銷貨訂單批次列印條件"
+                               Title="訂單批次列印條件"
                                OnConfirm="@HandleBatchPrintConfirmAsync"
                                OnCancel="@HandleBatchPrintCancelAsync">
     @* 區塊 1: 客戶多選篩選 *@
@@ -48,7 +48,7 @@
                                    DisplayProperty="CompanyName"
                                    ValueProperty="Id"
                                    Placeholder="請輸入客戶名稱搜尋..."
-                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的銷貨訂單"
+                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的訂單"
                                    ShowCard="false" />
     </FilterSectionComponent>
     
@@ -121,15 +121,15 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化銷貨訂單頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化銷貨訂單頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化訂單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化訂單頁面失敗");
         }
     }
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("銷售管理", "銷貨管理", "#", NotificationService, GetType());
 
-    // 載入銷貨訂單資料
-    private Task<List<SalesOrder>> LoadSalesOrdersAsync() => DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllAsync(), "銷貨訂單", NotificationService, GetType());
+    // 載入訂單資料
+    private Task<List<SalesOrder>> LoadSalesOrdersAsync() => DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllAsync(), "訂單", NotificationService, GetType());
 
     // 載入客戶資料
     private async Task LoadCustomersAsync() => customers = await DataLoaderHelper.LoadAsync(() => CustomerService.GetAllAsync(), "客戶", NotificationService, GetType());

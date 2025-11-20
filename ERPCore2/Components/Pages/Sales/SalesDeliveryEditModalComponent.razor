@@ -99,6 +99,9 @@
     // 明細管理組件引用
     private SalesDeliveryTable<SalesDelivery, SalesDeliveryDetail>? salesDeliveryDetailManager;
     
+    // ===== 明細載入狀態 =====
+    private bool shouldAutoLoadUndelivered = false;  // 標記是否需要自動載入未出貨商品
+    
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
     
@@ -219,6 +222,50 @@
         }
     }
 
+    /// <summary>
+    /// 開啟新增出貨單 Modal 並預填銷售訂單資訊（公開方法供外部調用）
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledOrder(int customerId, int salesOrderId)
+    {
+        try
+        {
+            // 使用 DocumentConversionHelper 統一處理轉單邏輯（參照採購模組）
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
+                {
+                    SalesDeliveryId = null;
+                    PrefilledCustomerId = customerId;
+                    PrefilledSalesOrderId = salesOrderId;
+                    shouldAutoLoadUndelivered = true;  // 🔑 標記需要自動載入
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadUndelivered = false;
+                    if (salesDeliveryDetailManager != null)
+                    {
+                        await salesDeliveryDetailManager.LoadAllUndeliveredItems();
+                    }
+                },
+                detailManagerReady: () => salesDeliveryDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadUndelivered,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledOrder), GetType(), 
+                additionalData: $"開啟預填出貨單Modal失敗 - CustomerId: {customerId}, SalesOrderId: {salesOrderId}");
+            await NotificationService.ShowErrorAsync("開啟出貨單時發生錯誤");
+        }
+    }
+
     private async Task<SalesDelivery?> LoadSalesDeliveryData()
     {
         try
@@ -238,10 +285,19 @@
                     IsApproved = false
                 };
                 
-                // 如果是從銷售訂單轉單，載入訂單資料
+                // 🔑 修正：不在這裡載入明細，改為設定預填值後由 DocumentConversionHelper 觸發自動載入
+                // 這樣可以確保 SalesDeliveryTable 組件已經渲染完成
                 if (PrefilledSalesOrderId.HasValue)
                 {
-                    await LoadDataFromSalesOrder(newDelivery, PrefilledSalesOrderId.Value);
+                    newDelivery.SalesOrderId = PrefilledSalesOrderId.Value;
+                    // 載入訂單基本資料（客戶、業務員等）
+                    var salesOrder = await SalesOrderService.GetWithDetailsAsync(PrefilledSalesOrderId.Value);
+                    if (salesOrder != null)
+                    {
+                        newDelivery.CustomerId = salesOrder.CustomerId;
+                        newDelivery.EmployeeId = salesOrder.EmployeeId;
+                    }
+                    // 明細載入會在 OnAfterRenderAsync 中由 DocumentConversionHelper 自動觸發
                 }
                 else if (PrefilledCustomerId.HasValue)
                 {
@@ -811,6 +867,7 @@
                                            Warehouses="@warehouses"
                                            WarehouseLocations="@warehouseLocations"
                                            SelectedCustomerId="@editModalComponent.Entity.CustomerId"
+                                           SelectedSalesOrderId="@editModalComponent.Entity.SalesOrderId"
                                            MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
                                            QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
                                            UnitPricePropertyName="@nameof(SalesDeliveryDetail.UnitPrice)"

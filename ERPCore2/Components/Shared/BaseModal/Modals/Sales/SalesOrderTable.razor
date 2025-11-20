@@ -472,6 +472,7 @@ else
                 {
                     SelectedProduct = salesDetail.Product ?? Products.FirstOrDefault(p => p.Id == salesDetail.ProductId),
                     OrderQuantity = salesDetail.OrderQuantity,
+                    DeliveredQuantity = salesDetail.DeliveredQuantity,
                     UnitPrice = salesDetail.UnitPrice,
                     DiscountPercentage = salesDetail.DiscountPercentage,
                     Subtotal = salesDetail.SubtotalAmount,
@@ -914,6 +915,19 @@ else
             })
         });
 
+        // 銷貨數量欄位（已出貨數量）- 唯讀顯示
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "銷貨數量",
+            PropertyName = nameof(SalesItem.DeliveredQuantity),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "100px",
+            SmartDecimalDisplay = true,
+            TextAlign = "right",
+            HideOnMobile = true,
+            Tooltip = "已出貨的數量（唯讀）"
+        });
+
         // 單價欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
         columns.Add(new InteractiveColumnDefinition
         { 
@@ -1152,6 +1166,7 @@ else
     {
         public Product? SelectedProduct { get; set; }
         public decimal OrderQuantity { get; set; } = 0;
+        public decimal DeliveredQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
         public decimal Subtotal { get; set; } = 0;

@@ -1,5 +1,6 @@
 @* 銷貨出貨明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
 
+@using ERPCore2.Helpers
 @inject IProductService ProductService
 @inject ISalesOrderService SalesOrderService
 @inject INotificationService NotificationService
@@ -44,15 +45,13 @@ else
                 <div>
                     <GenericButtonComponent Text="載入訂單"
                                           Variant="ButtonVariant.Info"
-                                          IconClass="bi bi-box-arrow-in-down"
                                           IsDisabled="@(!CanLoadAllUndelivered)"
                                           Title="@GetLoadAllUndeliveredTooltip()"
                                           OnClick="LoadAllUndeliveredItems" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="明細清除"
-                                          Variant="ButtonVariant.Warning"
-                                          IconClass="bi bi-trash"
+                                          Variant="ButtonVariant.Danger"
                                           IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0))"
                                           Title="@(IsReadOnly ? "唯讀模式" : DeliveryItems.Any(item => item.ProductId > 0) ? "清除所有出貨明細" : "沒有可清除的明細項目")"
                                           OnClick="ClearAllDetails" />
@@ -72,7 +71,7 @@ else
     // ===== 建立空項目方法 =====
     private DeliveryItem CreateNewEmptyItem()
     {
-        return new DeliveryItem();  // 🔑 返回新的空物件，所有屬性都是預設值（null）
+        return new DeliveryItem();  //  返回新的空物件，所有屬性都是預設值（null）
     }
     
     // ===== 基本參數 =====
@@ -115,6 +114,9 @@ else
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
+    // ===== 篩選參數 =====
+    [Parameter] public int? SelectedSalesOrderId { get; set; }  //  用於過濾指定訂單的明細
+    
     // ===== 下拉選項參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new List<WarehouseLocation>();
@@ -123,6 +125,7 @@ else
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private List<SalesOrderDetail> AvailableSalesDetails { get; set; } = new List<SalesOrderDetail>();
     private int? _previousSelectedCustomerId = null;
+    private int? _previousSelectedSalesOrderId = null;  // 追蹤訂單變化
     private int _previousExistingDetailsCount = 0;  // 追蹤 ExistingDetails 數量變化
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
 
@@ -176,12 +179,12 @@ else
         int currentExistingDetailsCount = ExistingDetails?.Count ?? 0;
         bool existingDetailsChanged = _previousExistingDetailsCount != currentExistingDetailsCount;
         
-        // 🔑 關鍵：如果 ExistingDetails 有變化（例如從編輯模式返回），重新載入明細
+        //  關鍵：如果 ExistingDetails 有變化（例如從編輯模式返回），重新載入明細
         if (existingDetailsChanged)
         {
             _previousExistingDetailsCount = currentExistingDetailsCount;
             
-            // 🔑 重新載入明細以顯示最新資料
+            //  重新載入明細以顯示最新資料
             await LoadExistingDetailsAsync();
             return;
         }
@@ -477,6 +480,7 @@ else
 
     /// <summary>
     /// 取得可用的訂單明細清單
+    /// 會根據 SelectedSalesOrderId 過濾指定訂單的明細
     /// </summary>
     private List<SalesOrderDetail> GetAvailableSalesDetails()
     {
@@ -485,7 +489,15 @@ else
             return new List<SalesOrderDetail>();
         }
         
-        return AvailableSalesDetails;
+        var filteredDetails = AvailableSalesDetails.AsEnumerable();
+        
+        //  關鍵修正：如果指定了訂單ID，只載入該訂單的明細
+        if (SelectedSalesOrderId.HasValue && SelectedSalesOrderId.Value > 0)
+        {
+            filteredDetails = filteredDetails.Where(sd => sd.SalesOrderId == SelectedSalesOrderId.Value);
+        }
+        
+        return filteredDetails.ToList();
     }
 
     private Task LoadExistingDetailsAsync()
@@ -498,7 +510,7 @@ else
             return Task.CompletedTask;
         }
 
-        // 🔑 開始載入資料 - 設定為未完成
+        //  開始載入資料 - 設定為未完成
         _dataLoadCompleted = false;
         
         DeliveryItems.Clear();
@@ -521,7 +533,7 @@ else
             var deliveryItem = new DeliveryItem
             {
                 ProductId = productId,
-                SelectedProduct = product,  // 🔑 設定 SelectedProduct
+                SelectedProduct = product,  //  設定 SelectedProduct
                 DeliveryQuantity = quantity,
                 UnitPrice = unitPrice,
                 Remarks = remarks ?? string.Empty,
@@ -545,8 +557,9 @@ else
             DeliveryItems.Add(deliveryItem);
         }
         
-        // 🔑 資料載入完成 - 觸發空行檢查
+        //  資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
+        tableComponent?.RefreshEmptyRow();
         StateHasChanged();
         
         return Task.CompletedTask;
@@ -1004,6 +1017,9 @@ else
     {
         try
         {
+            //  開始載入資料 - 設定為未完成
+            _dataLoadCompleted = false;
+            
             // 清空現有項目
             DeliveryItems.Clear();
 
@@ -1012,8 +1028,10 @@ else
             {
                 var deliveryItem = new DeliveryItem
                 {
-                    ProductId = detail.ProductId,
+                    //  關鍵：設定 SelectedSalesDetail 用於空行檢查
+                    SelectedSalesDetail = detail,
                     SelectedProduct = detail.Product,
+                    SalesDetailSearchValue = FormatSalesDetailDisplayText(detail),
                     DeliveryQuantity = detail.OrderQuantity - detail.DeliveredQuantity, // 未出貨數量
                     UnitPrice = detail.UnitPrice,
                     WarehouseId = detail.WarehouseId, // 使用訂單明細的倉庫
@@ -1032,6 +1050,10 @@ else
             
             // 通知變更
             await NotifyDetailsChanged();
+            
+            //  資料載入完成 - 觸發空行檢查
+            _dataLoadCompleted = true;
+            StateHasChanged();
             
             await NotificationService.ShowSuccessAsync(
                 $"成功載入 {details.Count} 項未出貨訂單"
