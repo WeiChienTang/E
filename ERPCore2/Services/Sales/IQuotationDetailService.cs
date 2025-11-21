@@ -29,5 +29,12 @@ namespace ERPCore2.Services
         /// <param name="productId">產品ID</param>
         /// <returns>報價單明細列表</returns>
         Task<List<QuotationDetail>> GetByProductIdAsync(int productId);
+
+        /// <summary>
+        /// 獲取客戶最近一次完整的報價單明細（智能下單用）
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <returns>報價單明細列表</returns>
+        Task<List<QuotationDetail>> GetLastCompleteQuotationAsync(int customerId);
     }
 }

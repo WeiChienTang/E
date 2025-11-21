@@ -13,21 +13,27 @@ namespace ERPCore2.Services
     /// </summary>
     public class QuotationDetailService : GenericManagementService<QuotationDetail>, IQuotationDetailService
     {
+        private readonly ISystemParameterService _systemParameterService;
+
         /// <summary>
-        /// 完整建構子 - 使用 ILogger
+        /// 完整建構子 - 使用 ILogger 和 ISystemParameterService
         /// </summary>
         public QuotationDetailService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<QuotationDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<QuotationDetail>> logger,
+            ISystemParameterService systemParameterService) : base(contextFactory, logger)
         {
+            _systemParameterService = systemParameterService;
         }
 
         /// <summary>
-        /// 簡易建構子 - 不使用 ILogger
+        /// 簡易建構子 - 不使用 ILogger，但需要 ISystemParameterService
         /// </summary>
         public QuotationDetailService(
-            IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISystemParameterService systemParameterService) : base(contextFactory)
         {
+            _systemParameterService = systemParameterService;
         }
 
         #region 覆寫基底方法
@@ -229,7 +235,57 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 獲取客戶最近一次完整的報價單明細（智能下單用）
+        /// </summary>
+        public async Task<List<QuotationDetail>> GetLastCompleteQuotationAsync(int customerId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 檢查是否啟用報價單審核
+                var isApprovalEnabled = await _systemParameterService.IsQuotationApprovalEnabledAsync();
+                
+                // 建立查詢
+                var query = context.Quotations
+                    .Include(q => q.QuotationDetails)
+                        .ThenInclude(qd => qd.Product)
+                    .Include(q => q.QuotationDetails)
+                        .ThenInclude(qd => qd.Unit)
+                    .Where(q => q.CustomerId == customerId 
+                              && q.QuotationDetails.Any());
+                
+                // 如果啟用審核，則只查詢已核准的報價單；否則查詢所有報價單
+                if (isApprovalEnabled)
+                {
+                    query = query.Where(q => q.IsApproved);
+                }
+                
+                var lastQuotation = await query
+                    .OrderByDescending(q => q.QuotationDate)
+                    .ThenByDescending(q => q.CreatedAt)
+                    .FirstOrDefaultAsync();
 
+                if (lastQuotation == null)
+                {
+                    return new List<QuotationDetail>();
+                }
+                
+                // 返回該報價單的所有明細
+                return lastQuotation.QuotationDetails
+                    .Where(qd => qd.Product != null)
+                    .OrderBy(qd => qd.Id)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastCompleteQuotationAsync), GetType(), _logger, new { 
+                    CustomerId = customerId
+                });
+                return new List<QuotationDetail>();
+            }
+        }
 
         #endregion
     }

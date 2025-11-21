@@ -12,14 +12,21 @@ namespace ERPCore2.Services
     /// </summary>
     public class PurchaseOrderDetailService : GenericManagementService<PurchaseOrderDetail>, IPurchaseOrderDetailService
     {
-        public PurchaseOrderDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        private readonly ISystemParameterService _systemParameterService;
+
+        public PurchaseOrderDetailService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ISystemParameterService systemParameterService) : base(contextFactory)
         {
+            _systemParameterService = systemParameterService;
         }
 
         public PurchaseOrderDetailService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<PurchaseOrderDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<PurchaseOrderDetail>> logger,
+            ISystemParameterService systemParameterService) : base(contextFactory, logger)
         {
+            _systemParameterService = systemParameterService;
         }
 
         #region 覆寫基底類別方法
@@ -733,20 +740,32 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 查詢該廠商最近一次已核准的採購單
-                var lastPurchaseOrder = await context.PurchaseOrders
+                // 檢查是否啟用採購單審核
+                var isApprovalEnabled = await _systemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+                
+                // 建立查詢
+                var query = context.PurchaseOrders
                     .Include(po => po.PurchaseOrderDetails)
                         .ThenInclude(pod => pod.Product)
                     .Where(po => po.SupplierId == supplierId 
-                              && po.IsApproved 
-                              && po.PurchaseOrderDetails.Any())
+                              && po.PurchaseOrderDetails.Any());
+                
+                // 如果啟用審核，則只查詢已核准的採購單；否則查詢所有採購單
+                if (isApprovalEnabled)
+                {
+                    query = query.Where(po => po.IsApproved);
+                }
+                
+                var lastPurchaseOrder = await query
                     .OrderByDescending(po => po.OrderDate)
                     .ThenByDescending(po => po.CreatedAt)
                     .FirstOrDefaultAsync();
 
                 if (lastPurchaseOrder == null)
+                {
                     return new List<PurchaseOrderDetail>();
-
+                }
+                
                 // 返回該採購單的所有明細
                 return lastPurchaseOrder.PurchaseOrderDetails
                     .Where(pod => pod.Product != null)

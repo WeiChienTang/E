@@ -567,7 +567,7 @@
             }
             
             // 載入實體資料
-            // 🔑 關鍵修復：如果正在導航，跳過 DataLoader（Entity 已由 NavigateToRecordAsync 直接載入）
+            //  關鍵修復：如果正在導航，跳過 DataLoader（Entity 已由 NavigateToRecordAsync 直接載入）
             if (!_isNavigating && DataLoader != null)
             {
                 var loadedEntity = await DataLoader();
@@ -723,17 +723,17 @@
             {
                 await ShowSuccessMessage(SaveSuccessMessage);
                 
-                // 🔑 關鍵修復：檢測從新增模式轉為編輯模式
+                //  關鍵修復：檢測從新增模式轉為編輯模式
                 // 當儲存成功且是從新增（Id 為 null）變為編輯（Entity.Id > 0）時
                 // 自動更新 Id 參數並重新載入所有資料，確保 Modal 狀態正確
                 bool wasNewRecord = !Id.HasValue;
                 if (wasNewRecord && Entity != null && Entity.Id > 0)
                 {
-                    // 🔑 關鍵：先更新 _lastId，避免觸發 OnParametersSetAsync 的重複載入
+                    //  關鍵：先更新 _lastId，避免觸發 OnParametersSetAsync 的重複載入
                     _lastId = Entity.Id;
                     Id = Entity.Id;
                     
-                    // 🔑 修復：觸發 IdChanged 事件，更新父組件的綁定參數（如 PurchaseOrderId）
+                    //  修復：觸發 IdChanged 事件，更新父組件的綁定參數（如 PurchaseOrderId）
                     // 這確保父組件可以正確判斷模式（新增/編輯）
                     if (IdChanged.HasDelegate)
                     {
@@ -1823,7 +1823,7 @@
         // 使用 _currentId（導航時的實際 ID）或 Id（參數）
         var currentId = _currentId ?? Id;
         
-        // 🔑 重要修正：即使在新增模式（currentId 為 null）也需要載入 _lastRecordId
+        //  重要修正：即使在新增模式（currentId 為 null）也需要載入 _lastRecordId
         // 因為返回編輯按鈕需要 _lastRecordId 來判斷是否顯示
         if (!EnableNavigation || Service == null)
         {
@@ -2008,14 +2008,14 @@
     {
         try
         {
-            // 🔑 關鍵修復：設置導航標記，防止 LoadAllData 呼叫 DataLoader 覆蓋資料
+            //  關鍵修復：設置導航標記，防止 LoadAllData 呼叫 DataLoader 覆蓋資料
             _isNavigating = true;
             
-            // 🔑 優化：不使用 IsLoading，避免顯示載入動畫造成閃爍
+            //  優化：不使用 IsLoading，避免顯示載入動畫造成閃爍
             // IsLoading = true;
             // StateHasChanged();  // 移除此處的 StateHasChanged，減少重繪次數
             
-            // 🔑 關鍵修復：使用內部變數 _currentId 追蹤導航後的 ID
+            //  關鍵修復：使用內部變數 _currentId 追蹤導航後的 ID
             // 因為 Id 是 [Parameter]，無法在組件內部直接修改
             _lastId = targetId;
             _currentId = targetId;  // 使用內部變數追蹤
@@ -2035,20 +2035,20 @@
                         var loadedEntity = await getByIdTask;
                         if (loadedEntity != null)
                         {
-                            // 🔑 優化：先完成所有資料更新，最後才觸發一次 UI 重繪
+                            //  優化：先完成所有資料更新，最後才觸發一次 UI 重繪
                             Entity = loadedEntity;
                             editContext = new EditContext(Entity);
                             
-                            // 🔑 觸發 IdChanged 事件，通知父組件 ID 已變更（雙向綁定）
+                            //  觸發 IdChanged 事件，通知父組件 ID 已變更（雙向綁定）
                             if (IdChanged.HasDelegate)
                             {
                                 await IdChanged.InvokeAsync(targetId);
                             }
                             
-                            // 🔑 重要：不需要遞增 _autoCompleteVersion
+                            //  重要：不需要遞增 _autoCompleteVersion
                             // 因為 @key="@(Entity?.Id ?? 0)"，Entity.Id 變化時組件會自動重新創建
                             
-                            // 🔑 重要：不呼叫 AdditionalDataLoader
+                            //  重要：不呼叫 AdditionalDataLoader
                             // 導航時資料已經載入，重複呼叫可能導致 JavaScript 重複初始化錯誤
                             // AdditionalDataLoader 主要用於 Modal 首次開啟時載入選項資料
                             
@@ -2061,13 +2061,13 @@
                             // 重新載入導航狀態（基於新的 Id）
                             await LoadNavigationStateAsync();
                             
-                            // 🔑 新增：觸發實體載入完成事件，通知父組件重新載入明細資料
+                            //  新增：觸發實體載入完成事件，通知父組件重新載入明細資料
                             if (OnEntityLoaded.HasDelegate)
                             {
                                 await OnEntityLoaded.InvokeAsync(targetId);
                             }
                             
-                            // 🔑 優化：所有資料更新完成後，只觸發一次 UI 重繪
+                            //  優化：所有資料更新完成後，只觸發一次 UI 重繪
                             StateHasChanged();
                         }
                         else
@@ -2092,7 +2092,7 @@
         finally
         {
             // IsLoading = false;  // 不使用 IsLoading
-            _isNavigating = false;  // 🔑 清除導航標記
+            _isNavigating = false;  //  清除導航標記
             // StateHasChanged();  // 移除此處的 StateHasChanged，已在成功載入後觸發
         }
     }

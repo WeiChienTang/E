@@ -22,13 +22,17 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "報價日期")]
         public DateTime QuotationDate { get; set; } = DateTime.Today;
 
-        [Display(Name = "報價總金額")]
+        [Display(Name = "折扣前金額")]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalAmount { get; set; } = 0;
+        public decimal SubtotalBeforeDiscount { get; set; } = 0;
 
         [Display(Name = "折扣金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal DiscountAmount { get; set; } = 0;
+
+        [Display(Name = "實付金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalAmount { get; set; } = 0;
 
         [Display(Name = "付款方式")]
         [MaxLength(200, ErrorMessage = "付款方式不可超過200個字元")]

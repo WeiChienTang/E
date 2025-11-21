@@ -464,22 +464,33 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Quotation.TotalAmount),
-                    Label = "報價總金額",
+                    PropertyName = nameof(Quotation.SubtotalBeforeDiscount),
+                    Label = "折扣前金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    IsReadOnly = true, // 總金額欄位始終為唯讀
-                    HelpText = "系統根據明細自動計算"
+                    IsReadOnly = true, // 折扣前金額始終為唯讀
+                    HelpText = "系統根據明細自動計算（明細的數量 × 單價總和）",
+                    CssClass = "text-warning fw-bold" // 使用黃色粗體顯示
                 },
                 new()
                 {
                     PropertyName = nameof(Quotation.DiscountAmount),
                     Label = "折扣金額",
                     FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入折扣金額",
                     IsRequired = false,
-                    HelpText = "整張報價單的額外折扣金額",
-                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
+                    IsReadOnly = true, // 折扣金額始終為唯讀
+                    HelpText = "系統根據明細自動計算（明細的折扣總和）",
+                    CssClass = "text-danger fw-bold" // 使用紅色粗體顯示
+                },
+                new()
+                {
+                    PropertyName = nameof(Quotation.TotalAmount),
+                    Label = "實付金額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true, // 實付金額始終為唯讀
+                    HelpText = "系統根據明細自動計算（折扣前金額 - 折扣金額）",
+                    CssClass = "text-success fw-bold" // 使用綠色粗體顯示
                 },
                 new FormFieldDefinition()
                 {
@@ -511,8 +522,9 @@
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddToSection(FormSectionNames.AmountInfo,
-                    q => q.TotalAmount,
-                    q => q.DiscountAmount)
+                    q => q.SubtotalBeforeDiscount,
+                    q => q.DiscountAmount,
+                    q => q.TotalAmount)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
                 .Build();
         }
@@ -579,8 +591,16 @@
             // 欄位鎖定由 InitializeFormFieldsAsync 中的 IsReadOnly 控制
             // 但使用者仍可修改明細並儲存整個單據
             
-            // 更新總金額
-            quotation.TotalAmount = quotationDetails.Sum(d => d.SubtotalAmount);
+            // 1. 更新折扣前金額（所有明細的原價總和）
+            quotation.SubtotalBeforeDiscount = quotationDetails.Sum(d => 
+                Math.Round(d.Quantity * d.UnitPrice, 2));
+            
+            // 2. 更新折扣金額（所有明細的折扣總和）
+            quotation.DiscountAmount = quotationDetails.Sum(d => 
+                Math.Round(d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100), 2));
+            
+            // 3. 更新實付金額（折扣前金額 - 折扣金額）
+            quotation.TotalAmount = quotation.SubtotalBeforeDiscount - quotation.DiscountAmount;
 
             // 儲存主檔
             ServiceResult<Quotation> result;
@@ -756,7 +776,7 @@
     };
 
     /// <summary>
-    /// 處理報價單明細變更 - 自動計算總金額
+    /// 處理報價單明細變更 - 自動計算三個金額欄位
     /// </summary>
     private async Task HandleQuotationDetailsChanged(List<QuotationDetail> details)
     {
@@ -766,8 +786,16 @@
             
             if (editModalComponent?.Entity != null)
             {
-                // 計算總金額
-                editModalComponent.Entity.TotalAmount = details.Sum(d => d.SubtotalAmount);
+                // 1. 計算折扣前金額（所有明細的原價總和）
+                editModalComponent.Entity.SubtotalBeforeDiscount = details.Sum(d => 
+                    Math.Round(d.Quantity * d.UnitPrice, 2));
+                
+                // 2. 計算折扣金額（所有明細的折扣總和）
+                editModalComponent.Entity.DiscountAmount = details.Sum(d => 
+                    Math.Round(d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100), 2));
+                
+                // 3. 計算實付金額（折扣前金額 - 折扣金額）
+                editModalComponent.Entity.TotalAmount = editModalComponent.Entity.SubtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount;
                 
                 // 更新主檔的 QuotationDetails 集合
                 editModalComponent.Entity.QuotationDetails = details;
@@ -895,7 +923,6 @@
             nameof(Quotation.QuotationDate),
             nameof(Quotation.PaymentTerms),
             nameof(Quotation.DeliveryTerms),
-            nameof(Quotation.DiscountAmount),
             nameof(Quotation.ProjectName),
             nameof(BaseEntity.Remarks)
         };
@@ -1357,15 +1384,20 @@
     {
         try
         {
-            // 重新載入明細資料
+            // 1. 重新載入明細資料
             await LoadQuotationDetails(loadedEntityId);
             
-            // 觸發 Table 元件刷新
+            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
+            StateHasChanged();
+            
+            // 2. 觸發 Table 元件刷新（此時 ExistingDetails 已經是新的資料）
             if (quotationDetailManager != null)
             {
                 await quotationDetailManager.RefreshDetailsAsync();
             }
             
+            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
             StateHasChanged();
         }
         catch (Exception ex)
