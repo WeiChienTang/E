@@ -892,6 +892,9 @@
     {
         try
         {
+            // 🔑 關鍵修復：導航到已存在的記錄時，允許轉單
+            canCreateDelivery = true;
+            
             // 1. 重新載入明細資料
             await LoadSalesOrderDetails(loadedEntityId);
             

@@ -125,7 +125,6 @@ else
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private List<SalesOrderDetail> AvailableSalesDetails { get; set; } = new List<SalesOrderDetail>();
     private int? _previousSelectedCustomerId = null;
-    private int? _previousSelectedSalesOrderId = null;  // 追蹤訂單變化
     private int _previousExistingDetailsCount = 0;  // 追蹤 ExistingDetails 數量變化
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
 

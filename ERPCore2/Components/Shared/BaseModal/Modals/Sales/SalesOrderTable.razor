@@ -454,10 +454,11 @@ else
         {
             SalesItems.Clear();
             _dataLoadCompleted = true;
+            tableComponent?.RefreshEmptyRow();
             StateHasChanged();
             return;
         }
-
+        
         // 🔑 開始載入資料 - 設定為未完成
         _dataLoadCompleted = false;
         
@@ -574,12 +575,12 @@ else
             }
         }
         
-        // 🔑 資料載入完成 - 觸發空行檢查
-        _dataLoadCompleted = true;
-        
-        // 載入退貨數量資訊（必須在 UI 渲染前完成）
+        // 載入退貨數量資訊（不觸發 StateHasChanged）
         await LoadReturnedQuantitiesAsync();
         
+        // 🔑 資料載入完成 - 觸發空行檢查
+        _dataLoadCompleted = true;
+        tableComponent?.RefreshEmptyRow();
         StateHasChanged();
     }
 
