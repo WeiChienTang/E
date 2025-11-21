@@ -92,6 +92,16 @@
                                           IsLoading="@IsSubmitting" />
                 }
                 
+                @* 新增按鈕（只在編輯模式顯示） *@
+                @if (ShowAddButton && Entity != null && Entity.Id > 0)
+                {
+                    <GenericButtonComponent Text="新增" 
+                                          Variant="ButtonVariant.Primary" 
+                                          OnClick="HandleAddClick" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)"
+                                          Title="新增資料" />
+                }
+                
                 @* 返回編輯按鈕（只在新增模式且有最後一筆記錄時顯示） *@
                 @if (ShowReturnToLastButton && !Id.HasValue && _lastRecordId.HasValue)
                 {
@@ -280,6 +290,7 @@
     [Parameter] public string CancelButtonText { get; set; } = "取消";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
     [Parameter] public bool ShowSaveButton { get; set; } = true;
+    [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowReturnToLastButton { get; set; } = true;
@@ -436,6 +447,9 @@
     private int? _nextId = null;
     private int? _firstId = null;  // 第一筆記錄的 ID
     private int? _lastRecordId = null;   // 最後一筆記錄的 ID
+    
+    // 新增模式控制
+    private bool _stayInAddMode = false;  // 標記是否在儲存後保持新增模式（用於「新增」按鈕）
     
     // ===== Modal 尺寸列舉 =====
     
@@ -727,26 +741,53 @@
                 // 當儲存成功且是從新增（Id 為 null）變為編輯（Entity.Id > 0）時
                 // 自動更新 Id 參數並重新載入所有資料，確保 Modal 狀態正確
                 bool wasNewRecord = !Id.HasValue;
+                ConsoleHelper.WriteInfo($"[HandleSave] wasNewRecord: {wasNewRecord}, Entity.Id: {Entity?.Id}, _stayInAddMode: {_stayInAddMode}");
+                
                 if (wasNewRecord && Entity != null && Entity.Id > 0)
                 {
-                    //  關鍵：先更新 _lastId，避免觸發 OnParametersSetAsync 的重複載入
-                    _lastId = Entity.Id;
-                    Id = Entity.Id;
-                    
-                    //  修復：觸發 IdChanged 事件，更新父組件的綁定參數（如 PurchaseOrderId）
-                    // 這確保父組件可以正確判斷模式（新增/編輯）
-                    if (IdChanged.HasDelegate)
+                    // 🔑 檢查是否要保持新增模式（透過「新增」按鈕觸發）
+                    if (_stayInAddMode)
                     {
-                        await IdChanged.InvokeAsync(Entity.Id);
+                        // 保持新增模式：重置旗標並重新載入新增表單
+                        _stayInAddMode = false;
+                        
+                        // 觸發 OnSaveSuccess（讓父組件刷新列表）
+                        if (OnSaveSuccess.HasDelegate)
+                        {
+                            await OnSaveSuccess.InvokeAsync();
+                        }
+                        
+                        // 🔑 關鍵修正：重置所有狀態，否則 HandleAddClick 會因為 IsSubmitting/IsLoading 而直接返回
+                        IsSubmitting = false;
+                        IsLoading = false;
+                        StateHasChanged();
+                        
+                        // 重新觸發新增流程（清空表單、產生新 Code）
+                        await HandleAddClick();
+                        return; // 提前返回，不執行後續的編輯模式邏輯
                     }
-                    
-                    // 重新載入所有資料（包含明細、狀態訊息、導航狀態等）
-                    // 這確保了：
-                    // 1. Modal 標題從「新增」變為「編輯」
-                    // 2. 明細資料正確載入並顯示鎖定狀態
-                    // 3. 審核按鈕、刪除按鈕等正確顯示
-                    // 4. 相關單據的操作按鈕可以正常使用
-                    await LoadAllData();
+                    else
+                    {
+                        // 預設行為：轉為編輯模式
+                        //  關鍵：先更新 _lastId，避免觸發 OnParametersSetAsync 的重複載入
+                        _lastId = Entity.Id;
+                        Id = Entity.Id;
+                        
+                        //  修復：觸發 IdChanged 事件，更新父組件的綁定參數（如 PurchaseOrderId）
+                        // 這確保父組件可以正確判斷模式（新增/編輯）
+                        if (IdChanged.HasDelegate)
+                        {
+                            await IdChanged.InvokeAsync(Entity.Id);
+                        }
+                        
+                        // 重新載入所有資料（包含明細、狀態訊息、導航狀態等）
+                        // 這確保了：
+                        // 1. Modal 標題從「新增」變為「編輯」
+                        // 2. 明細資料正確載入並顯示鎖定狀態
+                        // 3. 審核按鈕、刪除按鈕等正確顯示
+                        // 4. 相關單據的操作按鈕可以正常使用
+                        await LoadAllData();
+                    }
                 }
                 
                 if (OnSaveSuccess.HasDelegate)
@@ -1948,6 +1989,41 @@
         {
             await ShowErrorMessage($"返回編輯{EntityName}時發生錯誤");
             LogError("HandleReturnToLast", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 處理新增按鈕點擊（編輯模式專用，切換到新增模式）
+    /// </summary>
+    private async Task HandleAddClick()
+    {
+        if (IsLoading || IsSubmitting) return;
+        
+        try
+        {
+            // 🔑 設定旗標：儲存後保持新增模式
+            _stayInAddMode = true;
+            
+            // 🔑 關鍵修復：重置狀態並強制觸發完整的載入流程
+            // 將 _lastId 設為非 null 值，這樣 OnParametersSetAsync 才會偵測到變化
+            _lastId = -1;  // 設為一個不可能的值，確保觸發重新載入
+            Id = null;
+            _currentId = null;
+            
+            // 觸發 IdChanged 事件通知父組件（這會觸發 OnParametersSetAsync）
+            if (IdChanged.HasDelegate)
+            {
+                await IdChanged.InvokeAsync(null);
+            }
+            
+            // 🔑 直接調用 LoadAllData，確保完整的載入流程
+            // 這會載入新增模式的實體（包含自動產生的 Code）
+            await LoadAllData();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"切換到新增模式時發生錯誤：{ex.Message}");
+            LogError("HandleAddClick", ex);
         }
     }
     
