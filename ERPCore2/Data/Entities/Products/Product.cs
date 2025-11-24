@@ -37,6 +37,11 @@ namespace ERPCore2.Data.Entities
         [MaxLength(100, ErrorMessage = "規格說明不可超過100個字元")]
         public string? Specification { get; set; }
         
+        [Display(Name = "稅率")]
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100, ErrorMessage = "稅率必須介於0到100之間")]
+        public decimal? TaxRate { get; set; }
+        
         // Navigation Properties
         public Unit? Unit { get; set; }
         public Size? Size { get; set; }

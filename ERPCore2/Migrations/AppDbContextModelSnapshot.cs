@@ -1959,6 +1959,9 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");
 
@@ -2513,6 +2516,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,4)");
 
@@ -2649,6 +2655,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<decimal>("TotalPaidAmount")
                         .HasColumnType("decimal(18,2)");

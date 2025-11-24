@@ -5,6 +5,7 @@
 @inject IUnitService UnitService
 @inject ISupplierService SupplierService
 @inject IInventoryStockService InventoryStockService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -244,10 +245,13 @@
         {
             if (!ProductId.HasValue)
             {
-                // 新增模式
+                // 新增模式 - 從系統參數載入預設稅率
+                var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+                
                 return new Product
                 {
-                    Status = EntityStatus.Active
+                    Status = EntityStatus.Active,
+                    TaxRate = defaultTaxRate
                 };
             }
             
@@ -383,6 +387,17 @@
                 HelpText = "輸入單位名稱進行搜尋，或直接選擇",
                 ActionButtons = await GetUnitActionButtonsAsync()
             },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Product.TaxRate),
+                Label = "稅率%",
+                FieldType = FormFieldType.Number,
+                Placeholder = "請輸入稅率",
+                IsRequired = false,
+                HelpText = "產品的稅率，介於0到100之間，預設值來自系統參數",
+                Min = 0,
+                Max = 100
+            },
             new()
             {
                 PropertyName = nameof(Product.Specification),
@@ -391,11 +406,11 @@
                 Placeholder = "請輸入規格說明",
                 IsRequired = false,
                 MaxLength = 100,
-                ContainerCssClass = "col-12",
+                ContainerCssClass = "col-6",
                 HelpText = "產品的規格說明資訊"
             },
 
-            FormFieldConfigurationHelper.CreateRemarksField<Product>()
+            FormFieldConfigurationHelper.CreateRemarksField<Product>(containerCssClass: "col-6")
         };
 
         formSections = FormSectionHelper<Product>.Create()
@@ -405,7 +420,8 @@
                 p => p.Barcode,
                 p => p.ProductCategoryId,
                 p => p.SizeId,
-                p => p.UnitId)
+                p => p.UnitId,
+                p => p.TaxRate)
 
             .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Specification,

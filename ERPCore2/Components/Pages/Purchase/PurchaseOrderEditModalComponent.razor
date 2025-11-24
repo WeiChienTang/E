@@ -535,10 +535,10 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseOrder.PurchaseTaxAmount),
-                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("採購稅額", currentTaxRate),
+                    Label = "採購稅額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("採購單", currentTaxRate),
+                    HelpText = "採購單的稅額，根據明細自動計算",
                     IsReadOnly = true // 稅額欄位始終為唯讀
                 },
                 new FormFieldDefinition()
@@ -943,11 +943,18 @@
                 // 1. 計算總金額（未稅）
                 editModalComponent.Entity.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
                 
-                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
-                editModalComponent.Entity.PurchaseTaxAmount = TaxCalculationHelper.CalculateTax(
-                    editModalComponent.Entity.TotalAmount, 
-                    currentTaxRate
-                );            
+                // 2. 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
+                editModalComponent.Entity.PurchaseTaxAmount = purchaseOrderDetails.Sum(d => 
+                {
+                    // 使用明細的稅率，若無則使用系統預設值
+                    var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                    // 計算此筆明細的稅額 = 小計 × 稅率%
+                    var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                    return Math.Round(detailTaxAmount, 2);
+                });
+                
+                // 3. 含稅總金額會自動計算（PurchaseTotalAmountIncludingTax 是計算屬性）
+                //    = TotalAmount + PurchaseTaxAmount
                 
                 StateHasChanged();
             }
@@ -1031,12 +1038,18 @@
             // 不使用 ApprovalConfigHelper.CanSaveWhenApproved 的限制
             // 因為明細中的「完成進貨」欄位需要在審核後仍可修改
             
-            // 更新總金額和稅額（使用 TaxCalculationHelper 統一處理）
+            // 更新總金額和稅額
             purchaseOrder.TotalAmount = purchaseOrderDetails.Sum(d => d.SubtotalAmount);
-            purchaseOrder.PurchaseTaxAmount = TaxCalculationHelper.CalculateTax(
-                purchaseOrder.TotalAmount, 
-                currentTaxRate
-            );
+            
+            // 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
+            purchaseOrder.PurchaseTaxAmount = purchaseOrderDetails.Sum(d => 
+            {
+                // 使用明細的稅率，若無則使用系統預設值
+                var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                // 計算此筆明細的稅額 = 小計 × 稅率%
+                var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                return Math.Round(detailTaxAmount, 2);
+            });
 
             // 儲存主檔
             ServiceResult<PurchaseOrder> result;
