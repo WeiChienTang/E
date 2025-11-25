@@ -2,6 +2,7 @@
 @* 採購單商品管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
 @using ERPCore2.Helpers
+@using ERPCore2.Data.Enums
 @inject IProductService ProductService
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject ISystemParameterService SystemParameterService
@@ -103,6 +104,12 @@ else
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
+    
+    // ===== 稅率算法參數 =====
+    [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+    
+    // ===== 稅率算法輔助屬性 =====
+    private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
 
     // ===== InteractiveTableComponent 參考 =====
     private InteractiveTableComponent<ProductItem>? tableComponent;
@@ -280,39 +287,49 @@ else
             })
         });
 
-        // 稅率欄位
+        // 稅率欄位（可編輯）
         columns.Add(new()
         {
             Title = "稅率%",
-            Tooltip = "商品的稅率（0% ~ 100%），預設為系統設定值",
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "TaxRate",
+            ColumnType = InteractiveColumnType.Number,
             Width = "80px",
-            CustomTemplate = item =>
+            Tooltip = "商品的稅率（0% ~ 100%），可手動調整。當主檔選擇免稅時此欄位將被禁用",
+            IsDisabledFunc = item =>
             {
                 var productItem = (ProductItem)item;
-                // 只有選擇商品後才顯示稅率
-                var displayValue = productItem.SelectedProduct != null && productItem.TaxRate > 0 
-                    ? $"{productItem.TaxRate}%" 
-                    : "";
-                return @<div class="text-end text-info">@displayValue</div>;
-            }
+                // 當主檔選擇免稅時，禁用稅率欄位
+                return IsReadOnly || IsTaxCalculationMethodNoTax || 
+                       !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
+            },
+            TooltipFunc = item =>
+            {
+                var productItem = (ProductItem)item;
+                if (IsTaxCalculationMethodNoTax) return "主檔已選擇免稅，此欄位已停用";
+                if (!DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true))
+                    return "此商品已有進貨記錄，無法修改稅率";
+                return null;
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnTaxRateInput((ProductItem)item, valueString);
+            })
         });
 
-        // 小計欄位（含稅）
+        // 小計欄位（根據稅率算法顯示）
         columns.Add(new()
         {
             Title = "小計",
-            Tooltip = "數量 × 單價 × (1 + 稅率%) 的含稅總計",
+            Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
             CustomTemplate = item =>
             {
                 var productItem = (ProductItem)item;
-                // 小計含稅 = 數量 × 單價 × (1 + 稅率%)
-                var subtotalWithTax = productItem.Quantity * productItem.Price * (1 + productItem.TaxRate / 100);
-                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotalWithTax);
+                var subtotal = CalculateItemSubtotal(productItem);
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
                 return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
         });
@@ -727,6 +744,21 @@ else
         await NotifyDetailsChanged();
     }
 
+    private async Task OnTaxRateInput(ProductItem item, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            item.TaxRate = 0;
+        }
+        else if (decimal.TryParse(value, out var taxRate))
+        {
+            // 限制範圍 0 ~ 100
+            item.TaxRate = Math.Max(0, Math.Min(100, taxRate));
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
     private async Task OnRemarksInput(ProductItem item, string? value)
     {
         item.Remarks = value ?? string.Empty;
@@ -789,6 +821,51 @@ else
         }
         
         return Products;
+    }
+    
+    /// <summary>
+    /// 計算明細項目的小計（根據稅率算法，四捨五入到整數）
+    /// </summary>
+    private decimal CalculateItemSubtotal(ProductItem item)
+    {
+        if (item.SelectedProduct == null || item.Quantity <= 0 || item.Price <= 0)
+        {
+            return 0;
+        }
+        
+        var baseAmount = item.Quantity * item.Price;
+        
+        switch (TaxCalculationMethod)
+        {
+            case TaxCalculationMethod.TaxExclusive:
+                // 外加稅：小計 = 數量 × 單價 × (1 + 稅率%)（四捨五入到整數）
+                return Math.Round(baseAmount * (1 + item.TaxRate / 100m), 0, MidpointRounding.AwayFromZero);
+                
+            case TaxCalculationMethod.TaxInclusive:
+                // 內含稅：小計 = 數量 × 單價（單價已含稅，四捨五入到整數）
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+                
+            case TaxCalculationMethod.NoTax:
+                // 免稅：小計 = 數量 × 單價（四捨五入到整數）
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+                
+            default:
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+        }
+    }
+    
+    /// <summary>
+    /// 取得小計欄位的提示文字
+    /// </summary>
+    private string GetSubtotalTooltip()
+    {
+        return TaxCalculationMethod switch
+        {
+            TaxCalculationMethod.TaxExclusive => "外加稅：數量 × 單價 × (1 + 稅率%)",
+            TaxCalculationMethod.TaxInclusive => "內含稅：數量 × 單價（單價已含稅）",
+            TaxCalculationMethod.NoTax => "免稅：數量 × 單價",
+            _ => "數量 × 單價"
+        };
     }
 
     private decimal GetTotalAmount()

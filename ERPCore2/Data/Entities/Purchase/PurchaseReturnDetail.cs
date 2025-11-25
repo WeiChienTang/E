@@ -24,6 +24,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal ReturnSubtotalAmount => ReturnQuantity * OriginalUnitPrice;
 
+        [Display(Name = "稅率 (%)")]
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100, ErrorMessage = "稅率必須介於0到100之間")]
+        public decimal? TaxRate { get; set; }
+
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
         public string? BatchNumber { get; set; }

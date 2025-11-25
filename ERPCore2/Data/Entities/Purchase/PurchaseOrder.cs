@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
+using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -24,6 +25,10 @@ namespace ERPCore2.Data.Entities
 
         [Display(Name = "預計到貨日期")]
         public DateTime? ExpectedDeliveryDate { get; set; }
+
+        [Required(ErrorMessage = "稅率算法為必填")]
+        [Display(Name = "稅率算法")]
+        public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
 
         [MaxLength(100, ErrorMessage = "採購人員不可超過100個字元")]
         [Display(Name = "採購人員")]
