@@ -143,6 +143,7 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 實作特定驗證邏輯
+        /// 注意：PurchaseOrderDetailId 允許為 null，以支援無採購單的直接進貨
         /// </summary>
         public override async Task<ServiceResult> ValidateAsync(PurchaseReceivingDetail entity)
         {
@@ -168,6 +169,7 @@ namespace ERPCore2.Services
                 if (entity.UnitPrice < 0)
                     errors.Add("單價不能小於 0");
 
+                // 注意：PurchaseOrderDetailId 不驗證必填，允許為 null（支援無採購單的直接進貨）
                 // 移除重複檢查：允許同一採購訂單明細分配到不同倉庫
                 // 因為業務需求允許同一採購明細可以分配到不同倉庫位置
 

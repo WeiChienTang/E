@@ -155,17 +155,7 @@ namespace ERPCore2.Helpers
                 {
                     result.CanDelete = false;
                     result.DependentEntities.Add($"採購訂單({purchaseOrderCount}筆)");
-                }
-                
-                // 檢查商品供應商關聯
-                var productSupplierCount = await context.ProductSuppliers
-                    .CountAsync(ps => ps.SupplierId == supplierId);
-                    
-                if (productSupplierCount > 0)
-                {
-                    result.CanDelete = false;
-                    result.DependentEntities.Add($"商品供應商關聯({productSupplierCount}筆)");
-                }
+                }                
                 
                 return result;
             }
@@ -249,17 +239,7 @@ namespace ERPCore2.Helpers
                 {
                     result.CanDelete = false;
                     result.DependentEntities.Add($"庫存記錄({inventoryCount}筆)");
-                }
-                
-                // 檢查商品供應商關聯
-                var productSupplierCount = await context.ProductSuppliers
-                    .CountAsync(ps => ps.ProductId == productId);
-                    
-                if (productSupplierCount > 0)
-                {
-                    result.CanDelete = false;
-                    result.DependentEntities.Add($"商品供應商關聯({productSupplierCount}筆)");
-                }
+                }            
                 
                 return result;
             }

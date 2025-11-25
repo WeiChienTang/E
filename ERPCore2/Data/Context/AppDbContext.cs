@@ -20,7 +20,6 @@ namespace ERPCore2.Data.Context
       public DbSet<RolePermission> RolePermissions { get; set; }
       public DbSet<Product> Products { get; set; }
       public DbSet<ProductCategory> ProductCategories { get; set; }
-      public DbSet<ProductSupplier> ProductSuppliers { get; set; }      
       public DbSet<SupplierPricing> SupplierPricings { get; set; }
       public DbSet<PriceHistory> PriceHistories { get; set; }      
       public DbSet<Supplier> Suppliers { get; set; }      
@@ -153,26 +152,12 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(e => e.Unit)
                         .WithMany(u => u.Products)
                         .OnDelete(DeleteBehavior.SetNull);
-                  });
-                  
-                  modelBuilder.Entity<ProductSupplier>(entity =>
-                  {
-                        // 欄位對應                        
-                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
-                        // 關聯設定
-                        entity.HasOne(ps => ps.Product)
-                        .WithMany(p => p.ProductSuppliers)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(ps => ps.Supplier)
-                        .WithMany(s => s.ProductSuppliers)
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                        entity.HasOne(ps => ps.Unit)
-                        .WithMany()
+                        entity.HasOne(e => e.Supplier)
+                        .WithMany(s => s.Products)
+                        .HasForeignKey(e => e.SupplierId)
                         .OnDelete(DeleteBehavior.SetNull);
-                  });                  
+                  });
                   
                   modelBuilder.Entity<PaymentMethod>(entity =>
                   {

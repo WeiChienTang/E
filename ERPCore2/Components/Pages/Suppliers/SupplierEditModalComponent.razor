@@ -1,6 +1,5 @@
 @* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
 @inject ISupplierService SupplierService
-@inject IProductSupplierService ProductSupplierService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -41,11 +40,6 @@
     private GenericEditModalComponent<Supplier, ISupplierService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    
-    // 產品供應商關聯相關變數
-    private List<ProductSupplier> supplierProducts = new();
-    private List<Product> availableProducts = new();
-    private List<Unit> availableUnits = new();
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;

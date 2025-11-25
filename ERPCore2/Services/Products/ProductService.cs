@@ -61,10 +61,7 @@ namespace ERPCore2.Services
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Include(p => p.ProductSuppliers)
-                        .ThenInclude(ps => ps.Supplier)
-                    .Include(p => p.ProductSuppliers)
-                        .ThenInclude(ps => ps.Unit)
+                    .Include(p => p.Supplier)
                     .FirstOrDefaultAsync(p => p.Id == id);
             }
             catch (Exception ex)
@@ -237,13 +234,16 @@ namespace ERPCore2.Services
 
             try
             {
-                return await context.Products
+                var products = await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.Size)
-                    .Where(p => p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId && ps.Status == EntityStatus.Active))
+                    .Include(p => p.Supplier)
+                    .Where(p => p.SupplierId == supplierId && p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
+                
+                return products;
             }
             catch (Exception ex)
             {
@@ -333,100 +333,6 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region 供應商管理
-
-        public async Task<List<ProductSupplier>> GetProductSuppliersAsync(int productId)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Supplier)
-                    .Include(ps => ps.Unit)  // 新增 Unit 導航屬性載入
-                    .Where(ps => ps.ProductId == productId)
-                    .OrderBy(ps => ps.Supplier.CompanyName)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetProductSuppliersAsync), GetType(), _logger, new { ProductId = productId });
-                throw;
-            }
-        }
-
-        public async Task<ServiceResult> UpdateProductSuppliersAsync(int productId, List<ProductSupplier> productSuppliers)
-        {
-            try
-            {
-                // 取得現有供應商關聯
-                using var context = await _contextFactory.CreateDbContextAsync();
-                var existingRelations = await context.ProductSuppliers
-                    .Where(ps => ps.ProductId == productId)
-                    .ToListAsync();
-
-                // 刪除不在新列表中的關聯
-                var relationsToDelete = existingRelations
-                    .Where(er => !productSuppliers.Any(ps => ps.Id == er.Id))
-                    .ToList();
-
-                foreach (var relation in relationsToDelete)
-                {
-                    relation.UpdatedAt = DateTime.UtcNow;
-                }
-
-                // 更新或新增關聯
-                foreach (var productSupplier in productSuppliers)
-                {
-                    if (productSupplier.Id <= 0) // 新增（包括負數臨時 ID）
-                    {
-                        // 建立新的產品供應商實體以避免 ID 衝突
-                        var newProductSupplier = new ProductSupplier
-                        {
-                            ProductId = productId,
-                            SupplierId = productSupplier.SupplierId,
-                            SupplierProductCode = productSupplier.SupplierProductCode,
-                            SupplierPrice = productSupplier.SupplierPrice,
-                            LeadTime = productSupplier.LeadTime,
-                            MinOrderQuantity = productSupplier.MinOrderQuantity,
-                            UnitId = productSupplier.UnitId,  // 新增單位ID設定
-                            Status = EntityStatus.Active,
-                            
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow,
-                            CreatedBy = "System", // TODO: 從認證取得使用者
-                            Remarks = productSupplier.Remarks
-                        };
-                        context.ProductSuppliers.Add(newProductSupplier);
-                    }
-                    else
-                    {
-                        // 更新
-                        var existingRelation = existingRelations.FirstOrDefault(er => er.Id == productSupplier.Id);
-                        if (existingRelation != null)
-                        {
-                            existingRelation.SupplierId = productSupplier.SupplierId;
-                            existingRelation.SupplierProductCode = productSupplier.SupplierProductCode;
-                            existingRelation.SupplierPrice = productSupplier.SupplierPrice;
-                            existingRelation.LeadTime = productSupplier.LeadTime;
-                            existingRelation.MinOrderQuantity = productSupplier.MinOrderQuantity;
-                            existingRelation.UnitId = productSupplier.UnitId;  // 新增單位ID更新
-                            existingRelation.UpdatedAt = DateTime.UtcNow;
-                        }
-                    }
-                }
-
-                await context.SaveChangesAsync();
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateProductSuppliersAsync), GetType(), _logger, new { ProductId = productId });
-                return ServiceResult.Failure($"更新商品供應商關聯時發生錯誤: {ex.Message}");
-            }
-        }
-
-        #endregion
-
         #region 輔助方法
 
         public void InitializeNewProduct(Product product)
@@ -489,10 +395,7 @@ namespace ERPCore2.Services
                 
                 // 檢查實體是否存在，並載入相關資料
                 var existingEntity = await context.Products
-                    .Include(p => p.ProductSuppliers)
-                        .ThenInclude(ps => ps.Supplier)
-                    .Include(p => p.ProductSuppliers)
-                        .ThenInclude(ps => ps.Unit)
+                    .Include(p => p.Supplier)
                     .FirstOrDefaultAsync(x => x.Id == entity.Id);
                     
                 if (existingEntity == null)
@@ -514,49 +417,6 @@ namespace ERPCore2.Services
 
                 // 更新基本屬性
                 context.Entry(existingEntity).CurrentValues.SetValues(entity);
-
-                // 處理 ProductSuppliers 集合
-                if (entity.ProductSuppliers != null)
-                {
-                    // 移除不存在的 ProductSuppliers
-                    var existingSupplierIds = entity.ProductSuppliers.Select(ps => ps.Id).ToList();
-                    var toRemove = existingEntity.ProductSuppliers
-                        .Where(ps => ps.Id > 0 && !existingSupplierIds.Contains(ps.Id))
-                        .ToList();
-                    
-                    foreach (var item in toRemove)
-                    {
-                        context.ProductSuppliers.Remove(item);
-                    }
-
-                    // 更新或新增 ProductSuppliers
-                    foreach (var supplierEntity in entity.ProductSuppliers)
-                    {
-                        if (supplierEntity.Id > 0)
-                        {
-                            // 更新existing
-                            var existingSupplier = existingEntity.ProductSuppliers
-                                .FirstOrDefault(ps => ps.Id == supplierEntity.Id);
-                            if (existingSupplier != null)
-                            {
-                                // 保持審計資訊
-                                supplierEntity.CreatedAt = existingSupplier.CreatedAt;
-                                supplierEntity.CreatedBy = existingSupplier.CreatedBy;
-                                supplierEntity.UpdatedAt = DateTime.UtcNow;
-                                
-                                context.Entry(existingSupplier).CurrentValues.SetValues(supplierEntity);
-                            }
-                        }
-                        else
-                        {
-                            // 新增
-                            supplierEntity.ProductId = entity.Id;
-                            supplierEntity.CreatedAt = DateTime.UtcNow;
-                            supplierEntity.UpdatedAt = DateTime.UtcNow;
-                            context.ProductSuppliers.Add(supplierEntity);
-                        }
-                    }
-                }
 
                 await context.SaveChangesAsync();
 

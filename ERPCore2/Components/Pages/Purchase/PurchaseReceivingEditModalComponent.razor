@@ -124,6 +124,10 @@
     private List<Employee> employees = new();
     private List<Product> products = new();
     
+    // ===== 防止重複調用的標記 =====
+    private int? lastLoadedSupplierId = null; // 記錄上次載入的廠商ID
+    private bool isLoadingProducts = false; // 正在載入產品的標記
+    
     // ===== 下拉選單選項 =====
     private List<SelectOption> taxCalculationMethodOptions = new();
     
@@ -221,6 +225,10 @@
                 // 🔑 Modal 關閉時重置自動載入相關標記
                 // 這樣下次開啟時就能重新觸發自動載入
                 shouldAutoLoadUnreceived = false;
+                
+                // 🔑 重置防重複載入的標記
+                lastLoadedSupplierId = null;
+                isLoadingProducts = false;
             }
         }
         catch (Exception ex)
@@ -904,47 +912,49 @@
 
     /// <summary>
     /// 更新產品篩選的 AutoComplete 資料集合
-    /// 根據選擇的廠商，動態更新可選擇的商品列表
+    /// 根據選擇的廠商，動態更新可選擇的商品列表（顯示該廠商的所有產品）
     /// </summary>
     private async Task UpdateFilterProductCollection(int? supplierId = null)
     {
         try
         {
-            if (autoCompleteConfig?.Collections == null)
+            // 🔑 防止重複載入同一廠商的產品
+            if (supplierId.HasValue && supplierId == lastLoadedSupplierId && !isLoadingProducts)
+            {
                 return;
+            }
+            
+            // 🔑 防止並發載入
+            if (isLoadingProducts)
+            {
+                return;
+            }
+            
+            if (autoCompleteConfig?.Collections == null)
+            {
+                return;
+            }
+            
+            isLoadingProducts = true; // 標記開始載入
             
             List<Product> filteredProducts;
             
             if (supplierId.HasValue && supplierId.Value > 0)
             {
-                // 取得該廠商的所有採購訂單
-                var supplierOrders = purchaseOrders
-                    .Where(po => po.SupplierId == supplierId.Value)
-                    .ToList();
+                // 🔑 修正：使用 ProductService 載入該廠商的所有產品
+                // 不再限制只顯示採購單中的產品
+                filteredProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
                 
-                // 從採購訂單明細中提取已採購的商品ID（去重）
-                var productIds = new HashSet<int>();
-                foreach (var order in supplierOrders)
-                {
-                    if (order.PurchaseOrderDetails != null)
-                    {
-                        foreach (var detail in order.PurchaseOrderDetails)
-                        {
-                            productIds.Add(detail.ProductId);
-                        }
-                    }
-                }
-                
-                // 篩選出該廠商的商品
-                filteredProducts = products
-                    .Where(p => productIds.Contains(p.Id))
-                    .OrderBy(p => p.Code)
-                    .ToList();
+                // 🔑 記錄已載入的廠商ID
+                lastLoadedSupplierId = supplierId;
             }
             else
             {
                 // 沒有選擇廠商時，顯示全部商品
                 filteredProducts = products;
+                
+                // 清空記錄
+                lastLoadedSupplierId = null;
             }
             
             // 更新 AutoComplete 的資料集合
@@ -961,6 +971,10 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"更新產品篩選選項時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingProducts = false; // 標記載入完成
         }
     }
 

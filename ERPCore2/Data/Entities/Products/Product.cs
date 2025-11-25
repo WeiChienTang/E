@@ -42,11 +42,18 @@ namespace ERPCore2.Data.Entities
         [Range(0, 100, ErrorMessage = "稅率必須介於0到100之間")]
         public decimal? TaxRate { get; set; }
         
+        /// <summary>
+        /// 供應商 ID（直接關聯，不使用中間表）
+        /// </summary>
+        [Display(Name = "供應商")]
+        [ForeignKey(nameof(Supplier))]
+        public int? SupplierId { get; set; }
+        
         // Navigation Properties
         public Unit? Unit { get; set; }
         public Size? Size { get; set; }
         public ProductCategory? ProductCategory { get; set; }
-        public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
+        public Supplier? Supplier { get; set; }
         public ICollection<InventoryStock> InventoryStocks { get; set; } = new List<InventoryStock>();
         
         // Product Composition (BOM) Navigation Properties

@@ -60,20 +60,6 @@ namespace ERPCore2.Services
         
         #endregion
 
-        #region 供應商管理
-        
-        /// <summary>
-        /// 取得商品的供應商列表
-        /// </summary>
-        Task<List<ProductSupplier>> GetProductSuppliersAsync(int productId);
-        
-        /// <summary>
-        /// 更新商品供應商關聯
-        /// </summary>
-        Task<ServiceResult> UpdateProductSuppliersAsync(int productId, List<ProductSupplier> productSuppliers);
-        
-        #endregion
-
         #region 輔助方法
         
         /// <summary>

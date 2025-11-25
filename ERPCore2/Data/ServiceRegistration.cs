@@ -59,7 +59,6 @@ namespace ERPCore2.Data
             // 商品相關服務
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
-            services.AddScoped<IProductSupplierService, ProductSupplierService>();
             services.AddScoped<ISizeService, SizeService>();
             
             // 商品價格服務

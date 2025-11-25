@@ -75,7 +75,8 @@ namespace ERPCore2.Data.Entities
         
         // 聯絡資訊請使用 IContactService 取得 (OwnerType = "Supplier", OwnerId = this.Id)
         // 地址資訊請使用 IAddressService 取得
-        public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
-        public ICollection<Product> PrimaryProducts { get; set; } = new List<Product>();
+        
+        // Navigation Properties
+        public ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }
