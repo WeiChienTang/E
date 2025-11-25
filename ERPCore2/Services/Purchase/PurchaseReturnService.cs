@@ -410,13 +410,53 @@ namespace ERPCore2.Services
                     return result;
                 }
 
-                // 計算總金額
-                purchaseReturn.TotalReturnAmount = purchaseReturn.PurchaseReturnDetails
-                    .AsQueryable()
-                    .Sum(prd => prd.ReturnQuantity * prd.OriginalUnitPrice);
-
-                // 計算稅額 (假設稅率為 5%)
-                purchaseReturn.ReturnTaxAmount = purchaseReturn.TotalReturnAmount * 0.05m;
+                // 計算明細小計（根據稅別）
+                var detailSubtotals = purchaseReturn.PurchaseReturnDetails.Select(d => new
+                {
+                    BaseAmount = d.ReturnQuantity * d.OriginalUnitPrice,
+                    TaxRate = d.TaxRate ?? 5.0m // 如果明細沒有設定稅率，使用預設 5%
+                }).ToList();
+                
+                switch (purchaseReturn.TaxCalculationMethod)
+                {
+                    case Data.Enums.TaxCalculationMethod.TaxExclusive:
+                        // 外加稅：金額 = Σ(退回數量 × 單價)（四捨五入到整數），稅額 = 金額 × 稅率%（四捨五入到整數）
+                        purchaseReturn.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
+                        purchaseReturn.ReturnTaxAmount = detailSubtotals.Sum(d =>
+                        {
+                            var detailTaxAmount = d.BaseAmount * (d.TaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        break;
+                        
+                    case Data.Enums.TaxCalculationMethod.TaxInclusive:
+                        // 內含稅：總額 = Σ(退回數量 × 單價)，金額 = 總額 - 稅額，稅額 = 總額 / (1 + 稅率%) × 稅率%（四捨五入到整數）
+                        var totalWithTax = detailSubtotals.Sum(d => d.BaseAmount);
+                        var totalTax = detailSubtotals.Sum(d =>
+                        {
+                            var detailTaxAmount = d.BaseAmount / (1 + d.TaxRate / 100m) * (d.TaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        purchaseReturn.TotalReturnAmount = Math.Round(totalWithTax - totalTax, 0, MidpointRounding.AwayFromZero);
+                        purchaseReturn.ReturnTaxAmount = totalTax;
+                        break;
+                        
+                    case Data.Enums.TaxCalculationMethod.NoTax:
+                        // 免稅：金額 = Σ(退回數量 × 單價)（四捨五入到整數），稅額 = 0
+                        purchaseReturn.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
+                        purchaseReturn.ReturnTaxAmount = 0;
+                        break;
+                        
+                    default:
+                        // 預設使用外加稅（四捨五入到整數）
+                        purchaseReturn.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
+                        purchaseReturn.ReturnTaxAmount = detailSubtotals.Sum(d =>
+                        {
+                            var detailTaxAmount = d.BaseAmount * (d.TaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        break;
+                }
 
                 // TotalReturnAmountWithTax 是計算屬性，會自動計算，無需手動賦值
 

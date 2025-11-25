@@ -5,6 +5,7 @@
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject ISystemParameterService SystemParameterService
 
 @if (!EffectiveSupplierId.HasValue || EffectiveSupplierId.Value <= 0)
 {
@@ -111,6 +112,12 @@ else
     
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // ===== 稅別參數 =====
+    [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+    
+    // ===== 稅別輔助屬性 =====
+    private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
@@ -571,18 +578,47 @@ else
             IsReadOnly = true
         });
 
-        // 小計欄位
+        // 稅率欄位（可編輯）
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "稅率%",
+            PropertyName = nameof(ReturnItem.TaxRate),
+            ColumnType = InteractiveColumnType.Number,
+            Width = "80px",
+            Tooltip = "商品的稅率（0% ~ 100%），可手動調整。當主檔選擇免稅時此欄位將被禁用",
+            IsDisabledFunc = item =>
+            {
+                var returnItem = (ReturnItem)item;
+                // 當主檔選擇免稅時，禁用稅率欄位；或已有沖款記錄時也禁用
+                return IsReadOnly || IsTaxCalculationMethodNoTax || HasPaymentRecord(returnItem);
+            },
+            TooltipFunc = item =>
+            {
+                var returnItem = (ReturnItem)item;
+                if (IsTaxCalculationMethodNoTax) return "主檔已選擇免稅，此欄位已停用";
+                if (HasPaymentRecord(returnItem))
+                    return $"此商品已有沖款記錄（已收款 {GetReceivedAmount(returnItem):N0} 元），無法修改稅率";
+                return null;
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnTaxRateInput((ReturnItem)item, valueString);
+            })
+        });
+
+        // 小計欄位（根據稅別計算）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "小計",
-            Tooltip = "退回數量 × 單價的總計",
+            Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
             CustomTemplate = item =>
             {
                 var returnItem = (ReturnItem)item;
-                var subtotal = returnItem.ReturnQuantity * returnItem.OriginalUnitPrice;
+                var subtotal = CalculateItemSubtotal(returnItem);
                 var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
                 return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
@@ -765,6 +801,9 @@ else
 
         ReturnItems.Clear();
         
+        // 取得系統預設稅率（用於 fallback）
+        var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+        
         foreach (var detail in ExistingReturnDetails)
         {
             var item = new ReturnItem
@@ -781,6 +820,8 @@ else
                 // 使用屬性值
                 ReturnQuantity = detail.ReturnQuantity,
                 OriginalUnitPrice = detail.OriginalUnitPrice,
+                // 設定稅率：明細稅率 > 進貨明細稅率 > 商品稅率 > 系統預設稅率
+                TaxRate = detail.TaxRate ?? detail.PurchaseReceivingDetail?.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,
                 Remarks = detail.Remarks ?? string.Empty,
                 BatchNumber = detail.BatchNumber ?? string.Empty,
                 ExistingDetailEntity = detail
@@ -928,6 +969,7 @@ else
             returnItem.AlreadyReturnedQuantity = 0;
             returnItem.ReturnQuantity = 0;
             returnItem.OriginalUnitPrice = 0;
+            returnItem.TaxRate = 0;
             returnItem.ShowReceivingDetailDropdown = false;
             returnItem.ReceivingDetailSelectedIndex = -1;
             await NotifyDetailsChanged();
@@ -941,6 +983,8 @@ else
         returnItem.AlreadyReturnedQuantity = 0; // TODO: 需要實作計算已退回數量的邏輯
         returnItem.ReturnQuantity = 0;
         returnItem.OriginalUnitPrice = selectedDetail.UnitPrice;
+        // 設定稅率：進貨明細稅率 > 商品稅率 > 系統預設稅率
+        returnItem.TaxRate = selectedDetail.TaxRate ?? selectedDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
         returnItem.ShowReceivingDetailDropdown = false;
         returnItem.ReceivingDetailSelectedIndex = -1;
         
@@ -970,6 +1014,69 @@ else
     }
 
     /// <summary>
+    /// 處理稅率輸入
+    /// </summary>
+    private async Task OnTaxRateInput(ReturnItem item, string? valueString)
+    {
+        if (string.IsNullOrWhiteSpace(valueString))
+        {
+            item.TaxRate = 0;
+        }
+        else if (decimal.TryParse(valueString, out var taxRate))
+        {
+            // 限制範圍 0 ~ 100
+            item.TaxRate = Math.Max(0, Math.Min(100, taxRate));
+        }
+        
+        await NotifyDetailsChanged();
+    }
+
+    /// <summary>
+    /// 計算明細項目的小計（根據稅別，四捨五入到整數）
+    /// </summary>
+    private decimal CalculateItemSubtotal(ReturnItem item)
+    {
+        if (item.SelectedReceivingDetail == null || item.ReturnQuantity <= 0 || item.OriginalUnitPrice <= 0)
+        {
+            return 0;
+        }
+        
+        var baseAmount = item.ReturnQuantity * item.OriginalUnitPrice;
+        
+        switch (TaxCalculationMethod)
+        {
+            case TaxCalculationMethod.TaxExclusive:
+                // 外加稅：小計 = 數量 × 單價 × (1 + 稅率%)（四捨五入到整數）
+                return Math.Round(baseAmount * (1 + item.TaxRate / 100m), 0, MidpointRounding.AwayFromZero);
+                
+            case TaxCalculationMethod.TaxInclusive:
+                // 內含稅：小計 = 數量 × 單價（單價已含稅，四捨五入到整數）
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+                
+            case TaxCalculationMethod.NoTax:
+                // 免稅：小計 = 數量 × 單價（四捨五入到整數）
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+                
+            default:
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+        }
+    }
+    
+    /// <summary>
+    /// 取得小計欄位的提示文字
+    /// </summary>
+    private string GetSubtotalTooltip()
+    {
+        return TaxCalculationMethod switch
+        {
+            TaxCalculationMethod.TaxExclusive => "外加稅：數量 × 單價 × (1 + 稅率%)",
+            TaxCalculationMethod.TaxInclusive => "內含稅：數量 × 單價（單價已含稅）",
+            TaxCalculationMethod.NoTax => "免稅：數量 × 單價",
+            _ => "數量 × 單價"
+        };
+    }
+
+    /// <summary>
     /// 載入所有可退回商品的主要方法（公開方法，供父組件調用）
     /// </summary>
     public async Task LoadAllReturnableItems()
@@ -990,6 +1097,9 @@ else
                 if (ReturnItems.Any(item => item.SelectedReceivingDetail?.Id == detail.Id))
                     continue;
                 
+                // 🔑 取得稅率（優先順序：進貨明細稅率 > 商品稅率 > 系統預設稅率）
+                var taxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
+                
                 var newItem = new ReturnItem
                 {
                     SelectedReceivingDetail = detail,
@@ -998,7 +1108,8 @@ else
                     OriginalQuantity = detail.ReceivedQuantity,
                     AlreadyReturnedQuantity = 0, // TODO: 需要從資料庫計算已退回數量
                     ReturnQuantity = 0,
-                    OriginalUnitPrice = detail.UnitPrice
+                    OriginalUnitPrice = detail.UnitPrice,
+                    TaxRate = taxRate
                 };
                 
                 ReturnItems.Add(newItem);
@@ -1081,6 +1192,7 @@ else
             var existingDetail = item.ExistingDetailEntity;
             existingDetail.ReturnQuantity = item.ReturnQuantity;
             existingDetail.OriginalUnitPrice = item.OriginalUnitPrice;
+            existingDetail.TaxRate = item.TaxRate;
             existingDetail.Remarks = item.Remarks;
             existingDetail.BatchNumber = item.BatchNumber;
             existingDetail.PurchaseReceivingDetailId = item.SelectedReceivingDetail.Id;
@@ -1096,6 +1208,7 @@ else
             PurchaseReceivingDetailId = item.SelectedReceivingDetail.Id,
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
+            TaxRate = item.TaxRate,
             Remarks = item.Remarks,
             BatchNumber = item.BatchNumber
         };
@@ -1146,6 +1259,8 @@ else
         public int ReturnQuantity { get; set; } = 0;
         
         public decimal OriginalUnitPrice { get; set; } = 0;
+        
+        public decimal TaxRate { get; set; } = 0;
         
         public string Remarks { get; set; } = string.Empty;
         public string BatchNumber { get; set; } = string.Empty;

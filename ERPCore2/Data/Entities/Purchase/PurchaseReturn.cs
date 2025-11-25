@@ -23,6 +23,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;
 
+        [Required(ErrorMessage = "稅率算法為必填")]
+        [Display(Name = "稅率算法")]
+        public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+
         [Display(Name = "退回總金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalReturnAmount { get; set; } = 0;
