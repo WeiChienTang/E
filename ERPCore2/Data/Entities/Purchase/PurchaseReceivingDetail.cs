@@ -42,6 +42,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,4)")]
         public decimal UnitPrice { get; set; }
 
+        [Display(Name = "稅率 (%)")]
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100, ErrorMessage = "稅率必須介於0到100之間")]
+        public decimal? TaxRate { get; set; }
+
         [Display(Name = "小計金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalAmount => ReceivedQuantity * UnitPrice;

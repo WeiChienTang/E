@@ -1060,23 +1060,30 @@
     /// <summary>
     /// 處理進貨明細變更 - 自動計算稅額
     /// </summary>
+    /// <summary>
+    /// 處理進貨明細變更 - 使用明細獨立稅率計算稅額
+    /// </summary>
     private async Task HandleReceivingDetailsChanged(List<PurchaseReceivingDetail> details)
     {
         try
         {
             purchaseReceivingDetails = details ?? new List<PurchaseReceivingDetail>();
             
-            // 更新主檔的總金額和稅額（參考 README_稅額自動計算.md）
+            // 更新主檔的總金額和稅額
             if (editModalComponent?.Entity != null)
             {
                 // 1. 計算總金額（未稅）= Σ(進貨數量 × 單價)
                 editModalComponent.Entity.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
                 
-                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
-                editModalComponent.Entity.PurchaseReceivingTaxAmount = TaxCalculationHelper.CalculateTax(
-                    editModalComponent.Entity.TotalAmount, 
-                    currentTaxRate
-                );
+                // 2. 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
+                editModalComponent.Entity.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
+                {
+                    // 使用明細的稅率，若無則使用系統預設值
+                    var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                    // 計算此筆明細的稅額 = 小計 × 稅率%
+                    var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                    return Math.Round(detailTaxAmount, 2);
+                });
                 
                 // 3. 含稅總金額會自動計算（PurchaseReceivingTotalAmountIncludingTax 是計算屬性）
                 //    = TotalAmount + PurchaseReceivingTaxAmount
@@ -1352,12 +1359,18 @@
                 purchaseReceivingDetails = await PurchaseReceivingDetailService.GetByPurchaseReceivingIdAsync(purchaseReceiving.Id);
             }
 
-            // 更新主檔的總金額和稅額（使用 TaxCalculationHelper 統一處理）
+            // 更新主檔的總金額和稅額（使用明細稅額加總算法）
             purchaseReceiving.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
-            purchaseReceiving.PurchaseReceivingTaxAmount = TaxCalculationHelper.CalculateTax(
-                purchaseReceiving.TotalAmount, 
-                currentTaxRate
-            );
+            
+            // 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
+            purchaseReceiving.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
+            {
+                // 使用明細的稅率，若無則使用系統預設值
+                var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                // 計算此筆明細的稅額 = 小計 × 稅率%
+                var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                return Math.Round(detailTaxAmount, 2);
+            });
             
             if (purchaseReceiving.TotalAmount > 0)
             {

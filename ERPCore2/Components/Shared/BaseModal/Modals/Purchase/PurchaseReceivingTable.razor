@@ -5,6 +5,7 @@
 @inject IPurchaseOrderService PurchaseOrderService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
+@inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 
@@ -813,19 +814,39 @@ else
             IsReadOnly = true
         });
 
-        // 小計欄位
+        // 稅率欄位（只讀顯示）
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "稅率%",
+            Tooltip = "商品的稅率（0% ~ 100%），預設為系統設定值",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "80px",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                // 只有選擇商品後才顯示稅率
+                var displayValue = receivingItem.SelectedProduct != null && receivingItem.TaxRate > 0 
+                    ? $"{receivingItem.TaxRate}%" 
+                    : "";
+                return @<div class="text-end text-info">@displayValue</div>;
+            }
+        });
+
+        // 小計欄位（含稅）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "小計",
-            Tooltip = "入庫數量 × 單價的總計",
+            Tooltip = "入庫數量 × 單價 × (1 + 稅率%) 的含稅總計",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
             CustomTemplate = item =>
             {
                 var receivingItem = (ReceivingItem)item;
-                var subtotal = receivingItem.ReceivedQuantity * receivingItem.UnitPrice;
-                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
+                // 小計含稅 = 入庫數量 × 單價 × (1 + 稅率%)
+                var subtotalWithTax = receivingItem.ReceivedQuantity * receivingItem.UnitPrice * (1 + receivingItem.TaxRate / 100);
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotalWithTax);
                 return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
         });
@@ -1144,6 +1165,9 @@ else
             // 轉換為正確的實體類型
             if (detail is PurchaseReceivingDetail purchaseDetail)
             {
+                // 先取得稅率（避免在物件初始化器中使用 await）
+                var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+                
                 var item = new ReceivingItem
                 {
                     // 直接使用 Navigation Properties - 簡單且可靠！
@@ -1160,6 +1184,7 @@ else
                     // 直接使用屬性值，不需要反射
                     ReceivedQuantity = purchaseDetail.ReceivedQuantity,
                     UnitPrice = purchaseDetail.UnitPrice,
+                    TaxRate = purchaseDetail.TaxRate ?? defaultTaxRate,
                     Remarks = string.Empty,
                     ExistingDetailEntity = detail
                 };
@@ -1175,11 +1200,15 @@ else
                 
                 if (product != null)
                 {
+                    var taxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
+                    var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+                    
                     var item = new ReceivingItem
                     {
                         SelectedProduct = product,
                         ReceivedQuantity = Convert.ToInt32(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0),
                         UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
+                        TaxRate = taxRate ?? product?.TaxRate ?? defaultTaxRate,
                         Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
                         ExistingDetailEntity = detail
                     };
@@ -1253,6 +1282,7 @@ else
                 {
                     purchaseDetail.ReceivedQuantity = item.ReceivedQuantity;
                     purchaseDetail.UnitPrice = item.UnitPrice;
+                    purchaseDetail.TaxRate = item.TaxRate;
                     purchaseDetail.OrderQuantity = item.OrderQuantity > 0 ? item.OrderQuantity : item.ReceivedQuantity;
                     
                     if (item.SelectedWarehouse != null)
@@ -1272,6 +1302,7 @@ else
                     // 對於其他類型，使用反射
                     SetPropertyValue(detail, QuantityPropertyName, item.ReceivedQuantity);
                     SetPropertyValue(detail, UnitPricePropertyName, item.UnitPrice);
+                    SetPropertyValue(detail, "TaxRate", item.TaxRate);
                     SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
                     SetPropertyValue(detail, "OrderQuantity", item.OrderQuantity > 0 ? item.OrderQuantity : item.ReceivedQuantity);
                     
@@ -1312,6 +1343,7 @@ else
                 
                 SetPropertyValue(detail, QuantityPropertyName, item.ReceivedQuantity);
                 SetPropertyValue(detail, UnitPricePropertyName, item.UnitPrice);
+                SetPropertyValue(detail, "TaxRate", item.TaxRate);
                 SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
                 SetPropertyValue(detail, "OrderQuantity", item.OrderQuantity > 0 ? item.OrderQuantity : item.ReceivedQuantity);
                 
@@ -1494,6 +1526,21 @@ else
         receivingItem.UnitPrice = selectedDetail.UnitPrice;
         receivingItem.ShowPurchaseDetailDropdown = false;
         receivingItem.PurchaseDetailSelectedIndex = -1;
+        
+        // 帶入稅率：優先使用採購明細的稅率，如果為 null 則使用商品稅率或系統預設值
+        if (selectedDetail.TaxRate.HasValue)
+        {
+            receivingItem.TaxRate = selectedDetail.TaxRate.Value;
+        }
+        else if (selectedDetail.Product?.TaxRate.HasValue == true)
+        {
+            receivingItem.TaxRate = selectedDetail.Product.TaxRate.Value;
+        }
+        else
+        {
+            var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+            receivingItem.TaxRate = defaultTaxRate;
+        }
         
         // 自動帶出最近進貨的倉庫和庫位（只有在尚未選擇時才自動填入）
         if (receivingItem.SelectedWarehouse == null && selectedDetail.Product != null)
@@ -1814,6 +1861,9 @@ else
                 // 獲取該採購明細的預設倉庫
                 var defaultWarehouse = GetDefaultWarehouse(detail);
                 
+                // 取得稅率（優先順序：採購明細 > 商品 > 系統預設）
+                var taxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
+                
                 var receivingItem = new ReceivingItem
                 {
                     SelectedPurchaseDetail = detail,
@@ -1821,6 +1871,7 @@ else
                     PurchaseDetailSearchValue = FormatPurchaseDetailDisplayText(detail),
                     ReceivedQuantity = detail.OrderQuantity - detail.ReceivedQuantity, // 預填剩餘數量
                     UnitPrice = detail.UnitPrice,
+                    TaxRate = taxRate,
                     
                     // 使用採購單指定的倉庫，或預設倉庫
                     SelectedWarehouse = defaultWarehouse,
@@ -1988,6 +2039,7 @@ else
         public Product? SelectedProduct { get; set; }
         public int ReceivedQuantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
+        public decimal TaxRate { get; set; } = 5.0m;  // 預設 5%
         public string Remarks { get; set; } = string.Empty;
         public Warehouse? SelectedWarehouse { get; set; }
         public WarehouseLocation? SelectedWarehouseLocation { get; set; }

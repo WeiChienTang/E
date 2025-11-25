@@ -174,17 +174,41 @@ private async Task LoadExistingDetailsAsync()
 {
     foreach (var detail in ExistingDetails)
     {
+        // ⚠️ 重要：載入現有明細時，稅率優先順序必須正確！
+        // 錯誤寫法：taxRate ?? defaultTaxRate（會跳過商品稅率）
+        // 正確寫法：taxRate ?? product?.TaxRate ?? defaultTaxRate
+        
         var taxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
+        var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+        
         var item = new ProductItem
         {
             // ... 其他屬性 ...
-            TaxRate = taxRate ?? await SystemParameterService.GetTaxRateAsync(),
+            // 優先順序：明細稅率 > 商品稅率 > 系統預設值
+            TaxRate = taxRate ?? item.SelectedProduct?.TaxRate ?? defaultTaxRate,
             // ... 其他屬性 ...
         };
         ProductItems.Add(item);
     }
 }
 ```
+
+**⚠️ 常見錯誤：漏掉商品稅率檢查**
+
+```csharp
+// ❌ 錯誤：直接從明細稅率跳到系統預設值
+TaxRate = purchaseDetail.TaxRate ?? defaultTaxRate
+
+// ✅ 正確：明細 > 商品 > 系統預設
+TaxRate = purchaseDetail.TaxRate ?? purchaseDetail.Product?.TaxRate ?? defaultTaxRate
+```
+
+**實際案例**：
+- 商品主檔設定稅率 = 3%
+- 系統預設稅率 = 5%
+- 明細的 TaxRate 欄位 = NULL（舊資料或新建明細）
+
+如果只寫 `purchaseDetail.TaxRate ?? defaultTaxRate`，會直接使用 5%（系統預設），**忽略商品的 3% 稅率**，導致稅額計算錯誤！
 
 #### 2.5 儲存時寫入稅率
 
@@ -202,6 +226,70 @@ private List<TDetailEntity> ConvertToDetailEntities()
     return details;
 }
 ```
+
+#### 2.6 A單轉B單時的稅率設定
+
+**⚠️ 重要：轉單功能也要設定稅率！**
+
+如果有「A單轉B單」功能（例如：採購單轉進貨單），在載入未完成項目時，也要正確設定稅率。
+
+**檔案位置**：例如 `PurchaseReceivingTable.razor` 的 `LoadUnreceivedItemsInternal` 方法
+
+```csharp
+private async Task LoadUnreceivedItemsInternal(List<PurchaseOrderDetail> details)
+{
+    try
+    {
+        ReceivingItems.Clear();
+
+        foreach (var detail in details)
+        {
+            // 獲取該採購明細的預設倉庫
+            var defaultWarehouse = GetDefaultWarehouse(detail);
+            
+            // ⚠️ 重要：取得稅率（優先順序：採購明細 > 商品 > 系統預設）
+            var taxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
+            
+            var receivingItem = new ReceivingItem
+            {
+                SelectedPurchaseDetail = detail,
+                SelectedProduct = detail.Product,
+                PurchaseDetailSearchValue = FormatPurchaseDetailDisplayText(detail),
+                ReceivedQuantity = detail.OrderQuantity - detail.ReceivedQuantity,
+                UnitPrice = detail.UnitPrice,
+                TaxRate = taxRate,  // 👈 必須設定此屬性！
+                
+                SelectedWarehouse = defaultWarehouse,
+                SelectedWarehouseLocation = GetDefaultWarehouseLocation(defaultWarehouse)
+            };
+            
+            ReceivingItems.Add(receivingItem);
+        }
+        
+        await NotifyDetailsChanged();
+    }
+    catch (Exception ex)
+    {
+        // ... 錯誤處理 ...
+    }
+}
+```
+
+**常見錯誤**：
+```csharp
+// ❌ 錯誤：忘記設定 TaxRate，會使用類別預設值 5.0m
+var receivingItem = new ReceivingItem
+{
+    SelectedProduct = detail.Product,
+    UnitPrice = detail.UnitPrice,
+    // 缺少 TaxRate = ... 這一行！
+};
+```
+
+**影響**：
+- 從採購單轉進貨單時，即使商品稅率是 3%，也會顯示系統預設的 5%
+- 使用者必須手動修改稅率，造成操作不便
+- 可能導致稅額計算錯誤
 
 ---
 
@@ -336,8 +424,9 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 - [ ] 「小計」欄位改為含稅計算：`數量 × 單價 × (1 + 稅率%)`
 - [ ] `ProductItem` 類別增加 `TaxRate` 屬性
 - [ ] `OnProductSelected` 方法自動帶入商品稅率
-- [ ] `LoadExistingDetailsAsync` 方法載入明細稅率
+- [ ] `LoadExistingDetailsAsync` 方法載入明細稅率（**⚠️ 優先順序：明細 > 商品 > 系統**）
 - [ ] `ConvertToDetailEntities` 方法儲存明細稅率
+- [ ] **如有 A單轉B單功能，檢查轉單方法是否設定稅率（例如 `LoadUnreceivedItemsInternal`）**
 
 ### ✅ 步驟 3：EditModal 檢查
 - [ ] `HandleDetailsChanged` 方法使用明細稅額加總算法
@@ -347,9 +436,12 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 ### ✅ 測試檢查
 - [ ] 新增單據時，稅率自動帶入（商品稅率 > 系統預設值）
 - [ ] 編輯單據時，稅率正確顯示
+- [ ] **載入現有明細時，稅率優先順序正確（明細 > 商品 > 系統）**
 - [ ] 儲存後稅額計算正確（不會被覆蓋）
 - [ ] 混合不同稅率商品時，稅額計算正確
 - [ ] 空行（未選商品）不顯示稅率
+- [ ] **舊資料（TaxRate = NULL）能正確顯示商品稅率**
+- [ ] **A單轉B單時，稅率正確轉移（例如：採購單3%轉進貨單也是3%）**
 
 ---
 
@@ -382,6 +474,53 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 
 ### Q5：舊資料的稅率欄位會是什麼值？
 **A**：Migration 後，舊資料的 `TaxRate` 欄位為 `NULL`。程式會自動使用系統預設值，確保向下相容。
+
+### Q6：為什麼載入明細時顯示的是系統預設稅率，而不是商品稅率？
+**A**：這是最常見的錯誤！在 `LoadExistingDetailsAsync` 方法中，必須檢查**完整的優先順序**：
+
+```csharp
+// ❌ 錯誤寫法（跳過商品稅率）
+TaxRate = purchaseDetail.TaxRate ?? defaultTaxRate
+
+// ✅ 正確寫法（完整優先順序）
+TaxRate = purchaseDetail.TaxRate ?? purchaseDetail.Product?.TaxRate ?? defaultTaxRate
+```
+
+**檢查要點**：
+1. 明細載入時，要從 Navigation Property 讀取商品資料
+2. 如果明細的 `TaxRate` 是 NULL，先檢查 `Product.TaxRate`
+3. 最後才使用系統預設值
+
+**影響範圍**：所有有 `LoadExistingDetailsAsync` 或類似方法的組件都要檢查此問題。
+
+### Q7：為什麼從採購單轉進貨單時，稅率顯示 5% 而不是採購單的 3%？
+**A**：這是「A單轉B單」功能的常見錯誤！在轉單載入方法（如 `LoadUnreceivedItemsInternal`）中，必須設定稅率：
+
+```csharp
+// ❌ 錯誤：忘記設定 TaxRate
+var receivingItem = new ReceivingItem
+{
+    SelectedProduct = detail.Product,
+    UnitPrice = detail.UnitPrice,
+    // 缺少 TaxRate 設定！會使用類別預設值 5.0m
+};
+
+// ✅ 正確：設定完整的稅率優先順序
+var taxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
+var receivingItem = new ReceivingItem
+{
+    SelectedProduct = detail.Product,
+    UnitPrice = detail.UnitPrice,
+    TaxRate = taxRate,  // 必須設定！
+};
+```
+
+**檢查要點**：
+1. 所有「載入項目」的方法都要設定稅率
+2. 包括：`LoadExistingDetailsAsync`、`LoadUnreceivedItemsInternal`、`OnDetailSelected` 等
+3. 稅率優先順序：來源明細 > 商品 > 系統預設
+
+**影響範圍**：所有有轉單功能的組件（採購單→進貨單、報價單→銷貨單等）
 
 ---
 
