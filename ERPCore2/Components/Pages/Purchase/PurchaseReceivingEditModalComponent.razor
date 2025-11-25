@@ -124,6 +124,9 @@
     private List<Employee> employees = new();
     private List<Product> products = new();
     
+    // ===== 下拉選單選項 =====
+    private List<SelectOption> taxCalculationMethodOptions = new();
+    
     // ===== 進貨明細 =====
     private List<PurchaseReceivingDetail> purchaseReceivingDetails = new();
     private PurchaseReceivingTable<PurchaseReceiving, PurchaseReceivingDetail>? purchaseReceivingDetailManager;
@@ -498,6 +501,16 @@
                     PurchaseOrderId = PrefilledPurchaseOrderId
                 };
                 
+                // 🔑 如果是從採購單轉單，繼承採購單的稅率算法
+                if (PrefilledPurchaseOrderId.HasValue && PrefilledPurchaseOrderId.Value > 0)
+                {
+                    var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PrefilledPurchaseOrderId.Value);
+                    if (purchaseOrder != null)
+                    {
+                        newReceiving.TaxCalculationMethod = purchaseOrder.TaxCalculationMethod;
+                    }
+                }
+                
                 // ✅ 移除此處的更新呼叫，因為 OnParametersSetAsync 已經處理
                 // 避免重複觸發 UpdatePurchaseOrderOptions 和 UpdateFilterProductOptions
                 
@@ -572,6 +585,14 @@
             
             // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
+            
+            // 初始化稅率算法選項
+            taxCalculationMethodOptions = new List<SelectOption>
+            {
+                new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
+                new SelectOption { Text = "內含稅", Value = ((int)TaxCalculationMethod.TaxInclusive).ToString() },
+                new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
+            };
             
             // 🔑 在所有資料載入完成後建立 AutoComplete 配置
             // 確保 suppliers、purchaseOrders 和 products 都已載入
@@ -812,11 +833,21 @@
                     HelpText = "貨品實際進貨日",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
+                new()
+                {
+                    PropertyName = nameof(PurchaseReceiving.TaxCalculationMethod),
+                    Label = "稅率算法",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = taxCalculationMethodOptions,
+                    HelpText = "選擇稅額計算方式：外加稅、內含稅或不含稅",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
                 
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseReceiving.TotalAmount),
-                    Label = "入庫總金額",
+                    Label = "金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "入庫單的總金額，根據明細自動計算",
@@ -825,16 +856,16 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTaxAmount),
-                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("採購稅額", currentTaxRate),
+                    Label = "稅額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("採購單", currentTaxRate),
+                    HelpText = "採購單的稅額，根據總金額和稅率自動計算",
                     IsReadOnly = true // 稅額欄位始終為唯讀
                 },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTotalAmountIncludingTax),
-                    Label = "含稅總金額",
+                    Label = "總額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的含稅總金額，根據明細自動計算",
@@ -855,7 +886,8 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.PurchaseOrderId)
                 .AddToSection(FormSectionNames.BasicInfo,
-                    pr => pr.ReceiptDate)
+                    pr => pr.ReceiptDate,
+                    pr => pr.TaxCalculationMethod)
                 .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
                     pr => pr.TotalAmount,
                     pr => pr.PurchaseReceivingTaxAmount,
@@ -1061,7 +1093,7 @@
     /// 處理進貨明細變更 - 自動計算稅額
     /// </summary>
     /// <summary>
-    /// 處理進貨明細變更 - 使用明細獨立稅率計算稅額
+    /// 處理進貨明細變更 - 使用明細獨立稅率計算稅額，支援三種稅率算法
     /// </summary>
     private async Task HandleReceivingDetailsChanged(List<PurchaseReceivingDetail> details)
     {
@@ -1072,18 +1104,52 @@
             // 更新主檔的總金額和稅額
             if (editModalComponent?.Entity != null)
             {
-                // 1. 計算總金額（未稅）= Σ(進貨數量 × 單價)
-                editModalComponent.Entity.TotalAmount = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+                var taxMethod = editModalComponent.Entity.TaxCalculationMethod;
                 
-                // 2. 【新式算法】每筆明細分別計算稅額，再加總（支援不同商品不同稅率）
-                editModalComponent.Entity.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
+                switch (taxMethod)
                 {
-                    // 使用明細的稅率，若無則使用系統預設值
-                    var detailTaxRate = d.TaxRate ?? currentTaxRate;
-                    // 計算此筆明細的稅額 = 小計 × 稅率%
-                    var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
-                    return Math.Round(detailTaxAmount, 2);
-                });
+                    case TaxCalculationMethod.TaxExclusive:
+                        // 外加稅：金額 = 明細小計，稅額 = 金額 × 稅率%（四捨五入到整數）
+                        editModalComponent.Entity.TotalAmount = Math.Round(purchaseReceivingDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
+                        editModalComponent.Entity.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
+                        {
+                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                            var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        break;
+                        
+                    case TaxCalculationMethod.TaxInclusive:
+                        // 內含稅：總額 = 明細小計，金額 = 總額 / (1 + 稅率%)（四捨五入到整數），稅額 = 總額 - 金額
+                        var totalWithTax = purchaseReceivingDetails.Sum(d => d.SubtotalAmount);
+                        var totalTax = purchaseReceivingDetails.Sum(d =>
+                        {
+                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                            // 反推稅額 = 含稅總額 / (1 + 稅率%) × 稅率%（四捨五入到整數）
+                            var detailTaxAmount = d.SubtotalAmount / (1 + detailTaxRate / 100m) * (detailTaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        editModalComponent.Entity.TotalAmount = Math.Round(totalWithTax - totalTax, 0, MidpointRounding.AwayFromZero);
+                        editModalComponent.Entity.PurchaseReceivingTaxAmount = totalTax;
+                        break;
+                        
+                    case TaxCalculationMethod.NoTax:
+                        // 免稅：金額 = 明細小計（四捨五入到整數），稅額 = 0
+                        editModalComponent.Entity.TotalAmount = Math.Round(purchaseReceivingDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
+                        editModalComponent.Entity.PurchaseReceivingTaxAmount = 0;
+                        break;
+                        
+                    default:
+                        // 預設使用外加稅（四捨五入到整數）
+                        editModalComponent.Entity.TotalAmount = Math.Round(purchaseReceivingDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
+                        editModalComponent.Entity.PurchaseReceivingTaxAmount = purchaseReceivingDetails.Sum(d => 
+                        {
+                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                            var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        break;
+                }
                 
                 // 3. 含稅總金額會自動計算（PurchaseReceivingTotalAmountIncludingTax 是計算屬性）
                 //    = TotalAmount + PurchaseReceivingTaxAmount
@@ -1262,6 +1328,20 @@
                 }
                 
                 StateHasChanged();
+            }
+            
+            // 處理稅率算法變更
+            if (fieldChange.PropertyName == nameof(PurchaseReceiving.TaxCalculationMethod))
+            {
+                // 稅率算法變更時，重新計算主檔金額
+                if (editModalComponent?.Entity != null)
+                {
+                    // 手動觸發明細變更事件，讓金額重新計算
+                    await HandleReceivingDetailsChanged(purchaseReceivingDetails);
+                    
+                    // 觸發 Table 組件重新渲染（因為稅率算法影響小計顯示）
+                    StateHasChanged();
+                }
             }
         }
         catch (Exception ex)
@@ -1539,6 +1619,7 @@
                                                                SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
                                                                FilterProductId="@filterProductId"
                                                                IsApprovalEnabled="@isApprovalEnabled"
+                                                               TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                                MainEntity="@editModalComponent.Entity"
                                                                ExistingDetails="@purchaseReceivingDetails"
                                                                OnDetailsChanged="@HandleReceivingDetailsChanged"

@@ -2,12 +2,12 @@
 
 ## 📋 概述
 
-本文件說明如何將單據從「統一稅率」改為「明細獨立稅率」+ 「主檔稅率算法」的完整步驟。
+本文件說明如何將單據從「統一稅率」改為「明細獨立稅率」+ 「主檔稅別」的完整步驟。
 
 ### 改版目的
 - **舊設計**：整張單據使用系統統一稅率（5%）計算稅額
 - **新設計（兩層架構）**：
-  1. **主檔層**：增加「稅率算法」欄位（外加稅/內含稅/不含稅）
+  1. **主檔層**：增加「稅別」欄位（外加稅/內含稅/不含稅）
   2. **明細層**：每筆明細可設定獨立稅率，支援不同商品不同稅率的需求
 
 ### 適用範圍
@@ -23,9 +23,9 @@
 
 ## 🔧 改版四步驟
 
-### **步驟 0：主檔增加稅率算法欄位（新增）**
+### **步驟 0：主檔增加稅別欄位（新增）**
 
-#### 0.1 建立稅率算法 Enum
+#### 0.1 建立稅別 Enum
 
 **檔案位置**：`Data/Enums/TaxCalculationMethod.cs`
 
@@ -76,8 +76,8 @@ public class PurchaseOrder : BaseEntity
     [Display(Name = "預計到貨日期")]
     public DateTime? ExpectedDeliveryDate { get; set; }
 
-    [Required(ErrorMessage = "稅率算法為必填")]
-    [Display(Name = "稅率算法")]
+    [Required(ErrorMessage = "稅別為必填")]
+    [Display(Name = "稅別")]
     public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;  // 👈 新增此欄位，預設為外加稅
 
     [MaxLength(100, ErrorMessage = "採購人員不可超過100個字元")]
@@ -91,7 +91,7 @@ public class PurchaseOrder : BaseEntity
 **重點說明**：
 - 欄位類型：`TaxCalculationMethod`（Enum，非 nullable）
 - 預設值：`TaxCalculationMethod.TaxExclusive`（外加稅）
-- 必填欄位：確保每張單據都有明確的稅率算法
+- 必填欄位：確保每張單據都有明確的稅別
 
 #### 0.3 執行 Migration
 
@@ -135,7 +135,7 @@ private async Task LoadAdditionalDataAsync()
             new SelectOption { Text = "停用", Value = "Inactive" }
         };
         
-        // 👇 新增：初始化稅率算法選項
+        // 👇 新增：初始化稅別選項
         taxCalculationMethodOptions = new List<SelectOption>
         {
             new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
@@ -184,11 +184,11 @@ private async Task InitializeFormFieldsAsync()
                 HelpText = "預計廠商交貨的日期",
                 IsReadOnly = shouldLock
             },
-            // 👇 新增：稅率算法欄位
+            // 👇 新增：稅別欄位
             new()
             {
                 PropertyName = nameof(PurchaseOrder.TaxCalculationMethod),
-                Label = "稅率算法",
+                Label = "稅別",
                 FieldType = FormFieldType.Select,
                 IsRequired = true,
                 Options = taxCalculationMethodOptions,  // 👈 關鍵：設定下拉選項
@@ -276,12 +276,12 @@ dotnet ef database update
 
 **檔案位置**：`Components/Shared/BaseModal/Modals/Purchase/PurchaseOrderTable.razor`
 
-**步驟 A：增加稅率算法參數**
+**步驟 A：增加稅別參數**
 
 在組件的參數區域加入：
 
 ```csharp
-// ===== 稅率算法參數（新增）=====
+// ===== 稅別參數（新增）=====
 [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
 
 // ===== 輔助計算屬性 =====
@@ -327,7 +327,7 @@ private List<InteractiveColumnDefinition> GetColumnDefinitions()
         })
     });
     
-    // 小計欄位（根據稅率算法動態計算）
+    // 小計欄位（根據稅別動態計算）
     columns.Add(new()
     {
         Title = "小計",
@@ -372,11 +372,11 @@ private async Task OnTaxRateInput(ProductItem item, string? valueString)
 }
 ```
 
-**步驟 D：增加小計計算方法（支援三種稅率算法，四捨五入到整數）**
+**步驟 D：增加小計計算方法（支援三種稅別，四捨五入到整數）**
 
 ```csharp
 /// <summary>
-/// 計算明細項目的小計（根據稅率算法，四捨五入到整數）
+/// 計算明細項目的小計（根據稅別，四捨五入到整數）
 /// </summary>
 private decimal CalculateItemSubtotal(ProductItem item)
 {
@@ -597,9 +597,9 @@ var receivingItem = new ReceivingItem
 
 ---
 
-### **步驟 3：EditModal 傳遞稅率算法並改用明細稅率計算**
+### **步驟 3：EditModal 傳遞稅別並改用明細稅率計算**
 
-#### 3.1 EditModal 傳遞稅率算法給 Table 組件
+#### 3.1 EditModal 傳遞稅別給 Table 組件
 
 **檔案位置**：`Components/Pages/Purchase/PurchaseOrderEditModalComponent.razor`
 
@@ -627,7 +627,7 @@ var receivingItem = new ReceivingItem
                    HasUndeletableDetails="@hasUndeletableDetails" />
 ```
 
-#### 3.2 修改 HandleDetailsChanged 方法 - 支援三種稅率算法
+#### 3.2 修改 HandleDetailsChanged 方法 - 支援三種稅別
 
 **檔案位置**：`Components/Pages/Purchase/PurchaseOrderEditModalComponent.razor`
 
@@ -770,7 +770,7 @@ private async Task<bool> SavePurchaseOrderWithDetails(PurchaseOrder purchaseOrde
 }
 ```
 
-#### 3.4 增加稅率算法變更時的連動更新
+#### 3.4 增加稅別變更時的連動更新
 
 在 `OnFieldValueChanged` 方法中增加處理：
 
@@ -781,7 +781,7 @@ private async Task OnFieldValueChanged(FieldChangeEvent fieldChange)
     {
         // ... 其他欄位的處理 ...
         
-        // 當稅率算法變更時，重新計算金額、稅額、總額
+        // 當稅別變更時，重新計算金額、稅額、總額
         else if (fieldChange.PropertyName == nameof(PurchaseOrder.TaxCalculationMethod))
         {
             // 觸發明細重新計算
@@ -807,7 +807,7 @@ private async Task OnFieldValueChanged(FieldChangeEvent fieldChange)
 
 ### 範例 1：外加稅（TaxExclusive）- 稅額另外加上
 
-**主檔設定**：稅率算法 = 外加稅
+**主檔設定**：稅別 = 外加稅
 
 | 商品 | 數量 | 單價 | 稅率 | 小計（未稅）| 稅額 | 小計（含稅）|
 |------|------|------|------|------------|------|-------------|
@@ -832,7 +832,7 @@ private async Task OnFieldValueChanged(FieldChangeEvent fieldChange)
 
 ### 範例 2：內含稅（TaxInclusive）- 總價已包含稅
 
-**主檔設定**：稅率算法 = 內含稅
+**主檔設定**：稅別 = 內含稅
 
 | 商品 | 數量 | 單價 | 稅率 | 小計（含稅）| 稅額 | 金額（未稅）|
 |------|------|------|------|------------|------|-------------|
@@ -860,7 +860,7 @@ private async Task OnFieldValueChanged(FieldChangeEvent fieldChange)
 
 ### 範例 3：免稅（NoTax）- 完全不計稅
 
-**主檔設定**：稅率算法 = 不含稅
+**主檔設定**：稅別 = 不含稅
 
 | 商品 | 數量 | 單價 | 稅率 | 小計 | 稅額 | 總額 |
 |------|------|------|------|------|------|------|
@@ -914,7 +914,7 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 
 ## 🎯 改版檢查清單
 
-### ✅ 步驟 0：主檔稅率算法檢查（新增）
+### ✅ 步驟 0：主檔稅別檢查（新增）
 - [ ] 建立 `TaxCalculationMethod` Enum（三種選項：外加稅/內含稅/不含稅）
 - [ ] 主檔實體增加 `TaxCalculationMethod` 欄位（非 nullable，預設為外加稅）
 - [ ] 引入 `using ERPCore2.Data.Enums;` 命名空間
@@ -938,7 +938,7 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 - [ ] **稅率欄位設定 `OnInputChanged` 事件處理**
 - [ ] **增加 `OnTaxRateInput` 方法（處理稅率輸入）**
 - [ ] **「小計」欄位改為調用 `CalculateItemSubtotal` 方法**
-- [ ] **增加 `CalculateItemSubtotal` 方法（支援三種稅率算法）**
+- [ ] **增加 `CalculateItemSubtotal` 方法（支援三種稅別）**
 - [ ] **增加 `GetSubtotalTooltip` 方法（動態提示文字）**
 - [ ] `ProductItem` 類別增加 `TaxRate` 屬性
 - [ ] `OnProductSelected` 方法自動帶入商品稅率
@@ -948,14 +948,14 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 
 ### ✅ 步驟 3：EditModal 檢查
 - [ ] **傳遞 `TaxCalculationMethod` 參數給 Table 組件**
-- [ ] **`HandleDetailsChanged` 方法改為 switch 語句（支援三種稅率算法）**
+- [ ] **`HandleDetailsChanged` 方法改為 switch 語句（支援三種稅別）**
 - [ ] **`SavePurchaseOrderWithDetails` 方法改為 switch 語句（與 HandleDetailsChanged 邏輯一致）**
 - [ ] **`OnFieldValueChanged` 方法增加 `TaxCalculationMethod` 變更處理**
 - [ ] 兩個方法的計算邏輯完全一致
 
 ### ✅ 測試檢查
-- [ ] **新增單據時，稅率算法預設為外加稅**
-- [ ] **切換稅率算法時，金額、稅額、總額立即更新**
+- [ ] **新增單據時，稅別預設為外加稅**
+- [ ] **切換稅別時，金額、稅額、總額立即更新**
 - [ ] **選擇免稅時，明細稅率欄位被禁用**
 - [ ] **選擇免稅時，主檔稅額顯示為 0**
 - [ ] **外加稅計算正確：小計 = 數量 × 單價 × (1 + 稅率%)**
@@ -974,7 +974,7 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 
 ## 🔍 常見問題
 
-### Q0：為什麼需要在主檔增加「稅率算法」欄位？
+### Q0：為什麼需要在主檔增加「稅別」欄位？
 **A**：因為不同的交易情境需要不同的稅額處理方式：
 - **外加稅**：稅額另外加上（例如：報價 $100，外加 5% 稅 = $105）
 - **內含稅**：總價已包含稅（例如：零售價 $105 內含 5% 稅，未稅價 = $100）
@@ -982,7 +982,7 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 
 單據層級的設定可以讓整張單據統一使用同一種計算方式，避免混淆。
 
-### Q0-1：稅率算法下拉選單沒有資料怎麼辦？
+### Q0-1：稅別下拉選單沒有資料怎麼辦？
 **A**：這是最常見的問題！必須完成以下三個步驟：
 
 1. **宣告變數**：`private List<SelectOption> taxCalculationMethodOptions = new();`
@@ -999,7 +999,7 @@ PurchaseTotalAmountIncludingTax = 2,100  ❌ 錯誤
 
 缺少任何一步都會導致下拉選單是空的！
 
-### Q0-2：修改稅率算法後，金額沒有自動更新？
+### Q0-2：修改稅別後，金額沒有自動更新？
 **A**：需要在 `OnFieldValueChanged` 方法中增加處理：
 
 ```csharp
@@ -1026,10 +1026,10 @@ else if (fieldChange.PropertyName == nameof(PurchaseOrder.TaxCalculationMethod))
    }
    ```
 
-### Q0-4：三種稅率算法的計算差異？
+### Q0-4：三種稅別的計算差異？
 **A**：以商品 10個 × $100 = $1,000，稅率 5% 為例：
 
-| 稅率算法 | 明細小計 | 主檔金額 | 主檔稅額 | 主檔總額 |
+| 稅別 | 明細小計 | 主檔金額 | 主檔稅額 | 主檔總額 |
 |---------|---------|---------|---------|---------|
 | **外加稅** | $1,050 | $1,000 | $50 | $1,050 |
 | **內含稅** | $1,000 | $952.38 | $47.62 | $1,000 |
@@ -1057,7 +1057,7 @@ else if (fieldChange.PropertyName == nameof(PurchaseOrder.TaxCalculationMethod))
 確保三者邏輯一致，都使用 switch 語句根據 `TaxCalculationMethod` 計算。
 
 ### Q4：小計欄位應該顯示什麼？
-**A**：根據稅率算法不同而不同：
+**A**：根據稅別不同而不同：
 - **外加稅**：顯示含稅金額（數量 × 單價 × (1 + 稅率%)）- 使用者更關心實付金額
 - **內含稅**：顯示含稅金額（數量 × 單價）- 單價已含稅
 - **免稅**：顯示未稅金額（數量 × 單價）- 無稅額
@@ -1125,10 +1125,84 @@ var receivingItem = new ReceivingItem
 
 ### Q9：為什麼要有 `CalculateItemSubtotal` 和 `GetSubtotalTooltip` 兩個方法？
 **A**：
-- **`CalculateItemSubtotal`**：根據稅率算法計算實際金額（給程式用）
+- **`CalculateItemSubtotal`**：根據稅別計算實際金額（給程式用）
 - **`GetSubtotalTooltip`**：動態顯示計算公式說明（給使用者看）
 
-當使用者切換稅率算法時，不僅數字會變，提示文字也會自動更新，提升 UX。
+當使用者切換稅別時，不僅數字會變，提示文字也會自動更新，提升 UX。
+
+### Q10：為什麼改變明細稅率後，小計沒有更新？
+**A**：這是 **EditModal 組件沒有處理稅率算法變更事件** 導致的！當稅率欄位改變時：
+
+1. **Table 組件層**：
+   - `OnTaxRateInput` 更新了 `item.TaxRate` 的值 ✅
+   - 呼叫 `NotifyDetailsChanged()` 通知父組件 ✅
+   - 呼叫 `StateHasChanged()` 觸發重新渲染 ✅
+
+2. **EditModal 組件層（問題所在）**：
+   - `HandleDetailsChanged` 重新計算主檔金額和稅額 ✅
+   - 但 **沒有觸發 Table 組件的重新渲染** ❌
+   - 導致小計欄位的 `CustomTemplate` 不會重新執行 `CalculateItemSubtotal`
+
+**解決方案**：在 EditModal 的 `OnFieldValueChanged` 方法中增加處理稅率算法變更：
+
+```csharp
+private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+{
+    try
+    {
+        // ... 其他欄位的處理（廠商、採購單、商品篩選等）...
+        
+        // 👇 新增：處理稅率算法變更
+        if (fieldChange.PropertyName == nameof(PurchaseReceiving.TaxCalculationMethod))
+        {
+            // 稅率算法變更時，重新計算主檔金額
+            if (editModalComponent?.Entity != null)
+            {
+                // 手動觸發明細變更事件，讓金額重新計算
+                await HandleReceivingDetailsChanged(purchaseReceivingDetails);
+                
+                // 觸發 Table 組件重新渲染（因為稅率算法影響小計顯示）
+                StateHasChanged();
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+    }
+}
+```
+
+**為什麼這樣可以解決**：
+- `HandleReceivingDetailsChanged` 重新計算主檔的金額和稅額
+- `StateHasChanged()` 觸發整個 EditModal 組件重新渲染
+- EditModal 重新渲染時，會傳遞新的 `TaxCalculationMethod` 參數給 Table 組件
+- Table 組件接收到新參數後重新渲染，`CustomTemplate` 重新執行 `CalculateItemSubtotal`
+- 小計欄位使用新的 `item.TaxRate` 值重新計算，顯示正確結果 ✅
+
+**檢查要點**：
+1. ✅ EditModal 必須有 `OnFieldValueChanged` 方法
+2. ✅ 必須處理 `TaxCalculationMethod` 欄位變更
+3. ✅ 必須呼叫 `HandleDetailsChanged` 重新計算主檔金額
+4. ✅ 必須呼叫 `StateHasChanged()` 觸發重新渲染
+5. ✅ Table 組件必須接收 `TaxCalculationMethod` 參數
+6. ✅ 小計欄位必須調用 `CalculateItemSubtotal(item)` 而非寫死公式
+
+**常見錯誤**：
+```csharp
+// ❌ 錯誤：只在 Table 組件中處理稅率變更
+private async Task OnTaxRateInput(ReceivingItem item, string? value)
+{
+    item.TaxRate = Math.Max(0, Math.Min(100, taxRate));
+    await NotifyDetailsChanged();
+    StateHasChanged();  // 只觸發 Table 重新渲染，不夠！
+}
+
+// ✅ 正確：EditModal 也要處理稅率算法變更
+// EditModal 的 OnFieldValueChanged 中增加 TaxCalculationMethod 處理
+```
+
+**影響範圍**：所有使用稅率欄位的單據（採購單、進貨單、進貨退出、報價單、銷貨單等）
 
 ---
 
@@ -1162,11 +1236,11 @@ var receivingItem = new ReceivingItem
 
 1. **主檔層（新增）**：增加 `TaxCalculationMethod` 欄位，定義單據的稅額計算方式（外加稅/內含稅/不含稅）
 2. **資料層**：明細表增加 `TaxRate` 欄位（nullable），支援每筆明細獨立稅率
-3. **展示層**：Table 增加稅率欄位（Number 可編輯），小計根據稅率算法動態計算
-4. **邏輯層**：EditModal 使用 switch 語句，根據稅率算法分別計算金額和稅額
+3. **展示層**：Table 增加稅率欄位（Number 可編輯），小計根據稅別動態計算
+4. **邏輯層**：EditModal 使用 switch 語句，根據稅別分別計算金額和稅額
 
 **關鍵成功要素**：
-- ✅ 主檔稅率算法 Enum 正確建立（外加稅/內含稅/不含稅）
+- ✅ 主檔稅別 Enum 正確建立（外加稅/內含稅/不含稅）
 - ✅ EditModal 下拉選項正確初始化（變數宣告 + 選項初始化 + Options 設定）
 - ✅ Table 組件接收並使用 TaxCalculationMethod 參數
 - ✅ 稅率欄位改為 Number 類型（可編輯）
@@ -1182,12 +1256,12 @@ var receivingItem = new ReceivingItem
 - ❌ 忘記在表單欄位中設定 `Options = taxCalculationMethodOptions`
 - ❌ 忘記在安全預設值區塊加入 `taxCalculationMethodOptions = new List<SelectOption>();`
 - ❌ 忘記在 Table 組件中增加 `TaxCalculationMethod` 參數
-- ❌ 忘記在 `OnFieldValueChanged` 中處理稅率算法變更
+- ❌ 忘記在 `OnFieldValueChanged` 中處理稅別變更（導致改稅率後小計不更新） ⭐ 新增
 - ❌ `HandleDetailsChanged` 和 `SavePurchaseOrderWithDetails` 使用不同的計算邏輯
 - ❌ 稅率欄位用 Custom 類型而非 Number 類型
 - ❌ 小計欄位寫死計算公式，而非調用 `CalculateItemSubtotal` 方法
 
-**三種稅率算法的關鍵差異**：
+**三種稅別的關鍵差異**：
 
 | 項目 | 外加稅 | 內含稅 | 免稅 |
 |-----|-------|-------|------|
@@ -1201,7 +1275,7 @@ var receivingItem = new ReceivingItem
 
 ## 📌 快速檢查表（常見錯誤）
 
-### 步驟 0：主檔稅率算法
+### 步驟 0：主檔稅別
 
 | 檢查項目 | 檔案位置 | 檢查內容 |
 |---------|---------|---------|
@@ -1249,33 +1323,34 @@ var receivingItem = new ReceivingItem
 | ✅ 傳遞參數 | `XXXOrderEditModalComponent.razor` | Table 組件是否有 `TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"` |
 | ✅ HandleDetailsChanged | `XXXOrderEditModalComponent.razor` | 是否改為 switch 語句（三種算法） |
 | ✅ SavePurchaseOrderWithDetails | `XXXOrderEditModalComponent.razor` | 是否改為 switch 語句（與 HandleDetailsChanged 一致） |
-| ✅ OnFieldValueChanged | `XXXOrderEditModalComponent.razor` | 是否增加 `TaxCalculationMethod` 變更處理 |
+| ✅ OnFieldValueChanged | `XXXOrderEditModalComponent.razor` | 是否增加 `TaxCalculationMethod` 變更處理（**重要：修正稅率變更後小計不更新的問題**） |
 | ✅ 邏輯一致性 | 兩個方法 | 兩個方法的計算邏輯是否完全相同 |
 
 ### 功能測試
 
 | 測試項目 | 測試步驟 | 預期結果 |
 |---------|---------|---------|
-| ✅ 新增單據預設值 | 新增單據 | 稅率算法預設為「外加稅」 |
+| ✅ 新增單據預設值 | 新增單據 | 稅別預設為「外加稅」 |
 | ✅ 切換外加稅 | 選擇「外加稅」| 小計 = 數量 × 單價 × (1 + 稅率%)，金額、稅額、總額立即更新 |
 | ✅ 切換內含稅 | 選擇「內含稅」| 小計 = 數量 × 單價，金額反推計算，稅額正確 |
 | ✅ 切換免稅 | 選擇「不含稅」| 稅率欄位禁用，稅額 = 0 |
-| ✅ 稅率欄位編輯 | 修改明細稅率 | 小計和主檔金額立即更新 |
+| ✅ 稅率欄位編輯 | 修改明細稅率 | **小計和主檔金額立即更新（重要：測試 OnFieldValueChanged 是否正確實作）** |
 | ✅ 稅率欄位驗證 | 輸入 -5 或 150 | 自動限制在 0~100 範圍 |
 | ✅ 混合稅率計算 | 明細有 5% 和 10% | 稅額 = 分別計算後加總（不是統一稅率） |
 | ✅ 儲存後金額 | 儲存後重新開啟 | 金額、稅額不變（不會被覆蓋） |
 | ✅ 舊資料相容 | 載入舊單據 | 自動使用商品或系統預設稅率 |
-| ✅ 動態提示 | Hover 小計欄位 | 顯示對應稅率算法的公式說明 |
+| ✅ 動態提示 | Hover 小計欄位 | 顯示對應稅別的公式說明 |
 
 ---
 
-**文件版本**：3.1  
+**文件版本**：3.2  
 **最後更新**：2025-11-25  
-**範例單據**：採購單（PurchaseOrder）  
+**範例單據**：採購單（PurchaseOrder）、進貨單（PurchaseReceiving）  
 **主要更新**：
-- 步驟 0：主檔增加稅率算法欄位（外加稅/內含稅/不含稅）
+- 步驟 0：主檔增加稅別欄位（外加稅/內含稅/不含稅）
 - 步驟 2：稅率欄位改為 Number 可編輯類型，免稅時自動禁用，小計四捨五入到整數
-- 步驟 3：支援三種稅率算法的計算邏輯，金額和稅額都四捨五入到整數
+- 步驟 3：支援三種稅別的計算邏輯，金額和稅額都四捨五入到整數
 - 增加完整的計算範例（外加稅/內含稅/免稅），所有金額都為整數
 - 增加詳細的檢查清單和常見問題解答
+- **新增 Q10**：解決「改變明細稅率後小計不更新」的問題（OnFieldValueChanged 處理 TaxCalculationMethod 變更）
 - **重要**：所有金額和稅額計算都使用 `Math.Round(..., 0, MidpointRounding.AwayFromZero)` 四捨五入到整數

@@ -35,6 +35,10 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal PurchaseReceivingTotalAmountIncludingTax => TotalAmount + PurchaseReceivingTaxAmount;
 
+        [Required(ErrorMessage = "稅率算法為必填")]
+        [Display(Name = "稅率算法")]
+        public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+
         [Display(Name = "批號")]
         [MaxLength(50, ErrorMessage = "批號不可超過50個字元")]
         public string? BatchNumber { get; set; }
