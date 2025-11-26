@@ -97,18 +97,9 @@
                 .Build();
             warehouseModalManager = modalManagers.Get<Warehouse>(nameof(WarehouseLocation.WarehouseId));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync("初始化倉庫位置編輯組件時發生錯誤");
-        }
-    }
-    
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
 

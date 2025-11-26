@@ -1,4 +1,5 @@
 @* 可重用的產品編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Helpers
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @inject IProductCategoryService ProductCategoryService
@@ -82,6 +83,12 @@
     // 標誌變數，用於追蹤是否需要在實體載入後刷新欄位
     private bool _entityLoadedButFieldsNotRefreshed = false;
     private bool _hasCheckedEntityLoad = false;
+    
+    //  快取 ActionButtons，避免重複非同步載入
+    private List<FieldActionButton>? _cachedBarcodeActionButtons = null;
+    private List<FieldActionButton>? _cachedProductCategoryActionButtons = null;
+    private List<FieldActionButton>? _cachedSizeActionButtons = null;
+    private List<FieldActionButton>? _cachedUnitActionButtons = null;
     
     // 原始資料集合（用於 AutoComplete）
     private List<ProductCategory> availableProductCategories = new();
@@ -200,7 +207,6 @@
             {
                 await OnProductSaved.InvokeAsync(editModalComponent.Entity);
             }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {
@@ -321,6 +327,24 @@
 
     private async Task InitializeFormFieldsAsync()
     {
+        //  預先載入所有 ActionButtons（只在快取為空時載入）
+        if (_cachedBarcodeActionButtons == null)
+        {
+            _cachedBarcodeActionButtons = await GetBarcodeActionButtonsAsync();
+        }
+        if (_cachedProductCategoryActionButtons == null)
+        {
+            _cachedProductCategoryActionButtons = await GetProductCategoryActionButtonsAsync();
+        }
+        if (_cachedSizeActionButtons == null)
+        {
+            _cachedSizeActionButtons = await GetSizeActionButtonsAsync();
+        }
+        if (_cachedUnitActionButtons == null)
+        {
+            _cachedUnitActionButtons = await GetUnitActionButtonsAsync();
+        }
+        
         formFields = new List<FormFieldDefinition>
         {
             new()
@@ -352,7 +376,7 @@
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "產品的條碼編號",
-                ActionButtons = await GetBarcodeActionButtonsAsync()
+                ActionButtons = _cachedBarcodeActionButtons  //  使用快取
             },
             new()
             {
@@ -363,7 +387,7 @@
                 IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "輸入分類名稱進行搜尋，或直接選擇",
-                ActionButtons = await GetProductCategoryActionButtonsAsync()
+                ActionButtons = _cachedProductCategoryActionButtons  //  使用快取
             },
             new()
             {
@@ -374,7 +398,7 @@
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入尺寸名稱進行搜尋，或直接選擇",
-                ActionButtons = await GetSizeActionButtonsAsync()
+                ActionButtons = _cachedSizeActionButtons  //  使用快取
             },
             new()
             {
@@ -385,7 +409,7 @@
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "輸入單位名稱進行搜尋，或直接選擇",
-                ActionButtons = await GetUnitActionButtonsAsync()
+                ActionButtons = _cachedUnitActionButtons  //  使用快取
             },
             new FormFieldDefinition()
             {

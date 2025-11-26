@@ -207,15 +207,6 @@
         }
     }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
-        }
-    }
-
     private async Task HandleSaveSuccess()
     {
         try

@@ -63,15 +63,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-    
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            await LoadAdditionalDataAsync();
-            InitializeFormFields();
-        }
-    }
 
     // ===== 事件處理 =====
     private async Task HandleSaveSuccess()
@@ -83,8 +74,6 @@
             {
                 await OnProductionScheduleSaved.InvokeAsync(editModalComponent.Entity);
             }
-
-            // CloseModal 已由 GenericEditModalComponent 統一控制
         }
         catch (Exception ex)
         {

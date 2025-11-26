@@ -197,7 +197,7 @@
         }
         else
         {
-            // 🔑 Modal 關閉時重置明細資料準備狀態
+            //  Modal 關閉時重置明細資料準備狀態
             isDetailDataReady = false;
         }
     }
@@ -264,7 +264,7 @@
                 var hasConvertedDetails = quotationDetails.Any(d => d.ConvertedQuantity > 0);
                 hasUndeletableDetails = hasConvertedDetails;
                 
-                // 🔑 標記明細資料已準備就緒
+                //  標記明細資料已準備就緒
                 isDetailDataReady = true;
                 
                 // 如果已轉單或已審核，需要鎖定欄位
@@ -586,7 +586,7 @@
                 return false;
             }
 
-            // 🔑 修改：審核通過或已轉單後仍允許儲存（用於更新明細的執行狀態）
+            //  修改：審核通過或已轉單後仍允許儲存（用於更新明細的執行狀態）
             // 移除原有的 hasUndeletableDetails 檢查，與 PurchaseOrderEditModalComponent 保持一致
             // 欄位鎖定由 InitializeFormFieldsAsync 中的 IsReadOnly 控制
             // 但使用者仍可修改明細並儲存整個單據
@@ -1181,7 +1181,7 @@
                 },
                 reloadQuotation: async () =>
                 {
-                    // 🔑 關鍵修復：使用專門的 LoadQuotationDetails 方法從資料庫重新載入明細
+                    //  關鍵修復：使用專門的 LoadQuotationDetails 方法從資料庫重新載入明細
                     // 這確保 ConvertedQuantity 等欄位都是最新的資料
                     if (QuotationId.HasValue)
                     {
@@ -1194,7 +1194,7 @@
                 stateHasChanged: StateHasChanged,
                 additionalActions: async () =>
                 {
-                    // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                    //  關鍵修復：呼叫 Table 組件的公開刷新方法
                     // 因為父 Modal 沒有關閉，Table 組件不會自動重新載入
                     // 需要主動呼叫刷新方法來更新 UI 顯示
                     if (quotationDetailManager != null)
@@ -1387,7 +1387,7 @@
             // 1. 重新載入明細資料
             await LoadQuotationDetails(loadedEntityId);
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
             

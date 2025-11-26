@@ -635,14 +635,6 @@ else
         
         var availableProducts = GetAvailableProducts();
         
-        // 只在第一次搜尋時輸出調試信息
-        if (string.IsNullOrWhiteSpace(searchValue) && availableProducts.Any())
-        {
-            ConsoleHelper.WriteInfo($"可用商品數量: {availableProducts.Count}");
-            var firstProduct = availableProducts.First();
-            ConsoleHelper.WriteInfo($"第一個商品範例: [{firstProduct.Code}] {firstProduct.Name}, TaxRate = {(firstProduct.TaxRate.HasValue ? firstProduct.TaxRate.Value.ToString() : "null")}");
-        }
-        
         if (string.IsNullOrWhiteSpace(searchValue))
         {
             // 空白搜尋：顯示前20筆
@@ -670,10 +662,6 @@ else
     {
         if (selectedProduct != null)
         {
-            ConsoleHelper.WriteTitle("OnProductSelected - 商品選擇事件");
-            ConsoleHelper.WriteInfo($"選擇的商品: [{selectedProduct.Code}] {selectedProduct.Name}");
-            ConsoleHelper.WriteInfo($"商品的 TaxRate 屬性值: {(selectedProduct.TaxRate.HasValue ? selectedProduct.TaxRate.Value.ToString() : "null")}");
-            
             item.SelectedProduct = selectedProduct;
             item.SelectedProductId = selectedProduct.Id;
             item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
@@ -682,17 +670,12 @@ else
             if (selectedProduct.TaxRate.HasValue)
             {
                 item.TaxRate = selectedProduct.TaxRate.Value;
-                ConsoleHelper.WriteSuccess($"使用商品稅率: {item.TaxRate}%");
             }
             else
             {
                 // 從系統參數取得預設稅率
                 item.TaxRate = await SystemParameterService.GetTaxRateAsync();
-                ConsoleHelper.WriteWarning($"商品稅率為 null，使用系統預設稅率: {item.TaxRate}%");
             }
-            
-            ConsoleHelper.WriteInfo($"最終 ProductItem.TaxRate = {item.TaxRate}");
-            ConsoleHelper.WriteSeparator();
         }
         else
         {
@@ -732,13 +715,6 @@ else
         else if (decimal.TryParse(value, out var price))
         {
             item.Price = price;
-        }
-        
-        // 調試：顯示單價變更後的稅額計算
-        if (item.SelectedProduct != null && item.Price > 0)
-        {
-            var taxAmount = item.Quantity * item.Price * (item.TaxRate / 100);
-            ConsoleHelper.WriteInfo($"單價變更 - 商品: {item.SelectedProduct.Name}, 數量: {item.Quantity}, 單價: {item.Price}, 稅率: {item.TaxRate}%, 計算稅額: {taxAmount}");
         }
         
         await NotifyDetailsChanged();

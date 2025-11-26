@@ -65,15 +65,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-    
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
-        }
-    }
 
     // ===== 資料載入 =====
     private async Task<Company?> LoadCompanyData()

@@ -222,14 +222,16 @@
             }
             else
             {
-                // 🔑 Modal 關閉時重置自動載入相關標記
+                //  Modal 關閉時重置自動載入相關標記
                 // 這樣下次開啟時就能重新觸發自動載入
                 shouldAutoLoadUnreceived = false;
                 
-                // 🔑 重置防重複載入的標記
+                //  重置防重複載入的標記
                 lastLoadedSupplierId = null;
                 isLoadingProducts = false;
             }
+
+            await base.OnParametersSetAsync();
         }
         catch (Exception ex)
         {
@@ -509,7 +511,7 @@
                     PurchaseOrderId = PrefilledPurchaseOrderId
                 };
                 
-                // 🔑 如果是從採購單轉單，繼承採購單的稅率算法
+                //  如果是從採購單轉單，繼承採購單的稅率算法
                 if (PrefilledPurchaseOrderId.HasValue && PrefilledPurchaseOrderId.Value > 0)
                 {
                     var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PrefilledPurchaseOrderId.Value);
@@ -539,10 +541,10 @@
                 // 載入進貨明細
                 await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
                 
-                // 🔑 關鍵：載入退貨數量和沖款資料，並更新 hasUndeletableDetails
+                //  關鍵：載入退貨數量和沖款資料，並更新 hasUndeletableDetails
                 await LoadDetailRelatedDataAsync();
                 
-                // 🔑 標記明細資料已準備就緒（包括退貨數量等資訊）
+                //  標記明細資料已準備就緒（包括退貨數量等資訊）
                 isDetailDataReady = true;
                 
                 // 如果有廠商ID，更新採購單選項和產品篩選選項
@@ -591,7 +593,7 @@
             
             await Task.WhenAll(tasks);
             
-            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
             
             // 初始化稅率算法選項
@@ -602,7 +604,7 @@
                 new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
             };
             
-            // 🔑 在所有資料載入完成後建立 AutoComplete 配置
+            //  在所有資料載入完成後建立 AutoComplete 配置
             // 確保 suppliers、purchaseOrders 和 products 都已載入
             autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
                 .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
@@ -918,13 +920,13 @@
     {
         try
         {
-            // 🔑 防止重複載入同一廠商的產品
+            //  防止重複載入同一廠商的產品
             if (supplierId.HasValue && supplierId == lastLoadedSupplierId && !isLoadingProducts)
             {
                 return;
             }
             
-            // 🔑 防止並發載入
+            //  防止並發載入
             if (isLoadingProducts)
             {
                 return;
@@ -941,11 +943,11 @@
             
             if (supplierId.HasValue && supplierId.Value > 0)
             {
-                // 🔑 修正：使用 ProductService 載入該廠商的所有產品
+                //  修正：使用 ProductService 載入該廠商的所有產品
                 // 不再限制只顯示採購單中的產品
                 filteredProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
                 
-                // 🔑 記錄已載入的廠商ID
+                //  記錄已載入的廠商ID
                 lastLoadedSupplierId = supplierId;
             }
             else
@@ -1011,7 +1013,7 @@
             // 1. 重新載入明細資料
             await LoadPurchaseReceivingDetails(loadedEntityId);
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
             
@@ -1286,6 +1288,8 @@
     {
         try
         {
+            bool needsRerender = false; //  標記是否需要重新渲染
+            
             // 當廠商變更時，更新採購單選項並清空採購單選擇
             if (fieldChange.PropertyName == nameof(PurchaseReceiving.SupplierId))
             {
@@ -1317,18 +1321,15 @@
                     fieldChange.Value
                 );
                 
-                StateHasChanged();
+                needsRerender = true; // 廠商變更需要重新渲染
             }
-            
-            // 當採購單ID變更時，觸發重新渲染以篩選對應的採購明細
-            if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId))
+            // ⚠️ 當採購單ID變更時，只有在不是由廠商變更觸發的情況下才重新渲染
+            else if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId))
             {
-                // 無論選擇了特定採購單還是清空選擇，都需要重新渲染
-                StateHasChanged();
+                needsRerender = true;
             }
-            
             // 當產品篩選變更時，更新篩選狀態並觸發重新渲染
-            if (fieldChange.PropertyName == "FilterProductId")
+            else if (fieldChange.PropertyName == "FilterProductId")
             {
                 if (fieldChange.Value != null && 
                     int.TryParse(fieldChange.Value.ToString(), out int productId) && 
@@ -1341,11 +1342,10 @@
                     filterProductId = null;
                 }
                 
-                StateHasChanged();
+                needsRerender = true;
             }
-            
             // 處理稅率算法變更
-            if (fieldChange.PropertyName == nameof(PurchaseReceiving.TaxCalculationMethod))
+            else if (fieldChange.PropertyName == nameof(PurchaseReceiving.TaxCalculationMethod))
             {
                 // 稅率算法變更時，重新計算主檔金額
                 if (editModalComponent?.Entity != null)
@@ -1353,9 +1353,14 @@
                     // 手動觸發明細變更事件，讓金額重新計算
                     await HandleReceivingDetailsChanged(purchaseReceivingDetails);
                     
-                    // 觸發 Table 組件重新渲染（因為稅率算法影響小計顯示）
-                    StateHasChanged();
+                    needsRerender = true;
                 }
+            }
+            
+            //  只在真正需要時才呼叫一次 StateHasChanged
+            if (needsRerender)
+            {
+                StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -1768,7 +1773,7 @@
             },
             customRefresh: async () =>
             {
-                // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                //  關鍵修復：呼叫 Table 組件的公開刷新方法
                 // 重新載入進貨明細的退貨數量資訊
                 if (purchaseReceivingDetailManager != null)
                 {

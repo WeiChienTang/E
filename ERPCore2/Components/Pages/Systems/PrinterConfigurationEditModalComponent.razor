@@ -60,24 +60,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-    
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            try
-            {
-                InitializeFormFields();
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnParametersSetAsync), GetType(),
-                    additionalData: "初始化印表機設定編輯組件時發生錯誤");
-                await NotificationService.ShowErrorAsync("初始化編輯表單時發生錯誤");
-            }
-        }
-    }
 
     // ===== 事件處理 =====
     private async Task HandleSaveSuccess()

@@ -137,6 +137,8 @@
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
+
+        await base.OnParametersSetAsync();
     }
 
     // ===== 事件處理 =====

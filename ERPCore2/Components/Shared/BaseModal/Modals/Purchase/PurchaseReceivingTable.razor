@@ -1,5 +1,6 @@
 @* 採購入庫明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
+@using ERPCore2.Helpers
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
@@ -652,22 +653,23 @@ else
             return;
         }
         
-        // 更新追蹤變數
+        // 更新追蹤變數（靜默處理，不輸出訊息）
         if (existingDetailsChanged)
         {
             _previousExistingDetailsCount = currentExistingDetailsCount;
         }
         
-        // 如果只是採購單或商品篩選變更，只需要更新篩選狀態並重新渲染
-        if (purchaseOrderChanged || productFilterChanged)
+        if (purchaseOrderChanged)
         {
             _previousSelectedPurchaseOrderId = SelectedPurchaseOrderId;
-            _previousFilterProductId = FilterProductId;
-            
-            // 觸發重新渲染以套用新的篩選
-            StateHasChanged();
-            return;
         }
+        
+        if (productFilterChanged)
+        {
+            _previousFilterProductId = FilterProductId;
+        }
+        
+        // ⚠️ 不觸發任何渲染，讓 InteractiveTableComponent 自行處理
     }
 
     // ===== InteractiveTableComponent 方法 =====
@@ -1497,11 +1499,9 @@ else
             availableDetails = new List<PurchaseOrderDetail>(availableDetails) { item.SelectedPurchaseDetail };
         }
         
-        // 2. 取得一般商品清單（排除已在採購明細中的商品）
-        var purchaseProductIds = availableDetails.Select(d => d.ProductId).ToHashSet();
-        var availableProducts = (AvailableProducts ?? new List<Product>())
-            .Where(p => !purchaseProductIds.Contains(p.Id))
-            .ToList();
+        // 2. 取得一般商品清單（不排除任何商品，讓用戶可以看到全部商品）
+        // 修正：移除 purchaseProductIds 的排除邏輯，允許顯示所有商品
+        var availableProducts = (AvailableProducts ?? new List<Product>()).ToList();
         
         // 3. 搜尋過濾
         if (string.IsNullOrWhiteSpace(searchValue))
@@ -1545,7 +1545,7 @@ else
         item.FilteredItems = combinedItems;
         item.ShowDropdown = true;
         item.SelectedIndex = -1;
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，輸入事件會自動觸發重新渲染
     }
     
     /// <summary>
@@ -1647,6 +1647,7 @@ else
         receivingItem.ShowDropdown = false;
         receivingItem.SelectedIndex = -1;
         await NotifyDetailsChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     /// <summary>
@@ -1717,7 +1718,7 @@ else
         }
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnUnitPriceInput(ReceivingItem item, string? value)
@@ -1749,7 +1750,7 @@ else
         }
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnWarehouseSelectionChanged(ReceivingItem item, string? warehouseIdStr)
@@ -1783,7 +1784,7 @@ else
         item.SelectedWarehouseLocation = null;
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnWarehouseLocationSelectionChanged(ReceivingItem item, string? warehouseLocationIdStr)
@@ -1815,7 +1816,7 @@ else
         }
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnTaxRateInput(ReceivingItem item, string? value)
@@ -1831,7 +1832,7 @@ else
         }
         
         await NotifyDetailsChanged();
-        StateHasChanged();  // 強制重新渲染以更新小計顯示
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnRemarksInput(ReceivingItem item, string? value)
@@ -1839,7 +1840,7 @@ else
         item.Remarks = value ?? string.Empty;
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     public async Task RemoveItemAsync(int index)
@@ -1867,7 +1868,7 @@ else
         ReceivingItems.Remove(removedItem);
         
         await NotifyDetailsChanged();
-        StateHasChanged();
+        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     /// <summary>

@@ -59,15 +59,6 @@
         }
     }
     
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            InitializeFormFields();
-            await Task.CompletedTask;
-        }
-    }
-
     // ===== 事件處理 =====
     private async Task HandleSaveSuccess()
     {

@@ -136,17 +136,6 @@
         }
     }
     
-    protected override async Task OnParametersSetAsync()
-    {
-        // 當 CustomerId 參數變更時，重新初始化表單欄位
-        if (formFields != null) // 只有在已經初始化過的情況下才重新設定
-        {
-            await InitializeFormFieldsAsync();
-        }
-        
-        await base.OnParametersSetAsync();
-    }
-
     private async Task HandleSaveSuccess()
     {
         if (editModalComponent?.Entity != null)

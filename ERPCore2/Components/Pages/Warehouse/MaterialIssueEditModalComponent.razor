@@ -83,6 +83,8 @@
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
         }
+
+        await base.OnParametersSetAsync();
     }
     
     /// <summary>

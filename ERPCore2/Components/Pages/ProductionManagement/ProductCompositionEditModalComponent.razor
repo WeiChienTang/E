@@ -156,15 +156,6 @@
             await NotificationService.ShowErrorAsync("初始化產品合成表編輯組件時發生錯誤");
         }
     }
-    
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
-        }
-    }
 
     // ===== 事件處理 =====
     private async Task HandleSaveSuccess()

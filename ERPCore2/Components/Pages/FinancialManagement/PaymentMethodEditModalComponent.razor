@@ -58,16 +58,6 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
-    
-    protected override Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            InitializeFormFields();
-        }
-        
-        return Task.CompletedTask;
-    }
 
     // ===== 事件處理 =====
     private async Task HandleSaveSuccess()
