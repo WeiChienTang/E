@@ -965,8 +965,12 @@
                 autoCompleteConfig.Collections["FilterProductId"] = filteredProducts.Cast<object>().ToList();
             }
             
-            // 清空目前的產品篩選選擇
-            filterProductId = null;
+            //  修正：不要清空 filterProductId，保持使用者的選擇
+            // 只在選擇的產品不在新的篩選結果中時才清空
+            if (filterProductId.HasValue && !filteredProducts.Any(p => p.Id == filterProductId.Value))
+            {
+                filterProductId = null;
+            }
             
             await Task.CompletedTask;
         }
@@ -1328,7 +1332,8 @@
             {
                 needsRerender = true;
             }
-            // 當產品篩選變更時，更新篩選狀態並觸發重新渲染
+            // 當產品篩選變更時，更新篩選狀態
+            //  修正：不需要觸發重新渲染，PurchaseReceivingTable 會自行處理參數變更
             else if (fieldChange.PropertyName == "FilterProductId")
             {
                 if (fieldChange.Value != null && 
@@ -1342,7 +1347,8 @@
                     filterProductId = null;
                 }
                 
-                needsRerender = true;
+                // 不設置 needsRerender，避免過度渲染
+                // PurchaseReceivingTable 會根據參數變更自行處理
             }
             // 處理稅率算法變更
             else if (fieldChange.PropertyName == nameof(PurchaseReceiving.TaxCalculationMethod))

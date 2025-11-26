@@ -186,7 +186,7 @@
     }
 
     // ===== 表單初始化 =====
-    private async Task InitializeFormFieldsAsync()
+    private void InitializeFormFieldsAsync()
     {
         try
         {
@@ -200,7 +200,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入代碼",
                     IsRequired = false,
-                    HelpText = "報表列印配置的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "報表列印配置的唯一識別代碼,新增時系統會自動產生,也可手動修改"
                 },
                 new()
                 {
@@ -269,7 +269,7 @@
         }
         catch (Exception)
         {
-            _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+            NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
     }
 

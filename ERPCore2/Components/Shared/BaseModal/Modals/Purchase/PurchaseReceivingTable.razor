@@ -46,16 +46,17 @@ else
                                       TItem="ReceivingItem" 
                                       Items="@ReceivingItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
-                                      EnableAutoEmptyRow="true"
-                                      DataLoadCompleted="@_dataLoadCompleted"
-                                      CreateEmptyItem="@CreateNewEmptyItem"
                                       IsReadOnly="@IsReadOnly"
                                       ShowRowNumbers="false"
                                       EmptyMessage="尚未新增入庫商品"
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
+                                      ActionsColumnWidth="60px"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
-                                      ActionsColumnWidth = "60px" />
+                                      OnItemDelete="@HandleItemDelete"
+                                      EnableAutoEmptyRow="true"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      CreateEmptyItem="@(() => new ReceivingItem())" />
         </div>
 
         <div class="card-footer">
@@ -649,11 +650,21 @@ else
             
             // 廠商變更時清空現有選項並重新載入
             ReceivingItems.Clear();
-            await LoadExistingDetailsAsync();
+            
+            // 如果沒有現有明細，立即設定為載入完成，讓空行可以顯示
+            if (ExistingDetails?.Any() != true)
+            {
+                _dataLoadCompleted = true;
+                StateHasChanged();
+            }
+            else
+            {
+                await LoadExistingDetailsAsync();
+            }
             return;
         }
         
-        // 更新追蹤變數（靜默處理，不輸出訊息）
+        // 更新追蹤變數（靜默處理）
         if (existingDetailsChanged)
         {
             _previousExistingDetailsCount = currentExistingDetailsCount;
@@ -669,18 +680,10 @@ else
             _previousFilterProductId = FilterProductId;
         }
         
-        // ⚠️ 不觸發任何渲染，讓 InteractiveTableComponent 自行處理
+        //  不觸發任何渲染，讓 InteractiveTableComponent 自行處理
     }
 
     // ===== InteractiveTableComponent 方法 =====
-    
-    /// <summary>
-    /// 建立新的空項目（用於 InteractiveTableComponent 自動空行功能）
-    /// </summary>
-    private ReceivingItem CreateNewEmptyItem()
-    {
-        return new ReceivingItem();
-    }
     
     /// <summary>
     /// 判斷一行是否為空（用於內部邏輯判斷）
@@ -690,21 +693,30 @@ else
         return item.SelectedPurchaseDetail == null && item.SelectedProduct == null;
     }
     
+    // 緩存欄位定義，避免每次渲染都重新創建
+    private List<InteractiveColumnDefinition>? _cachedColumnDefinitions = null;
+    
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
+        // 如果已經有緩存，直接返回
+        if (_cachedColumnDefinitions != null)
+        {
+            return _cachedColumnDefinitions;
+        }
+        
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 支援採購單商品和一般商品
+        //  商品選擇欄位 - 觸發欄位（選擇商品後自動新增空行）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "採購單號/商品編號/名稱", 
             PropertyName = "ProductSearchValue",
-            EmptyCheckPropertyName = "SelectedProduct",
-            TriggerEmptyRowOnFilled = true,
+            EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
+            TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "300px",
-            Tooltip = "搜尋並選擇要入庫的商品。可選擇採購單商品或一般商品。已有退貨或沖款記錄的商品將無法變更",
-            Placeholder = "請輸入採購單號或商品名稱",
+            Tooltip = "搜尋並選擇要入庫的商品（輸入採購單號/商品編號或名稱）。已有退貨或沖款記錄的商品將無法變更",
+            Placeholder = "請輸入採購單號或商品編號/名稱",
             SearchValuePropertyName = nameof(ReceivingItem.ProductSearchValue),
             FilteredItemsPropertyName = nameof(ReceivingItem.FilteredItems),
             ShowDropdownPropertyName = nameof(ReceivingItem.ShowDropdown),
@@ -1007,32 +1019,22 @@ else
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "備註", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
+            PropertyName = "Remarks",
+            ColumnType = InteractiveColumnType.Input,  // 使用內建 Input 類型
             Width = "150px",
             HideOnMobile = true,
+            ExcludeFromEmptyCheck = true,  // 備註不參與空行檢查
             Tooltip = "選填。可記錄入庫相關的備註資訊",
-            CustomTemplate = item => 
+            Placeholder = "選填...",
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
-                var receivingItem = (ReceivingItem)item;
-                
-                // 如果是唯讀狀態，直接顯示 span
-                if (IsReadOnly)
-                {
-                    var displayText = string.IsNullOrEmpty(receivingItem.Remarks) ? "無備註" : receivingItem.Remarks;
-                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
-                        <span class="text-muted">@displayText</span>
-                    </div>;
-                }
-                
-                // 可編輯狀態，顯示輸入框
-                return @<input type="text" class="form-control " 
-                               value="@receivingItem.Remarks"
-                               @oninput="(e) => OnRemarksInput(receivingItem, e.Value?.ToString())"
-                               placeholder="選填..." />;
-            }
+                var (item, valueString) = args;
+                await OnRemarksInput((ReceivingItem)item, valueString);
+            })
         });
 
+        // 緩存欄位定義
+        _cachedColumnDefinitions = columns;
         return columns;
     }
 
@@ -1159,22 +1161,33 @@ else
                 // 這樣即使沒有採購單，也能直接選擇商品進貨
                 var allSupplierProducts = await ProductService.GetBySupplierAsync(SelectedSupplierId.Value);
                 AvailableProducts = allSupplierProducts.ToList();
+                
+                // 清除緩存，強制重新計算
+                _cachedFilteredDetails = null;
             }
             else
             {
                 AvailableProducts = new List<Product>();
                 AvailablePurchaseDetails = new List<PurchaseOrderDetail>();
+                _cachedFilteredDetails = null;
             }
         }
         catch (Exception)
         {
             AvailableProducts = new List<Product>();
             AvailablePurchaseDetails = new List<PurchaseOrderDetail>();
+            _cachedFilteredDetails = null;
         }
     }
 
     /// <summary>
-    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// 公開方法：刷新明細資料（供父組件呼叫）
+    /// 用於上下筆切換或子單據儲存後，重新載入明細以更新相關數量
+    /// 
+    /// 使用場景：
+    /// - 上下筆切換時重新載入明細
+    /// - 進貨退出儲存後，刷新進貨明細的「退貨數量」
+    /// - 沖款單儲存後，刷新進貨明細的「沖款狀態」
     /// </summary>
     public async Task RefreshDetailsAsync()
     {
@@ -1183,13 +1196,13 @@ else
         StateHasChanged();
     }
 
+    /// <summary>
+    /// 從現有明細資料載入到 ReceivingItems
+    /// </summary>
     private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
-            ReceivingItems.Clear();
-            _dataLoadCompleted = true;
-            StateHasChanged();
             return;
         }
 
@@ -1545,7 +1558,9 @@ else
         item.FilteredItems = combinedItems;
         item.ShowDropdown = true;
         item.SelectedIndex = -1;
-        // ⚠️ 移除 StateHasChanged()，輸入事件會自動觸發重新渲染
+        
+        // 觸發 UI 更新以顯示下拉選單
+        StateHasChanged();
     }
     
     /// <summary>
@@ -1647,7 +1662,6 @@ else
         receivingItem.ShowDropdown = false;
         receivingItem.SelectedIndex = -1;
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     /// <summary>
@@ -1718,7 +1732,7 @@ else
         }
         
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
+        //  移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnUnitPriceInput(ReceivingItem item, string? value)
@@ -1750,7 +1764,7 @@ else
         }
         
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
+        //  移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnWarehouseSelectionChanged(ReceivingItem item, string? warehouseIdStr)
@@ -1784,7 +1798,6 @@ else
         item.SelectedWarehouseLocation = null;
         
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnWarehouseLocationSelectionChanged(ReceivingItem item, string? warehouseLocationIdStr)
@@ -1816,7 +1829,6 @@ else
         }
         
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnTaxRateInput(ReceivingItem item, string? value)
@@ -1832,15 +1844,12 @@ else
         }
         
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     private async Task OnRemarksInput(ReceivingItem item, string? value)
     {
         item.Remarks = value ?? string.Empty;
-        
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     public async Task RemoveItemAsync(int index)
@@ -1868,7 +1877,6 @@ else
         ReceivingItems.Remove(removedItem);
         
         await NotifyDetailsChanged();
-        // ⚠️ 移除 StateHasChanged()，NotifyDetailsChanged 已經會觸發重新渲染
     }
 
     /// <summary>
@@ -1892,11 +1900,22 @@ else
     /// <summary>
     /// 取得可用的採購明細清單（支援三層篩選：廠商->採購單->商品）
     /// </summary>
+    // 緩存篩選結果，避免每次渲染都重新計算
+    private List<PurchaseOrderDetail>? _cachedFilteredDetails = null;
+    private (int?, int?, int?) _lastFilterKey = (null, null, null);
+    
     private List<PurchaseOrderDetail> GetAvailablePurchaseDetails()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
         {
             return new List<PurchaseOrderDetail>();
+        }
+        
+        // 檢查緩存是否有效
+        var currentFilterKey = (SelectedSupplierId, SelectedPurchaseOrderId, FilterProductId);
+        if (_cachedFilteredDetails != null && _lastFilterKey == currentFilterKey)
+        {
+            return _cachedFilteredDetails;
         }
         
         var filteredDetails = AvailablePurchaseDetails.AsEnumerable();
@@ -1913,7 +1932,10 @@ else
             filteredDetails = filteredDetails.Where(pd => pd.ProductId == FilterProductId.Value);
         }
         
-        return filteredDetails.ToList();
+        _cachedFilteredDetails = filteredDetails.ToList();
+        _lastFilterKey = currentFilterKey;
+        
+        return _cachedFilteredDetails;
     }
 
     // ===== 新增：載入所有未入庫相關方法 =====
@@ -2000,10 +2022,16 @@ else
     /// <summary>
     /// 內部方法：載入未入庫項目
     /// </summary>
+    /// <summary>
+    /// 內部方法：載入未入庫項目
+    /// </summary>
     private async Task LoadUnreceivedItemsInternal(List<PurchaseOrderDetail> details)
     {
         try
         {
+            //  開始載入資料 - 設定為未完成
+            _dataLoadCompleted = false;
+            
             // 清空現有項目
             ReceivingItems.Clear();
 
@@ -2050,6 +2078,10 @@ else
             // 通知變更
             await NotifyDetailsChanged();
             
+            //  資料載入完成 - 觸發空行檢查
+            _dataLoadCompleted = true;
+            StateHasChanged();
+            
             var filterInfo = GetCurrentFilterInfo();
             await NotificationService.ShowSuccessAsync(
                 $"成功載入 {details.Count} 項未入庫商品{filterInfo}"
@@ -2057,6 +2089,8 @@ else
         }
         catch (Exception ex)
         {
+            //  發生錯誤也要恢復載入完成狀態
+            _dataLoadCompleted = true;
             await NotificationService.ShowErrorAsync($"載入未入庫商品失敗：{ex.Message}");
         }
     }
@@ -2256,33 +2290,7 @@ else
         public string ProductSearchValue { get; set; } = string.Empty;
         public List<object> FilteredItems { get; set; } = new();
         public bool ShowDropdown { get; set; } = false;
-        public int SelectedIndex { get; set; } = -1;
-        
-        // === 舊版屬性（保留向後相容）===
-        [Obsolete("請使用 ProductSearchValue")]
-        public string PurchaseDetailSearchValue 
-        { 
-            get => ProductSearchValue; 
-            set => ProductSearchValue = value; 
-        }
-        [Obsolete("請使用 FilteredItems")]
-        public List<PurchaseOrderDetail> FilteredPurchaseDetails 
-        { 
-            get => FilteredItems.OfType<PurchaseOrderDetail>().ToList(); 
-            set => FilteredItems = value.Cast<object>().ToList(); 
-        }
-        [Obsolete("請使用 ShowDropdown")]
-        public bool ShowPurchaseDetailDropdown 
-        { 
-            get => ShowDropdown; 
-            set => ShowDropdown = value; 
-        }
-        [Obsolete("請使用 SelectedIndex")]
-        public int PurchaseDetailSelectedIndex 
-        { 
-            get => SelectedIndex; 
-            set => SelectedIndex = value; 
-        }
+        public int SelectedIndex { get; set; } = -1;    
         
         // === 採購單相關資訊（從選中的採購明細中獲取） ===
         public string? PurchaseOrderNumber => SelectedPurchaseDetail?.PurchaseOrder?.Code;
