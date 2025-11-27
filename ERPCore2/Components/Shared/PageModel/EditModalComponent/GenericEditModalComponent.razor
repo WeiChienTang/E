@@ -35,8 +35,7 @@
                    ShowFooter="@(Entity != null && Entity.Id > 0)"
                    AuditInfo="@GetAuditInfo()"
                    BodyCssClass="p-0"
-                   OnClose="@HandleCancel">
-    
+                   OnClose="@HandleCancel">    
     <HeaderButtons>
         @* ===== Modal Actions 按鈕區塊 ===== *@
         <div class="w-100 d-flex align-items-center px-2">
@@ -136,6 +135,8 @@
                                           OnClick="HandlePrint" 
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
+
+                
                 
                 @if (ShowDeleteButton && Entity != null && Entity.Id > 0 && IsEntityDeletable(Entity))
                 {
