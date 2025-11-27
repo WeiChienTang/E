@@ -128,7 +128,7 @@
                 purchaseReturnDetails = new List<PurchaseReturnDetail>();
             }
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
             
@@ -377,7 +377,7 @@
                         PurchaseReceivingId = PrefilledPurchaseReceivingId // 直接設定實體屬性
                     };
                     
-                    // 🔑 如果是從進貨單轉單，繼承進貨單的稅率算法
+                    //  如果是從進貨單轉單，繼承進貨單的稅率算法
                     if (PrefilledPurchaseReceivingId.HasValue && PrefilledPurchaseReceivingId.Value > 0)
                     {
                         var purchaseReceiving = await PurchaseReceivingService.GetByIdAsync(PrefilledPurchaseReceivingId.Value);
@@ -630,16 +630,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PurchaseReturn.TaxCalculationMethod),
-                    Label = "稅別",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = taxCalculationMethodOptions,
-                    HelpText = "選擇稅額計算方式：外加稅（稅額另計）、內含稅（總額已含稅）、不含稅（免稅）",
-                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
-                },
-                new()
-                {
                     PropertyName = nameof(PurchaseReturn.TotalReturnAmount),
                     Label = "金額",
                     FieldType = FormFieldType.Number,
@@ -677,8 +667,7 @@
                 .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.PurchaseReceivingId,
-                    pr => pr.ReturnDate,
-                    pr => pr.TaxCalculationMethod)
+                    pr => pr.ReturnDate)
                 .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
                     pr => pr.TotalReturnAmount,
                     pr => pr.ReturnTaxAmount,

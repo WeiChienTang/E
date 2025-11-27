@@ -63,11 +63,11 @@ namespace ERPCore2.FieldConfiguration
                         "SupplierName",
                         new FieldDefinition<PurchaseReceiving>
                         {
-                            PropertyName = "Supplier.CompanyName", // 直接使用供應商關聯顯示供應商名稱
-                            DisplayName = "供應商",
+                            PropertyName = "Supplier.CompanyName", // 直接使用廠商關聯顯示廠商名稱
+                            DisplayName = "廠商",
                             TableOrder = 3,
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入供應商名稱搜尋",
+                            FilterPlaceholder = "輸入廠商名稱搜尋",
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "SupplierName", pr => pr.Supplier != null ? pr.Supplier.CompanyName : "")

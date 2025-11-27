@@ -189,6 +189,14 @@
         }
     }
 
+        protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
     // ===== 表單設定 =====
     private void InitializeFormFields()
     {

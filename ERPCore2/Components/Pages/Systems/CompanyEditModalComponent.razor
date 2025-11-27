@@ -48,6 +48,17 @@
 
     // ===== 生命週期 =====
     
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+
+        await base.OnParametersSetAsync();
+    }
+    
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
     /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染

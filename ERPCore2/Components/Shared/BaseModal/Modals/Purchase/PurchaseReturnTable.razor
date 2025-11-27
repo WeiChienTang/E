@@ -40,7 +40,7 @@ else
         <div class="card-footer">
             <div class="d-flex justify-content-between">
                 <div>
-                    <GenericButtonComponent Text="載入可退回"
+                    <GenericButtonComponent Text="智能退回"
                                           Variant="ButtonVariant.DarkBlue"
                                           IsDisabled="@(!CanLoadAllReturnable)"
                                           Title="@GetLoadAllReturnableTooltip()"
@@ -78,7 +78,7 @@ else
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
     [Parameter] public EventCallback<List<ReturnItem>> OnReturnItemsChanged { get; set; }
     
-    // ===== 供應商過濾參數 =====
+    // ===== 廠商過濾參數 =====
     [Parameter] public int? SupplierId { get; set; }
     [Parameter] public int? SelectedSupplierId { get; set; }
     
@@ -191,7 +191,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // 初始化時記錄當前供應商ID，避免 OnParametersSetAsync 誤判為變更
+        // 初始化時記錄當前廠商ID，避免 OnParametersSetAsync 誤判為變更
         _previousSelectedSupplierId = EffectiveSupplierId;
         _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
         _previousFilterProductId = EffectiveFilterProductId;
@@ -544,7 +544,7 @@ else
             PropertyName = nameof(ReturnItem.ReturnQuantity),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            Tooltip = "要退回給供應商的商品數量。已收款的商品將無法修改數量",
+            Tooltip = "要退回給廠商的商品數量。已收款的商品將無法修改數量",
             IsDisabledFunc = item =>
             {
                 var returnItem = (ReturnItem)item;
@@ -1085,6 +1085,21 @@ else
         {
             var availableDetails = GetAvailableReceivingDetails();
             
+            //  檢查是否有可載入的明細
+            if (!availableDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("沒有可退回的進貨明細", "提示");
+                return;
+            }
+            
+            //  確認對話框 - 顯示即將載入的數量
+            var confirmed = await NotificationService.ShowConfirmAsync(
+                $"即將載入 {availableDetails.Count} 項可退回的進貨明細，是否繼續？\n\n" +
+                "提示：如果只需要退回特定商品，建議使用商品篩選功能。",
+                "智能退回確認");
+            
+            if (!confirmed) return;
+            
             // 清除現有項目但保留已有資料的項目
             var existingItems = ReturnItems.Where(item => item.SelectedReceivingDetail != null).ToList();
             ReturnItems.Clear();
@@ -1097,7 +1112,7 @@ else
                 if (ReturnItems.Any(item => item.SelectedReceivingDetail?.Id == detail.Id))
                     continue;
                 
-                // 🔑 取得稅率（優先順序：進貨明細稅率 > 商品稅率 > 系統預設稅率）
+                //  取得稅率（優先順序：進貨明細稅率 > 商品稅率 > 系統預設稅率）
                 var taxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
                 
                 var newItem = new ReturnItem

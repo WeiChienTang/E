@@ -102,6 +102,20 @@
 
     // ===== 生命週期 =====
     
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            // 每次開啟 Modal 時都重置明細資料
+            compositionDetails = new List<ProductCompositionDetail>();
+            
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+
+        await base.OnParametersSetAsync();
+    }
+    
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
     /// 當上下筆切換時，重新載入對應的明細資料

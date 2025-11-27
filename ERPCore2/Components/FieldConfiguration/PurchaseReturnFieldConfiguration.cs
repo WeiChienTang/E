@@ -60,10 +60,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = "Supplier.CompanyName",
-                            DisplayName = "供應商",
+                            DisplayName = "廠商",
                             TableOrder = 2,
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入供應商名稱搜尋",
+                            FilterPlaceholder = "輸入廠商名稱搜尋",
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "SupplierName", pr => pr.Supplier != null ? pr.Supplier.CompanyName : "")

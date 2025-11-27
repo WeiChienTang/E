@@ -103,6 +103,14 @@
         }
     }
 
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
     private void InitializeFormFields()
     {
         formFields = new List<FormFieldDefinition>

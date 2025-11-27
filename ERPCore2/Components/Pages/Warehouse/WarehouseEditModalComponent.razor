@@ -144,6 +144,13 @@
             await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
         }
     }
+        protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
 
     private void InitializeFormFields()
     {

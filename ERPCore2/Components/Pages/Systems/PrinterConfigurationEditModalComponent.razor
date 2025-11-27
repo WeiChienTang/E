@@ -197,6 +197,14 @@
         }
     }
 
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
     // ===== 表單初始化 =====
     private void InitializeFormFields()
     {

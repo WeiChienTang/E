@@ -2,10 +2,13 @@
 
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Helpers
+@using ERPCore2.Data.Enums
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject IPurchaseReturnDetailService PurchaseReturnDetailService
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -30,8 +33,9 @@ else
                                       ShowRowNumbers="false"
                                       EmptyMessage="尚未新增入庫商品"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
-                                      ActionsColumnWidth="80px"
+                                      ShowBuiltInDeleteButton="false"
+                                      ActionsColumnWidth="60px"
+                                      CustomActionsTemplate="@GetCustomActionsTemplate"
                                       OnItemDelete="@HandleItemDelete"
                                       EnableAutoEmptyRow="true"
                                       DataLoadCompleted="@_dataLoadCompleted"
@@ -46,7 +50,7 @@ else
                                           Text="智能載入"
                                           OnClick="@SmartLoadReceivingDetails"
                                           IsDisabled="@(!CanUseSmartLoad || IsReadOnly)"
-                                          Title="@(CanUseSmartLoad ? "載入該廠商所有待進貨的採購明細" : "請先選擇廠商")"
+                                          Title="@GetSmartLoadTooltip()"
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small" />
                 </div>
@@ -101,6 +105,14 @@ else
     </div>
 }
 
+<!-- 相關單據查看 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick" />
+
 @code {
     // ===== 參數 =====
     [Parameter] public int? SelectedSupplierId { get; set; }
@@ -134,6 +146,13 @@ else
     private bool _dataLoadCompleted = true;
     private int? _previousSupplierId = null;
     private List<int> _deletedDetailIds = new(); // 追蹤已刪除的明細ID
+    private Dictionary<int, decimal> _returnedQuantities = new(); // 追蹤每個明細的已退貨數量 (Key: DetailId, Value: 已退貨數量)
+    
+    // ===== 相關單據查看 =====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
     
     // ===== 內部類別 =====
     public class ReceivingItem
@@ -594,6 +613,36 @@ else
         await NotifyChange();
     }
     
+    // ===== 自訂操作按鈕模板 =====
+    private RenderFragment<ReceivingItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        // 使用 DetailLockHelper 檢查是否可以刪除（需傳入退貨數量字典）
+        if (DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+            checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities))
+        {
+            // 可以刪除：顯示刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 已被使用：顯示查看按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+    };
+    
     // ===== 輔助方法 =====
     
     // 載入商品清單
@@ -656,6 +705,10 @@ else
         }
         
         _dataLoadCompleted = true;
+        
+        // 載入退貨數量（用於鎖定檢查）
+        await LoadReturnedQuantitiesAsync();
+        
         StateHasChanged();
     }
     
@@ -774,7 +827,8 @@ else
         // 檢查是否有不可刪除的明細（已有退貨或沖款記錄）
         bool hasUndeletableDetails = ReceivingItems.Any(item => 
             item.ExistingDetailEntity != null && 
-            !DetailLockHelper.CanDeleteItem(item, out _, checkReturn: true, checkPayment: true));
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+                checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities));
         await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
     }
     
@@ -859,6 +913,7 @@ else
     public async Task RefreshDetailsAsync()
     {
         await LoadExistingDetailsAsync();
+        // LoadExistingDetailsAsync 內部已經會呼叫 LoadReturnedQuantitiesAsync
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
     }
@@ -890,12 +945,45 @@ else
     }
     
     /// <summary>
-    /// 載入退貨數量（簡化版，保持向下兼容）
+    /// 載入退貨數量 - 查詢每個進貨明細的已退貨數量
     /// </summary>
-    public Task LoadReturnedQuantitiesAsync()
+    public async Task LoadReturnedQuantitiesAsync()
     {
-        // 簡化版本暫不處理退貨數量
-        return Task.CompletedTask;
+        try
+        {
+            _returnedQuantities.Clear();
+            
+            // 只處理已儲存的明細（有ID的）
+            var items = ReceivingItems
+                .Where(item => item.ExistingDetailEntity != null)
+                .ToList();
+            
+            if (!items.Any())
+            {
+                return;
+            }
+            
+            // 逐一查詢每個明細的退貨數量
+            foreach (var item in items)
+            {
+                var detailId = GetPropertyValue<int>(item.ExistingDetailEntity!, "Id");
+                if (detailId > 0)
+                {
+                    var returnedQty = await PurchaseReturnDetailService
+                        .GetReturnedQuantityByReceivingDetailAsync(detailId);
+                    
+                    if (returnedQty > 0)
+                    {
+                        _returnedQuantities[detailId] = returnedQty;
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // 發生錯誤時清空字典，避免顯示錯誤的鎖定狀態
+            _returnedQuantities.Clear();
+        }
     }
     
     /// <summary>
@@ -1004,7 +1092,26 @@ else
     /// </summary>
     private bool CanUseSmartLoad => 
         SelectedSupplierId.HasValue && 
-        SelectedSupplierId.Value > 0;
+        SelectedSupplierId.Value > 0 &&
+        !HasReceivingItems &&
+        AvailablePurchaseDetails.Any();
+    
+    /// <summary>
+    /// 取得智能載入按鈕的提示文字
+    /// </summary>
+    private string GetSmartLoadTooltip()
+    {
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+            return "請先選擇廠商";
+        
+        if (HasReceivingItems)
+            return "目前已有明細資料，無法使用智能載入";
+        
+        if (!AvailablePurchaseDetails.Any())
+            return "此廠商沒有任何待進貨的採購明細";
+        
+        return "載入該廠商所有待進貨的採購明細";
+    }
     
     /// <summary>
     /// 計算屬性：是否有入庫明細項目
@@ -1150,5 +1257,60 @@ else
         StateHasChanged();
         
         await NotificationService.ShowSuccessAsync("已清除所有入庫明細");
+    }
+    
+    // ===== 相關單據查看方法 =====
+    
+    /// <summary>
+    /// 顯示相關單據（退貨單、沖款單）
+    /// </summary>
+    private async Task ShowRelatedDocuments(ReceivingItem item)
+    {
+        if (item.ExistingDetailEntity is not PurchaseReceivingDetail detail || detail.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
+            return;
+        }
+
+        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForPurchaseReceivingDetailAsync(detail.Id);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理點擊相關單據的事件
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理，顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+                "提示"
+            );
+        }
     }
 }
