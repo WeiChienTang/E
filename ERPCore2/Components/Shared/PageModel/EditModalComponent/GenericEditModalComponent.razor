@@ -136,7 +136,14 @@
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
 
-                
+                @if (Entity != null && Entity.Id > 0)
+                {
+                    <GenericButtonComponent Text="重整" 
+                                          Variant="ButtonVariant.Green" 
+                                          OnClick="HandleRefresh" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)"
+                                          Title="重新載入資料" />
+                }
                 
                 @if (ShowDeleteButton && Entity != null && Entity.Id > 0 && IsEntityDeletable(Entity))
                 {
@@ -145,6 +152,8 @@
                                           OnClick="DeleteEntityAsync" 
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
+                
+
             </div>
         </div>
     </HeaderButtons>
@@ -858,6 +867,21 @@
         if (OnPrint.HasDelegate)
         {
             await OnPrint.InvokeAsync();
+        }
+    }
+    
+    private async Task HandleRefresh()
+    {
+        if (IsLoading || IsSubmitting) return;
+        
+        try
+        {
+            await LoadAllData();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"重新載入資料時發生錯誤：{ex.Message}");
+            LogError("HandleRefresh", ex);
         }
     }
     

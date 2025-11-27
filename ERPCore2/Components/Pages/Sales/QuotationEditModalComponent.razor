@@ -138,6 +138,7 @@
     private List<Employee> employees = new();
     private List<SelectOption> customerOptions = new();
     private List<SelectOption> employeeOptions = new();
+    private List<SelectOption> taxCalculationMethodOptions = new();
     
     // ===== 審核開關狀態 =====
     private bool isApprovalEnabled = true; // 是否啟用報價單審核功能（從系統參數載入）
@@ -328,6 +329,14 @@
             // 載入單位列表（用於明細）
             availableUnits = await UnitService.GetAllAsync();
             
+            // 初始化稅別下拉選項
+            taxCalculationMethodOptions = new List<SelectOption>
+            {
+                new SelectOption { Value = ((int)TaxCalculationMethod.TaxExclusive).ToString(), Text = "外加稅" },
+                new SelectOption { Value = ((int)TaxCalculationMethod.TaxInclusive).ToString(), Text = "內含稅" },
+                new SelectOption { Value = ((int)TaxCalculationMethod.NoTax).ToString(), Text = "不含稅" }
+            };
+            
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<Quotation>()
                 .AddField(nameof(Quotation.CustomerId), "CompanyName", availableCustomers)
@@ -442,6 +451,16 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(Quotation.TaxCalculationMethod),
+                    Label = "稅別",
+                    FieldType = FormFieldType.Select,
+                    Options = taxCalculationMethodOptions,
+                    IsRequired = true,
+                    HelpText = "外加稅：稅額另外加上 | 內含稅：總價已包含稅 | 不含稅：完全免稅",
+                    IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
+                },
+                new()
+                {
                     PropertyName = nameof(Quotation.PaymentTerms),
                     Label = "付款條件",
                     FieldType = FormFieldType.Text,
@@ -465,32 +484,42 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.SubtotalBeforeDiscount),
-                    Label = "折扣前金額",
+                    Label = "金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true, // 折扣前金額始終為唯讀
                     HelpText = "系統根據明細自動計算（明細的數量 × 單價總和）",
                     CssClass = "text-warning fw-bold" // 使用黃色粗體顯示
                 },
-                new()
+                new FormFieldDefinition()
                 {
                     PropertyName = nameof(Quotation.DiscountAmount),
-                    Label = "折扣金額",
+                    Label = "折扣",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true, // 折扣金額始終為唯讀
-                    HelpText = "系統根據明細自動計算（明細的折扣總和）",
+                    HelpText = "系統根據明細自動計算 = (數量 × 單價 × 折扣%)",
                     CssClass = "text-danger fw-bold" // 使用紅色粗體顯示
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(Quotation.QuotationTaxAmount),
+                    Label = "稅額",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true,
+                    HelpText = "系統根據明細自動計算 = (折扣後金額 × 稅率%)",
+                    CssClass = "text-info fw-bold"
                 },
                 new()
                 {
                     PropertyName = nameof(Quotation.TotalAmount),
-                    Label = "實付金額",
+                    Label = "總額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    IsReadOnly = true, // 實付金額始終為唯讀
-                    HelpText = "系統根據明細自動計算（折扣前金額 - 折扣金額）",
-                    CssClass = "text-success fw-bold" // 使用綠色粗體顯示
+                    IsReadOnly = true,
+                    HelpText = "系統根據明細自動計算（金額 - 折扣 + 稅額）",
+                    CssClass = "text-success fw-bold"
                 },
                 new FormFieldDefinition()
                 {
@@ -517,13 +546,15 @@
                     q => q.CompanyId,
                     q => q.EmployeeId,
                     q => q.ProjectName,
-                    q => q.QuotationDate)
+                    q => q.QuotationDate,
+                    q => q.TaxCalculationMethod)
                 .AddToSection(FormSectionNames.TradingTerms,
                     q => q.PaymentTerms,
                     q => q.DeliveryTerms)
                 .AddToSection(FormSectionNames.AmountInfo,
                     q => q.SubtotalBeforeDiscount,
                     q => q.DiscountAmount,
+                    q => q.QuotationTaxAmount,
                     q => q.TotalAmount)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
                 .Build();
@@ -591,16 +622,67 @@
             // 欄位鎖定由 InitializeFormFieldsAsync 中的 IsReadOnly 控制
             // 但使用者仍可修改明細並儲存整個單據
             
-            // 1. 更新折扣前金額（所有明細的原價總和）
-            quotation.SubtotalBeforeDiscount = quotationDetails.Sum(d => 
-                Math.Round(d.Quantity * d.UnitPrice, 2));
+            // 根據稅別計算金額欄位（與 HandleQuotationDetailsChanged 邏輯一致）
+            var taxMethod = quotation.TaxCalculationMethod;
             
-            // 2. 更新折扣金額（所有明細的折扣總和）
-            quotation.DiscountAmount = quotationDetails.Sum(d => 
-                Math.Round(d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100), 2));
-            
-            // 3. 更新實付金額（折扣前金額 - 折扣金額）
-            quotation.TotalAmount = quotation.SubtotalBeforeDiscount - quotation.DiscountAmount;
+            switch (taxMethod)
+            {
+                case TaxCalculationMethod.TaxExclusive:
+                    // 外加稅：總額 = 金額 - 折扣 + 稅額
+                    {
+                        quotation.SubtotalBeforeDiscount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.DiscountAmount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.QuotationTaxAmount = Math.Round(
+                            quotationDetails.Sum(d => {
+                                var amountAfterDiscount = d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
+                                var taxRate = d.TaxRate ?? 0;
+                                return amountAfterDiscount * (taxRate / 100);
+                            }), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.TotalAmount = quotation.SubtotalBeforeDiscount - quotation.DiscountAmount + quotation.QuotationTaxAmount;
+                    }
+                    break;
+                
+                case TaxCalculationMethod.TaxInclusive:
+                    // 內含稅：總額已含稅，反推金額、折扣、稅額
+                    {
+                        quotation.TotalAmount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.QuotationTaxAmount = Math.Round(
+                            quotationDetails.Sum(d => {
+                                var amountWithTax = d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
+                                var taxRate = d.TaxRate ?? 0;
+                                return amountWithTax / (1 + taxRate / 100) * (taxRate / 100);
+                            }), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.SubtotalBeforeDiscount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.DiscountAmount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                    }
+                    break;
+                
+                case TaxCalculationMethod.NoTax:
+                    // 免稅：總額 = 金額 - 折扣（稅額為 0）
+                    {
+                        quotation.SubtotalBeforeDiscount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.DiscountAmount = Math.Round(
+                            quotationDetails.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                        
+                        quotation.QuotationTaxAmount = 0;
+                        
+                        quotation.TotalAmount = quotation.SubtotalBeforeDiscount - quotation.DiscountAmount;
+                    }
+                    break;
+            }
 
             // 儲存主檔
             ServiceResult<Quotation> result;
@@ -738,6 +820,7 @@
                                                 Products="@availableProducts"
                                                 Units="@availableUnits"
                                                 SelectedCustomerId="@editModalComponent?.Entity?.CustomerId"
+                                                TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                                                 MainEntityIdPropertyName="@nameof(QuotationDetail.QuotationId)"
                                                 QuantityPropertyName="@nameof(QuotationDetail.Quantity)"
                                                 UnitPricePropertyName="@nameof(QuotationDetail.UnitPrice)"
@@ -776,7 +859,7 @@
     };
 
     /// <summary>
-    /// 處理報價單明細變更 - 自動計算三個金額欄位
+    /// 處理報價單明細變更 - 根據稅別自動計算金額欄位
     /// </summary>
     private async Task HandleQuotationDetailsChanged(List<QuotationDetail> details)
     {
@@ -786,16 +869,80 @@
             
             if (editModalComponent?.Entity != null)
             {
-                // 1. 計算折扣前金額（所有明細的原價總和）
-                editModalComponent.Entity.SubtotalBeforeDiscount = details.Sum(d => 
-                    Math.Round(d.Quantity * d.UnitPrice, 2));
+                var taxMethod = editModalComponent.Entity.TaxCalculationMethod;
                 
-                // 2. 計算折扣金額（所有明細的折扣總和）
-                editModalComponent.Entity.DiscountAmount = details.Sum(d => 
-                    Math.Round(d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100), 2));
-                
-                // 3. 計算實付金額（折扣前金額 - 折扣金額）
-                editModalComponent.Entity.TotalAmount = editModalComponent.Entity.SubtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount;
+                switch (taxMethod)
+                {
+                    case TaxCalculationMethod.TaxExclusive:
+                        // 外加稅：總額 = 金額 - 折扣 + 稅額
+                        {
+                            // 金額
+                            editModalComponent.Entity.SubtotalBeforeDiscount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 折扣
+                            editModalComponent.Entity.DiscountAmount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 稅額 = Σ(折扣後金額 × 稅率%)
+                            editModalComponent.Entity.QuotationTaxAmount = Math.Round(
+                                details.Sum(d => {
+                                    var amountAfterDiscount = d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
+                                    var taxRate = d.TaxRate ?? 0;
+                                    return amountAfterDiscount * (taxRate / 100);
+                                }), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 總額 = 金額 - 折扣 + 稅額
+                            editModalComponent.Entity.TotalAmount = 
+                                editModalComponent.Entity.SubtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount + editModalComponent.Entity.QuotationTaxAmount;
+                        }
+                        break;
+                    
+                    case TaxCalculationMethod.TaxInclusive:
+                        // 內含稅：總額已含稅，反推金額、折扣、稅額
+                        {
+                            // 總額（含稅）= Σ(數量 × 單價 × (1 - 折扣%))
+                            editModalComponent.Entity.TotalAmount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 稅額 = Σ(小計 / (1 + 稅率%) × 稅率%)
+                            editModalComponent.Entity.QuotationTaxAmount = Math.Round(
+                                details.Sum(d => {
+                                    var amountWithTax = d.Quantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
+                                    var taxRate = d.TaxRate ?? 0;
+                                    return amountWithTax / (1 + taxRate / 100) * (taxRate / 100);
+                                }), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 金額（未稅）
+                            editModalComponent.Entity.SubtotalBeforeDiscount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 折扣
+                            editModalComponent.Entity.DiscountAmount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                        }
+                        break;
+                    
+                    case TaxCalculationMethod.NoTax:
+                        // 免稅：總額 = 金額 - 折扣（稅額為 0）
+                        {
+                            // 金額
+                            editModalComponent.Entity.SubtotalBeforeDiscount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 折扣
+                            editModalComponent.Entity.DiscountAmount = Math.Round(
+                                details.Sum(d => d.Quantity * d.UnitPrice * (d.DiscountPercentage / 100)), 0, MidpointRounding.AwayFromZero);
+                            
+                            // 稅額 = 0（免稅）
+                            editModalComponent.Entity.QuotationTaxAmount = 0;
+                            
+                            // 總額 = 金額 - 折扣
+                            editModalComponent.Entity.TotalAmount = 
+                                editModalComponent.Entity.SubtotalBeforeDiscount - editModalComponent.Entity.DiscountAmount;
+                        }
+                        break;
+                }
                 
                 // 更新主檔的 QuotationDetails 集合
                 editModalComponent.Entity.QuotationDetails = details;
@@ -1024,6 +1171,16 @@
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
+            }
+            // 處理稅別變更 - 觸發明細重新計算
+            else if (fieldChange.PropertyName == nameof(Quotation.TaxCalculationMethod))
+            {
+                // 當稅別改變時，重新計算主檔金額欄位
+                if (quotationDetails?.Any() == true)
+                {
+                    await HandleQuotationDetailsChanged(quotationDetails);
+                }
+                StateHasChanged();
             }
         }
         catch (Exception)

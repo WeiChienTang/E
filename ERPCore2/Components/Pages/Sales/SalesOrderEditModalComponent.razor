@@ -207,6 +207,26 @@
         }
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            // 打開時,如果是新增模式,重置鎖定狀態
+            if (!SalesOrderId.HasValue)
+            {
+                hasUndeletableDetails = false;
+            }
+            
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+        else
+        {
+            //  Modal 關閉時重置明細資料準備狀態
+            isDetailDataReady = false;
+        }
+    }
+
     private async Task HandleSaveSuccess()
     {
         try

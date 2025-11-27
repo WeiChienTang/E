@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
+using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -22,17 +23,25 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "報價日期")]
         public DateTime QuotationDate { get; set; } = DateTime.Today;
 
-        [Display(Name = "折扣前金額")]
+        [Display(Name = "金額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalBeforeDiscount { get; set; } = 0;
 
-        [Display(Name = "折扣金額")]
+        [Display(Name = "折扣")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal DiscountAmount { get; set; } = 0;
 
-        [Display(Name = "實付金額")]
+        [Display(Name = "稅額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal QuotationTaxAmount { get; set; } = 0;
+
+        [Display(Name = "總額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; } = 0;
+
+        [Required(ErrorMessage = "稅別為必填")]
+        [Display(Name = "稅別")]
+        public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
 
         [Display(Name = "付款方式")]
         [MaxLength(200, ErrorMessage = "付款方式不可超過200個字元")]

@@ -4,6 +4,7 @@
 @inject IProductService ProductService
 @inject IQuotationDetailService QuotationDetailService
 @inject INotificationService NotificationService
+@inject ISystemParameterService SystemParameterService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
@@ -42,7 +43,7 @@ else
                                           Variant="ButtonVariant.DarkBlue"
                                           OnClick="SmartQuotation"
                                           IsDisabled="@(!CanUseSmartQuotation || IsReadOnly)"
-                                          Title="@(CanUseSmartQuotation ? "根據該客戶上次報價單載入明細" : "請先選擇客戶")" />
+                                          Title="@GetSmartQuotationTooltip()" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
@@ -66,6 +67,7 @@ else
 @code {
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private bool _hasLastQuotationRecord = false;  // 是否有歷史報價記錄（快取）
     
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
@@ -99,6 +101,12 @@ else
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
+    
+    // ===== 稅別參數（新增）=====
+    [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+    
+    // ===== 輔助計算屬性 =====
+    private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
 
     private List<QuotationItem> QuotationItems { get; set; } = new List<QuotationItem>();
     private int? _previousSelectedCustomerId = null;
@@ -112,7 +120,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // 初始化時記錄當前客戶ID，避免 OnParametersSetAsync 誤判為變更
+        _previousSelectedCustomerId = SelectedCustomerId;
+        
         await LoadExistingDetailsAsync();
+        
+        // 檢查是否有歷史報價記錄
+        await CheckLastQuotationRecordAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -120,17 +134,40 @@ else
         base.OnParametersSet();
         
         // 檢查客戶是否變更
-        bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
-        
-        // 如果客戶變更，需要重新載入所有資料
-        if (customerChanged)
+        if (_previousSelectedCustomerId != SelectedCustomerId)
         {
             _previousSelectedCustomerId = SelectedCustomerId;
             
-            // 客戶變更時清空現有選項並重新載入
+            // 如果更換客戶，需要清空現有選項並重新載入
             QuotationItems.Clear();
             await LoadExistingDetailsAsync();
+            
+            // 檢查是否有歷史報價記錄
+            await CheckLastQuotationRecordAsync();
+            
+            return; // 客戶變更時已經處理完畢，直接返回
+        }
+    }
+    
+    /// <summary>
+    /// 檢查是否有歷史報價記錄
+    /// </summary>
+    private async Task CheckLastQuotationRecordAsync()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+        {
+            _hasLastQuotationRecord = false;
             return;
+        }
+        
+        try
+        {
+            var lastQuotationDetails = await QuotationDetailService.GetLastCompleteQuotationAsync(SelectedCustomerId.Value);
+            _hasLastQuotationRecord = lastQuotationDetails?.Any() == true;
+        }
+        catch
+        {
+            _hasLastQuotationRecord = false;
         }
     }
 
@@ -220,7 +257,7 @@ else
             PropertyName = "UnitId",
             ColumnType = InteractiveColumnType.Select,
             Width = "100px",
-            Placeholder = "請選擇單位",
+            Placeholder = "",
             Tooltip = "選擇報價單位",
             Options = Units.Select(u => new InteractiveSelectOption 
             { 
@@ -342,18 +379,50 @@ else
             })
         });
 
+        // 稅率欄位
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "稅率(%)",
+            PropertyName = "TaxRate",
+            ColumnType = InteractiveColumnType.Number,
+            Width = "100px",
+            Tooltip = "輸入稅率百分比（例如：5 代表 5%）",
+            CellCssClass = "text-end",
+            MinValue = 0,
+            MaxValue = 100,
+            IsDisabledFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                return IsReadOnly || IsTaxCalculationMethodNoTax || 
+                       !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                if (IsTaxCalculationMethodNoTax) return "主檔已選擇免稅，此欄位已停用";
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true))
+                    return "此商品已轉銷貨，無法修改稅率";
+                return "輸入稅率百分比（例如：5 代表 5%）";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var quotationItem = (QuotationItem)args.Item1;
+                await OnTaxRateInput(quotationItem, args.Item2);
+            })
+        });
+
         // 小計欄位
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "小計",
-            Tooltip = "數量 × 單價 × (1 - 折扣%) 的總計",
+            Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
             CustomTemplate = item =>
             {
                 var quotationItem = (QuotationItem)item;
-                var subtotal = quotationItem.Quantity * quotationItem.UnitPrice * (1 - quotationItem.DiscountPercentage / 100);
+                var subtotal = CalculateItemSubtotal(quotationItem);
                 var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
                 return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
@@ -385,7 +454,7 @@ else
                 return @<input type="text" class="form-control " 
                                value="@quotationItem.Remarks"
                                @oninput="(e) => OnRemarksInput(quotationItem, e.Value?.ToString())"
-                               placeholder="選填..." />;
+                               placeholder="" />;
             }
         });
 
@@ -510,12 +579,15 @@ else
     /// <summary>
     /// 從現有明細資料載入到 QuotationItems
     /// </summary>
-    private Task LoadExistingDetailsAsync()
+    private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true) 
         {
-            return Task.CompletedTask;
+            return;
         }
+
+        // 獲取系統預設稅率
+        var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
 
         QuotationItems.Clear();
         
@@ -539,6 +611,7 @@ else
                     UnitPrice = quotationDetail.UnitPrice,
                     DiscountPercentage = quotationDetail.DiscountPercentage,
                     ConvertedQuantity = quotationDetail.ConvertedQuantity,
+                    TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? defaultTaxRate,
                     Remarks = string.Empty,
                     ExistingDetailEntity = detail
                 };
@@ -561,6 +634,7 @@ else
                         UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
                         DiscountPercentage = Convert.ToDecimal(GetPropertyValue<object>(detail, DiscountPercentagePropertyName) ?? 0m),
                         ConvertedQuantity = Convert.ToDecimal(GetPropertyValue<object>(detail, "ConvertedQuantity") ?? 0m),
+                        TaxRate = product.TaxRate ?? defaultTaxRate,
                         Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
                         ExistingDetailEntity = detail
                     };
@@ -579,8 +653,6 @@ else
                 }
             }
         }
-        
-        return Task.CompletedTask;
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()
@@ -603,6 +675,7 @@ else
                     quotationDetail.Quantity = item.Quantity;
                     quotationDetail.UnitPrice = item.UnitPrice;
                     quotationDetail.DiscountPercentage = item.DiscountPercentage;
+                    quotationDetail.TaxRate = item.TaxRate;
                     // ConvertedQuantity 不應在此更新，它由轉單流程控制
                     
                     if (item.SelectedUnit != null)
@@ -650,10 +723,11 @@ else
                     SetPropertyValue(detail, UnitIdPropertyName, item.SelectedUnit.Id);
                 }
                 
-                // 新增的明細，ConvertedQuantity 預設為 0
+                // 新增的明細，ConvertedQuantity 預設為 0，並設定稅率
                 if (detail is QuotationDetail newQuotationDetail)
                 {
                     newQuotationDetail.ConvertedQuantity = 0;
+                    newQuotationDetail.TaxRate = item.TaxRate;
                 }
             }
             
@@ -754,12 +828,24 @@ else
             {
                 item.SelectedUnit = selectedProduct.Unit;
             }
+            
+            // 自動帶入稅率（商品稅率 > 系統預設值）
+            if (selectedProduct.TaxRate.HasValue)
+            {
+                item.TaxRate = selectedProduct.TaxRate.Value;
+            }
+            else
+            {
+                var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+                item.TaxRate = defaultTaxRate;
+            }
         }
         else
         {
             item.SelectedProduct = null;
             item.ProductSearchValue = string.Empty;
             item.SelectedUnit = null;
+            item.TaxRate = null;
         }
         
         item.ShowProductDropdown = false;
@@ -863,6 +949,79 @@ else
         
         await NotifyDetailsChanged();
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理稅率輸入
+    /// </summary>
+    private async Task OnTaxRateInput(QuotationItem item, string? valueString)
+    {
+        if (string.IsNullOrWhiteSpace(valueString))
+        {
+            item.TaxRate = null;
+        }
+        else if (decimal.TryParse(valueString, out var taxRate))
+        {
+            // 限制稅率在 0-100 之間
+            var limitedTaxRate = Math.Max(0, Math.Min(100, taxRate));
+            item.TaxRate = limitedTaxRate;
+            
+            if (limitedTaxRate != taxRate)
+            {
+                StateHasChanged();
+            }
+        }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 計算明細項目的小計（根據稅別，四捨五入到整數）
+    /// </summary>
+    private decimal CalculateItemSubtotal(QuotationItem item)
+    {
+        if (item.SelectedProduct == null || item.Quantity <= 0 || item.UnitPrice <= 0)
+        {
+            return 0;
+        }
+
+        // 計算折扣後金額
+        var amountAfterDiscount = item.Quantity * item.UnitPrice * (1 - item.DiscountPercentage / 100);
+
+        // 根據稅別計算小計
+        switch (TaxCalculationMethod)
+        {
+            case TaxCalculationMethod.TaxExclusive:
+                // 外加稅：小計 = 金額 × (1 + 稅率%)
+                var taxRate = item.TaxRate ?? 0;
+                return Math.Round(amountAfterDiscount * (1 + taxRate / 100), 0, MidpointRounding.AwayFromZero);
+
+            case TaxCalculationMethod.TaxInclusive:
+                // 內含稅：小計 = 金額（四捨五入到整數）
+                return Math.Round(amountAfterDiscount, 0, MidpointRounding.AwayFromZero);
+
+            case TaxCalculationMethod.NoTax:
+                // 免稅：小計 = 金額（四捨五入到整數）
+                return Math.Round(amountAfterDiscount, 0, MidpointRounding.AwayFromZero);
+
+            default:
+                return Math.Round(amountAfterDiscount, 0, MidpointRounding.AwayFromZero);
+        }
+    }
+
+    /// <summary>
+    /// 取得小計欄位的提示文字
+    /// </summary>
+    private string GetSubtotalTooltip()
+    {
+        return TaxCalculationMethod switch
+        {
+            TaxCalculationMethod.TaxExclusive => "小計 = 數量 × 單價 × (1 - 折扣%) × (1 + 稅率%)，四捨五入到整數",
+            TaxCalculationMethod.TaxInclusive => "小計 = 數量 × 單價 × (1 - 折扣%)，四捨五入到整數（單價已含稅）",
+            TaxCalculationMethod.NoTax => "小計 = 數量 × 單價 × (1 - 折扣%)，四捨五入到整數（免稅）",
+            _ => "小計金額（四捨五入到整數）"
+        };
     }
 
     public async Task RemoveItemAsync(int index)
@@ -1034,7 +1193,32 @@ else
     /// </summary>
     private bool CanUseSmartQuotation => 
         SelectedCustomerId.HasValue && 
-        SelectedCustomerId.Value > 0;
+        SelectedCustomerId.Value > 0 &&
+        !HasQuotationItems &&
+        _hasLastQuotationRecord;
+    
+    /// <summary>
+    /// 計算屬性：是否有報價明細項目
+    /// </summary>
+    private bool HasQuotationItems =>
+        QuotationItems.Any(item => item.SelectedProduct != null);
+    
+    /// <summary>
+    /// 取得智能下單按鈕的提示文字
+    /// </summary>
+    private string GetSmartQuotationTooltip()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+            return "請先選擇客戶";
+        
+        if (HasQuotationItems)
+            return "目前已有明細資料，無法使用智能下單";
+        
+        if (!_hasLastQuotationRecord)
+            return "此客戶沒有歷史報價記錄";
+        
+        return "載入該客戶上次報價的商品明細";
+    }
 
     /// <summary>
     /// 智能下單主要方法
@@ -1063,14 +1247,9 @@ else
             
             if (hasExistingData)
             {
-                // 使用確認對話框
-                var confirmed = await ShowConfirmationAsync(
-                    "確認覆蓋", 
-                    "目前已有報價明細資料，是否要清除並載入上次的報價記錄？"
-                );
-                
-                if (!confirmed)
-                    return;
+                // 有現有資料時不應執行（按鈕應該被禁用）
+                await NotificationService.ShowWarningAsync("目前已有明細資料，無法使用智能下單");
+                return;
             }
 
             await LoadLastQuotationDetailsInternal(lastQuotationDetails);
@@ -1116,6 +1295,9 @@ else
             // 載入上次報價的所有商品明細
             foreach (var detail in lastQuotationDetails)
             {
+                // 獲取系統預設稅率
+                var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+                
                 var item = new QuotationItem
                 {
                     SelectedProduct = detail.Product,
@@ -1125,6 +1307,7 @@ else
                     Quantity = detail.Quantity,
                     UnitPrice = detail.UnitPrice,
                     DiscountPercentage = detail.DiscountPercentage,
+                    TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,
                     ConvertedQuantity = 0,  // 新報價單，轉單數量為0
                     Remarks = string.Empty,
                     ExistingDetailEntity = null  // 新項目，沒有現有實體
@@ -1159,6 +1342,7 @@ else
         public decimal Quantity { get; set; } = 0;
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
+        public decimal? TaxRate { get; set; } = 5.0m;
         public decimal ConvertedQuantity { get; set; } = 0;
         public string Remarks { get; set; } = string.Empty;
         public TDetailEntity? ExistingDetailEntity { get; set; }
