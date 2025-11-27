@@ -19,10 +19,9 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(PurchaseReceiving))]
         public int PurchaseReceivingId { get; set; }
 
-        [Required(ErrorMessage = "採購訂單明細為必填")]
         [Display(Name = "採購訂單明細")]
         [ForeignKey(nameof(PurchaseOrderDetail))]
-        public int PurchaseOrderDetailId { get; set; }
+        public int? PurchaseOrderDetailId { get; set; }
 
         [Required(ErrorMessage = "商品為必填")]
         [Display(Name = "商品")]
@@ -82,7 +81,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
-        public PurchaseOrderDetail PurchaseOrderDetail { get; set; } = null!;
+        public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }
         public Product Product { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }

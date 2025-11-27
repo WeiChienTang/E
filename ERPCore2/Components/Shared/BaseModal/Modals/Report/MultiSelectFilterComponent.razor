@@ -138,7 +138,7 @@
         // 全選按鈕
         builder.OpenComponent<GenericButtonComponent>(13);
         builder.AddAttribute(14, "Text", "全選");
-        builder.AddAttribute(15, "Variant", ButtonVariant.Primary);
+        builder.AddAttribute(15, "Variant", ButtonVariant.DarkBlue);
         builder.AddAttribute(16, "Size", ButtonSize.Small);
         builder.AddAttribute(17, "OnClick", EventCallback.Factory.Create(this, SelectAll));
         builder.AddAttribute(18, "Title", "全選");
@@ -262,7 +262,7 @@
         // 清空按鈕
         builder.OpenComponent<GenericButtonComponent>(65);
         builder.AddAttribute(66, "Text", "清空");
-        builder.AddAttribute(67, "Variant", ButtonVariant.Danger);
+        builder.AddAttribute(67, "Variant", ButtonVariant.Red);
         builder.AddAttribute(68, "Size", ButtonSize.Small);
         builder.AddAttribute(69, "OnClick", EventCallback.Factory.Create(this, ClearAll));
         builder.AddAttribute(70, "Title", "清空");

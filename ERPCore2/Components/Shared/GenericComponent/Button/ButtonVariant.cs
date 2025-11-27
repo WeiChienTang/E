@@ -8,61 +8,61 @@ namespace ERPCore2.Components.Shared.GenericComponent.Button
         /// <summary>
         /// 主要按鈕 - 深藍色背景
         /// </summary>
-        Primary,
+        DarkBlue,
         
         /// <summary>
         /// 次要按鈕 - 灰色背景
         /// </summary>
-        Secondary,
+        Gray,
         
         /// <summary>
         /// 成功按鈕 - 綠色背景
         /// </summary>
-        Success,
+        Green,
         
         /// <summary>
         /// 警告按鈕 - 黃色背景
         /// </summary>
-        Warning,
+        Yellow,
         
         /// <summary>
         /// 危險按鈕 - 紅色背景
         /// </summary>
-        Danger,
+        Red,
         
         /// <summary>
         /// 資訊按鈕 - 藍色背景
         /// </summary>
-        Info,
+        Blue,
         
         /// <summary>
         /// 主要輪廓按鈕 - 透明背景深藍色邊框
         /// </summary>
-        OutlinePrimary,
+        OutlineDarkBlue,
         
         /// <summary>
         /// 次要輪廓按鈕 - 透明背景灰色邊框
         /// </summary>
-        OutlineSecondary,
+        OutlineGray,
         
         /// <summary>
         /// 成功輪廓按鈕 - 透明背景綠色邊框
         /// </summary>
-        OutlineSuccess,
+        OutlineGreen,
         
         /// <summary>
         /// 警告輪廓按鈕 - 透明背景黃色邊框
         /// </summary>
-        OutlineWarning,
+        OutlineYellow,
         
         /// <summary>
         /// 危險輪廓按鈕 - 透明背景紅色邊框
         /// </summary>
-        OutlineDanger,
+        OutlineRed,
         
         /// <summary>
         /// 資訊輪廓按鈕 - 透明背景藍色邊框
         /// </summary>
-        OutlineInfo
+        OutlineBlue
     }
 }

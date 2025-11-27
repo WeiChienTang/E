@@ -52,7 +52,7 @@
                             <div class="d-flex gap-2 justify-content-end flex-wrap mt-3 mt-md-0">
                                 <div class="dropdown">
                                     <GenericButtonComponent Text="複製"
-                                                        Variant="ButtonVariant.Secondary"
+                                                        Variant="ButtonVariant.Gray"
                                                         Size="ButtonSize.Small"
                                                         IsDisabled="@isSaving"
                                                         AdditionalAttributes="@(new Dictionary<string, object> 
@@ -61,35 +61,35 @@
                                                             { "aria-expanded", "false" }
                                                         })" />
                                     <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">複製其他身分權限</h6></li>
+                                        <li><h6 class="dropdown-header">選擇複製對象</h6></li>
                                         @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
                                         {
                                             <li>
                                                 <a class="dropdown-item" href="#" @onclick="() => CopyPermissionsFromRole(role.Id)" @onclick:preventDefault="true">
-                                                    <i class="bi bi-person me-2"></i>@role.Name
+                                                    @role.Name
                                                 </a>
                                             </li>
                                         }
                                         @if (!roles.Any(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
                                         {
-                                            <li><span class="dropdown-item-text text-muted">沒有可複製的身分</span></li>
+                                            <li><span class="dropdown-item-text text-muted">沒有可複製的對象</span></li>
                                         }
                                     </ul>
                                 </div>
                                 <GenericButtonComponent Text="全選"
-                                                    Variant="ButtonVariant.Success"
+                                                    Variant="ButtonVariant.Green"
                                                     Size="ButtonSize.Small"
                                                     OnClick="SelectAllPermissions"
                                                     IsDisabled="@isSaving"
                                                     Tooltip="僅選擇一般權限，系統權限需手動選擇" />
                                 <GenericButtonComponent Text="全清"
-                                                    Variant="ButtonVariant.Warning"
+                                                    Variant="ButtonVariant.Yellow"
                                                     Size="ButtonSize.Small"
                                                     OnClick="ClearAllPermissions"
                                                     IsDisabled="@isSaving"
                                                     Tooltip="僅清除一般權限，系統權限需手動取消" />
                                 <GenericButtonComponent Text="儲存"
-                                                    Variant="ButtonVariant.Primary"
+                                                    Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
                                                     OnClick="SaveRolePermissions"
                                                     IsDisabled="@isSaving"

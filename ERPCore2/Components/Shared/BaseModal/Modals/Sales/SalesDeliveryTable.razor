@@ -44,14 +44,14 @@ else
             <div class="d-flex justify-content-between">
                 <div>
                     <GenericButtonComponent Text="載入訂單"
-                                          Variant="ButtonVariant.Info"
+                                          Variant="ButtonVariant.Blue"
                                           IsDisabled="@(!CanLoadAllUndelivered)"
                                           Title="@GetLoadAllUndeliveredTooltip()"
                                           OnClick="LoadAllUndeliveredItems" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="明細清除"
-                                          Variant="ButtonVariant.Danger"
+                                          Variant="ButtonVariant.Red"
                                           IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0))"
                                           Title="@(IsReadOnly ? "唯讀模式" : DeliveryItems.Any(item => item.ProductId > 0) ? "清除所有出貨明細" : "沒有可清除的明細項目")"
                                           OnClick="ClearAllDetails" />

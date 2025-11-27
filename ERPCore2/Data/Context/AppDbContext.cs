@@ -373,7 +373,7 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(prd => prd.PurchaseOrderDetail)
                         .WithMany(pod => pod.PurchaseReceivingDetails)
                         .HasForeignKey(prd => prd.PurchaseOrderDetailId)
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasOne(prd => prd.Product)
                         .WithMany()

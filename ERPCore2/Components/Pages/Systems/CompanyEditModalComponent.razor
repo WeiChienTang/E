@@ -386,14 +386,14 @@
             @if (editModalComponent?.Entity != null)
             {
                 <GenericButtonComponent Text="@(string.IsNullOrEmpty(editModalComponent.Entity.LogoPath) ? "上傳 LOGO" : "更換 LOGO")"
-                                      Variant="ButtonVariant.Primary"
+                                      Variant="ButtonVariant.DarkBlue"
                                       Size="ButtonSize.Small"
                                       OnClick="TriggerFileInput" />
                 
                 @if (!string.IsNullOrEmpty(editModalComponent.Entity.LogoPath))
                 {
                     <GenericButtonComponent Text="預覽 LOGO"
-                                          Variant="ButtonVariant.Primary"
+                                          Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small"
                                           OnClick="PreviewLogo" />
                 }

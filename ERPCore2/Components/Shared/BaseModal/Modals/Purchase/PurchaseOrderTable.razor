@@ -48,14 +48,14 @@ else
             <div class="d-flex justify-content-between">
                 <div>
                     <GenericButtonComponent Text="智能下單"
-                                          Variant="ButtonVariant.Primary"
+                                          Variant="ButtonVariant.DarkBlue"
                                           Icon="fas fa-magic"
                                           OnClick="SmartPurchaseOrder"
                                           IsDisabled="@(!CanUseSmartPurchase)" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
-                                          Variant="ButtonVariant.Danger"
+                                          Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails" />
                 </div>
             </div>
@@ -406,7 +406,7 @@ else
         if (DetailLockHelper.CanDeleteItem(item, out _, checkReceiving: true))
         {
             // 可以刪除：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Danger"
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
@@ -418,7 +418,7 @@ else
         else
         {
             // 已被使用：顯示查看按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Info"
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
                                    Title="查看相關單據"

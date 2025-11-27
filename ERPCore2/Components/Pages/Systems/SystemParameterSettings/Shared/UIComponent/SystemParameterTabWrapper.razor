@@ -14,14 +14,14 @@
         
         <ActionButtons>
             <GenericButtonComponent Text="@(IsSaving ? "儲存中..." : "儲存設定")"
-                                  Variant="ButtonVariant.Primary"
+                                  Variant="ButtonVariant.DarkBlue"
                                   IconClass="fas fa-save"
                                   Type="submit"
                                   IsDisabled="@IsSaving"
                                   IsLoading="@IsSaving" />
             
             <GenericButtonComponent Text="重新載入"
-                                  Variant="ButtonVariant.Secondary"
+                                  Variant="ButtonVariant.Gray"
                                   IconClass="fas fa-undo"
                                   OnClick="HandleReload"
                                   IsDisabled="@IsSaving" />

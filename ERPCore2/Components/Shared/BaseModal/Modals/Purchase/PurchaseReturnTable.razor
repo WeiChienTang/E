@@ -41,20 +41,20 @@ else
             <div class="d-flex justify-content-between">
                 <div>
                     <GenericButtonComponent Text="載入可退回"
-                                          Variant="ButtonVariant.Primary"
+                                          Variant="ButtonVariant.DarkBlue"
                                           IsDisabled="@(!CanLoadAllReturnable)"
                                           Title="@GetLoadAllReturnableTooltip()"
                                           OnClick="LoadAllReturnableItems" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="退回全填"
-                                          Variant="ButtonVariant.Primary"
+                                          Variant="ButtonVariant.DarkBlue"
                                           OnClick="FillAllQuantities" />
                     <GenericButtonComponent Text="退回清空"
-                                          Variant="ButtonVariant.Danger"
+                                          Variant="ButtonVariant.Red"
                                           OnClick="ClearAllQuantities" />
                     <GenericButtonComponent Text="清除明細"
-                                          Variant="ButtonVariant.Danger"
+                                          Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails" />
                 </div>
             </div>
@@ -652,7 +652,7 @@ else
         if (canDelete)
         {
             // 可以刪除：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Danger"
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
@@ -664,7 +664,7 @@ else
         else
         {
             // 不能刪除：顯示查看按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Info"
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
                                    Title="查看相關單據"

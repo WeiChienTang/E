@@ -37,11 +37,11 @@ else
         <div class="card-footer">
             <div class="d-flex justify-content-end gap-2">
                 <GenericButtonComponent Text="全部沖款"
-                                      Variant="ButtonVariant.Success"
+                                      Variant="ButtonVariant.Green"
                                       OnClick="FillAllSetoffAmounts"
                                       IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
                 <GenericButtonComponent Text="沖款清空"
-                                      Variant="ButtonVariant.Danger"
+                                      Variant="ButtonVariant.Red"
                                       OnClick="ClearAllSetoffAmounts"
                                       IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
             </div>

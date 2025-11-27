@@ -16,12 +16,12 @@
                    CloseOnBackdropClick="@(!IsProcessing)"
                    OnClose="@HandleCancel">
         <HeaderButtons>
-            <GenericButtonComponent Variant="ButtonVariant.Secondary" 
+            <GenericButtonComponent Variant="ButtonVariant.Gray" 
                                 Text="@CancelButtonText" 
                                 OnClick="HandleCancel"
                                 IsDisabled="@IsProcessing"
                                 Title="取消" />
-            <GenericButtonComponent Variant="ButtonVariant.Danger" 
+            <GenericButtonComponent Variant="ButtonVariant.Red" 
                                 Text="@ConfirmButtonText" 
                                 OnClick="HandleConfirm"
                                 IsDisabled="@IsProcessing"

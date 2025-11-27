@@ -172,7 +172,7 @@ namespace ERPCore2.Components.Shared.SubCollections
         /// <summary>
         /// 按鈕樣式
         /// </summary>
-        public ButtonVariant ButtonVariant { get; set; } = ButtonVariant.Primary;
+        public ButtonVariant ButtonVariant { get; set; } = ButtonVariant.DarkBlue;
         
         /// <summary>
         /// 按鈕尺寸

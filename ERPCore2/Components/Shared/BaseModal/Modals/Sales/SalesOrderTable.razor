@@ -64,13 +64,13 @@ else
                     @if (CanLoadSmartOrder)
                     {
                         <GenericButtonComponent Text="智能下單"
-                                              Variant="ButtonVariant.Primary"
+                                              Variant="ButtonVariant.DarkBlue"
                                               OnClick="LoadSmartOrderItems" />
                     }
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
-                                          Variant="ButtonVariant.Danger"
+                                          Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails"
                                           IsDisabled="@IsReadOnly" />
                 </div>
@@ -1054,7 +1054,7 @@ else
         if (canDelete)
         {
             // 可以刪除：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Danger"
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
@@ -1066,7 +1066,7 @@ else
         else
         {
             // 不能刪除：顯示查看按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Info"
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
                                    Title="查看相關單據"

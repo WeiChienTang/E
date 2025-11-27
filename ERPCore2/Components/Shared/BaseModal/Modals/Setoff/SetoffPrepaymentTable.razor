@@ -608,7 +608,7 @@
         if (canDelete)
         {
             // 可以刪除：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Danger"
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    IsDisabled="@IsReadOnly"
@@ -620,7 +620,7 @@
         else if (canViewRelated)
         {
             // 編輯模式且可以查看相關單據：顯示查看按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Info"
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
                                    Title="查看相關沖款單"

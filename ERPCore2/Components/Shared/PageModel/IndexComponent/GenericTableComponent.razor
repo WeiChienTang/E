@@ -127,7 +127,7 @@
                     <div class="d-none d-md-block">
                         <GenericButtonComponent Text="第一頁"
                                               IconClass="fas fa-angle-double-left"
-                                              Variant="ButtonVariant.OutlinePrimary"
+                                              Variant="ButtonVariant.OutlineDarkBlue"
                                               Size="ButtonSize.Small"
                                               IsDisabled="@(!HasPreviousPage)"
                                               OnClick="@(() => HandlePageChanged(1))"
@@ -137,7 +137,7 @@
                     <!-- 上一頁按鈕 -->
                     <GenericButtonComponent Text="@GetPreviousButtonText()"
                                           IconClass="fas fa-angle-left"
-                                          Variant="ButtonVariant.OutlinePrimary"
+                                          Variant="ButtonVariant.OutlineDarkBlue"
                                           Size="ButtonSize.Small"
                                           IsDisabled="@(!HasPreviousPage)"
                                           OnClick="@(() => HandlePageChanged(CurrentPage - 1))"
@@ -150,7 +150,7 @@
                         var isCurrentPage = currentPageNumber == CurrentPage;
                         
                         <GenericButtonComponent Text="@currentPageNumber.ToString()"
-                                              Variant="@(isCurrentPage ? ButtonVariant.Primary : ButtonVariant.OutlinePrimary)"
+                                              Variant="@(isCurrentPage ? ButtonVariant.DarkBlue : ButtonVariant.OutlineDarkBlue)"
                                               Size="ButtonSize.Small"
                                               OnClick="@(() => HandlePageChanged(currentPageNumber))"
                                               Title="@($"前往第 {currentPageNumber} 頁")" />
@@ -159,7 +159,7 @@
                     <!-- 下一頁按鈕 -->
                     <GenericButtonComponent Text="@GetNextButtonText()"
                                           IconClass="fas fa-angle-right"
-                                          Variant="ButtonVariant.OutlinePrimary"
+                                          Variant="ButtonVariant.OutlineDarkBlue"
                                           Size="ButtonSize.Small"
                                           IsDisabled="@(!HasNextPage)"
                                           OnClick="@(() => HandlePageChanged(CurrentPage + 1))"
@@ -169,7 +169,7 @@
                     <div class="d-none d-md-block">
                         <GenericButtonComponent Text="最後一頁"
                                               IconClass="fas fa-angle-double-right"
-                                              Variant="ButtonVariant.OutlinePrimary"
+                                              Variant="ButtonVariant.OutlineDarkBlue"
                                               Size="ButtonSize.Small"
                                               IsDisabled="@(!HasNextPage)"
                                               OnClick="@(() => HandlePageChanged(TotalPages))"

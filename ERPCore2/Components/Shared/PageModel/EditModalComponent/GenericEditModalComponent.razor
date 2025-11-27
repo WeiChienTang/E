@@ -67,12 +67,12 @@
                     <PermissionCheck Permission="@ApprovalPermission">
                         <div class="d-flex gap-2 me-3">
                             <GenericButtonComponent Text="通過" 
-                                                  Variant="ButtonVariant.Success" 
+                                                  Variant="ButtonVariant.Green" 
                                                   OnClick="HandleApprove" 
                                                   IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                   IsLoading="@IsApproving" />
                             <GenericButtonComponent Text="駁回" 
-                                                  Variant="ButtonVariant.Danger" 
+                                                  Variant="ButtonVariant.Red" 
                                                   OnClick="OpenRejectConfirmModal" 
                                                   IsDisabled="@(IsSubmitting || IsApproving || IsRejecting)"
                                                   IsLoading="@IsRejecting" />
@@ -86,7 +86,7 @@
                 @if (ShowSaveButton)
                 {
                     <GenericButtonComponent Text="@SaveButtonText" 
-                                          Variant="ButtonVariant.Primary" 
+                                          Variant="ButtonVariant.DarkBlue" 
                                           OnClick="HandleSave" 
                                           IsDisabled="@(IsSubmitting || IsLoading)" 
                                           IsLoading="@IsSubmitting" />
@@ -96,7 +96,7 @@
                 @if (ShowAddButton && Entity != null && Entity.Id > 0)
                 {
                     <GenericButtonComponent Text="新增" 
-                                          Variant="ButtonVariant.Primary" 
+                                          Variant="ButtonVariant.DarkBlue" 
                                           OnClick="HandleAddClick" 
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="新增資料" />
@@ -106,7 +106,7 @@
                 @if (ShowReturnToLastButton && !Id.HasValue && _lastRecordId.HasValue)
                 {
                     <GenericButtonComponent Text="@ReturnToLastButtonText" 
-                                          Variant="ButtonVariant.Success" 
+                                          Variant="ButtonVariant.Green" 
                                           OnClick="HandleReturnToLast" 
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="返回到最後一筆儲存的資料" />
@@ -117,13 +117,13 @@
                 @if (EnableNavigation && Entity != null && Entity.Id > 0)
                 {
                     <GenericButtonComponent Text="上筆" 
-                                          Variant="ButtonVariant.Success" 
+                                          Variant="ButtonVariant.Green" 
                                           OnClick="HandlePrevious"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="@GetPreviousButtonTitle()" />
                     
                     <GenericButtonComponent Text="下筆" 
-                                          Variant="ButtonVariant.Success"
+                                          Variant="ButtonVariant.Green"
                                           OnClick="HandleNext"
                                           IsDisabled="@(IsSubmitting || IsLoading)"
                                           Title="@GetNextButtonTitle()" />
@@ -132,7 +132,7 @@
                 @if (ShowPrintButton)
                 {
                     <GenericButtonComponent Text="@PrintButtonText" 
-                                          Variant="ButtonVariant.Info" 
+                                          Variant="ButtonVariant.Blue" 
                                           OnClick="HandlePrint" 
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
@@ -140,7 +140,7 @@
                 @if (ShowDeleteButton && Entity != null && Entity.Id > 0 && IsEntityDeletable(Entity))
                 {
                     <GenericButtonComponent Text="刪除" 
-                                          Variant="ButtonVariant.Danger" 
+                                          Variant="ButtonVariant.Red" 
                                           OnClick="DeleteEntityAsync" 
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }

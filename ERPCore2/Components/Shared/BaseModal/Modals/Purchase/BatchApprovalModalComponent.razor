@@ -37,14 +37,14 @@
             @* 右側：按鈕組 *@
             <div class="d-flex gap-2 ms-auto">
                 @* 全選/取消全選按鈕 *@
-                <GenericButtonComponent Variant="ButtonVariant.Secondary" 
+                <GenericButtonComponent Variant="ButtonVariant.Gray" 
                                       Text="@(selectedItems.Count == pendingItems.Count ? "取消全選" : "全選")" 
                                       OnClick="HandleToggleSelectAll"
                                       IsDisabled="@(!pendingItems.Any() || isLoading)"
                                       Title="@(selectedItems.Count == pendingItems.Count ? "取消選取所有項目" : "選取所有項目")" />
                 
                 @* 審核按鈕 - 只審核已選取的項目 *@
-                <GenericButtonComponent Variant="ButtonVariant.Success" 
+                <GenericButtonComponent Variant="ButtonVariant.Green" 
                                       Text="審核" 
                                       OnClick="HandleApproveSelected"
                                       IsDisabled="@(!selectedItems.Any() || isLoading)"
@@ -72,7 +72,7 @@
     </BodyContent>
     
     <FooterContent>
-        <GenericButtonComponent Variant="ButtonVariant.Danger" 
+        <GenericButtonComponent Variant="ButtonVariant.Red" 
                               Text="關閉" 
                               OnClick="HandleClose"
                               Title="關閉視窗" />

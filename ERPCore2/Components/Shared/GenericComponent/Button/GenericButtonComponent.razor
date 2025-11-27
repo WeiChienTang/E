@@ -26,7 +26,7 @@
     /// <summary>
     /// 按鈕類型 - 主要參數，決定按鈕的顏色和樣式
     /// </summary>
-    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Primary;
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.DarkBlue;
     
     /// <summary>
     /// 按鈕尺寸
@@ -152,18 +152,18 @@
     {
         return Variant switch
         {
-            ButtonVariant.Primary => "btn-primary",
-            ButtonVariant.Secondary => "btn-secondary",
-            ButtonVariant.Success => "btn-success",
-            ButtonVariant.Warning => "btn-warning",
-            ButtonVariant.Danger => "btn-danger",
-            ButtonVariant.Info => "btn-info",
-            ButtonVariant.OutlinePrimary => "btn-outline-primary",
-            ButtonVariant.OutlineSecondary => "btn-outline-secondary",
-            ButtonVariant.OutlineSuccess => "btn-outline-success",
-            ButtonVariant.OutlineWarning => "btn-outline-warning",
-            ButtonVariant.OutlineDanger => "btn-outline-danger",
-            ButtonVariant.OutlineInfo => "btn-outline-info",
+            ButtonVariant.DarkBlue => "btn-primary",
+            ButtonVariant.Gray => "btn-secondary",
+            ButtonVariant.Green => "btn-success",
+            ButtonVariant.Yellow => "btn-warning",
+            ButtonVariant.Red => "btn-danger",
+            ButtonVariant.Blue => "btn-info",
+            ButtonVariant.OutlineDarkBlue => "btn-outline-primary",
+            ButtonVariant.OutlineGray => "btn-outline-secondary",
+            ButtonVariant.OutlineGreen => "btn-outline-success",
+            ButtonVariant.OutlineYellow => "btn-outline-warning",
+            ButtonVariant.OutlineRed => "btn-outline-danger",
+            ButtonVariant.OutlineBlue => "btn-outline-info",
             _ => "btn-primary"
         };
     }

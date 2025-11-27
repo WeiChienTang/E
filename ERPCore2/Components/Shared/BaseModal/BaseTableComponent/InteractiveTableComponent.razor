@@ -411,7 +411,7 @@
     [Parameter] public bool ShowBuiltInActions { get; set; } = false;
     [Parameter] public bool ShowBuiltInDeleteButton { get; set; } = true;
     [Parameter] public string DeleteButtonIcon { get; set; } = "bi bi-trash text-white";
-    [Parameter] public ButtonVariant DeleteButtonVariant { get; set; } = ButtonVariant.Danger;
+    [Parameter] public ButtonVariant DeleteButtonVariant { get; set; } = ButtonVariant.Red;
     [Parameter] public ButtonSize DeleteButtonSize { get; set; } = ButtonSize.Large;
     [Parameter] public string DeleteButtonTitle { get; set; } = "刪除";
     [Parameter] public Func<TItem, bool>? IsDeleteDisabled { get; set; }

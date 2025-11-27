@@ -24,17 +24,17 @@
             
         @* 按鈕組 *@
         <div class="d-flex gap-2">
-            <GenericButtonComponent Variant="ButtonVariant.Success" 
+            <GenericButtonComponent Variant="ButtonVariant.Green" 
                                   Size="ButtonSize.Small"
                                   Text="列印條碼" 
                                   OnClick="HandlePrintConfirm"
                                   IsDisabled="@(selectedCount == 0)"
                                   Title="確認並執行列印" />
-            <GenericButtonComponent Variant="ButtonVariant.Primary"
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
                                   Text="全選"
                                   OnClick="SelectAll" />
-            <GenericButtonComponent Variant="ButtonVariant.Danger"
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                   Size="ButtonSize.Small"
                                   Text="取消全選"
                                   OnClick="DeselectAll" />

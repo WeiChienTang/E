@@ -39,14 +39,14 @@ else
             <div class="d-flex justify-content-between">
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="智能下單"
-                                          Variant="ButtonVariant.Primary"
+                                          Variant="ButtonVariant.DarkBlue"
                                           OnClick="SmartQuotation"
                                           IsDisabled="@(!CanUseSmartQuotation || IsReadOnly)"
                                           Title="@(CanUseSmartQuotation ? "根據該客戶上次報價單載入明細" : "請先選擇客戶")" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
-                                          Variant="ButtonVariant.Danger"
+                                          Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails"
                                           IsDisabled="@IsReadOnly" />
                 </div>
@@ -401,7 +401,7 @@ else
         if (IsReadOnly)
         {
             // 唯讀模式：所有項目都顯示檢視按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Info"
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
                                    Title="查看相關單據"
@@ -412,7 +412,7 @@ else
         else if (canDelete || isEmptyRow)
         {
             // 可編輯模式且未轉銷貨（或是空行）：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Danger"
+            <GenericButtonComponent Variant="ButtonVariant.Red"
                                    IconClass="bi bi-trash text-white"
                                    Size="ButtonSize.Large"
                                    Title="刪除"
@@ -423,7 +423,7 @@ else
         else
         {
             // 已轉銷貨且非空行：顯示查看相關單據按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Info"
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
                                    IconClass="bi bi-eye text-white"
                                    Size="ButtonSize.Large"
                                    Title="查看相關單據"

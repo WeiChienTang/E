@@ -48,9 +48,9 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
@@ -80,9 +80,9 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
@@ -113,9 +113,9 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
@@ -205,9 +205,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
@@ -265,9 +265,9 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.ProductId == productId)
@@ -296,9 +296,9 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Product)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.WarehouseId == warehouseId)
@@ -327,9 +327,9 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.PurchaseOrder)
+                        .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
@@ -714,7 +714,7 @@ namespace ERPCore2.Services
                     .Include(d => d.Product)
                     .Include(d => d.Warehouse)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod!.Product)
                     .FirstOrDefaultAsync(d => d.Id == id);
                     
                 if (entity == null)

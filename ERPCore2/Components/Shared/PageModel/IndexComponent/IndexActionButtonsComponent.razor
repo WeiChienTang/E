@@ -2,14 +2,14 @@
 <div class="d-flex gap-2">
     @if (ShowAddButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="新增" 
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="新增" 
                                OnClick="HandleAddClick" IsDisabled="@(IsLoading || IsAddDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnAdd)" Title="新增"/>
     }
 
     @if (ShowBarcodePrintButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Primary" Text="條碼列印" 
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="條碼列印" 
                                OnClick="HandleBarcodePrintClick" IsDisabled="@(IsLoading || IsBarcodePrintDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnBarcodePrint)" Title="條碼列印"/>
     }
@@ -24,28 +24,28 @@
 
     @if (ShowBatchPrintButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Info" Text="多筆列印" 
+        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="多筆列印" 
                                OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="多筆列印"/>
     }
 
     @if (ShowRefreshButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Success" Text="重整" 
+        <GenericButtonComponent Variant="ButtonVariant.Green" Text="重整" 
                                OnClick="HandleRefreshClick" IsDisabled="@(IsLoading || IsRefreshDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnRefresh)" Title="重整"/>
     }
 
     @if (ShowExportExcelButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="匯出Excel" 
+        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="匯出Excel" 
                                OnClick="HandleExportExcelClick" IsDisabled="@(IsLoading || IsExportExcelDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="匯出Excel"/>
     }
 
     @if (ShowExportPdfButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Secondary" Text="匯出PDF" 
+        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="匯出PDF" 
                                OnClick="HandleExportPdfClick" IsDisabled="@(IsLoading || IsExportPdfDisabled)" 
                                IsLoading="@(IsLoading && LoadingOnExportPdf)" Title="匯出PDF"/>
     }

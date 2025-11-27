@@ -147,11 +147,11 @@ namespace ERPCore2.Services
                             .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
-                            .ThenInclude(pod => pod.Product)
+                            .ThenInclude(pod => pod!.Product)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
-                            .ThenInclude(pod => pod.PurchaseOrder)
-                                .ThenInclude(po => po.Supplier)
+                            .ThenInclude(pod => pod!.PurchaseOrder)
+                                .ThenInclude(po => po!.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.WarehouseLocation)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -463,7 +463,7 @@ namespace ERPCore2.Services
                                 var newReceivedAmount = newReceivedQuantity * purchaseOrderDetail.UnitPrice;
                                 
                                 var updateResult = await _purchaseOrderDetailService.UpdateReceivedQuantityAsync(
-                                    purchaseOrderDetailId, 
+                                    purchaseOrderDetailId!.Value, 
                                     newReceivedQuantity, 
                                     newReceivedAmount
                                 );

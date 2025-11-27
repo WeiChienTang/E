@@ -414,11 +414,13 @@ namespace ERPCore2.Helpers
                 var result = new DependencyCheckResult { CanDelete = true };
 
                 // 檢查是否有進貨明細記錄 (PurchaseReceivingDetails)
+                var purchaseOrderDetailIds = await context.PurchaseOrderDetails
+                    .Where(pod => pod.PurchaseOrderId == purchaseOrderId)
+                    .Select(pod => pod.Id)
+                    .ToListAsync();
+                
                 var receivingDetailCount = await context.PurchaseReceivingDetails
-                    .CountAsync(prd => context.PurchaseOrderDetails
-                        .Where(pod => pod.PurchaseOrderId == purchaseOrderId)
-                        .Select(pod => pod.Id)
-                        .Contains(prd.PurchaseOrderDetailId));
+                    .CountAsync(prd => prd.PurchaseOrderDetailId.HasValue && purchaseOrderDetailIds.Contains(prd.PurchaseOrderDetailId.Value));
 
                 if (receivingDetailCount > 0)
                 {
