@@ -949,10 +949,11 @@ namespace ERPCore2.Services
                     if (currentReceiving == null)
                         return ServiceResult.Failure("找不到指定的進貨單");
 
-                    // 查詢所有與此進貨單相關的庫存交易記錄（包含原始、調整、回退等所有類型）
+                    // 查詢所有與此進貨單相關的庫存交易記錄（排除 _DEL 交易，因為那是由 PermanentDeleteAsync 獨立處理的）
                     var existingTransactions = await context.InventoryTransactions
                         .Where(t => (t.TransactionNumber == currentReceiving.Code ||
-                                   t.TransactionNumber.StartsWith(currentReceiving.Code + "_")))
+                                   t.TransactionNumber.StartsWith(currentReceiving.Code + "_"))
+                                   && !t.TransactionNumber.EndsWith("_DEL"))  // 排除刪除交易，避免重複計算
                         .ToListAsync();
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
@@ -966,11 +967,13 @@ namespace ERPCore2.Services
                             processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0, trans.UnitCost);
                         }
                         // 累加所有交易的淨值（Quantity已經包含正負號）
+                        var oldQty = processedInventory[key].NetProcessedQuantity;
+                        var newQty = oldQty + trans.Quantity;
                         processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
-                                                  processedInventory[key].LocationId, processedInventory[key].NetProcessedQuantity + trans.Quantity, 
+                                                  processedInventory[key].LocationId, newQty, 
                                                   trans.UnitCost);
                     }
-
+                    
                     // 建立當前明細字典
                     var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int CurrentQuantity, decimal UnitPrice)>();
                     
@@ -981,11 +984,13 @@ namespace ERPCore2.Services
                         {
                             currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitPrice);
                         }
+                        var oldQty = currentInventory[key].CurrentQuantity;
+                        var newQty = oldQty + detail.ReceivedQuantity;
                         currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
-                                               currentInventory[key].LocationId, currentInventory[key].CurrentQuantity + detail.ReceivedQuantity, 
+                                               currentInventory[key].LocationId, newQty, 
                                                detail.UnitPrice);
                     }
-
+                    
                     // 處理庫存差異 - 使用淨值計算方式
                     var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
                     

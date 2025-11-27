@@ -1012,11 +1012,15 @@ namespace ERPCore2.Services
                                             (locationId == null || d.WarehouseLocationId == locationId));
                     
                     if (detail == null)
+                    {
                         return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
+                    }
 
                     if (detail.AvailableStock < quantity)
+                    {
                         return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{detail.AvailableStock}");
-
+                    }
+                    
                     // 3. 更新庫存數量
                     var stockBefore = detail.CurrentStock;
                     detail.CurrentStock -= quantity;

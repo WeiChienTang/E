@@ -1224,7 +1224,33 @@ else
             return;
         }
         
+        // 分離可修改和不可修改的明細
+        var modifiableItems = new List<ReceivingItem>();
+        var lockedItems = new List<ReceivingItem>();
+        
         foreach (var item in validItems)
+        {
+            // 檢查是否被鎖定（已有退貨或沖款記錄）
+            if (item.ExistingDetailEntity != null && 
+                !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities))
+            {
+                lockedItems.Add(item);
+            }
+            else
+            {
+                modifiableItems.Add(item);
+            }
+        }
+        
+        if (!modifiableItems.Any())
+        {
+            await NotificationService.ShowWarningAsync("所有明細都已被鎖定（已有退貨或沖款記錄），無法統一設定倉庫");
+            return;
+        }
+        
+        // 只更新可修改的明細
+        foreach (var item in modifiableItems)
         {
             item.SelectedWarehouse = warehouse;
             // 清空庫位（因為倉庫變更了）
@@ -1234,11 +1260,21 @@ else
         await NotifyChange();
         StateHasChanged();
         
-        await NotificationService.ShowSuccessAsync($"已將 {validItems.Count} 筆明細的倉庫統一設定為「{warehouse.Name}」");
+        // 顯示結果訊息
+        if (lockedItems.Any())
+        {
+            await NotificationService.ShowSuccessAsync(
+                $"已將 {modifiableItems.Count} 筆明細的倉庫統一設定為「{warehouse.Name}」\n" +
+                $"（{lockedItems.Count} 筆明細因已有退貨或沖款記錄而無法修改）");
+        }
+        else
+        {
+            await NotificationService.ShowSuccessAsync($"已將 {modifiableItems.Count} 筆明細的倉庫統一設定為「{warehouse.Name}」");
+        }
     }
     
     /// <summary>
-    /// 清除所有明細
+    /// 清除所有明細（僅從畫面移除，不從資料庫刪除）
     /// </summary>
     private async Task ClearAllDetails()
     {
@@ -1246,17 +1282,59 @@ else
         {
             await NotificationService.ShowWarningAsync("目前沒有可清除的明細");
             return;
-        }    
+        }
         
-        ReceivingItems.Clear();
-        _deletedDetailIds.Clear();
+        // 分離可清除和已鎖定的明細
+        var validItems = ReceivingItems.Where(item => item.SelectedProduct != null).ToList();
+        var clearableItems = new List<ReceivingItem>();
+        var lockedItems = new List<ReceivingItem>();
         
+        foreach (var item in validItems)
+        {
+            // 檢查是否被鎖定（已有退貨或沖款記錄）
+            if (item.ExistingDetailEntity != null && 
+                !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities))
+            {
+                lockedItems.Add(item);
+            }
+            else
+            {
+                clearableItems.Add(item);
+            }
+        }
+        
+        if (!clearableItems.Any())
+        {
+            await NotificationService.ShowWarningAsync("所有明細都已被鎖定（已有退貨或沖款記錄），無法清除");
+            return;
+        }
+        
+        // 🔑 重要：「清除明細」只從畫面移除，不加入 _deletedDetailIds
+        // 這樣儲存時不會真的從資料庫刪除，只是不包含在更新的明細清單中
+        // 直接清除可清除的明細，不需要確認
+        foreach (var item in clearableItems)
+        {
+            ReceivingItems.Remove(item);
+        }
+        
+        // 通知變更（但不觸發 OnDeletedDetailsChanged）
         await NotifyChange();
         
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
         
-        await NotificationService.ShowSuccessAsync("已清除所有入庫明細");
+        // 顯示結果訊息
+        if (lockedItems.Any())
+        {
+            await NotificationService.ShowSuccessAsync(
+                $"已清除 {clearableItems.Count} 筆明細\n" +
+                $"（保留 {lockedItems.Count} 筆已被鎖定的明細）");
+        }
+        else
+        {
+            await NotificationService.ShowSuccessAsync($"已清除 {clearableItems.Count} 筆入庫明細");
+        }
     }
     
     // ===== 相關單據查看方法 =====
