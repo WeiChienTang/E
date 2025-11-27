@@ -1,12 +1,14 @@
 @* 銷貨訂單明細管理組件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
 @using ERPCore2.Models
+@using ERPCore2.Data.Enums
 @inject IProductService ProductService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject IInventoryStockService InventoryStockService
+@inject ISystemParameterService SystemParameterService
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -143,6 +145,12 @@ else
     
     // ===== 下拉選項參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
+    
+    // ===== 稅別參數（新增）=====
+    [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+
+    // ===== 輔助計算屬性 =====
+    private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
     
     // ===== 審核管理參數 =====
     [Parameter] public bool IsApprovalEnabled { get; set; } = false; // 是否啟用報價單審核（從系統參數載入）
@@ -476,6 +484,7 @@ else
                     DeliveredQuantity = salesDetail.DeliveredQuantity,
                     UnitPrice = salesDetail.UnitPrice,
                     DiscountPercentage = salesDetail.DiscountPercentage,
+                    TaxRate = salesDetail.TaxRate ?? salesDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
                     Subtotal = salesDetail.SubtotalAmount,
                     DetailRemarks = salesDetail.Remarks ?? "",
                     SelectedWarehouse = salesDetail.Warehouse ?? Warehouses.FirstOrDefault(w => w.Id == salesDetail.WarehouseId),
@@ -616,6 +625,9 @@ else
                 // 更新倉庫位置ID
                 SetPropertyValue(detail, "WarehouseLocationId", item.WarehouseLocationId);
                 
+                // 更新稅率
+                SetPropertyValue(detail, "TaxRate", item.TaxRate);
+                
                 // 更新報價單明細來源（如果有）
                 if (item.SourceQuotationDetailId.HasValue)
                     SetPropertyValue(detail, "QuotationDetailId", item.SourceQuotationDetailId.Value);
@@ -647,6 +659,9 @@ else
                 
                 // 設定倉庫位置ID
                 SetPropertyValue(detail, "WarehouseLocationId", item.WarehouseLocationId);
+                
+                // 設定稅率
+                SetPropertyValue(detail, "TaxRate", item.TaxRate);
                 
                 // 設定報價單明細來源（如果有）
                 if (item.SourceQuotationDetailId.HasValue)
@@ -1004,19 +1019,61 @@ else
             })
         });
         
+        // 稅率欄位 - 根據稅別決定是否啟用
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "稅率%", 
+            PropertyName = nameof(SalesItem.TaxRate),
+            ColumnType = InteractiveColumnType.Number,
+            Width = "100px",
+            HideOnMobile = true,
+            Tooltip = "稅率百分比（0-100%）",
+            IsDisabledFunc = item =>
+            {
+                var salesItem = (SalesItem)item;
+                return IsTaxCalculationMethodNoTax || HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+            },
+            TooltipFunc = item =>
+            {
+                var salesItem = (SalesItem)item;
+                
+                // 免稅時顯示特殊提示
+                if (IsTaxCalculationMethodNoTax)
+                    return "主檔設定為「不含稅」，稅率欄位已禁用";
+                
+                var hasReturnRecord = HasReturnRecord(salesItem);
+                var hasPaymentRecord = HasPaymentRecord(salesItem);
+                if (!hasReturnRecord && !hasPaymentRecord) return null;
+                
+                var tooltipMessages = new List<string>();
+                if (hasReturnRecord)
+                    tooltipMessages.Add("此商品已有退貨記錄");
+                if (hasPaymentRecord)
+                {
+                    var receivedAmount = GetReceivedAmount(salesItem);
+                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
+                }
+                return string.Join("；", tooltipMessages) + "，無法修改稅率";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnTaxRateInput((SalesItem)item, valueString);
+            })
+        });
 
-        // 小計欄位
+        // 小計欄位（根據稅別計算）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "小計",
-            Tooltip = "訂單金額小計（數量 × 單價 × (1 - 折扣%)）",
+            Tooltip = GetSubtotalTooltip(),
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
             CustomTemplate = item =>
             {
                 var salesItem = (SalesItem)item;
-                var subtotal = salesItem.Subtotal;
+                var subtotal = CalculateItemSubtotal(salesItem);
                 var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(subtotal);
                 return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
@@ -1171,6 +1228,7 @@ else
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
         public decimal Subtotal { get; set; } = 0;
+        public decimal TaxRate { get; set; } = 0;
         public string DetailRemarks { get; set; } = string.Empty;
         public Warehouse? SelectedWarehouse { get; set; }
         public TDetailEntity? ExistingDetailEntity { get; set; }
@@ -1323,6 +1381,9 @@ else
         item.ProductSearchValue = FormatProductDisplayText(selectedProduct);
         item.ShowProductDropdown = false;
         item.ProductSelectedIndex = -1;
+        
+        // 自動帶入商品稅率（優先使用商品稅率，沒有則使用系統預設值）
+        item.TaxRate = selectedProduct.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
         
         // 載入該商品的可用倉庫位置清單（僅有庫存的位置）
         item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(selectedProduct.Id);
@@ -1480,6 +1541,81 @@ else
         // 通知父組件資料已變更（這會觸發 HandleDetailsChanged）
         await NotifyDetailsChanged();
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理稅率輸入
+    /// </summary>
+    private async Task OnTaxRateInput(SalesItem item, string? valueString)
+    {
+        // 檢查是否可以修改
+        if (!CanDeleteItem(item, out string reason))
+        {
+            var friendlyMessage = HasReturnRecord(item)
+                ? "此商品已有退貨記錄，無法修改稅率"
+                : "此商品已有沖款記錄，無法修改稅率";
+            
+            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(valueString))
+        {
+            item.TaxRate = 0;
+        }
+        else if (decimal.TryParse(valueString, out var rate))
+        {
+            // 限制稅率在 0-100 之間
+            item.TaxRate = Math.Max(0, Math.Min(100, rate));
+        }
+        
+        // 通知父組件資料已變更
+        await NotifyDetailsChanged();
+    }
+
+    /// <summary>
+    /// 計算明細項目的小計（根據稅別，四捨五入到整數）
+    /// </summary>
+    private decimal CalculateItemSubtotal(SalesItem item)
+    {
+        if (item.SelectedProduct == null || item.OrderQuantity <= 0 || item.UnitPrice <= 0)
+            return 0;
+
+        // 計算未稅金額
+        var baseAmount = item.OrderQuantity * item.UnitPrice * (1 - item.DiscountPercentage / 100);
+
+        switch (TaxCalculationMethod)
+        {
+            case TaxCalculationMethod.TaxExclusive:
+                // 外加稅：小計 = 基礎金額 × (1 + 稅率%)
+                var amountWithTax = baseAmount * (1 + item.TaxRate / 100);
+                return Math.Round(amountWithTax, 0, MidpointRounding.AwayFromZero);
+
+            case TaxCalculationMethod.TaxInclusive:
+                // 內含稅：小計 = 基礎金額（單價已含稅，直接四捨五入）
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+
+            case TaxCalculationMethod.NoTax:
+                // 免稅：小計 = 基礎金額（不計稅）
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+
+            default:
+                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
+        }
+    }
+
+    /// <summary>
+    /// 取得小計欄位的提示文字
+    /// </summary>
+    private string GetSubtotalTooltip()
+    {
+        return TaxCalculationMethod switch
+        {
+            TaxCalculationMethod.TaxExclusive => "小計（含稅）= 數量 × 單價 × (1 - 折扣%) × (1 + 稅率%)",
+            TaxCalculationMethod.TaxInclusive => "小計（含稅）= 數量 × 單價 × (1 - 折扣%)（單價已內含稅）",
+            TaxCalculationMethod.NoTax => "小計（未稅）= 數量 × 單價 × (1 - 折扣%)（免稅）",
+            _ => "小計"
+        };
     }
 
     private async Task OnWarehouseLocationChanged(SalesItem item, object? value)
@@ -1722,6 +1858,7 @@ else
                 SelectedProduct = detail.Product,
                 OrderQuantity = detail.OrderQuantity,
                 UnitPrice = detail.UnitPrice,
+                TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
                 DetailRemarks = detail.Remarks ?? "",
                 SelectedWarehouse = detail.Warehouse ?? (detail.WarehouseId.HasValue ? 
                     Warehouses.FirstOrDefault(w => w.Id == detail.WarehouseId.Value) : null)
@@ -1785,6 +1922,7 @@ else
                     OrderQuantity = pendingQuantity,  // 使用剩餘數量，而非全部數量
                     UnitPrice = quotationDetail.UnitPrice,
                     DiscountPercentage = quotationDetail.DiscountPercentage,
+                    TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
                     DetailRemarks = quotationDetail.Remarks ?? "",
                     // 設定報價單來源資訊（用於審核檢查和轉單追蹤）
                     SourceQuotationId = quotationId,

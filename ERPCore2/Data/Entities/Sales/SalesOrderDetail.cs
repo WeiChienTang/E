@@ -44,6 +44,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalReceivedAmount { get; set; } = 0;
 
+        [Display(Name = "稅率(%)")]
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100, ErrorMessage = "稅率必須介於 0 到 100 之間")]
+        public decimal? TaxRate { get; set; }
+
         // Foreign Keys
         [Required(ErrorMessage = "銷貨訂單為必填")]
         [Display(Name = "銷貨訂單")]

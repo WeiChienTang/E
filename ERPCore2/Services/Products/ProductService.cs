@@ -134,6 +134,12 @@ namespace ERPCore2.Services
                     errors.Add("商品類別為必填欄位");
                 }
 
+                // 驗證稅率範圍（0-100）
+                if (entity.TaxRate.HasValue && (entity.TaxRate.Value < 0 || entity.TaxRate.Value > 100))
+                {
+                    errors.Add("稅率必須介於 0 到 100 之間");
+                }
+
                 return errors.Any()
                     ? ServiceResult.Failure(string.Join("; ", errors))
                     : ServiceResult.Success();

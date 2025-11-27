@@ -3314,6 +3314,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -3357,6 +3360,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("TaxCalculationMethod")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -3374,6 +3380,8 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("CompanyId", "OrderDate");
 
                     b.HasIndex("CustomerId", "OrderDate");
 
@@ -3428,6 +3436,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<decimal>("TotalReceivedAmount")
                         .HasColumnType("decimal(18,2)");
@@ -5567,6 +5578,12 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrder", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -5582,6 +5599,8 @@ namespace ERPCore2.Migrations
                         .WithMany("SalesOrders")
                         .HasForeignKey("QuotationId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Company");
 
                     b.Navigation("Customer");
 

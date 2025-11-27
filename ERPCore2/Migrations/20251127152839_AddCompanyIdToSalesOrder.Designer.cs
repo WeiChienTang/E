@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251125034346_AddTaxCalculationMethodToPurchaseReturn")]
-    partial class AddTaxCalculationMethodToPurchaseReturn
+    [Migration("20251127152839_AddCompanyIdToSalesOrder")]
+    partial class AddCompanyIdToSalesOrder
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2166,72 +2166,6 @@ namespace ERPCore2.Migrations
                     b.ToTable("ProductCompositionDetails");
                 });
 
-            modelBuilder.Entity("ERPCore2.Data.Entities.ProductSupplier", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("LeadTime")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MinOrderQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SupplierId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("SupplierPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SupplierProductCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("UnitId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("SupplierId");
-
-                    b.HasIndex("UnitId");
-
-                    b.ToTable("ProductSuppliers");
-                });
-
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductionSchedule", b =>
                 {
                     b.Property<int>("Id")
@@ -2649,7 +2583,7 @@ namespace ERPCore2.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PurchaseOrderDetailId")
+                    b.Property<int?>("PurchaseOrderDetailId")
                         .HasColumnType("int");
 
                     b.Property<int>("PurchaseReceivingId")
@@ -2908,6 +2842,9 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("QuotationDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("QuotationTaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("RejectReason")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -2921,6 +2858,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<decimal>("SubtotalBeforeDiscount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TaxCalculationMethod")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -2989,6 +2929,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");
@@ -3374,6 +3317,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -3417,6 +3363,9 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("TaxCalculationMethod")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -3434,6 +3383,8 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("CompanyId", "OrderDate");
 
                     b.HasIndex("CustomerId", "OrderDate");
 
@@ -3488,6 +3439,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<decimal>("TotalReceivedAmount")
                         .HasColumnType("decimal(18,2)");
@@ -5139,9 +5093,10 @@ namespace ERPCore2.Migrations
                         .WithMany("Products")
                         .HasForeignKey("SizeId");
 
-                    b.HasOne("ERPCore2.Data.Entities.Supplier", null)
-                        .WithMany("PrimaryProducts")
-                        .HasForeignKey("SupplierId");
+                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
+                        .WithMany("Products")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ERPCore2.Data.Entities.Unit", "Unit")
                         .WithMany("Products")
@@ -5151,6 +5106,8 @@ namespace ERPCore2.Migrations
                     b.Navigation("ProductCategory");
 
                     b.Navigation("Size");
+
+                    b.Navigation("Supplier");
 
                     b.Navigation("Unit");
                 });
@@ -5207,32 +5164,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("ComponentProduct");
 
                     b.Navigation("ProductComposition");
-
-                    b.Navigation("Unit");
-                });
-
-            modelBuilder.Entity("ERPCore2.Data.Entities.ProductSupplier", b =>
-                {
-                    b.HasOne("ERPCore2.Data.Entities.Product", "Product")
-                        .WithMany("ProductSuppliers")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
-                        .WithMany("ProductSuppliers")
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ERPCore2.Data.Entities.Unit", "Unit")
-                        .WithMany()
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Supplier");
 
                     b.Navigation("Unit");
                 });
@@ -5380,8 +5311,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.PurchaseOrderDetail", "PurchaseOrderDetail")
                         .WithMany("PurchaseReceivingDetails")
                         .HasForeignKey("PurchaseOrderDetailId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ERPCore2.Data.Entities.PurchaseReceiving", "PurchaseReceiving")
                         .WithMany("PurchaseReceivingDetails")
@@ -5651,6 +5581,12 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrder", b =>
                 {
+                    b.HasOne("ERPCore2.Data.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ERPCore2.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -5666,6 +5602,8 @@ namespace ERPCore2.Migrations
                         .WithMany("SalesOrders")
                         .HasForeignKey("QuotationId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Company");
 
                     b.Navigation("Customer");
 
@@ -6064,8 +6002,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("InventoryStocks");
 
                     b.Navigation("ProductCompositions");
-
-                    b.Navigation("ProductSuppliers");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductCategory", b =>
@@ -6186,9 +6122,7 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Supplier", b =>
                 {
-                    b.Navigation("PrimaryProducts");
-
-                    b.Navigation("ProductSuppliers");
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Unit", b =>

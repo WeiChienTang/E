@@ -163,7 +163,7 @@
                     InitializeFormFieldsAsync)
                 .AddManager<Customer>(nameof(Quotation.CustomerId), "客戶")
                 .AddManager<Company>(nameof(Quotation.CompanyId), "公司")
-                .AddManager<Employee>(nameof(Quotation.EmployeeId), "業務人員")
+                .AddManager<Employee>(nameof(Quotation.EmployeeId), "業務員")
                 .Build();
             
             // 取得個別 Manager 供組件使用
@@ -314,7 +314,7 @@
             // 載入公司列表
             availableCompanies = await CompanyService.GetAllAsync();
             
-            // 載入業務人員列表
+            // 載入業務員列表
             availableEmployees = await EmployeeService.GetAllAsync();
             employees = availableEmployees;
             employeeOptions = employees.Select(e => new SelectOption 
@@ -431,12 +431,12 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.EmployeeId),
-                    Label = "業務人員",
+                    Label = "業務員",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇業務人員",
+                    Placeholder = "請輸入或選擇業務員",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "輸入業務人員姓名進行搜尋，或直接選擇",
+                    HelpText = "輸入業務員姓名進行搜尋，或直接選擇",
                     ActionButtons = await GetEmployeeActionButtonsAsync(),
                     IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
@@ -1295,6 +1295,7 @@
             {
                 await salesOrderEditModal.ShowAddModalWithPrefilledQuotation(
                     editModalComponent.Entity.CustomerId,
+                    editModalComponent.Entity.CompanyId,
                     QuotationId.Value
                 );
             }

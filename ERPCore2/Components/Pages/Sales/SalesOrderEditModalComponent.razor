@@ -69,6 +69,14 @@
                            OnCustomerSaved="@OnCustomerSavedWrapper"
                            OnCancel="@customerModalManager.HandleModalCancelAsync" />
 
+@* 公司編輯 Modal *@
+<CompanyEditModalComponent @ref="companyEditModal"
+                          IsVisible="@companyModalManager.IsModalVisible"
+                          IsVisibleChanged="@companyModalManager.HandleModalVisibilityChangedAsync"
+                          CompanyId="@companyModalManager.SelectedEntityId"
+                          OnCompanySaved="@OnCompanySavedWrapper"
+                          OnCancel="@companyModalManager.HandleModalCancelAsync" />
+
 @* 業務員編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
                            IsVisible="@employeeModalManager.IsModalVisible"
@@ -111,6 +119,7 @@
     
     // ===== 預填參數（用於從報價單轉單） =====
     [Parameter] public int? PrefilledCustomerId { get; set; }
+    [Parameter] public int? PrefilledCompanyId { get; set; }
     [Parameter] public int? PrefilledQuotationId { get; set; }
     
     // ===== 審核控制 =====
@@ -145,6 +154,8 @@
     // Modal 管理器
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
+    private CompanyEditModalComponent? companyEditModal;
+    private RelatedEntityModalManager<Company> companyModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
     
@@ -173,6 +184,7 @@
     private List<SelectOption> companyOptions = new();
     private List<SelectOption> employeeOptions = new();
     private List<SelectOption> statusOptions = new();
+    private List<SelectOption> taxCalculationMethodOptions = new();
     
     // 稅率快取變數（一次性載入，避免每次計算都查詢資料庫）
     private decimal currentTaxRate = 5.0m; // 預設 5%，實際值會在初始化時從資料庫載入
@@ -194,11 +206,13 @@
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
                 .AddManager<Customer>(nameof(SalesOrder.CustomerId), "客戶")
+                .AddManager<Company>(nameof(SalesOrder.CompanyId), "公司")
                 .AddManager<Employee>(nameof(SalesOrder.EmployeeId), "業務員")
                 .Build();
             
             // 取得個別 Manager 供組件使用
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesOrder.CustomerId));
+            companyModalManager = modalManagers.Get<Company>(nameof(SalesOrder.CompanyId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesOrder.EmployeeId));
         }
         catch (Exception)
@@ -292,13 +306,17 @@
                 // 新增模式：必須先儲存才能轉銷貨
                 canCreateDelivery = false;
                 
+                // 取得預設公司
+                var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+                
                 var newOrder = new SalesOrder
                 {
                     OrderDate = DateTime.Today,
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
                     Status = EntityStatus.Active,
                     TotalAmount = 0,
-                    Code = generatedCode
+                    Code = generatedCode,
+                    CompanyId = primaryCompany?.Id ?? 0 // 設定預設公司
                 };
                 
                 // 如果是從報價單轉單，載入報價單資料
@@ -306,10 +324,17 @@
                 {
                     await LoadDataFromQuotation(newOrder, PrefilledQuotationId.Value);
                 }
-                // 否則使用預填客戶
-                else if (PrefilledCustomerId.HasValue)
+                // 否則使用預填客戶和公司
+                else
                 {
-                    newOrder.CustomerId = PrefilledCustomerId.Value;
+                    if (PrefilledCustomerId.HasValue)
+                    {
+                        newOrder.CustomerId = PrefilledCustomerId.Value;
+                    }
+                    if (PrefilledCompanyId.HasValue)
+                    {
+                        newOrder.CompanyId = PrefilledCompanyId.Value;
+                    }
                 }
                 
                 // 清空明細（如果沒有從報價單載入）
@@ -334,7 +359,7 @@
                 // 載入銷貨訂單明細
                 await LoadSalesOrderDetails(SalesOrderId.Value);
                 
-                // 🔑 關鍵：載入明細相關資料（退貨記錄、收款記錄）
+                //  關鍵：載入明細相關資料（退貨記錄、收款記錄）
                 await LoadDetailRelatedDataAsync();
                 isDetailDataReady = true;
                 StateHasChanged();
@@ -468,12 +493,21 @@
                 new SelectOption { Text = "停用", Value = "Inactive" }
             };
             
-            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            // 初始化稅別選項
+            taxCalculationMethodOptions = new List<SelectOption>
+            {
+                new SelectOption { Text = "外加稅", Value = ((int)TaxCalculationMethod.TaxExclusive).ToString() },
+                new SelectOption { Text = "內含稅", Value = ((int)TaxCalculationMethod.TaxInclusive).ToString() },
+                new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
+            };
+            
+            //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
             
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesOrder>()
                 .AddField(nameof(SalesOrder.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(SalesOrder.CompanyId), "CompanyName", availableCompanies)
                 .AddField(nameof(SalesOrder.EmployeeId), "Name", availableEmployees)
                 .Build();
         }
@@ -523,6 +557,18 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(SalesOrder.CompanyId),
+                    Label = "公司",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇公司",
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "選擇進行此次銷貨的公司",
+                    ActionButtons = await GetCompanyActionButtonsAsync(),
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
+                new()
+                {
                     PropertyName = nameof(SalesOrder.EmployeeId),
                     Label = "業務員",
                     FieldType = FormFieldType.AutoComplete,
@@ -544,6 +590,16 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(SalesOrder.TaxCalculationMethod),
+                    Label = "稅別",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = taxCalculationMethodOptions,
+                    HelpText = "稅額計算方式：外加稅（稅額另加）、內含稅（價格已含稅）、不含稅（免稅）",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
+                new()
+                {
                     PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
                     Label = "預定出貨日期",
                     FieldType = FormFieldType.Date,
@@ -555,29 +611,42 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.TotalAmount),
-                    Label = "銷貨總金額",
+                    Label = "金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = "銷貨單的總金額，根據明細自動計算",
-                    IsReadOnly = true // 總金額欄位始終為唯讀
+                    HelpText = "銷貨單的總金額，根據明細自動計算（明細的數量 × 單價總和）",
+                    IsReadOnly = true, // 總金額欄位始終為唯讀
+                    CssClass = "text-warning fw-bold" // 使用黃色粗體顯示
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.DiscountAmount),
+                    Label = "折扣",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "銷貨單的折扣金額，根據明細自動計算 = (數量 × 單價 × 折扣%)",
+                    IsReadOnly = true, // 折扣欄位始終為唯讀
+                    CssClass = "text-danger fw-bold" // 使用紅色粗體顯示
                 },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.SalesTaxAmount),
-                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("銷貨稅額", currentTaxRate),
+                    Label = "稅額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("銷貨單", currentTaxRate),
-                    IsReadOnly = true // 稅額欄位始終為唯讀
+                    HelpText = "銷貨單的稅額，根據金額和稅率自動計算 = (折扣後金額 × 稅率%)",
+                    IsReadOnly = true, // 稅額欄位始終為唯讀
+                    CssClass = "text-info fw-bold" // 使用藍色粗體顯示
                 },
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesOrder.TotalAmountWithTax),
-                    Label = "含稅總金額",
+                    Label = "總額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = "銷貨單的含稅總金額，根據明細自動計算",
-                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                    HelpText = "銷貨單的含稅總金額，根據明細自動計算（金額 - 折扣 + 稅額）",
+                    IsReadOnly = true, // 含稅總金額欄位始終為唯讀
+                    CssClass = "text-success fw-bold" // 使用綠色粗體顯示
                 },
                 new()
                 {
@@ -614,13 +683,16 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
                     so => so.CustomerId,
+                    so => so.CompanyId,
                     so => so.EmployeeId,
                     so => so.OrderDate,
+                    so => so.TaxCalculationMethod,
                     so => so.ExpectedDeliveryDate)
                 .AddToSection(FormSectionNames.AmountInfo,
-                    so => so.TotalAmount,
-                    so => so.SalesTaxAmount,
-                    so => so.TotalAmountWithTax)
+                    so => so.TotalAmount,      // 金額（折扣前）
+                    so => so.DiscountAmount,   // 折扣
+                    so => so.SalesTaxAmount,   // 稅額
+                    so => so.TotalAmountWithTax) // 總額
                 .AddToSection(FormSectionNames.AdditionalInfo,
                     so => so.PaymentTerms,
                     so => so.DeliveryTerms,
@@ -657,6 +729,7 @@
         return new Dictionary<string, object>
         {
             { nameof(SalesOrder.CustomerId), customerModalManager },
+            { nameof(SalesOrder.CompanyId), companyModalManager },
             { nameof(SalesOrder.EmployeeId), employeeModalManager }
         };
     }
@@ -713,6 +786,7 @@
                                                           Products="@availableProducts"
                                                           Warehouses="@availableWarehouses"
                                                           SelectedCustomerId="@editModalComponent.Entity.CustomerId"
+                                                          TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                           IsReadOnly="false"
                                                           MainEntityIdPropertyName="SalesOrderId"
                                                           QuantityPropertyName="OrderQuantity"
@@ -778,6 +852,18 @@
     }
     
     /// <summary>
+    /// 產生公司操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetCompanyActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            companyModalManager, 
+            nameof(SalesOrder.CompanyId)
+        );
+    }
+    
+    /// <summary>
     /// 產生業務員操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
@@ -797,6 +883,14 @@
     private async Task OnCustomerSavedWrapper(Customer savedCustomer)
     {
         await customerModalManager.HandleEntitySavedAsync(savedCustomer, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 包裝公司儲存事件
+    /// </summary>
+    private async Task OnCompanySavedWrapper(Company savedCompany)
+    {
+        await companyModalManager.HandleEntitySavedAsync(savedCompany, shouldAutoSelect: true);
     }
     
     /// <summary>
@@ -866,7 +960,7 @@
             // 使用統一 Helper 處理客戶欄位變更
             if (fieldChange.PropertyName == nameof(SalesOrder.CustomerId))
             {
-                // 🔑 關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
                 if (!hasUndeletableDetails)
                 {
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
@@ -876,15 +970,32 @@
                 // 客戶變更時，觸發商品管理器重新渲染
                 StateHasChanged();
             }
+            // 處理公司欄位變更
+            else if (fieldChange.PropertyName == nameof(SalesOrder.CompanyId))
+            {
+                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                if (!hasUndeletableDetails)
+                {
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        companyModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                }
+            }
             // 處理業務員欄位變更
             else if (fieldChange.PropertyName == nameof(SalesOrder.EmployeeId))
             {
-                // 🔑 關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
+                //  關鍵：只有在沒有不可刪除明細時才更新 ActionButtons
                 if (!hasUndeletableDetails)
                 {
                     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                         employeeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                 }
+            }
+            // 處理稅別變更
+            else if (fieldChange.PropertyName == nameof(SalesOrder.TaxCalculationMethod))
+            {
+                // 稅別變更時，重新計算金額和稅額
+                await HandleDetailsChanged(salesOrderDetails);
+                StateHasChanged();
             }
         }
         catch (Exception)
@@ -903,13 +1014,13 @@
     {
         try
         {
-            // 🔑 關鍵修復：導航到已存在的記錄時，允許轉單
+            //  關鍵修復：導航到已存在的記錄時，允許轉單
             canCreateDelivery = true;
             
             // 1. 重新載入明細資料
             await LoadSalesOrderDetails(loadedEntityId);
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
             
@@ -968,23 +1079,73 @@
         {
             salesOrderDetails = details ?? new List<SalesOrderDetail>();
             
-            // 明細的小計已經在 SalesOrderDetailManagerComponent 中計算好了
-            // 這裡只需要更新主檔的總金額和稅額
-            
-            // 更新主檔的總金額和稅額
+            // 更新主檔的金額、折扣、稅額和總額
             if (editModalComponent?.Entity != null)
             {
-                // 1. 計算總金額（未稅）- 使用明細的 SubtotalAmount（已扣除折扣）
-                editModalComponent.Entity.TotalAmount = salesOrderDetails.Sum(d => d.SubtotalAmount);
-                
-                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
-                editModalComponent.Entity.SalesTaxAmount = TaxCalculationHelper.CalculateTax(
-                    editModalComponent.Entity.TotalAmount, 
-                    currentTaxRate
-                );
-                
-                // 3. 含稅總金額會自動計算（TotalAmountWithTax 是計算屬性）
-                //    = TotalAmount + SalesTaxAmount
+                // 根據稅別計算金額和稅額
+                switch (editModalComponent.Entity.TaxCalculationMethod)
+                {
+                    case TaxCalculationMethod.TaxExclusive:
+                        // 外加稅：稅額另外加上
+                        // 1. 金額（未稅）= Σ(數量 × 單價 × (1 - 折扣%))
+                        editModalComponent.Entity.TotalAmount = Math.Round(
+                            salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        // 2. 折扣金額 = Σ(數量 × 單價 × 折扣%)
+                        editModalComponent.Entity.DiscountAmount = Math.Round(
+                            salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        // 3. 稅額 = Σ(數量 × 單價 × (1 - 折扣%) × 稅率%)（每筆四捨五入）
+                        editModalComponent.Entity.SalesTaxAmount = salesOrderDetails.Sum(d =>
+                        {
+                            var baseAmount = d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
+                            var taxRate = d.TaxRate ?? 5.0m;
+                            return Math.Round(baseAmount * (taxRate / 100), 0, MidpointRounding.AwayFromZero);
+                        });
+                        break;
+
+                    case TaxCalculationMethod.TaxInclusive:
+                        // 內含稅：總價已包含稅
+                        // 1. 總額（含稅）= Σ(數量 × 單價 × (1 - 折扣%))
+                        var totalWithTax = Math.Round(
+                            salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        // 2. 折扣金額 = Σ(數量 × 單價 × 折扣%)
+                        editModalComponent.Entity.DiscountAmount = Math.Round(
+                            salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        // 3. 稅額 = Σ(小計 / (1 + 稅率%) × 稅率%)（每筆四捨五入）
+                        editModalComponent.Entity.SalesTaxAmount = salesOrderDetails.Sum(d =>
+                        {
+                            var subtotal = d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
+                            var taxRate = d.TaxRate ?? 5.0m;
+                            return Math.Round(subtotal / (1 + taxRate / 100) * (taxRate / 100), 0, MidpointRounding.AwayFromZero);
+                        });
+                        
+                        // 4. 金額（未稅）= 總額 - 稅額
+                        editModalComponent.Entity.TotalAmount = Math.Round(totalWithTax - editModalComponent.Entity.SalesTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        break;
+
+                    case TaxCalculationMethod.NoTax:
+                        // 免稅：完全不計稅
+                        // 1. 金額 = Σ(數量 × 單價 × (1 - 折扣%))
+                        editModalComponent.Entity.TotalAmount = Math.Round(
+                            salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100)), 
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        // 2. 折扣金額 = Σ(數量 × 單價 × 折扣%)
+                        editModalComponent.Entity.DiscountAmount = Math.Round(
+                            salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice * (d.DiscountPercentage / 100)), 
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        // 3. 稅額 = 0
+                        editModalComponent.Entity.SalesTaxAmount = 0;
+                        break;
+                }
                 
                 StateHasChanged();
             }
@@ -1040,6 +1201,7 @@
         {
             nameof(SalesOrder.Code),
             nameof(SalesOrder.OrderDate),
+            nameof(SalesOrder.TaxCalculationMethod),
             nameof(SalesOrder.ExpectedDeliveryDate),
             nameof(SalesOrder.PaymentTerms),
             nameof(SalesOrder.DeliveryTerms),
@@ -1057,6 +1219,7 @@
         var fieldsWithActionButtons = new Dictionary<string, Func<Task<List<FieldActionButton>>>>
         {
             { nameof(SalesOrder.CustomerId), GetCustomerActionButtonsAsync },
+            { nameof(SalesOrder.CompanyId), GetCompanyActionButtonsAsync },
             { nameof(SalesOrder.EmployeeId), GetEmployeeActionButtonsAsync }
         };
 
@@ -1273,7 +1436,7 @@
                 invokeAsync: InvokeAsync,
                 additionalActions: async () =>
                 {
-                    // 🔑 重新載入出貨數量資訊
+                    //  重新載入出貨數量資訊
                     // 注意：SalesOrderTable 目前沒有 LoadDeliveredQuantitiesAsync 方法
                     // 未來如需重新載入出貨數量，需要在 SalesOrderTable 中實作此方法
                     await Task.CompletedTask;
@@ -1325,7 +1488,7 @@
                 invokeAsync: InvokeAsync,
                 additionalActions: async () =>
                 {
-                    // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                    //  關鍵修復：呼叫 Table 組件的公開刷新方法
                     // 重新載入退貨數量資訊
                     if (salesOrderDetailManager != null)
                     {
@@ -1569,7 +1732,7 @@
                         // 更新本地明細的 ID
                         detail.Id = createResult.Data.Id;
                         
-                        // 🔑 更新報價單明細的已轉銷貨數量
+                        //  更新報價單明細的已轉銷貨數量
                         if (detail.QuotationDetailId.HasValue)
                         {
                             await UpdateQuotationDetailConvertedQuantity(
@@ -1588,7 +1751,7 @@
                     
                     await SalesOrderDetailService.UpdateAsync(detail);
                     
-                    // 🔑 如果數量有變化且有報價單來源，更新報價單明細的已轉銷貨數量
+                    //  如果數量有變化且有報價單來源，更新報價單明細的已轉銷貨數量
                     if (quantityDiff != 0 && detail.QuotationDetailId.HasValue)
                     {
                         await UpdateQuotationDetailConvertedQuantity(
@@ -1607,7 +1770,7 @@
 
             foreach (var detailToDelete in detailsToDelete)
             {
-                // 🔑 如果有報價單來源，減少報價單明細的已轉銷貨數量
+                //  如果有報價單來源，減少報價單明細的已轉銷貨數量
                 if (detailToDelete.QuotationDetailId.HasValue)
                 {
                     await UpdateQuotationDetailConvertedQuantity(
@@ -1711,7 +1874,7 @@
     /// <summary>
     /// 打開新增銷貨訂單 Modal 並預填報價單資料（公開方法，供父組件呼叫）
     /// </summary>
-    public async Task ShowAddModalWithPrefilledQuotation(int customerId, int quotationId)
+    public async Task ShowAddModalWithPrefilledQuotation(int customerId, int companyId, int quotationId)
     {
         try
         {
@@ -1721,6 +1884,7 @@
                 setPrefilledValues: () =>
                 {
                     PrefilledCustomerId = customerId;
+                    PrefilledCompanyId = companyId;
                     PrefilledQuotationId = quotationId;
                 },
                 isVisibleChanged: IsVisibleChanged,
@@ -1741,7 +1905,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledQuotation), GetType(), 
-                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, QuotationId: {quotationId}");
+                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, CompanyId: {companyId}, QuotationId: {quotationId}");
             await NotificationService.ShowErrorAsync("開啟銷貨訂單時發生錯誤");
         }
     }
@@ -1812,6 +1976,9 @@
             
             // 設定客戶ID
             salesOrder.CustomerId = quotation.CustomerId;
+            
+            // 設定公司ID
+            salesOrder.CompanyId = quotation.CompanyId;
             
             // 記錄審核狀態
             isSourceQuotationApproved = quotation.IsApproved;

@@ -12,6 +12,7 @@ namespace ERPCore2.Data.Entities
     [Index(nameof(Code), IsUnique = true)]
     [Index(nameof(CustomerId), nameof(OrderDate))]
     [Index(nameof(QuotationId), nameof(OrderDate))]
+    [Index(nameof(CompanyId), nameof(OrderDate))]
     [CodeGenerationStrategy(
         CodeGenerationStrategy.TimestampWithSequence,
         Prefix = "SO",
@@ -43,6 +44,10 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal DiscountAmount { get; set; } = 0;
 
+        [Required(ErrorMessage = "稅別為必填")]
+        [Display(Name = "稅別")]
+        public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+
         [Display(Name = "付款條件")]
         [MaxLength(200, ErrorMessage = "付款條件不可超過200個字元")]
         public string? PaymentTerms { get; set; }
@@ -56,6 +61,11 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(Quotation))]
         public int? QuotationId { get; set; }  // 可選，支援多訂單模式
 
+        [Required(ErrorMessage = "公司為必填")]
+        [Display(Name = "公司")]
+        [ForeignKey(nameof(Company))]
+        public int CompanyId { get; set; }
+
         [Required(ErrorMessage = "客戶為必填")]
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
@@ -67,6 +77,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public Quotation? Quotation { get; set; }  // 報價單導覽屬性
+        public Company Company { get; set; } = null!;
         public Customer Customer { get; set; } = null!;
         public Employee? Employee { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
