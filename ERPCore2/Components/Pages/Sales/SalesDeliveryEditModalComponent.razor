@@ -150,6 +150,21 @@
         }
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            // 打開時,如果是新增模式,重置狀態
+            if (!SalesDeliveryId.HasValue)
+            {
+                shouldAutoLoadUndelivered = false;
+            }
+            
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+        }
+    }
+
     private async Task HandleSaveSuccess()
     {
         try

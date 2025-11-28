@@ -120,6 +120,7 @@
     // ===== 預填參數（用於從報價單轉單） =====
     [Parameter] public int? PrefilledCustomerId { get; set; }
     [Parameter] public int? PrefilledCompanyId { get; set; }
+    [Parameter] public int? PrefilledEmployeeId { get; set; }
     [Parameter] public int? PrefilledQuotationId { get; set; }
     
     // ===== 審核控制 =====
@@ -324,7 +325,7 @@
                 {
                     await LoadDataFromQuotation(newOrder, PrefilledQuotationId.Value);
                 }
-                // 否則使用預填客戶和公司
+                // 否則使用預填客戶、公司和業務員
                 else
                 {
                     if (PrefilledCustomerId.HasValue)
@@ -334,6 +335,10 @@
                     if (PrefilledCompanyId.HasValue)
                     {
                         newOrder.CompanyId = PrefilledCompanyId.Value;
+                    }
+                    if (PrefilledEmployeeId.HasValue)
+                    {
+                        newOrder.EmployeeId = PrefilledEmployeeId.Value;
                     }
                 }
                 
@@ -1874,7 +1879,7 @@
     /// <summary>
     /// 打開新增銷貨訂單 Modal 並預填報價單資料（公開方法，供父組件呼叫）
     /// </summary>
-    public async Task ShowAddModalWithPrefilledQuotation(int customerId, int companyId, int quotationId)
+    public async Task ShowAddModalWithPrefilledQuotation(int customerId, int companyId, int? employeeId, int quotationId)
     {
         try
         {
@@ -1885,6 +1890,7 @@
                 {
                     PrefilledCustomerId = customerId;
                     PrefilledCompanyId = companyId;
+                    PrefilledEmployeeId = employeeId;
                     PrefilledQuotationId = quotationId;
                 },
                 isVisibleChanged: IsVisibleChanged,
@@ -1905,7 +1911,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledQuotation), GetType(), 
-                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, CompanyId: {companyId}, QuotationId: {quotationId}");
+                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, CompanyId: {companyId}, EmployeeId: {employeeId}, QuotationId: {quotationId}");
             await NotificationService.ShowErrorAsync("開啟銷貨訂單時發生錯誤");
         }
     }
@@ -1979,6 +1985,12 @@
             
             // 設定公司ID
             salesOrder.CompanyId = quotation.CompanyId;
+            
+            // 設定業務員ID
+            salesOrder.EmployeeId = quotation.EmployeeId;
+            
+            // 設定稅別
+            salesOrder.TaxCalculationMethod = quotation.TaxCalculationMethod;
             
             // 記錄審核狀態
             isSourceQuotationApproved = quotation.IsApproved;
