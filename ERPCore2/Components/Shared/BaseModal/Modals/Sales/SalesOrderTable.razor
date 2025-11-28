@@ -238,7 +238,7 @@ else
         int currentExistingDetailsCount = ExistingDetails?.Count ?? 0;
         bool existingDetailsChanged = _previousExistingDetailsCount != currentExistingDetailsCount;
         
-        // 🔑 關鍵：如果 ExistingDetails 有變化（例如從編輯模式返回），不要清空資料
+        //  關鍵：如果 ExistingDetails 有變化（例如從編輯模式返回），不要清空資料
         // 只在真正的客戶變更時才重新載入
         if (customerChanged && !existingDetailsChanged)
         {
@@ -467,7 +467,7 @@ else
             return;
         }
         
-        // 🔑 開始載入資料 - 設定為未完成
+        //  開始載入資料 - 設定為未完成
         _dataLoadCompleted = false;
         
         SalesItems.Clear();
@@ -477,6 +477,18 @@ else
             // 轉換為正確的實體類型
             if (detail is SalesOrderDetail salesDetail)
             {
+                // 🔍 Debug: 追蹤稅率載入
+                ConsoleHelper.WriteTitle("載入銷貨明細 (SalesOrderDetail 分支)");
+                ConsoleHelper.WriteInfo($"商品ID: {salesDetail.ProductId}");
+                ConsoleHelper.WriteInfo($"明細稅率 (salesDetail.TaxRate): {salesDetail.TaxRate}");
+                ConsoleHelper.WriteInfo($"商品稅率 (Product?.TaxRate): {salesDetail.Product?.TaxRate}");
+                var systemTaxRate = await SystemParameterService.GetTaxRateAsync();
+                ConsoleHelper.WriteInfo($"系統預設稅率: {systemTaxRate}");
+                
+                var finalTaxRate = salesDetail.TaxRate ?? salesDetail.Product?.TaxRate ?? systemTaxRate;
+                ConsoleHelper.WriteSuccess($"最終使用稅率: {finalTaxRate}");
+                ConsoleHelper.WriteSeparator();
+                
                 var salesItem = new SalesItem
                 {
                     SelectedProduct = salesDetail.Product ?? Products.FirstOrDefault(p => p.Id == salesDetail.ProductId),
@@ -484,7 +496,7 @@ else
                     DeliveredQuantity = salesDetail.DeliveredQuantity,
                     UnitPrice = salesDetail.UnitPrice,
                     DiscountPercentage = salesDetail.DiscountPercentage,
-                    TaxRate = salesDetail.TaxRate ?? salesDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
+                    TaxRate = finalTaxRate,
                     Subtotal = salesDetail.SubtotalAmount,
                     DetailRemarks = salesDetail.Remarks ?? "",
                     SelectedWarehouse = salesDetail.Warehouse ?? Warehouses.FirstOrDefault(w => w.Id == salesDetail.WarehouseId),
@@ -548,6 +560,19 @@ else
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     salesItem.Subtotal = GetPropertyValue<decimal>(detail, SubtotalPropertyName);
                 
+                // 🔍 Debug: 追蹤稅率載入（通用轉換邏輯）
+                ConsoleHelper.WriteTitle("載入銷貨明細 (通用轉換邏輯分支)");
+                ConsoleHelper.WriteInfo($"商品ID: {productId}");
+                var detailTaxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
+                ConsoleHelper.WriteInfo($"明細稅率 (detail.TaxRate): {detailTaxRate}");
+                ConsoleHelper.WriteInfo($"商品稅率 (Product?.TaxRate): {salesItem.SelectedProduct?.TaxRate}");
+                var systemTaxRate2 = await SystemParameterService.GetTaxRateAsync();
+                ConsoleHelper.WriteInfo($"系統預設稅率: {systemTaxRate2}");
+                
+                salesItem.TaxRate = detailTaxRate ?? salesItem.SelectedProduct?.TaxRate ?? systemTaxRate2;
+                ConsoleHelper.WriteSuccess($"最終使用稅率: {salesItem.TaxRate}");
+                ConsoleHelper.WriteSeparator();
+                
                 if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
                 {
                     var warehouseId = GetPropertyValue<int?>(detail, WarehouseIdPropertyName);
@@ -587,7 +612,7 @@ else
         // 載入退貨數量資訊（不觸發 StateHasChanged）
         await LoadReturnedQuantitiesAsync();
         
-        // 🔑 資料載入完成 - 觸發空行檢查
+        //  資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
@@ -1907,7 +1932,7 @@ else
             // 將報價單明細轉換為銷貨項目
             foreach (var quotationDetail in quotationDetails)
             {
-                // 🔑 關鍵修改：只載入尚未轉單的數量（報價數量 - 已轉數量）
+                //  關鍵修改：只載入尚未轉單的數量（報價數量 - 已轉數量）
                 var pendingQuantity = quotationDetail.Quantity - quotationDetail.ConvertedQuantity;
                 
                 // 如果該明細已經全部轉完，跳過不載入

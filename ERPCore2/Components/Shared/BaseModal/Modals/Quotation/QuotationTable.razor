@@ -226,20 +226,11 @@ else
             }),
             OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
             {
-                var quotationItem = (QuotationItem)item;
-                quotationItem.FilteredProducts = Products.Take(20).ToList();
-                quotationItem.ShowProductDropdown = true;
-                quotationItem.ProductSelectedIndex = -1;
-                StateHasChanged();
+                OnProductFocus((QuotationItem)item);
             }),
             OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
             {
-                Task.Delay(200).ContinueWith(_ =>
-                {
-                    var quotationItem = (QuotationItem)item;
-                    quotationItem.ShowProductDropdown = false;
-                    InvokeAsync(StateHasChanged);
-                });
+                OnProductBlur((QuotationItem)item);
             }),
             EnableKeyboardNavigation = true,
             GetDropdownItems = (item) => ((QuotationItem)item).FilteredProducts,
@@ -786,6 +777,44 @@ else
 
     // ===== 事件處理方法 =====
 
+    // ===== 商品 SearchableSelect 事件處理 =====
+    
+    /// <summary>
+    /// 商品輸入框獲得焦點
+    /// </summary>
+    private void OnProductFocus(QuotationItem item)
+    {
+        // 只顯示產品類別標記為可販售的商品
+        var availableProducts = Products
+            .Where(p => p.ProductCategory != null && 
+                       p.ProductCategory.IsSaleable)
+            .ToList();
+        
+        // 確保當前選中的商品也在列表中
+        if (item.SelectedProduct != null && 
+            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
+        {
+            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
+        }
+        
+        item.FilteredProducts = availableProducts.Take(20).ToList();
+        item.ShowProductDropdown = true;
+        item.ProductSelectedIndex = -1;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 商品輸入框失去焦點
+    /// </summary>
+    private void OnProductBlur(QuotationItem item)
+    {
+        Task.Delay(200).ContinueWith(_ =>
+        {
+            item.ShowProductDropdown = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+    
     /// <summary>
     /// 商品搜尋輸入變更事件（SearchableSelect）
     /// </summary>
@@ -793,15 +822,28 @@ else
     {
         item.ProductSearchValue = searchValue ?? string.Empty;
         
+        // 只顯示產品類別標記為可販售的商品
+        var availableProducts = Products
+            .Where(p => p.ProductCategory != null && 
+                       p.ProductCategory.IsSaleable)
+            .ToList();
+        
+        // 確保當前選中的商品也在列表中
+        if (item.SelectedProduct != null && 
+            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
+        {
+            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
+        }
+        
         if (string.IsNullOrWhiteSpace(searchValue))
         {
             // 空白搜尋：顯示前20筆
-            item.FilteredProducts = Products.Take(20).ToList();
+            item.FilteredProducts = availableProducts.Take(20).ToList();
         }
         else
         {
             // 篩選符合的商品（編號或名稱包含搜尋字串）
-            item.FilteredProducts = Products
+            item.FilteredProducts = availableProducts
                 .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                            (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 .Take(20)

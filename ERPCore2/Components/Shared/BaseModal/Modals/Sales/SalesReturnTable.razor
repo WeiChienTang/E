@@ -1,6 +1,7 @@
 @* 銷售退貨商品明細管理元件 - 使用 InteractiveTableComponent 統一UI 並整合自動空行功能 *@
 
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
+@using ERPCore2.Data.Enums
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
@@ -118,6 +119,12 @@ else
     // ===== 唯讀模式參數 =====
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
+    // ===== 稅別參數（新增）=====
+    [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
+
+    // ===== 輔助計算屬性 =====
+    private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
+    
     // ===== 狀態通知參數 =====
     /// <summary>
     /// 狀態通知參數 - 通知父組件是否有不可刪除的明細
@@ -175,7 +182,7 @@ else
         await LoadAvailableProductsAsync();
         LoadExistingDetailsAsync();
         
-        // 🔑 初始化後通知父組件是否有不可刪除的明細
+        //  初始化後通知父組件是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();
     }
 
@@ -440,6 +447,36 @@ else
             }
         });
 
+        // 稅率欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "稅率(%)", 
+            PropertyName = nameof(ReturnItem.TaxRate),
+            ColumnType = InteractiveColumnType.Number,
+            Width = "100px",
+            Tooltip = "退貨的稅率百分比（免稅時無法編輯）",
+            IsDisabledFunc = item =>
+            {
+                var returnItem = (ReturnItem)item;
+                return IsTaxCalculationMethodNoTax || HasPaymentRecord(returnItem);
+            },
+            TooltipFunc = item =>
+            {
+                var returnItem = (ReturnItem)item;
+                if (IsTaxCalculationMethodNoTax)
+                    return "當前稅別為免稅，無法編輯稅率";
+                var hasPaymentRecord = HasPaymentRecord(returnItem);
+                if (!hasPaymentRecord) return null;
+                
+                return $"此商品已有沖款記錄（已沖款 {GetPaidAmount(returnItem):N0} 元），無法修改稅率";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnTaxRateInput((ReturnItem)item, valueString);
+            })
+        });
+
         // 小計欄位 (只讀顯示)
         columns.Add(new InteractiveColumnDefinition
         { 
@@ -447,13 +484,14 @@ else
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "退貨金額小計（退貨數量 × 單價 × (1 - 折扣%)）",
+            Tooltip = GetSubtotalTooltip(),
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
+                var subtotal = CalculateItemSubtotal(returnItem);
                 
                 return @<div class="text-end fw-bold text-success">
-                    @returnItem.ReturnSubtotalAmount.ToString("C")
+                    @subtotal.ToString("C")
                 </div>;
             }
         });
@@ -655,10 +693,13 @@ else
             return;
         }
 
-        // 🔑 開始載入資料
+        //  開始載入資料
         _dataLoadCompleted = false;
         
         ReturnItems.Clear();
+        
+        // 載入系統預設稅率
+        var defaultTaxRate = SystemParameterService.GetTaxRateAsync().GetAwaiter().GetResult();
         
         foreach (var detail in ExistingReturnDetails)
         {
@@ -675,6 +716,7 @@ else
                 ReturnQuantity = (int)detail.ReturnQuantity,
                 OriginalUnitPrice = orderDetail?.UnitPrice ?? detail.OriginalUnitPrice,
                 DiscountPercentage = orderDetail?.DiscountPercentage ?? detail.DiscountPercentage,
+                TaxRate = detail.TaxRate ?? orderDetail?.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,  //  優先順序：明細 > 銀貨訂單明細 > 商品 > 系統
                 ReturnReason = string.Empty,
                 Remarks = detail.Remarks ?? string.Empty,
                 ExistingDetailEntity = detail
@@ -683,7 +725,7 @@ else
             ReturnItems.Add(item);
         }
         
-        // 🔑 資料載入完成
+        //  資料載入完成
         _dataLoadCompleted = true;
         StateHasChanged();
     }
@@ -742,12 +784,16 @@ else
             returnItem.ReturnQuantity = 0;
             returnItem.OriginalUnitPrice = 0;
             returnItem.DiscountPercentage = 0;
+            returnItem.TaxRate = null;
         }
         else if (int.TryParse(orderDetailIdStr, out var orderDetailId))
         {
             var detail = GetAvailableOrderDetails().FirstOrDefault(d => d.Id == orderDetailId);
             if (detail != null)
             {
+                // 載入系統預設稅率
+                var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
+                
                 returnItem.SelectedOrderDetail = detail;
                 returnItem.SelectedProduct = detail.Product;
                 returnItem.OriginalQuantity = (int)detail.OrderQuantity;
@@ -755,6 +801,7 @@ else
                 returnItem.ReturnQuantity = 0;
                 returnItem.OriginalUnitPrice = detail.UnitPrice;
                 returnItem.DiscountPercentage = detail.DiscountPercentage;
+                returnItem.TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate;  //  優先順序：銀貨訂單明細 > 商品 > 系統
             }
         }
         
@@ -803,6 +850,68 @@ else
     }
 
     /// <summary>
+    /// 處理稅率輸入
+    /// </summary>
+    private async Task OnTaxRateInput(ReturnItem returnItem, string? valueString)
+    {
+        if (string.IsNullOrWhiteSpace(valueString))
+        {
+            returnItem.TaxRate = null;
+        }
+        else if (decimal.TryParse(valueString, out var taxRate))
+        {
+            returnItem.TaxRate = Math.Max(0, Math.Min(100, taxRate));
+        }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 計算明細項目的小計（根據稅別，四捨五入到整數）
+    /// </summary>
+    private decimal CalculateItemSubtotal(ReturnItem item)
+    {
+        if (item.SelectedProduct == null || item.ReturnQuantity <= 0 || item.OriginalUnitPrice <= 0)
+            return 0;
+        
+        // 基本金額：數量 × 單價 × (1 - 折扣%)
+        var baseAmount = item.ReturnQuantity * item.OriginalUnitPrice * (1 - item.DiscountPercentage / 100);
+        
+        // 根據稅別計算小計
+        return TaxCalculationMethod switch
+        {
+            TaxCalculationMethod.TaxExclusive => 
+                // 外加稅：金額 × (1 + 稅率%)，四捨五入到整數
+                Math.Round(baseAmount * (1 + (item.TaxRate ?? 0) / 100), 0, MidpointRounding.AwayFromZero),
+            
+            TaxCalculationMethod.TaxInclusive => 
+                // 內含稅：金額已含稅，直接四捨五入到整數
+                Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero),
+            
+            TaxCalculationMethod.NoTax => 
+                // 免稅：金額不含稅，四捨五入到整數
+                Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero),
+            
+            _ => Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero)
+        };
+    }
+
+    /// <summary>
+    /// 取得小計欄位的提示文字
+    /// </summary>
+    private string GetSubtotalTooltip()
+    {
+        return TaxCalculationMethod switch
+        {
+            TaxCalculationMethod.TaxExclusive => "退貨金額小計（含稅） = 數量 × 單價 × (1 - 折扣%) × (1 + 稅率%)",
+            TaxCalculationMethod.TaxInclusive => "退貨金額小計（內含稅） = 數量 × 單價 × (1 - 折扣%)",
+            TaxCalculationMethod.NoTax => "退貨金額小計（免稅） = 數量 × 單價 × (1 - 折扣%)",
+            _ => "退貨金額小計"
+        };
+    }
+
+    /// <summary>
     /// 載入所有可退貨商品的主要方法（公開方法，供父組件調用）
     /// </summary>
     public async Task LoadAllReturnableItems()
@@ -810,6 +919,9 @@ else
         try
         {
             var availableDetails = GetAvailableOrderDetails();
+            
+            // 載入系統預設稅率
+            var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
             
             foreach (var orderDetail in availableDetails)
             {
@@ -828,6 +940,7 @@ else
                 emptyItem.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail.Id);
                 emptyItem.OriginalUnitPrice = orderDetail.UnitPrice;
                 emptyItem.DiscountPercentage = orderDetail.DiscountPercentage; // 複製折扣
+                emptyItem.TaxRate = orderDetail.TaxRate ?? orderDetail.Product?.TaxRate ?? defaultTaxRate;  //  優先順序：銀貨訂單明細 > 商品 > 系統
             }
             
             await NotifyDetailsChanged();
@@ -893,7 +1006,7 @@ else
             await OnReturnItemsChanged.InvokeAsync(ReturnItems);
         }
         
-        // 🔑 通知父組件是否有不可刪除的明細
+        //  通知父組件是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();
     }
 
@@ -913,6 +1026,7 @@ else
             item.ExistingDetailEntity.ReturnQuantity = item.ReturnQuantity;
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
             item.ExistingDetailEntity.DiscountPercentage = item.DiscountPercentage;
+            item.ExistingDetailEntity.TaxRate = item.TaxRate;  //  寫入稅率
             item.ExistingDetailEntity.Remarks = item.Remarks;
             
             return item.ExistingDetailEntity;
@@ -926,6 +1040,7 @@ else
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
             DiscountPercentage = item.DiscountPercentage,
+            TaxRate = item.TaxRate,  //  寫入稅率
             Remarks = item.Remarks
         };
     }
@@ -1144,6 +1259,7 @@ else
         
         public decimal OriginalUnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
+        public decimal? TaxRate { get; set; }  //  新增稅率屬性
         
         public string ReturnReason { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;

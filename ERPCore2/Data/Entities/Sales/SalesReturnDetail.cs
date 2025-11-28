@@ -24,6 +24,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(5,2)")]
         public decimal DiscountPercentage { get; set; } = 0;
 
+        [Display(Name = "稅率(%)")]
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100, ErrorMessage = "稅率必須介於 0 到 100 之間")]
+        public decimal? TaxRate { get; set; }
+
         [Display(Name = "退回小計")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal ReturnSubtotalAmount => Math.Round(ReturnQuantity * OriginalUnitPrice * (1 - DiscountPercentage / 100), 2);

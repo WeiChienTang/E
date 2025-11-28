@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
+using ERPCore2.Data.Enums;
 
 // 使用別名來避免命名衝突
 using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;
@@ -25,6 +26,15 @@ namespace ERPCore2.Data.Entities
         [Required(ErrorMessage = "退回日期為必填")]
         [Display(Name = "退回日期")]
         public DateTime ReturnDate { get; set; } = DateTime.Today;
+
+        [Display(Name = "折扣金額")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DiscountAmount { get; set; } = 0;
+
+
+        [Required(ErrorMessage = "稅別為必填")]
+        [Display(Name = "稅別")]
+        public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
 
         [Display(Name = "退回總金額")]
         [Column(TypeName = "decimal(18,2)")]

@@ -20,6 +20,7 @@
 @implements IDisposable
 
 @using ERPCore2.FieldConfiguration
+@using ERPCore2.Data.Enums
 
 <GenericEditModalComponent TEntity="SalesReturn" 
                           TService="ISalesReturnService"
@@ -98,6 +99,9 @@
     private List<Employee> employees = new();
     private List<Product> products = new();
     private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
+    
+    // 下拉選單選項（向下相容）
+    private List<SelectOption> taxCalculationMethodOptions = new();  // 👈 新增此行
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -721,6 +725,16 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(SalesReturn.TaxCalculationMethod),
+                    Label = "稅別",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = taxCalculationMethodOptions,
+                    HelpText = "選擇稅稅計算方式：外加稅/內含稅/不含稅",
+                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
+                new()
+                {
                     PropertyName = nameof(SalesReturn.ReturnReasonId),
                     Label = "退貨原因",
                     FieldType = FormFieldType.Select,
@@ -741,25 +755,36 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(SalesReturn.TotalReturnAmount),
-                    Label = "退貨總金額",
+                    Label = "金額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "退貨單的總金額，根據明細自動計算",
                     IsReadOnly = true // 總金額欄位始終為唯讀
                 },
+
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesReturn.DiscountAmount),
+                    Label = "折扣",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    HelpText = "退貨單的折扣金額，根據明細自動計算",
+                    IsReadOnly = true
+                },
+                
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(SalesReturn.ReturnTaxAmount),
-                    Label = TaxCalculationHelper.GenerateTaxAmountLabel("退貨稅額", currentTaxRate),
+                    Label = "稅額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    HelpText = TaxCalculationHelper.GenerateTaxAmountHelpText("退貨單", currentTaxRate),
+                    HelpText = "退貨單的稅額，根據明細自動計算",
                     IsReadOnly = true // 稅額欄位始終為唯讀
                 },
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(SalesReturn.TotalReturnAmountWithTax),
-                    Label = "含稅總金額",
+                    Label = "總額",
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "退貨單的含稅總金額，根據明細自動計算",
@@ -777,10 +802,12 @@
                     sr => sr.CustomerId,
                     sr => sr.SalesOrderId,
                     sr => sr.ReturnDate,
+                    sr => sr.TaxCalculationMethod,
                     sr => sr.ReturnReasonId)
                 .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
                 .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
                     sr => sr.TotalReturnAmount,
+                    sr => sr.DiscountAmount,
                     sr => sr.ReturnTaxAmount,
                     sr => sr.TotalReturnAmountWithTax)
                 .AddToSection(FormSectionNames.OtherInfo,
@@ -933,19 +960,57 @@
             
             if (editModalComponent?.Entity != null)
             {
-                // 1. 計算總金額（未稅）- 考慮折扣
-                editModalComponent.Entity.TotalReturnAmount = details
-                    .Where(d => d.ProductId > 0)
-                    .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100));
-                
-                // 2. 計算稅額（使用 TaxCalculationHelper 統一處理）
-                editModalComponent.Entity.ReturnTaxAmount = TaxCalculationHelper.CalculateTax(
-                    editModalComponent.Entity.TotalReturnAmount, 
-                    currentTaxRate
-                );
-                
-                // 3. 含稅總金額會自動計算（TotalReturnAmountWithTax 是計算屬性）
-                //    = TotalReturnAmount + ReturnTaxAmount
+                // 根據稅別計算金額和稅額
+                switch (editModalComponent.Entity.TaxCalculationMethod)
+                {
+                    case TaxCalculationMethod.TaxExclusive:
+                        // 外加稅：金額（未稅）= ∑(數量 × 單價 × (1 - 折扣%))
+                        //        稅額 = ∑(小計 × 稅率%)
+                        editModalComponent.Entity.TotalReturnAmount = Math.Round(
+                            details.Where(d => d.ProductId > 0)
+                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        editModalComponent.Entity.ReturnTaxAmount = Math.Round(
+                            details.Where(d => d.ProductId > 0)
+                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100) * (d.TaxRate ?? 0) / 100),
+                            0, MidpointRounding.AwayFromZero);
+                        break;
+                    
+                    case TaxCalculationMethod.TaxInclusive:
+                        // 內含稅：總額（含稅）= ∑(數量 × 單價 × (1 - 折扣%))
+                        //        稅額 = ∑(小計 / (1 + 稅率%) × 稅率%)
+                        //        金額（未稅）= 總額 - 稅額
+                        var totalWithTax = Math.Round(
+                            details.Where(d => d.ProductId > 0)
+                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        var taxAmount = Math.Round(
+                            details.Where(d => d.ProductId > 0)
+                                   .Sum(d => 
+                                   {
+                                       var subtotal = d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100);
+                                       var taxRate = d.TaxRate ?? 0;
+                                       return Math.Round(subtotal / (1 + taxRate / 100) * taxRate / 100, 0, MidpointRounding.AwayFromZero);
+                                   }),
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        editModalComponent.Entity.ReturnTaxAmount = taxAmount;
+                        editModalComponent.Entity.TotalReturnAmount = Math.Round(totalWithTax - taxAmount, 0, MidpointRounding.AwayFromZero);
+                        break;
+                    
+                    case TaxCalculationMethod.NoTax:
+                        // 免稅：金額 = ∑(數量 × 單價 × (1 - 折扣%))
+                        //      稅額 = 0
+                        editModalComponent.Entity.TotalReturnAmount = Math.Round(
+                            details.Where(d => d.ProductId > 0)
+                                   .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
+                            0, MidpointRounding.AwayFromZero);
+                        
+                        editModalComponent.Entity.ReturnTaxAmount = 0;
+                        break;
+                }
                 
                 StateHasChanged();
             }
@@ -1005,6 +1070,7 @@
             "FilterProductId",
             nameof(SalesReturn.SalesOrderId),
             nameof(SalesReturn.ReturnDate),
+            nameof(SalesReturn.TaxCalculationMethod),  // 🔑 增加稅別欄位鎖定
             nameof(SalesReturn.ReturnReasonId),
             nameof(BaseEntity.Remarks)
         };
@@ -1129,8 +1195,13 @@
                     break;
 
                 case nameof(SalesReturn.SalesOrderId):
-                    // 當銷售單ID變更時，觸發重新渲染以篩選對應的銷售明細
+                    // 當銷售單 ID 變更時，觸發重新渲染以篩選對應的銷售明細
                     StateHasChanged();
+                    break;
+                
+                case nameof(SalesReturn.TaxCalculationMethod):
+                    // 當稅別變更時，重新計算金額和稅額
+                    await HandleReturnDetailsChanged(salesReturnDetails);
                     break;
             }
         }
@@ -1210,14 +1281,52 @@
             }
             
             // 🔑 儲存前再次計算總金額和稅額（確保資料一致性）
-            salesReturn.TotalReturnAmount = salesReturnDetails
-                .Where(d => d.ProductId > 0)
-                .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100));
-            
-            salesReturn.ReturnTaxAmount = TaxCalculationHelper.CalculateTax(
-                salesReturn.TotalReturnAmount, 
-                currentTaxRate
-            );
+            switch (salesReturn.TaxCalculationMethod)
+            {
+                case TaxCalculationMethod.TaxExclusive:
+                    // 外加稅
+                    salesReturn.TotalReturnAmount = Math.Round(
+                        salesReturnDetails.Where(d => d.ProductId > 0)
+                                         .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
+                        0, MidpointRounding.AwayFromZero);
+                    
+                    salesReturn.ReturnTaxAmount = Math.Round(
+                        salesReturnDetails.Where(d => d.ProductId > 0)
+                                         .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100) * (d.TaxRate ?? 0) / 100),
+                        0, MidpointRounding.AwayFromZero);
+                    break;
+                
+                case TaxCalculationMethod.TaxInclusive:
+                    // 內含稅
+                    var totalWithTax = Math.Round(
+                        salesReturnDetails.Where(d => d.ProductId > 0)
+                                         .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
+                        0, MidpointRounding.AwayFromZero);
+                    
+                    var taxAmount = Math.Round(
+                        salesReturnDetails.Where(d => d.ProductId > 0)
+                                         .Sum(d => 
+                                         {
+                                             var subtotal = d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100);
+                                             var taxRate = d.TaxRate ?? 0;
+                                             return Math.Round(subtotal / (1 + taxRate / 100) * taxRate / 100, 0, MidpointRounding.AwayFromZero);
+                                         }),
+                        0, MidpointRounding.AwayFromZero);
+                    
+                    salesReturn.ReturnTaxAmount = taxAmount;
+                    salesReturn.TotalReturnAmount = Math.Round(totalWithTax - taxAmount, 0, MidpointRounding.AwayFromZero);
+                    break;
+                
+                case TaxCalculationMethod.NoTax:
+                    // 免稅
+                    salesReturn.TotalReturnAmount = Math.Round(
+                        salesReturnDetails.Where(d => d.ProductId > 0)
+                                         .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
+                        0, MidpointRounding.AwayFromZero);
+                    
+                    salesReturn.ReturnTaxAmount = 0;
+                    break;
+            }
                         
             // 呼叫服務的 SaveWithDetailsAsync 方法
             var result = await SalesReturnService.SaveWithDetailsAsync(salesReturn, salesReturnDetails);
@@ -1295,6 +1404,7 @@
                             FilterSalesOrderId="@FilterSalesOrderId"
                             FilterProductId="@FilterProductId"
                             ExistingReturnDetails="@salesReturnDetails"
+                            TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
                             OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                             OnOpenRelatedDocument="@HandleOpenRelatedDocument"
