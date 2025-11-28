@@ -1293,13 +1293,6 @@
             // 使用公開方法打開銷貨訂單 Modal 並自動載入報價單明細
             if (salesOrderEditModal != null)
             {
-                ConsoleHelper.WriteTitle("報價單轉銷貨訂單 - 開始轉單");
-                ConsoleHelper.WriteInfo($"報價單ID: {QuotationId.Value}");
-                ConsoleHelper.WriteInfo($"客戶ID: {editModalComponent.Entity.CustomerId}");
-                ConsoleHelper.WriteInfo($"公司ID: {editModalComponent.Entity.CompanyId}");
-                ConsoleHelper.WriteInfo($"業務員ID: {editModalComponent.Entity.EmployeeId}");
-                ConsoleHelper.WriteSeparator();
-                
                 await salesOrderEditModal.ShowAddModalWithPrefilledQuotation(
                     editModalComponent.Entity.CustomerId,
                     editModalComponent.Entity.CompanyId,

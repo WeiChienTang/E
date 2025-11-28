@@ -477,17 +477,8 @@ else
             // 轉換為正確的實體類型
             if (detail is SalesOrderDetail salesDetail)
             {
-                // 🔍 Debug: 追蹤稅率載入
-                ConsoleHelper.WriteTitle("載入銷貨明細 (SalesOrderDetail 分支)");
-                ConsoleHelper.WriteInfo($"商品ID: {salesDetail.ProductId}");
-                ConsoleHelper.WriteInfo($"明細稅率 (salesDetail.TaxRate): {salesDetail.TaxRate}");
-                ConsoleHelper.WriteInfo($"商品稅率 (Product?.TaxRate): {salesDetail.Product?.TaxRate}");
                 var systemTaxRate = await SystemParameterService.GetTaxRateAsync();
-                ConsoleHelper.WriteInfo($"系統預設稅率: {systemTaxRate}");
-                
                 var finalTaxRate = salesDetail.TaxRate ?? salesDetail.Product?.TaxRate ?? systemTaxRate;
-                ConsoleHelper.WriteSuccess($"最終使用稅率: {finalTaxRate}");
-                ConsoleHelper.WriteSeparator();
                 
                 var salesItem = new SalesItem
                 {
@@ -560,18 +551,10 @@ else
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     salesItem.Subtotal = GetPropertyValue<decimal>(detail, SubtotalPropertyName);
                 
-                // 🔍 Debug: 追蹤稅率載入（通用轉換邏輯）
-                ConsoleHelper.WriteTitle("載入銷貨明細 (通用轉換邏輯分支)");
-                ConsoleHelper.WriteInfo($"商品ID: {productId}");
+                // 設定稅率（優先使用明細稅率，其次商品稅率，最後系統預設值）
                 var detailTaxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
-                ConsoleHelper.WriteInfo($"明細稅率 (detail.TaxRate): {detailTaxRate}");
-                ConsoleHelper.WriteInfo($"商品稅率 (Product?.TaxRate): {salesItem.SelectedProduct?.TaxRate}");
                 var systemTaxRate2 = await SystemParameterService.GetTaxRateAsync();
-                ConsoleHelper.WriteInfo($"系統預設稅率: {systemTaxRate2}");
-                
                 salesItem.TaxRate = detailTaxRate ?? salesItem.SelectedProduct?.TaxRate ?? systemTaxRate2;
-                ConsoleHelper.WriteSuccess($"最終使用稅率: {salesItem.TaxRate}");
-                ConsoleHelper.WriteSeparator();
                 
                 if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
                 {

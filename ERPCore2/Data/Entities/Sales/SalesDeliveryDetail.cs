@@ -30,6 +30,11 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal SubtotalAmount => Math.Round(DeliveryQuantity * UnitPrice * (1 - DiscountPercentage / 100), 2);
 
+        [Display(Name = "稅率(%)")]
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100, ErrorMessage = "稅率必須介於 0 ~ 100 之間")]
+        public decimal? TaxRate { get; set; }
+
         [Required(ErrorMessage = "是否結清為必填")]
         [Display(Name = "是否結清")]
         public bool IsSettled { get; set; } = false;

@@ -1084,18 +1084,6 @@
         {
             salesOrderDetails = details ?? new List<SalesOrderDetail>();
             
-            // 🔍 Debug: 追蹤明細變更事件
-            ConsoleHelper.WriteTitle("HandleDetailsChanged - 銷貨訂單明細變更");
-            ConsoleHelper.WriteInfo($"明細數量: {details?.Count ?? 0}");
-            if (details?.Any() == true)
-            {
-                foreach (var detail in details)
-                {
-                    ConsoleHelper.WriteInfo($"  商品ID: {detail.ProductId}, 稅率: {detail.TaxRate}");
-                }
-            }
-            ConsoleHelper.WriteSeparator();
-            
             // 更新主檔的金額、折扣、稅額和總額
             if (editModalComponent?.Entity != null)
             {
@@ -1105,8 +1093,6 @@
                     case TaxCalculationMethod.TaxExclusive:
                         // 外加稅：總額 = 金額 - 折扣 + 稅額
                         {
-                            ConsoleHelper.WriteInfo("計算模式: 外加稅");
-                            
                             // 1. 金額（折扣前）= Σ(數量 × 單價)
                             editModalComponent.Entity.TotalAmount = Math.Round(
                                 salesOrderDetails.Sum(d => d.OrderQuantity * d.UnitPrice), 
@@ -1118,16 +1104,12 @@
                                 0, MidpointRounding.AwayFromZero);
                             
                             // 3. 稅額 = Σ(折扣後金額 × 稅率%)
-                            ConsoleHelper.WriteInfo("計算稅額...");
                             editModalComponent.Entity.SalesTaxAmount = Math.Round(
                                 salesOrderDetails.Sum(d => {
                                     var amountAfterDiscount = d.OrderQuantity * d.UnitPrice * (1 - d.DiscountPercentage / 100);
                                     var taxRate = d.TaxRate ?? 0;
-                                    ConsoleHelper.WriteDebug($"  明細: 金額={amountAfterDiscount:N2}, 稅率={taxRate}%, 稅額={amountAfterDiscount * (taxRate / 100):N2}");
                                     return amountAfterDiscount * (taxRate / 100);
                                 }), 0, MidpointRounding.AwayFromZero);
-                            
-                            ConsoleHelper.WriteSuccess($"總稅額: {editModalComponent.Entity.SalesTaxAmount}");
                             
                             // 4. 總額由 TotalAmountWithTax 計算屬性自動計算 (TotalAmount + SalesTaxAmount)
                             // 注意：這裡的 TotalAmount 是折扣前金額，需要減去折扣後再加稅
