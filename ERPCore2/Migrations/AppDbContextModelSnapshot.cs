@@ -3535,9 +3535,6 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("SalesDeliveryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SalesOrderId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -3564,11 +3561,9 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("ReturnReasonId");
 
-                    b.HasIndex("SalesDeliveryId");
-
                     b.HasIndex("CustomerId", "ReturnDate");
 
-                    b.HasIndex("SalesOrderId", "ReturnDate");
+                    b.HasIndex("SalesDeliveryId", "ReturnDate");
 
                     b.ToTable("SalesReturns");
                 });
@@ -3614,9 +3609,6 @@ namespace ERPCore2.Migrations
                     b.Property<int?>("SalesDeliveryDetailId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SalesOrderDetailId")
-                        .HasColumnType("int");
-
                     b.Property<int>("SalesReturnId")
                         .HasColumnType("int");
 
@@ -3641,8 +3633,6 @@ namespace ERPCore2.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("SalesDeliveryDetailId");
-
-                    b.HasIndex("SalesOrderDetailId");
 
                     b.HasIndex("SalesReturnId", "ProductId");
 
@@ -5688,11 +5678,7 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.SalesDelivery", "SalesDelivery")
                         .WithMany("SalesReturns")
-                        .HasForeignKey("SalesDeliveryId");
-
-                    b.HasOne("ERPCore2.Data.Entities.SalesOrder", "SalesOrder")
-                        .WithMany()
-                        .HasForeignKey("SalesOrderId")
+                        .HasForeignKey("SalesDeliveryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Customer");
@@ -5702,8 +5688,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("ReturnReason");
 
                     b.Navigation("SalesDelivery");
-
-                    b.Navigation("SalesOrder");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesReturnDetail", b =>
@@ -5716,11 +5700,7 @@ namespace ERPCore2.Migrations
 
                     b.HasOne("ERPCore2.Data.Entities.SalesDeliveryDetail", "SalesDeliveryDetail")
                         .WithMany("SalesReturnDetails")
-                        .HasForeignKey("SalesDeliveryDetailId");
-
-                    b.HasOne("ERPCore2.Data.Entities.SalesOrderDetail", "SalesOrderDetail")
-                        .WithMany()
-                        .HasForeignKey("SalesOrderDetailId")
+                        .HasForeignKey("SalesDeliveryDetailId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ERPCore2.Data.Entities.SalesReturn", "SalesReturn")
@@ -5732,8 +5712,6 @@ namespace ERPCore2.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("SalesDeliveryDetail");
-
-                    b.Navigation("SalesOrderDetail");
 
                     b.Navigation("SalesReturn");
                 });

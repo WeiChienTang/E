@@ -436,11 +436,8 @@ namespace ERPCore2.Services
                     .Include(sod => sod.Warehouse)
                     .Where(sod => 
                         sod.SalesOrder.CustomerId == customerId &&
-                        sod.OrderQuantity > 0 &&
-                        // 檢查是否已全部退貨 - 計算已退貨數量
-                        sod.OrderQuantity > context.SalesReturnDetails
-                            .Where(srd => srd.SalesOrderDetailId == sod.Id)
-                            .Sum(srd => srd.ReturnQuantity)
+                        sod.OrderQuantity > 0
+                        // 注意：退貨現在從出貨單產生，不直接從訂單
                     )
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
                     .ThenBy(sod => sod.SalesOrder.Code)

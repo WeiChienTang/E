@@ -16,18 +16,18 @@ namespace ERPCore2.FieldConfiguration
     /// </summary>
     public class SalesReturnFieldConfiguration : BaseFieldConfiguration<SalesReturn>
     {
-        private readonly List<SalesOrder> _salesOrders;
+        private readonly List<SalesDelivery> _salesDeliveries;
         private readonly List<Warehouse> _warehouses;
         private readonly List<EntitySalesReturnReason> _returnReasons;
         private readonly INotificationService? _notificationService;
 
         public SalesReturnFieldConfiguration(
-            List<SalesOrder> salesOrders, 
+            List<SalesDelivery> salesDeliveries, 
             List<Warehouse> warehouses, 
             List<EntitySalesReturnReason> returnReasons,
             INotificationService? notificationService = null)
         {
-            _salesOrders = salesOrders;
+            _salesDeliveries = salesDeliveries;
             _warehouses = warehouses;
             _returnReasons = returnReasons;
             _notificationService = notificationService;
@@ -119,7 +119,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), 
                         additionalData: new { 
-                            SalesOrdersCount = _salesOrders?.Count ?? 0,
+                            SalesDeliveriesCount = _salesDeliveries?.Count ?? 0,
                             WarehousesCount = _warehouses?.Count ?? 0,
                             ReturnReasonsCount = _returnReasons?.Count ?? 0
                         });

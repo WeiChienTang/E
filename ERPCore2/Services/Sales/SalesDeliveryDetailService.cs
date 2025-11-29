@@ -213,6 +213,59 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定客戶的可退貨出貨明細（已出貨但未完全退貨）
+        /// </summary>
+        public async Task<List<SalesDeliveryDetail>> GetReturnableDetailsByCustomerAsync(int customerId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢該客戶的所有出貨明細，並計算已退貨數量
+                var deliveryDetails = await context.SalesDeliveryDetails
+                    .Include(dd => dd.SalesDelivery)
+                        .ThenInclude(sd => sd.Customer)
+                    .Include(dd => dd.Product)
+                    .Include(dd => dd.Unit)
+                    .Include(dd => dd.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Where(dd => dd.SalesDelivery.CustomerId == customerId)
+                    .ToListAsync();
+                
+                // 篩選出還有可退貨數量的明細
+                var returnableDetails = new List<SalesDeliveryDetail>();
+                
+                foreach (var detail in deliveryDetails)
+                {
+                    // 計算已退貨數量
+                    var returnedQty = await context.SalesReturnDetails
+                        .Where(srd => srd.SalesDeliveryDetailId == detail.Id)
+                        .SumAsync(srd => srd.ReturnQuantity);
+                    
+                    // 如果還有可退貨數量，加入列表
+                    if (detail.DeliveryQuantity > returnedQty)
+                    {
+                        returnableDetails.Add(detail);
+                    }
+                }
+                
+                return returnableDetails
+                    .OrderByDescending(dd => dd.SalesDelivery.DeliveryDate)
+                    .ThenBy(dd => dd.Product.Code)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnableDetailsByCustomerAsync), GetType(), _logger, new {
+                    Method = nameof(GetReturnableDetailsByCustomerAsync),
+                    ServiceType = GetType().Name,
+                    CustomerId = customerId
+                });
+                return new List<SalesDeliveryDetail>();
+            }
+        }
+
         #endregion
     }
 }

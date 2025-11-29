@@ -1,8 +1,8 @@
 @* 銷售退貨編輯模態組件 *@
 @inject ISalesReturnService SalesReturnService
 @inject ISalesReturnDetailService SalesReturnDetailService
-@inject ISalesOrderService SalesOrderService
-@inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesDeliveryService SalesDeliveryService
+@inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject ISalesReturnReasonService SalesReturnReasonService
@@ -83,9 +83,8 @@
     [Parameter] public EventCallback<SalesReturn> OnSalesReturnSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
-    // ===== 預填參數（用於從銷貨訂單或出貨單轉單） =====
+    // ===== 預填參數（用於從出貨單轉單） =====
     [Parameter] public int? PrefilledCustomerId { get; set; }
-    [Parameter] public int? PrefilledSalesOrderId { get; set; }
     [Parameter] public int? PrefilledSalesDeliveryId { get; set; }  // 從出貨單轉退貨時使用
 
     // ===== 內部狀態 =====
@@ -93,16 +92,25 @@
     private GenericEditModalComponent<SalesReturn, ISalesReturnService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<SalesOrder> salesOrders = new();
+    
+    // 原始資料集合（用於 AutoComplete）
+    private List<SalesDelivery> availableSalesDeliveries = new();
+    private List<Warehouse> availableWarehouses = new();
+    private List<WarehouseLocation> availableWarehouseLocations = new();
+    private List<Customer> availableCustomers = new();
+    private List<Employee> availableEmployees = new();
+    private List<Product> availableProducts = new();
+    private List<ERPCore2.Data.Entities.SalesReturnReason> availableReturnReasons = new();
+    
+    // 下拉選單選項（向下相容，用於過濾後的選項）
+    private List<SalesDelivery> salesDeliveries = new();
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
     private List<Customer> customers = new();
     private List<Employee> employees = new();
     private List<Product> products = new();
     private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
-    
-    // 下拉選單選項（向下相容）
-    private List<SelectOption> taxCalculationMethodOptions = new();  // 👈 新增此行
+    private List<SelectOption> taxCalculationMethodOptions = new();
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -114,7 +122,7 @@
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
     private int? FilterProductId => filterProductId;
-    private int? FilterSalesOrderId = null;
+    private int? FilterSalesDeliveryId = null;
     
     // ===== 明細載入狀態 =====
     private bool shouldAutoLoadReturnable = false;  // 標記是否需要自動載入可退貨商品
@@ -174,10 +182,10 @@
                 await InitializeFormFieldsAsync();
                 
                 // 再次觸發選項更新（在表單欄位初始化後）
-                // 當從銷貨訂單轉單時，確保銷售單選項正確篩選
+                // 當從出貨單轉單時，確保銷售單選項正確篩選
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
                 {
-                    await UpdateSalesOrderOptions(PrefilledCustomerId.Value);
+                    await UpdateSalesDeliveryOptions(PrefilledCustomerId.Value);
                     await UpdateFilterProductOptions(PrefilledCustomerId.Value);
                     StateHasChanged(); // 強制UI更新
                 }
@@ -193,50 +201,6 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 開啟新增銷售退貨單 Modal 並預填銷貨訂單資訊（公開方法供外部調用）
-    /// </summary>
-    public async Task ShowAddModalWithPrefilledOrder(int customerId, int salesOrderId)
-    {
-        try
-        {
-            // 使用 DocumentConversionHelper 統一處理轉單邏輯
-            var success = await DocumentConversionHelper.ShowConversionModalAsync(
-                setPrefilledValues: () =>
-                {
-                    SalesReturnId = null;
-                    PrefilledCustomerId = customerId;
-                    PrefilledSalesOrderId = salesOrderId;
-                    shouldAutoLoadReturnable = true;
-                },
-                isVisibleChanged: IsVisibleChanged,
-                autoLoadAction: async () =>
-                {
-                    shouldAutoLoadReturnable = false;
-                    if (salesReturnDetailManager != null)
-                    {
-                        await salesReturnDetailManager.LoadAllReturnableItems();
-                    }
-                },
-                detailManagerReady: () => salesReturnDetailManager != null,
-                shouldAutoLoad: () => shouldAutoLoadReturnable,
-                stateHasChangedAction: StateHasChanged,
-                invokeAsync: InvokeAsync
-            );
-
-            if (!success)
-            {
-                throw new Exception("轉單流程執行失敗");
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledOrder), GetType(), 
-                additionalData: $"開啟預填銷售退貨單Modal失敗 - CustomerId: {customerId}, OrderId: {salesOrderId}");
-            await NotificationService.ShowErrorAsync("開啟銷售退貨單時發生錯誤");
         }
     }
 
@@ -436,24 +400,17 @@
                     ReturnReasonId = null // 預設為 null，選擇性填寫
                 };
                 
-                // 🔑 使用預填參數（從銷貨訂單或出貨單轉單時）
+                // 🔑 使用預填參數（從出貨單轉單時）
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
                 {
                     newSalesReturn.CustomerId = PrefilledCustomerId.Value;
-                }
-                
-                if (PrefilledSalesOrderId.HasValue && PrefilledSalesOrderId.Value > 0)
-                {
-                    newSalesReturn.SalesOrderId = PrefilledSalesOrderId.Value;
-                    // 設定篩選條件，讓明細管理器只顯示這張銷貨訂單的可退貨商品
-                    FilterSalesOrderId = PrefilledSalesOrderId.Value;
                 }
                 
                 if (PrefilledSalesDeliveryId.HasValue && PrefilledSalesDeliveryId.Value > 0)
                 {
                     newSalesReturn.SalesDeliveryId = PrefilledSalesDeliveryId.Value;
                     // 設定篩選條件，讓明細管理器只顯示這張出貨單的可退貨商品
-                    // 注意：如果同時有 SalesOrderId 和 SalesDeliveryId，優先使用 SalesDeliveryId
+                    FilterSalesDeliveryId = PrefilledSalesDeliveryId.Value;
                 }
                 
                 // 初始化空的明細列表
@@ -518,7 +475,7 @@
     {
         try
         {
-            await LoadSalesOrdersAsync();
+            await LoadsalesDeliveriesAsync();
             await LoadWarehousesAsync();
             await LoadWarehouseLocationsAsync();
             await LoadCustomersAsync();
@@ -535,16 +492,18 @@
         }
     }
 
-    private async Task LoadSalesOrdersAsync()
+    private async Task LoadsalesDeliveriesAsync()
     {
         try
         {
-            salesOrders = await SalesOrderService.GetAllAsync();
+            availableSalesDeliveries = await SalesDeliveryService.GetAllAsync();
+            salesDeliveries = availableSalesDeliveries; // 向下相容
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入銷售訂單資料時發生錯誤：{ex.Message}");
-            salesOrders = new List<SalesOrder>();
+            await NotificationService.ShowErrorAsync($"載入出貨單資料時發生錯誤：{ex.Message}");
+            availableSalesDeliveries = new List<SalesDelivery>();
+            salesDeliveries = new List<SalesDelivery>();
         }
     }
 
@@ -552,11 +511,13 @@
     {
         try
         {
-            warehouses = await WarehouseService.GetAllAsync();
+            availableWarehouses = await WarehouseService.GetAllAsync();
+            warehouses = availableWarehouses; // 向下相容
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入倉庫資料時發生錯誤：{ex.Message}");
+            availableWarehouses = new List<Warehouse>();
             warehouses = new List<Warehouse>();
         }
     }
@@ -565,11 +526,13 @@
     {
         try
         {
-            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+            availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
+            warehouseLocations = availableWarehouseLocations; // 向下相容
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入倉庫位置資料時發生錯誤：{ex.Message}");
+            availableWarehouseLocations = new List<WarehouseLocation>();
             warehouseLocations = new List<WarehouseLocation>();
         }
     }
@@ -578,11 +541,13 @@
     {
         try
         {
-            customers = await CustomerService.GetAllAsync();
+            availableCustomers = await CustomerService.GetAllAsync();
+            customers = availableCustomers; // 向下相容
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入客戶資料時發生錯誤：{ex.Message}");
+            availableCustomers = new List<Customer>();
             customers = new List<Customer>();
         }
     }
@@ -594,16 +559,19 @@
             var result = await EmployeeService.GetActiveEmployeesAsync();
             if (result.IsSuccess && result.Data != null)
             {
-                employees = result.Data;
+                availableEmployees = result.Data;
+                employees = availableEmployees; // 向下相容
             }
             else
             {
+                availableEmployees = new List<Employee>();
                 employees = new List<Employee>();
             }
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入員工資料時發生錯誤：{ex.Message}");
+            availableEmployees = new List<Employee>();
             employees = new List<Employee>();
         }
     }
@@ -612,11 +580,13 @@
     {
         try
         {
-            products = await ProductService.GetAllAsync();
+            availableProducts = await ProductService.GetAllAsync();
+            products = availableProducts; // 向下相容
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
+            availableProducts = new List<Product>();
             products = new List<Product>();
         }
     }
@@ -625,16 +595,19 @@
     {
         try
         {
-            returnReasons = await SalesReturnReasonService.GetActiveReasonsAsync();
+            availableReturnReasons = await SalesReturnReasonService.GetActiveReasonsAsync();
+            returnReasons = availableReturnReasons; // 向下相容
             
-            // 配置 AutoComplete
+            // 配置 AutoComplete - 使用 available* 集合確保顯示完整資料
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesReturn>()
-                .AddField(nameof(SalesReturn.CustomerId), "CompanyName", customers)
+                .AddField(nameof(SalesReturn.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(SalesReturn.SalesDeliveryId), "Code", availableSalesDeliveries)
                 .Build();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入退貨原因資料時發生錯誤：{ex.Message}");
+            availableReturnReasons = new List<ERPCore2.Data.Entities.SalesReturnReason>();
             returnReasons = new List<ERPCore2.Data.Entities.SalesReturnReason>();
         }
     }
@@ -650,32 +623,32 @@
     /// <summary>
     /// 更新銷售單選項 - 根據客戶ID過濾，並排除已完成的銷售單
     /// </summary>
-    private async Task UpdateSalesOrderOptions(int? customerId = null)
+    private async Task UpdateSalesDeliveryOptions(int? customerId = null)
     {
         try
         {
-            var filteredSalesOrders = salesOrders;
+            var filteredsalesDeliveries = salesDeliveries;
 
             if (customerId.HasValue)
             {
                 // 根據選擇的客戶過濾銷售單
-                filteredSalesOrders = salesOrders
-                    .Where(so => so.CustomerId == customerId.Value && !IsOrderFullyReturned(so))
+                filteredsalesDeliveries = salesDeliveries
+                    .Where(so => so.CustomerId == customerId.Value && !IsDeliveryFullyReturned(so))
                     .ToList();
             }
             else
             {
                 // 顯示所有未完全退貨的銷售單
-                filteredSalesOrders = salesOrders
-                    .Where(so => !IsOrderFullyReturned(so))
+                filteredsalesDeliveries = salesDeliveries
+                    .Where(so => !IsDeliveryFullyReturned(so))
                     .ToList();
             }
 
             // 更新表單中銷售單選項
-            var salesOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesOrderId));
-            if (salesOrderField != null)
+            var salesDeliveryField = formFields.FirstOrDefault(f => f.PropertyName == nameof(SalesReturn.SalesDeliveryId));
+            if (salesDeliveryField != null)
             {
-                salesOrderField.Options = filteredSalesOrders.Select(so => new SelectOption
+                salesDeliveryField.Options = filteredsalesDeliveries.Select(so => new SelectOption
                 {
                     Text = so.Code ?? string.Empty,
                     Value = so.Id.ToString()
@@ -694,17 +667,17 @@
     /// 判斷銷售單是否已完全退貨
     /// 退貨條件：所有明細都已完成退貨（退貨數量 == 銷售數量 或 標記為已完成）
     /// </summary>
-    private bool IsOrderFullyReturned(SalesOrder salesOrder)
+    private bool IsDeliveryFullyReturned(SalesDelivery salesDelivery)
     {
         try
         {
             // 如果沒有明細，視為未完成
-            if (salesOrder.SalesOrderDetails == null || !salesOrder.SalesOrderDetails.Any())
+            if (salesDelivery.DeliveryDetails == null || !salesDelivery.DeliveryDetails.Any())
                 return false;
 
             // 這裡需要實作檢查邏輯，暫時回傳 false
             // 檢查所有明細是否都已完成退貨
-            // return salesOrder.SalesOrderDetails.All(detail => detail.ReturnedQuantity >= detail.Quantity);
+            // return salesDelivery.DeliveryDetails.All(detail => detail.ReturnedQuantity >= detail.Quantity);
             return false;
         }
         catch
@@ -758,12 +731,13 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesReturn.SalesOrderId),
-                    Label = "篩選銷售單",
-                    FieldType = FormFieldType.Select,
+                    PropertyName = nameof(SalesReturn.SalesDeliveryId),
+                    Label = "銷貨單單號",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇銷貨單號",
                     IsRequired = false,
-                    Options = new List<SelectOption>(), // 初始化空選項，稍後由 UpdateSalesOrderOptions 更新
-                    HelpText = "可選擇特定銷售單進行篩選，或留空使用多銷售單模式",
+                    MinSearchLength = 0,
+                    HelpText = "可選擇特定銷貨單進行篩選，或留空使用多銷貨單模式",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
@@ -845,8 +819,7 @@
             formSections = FormSectionHelper<SalesReturn>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sr => sr.Code,
-                    sr => sr.CustomerId,
-                    sr => sr.SalesOrderId)                    
+                    sr => sr.CustomerId)                    
                 .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
                 .AddToSection(FormSectionNames.BasicInfo,
                     sr => sr.ReturnReasonId,
@@ -1095,7 +1068,6 @@
     /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
     /// - 客戶 (CustomerId) - 同時禁用新增/編輯按鈕
     /// - 篩選產品 (FilterProductId)
-    /// - 銷售單 (SalesOrderId)
     /// - 退貨日期 (ReturnDate)
     /// - 退貨原因 (ReturnReasonId)
     /// - 備註 (Remarks)
@@ -1116,7 +1088,7 @@
         var fieldsToLock = new[]
         {
             "FilterProductId",
-            nameof(SalesReturn.SalesOrderId),
+            nameof(SalesReturn.SalesDeliveryId),
             nameof(SalesReturn.ReturnDate),
             nameof(SalesReturn.TaxCalculationMethod),  // 🔑 增加稅別欄位鎖定
             nameof(SalesReturn.ReturnReasonId),
@@ -1227,7 +1199,7 @@
                     }
                     break;
 
-                case nameof(SalesReturn.SalesOrderId):
+                case nameof(SalesReturn.SalesDeliveryId):
                     // ✅ 欄位依賴變化：銷售單篩選改變需要立即更新明細表格
                     StateHasChanged();
                     break;
@@ -1436,7 +1408,7 @@
                         <SalesReturnTable @ref="salesReturnDetailManager"
                             Products="@products"
                             CustomerId="@(editModalComponent?.Entity?.CustomerId)"
-                            FilterSalesOrderId="@FilterSalesOrderId"
+                            FilterSalesDeliveryId="@FilterSalesDeliveryId"
                             FilterProductId="@FilterProductId"
                             ExistingReturnDetails="@salesReturnDetails"
                             TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
@@ -1601,3 +1573,4 @@
         }
     }
 }
+

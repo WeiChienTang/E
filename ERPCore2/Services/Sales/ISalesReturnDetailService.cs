@@ -23,11 +23,11 @@ namespace ERPCore2.Services
         Task<List<SalesReturnDetail>> GetByProductIdAsync(int productId);
 
         /// <summary>
-        /// 根據銷貨訂單明細ID取得退回明細清單
+        /// 根據銷貨出貨明細ID取得退回明細清單
         /// </summary>
-        /// <param name="salesOrderDetailId">銷貨訂單明細ID</param>
+        /// <param name="salesDeliveryDetailId">銷貨出貨明細ID</param>
         /// <returns>明細清單</returns>
-        Task<List<SalesReturnDetail>> GetBySalesOrderDetailIdAsync(int salesOrderDetailId);
+        Task<List<SalesReturnDetail>> GetBySalesDeliveryDetailIdAsync(int salesDeliveryDetailId);
 
 
 
@@ -60,11 +60,11 @@ namespace ERPCore2.Services
         Task<ServiceResult> ValidateReturnQuantityAsync(SalesReturnDetail detail);
 
         /// <summary>
-        /// 取得指定銷售訂單明細的已退貨數量
+        /// 取得指定銷售出貨明細的已退貨數量
         /// </summary>
-        /// <param name="salesOrderDetailId">銷售訂單明細ID</param>
+        /// <param name="salesDeliveryDetailId">銷售出貨明細ID</param>
         /// <returns>已退貨數量</returns>
-        Task<decimal> GetReturnedQuantityByOrderDetailAsync(int salesOrderDetailId);
+        Task<decimal> GetReturnedQuantityByDeliveryDetailAsync(int salesDeliveryDetailId);
     }
 
     /// <summary>

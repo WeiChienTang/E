@@ -1,7 +1,7 @@
 @page "/salesReturns"
 @using ERPCore2.Models
 @inject ISalesReturnService SalesReturnService
-@inject ISalesOrderService SalesOrderService
+@inject ISalesDeliveryService SalesDeliveryService
 @inject IWarehouseService WarehouseService
 @inject ISalesReturnReasonService SalesReturnReasonService
 @inject ICustomerService CustomerService
@@ -95,7 +95,7 @@
     private List<BreadcrumbItem> breadcrumbItems = new();
 
     // 相關資料
-    private List<SalesOrder> salesOrders = new();
+    private List<SalesDelivery> salesDeliveries = new();
     private List<Warehouse> warehouses = new();
     private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
     private List<Customer> customers = new();
@@ -115,13 +115,13 @@
             await InitializeBreadcrumbsAsync();
             
             // 載入相關資料
-            await LoadSalesOrdersAsync();
+            await LoadSalesDeliveriesAsync();
             await LoadWarehousesAsync();
             await LoadReturnReasonsAsync();
             await LoadCustomersAsync();
             
             // 建立欄位配置
-            fieldConfiguration = new SalesReturnFieldConfiguration(salesOrders, warehouses, returnReasons, NotificationService);
+            fieldConfiguration = new SalesReturnFieldConfiguration(salesDeliveries, warehouses, returnReasons, NotificationService);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }
@@ -149,7 +149,7 @@
     {
         try
         {
-            await LoadSalesOrdersAsync();
+            await LoadSalesDeliveriesAsync();
             await LoadWarehousesAsync();
             await LoadReturnReasonsAsync();
         }
@@ -163,7 +163,7 @@
     /// <summary>
     /// 載入銷售訂單資料
     /// </summary>
-    private async Task LoadSalesOrdersAsync() => salesOrders = await DataLoaderHelper.LoadAsync(() => SalesOrderService.GetAllAsync(), "銷售訂單", NotificationService, GetType());
+    private async Task LoadSalesDeliveriesAsync() => salesDeliveries = await DataLoaderHelper.LoadAsync(() => SalesDeliveryService.GetAllAsync(), "銷售出貨單", NotificationService, GetType());
 
     /// <summary>
     /// 載入倉庫資料

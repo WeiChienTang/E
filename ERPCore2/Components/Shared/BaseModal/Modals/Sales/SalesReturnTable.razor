@@ -3,7 +3,7 @@
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Data.Enums
 @using ERPCore2.Helpers
-@inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject INotificationService NotificationService
 @inject IWarehouseLocationService WarehouseLocationService
@@ -95,8 +95,8 @@ else
     [Parameter] public int? SelectedCustomerId { get; set; }
     
     // ===== 篩選參數 =====
-    [Parameter] public int? SelectedSalesOrderId { get; set; }
-    [Parameter] public int? FilterSalesOrderId { get; set; }
+    [Parameter] public int? SelectedSalesDeliveryId { get; set; }
+    [Parameter] public int? FilterSalesDeliveryId { get; set; }
     [Parameter] public int? FilterProductId { get; set; }
     
     // ===== 現有明細參數 =====
@@ -136,9 +136,9 @@ else
 
     private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
-    private List<SalesOrderDetail> AvailableOrderDetails { get; set; } = new List<SalesOrderDetail>();
+    private List<SalesDeliveryDetail> AvailableDeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();
     private int? _previousSelectedCustomerId = null;
-    private int? _previousSelectedSalesOrderId = null;
+    private int? _previousSelectedSalesDeliveryId = null;
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
     
@@ -150,7 +150,7 @@ else
 
     // ===== 計算屬性 =====
     private int? EffectiveCustomerId => CustomerId ?? SelectedCustomerId;
-    private int? EffectiveSalesOrderId => FilterSalesOrderId ?? SelectedSalesOrderId;
+    private int? EffectiveSalesDeliveryId => FilterSalesDeliveryId ?? SelectedSalesDeliveryId;
     private int? EffectiveFilterProductId => FilterProductId;
     private EventCallback<List<SalesReturnDetail>> EffectiveDetailsChangedCallback => 
         OnReturnDetailsChanged.HasDelegate ? OnReturnDetailsChanged : OnDetailsChanged;
@@ -159,13 +159,13 @@ else
     /// 判斷是否可以使用「載入全部可退」功能
     /// 規則：
     /// 1. 必須選擇客戶
-    /// 2. 必須有可載入的銷售訂單明細
+    /// 2. 必須有可載入的出貨明細
     /// 3. 編輯模式下或已有明細時禁用此按鈕（避免覆蓋現有資料）
     /// </summary>
     private bool CanLoadAllReturnable => 
         EffectiveCustomerId.HasValue && 
         EffectiveCustomerId.Value > 0 && 
-        GetAvailableOrderDetails().Any() &&
+        GetAvailableDeliveryDetails().Any() &&
         !(ExistingReturnDetails?.Any() == true) && // 編輯模式（有現有明細）時禁用
         !ReturnItems.Any(x => x.SelectedProduct != null); // 已載入明細時禁用
     
@@ -177,8 +177,8 @@ else
         if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
             return "請先選擇客戶";
         
-        if (!GetAvailableOrderDetails().Any())
-            return "該客戶沒有可退貨的銷售訂單明細";
+        if (!GetAvailableDeliveryDetails().Any())
+            return "該客戶沒有可退貨的出貨明細";
         
         if (ExistingReturnDetails?.Any() == true)
             return "編輯模式下無法載入可退貨項目，以避免覆蓋現有資料";
@@ -186,7 +186,7 @@ else
         if (ReturnItems.Any(x => x.SelectedProduct != null))
             return "已有明細項目，無法再次載入以避免覆蓋現有資料";
         
-        return "載入該客戶所有可退貨的銷售訂單明細";
+        return "載入該客戶所有可退貨的出貨明細";
     }
     
     /// <summary>
@@ -213,11 +213,11 @@ else
         
         // 檢查篩選參數是否變更
         bool customerChanged = _previousSelectedCustomerId != EffectiveCustomerId;
-        bool salesOrderChanged = _previousSelectedSalesOrderId != EffectiveSalesOrderId;
+        bool salesDeliveryChanged = _previousSelectedSalesDeliveryId != EffectiveSalesDeliveryId;
         bool productFilterChanged = _previousFilterProductId != EffectiveFilterProductId;
         
         // ✅ 如果沒有任何變化,直接返回
-        if (!customerChanged && !salesOrderChanged && !productFilterChanged)
+        if (!customerChanged && !salesDeliveryChanged && !productFilterChanged)
         {
             return;
         }
@@ -226,7 +226,7 @@ else
         if (customerChanged)
         {
             _previousSelectedCustomerId = EffectiveCustomerId;
-            _previousSelectedSalesOrderId = EffectiveSalesOrderId;
+            _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
             _previousFilterProductId = EffectiveFilterProductId;
             
             await LoadAvailableProductsAsync();
@@ -237,10 +237,10 @@ else
             return;
         }
         
-        // 如果只是銷售訂單或商品篩選變更，只需要更新篩選狀態並重新渲染
-        if (salesOrderChanged || productFilterChanged)
+        // 如果只是出貨單或商品篩選變更，只需要更新篩選狀態並重新渲染
+        if (salesDeliveryChanged || productFilterChanged)
         {
-            _previousSelectedSalesOrderId = EffectiveSalesOrderId;
+            _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
             _previousFilterProductId = EffectiveFilterProductId;
             
             // 觸發重新渲染以套用新的篩選
@@ -341,25 +341,25 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 銷售訂單明細選擇欄位 - 使用 SearchableSelect 類型（只顯示有銷貨的商品）
+        // 出貨明細選擇欄位 - 使用 SearchableSelect 類型（只顯示有銷貨的商品）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "商品編號/名稱",
-            PropertyName = "OrderDetailSearchValue",
-            EmptyCheckPropertyName = "SelectedOrderDetail",  //  檢查物件屬性是否為空
+            PropertyName = "DeliveryDetailSearchValue",
+            EmptyCheckPropertyName = "SelectedDeliveryDetail",  //  檢查物件屬性是否為空
             TriggerEmptyRowOnFilled = true,  //  選擇後自動新增空行
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "300px",
             Tooltip = "搜尋並選擇要退貨的銷售商品。已有沖款記錄的商品將無法變更",
-            Placeholder = "請輸入訂單單號或商品編號/名稱",
-            SearchValuePropertyName = nameof(ReturnItem.OrderDetailSearchValue),
-            FilteredItemsPropertyName = nameof(ReturnItem.FilteredOrderDetails),
+            Placeholder = "請輸入出貨單號或商品編號/名稱",
+            SearchValuePropertyName = nameof(ReturnItem.DeliveryDetailSearchValue),
+            FilteredItemsPropertyName = nameof(ReturnItem.FilteredDeliveryDetails),
             ShowDropdownPropertyName = nameof(ReturnItem.ShowDropdown),
             SelectedIndexPropertyName = nameof(ReturnItem.SelectedIndex),
             ItemDisplayFormatter = (item) =>
             {
-                if (item is SalesOrderDetail detail)
-                    return FormatOrderDetailDisplayText(detail);
+                if (item is SalesDeliveryDetail detail)
+                    return FormatDeliveryDetailDisplayText(detail);
                 return string.Empty;
             },
             IsDisabledFunc = item =>
@@ -378,23 +378,23 @@ else
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async (tuple) =>
             {
                 var (item, searchValue) = tuple;
-                await OnOrderDetailSearch((ReturnItem)item, searchValue);
+                await OnDeliveryDetailSearch((ReturnItem)item, searchValue);
             }),
             OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
             {
                 var (item, selectedItem) = tuple;
-                await OnOrderDetailSelect((ReturnItem)item, selectedItem);
+                await OnDeliveryDetailSelect((ReturnItem)item, selectedItem);
             }),
             OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
             {
-                OnOrderDetailFocus((ReturnItem)item);
+                OnDeliveryDetailFocus((ReturnItem)item);
             }),
             OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
             {
-                OnOrderDetailBlur((ReturnItem)item);
+                OnDeliveryDetailBlur((ReturnItem)item);
             }),
             EnableKeyboardNavigation = true,
-            GetDropdownItems = (item) => ((ReturnItem)item).FilteredOrderDetails,
+            GetDropdownItems = (item) => ((ReturnItem)item).FilteredDeliveryDetails,
             GetSelectedIndex = (item) => ((ReturnItem)item).SelectedIndex,
             SetSelectedIndex = (item, index) => ((ReturnItem)item).SelectedIndex = index,
             GetShowDropdown = (item) => ((ReturnItem)item).ShowDropdown,
@@ -413,7 +413,7 @@ else
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                if (returnItem.SelectedOrderDetail == null) return @<span class="text-muted">-</span>;
+                if (returnItem.SelectedDeliveryDetail == null) return @<span class="text-muted">-</span>;
                 return @<div class="d-flex align-items-center justify-content-end">
                     <span>@returnItem.OriginalQuantity.ToString("N0")</span>
                 </div>;
@@ -470,7 +470,7 @@ else
             CustomTemplate = item => 
             {
                 var returnItem = (ReturnItem)item;
-                var discount = returnItem.SelectedOrderDetail?.DiscountPercentage ?? 0;
+                var discount = returnItem.SelectedDeliveryDetail?.DiscountPercentage ?? 0;
                 
                 return @<div class="d-flex align-items-center justify-content-end">
                     <span>@(discount % 1 == 0 ? discount.ToString("F0") : discount.ToString())</span>
@@ -540,7 +540,7 @@ else
             IsDisabledFunc = item =>
             {
                 var returnItem = (ReturnItem)item;
-                return returnItem.SelectedOrderDetail == null;
+                return returnItem.SelectedDeliveryDetail == null;
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -662,33 +662,33 @@ else
         {
             AvailableProducts = Products?.ToList() ?? new List<Product>();
             
-            // 同時載入銷售訂單明細
-            await LoadAvailableOrderDetailsAsync();
+            // 同時載入出貨明細
+            await LoadAvailableDeliveryDetailsAsync();
         }
         catch (Exception)
         {
             AvailableProducts = new List<Product>();
-            AvailableOrderDetails = new List<SalesOrderDetail>();
+            AvailableDeliveryDetails = new List<SalesDeliveryDetail>();
         }
     }
 
-    private async Task LoadAvailableOrderDetailsAsync()
+    private async Task LoadAvailableDeliveryDetailsAsync()
     {
         try
         {
             if (EffectiveCustomerId.HasValue && EffectiveCustomerId.Value > 0)
             {
-                // 載入該客戶的可退貨銷售訂單明細
-                AvailableOrderDetails = await SalesOrderDetailService.GetReturnableDetailsByCustomerAsync(EffectiveCustomerId.Value);
+                // 載入該客戶的可退貨出貨單明細
+                AvailableDeliveryDetails = await SalesDeliveryDetailService.GetReturnableDetailsByCustomerAsync(EffectiveCustomerId.Value);
             }
             else
             {
-                AvailableOrderDetails = new List<SalesOrderDetail>();
+                AvailableDeliveryDetails = new List<SalesDeliveryDetail>();
             }
         }
         catch (Exception)
         {
-            AvailableOrderDetails = new List<SalesOrderDetail>();
+            AvailableDeliveryDetails = new List<SalesDeliveryDetail>();
         }
     }
 
@@ -730,19 +730,19 @@ else
         foreach (var detail in ExistingReturnDetails)
         {
             // 直接使用 Navigation Properties - 更可靠的方式
-            var orderDetail = detail.SalesOrderDetail;
+            var deliveryDetail = detail.SalesDeliveryDetail;
             
             var item = new ReturnItem
             {
                 // 直接使用 Navigation Properties
                 SelectedProduct = detail.Product,
-                SelectedOrderDetail = orderDetail,
-                OriginalQuantity = (int)(orderDetail?.OrderQuantity ?? 0),
-                AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail?.Id ?? 0),
+                SelectedDeliveryDetail = deliveryDetail,
+                OriginalQuantity = (int)(deliveryDetail?.DeliveryQuantity ?? 0),
+                AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail?.Id ?? 0),
                 ReturnQuantity = (int)detail.ReturnQuantity,
-                OriginalUnitPrice = orderDetail?.UnitPrice ?? detail.OriginalUnitPrice,
-                DiscountPercentage = orderDetail?.DiscountPercentage ?? detail.DiscountPercentage,
-                TaxRate = detail.TaxRate ?? orderDetail?.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,  //  優先順序：明細 > 銀貨訂單明細 > 商品 > 系統
+                OriginalUnitPrice = deliveryDetail?.UnitPrice ?? detail.OriginalUnitPrice,
+                DiscountPercentage = deliveryDetail?.DiscountPercentage ?? detail.DiscountPercentage,
+                TaxRate = detail.TaxRate ?? deliveryDetail?.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,  //  優先順序：明細 > 銀貨出貨明細 > 商品 > 系統
                 ReturnReason = string.Empty,
                 Remarks = detail.Remarks ?? string.Empty,
                 ExistingDetailEntity = detail
@@ -757,14 +757,14 @@ else
         StateHasChanged();
     }
 
-    private List<SalesOrderDetail> GetAvailableOrderDetails()
+    private List<SalesDeliveryDetail> GetAvailableDeliveryDetails()
     {
-        var filteredDetails = AvailableOrderDetails.AsQueryable();
+        var filteredDetails = AvailableDeliveryDetails.AsQueryable();
         
-        // 根據銷售訂單篩選
-        if (EffectiveSalesOrderId.HasValue && EffectiveSalesOrderId.Value > 0)
+        // 根據出貨單篩選
+        if (EffectiveSalesDeliveryId.HasValue && EffectiveSalesDeliveryId.Value > 0)
         {
-            filteredDetails = filteredDetails.Where(od => od.SalesOrderId == EffectiveSalesOrderId.Value);
+            filteredDetails = filteredDetails.Where(od => od.SalesDeliveryId == EffectiveSalesDeliveryId.Value);
         }
         
         // 根據商品篩選
@@ -779,56 +779,56 @@ else
 
     // ===== 事件處理方法 =====
     
-    // ===== 銷售訂單明細選擇事件處理 =====
+    // ===== 出貨明細選擇事件處理 =====
     
     /// <summary>
-    /// 格式化銷售訂單明細顯示文字（用於下拉選單）
+    /// 格式化出貨明細顯示文字（用於下拉選單）
     /// </summary>
-    private string FormatOrderDetailDisplayText(SalesOrderDetail detail)
+    private string FormatDeliveryDetailDisplayText(SalesDeliveryDetail detail)
     {
         if (detail?.Product == null) return "";
         
         var product = detail.Product;
-        var orderCode = detail.SalesOrder?.Code ?? "N/A";
+        var deliveryCode = detail.SalesDelivery?.Code ?? "N/A";
         var productCode = product.Code ?? "";
         var productName = product.Name ?? "未知商品";
         
-        return $"[{orderCode}] [{productCode}] {productName}";
+        return $"[{deliveryCode}] [{productCode}] {productName}";
     }
 
-    // ===== 訂單明細選擇事件處理（SearchableSelect）=====
+    // ===== 出貨明細選擇事件處理（SearchableSelect）=====
 
     /// <summary>
-    /// 訂單明細搜尋輸入事件（只顯示有銷貨的商品）
+    /// 出貨明細搜尋輸入事件（只顯示有銷貨的商品）
     /// </summary>
-    private Task OnOrderDetailSearch(ReturnItem item, string? searchValue)
+    private Task OnDeliveryDetailSearch(ReturnItem item, string? searchValue)
     {
-        item.OrderDetailSearchValue = searchValue ?? string.Empty;
+        item.DeliveryDetailSearchValue = searchValue ?? string.Empty;
         
-        var availableDetails = GetAvailableOrderDetails();
+        var availableDetails = GetAvailableDeliveryDetails();
         
         if (!string.IsNullOrWhiteSpace(searchValue))
         {
             var searchLower = searchValue.ToLower();
             
-            // 搜尋：訂單單號、商品編號、商品名稱
+            // 搜尋：出貨單號、商品編號、商品名稱
             var filteredDetails = availableDetails.Where(detail =>
             {
-                var orderCode = detail.SalesOrder?.Code?.ToLower() ?? "";
+                var deliveryCode = detail.SalesDelivery?.Code?.ToLower() ?? "";
                 var productCode = detail.Product?.Code?.ToLower() ?? "";
                 var productName = detail.Product?.Name?.ToLower() ?? "";
                 
-                return orderCode.Contains(searchLower) ||
+                return deliveryCode.Contains(searchLower) ||
                        productCode.Contains(searchLower) ||
                        productName.Contains(searchLower);
             }).Take(20).ToList();
             
-            item.FilteredOrderDetails = filteredDetails.Cast<object>().ToList();
+            item.FilteredDeliveryDetails = filteredDetails.Cast<object>().ToList();
         }
         else
         {
             // 未輸入搜尋值，顯示前 20 筆
-            item.FilteredOrderDetails = availableDetails.Take(20).Cast<object>().ToList();
+            item.FilteredDeliveryDetails = availableDetails.Take(20).Cast<object>().ToList();
         }
         
         item.ShowDropdown = true;
@@ -839,17 +839,17 @@ else
     }
     
     /// <summary>
-    /// 訂單明細輸入框獲得焦點
+    /// 出貨明細輸入框獲得焦點
     /// </summary>
-    private void OnOrderDetailFocus(ReturnItem item)
+    private void OnDeliveryDetailFocus(ReturnItem item)
     {
-        _ = OnOrderDetailSearch(item, item.OrderDetailSearchValue);
+        _ = OnDeliveryDetailSearch(item, item.DeliveryDetailSearchValue);
     }
     
     /// <summary>
-    /// 訂單明細輸入框失去焦點
+    /// 出貨明細輸入框失去焦點
     /// </summary>
-    private void OnOrderDetailBlur(ReturnItem item)
+    private void OnDeliveryDetailBlur(ReturnItem item)
     {
         Task.Delay(200).ContinueWith(_ =>
         {
@@ -859,18 +859,18 @@ else
     }
     
     /// <summary>
-    /// 選擇訂單明細項目
+    /// 選擇出貨明細項目
     /// </summary>
-    private async Task OnOrderDetailSelect(ReturnItem item, object? selectedItem)
+    private async Task OnDeliveryDetailSelect(ReturnItem item, object? selectedItem)
     {
-        if (selectedItem is SalesOrderDetail detail)
+        if (selectedItem is SalesDeliveryDetail detail)
         {
             // 載入系統預設稅率
             var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
             
-            item.SelectedOrderDetail = detail;
+            item.SelectedDeliveryDetail = detail;
             item.SelectedProduct = detail.Product;
-            item.OriginalQuantity = (int)detail.OrderQuantity;
+            item.OriginalQuantity = (int)detail.DeliveryQuantity;
             item.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(detail.Id);
             item.ReturnQuantity = 0;
             item.OriginalUnitPrice = detail.UnitPrice;
@@ -878,11 +878,11 @@ else
             item.TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate;
             
             // 更新搜尋框顯示
-            item.OrderDetailSearchValue = FormatOrderDetailDisplayText(detail);
+            item.DeliveryDetailSearchValue = FormatDeliveryDetailDisplayText(detail);
         }
         else
         {
-            item.SelectedOrderDetail = null;
+            item.SelectedDeliveryDetail = null;
             item.SelectedProduct = null;
             item.OriginalQuantity = 0;
             item.AlreadyReturnedQuantity = 0;
@@ -890,7 +890,7 @@ else
             item.OriginalUnitPrice = 0;
             item.DiscountPercentage = 0;
             item.TaxRate = null;
-            item.OrderDetailSearchValue = string.Empty;
+            item.DeliveryDetailSearchValue = string.Empty;
         }
         
         item.ShowDropdown = false;
@@ -1006,18 +1006,18 @@ else
     {
         try
         {
-            var availableDetails = GetAvailableOrderDetails();
+            var availableDetails = GetAvailableDeliveryDetails();
             
             //  檢查是否有可載入的明細
             if (!availableDetails.Any())
             {
-                await NotificationService.ShowWarningAsync("沒有可退貨的銷售訂單明細", "提示");
+                await NotificationService.ShowWarningAsync("沒有可退貨的出貨明細", "提示");
                 return;
             }
             
             //  確認對話框 - 顯示即將載入的數量
             var confirmed = await NotificationService.ShowConfirmAsync(
-                $"即將載入 {availableDetails.Count} 項可退貨的銷售訂單明細，是否繼續？\n\n" +
+                $"即將載入 {availableDetails.Count} 項可退貨的出貨明細，是否繼續？\n\n" +
                 "提示：如果只需要退貨特定商品，建議使用商品篩選功能。",
                 "智能退貨確認");
             
@@ -1032,25 +1032,25 @@ else
             var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
             
             // 新增所有可退貨的項目
-            foreach (var orderDetail in availableDetails)
+            foreach (var deliveryDetail in availableDetails)
             {
                 // 檢查是否已經存在相同的明細
-                if (ReturnItems.Any(item => item.SelectedOrderDetail?.Id == orderDetail.Id))
+                if (ReturnItems.Any(item => item.SelectedDeliveryDetail?.Id == deliveryDetail.Id))
                     continue;
                 
-                //  取得稅率（優先順序：銷貨訂單明細稅率 > 商品稅率 > 系統預設稅率）
-                var taxRate = orderDetail.TaxRate ?? orderDetail.Product?.TaxRate ?? defaultTaxRate;
+                //  取得稅率（優先順序：銷貨出貨明細稅率 > 商品稅率 > 系統預設稅率）
+                var taxRate = deliveryDetail.TaxRate ?? deliveryDetail.Product?.TaxRate ?? defaultTaxRate;
                 
                 var newItem = new ReturnItem
                 {
-                    SelectedOrderDetail = orderDetail,
-                    SelectedProduct = orderDetail.Product,
-                    OrderDetailSearchValue = FormatOrderDetailDisplayText(orderDetail),
-                    OriginalQuantity = (int)orderDetail.OrderQuantity,
-                    AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(orderDetail.Id),
+                    SelectedDeliveryDetail = deliveryDetail,
+                    SelectedProduct = deliveryDetail.Product,
+                    DeliveryDetailSearchValue = FormatDeliveryDetailDisplayText(deliveryDetail),
+                    OriginalQuantity = (int)deliveryDetail.DeliveryQuantity,
+                    AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail.Id),
                     ReturnQuantity = 0,
-                    OriginalUnitPrice = orderDetail.UnitPrice,
-                    DiscountPercentage = orderDetail.DiscountPercentage,
+                    OriginalUnitPrice = deliveryDetail.UnitPrice,
+                    DiscountPercentage = deliveryDetail.DiscountPercentage,
                     TaxRate = taxRate
                 };
                 
@@ -1128,7 +1128,7 @@ else
     private SalesReturnDetail? ConvertToEntity(ReturnItem item)
     {
         // 只要選擇了商品就轉換，即使 ReturnQuantity 為 0（用於計算）
-        if (item.SelectedOrderDetail == null || item.SelectedProduct == null)
+        if (item.SelectedDeliveryDetail == null || item.SelectedProduct == null)
         {
             return null;
         }
@@ -1136,7 +1136,7 @@ else
         // 如果已有實體，更新它
         if (item.ExistingDetailEntity != null)
         {
-            item.ExistingDetailEntity.SalesOrderDetailId = item.SelectedOrderDetail.Id;
+            item.ExistingDetailEntity.SalesDeliveryDetailId = item.SelectedDeliveryDetail.Id;
             item.ExistingDetailEntity.ProductId = item.SelectedProduct.Id;
             item.ExistingDetailEntity.ReturnQuantity = item.ReturnQuantity;
             item.ExistingDetailEntity.OriginalUnitPrice = item.OriginalUnitPrice;
@@ -1150,7 +1150,7 @@ else
         // 創建新實體
         return new SalesReturnDetail
         {
-            SalesOrderDetailId = item.SelectedOrderDetail.Id,
+            SalesDeliveryDetailId = item.SelectedDeliveryDetail.Id,
             ProductId = item.SelectedProduct.Id,
             ReturnQuantity = item.ReturnQuantity,
             OriginalUnitPrice = item.OriginalUnitPrice,
@@ -1161,17 +1161,17 @@ else
     }
 
     // ===== 輔助方法 =====
-    private int GetAlreadyReturnedQuantity(int orderDetailId)
+    private int GetAlreadyReturnedQuantity(int deliveryDetailId)
     {
         // 這裡應該查詢資料庫獲取已退貨數量，目前暫時回傳0
         // 可能需要呼叫服務來獲取
         return 0;
     }
     
-    private int GetAvailableReturnQuantity(SalesOrderDetail orderDetail)
+    private int GetAvailableReturnQuantity(SalesDeliveryDetail deliveryDetail)
     {
-        var alreadyReturned = GetAlreadyReturnedQuantity(orderDetail.Id);
-        return (int)(orderDetail.OrderQuantity - alreadyReturned);
+        var alreadyReturned = GetAlreadyReturnedQuantity(deliveryDetail.Id);
+        return (int)(deliveryDetail.DeliveryQuantity - alreadyReturned);
     }
 
     /// <summary>
@@ -1200,7 +1200,7 @@ else
         
         foreach (var item in unlocked)
         {
-            if (item.SelectedOrderDetail != null)
+            if (item.SelectedDeliveryDetail != null)
             {
                 item.ReturnQuantity = item.AvailableQuantity;
                 item.ValidationError = null;
@@ -1329,9 +1329,9 @@ else
             // 檢查必填欄位和基本驗證
             foreach (var item in potentialItems)
             {
-                if (item.SelectedOrderDetail == null)
+                if (item.SelectedDeliveryDetail == null)
                 {
-                    errors.Add("請選擇有效的銷售訂單明細");
+                    errors.Add("請選擇有效的出貨明細");
                     continue;
                 }
                 
@@ -1366,11 +1366,11 @@ else
     public class ReturnItem
     {
         public Product? SelectedProduct { get; set; }
-        public SalesOrderDetail? SelectedOrderDetail { get; set; }
+        public SalesDeliveryDetail? SelectedDeliveryDetail { get; set; }
         
-        // === SearchableSelect 支援屬性（訂單明細搜尋）===
-        public string OrderDetailSearchValue { get; set; } = string.Empty;
-        public List<object> FilteredOrderDetails { get; set; } = new();
+        // === SearchableSelect 支援屬性（出貨明細搜尋）===
+        public string DeliveryDetailSearchValue { get; set; } = string.Empty;
+        public List<object> FilteredDeliveryDetails { get; set; } = new();
         public bool ShowDropdown { get; set; } = false;
         public int SelectedIndex { get; set; } = -1;
         
@@ -1393,11 +1393,12 @@ else
         public int AvailableQuantity => OriginalQuantity - AlreadyReturnedQuantity;
         
         /// <summary>
-        /// 取得顯示用的商品名稱（包含銷售訂單號）
+        /// 取得顯示用的商品名稱（包含出貨單號）
         /// </summary>
         public string DisplayName => 
             SelectedProduct != null 
-                ? $"[{SelectedOrderDetail?.SalesOrder?.Code ?? "N/A"}] {SelectedProduct.Code} - {SelectedProduct.Name}"
+                ? $"[{SelectedDeliveryDetail?.SalesDelivery?.Code ?? "N/A"}] {SelectedProduct.Code} - {SelectedProduct.Name}"
                 : string.Empty;
     }
 }
+

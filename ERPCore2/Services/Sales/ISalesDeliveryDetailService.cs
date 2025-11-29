@@ -18,6 +18,11 @@ namespace ERPCore2.Services
         Task<List<SalesDeliveryDetail>> GetBySalesOrderDetailIdAsync(int salesOrderDetailId);
 
         /// <summary>
+        /// 取得指定客戶的可退貨出貨明細（已出貨但未完全退貨）
+        /// </summary>
+        Task<List<SalesDeliveryDetail>> GetReturnableDetailsByCustomerAsync(int customerId);
+
+        /// <summary>
         /// 取得銷貨明細的統計資訊
         /// </summary>
         Task<SalesDeliveryDetailStatistics> GetStatisticsAsync(int? deliveryId = null, int? productId = null);

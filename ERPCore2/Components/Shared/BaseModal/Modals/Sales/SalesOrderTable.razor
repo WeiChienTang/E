@@ -288,11 +288,12 @@ else
         {
             if (item.ExistingDetailEntity is SalesOrderDetail detail && detail.Id > 0)
             {
-                var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByOrderDetailAsync(detail.Id);
-                if (returnedQty > 0)
-                {
-                    _returnedQuantities[detail.Id] = returnedQty;
-                }
+                // TODO: 退貨現在從出貨單產生，不直接從訂單
+                // var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByDeliveryDetailAsync(detail.Id);
+                // if (returnedQty > 0)
+                // {
+                //     _returnedQuantities[detail.Id] = returnedQty;
+                // }
             }
         }
         

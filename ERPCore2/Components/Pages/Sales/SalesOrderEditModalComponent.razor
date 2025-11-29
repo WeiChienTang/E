@@ -418,13 +418,14 @@
             
             foreach (var detail in salesOrderDetails.Where(d => d.Id > 0))
             {
+                // TODO: 退貨現在從出貨單產生，不直接從訂單
                 // 檢查退貨記錄
-                var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByOrderDetailAsync(detail.Id);
-                if (returnedQty > 0)
-                {
-                    hasUndeletable = true;
-                    break;
-                }
+                // var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByDeliveryDetailAsync(detail.Id);
+                // if (returnedQty > 0)
+                // {
+                //     hasUndeletable = true;
+                //     break;
+                // }
                 
                 // 檢查收款記錄
                 if (detail.TotalReceivedAmount > 0)
@@ -1377,9 +1378,10 @@
             // 5. 呼叫銷售退貨單組件的公開方法
             if (salesReturnEditModal != null)
             {
-                await salesReturnEditModal.ShowAddModalWithPrefilledOrder(
+                // 注意：退貨應該從出貨單產生，此處暫時保留但需要重構
+                await salesReturnEditModal.ShowAddModalWithPrefilledDelivery(
                     editModalComponent.Entity.CustomerId,
-                    SalesOrderId.Value
+                    SalesOrderId.Value  // TODO: 應該改為 SalesDeliveryId
                 );
             }
             else

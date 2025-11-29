@@ -31,10 +31,10 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.Product)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.SalesDelivery)
                     .AsQueryable()
                     .OrderBy(srd => srd.SalesReturnId)
                     .ThenBy(srd => srd.Product.Code)
@@ -60,10 +60,10 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.Product)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.SalesDelivery)
                     .FirstOrDefaultAsync(srd => srd.Id == id);
             }
             catch (Exception ex)
@@ -92,10 +92,10 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.Product)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.SalesDelivery)
                     .Where(srd => ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Code != null && srd.SalesReturn.Code.ToLower().Contains(lowerSearchTerm)) ||
@@ -166,10 +166,10 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnDetails
                     .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.Product)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.SalesDelivery)
                     .Where(srd => srd.SalesReturnId == salesReturnId)
                     .OrderBy(srd => srd.Product.Code)
                     .ToListAsync();
@@ -195,10 +195,10 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.Product)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.SalesDelivery)
                     .Where(srd => srd.ProductId == productId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();
@@ -215,7 +215,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesReturnDetail>> GetBySalesOrderDetailIdAsync(int salesOrderDetailId)
+        public async Task<List<SalesReturnDetail>> GetBySalesDeliveryDetailIdAsync(int salesDeliveryDetailId)
         {
             try
             {
@@ -224,21 +224,21 @@ namespace ERPCore2.Services
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
                     .Include(srd => srd.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
-                    .Include(srd => srd.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.SalesOrder)
-                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.Product)
+                    .Include(srd => srd.SalesDeliveryDetail)
+                        .ThenInclude(sdd => sdd!.SalesDelivery)
+                    .Where(srd => srd.SalesDeliveryDetailId == salesDeliveryDetailId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesOrderDetailIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesDeliveryDetailIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetBySalesOrderDetailIdAsync),
+                    Method = nameof(GetBySalesDeliveryDetailIdAsync),
                     ServiceType = GetType().Name,
-                    SalesOrderDetailId = salesOrderDetailId
+                    SalesDeliveryDetailId = salesDeliveryDetailId
                 });
                 return new List<SalesReturnDetail>();
             }
@@ -364,23 +364,23 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定銷售訂單明細的已退貨數量
+        /// 取得指定銷售出貨明細的已退貨數量
         /// </summary>
-        public async Task<decimal> GetReturnedQuantityByOrderDetailAsync(int salesOrderDetailId)
+        public async Task<decimal> GetReturnedQuantityByDeliveryDetailAsync(int salesDeliveryDetailId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnDetails
-                    .Where(srd => srd.SalesOrderDetailId == salesOrderDetailId)
+                    .Where(srd => srd.SalesDeliveryDetailId == salesDeliveryDetailId)
                     .SumAsync(srd => srd.ReturnQuantity);
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnedQuantityByOrderDetailAsync), GetType(), _logger, new { 
-                    Method = nameof(GetReturnedQuantityByOrderDetailAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnedQuantityByDeliveryDetailAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReturnedQuantityByDeliveryDetailAsync),
                     ServiceType = GetType().Name,
-                    SalesOrderDetailId = salesOrderDetailId 
+                    SalesDeliveryDetailId = salesDeliveryDetailId 
                 });
                 return 0;
             }

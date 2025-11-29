@@ -41,7 +41,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails)
@@ -69,13 +69,13 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.Product)
                     .Include(sr => sr.SalesReturnDetails)
-                        .ThenInclude(srd => srd.SalesOrderDetail)
+                        .ThenInclude(srd => srd.SalesDeliveryDetail)
                     .FirstOrDefaultAsync(sr => sr.Id == id);
             }
             catch (Exception ex)
@@ -102,7 +102,7 @@ namespace ERPCore2.Services
 
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => ((sr.Code != null && sr.Code.ToLower().Contains(lowerSearchTerm)) ||
@@ -260,7 +260,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.CustomerId == customerId)
@@ -280,28 +280,28 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesReturn>> GetBySalesOrderIdAsync(int salesOrderId)
+        public async Task<List<SalesReturn>> GetBySalesDeliveryIdAsync(int salesDeliveryId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
-                    .Where(sr => sr.SalesOrderId == salesOrderId)
+                    .Where(sr => sr.SalesDeliveryId == salesDeliveryId)
                     .OrderByDescending(sr => sr.ReturnDate)
                     .ThenBy(sr => sr.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesOrderIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySalesDeliveryIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetBySalesOrderIdAsync),
+                    Method = nameof(GetBySalesDeliveryIdAsync),
                     ServiceType = GetType().Name,
-                    SalesOrderId = salesOrderId
+                    SalesDeliveryId = salesDeliveryId
                 });
                 return new List<SalesReturn>();
             }
@@ -316,7 +316,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Where(sr => sr.ReturnDate >= startDate && sr.ReturnDate <= endDate)
@@ -451,7 +451,7 @@ namespace ERPCore2.Services
                 // 基本查詢 - 載入所有需要的關聯資料
                 var query = context.SalesReturns
                     .Include(sr => sr.Customer)
-                    .Include(sr => sr.SalesOrder)
+                    .Include(sr => sr.SalesDelivery)
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails.AsQueryable())
@@ -476,12 +476,12 @@ namespace ERPCore2.Services
                     query = query.Where(sr => criteria.RelatedEntityIds.Contains(sr.CustomerId));
                 }
 
-                // 篩選條件 3: 倉庫ID（透過明細關聯的銷貨訂單明細）
+                // 篩選條件 3: 倉庫ID（透過明細關聯的銷貨出貨明細）
                 if (criteria.WarehouseId.HasValue)
                 {
                     query = query.Where(sr => sr.SalesReturnDetails.Any(srd => 
-                        srd.SalesOrderDetail != null && 
-                        srd.SalesOrderDetail.WarehouseId == criteria.WarehouseId.Value));
+                        srd.SalesDeliveryDetail != null && 
+                        srd.SalesDeliveryDetail.WarehouseId == criteria.WarehouseId.Value));
                 }
 
                 // 篩選條件 4: 狀態列表（Status 欄位，銷貨退回單使用 EntityStatus）
@@ -623,15 +623,15 @@ namespace ERPCore2.Services
                         
                         foreach (var (detail, quantityDiff) in stockChanges.Where(sc => sc.Item2 != 0))
                         {
-                            // 從關聯的銷貨訂單明細取得倉庫ID
+                            // 從關聯的銷貨出貨明細取得倉庫ID
                             int? warehouseId = null;
                             
-                            // 方法1：如果有關聯的銷貨訂單明細，直接從中取得倉庫ID
-                            if (detail.SalesOrderDetailId.HasValue)
+                            // 如果有關聯的銷貨出貨明細，直接從中取得倉庫ID
+                            if (detail.SalesDeliveryDetailId.HasValue)
                             {
-                                var orderDetail = await context.SalesOrderDetails
-                                    .FirstOrDefaultAsync(sod => sod.Id == detail.SalesOrderDetailId.Value);
-                                warehouseId = orderDetail?.WarehouseId;
+                                var deliveryDetail = await context.SalesDeliveryDetails
+                                    .FirstOrDefaultAsync(sdd => sdd.Id == detail.SalesDeliveryDetailId.Value);
+                                warehouseId = deliveryDetail?.WarehouseId;
                             }
 
                             // 如果還是沒有倉庫ID，跳過此明細並記錄警告
@@ -875,8 +875,8 @@ namespace ERPCore2.Services
                         .Include(sr => sr.SalesReturnDetails.AsQueryable())
                             .ThenInclude(srd => srd.Product)
                         .Include(sr => sr.SalesReturnDetails.AsQueryable())
-                            .ThenInclude(srd => srd.SalesOrderDetail)
-                                .ThenInclude(sod => sod != null ? sod.SalesOrder : null)
+                            .ThenInclude(srd => srd.SalesDeliveryDetail)
+                                .ThenInclude(sdd => sdd != null ? sdd.SalesDelivery : null)
                         .FirstOrDefaultAsync(sr => sr.Id == id);
 
                     if (entity == null)
@@ -898,11 +898,11 @@ namespace ERPCore2.Services
 
                         foreach (var detail in eligibleDetails)
                         {
-                            // 從關聯的銷貨訂單明細取得倉庫ID
+                            // 從關聯的銷貨出貨明細取得倉庫ID
                             int? warehouseId = null;
-                            if (detail.SalesOrderDetailId.HasValue && detail.SalesOrderDetail != null)
+                            if (detail.SalesDeliveryDetailId.HasValue && detail.SalesDeliveryDetail != null)
                             {
-                                warehouseId = detail.SalesOrderDetail.WarehouseId;
+                                warehouseId = detail.SalesDeliveryDetail.WarehouseId;
                             }
 
                             if (!warehouseId.HasValue)

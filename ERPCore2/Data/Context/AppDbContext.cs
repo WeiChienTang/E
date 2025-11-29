@@ -494,9 +494,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(sr => sr.CustomerId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-                        entity.HasOne(sr => sr.SalesOrder)
-                        .WithMany()
-                        .HasForeignKey(sr => sr.SalesOrderId)
+                        entity.HasOne(sr => sr.SalesDelivery)
+                        .WithMany(sd => sd.SalesReturns)
+                        .HasForeignKey(sr => sr.SalesDeliveryId)
                         .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasOne(sr => sr.Employee)
@@ -531,9 +531,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(srd => srd.ProductId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-                        entity.HasOne(srd => srd.SalesOrderDetail)
-                        .WithMany()
-                        .HasForeignKey(srd => srd.SalesOrderDetailId)
+                        entity.HasOne(srd => srd.SalesDeliveryDetail)
+                        .WithMany(sdd => sdd.SalesReturnDetails)
+                        .HasForeignKey(srd => srd.SalesDeliveryDetailId)
                         .OnDelete(DeleteBehavior.SetNull);
                   });
 

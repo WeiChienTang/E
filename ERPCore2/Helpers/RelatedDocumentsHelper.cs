@@ -82,10 +82,11 @@ namespace ERPCore2.Helpers
 
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            // 1. 查詢退貨單
+            // 1. 查詢退貨單 - 注意：退貨現在是從出貨單產生，不直接從訂單
+            // 這個方法可能需要重新設計
             var returnDetails = await context.SalesReturnDetails
                 .Include(d => d.SalesReturn)
-                .Where(d => d.SalesOrderDetailId == salesOrderDetailId)
+                .Where(d => d.SalesDeliveryDetailId == salesOrderDetailId)
                 .ToListAsync();
 
             foreach (var detail in returnDetails)

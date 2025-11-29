@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ERPCore2.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCompanyIdToSalesOrder : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -2198,6 +2198,7 @@ namespace ERPCore2.Migrations
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TaxCalculationMethod = table.Column<int>(type: "int", nullable: false),
                     PaymentTerms = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     ShippingMethod = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     DeliveryAddress = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -2440,12 +2441,13 @@ namespace ERPCore2.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ReturnDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TaxCalculationMethod = table.Column<int>(type: "int", nullable: false),
                     TotalReturnAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ReturnTaxAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsRefunded = table.Column<bool>(type: "bit", nullable: false),
                     RefundDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
-                    SalesOrderId = table.Column<int>(type: "int", nullable: true),
                     SalesDeliveryId = table.Column<int>(type: "int", nullable: true),
                     EmployeeId = table.Column<int>(type: "int", nullable: true),
                     ReturnReasonId = table.Column<int>(type: "int", nullable: true),
@@ -2476,11 +2478,6 @@ namespace ERPCore2.Migrations
                         name: "FK_SalesReturns_SalesDeliveries_SalesDeliveryId",
                         column: x => x.SalesDeliveryId,
                         principalTable: "SalesDeliveries",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_SalesReturns_SalesOrders_SalesOrderId",
-                        column: x => x.SalesOrderId,
-                        principalTable: "SalesOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
@@ -2500,6 +2497,7 @@ namespace ERPCore2.Migrations
                     DeliveryQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    TaxRate = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     IsSettled = table.Column<bool>(type: "bit", nullable: false),
                     TotalReceivedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SalesDeliveryId = table.Column<int>(type: "int", nullable: false),
@@ -2562,11 +2560,11 @@ namespace ERPCore2.Migrations
                     ReturnQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     OriginalUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    TaxRate = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     IsSettled = table.Column<bool>(type: "bit", nullable: false),
                     TotalPaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SalesReturnId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
-                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: true),
                     SalesDeliveryDetailId = table.Column<int>(type: "int", nullable: true),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -2589,11 +2587,6 @@ namespace ERPCore2.Migrations
                         name: "FK_SalesReturnDetails_SalesDeliveryDetails_SalesDeliveryDetailId",
                         column: x => x.SalesDeliveryDetailId,
                         principalTable: "SalesDeliveryDetails",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_SalesReturnDetails_SalesOrderDetails_SalesOrderDetailId",
-                        column: x => x.SalesOrderDetailId,
-                        principalTable: "SalesOrderDetails",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
@@ -3355,11 +3348,6 @@ namespace ERPCore2.Migrations
                 column: "SalesDeliveryDetailId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SalesReturnDetails_SalesOrderDetailId",
-                table: "SalesReturnDetails",
-                column: "SalesOrderDetailId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SalesReturnDetails_SalesReturnId_ProductId",
                 table: "SalesReturnDetails",
                 columns: new[] { "SalesReturnId", "ProductId" });
@@ -3393,14 +3381,9 @@ namespace ERPCore2.Migrations
                 column: "ReturnReasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SalesReturns_SalesDeliveryId",
+                name: "IX_SalesReturns_SalesDeliveryId_ReturnDate",
                 table: "SalesReturns",
-                column: "SalesDeliveryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SalesReturns_SalesOrderId_ReturnDate",
-                table: "SalesReturns",
-                columns: new[] { "SalesOrderId", "ReturnDate" });
+                columns: new[] { "SalesDeliveryId", "ReturnDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SetoffDocuments_Code",
