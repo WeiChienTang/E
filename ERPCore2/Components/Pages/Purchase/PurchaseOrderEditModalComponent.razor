@@ -929,7 +929,8 @@
             // 更新欄位的唯讀狀態
             UpdateFieldsReadOnlyState();
             
-            StateHasChanged();
+            // ❌ 移除 StateHasChanged() - 避免重複渲染
+            // StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -1027,7 +1028,8 @@
                 // 3. 含稅總金額會自動計算（PurchaseTotalAmountIncludingTax 是計算屬性）
                 //    = TotalAmount + PurchaseTaxAmount
                 
-                StateHasChanged();
+                // ❌ 移除 StateHasChanged() - 讓呼叫者統一處理渲染
+                // StateHasChanged();
             }
         }
         catch (Exception ex)

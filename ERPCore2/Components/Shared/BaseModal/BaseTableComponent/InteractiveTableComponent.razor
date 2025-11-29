@@ -1,6 +1,7 @@
 @* 互動式表格組件 - 支援多種輸入控件和統一的UI風格 *@
 @using System.Reflection
 @using System.Web
+@using ERPCore2.Helpers
 @inject IJSRuntime JSRuntime
 @typeparam TItem
 
@@ -472,6 +473,12 @@
     {
         await base.OnAfterRenderAsync(firstRender);
         
+        if (EnableAutoEmptyRow)
+        {
+            var itemCount = Items?.Count ?? 0;
+            var nonEmptyCount = Items?.Count(item => !IsRowEmpty(item)) ?? 0;
+        }
+        
         //  優先處理：如果標記了需要檢查空行（Items 集合變化觸發）
         if (EnableAutoEmptyRow && _needsEmptyRowCheck)
         {
@@ -939,6 +946,8 @@
         {
             return;
         }
+        
+        var itemCount = Items.Count;
         
         //  找出所有空行
         var emptyRows = Items.Where(IsRowEmpty).ToList();

@@ -83,9 +83,10 @@
     [Parameter] public EventCallback<SalesReturn> OnSalesReturnSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
-    // ===== 預填參數（用於從銷貨訂單轉單） =====
+    // ===== 預填參數（用於從銷貨訂單或出貨單轉單） =====
     [Parameter] public int? PrefilledCustomerId { get; set; }
     [Parameter] public int? PrefilledSalesOrderId { get; set; }
+    [Parameter] public int? PrefilledSalesDeliveryId { get; set; }  // 從出貨單轉退貨時使用
 
     // ===== 內部狀態 =====
     
@@ -235,6 +236,50 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledOrder), GetType(), 
                 additionalData: $"開啟預填銷售退貨單Modal失敗 - CustomerId: {customerId}, OrderId: {salesOrderId}");
+            await NotificationService.ShowErrorAsync("開啟銷售退貨單時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 開啟新增銷售退貨單 Modal 並預填出貨單資訊（公開方法供外部調用）
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledDelivery(int customerId, int salesDeliveryId)
+    {
+        try
+        {
+            // 使用 DocumentConversionHelper 統一處理轉單邏輯
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
+                {
+                    SalesReturnId = null;
+                    PrefilledCustomerId = customerId;
+                    PrefilledSalesDeliveryId = salesDeliveryId;
+                    shouldAutoLoadReturnable = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadReturnable = false;
+                    if (salesReturnDetailManager != null)
+                    {
+                        await salesReturnDetailManager.LoadAllReturnableItems();
+                    }
+                },
+                detailManagerReady: () => salesReturnDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadReturnable,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledDelivery), GetType(), 
+                additionalData: $"開啟預填銷售退貨單Modal失敗 - CustomerId: {customerId}, DeliveryId: {salesDeliveryId}");
             await NotificationService.ShowErrorAsync("開啟銷售退貨單時發生錯誤");
         }
     }
@@ -391,7 +436,7 @@
                     ReturnReasonId = null // 預設為 null，選擇性填寫
                 };
                 
-                // 🔑 使用預填參數（從銷貨訂單轉單時）
+                // 🔑 使用預填參數（從銷貨訂單或出貨單轉單時）
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
                 {
                     newSalesReturn.CustomerId = PrefilledCustomerId.Value;
@@ -402,6 +447,13 @@
                     newSalesReturn.SalesOrderId = PrefilledSalesOrderId.Value;
                     // 設定篩選條件，讓明細管理器只顯示這張銷貨訂單的可退貨商品
                     FilterSalesOrderId = PrefilledSalesOrderId.Value;
+                }
+                
+                if (PrefilledSalesDeliveryId.HasValue && PrefilledSalesDeliveryId.Value > 0)
+                {
+                    newSalesReturn.SalesDeliveryId = PrefilledSalesDeliveryId.Value;
+                    // 設定篩選條件，讓明細管理器只顯示這張出貨單的可退貨商品
+                    // 注意：如果同時有 SalesOrderId 和 SalesDeliveryId，優先使用 SalesDeliveryId
                 }
                 
                 // 初始化空的明細列表
@@ -629,7 +681,7 @@
                     Value = so.Id.ToString()
                 }).ToList();
                 
-                StateHasChanged();
+                // ❌ 移除 StateHasChanged() - 讓呼叫者統一控制渲染
             }
         }
         catch (Exception ex)
@@ -725,16 +777,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(SalesReturn.TaxCalculationMethod),
-                    Label = "稅別",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = taxCalculationMethodOptions,
-                    HelpText = "選擇稅稅計算方式：外加稅/內含稅/不含稅",
-                    IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
-                },
-                new()
-                {
                     PropertyName = nameof(SalesReturn.ReturnReasonId),
                     Label = "退貨原因",
                     FieldType = FormFieldType.Select,
@@ -759,7 +801,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "退貨單的總金額，根據明細自動計算",
-                    IsReadOnly = true // 總金額欄位始終為唯讀
+                    IsReadOnly = true, // 總金額欄位始終為唯讀
+                    CssClass = "text-warning fw-bold" // 使用黃色粗體顯示
                 },
 
                 new FormFieldDefinition()
@@ -769,7 +812,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "退貨單的折扣金額，根據明細自動計算",
-                    IsReadOnly = true
+                    IsReadOnly = true,
+                    CssClass = "text-danger fw-bold" // 使用紅色粗體顯示
                 },
                 
                 new FormFieldDefinition
@@ -779,7 +823,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "退貨單的稅額，根據明細自動計算",
-                    IsReadOnly = true // 稅額欄位始終為唯讀
+                    IsReadOnly = true, // 稅額欄位始終為唯讀
+                    CssClass = "text-info fw-bold" // 使用藍色粗體顯示
                 },
                 new FormFieldDefinition
                 {
@@ -788,7 +833,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "退貨單的含稅總金額，根據明細自動計算",
-                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                    IsReadOnly = true, // 含稅總金額欄位始終為唯讀
+                    CssClass = "text-success fw-bold" // 使用綠色粗體顯示
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<SalesReturn>(
@@ -800,11 +846,11 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     sr => sr.Code,
                     sr => sr.CustomerId,
-                    sr => sr.SalesOrderId,
-                    sr => sr.ReturnDate,
-                    sr => sr.TaxCalculationMethod,
-                    sr => sr.ReturnReasonId)
+                    sr => sr.SalesOrderId)                    
                 .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddToSection(FormSectionNames.BasicInfo,
+                    sr => sr.ReturnReasonId,
+                    sr => sr.ReturnDate)
                 .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
                     sr => sr.TotalReturnAmount,
                     sr => sr.DiscountAmount,
@@ -1012,7 +1058,8 @@
                         break;
                 }
                 
-                StateHasChanged();
+                // ❌ 移除 StateHasChanged() - 讓呼叫者統一處理渲染
+                // StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -1034,7 +1081,8 @@
             // 更新欄位的唯讀狀態
             UpdateFieldsReadOnlyState();
             
-            StateHasChanged();
+            // ❌ 移除 StateHasChanged() - 避免重複渲染
+            // StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -1158,24 +1206,15 @@
                 case nameof(SalesReturn.CustomerId):
                     if (int.TryParse(fieldChange.Value?.ToString(), out var customerId))
                     {
-                        // 當客戶變更時，更新銷售單選項和產品篩選選項
-                        await UpdateSalesOrderOptions(customerId);
-                        await UpdateFilterProductOptions(customerId);
-                        
-                        // 🔑 只有在沒有不可刪除明細時才更新 ActionButtons
+                        // 只有在沒有不可刪除明細時才更新 ActionButtons
                         if (!hasUndeletableDetails)
                         {
-                            // 使用統一 Helper 更新客戶欄位的操作按鈕
                             await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                                 customerModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
                         }
                         
-                        // 清除現有的銷售單選擇
-                        if (editModalComponent?.Entity != null)
-                        {
-                            editModalComponent.Entity.SalesOrderId = null;
-                            StateHasChanged();
-                        }
+                        // 客戶變更時，觸發退貨明細管理器重新渲染
+                        StateHasChanged();
                     }
                     break;
 
@@ -1183,25 +1222,21 @@
                     if (int.TryParse(fieldChange.Value?.ToString(), out var productId))
                     {
                         filterProductId = productId == 0 ? null : productId;
-                        
-                        // 通知退貨明細管理器篩選變更
-                        // if (salesReturnDetailManager != null)
-                        // {
-                        //     // 這裡可以調用明細管理器的篩選方法
-                        //     StateHasChanged();
-                        // }
+                        // ✅ 欄位依賴變化：篩選條件改變需要立即更新明細表格
                         StateHasChanged();
                     }
                     break;
 
                 case nameof(SalesReturn.SalesOrderId):
-                    // 當銷售單 ID 變更時，觸發重新渲染以篩選對應的銷售明細
+                    // ✅ 欄位依賴變化：銷售單篩選改變需要立即更新明細表格
                     StateHasChanged();
                     break;
                 
                 case nameof(SalesReturn.TaxCalculationMethod):
                     // 當稅別變更時，重新計算金額和稅額
                     await HandleReturnDetailsChanged(salesReturnDetails);
+                    // 🔑 稅別變更時，觸發 Table 組件重新渲染（影響小計顯示）
+                    StateHasChanged();
                     break;
             }
         }
@@ -1512,7 +1547,7 @@
                     // 重新載入明細資料以更新沖款相關資訊
                     if (salesReturnDetailManager != null)
                     {
-                        salesReturnDetailManager.RefreshDetails();
+                        await salesReturnDetailManager.RefreshDetails();
                     }
                     
                     await NotificationService.ShowSuccessAsync("沖款單已更新，銷售退貨明細已刷新");

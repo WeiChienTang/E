@@ -46,6 +46,7 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomModules="@GetCustomModules()"
+                          CustomActionButtons="@CustomActionButtons"
                           OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
@@ -64,6 +65,14 @@
                            EmployeeId="@employeeModalManager.SelectedEntityId"
                            OnEmployeeSaved="@OnEmployeeSavedWrapper"
                            OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 銷貨退貨編輯 Modal *@
+<SalesReturnEditModalComponent @ref="salesReturnEditModal"
+                              IsVisible="@showSalesReturnModal"
+                              IsVisibleChanged="@((bool visible) => showSalesReturnModal = visible)"
+                              SalesReturnId="@selectedSalesReturnId"
+                              OnSalesReturnSaved="@HandleSalesReturnSaved"
+                              OnCancel="@(() => showSalesReturnModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -102,6 +111,9 @@
     // ===== 明細載入狀態 =====
     private bool shouldAutoLoadUndelivered = false;  // 標記是否需要自動載入未出貨商品
     
+    // ===== 轉單狀態 =====
+    private bool canCreateReturn = false;  // 是否可以轉退貨（新增模式需先儲存，編輯模式直接為 true）
+    
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
     
@@ -110,6 +122,11 @@
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    
+    // ===== 相關單據 Modal =====
+    private SalesReturnEditModalComponent? salesReturnEditModal;
+    private bool showSalesReturnModal = false;
+    private int? selectedSalesReturnId = null;
     
     // 下拉選單選項（向下相容）
     private List<Customer> customers = new();
@@ -189,6 +206,9 @@
     {
         try
         {
+            // 儲存成功後允許轉退貨
+            canCreateReturn = true;
+            
             // 重新載入剛儲存的明細資料
             if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
             {
@@ -314,6 +334,9 @@
                     IsApproved = false
                 };
                 
+                // 新增模式：必須先儲存才能轉退貨
+                canCreateReturn = false;
+                
                 // 🔑 修正：不在這裡載入明細，改為設定預填值後由 DocumentConversionHelper 觸發自動載入
                 // 這樣可以確保 SalesDeliveryTable 組件已經渲染完成
                 if (PrefilledSalesOrderId.HasValue)
@@ -342,6 +365,7 @@
             }
 
             // 編輯模式 - 載入銷貨出貨單和明細
+            canCreateReturn = true;  // 編輯模式：可以直接轉退貨
             var salesDelivery = await SalesDeliveryService.GetByIdAsync(SalesDeliveryId.Value);
             
             if (salesDelivery != null)
@@ -1069,6 +1093,99 @@
             </div>
         }
     };
+    
+    /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
+    /// </summary>
+    private RenderFragment? CustomActionButtons
+    {
+        get
+        {
+            return __builder =>
+            {
+                @* 轉退貨按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
+                @if (canCreateReturn)
+                {
+                    <GenericButtonComponent Text="轉退貨" 
+                                          Variant="ButtonVariant.Red" 
+                                          Size="ButtonSize.Small"
+                                          CssClass="me-2"
+                                          OnClick="HandleCreateReturnFromDelivery" />
+                }
+            };
+        }
+    }
+    
+    /// <summary>
+    /// 從出貨單轉退貨單 - 簡化版本，所有業務驗證交給退貨單 Modal 處理
+    /// </summary>
+    private async Task HandleCreateReturnFromDelivery()
+    {
+        try
+        {
+            // 唯一檢查：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
+            if (!canCreateReturn)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存出貨單後，才能轉退貨");
+                return;
+            }
+            
+            // 安全檢查：確保 Entity 已載入（canCreateReturn = true 時理論上一定有值）
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("出貨單資料載入失敗，請重新整理頁面");
+                return;
+            }
+            
+            // 直接開啟退貨單 Modal，使用 Entity.Id 作為出貨單 ID（最可靠的來源）
+            // 所有業務驗證（客戶、明細、已退貨等）交給 Modal 內部處理
+            await salesReturnEditModal!.ShowAddModalWithPrefilledDelivery(
+                editModalComponent.Entity.CustomerId,
+                editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesDeliveryId 參數
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromDelivery), GetType(), 
+                additionalData: $"轉退貨單失敗 - DeliveryId: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync($"轉退貨時發生錯誤: {ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理退貨單儲存後的事件（出貨單轉單）
+    /// 使用 ChildDocumentRefreshHelper 統一處理刷新邏輯
+    /// </summary>
+    private async Task HandleSalesReturnSaved(SalesReturn savedSalesReturn)
+    {
+        try
+        {
+            // 使用統一 Helper 處理子單據儲存後的刷新邏輯
+            await ChildDocumentRefreshHelper.HandleChildDocumentSavedAsync(
+                closeModal: () =>
+                {
+                    showSalesReturnModal = false;
+                    selectedSalesReturnId = null;
+                },
+                reloadDetails: async () =>
+                {
+                    // 刷新出貨單明細（更新已退數量等資訊）
+                    if (editModalComponent?.Entity?.Id > 0)
+                    {
+                        await LoadSalesDeliveryDetailsInternal(editModalComponent.Entity.Id);
+                    }
+                },
+                detailManager: salesDeliveryDetailManager,
+                notificationMessage: $"退貨單 {savedSalesReturn.Code} 已更新，出貨明細已刷新",
+                stateHasChanged: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesReturnSaved), GetType());
+        }
+    }
     
     // ===== ActionButton 產生方法 =====
 }
