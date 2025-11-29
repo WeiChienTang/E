@@ -673,15 +673,20 @@
     {
         try
         {
-            // 重新載入明細資料
+            // 1. 重新載入明細資料
             await LoadSalesDeliveryDetailsInternal(loadedEntityId);
             
-            // 觸發 Table 元件刷新
+            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料（與 QuotationEditModalComponent 保持一致）
+            StateHasChanged();
+            
+            // 2. 觸發 Table 元件刷新（此時 ExistingDetails 已經是新的資料）
             if (salesDeliveryDetailManager != null)
             {
                 await salesDeliveryDetailManager.RefreshDetailsAsync();
             }
             
+            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
             StateHasChanged();
         }
         catch (Exception ex)
@@ -696,6 +701,9 @@
     {
         try
         {
+            // 🔑 關鍵修正：使用 GetWithDetailsAsync 重新載入完整實體（包含關聯資料）
+            // 這確保 Product 等關聯物件都已載入，與 QuotationEditModalComponent 保持一致
+            var salesDelivery = await SalesDeliveryService.GetByIdAsync(salesDeliveryId);
             salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDeliveryId);
         }
         catch (Exception ex)
@@ -1169,7 +1177,8 @@
                 },
                 reloadDetails: async () =>
                 {
-                    // 刷新出貨單明細（更新已退數量等資訊）
+                    // 🔑 關鍵修復：從資料庫重新載入明細資料
+                    // 這確保 ReturnedQuantity 等欄位都是最新的資料
                     if (editModalComponent?.Entity?.Id > 0)
                     {
                         await LoadSalesDeliveryDetailsInternal(editModalComponent.Entity.Id);
@@ -1178,8 +1187,25 @@
                 detailManager: salesDeliveryDetailManager,
                 notificationMessage: $"退貨單 {savedSalesReturn.Code} 已更新，出貨明細已刷新",
                 stateHasChanged: StateHasChanged,
-                invokeAsync: InvokeAsync
+                invokeAsync: InvokeAsync,
+                additionalActions: async () =>
+                {
+                    // 🔑 關鍵修復：先確保 UI 更新（參數傳遞），再刷新 Table 組件
+                    // 這樣可以確保 SalesDeliveryTable 的 ExistingDetails 參數已收到最新的 salesDeliveryDetails
+                    await InvokeAsync(StateHasChanged);
+                    
+                    // 延遲一小段時間，確保 Blazor 完成參數綁定
+                    await Task.Delay(50);
+                    
+                    // 呼叫 Table 組件的公開刷新方法來更新 UI 顯示
+                    if (salesDeliveryDetailManager != null)
+                    {
+                        await salesDeliveryDetailManager.RefreshDetailsAsync();
+                    }
+                }
             );
+            
+            await NotificationService.ShowSuccessAsync($"已成功從出貨單轉為退貨單（退貨單編號：{savedSalesReturn.Code}）");
         }
         catch (Exception ex)
         {

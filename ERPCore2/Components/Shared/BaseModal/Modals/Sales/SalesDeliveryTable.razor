@@ -224,6 +224,7 @@ else
     public async Task RefreshDetailsAsync()
     {
         await LoadExistingDetailsAsync();
+        
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
     }
@@ -497,9 +498,11 @@ else
                     includeCompleted: false,
                     checkApproval: false);
                 
-                // 載入所有啟用的商品（與 PurchaseReceivingTable 一致）
+                // 載入所有啟用的商品，只顯示產品類別標記為可販售的商品
                 var allProducts = await ProductService.GetActiveProductsAsync();
-                AvailableProducts = allProducts.ToList();
+                AvailableProducts = allProducts
+                    .Where(p => p.ProductCategory != null && p.ProductCategory.IsSaleable)
+                    .ToList();
             }
             else
             {
@@ -542,7 +545,7 @@ else
         {
             return Task.CompletedTask;
         }
-
+        
         //  開始載入資料 - 設定為未完成
         _dataLoadCompleted = false;
         
@@ -551,6 +554,7 @@ else
         foreach (var detail in ExistingDetails)
         {
             var productId = GetPropertyValue<int>(detail, nameof(DeliveryItem.ProductId));
+            
             var quantity = GetPropertyValue<decimal>(detail, QuantityPropertyName);
             var unitPrice = GetPropertyValue<decimal>(detail, UnitPricePropertyName);
             var discountPercentage = !string.IsNullOrEmpty(DiscountPercentagePropertyName)
@@ -923,6 +927,18 @@ else
         var combinedItems = new List<object>();
         var availableDetails = GetAvailableSalesDetails();
         
+        // 只顯示產品類別標記為可販售的商品
+        var availableProducts = AvailableProducts
+            .Where(p => p.ProductCategory != null && p.ProductCategory.IsSaleable)
+            .ToList();
+        
+        // 確保當前選中的商品也在列表中
+        if (item.SelectedProduct != null && 
+            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
+        {
+            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
+        }
+        
         if (!string.IsNullOrWhiteSpace(searchValue))
         {
             // 1. 搜尋訂單明細（優先顯示）
@@ -934,8 +950,8 @@ else
                 .Take(10)
                 .ToList();
             
-            // 2. 搜尋一般商品
-            var filteredProducts = AvailableProducts
+            // 2. 搜尋一般商品（只顯示可販售的）
+            var filteredProducts = availableProducts
                 .Where(p =>
                     (p.Code != null && p.Code.Contains(searchValue, StringComparison.OrdinalIgnoreCase)) ||
                     (p.Name != null && p.Name.Contains(searchValue, StringComparison.OrdinalIgnoreCase)))
@@ -947,9 +963,9 @@ else
         }
         else
         {
-            // 沒有搜尋條件時，優先顯示訂單明細，然後是一般商品
+            // 沒有搜尋條件時，優先顯示訂單明細，然後是一般商品（只顯示可販售的）
             var topDetails = availableDetails.Take(10).ToList();
-            var topProducts = AvailableProducts.Take(10).ToList();
+            var topProducts = availableProducts.Take(10).ToList();
             
             combinedItems.AddRange(topDetails.Cast<object>());
             combinedItems.AddRange(topProducts.Cast<object>());
