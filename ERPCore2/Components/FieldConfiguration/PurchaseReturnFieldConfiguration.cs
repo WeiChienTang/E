@@ -102,11 +102,19 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseReturn>
                         {
                             PropertyName = nameof(PurchaseReturn.TotalReturnAmountWithTax),
-                            DisplayName = "退回總金額",
-                            ColumnType = ColumnDataType.Currency,
+                            DisplayName = "總額",
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
+                            CustomTemplate = item => builder =>
+                            {
+                                var purchaseReturn = (PurchaseReturn)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, purchaseReturn.TotalReturnAmountWithTax.ToString("N0"));
+                                builder.CloseElement();
+                            }
                         }
                     }
 

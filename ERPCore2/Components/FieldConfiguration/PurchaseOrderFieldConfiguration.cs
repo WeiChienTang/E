@@ -103,14 +103,22 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(PurchaseOrder.TotalAmount),
+                        nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax),
                         new FieldDefinition<PurchaseOrder>
                         {
-                            PropertyName = nameof(PurchaseOrder.TotalAmount),
-                            DisplayName = "總金額",
-                            ColumnType = ColumnDataType.Currency,
+                            PropertyName = nameof(PurchaseOrder.PurchaseTotalAmountIncludingTax),
+                            DisplayName = "總額",
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
                             ShowInFilter = false, // 通常不會用金額篩選
+                            CustomTemplate = item => builder =>
+                            {
+                                var purchaseOrder = (PurchaseOrder)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, purchaseOrder.PurchaseTotalAmountIncludingTax.ToString("N0"));
+                                builder.CloseElement();
+                            }
                         }
                     }
                 };

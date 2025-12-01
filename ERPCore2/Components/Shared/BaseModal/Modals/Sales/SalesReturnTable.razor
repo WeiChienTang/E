@@ -200,6 +200,11 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // 初始化前一個狀態值，避免 OnParametersSetAsync 誤判為變更
+        _previousSelectedCustomerId = EffectiveCustomerId;
+        _previousSelectedSalesDeliveryId = EffectiveSalesDeliveryId;
+        _previousFilterProductId = EffectiveFilterProductId;
+        
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
         
@@ -231,8 +236,7 @@ else
             
             await LoadAvailableProductsAsync();
             
-            // 客戶變更時清空現有選項並重新載入
-            ReturnItems.Clear();
+            // 客戶變更時重新載入明細（LoadExistingDetailsAsync 內部會自動 Clear）
             await LoadExistingDetailsAsync();
             return;
         }
@@ -721,8 +725,8 @@ else
 
         //  開始載入資料
         _dataLoadCompleted = false;
-        
         ReturnItems.Clear();
+        _deletedDetailIds.Clear(); // 清空已刪除ID列表
         
         // 載入系統預設稅率
         var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
@@ -737,6 +741,9 @@ else
                 // 直接使用 Navigation Properties
                 SelectedProduct = detail.Product,
                 SelectedDeliveryDetail = deliveryDetail,
+                DeliveryDetailSearchValue = deliveryDetail != null 
+                    ? FormatDeliveryDetailDisplayText(deliveryDetail)
+                    : (detail.Product != null ? $"[{detail.Product.Code}] {detail.Product.Name}" : ""),
                 OriginalQuantity = (int)(deliveryDetail?.DeliveryQuantity ?? 0),
                 AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail?.Id ?? 0),
                 ReturnQuantity = (int)detail.ReturnQuantity,

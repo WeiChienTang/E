@@ -500,6 +500,23 @@
     
     protected override async Task OnParametersSetAsync()
     {
+        // 🔑 關鍵修復：如果 _currentId 存在且與傳入的 Id 不同，
+        // 說明是導航後的狀態，不應該被外部參數覆蓋（例如父組件刷新時傳入舊 ID）
+        if (_currentId.HasValue && _currentId != Id && !_isNavigating && IsVisible)
+        {
+            // 保護導航狀態，主動同步回父組件，確保父組件知道當前的 ID
+            if (IdChanged.HasDelegate)
+            {
+                await IdChanged.InvokeAsync(_currentId);
+            }
+            
+            // 同步 _lastId，避免觸發重新載入
+            _lastId = _currentId;
+            
+            // 跳過後續邏輯，保持當前狀態不變
+            return;
+        }
+        
         // 同步 _currentId 與 Id（除非正在導航中）
         if (!_isNavigating)
         {

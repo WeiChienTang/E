@@ -107,11 +107,19 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Quotation>
                         {
                             PropertyName = nameof(Quotation.TotalAmount),
-                            DisplayName = "報價金額",
-                            ColumnType = ColumnDataType.Currency,
+                            DisplayName = "總額",
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             HeaderStyle = "width: 130px; text-align: right;",
-                            ShowInFilter = false
+                            ShowInFilter = false,
+                            CustomTemplate = item => builder =>
+                            {
+                                var quotation = (Quotation)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, quotation.TotalAmount.ToString("N0"));
+                                builder.CloseElement();
+                            }
                         }
                     }
                 };

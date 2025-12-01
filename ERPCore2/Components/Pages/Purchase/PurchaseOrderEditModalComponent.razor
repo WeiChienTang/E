@@ -552,7 +552,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的總金額，根據明細自動計算",
-                    IsReadOnly = true // 總金額欄位始終為唯讀
+                    IsReadOnly = true, // 總金額欄位始終為唯讀
+                    CssClass = "text-warning fw-bold" // 使用黃色粗體顯示
                 },
                 new FormFieldDefinition()
                 {
@@ -561,7 +562,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的稅額，根據明細自動計算",
-                    IsReadOnly = true // 稅額欄位始終為唯讀
+                    IsReadOnly = true, // 稅額欄位始終為唯讀
+                    CssClass = "text-info fw-bold" // 使用藍色粗體顯示
                 },
                 new FormFieldDefinition()
                 {
@@ -570,7 +572,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     HelpText = "採購單的含稅總金額，根據明細自動計算",
-                    IsReadOnly = true // 含稅總金額欄位始終為唯讀
+                    IsReadOnly = true, // 含稅總金額欄位始終為唯讀
+                    CssClass = "text-success fw-bold" // 使用綠色粗體顯示
                 },
 
                 new FormFieldDefinition()

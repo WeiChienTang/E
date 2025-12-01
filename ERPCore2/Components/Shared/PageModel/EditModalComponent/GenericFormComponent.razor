@@ -185,21 +185,37 @@
                     
                 case FormFieldType.Number:
                     var numberValue = GetPropertyValue(Model, field.PropertyName);
-                    var formattedNumberValue = FormatNumberForInput(numberValue);
-                    <input type="number"
-                           class="@inputClass"
-                           id="@field.PropertyName"
-                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                           placeholder="@field.Placeholder"
-                           readonly="@field.IsReadOnly"
-                           disabled="@field.IsDisabled"
-                           autocomplete="off"
-                           required="@field.IsRequired"
-                           min="@field.Min"
-                           max="@field.Max"
-                           step="@field.Step"
-                           value="@formattedNumberValue"
-                           @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    
+                    if (field.IsReadOnly)
+                    {
+                        // 唯讀模式：使用 text input + 千分位格式（保留邊框樣式）
+                        var displayValue = FormatNumberForDisplay(numberValue, field.DecimalPlaces, field.UseThousandsSeparator);
+                        <input type="text"
+                               class="@inputClass"
+                               id="@field.PropertyName"
+                               name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
+                               readonly
+                               tabindex="-1"
+                               value="@displayValue" />
+                    }
+                    else
+                    {
+                        // 可編輯模式：保持原有的 number input（不使用千分位）
+                        var formattedNumberValue = FormatNumberForInput(numberValue);
+                        <input type="number"
+                               class="@inputClass"
+                               id="@field.PropertyName"
+                               name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
+                               placeholder="@field.Placeholder"
+                               disabled="@field.IsDisabled"
+                               autocomplete="off"
+                               required="@field.IsRequired"
+                               min="@field.Min"
+                               max="@field.Max"
+                               step="@field.Step"
+                               value="@formattedNumberValue"
+                               @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                    }
                     break;
                     
                 case FormFieldType.Date:
@@ -1077,6 +1093,30 @@
         if (decimal.TryParse(value.ToString(), out decimal decimalValue))
         {
             return NumberFormatHelper.FormatForInput(decimalValue);
+        }
+
+        // 如果無法轉換，返回原始字串
+        return value.ToString() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// 格式化數字欄位用於唯讀顯示（帶千分位）
+    /// </summary>
+    /// <remarks>
+    /// - 支援千分位分隔符號（1,234,567）
+    /// - 可指定小數位數
+    /// - 智能顯示：整數不顯示小數點，有小數才顯示
+    /// - 零值顯示為 0（而非空字串）
+    /// </remarks>
+    private string FormatNumberForDisplay(object? value, int decimalPlaces = 0, bool useThousandsSeparator = true)
+    {
+        if (value == null)
+            return string.Empty;
+
+        // 嘗試轉換為 decimal
+        if (decimal.TryParse(value.ToString(), out decimal decimalValue))
+        {
+            return NumberFormatHelper.FormatSmart(decimalValue, decimalPlaces, useThousandsSeparator);
         }
 
         // 如果無法轉換，返回原始字串

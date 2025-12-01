@@ -88,15 +88,23 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(PurchaseReceiving.TotalAmount),
+                        nameof(PurchaseReceiving.PurchaseReceivingTotalAmountIncludingTax),
                         new FieldDefinition<PurchaseReceiving>
                         {
-                            PropertyName = nameof(PurchaseReceiving.TotalAmount),
-                            DisplayName = "總金額",
-                            ColumnType = ColumnDataType.Currency,
+                            PropertyName = nameof(PurchaseReceiving.PurchaseReceivingTotalAmountIncludingTax),
+                            DisplayName = "總額",
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
+                            CustomTemplate = item => builder =>
+                            {
+                                var purchaseReceiving = (PurchaseReceiving)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, purchaseReceiving.PurchaseReceivingTotalAmountIncludingTax.ToString("N0"));
+                                builder.CloseElement();
+                            }
                         }
                     }
                 };

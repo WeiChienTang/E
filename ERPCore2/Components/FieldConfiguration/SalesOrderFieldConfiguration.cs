@@ -70,12 +70,20 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.TotalAmountWithTax),
-                            DisplayName = "總額(含稅)",
+                            DisplayName = "總額",
                             FilterType = SearchFilterType.NumberRange,
-                            ColumnType = ColumnDataType.Currency,
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 4,
                             HeaderStyle = "width: 120px; text-align: right;",
-                            ShowInFilter = false // 金額欄位暫時不提供篩選功能
+                            ShowInFilter = false, // 金額欄位暫時不提供篩選功能
+                            CustomTemplate = item => builder =>
+                            {
+                                var salesOrder = (SalesOrder)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, salesOrder.TotalAmountWithTax.ToString("N0"));
+                                builder.CloseElement();
+                            }
                         }
                     },
                     {

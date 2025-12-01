@@ -73,6 +73,18 @@ public class FormFieldDefinition
     public decimal? Step { get; set; }
     
     /// <summary>
+    /// 數字欄位小數位數（預設 0 表示整數）
+    /// 用於控制唯讀模式下的顯示格式
+    /// </summary>
+    public int DecimalPlaces { get; set; } = 0;
+    
+    /// <summary>
+    /// 數字欄位是否使用千分位分隔符號（預設 true）
+    /// 僅在唯讀模式下生效，可編輯模式下為了相容 input type="number" 不使用千分位
+    /// </summary>
+    public bool UseThousandsSeparator { get; set; } = true;
+    
+    /// <summary>
     /// 最小長度 (文字欄位)
     /// </summary>
     public int? MinLength { get; set; }

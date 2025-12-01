@@ -1084,7 +1084,7 @@ else
             
             StateHasChanged();
             
-            await NotificationService.ShowSuccessAsync($"已載入 {ReceivingItems.Count} 筆待進貨明細");
+            await NotificationService.ShowSuccessAsync($"已載入 {unreceivedDetails.Count} 筆待進貨明細");
         }
         catch (Exception ex)
         {
@@ -1225,7 +1225,7 @@ else
             tableComponent?.RefreshEmptyRow();
             StateHasChanged();
             
-            await NotificationService.ShowSuccessAsync($"已載入 {ReceivingItems.Count} 項商品作為參考");
+            await NotificationService.ShowSuccessAsync($"已載入 {lastReceivingDetails.Count} 項商品作為參考");
         }
         catch (Exception ex)
         {

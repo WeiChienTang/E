@@ -635,7 +635,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
-                    HelpText = "系統自動計算的退回總金額"
+                    HelpText = "系統自動計算的退回總金額",
+                    CssClass = "text-warning fw-bold" // 使用黃色粗體顯示
                 },
                 new()
                 {
@@ -644,7 +645,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
-                    HelpText = "系統自動計算的退回稅額"
+                    HelpText = "系統自動計算的退回稅額",
+                    CssClass = "text-info fw-bold" // 使用藍色粗體顯示
                 },
                 new()
                 {
@@ -653,7 +655,8 @@
                     FieldType = FormFieldType.Number,
                     IsRequired = false,
                     IsReadOnly = true,
-                    HelpText = "系統自動計算的退回含稅總金額"
+                    HelpText = "系統自動計算的退回含稅總金額",
+                    CssClass = "text-success fw-bold" // 使用綠色粗體顯示
                 },
                 FormFieldConfigurationHelper.CreateRemarksField<PurchaseReturn>(
                     readOnly: hasUndeletableDetails // 根據明細狀態決定是否鎖定

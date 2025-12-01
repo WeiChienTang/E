@@ -99,15 +99,23 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(SalesReturn.TotalReturnAmount),
+                        nameof(SalesReturn.TotalReturnAmountWithTax),
                         new FieldDefinition<SalesReturn>
                         {
-                            PropertyName = nameof(SalesReturn.TotalReturnAmount),
-                            DisplayName = "總金額",
-                            ColumnType = ColumnDataType.Currency,
+                            PropertyName = nameof(SalesReturn.TotalReturnAmountWithTax),
+                            DisplayName = "總額",
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,
                             HeaderStyle = "width: 120px; text-align: right;",
+                            CustomTemplate = item => builder =>
+                            {
+                                var salesReturn = (SalesReturn)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, salesReturn.TotalReturnAmountWithTax.ToString("N0"));
+                                builder.CloseElement();
+                            }
                         }
                     }
                 };

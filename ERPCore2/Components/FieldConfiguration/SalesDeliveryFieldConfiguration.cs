@@ -105,46 +105,23 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(SalesDelivery.TotalAmount),
+                        nameof(SalesDelivery.TotalAmountWithTax),
                         new FieldDefinition<SalesDelivery>
                         {
-                            PropertyName = nameof(SalesDelivery.TotalAmount),
-                            DisplayName = "出貨金額",
+                            PropertyName = nameof(SalesDelivery.TotalAmountWithTax),
+                            DisplayName = "總額",
                             FilterType = SearchFilterType.NumberRange,
-                            ColumnType = ColumnDataType.Currency,
+                            ColumnType = ColumnDataType.Number,
                             TableOrder = 7,
                             HeaderStyle = "width: 120px; text-align: right;",
-                            ShowInFilter = false // 金額欄位暫時不提供篩選功能
-                        }
-                    },
-                    {
-                        nameof(SalesDelivery.IsApproved),
-                        new FieldDefinition<SalesDelivery>
-                        {
-                            PropertyName = nameof(SalesDelivery.IsApproved),
-                            DisplayName = "已核准",
-                            FilterType = SearchFilterType.Select,
-                            ColumnType = ColumnDataType.Boolean,
-                            TableOrder = 9,
-                            FilterOrder = 9,
-                            HeaderStyle = "width: 100px; text-align: center;",
-                            Options = new List<SelectOption>
+                            ShowInFilter = false, // 金額欄位暫時不提供篩選功能
+                            CustomTemplate = item => builder =>
                             {
-                                new SelectOption { Text = "全部", Value = "" },
-                                new SelectOption { Text = "已核准", Value = "true" },
-                                new SelectOption { Text = "未核准", Value = "false" }
-                            },
-                            FilterFunction = (model, query) => 
-                            {
-                                if (!string.IsNullOrWhiteSpace(model.TextFilters.GetValueOrDefault(nameof(SalesDelivery.IsApproved))))
-                                {
-                                    var value = model.TextFilters[nameof(SalesDelivery.IsApproved)];
-                                    if (bool.TryParse(value, out bool isApproved))
-                                    {
-                                        query = query.Where(sd => sd.IsApproved == isApproved);
-                                    }
-                                }
-                                return query;
+                                var salesDelivery = (SalesDelivery)item;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "text-success fw-bold");
+                                builder.AddContent(2, salesDelivery.TotalAmountWithTax.ToString("N0"));
+                                builder.CloseElement();
                             }
                         }
                     },
