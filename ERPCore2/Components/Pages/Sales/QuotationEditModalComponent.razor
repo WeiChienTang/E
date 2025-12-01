@@ -1,5 +1,6 @@
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
+@inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IEmployeeService EmployeeService
@@ -764,12 +765,52 @@
             {
                 await QuotationDetailService.DeleteAsync(detailToDelete.Id);
             }
+            
+            // 儲存報價單組合明細（BOM）
+            await SaveQuotationCompositionDetails(quotationId);
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveQuotationDetails), GetType(), 
                 additionalData: $"儲存報價單明細失敗 - QuotationId: {quotationId}");
             throw; // 重新拋出例外，讓上層處理
+        }
+    }
+
+    /// <summary>
+    /// 儲存報價單組合明細（BOM）
+    /// </summary>
+    private async Task SaveQuotationCompositionDetails(int quotationId)
+    {
+        try
+        {
+            // 從 QuotationTable 組件取得組合明細資料
+            if (quotationDetailManager == null) return;
+            
+            var compositionDetailsMap = quotationDetailManager.GetCompositionDetails();
+            if (!compositionDetailsMap.Any()) return;
+            
+            // 取得所有報價單明細
+            var savedQuotationDetails = await QuotationDetailService.GetByQuotationIdAsync(quotationId);
+            
+            foreach (var kvp in compositionDetailsMap)
+            {
+                var quotationDetailId = kvp.Key;
+                var compositionDetails = kvp.Value;
+                
+                // 確保報價單明細存在
+                var quotationDetail = savedQuotationDetails.FirstOrDefault(d => d.Id == quotationDetailId);
+                if (quotationDetail == null) continue;
+                
+                // 批次儲存組合明細
+                await QuotationCompositionDetailService.SaveBatchAsync(quotationDetailId, compositionDetails);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveQuotationCompositionDetails), GetType(), 
+                additionalData: $"儲存報價單組合明細失敗 - QuotationId: {quotationId}");
+            // 不拋出例外，讓主要儲存流程繼續
         }
     }
 

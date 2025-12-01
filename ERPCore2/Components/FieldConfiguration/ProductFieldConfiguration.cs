@@ -151,5 +151,13 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<Product>>();
             }
         }
+        
+        /// <summary>
+        /// 覆寫預設排序 - 按產品名稱升序排列（與 Service 層一致）
+        /// </summary>
+        protected override Func<IQueryable<Product>, IQueryable<Product>> GetDefaultSort()
+        {
+            return query => query.OrderBy(p => p.Name);
+        }
     }
 }

@@ -422,6 +422,14 @@
                 Min = 0,
                 Max = 100
             },
+            new FormFieldDefinition()
+            {
+              PropertyName = nameof(Product.CanSchedule),  
+                Label = "可排程",
+                FieldType = FormFieldType.Checkbox,
+                IsRequired = false,
+                HelpText = "指示產品是否可用於排程"
+            },
             new()
             {
                 PropertyName = nameof(Product.Specification),
@@ -445,7 +453,8 @@
                 p => p.ProductCategoryId,
                 p => p.SizeId,
                 p => p.UnitId,
-                p => p.TaxRate)
+                p => p.TaxRate,
+                p => p.CanSchedule)
 
             .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Specification,

@@ -1,0 +1,340 @@
+@* BOM 組合編輯 Modal - 編輯報價單明細的 BOM 組成（客製化） *@
+@using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Shared.GenericComponent.Button
+@using ERPCore2.Data.Entities
+@inject IQuotationCompositionDetailService QuotationCompositionDetailService
+@inject IProductService ProductService
+@inject IUnitService UnitService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@GetModalTitle()"
+                   Icon="bi bi-diagram-3"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Info"
+                   ShowFooter="false"
+                   CloseOnBackdropClick="false"
+                   CloseOnEscape="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="載入中..."
+                   HeaderButtons="@HeaderButtons"
+                   BodyContent="@BodyContent" />
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? QuotationDetailId { get; set; }
+    [Parameter] public string ProductName { get; set; } = string.Empty;
+    [Parameter] public int? ProductId { get; set; }
+    [Parameter] public EventCallback<List<QuotationCompositionDetail>> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Func<List<QuotationCompositionDetail>?>? OnRequestCachedData { get; set; }
+
+    // ===== 私有欄位 =====
+    private bool isLoading = false;
+    private bool _dataLoadCompleted = true;  // 資料載入完成標記（預設 true 保持向下兼容）
+    private List<QuotationCompositionDetail> compositionDetails = new();
+    private List<ERPCore2.Data.Entities.Product> availableProducts = new();
+    private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
+    private InteractiveTableComponent<QuotationCompositionDetail>? tableComponent;
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && QuotationDetailId.HasValue)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        _dataLoadCompleted = false;  //  開始載入資料 - 設定為未完成
+        StateHasChanged();
+
+        try
+        {
+            // 載入可用的商品和單位
+            availableProducts = await ProductService.GetAllAsync();
+            availableUnits = await UnitService.GetAllAsync();
+
+            //  優先從父組件的快取載入（如果有的話）
+            if (OnRequestCachedData != null)
+            {
+                var cachedData = OnRequestCachedData();
+                if (cachedData?.Any() == true)
+                {
+                    compositionDetails = cachedData;
+                    
+                    // 手動填充導航屬性
+                    foreach (var detail in compositionDetails)
+                    {
+                        if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                        {
+                            detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                        }
+                        if (detail.UnitId.HasValue && detail.Unit == null)
+                        {
+                            detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                        }
+                    }
+                    
+                    // 使用快取資料，不再從資料庫載入
+                    return;
+                }
+            }
+
+            // 沒有快取資料時才從資料庫載入
+            var existingDetails = await QuotationCompositionDetailService.GetByQuotationDetailIdAsync(QuotationDetailId!.Value);
+
+            if (existingDetails.Any())
+            {
+                // 已有自訂的組合明細
+                compositionDetails = existingDetails;
+            }
+            else if (ProductId.HasValue)
+            {
+                // 從產品合成表複製
+                compositionDetails = await QuotationCompositionDetailService.CopyFromProductCompositionAsync(
+                    QuotationDetailId!.Value,
+                    ProductId.Value
+                );
+                
+                //  手動填充導航屬性（因為 CopyFromProductCompositionAsync 只複製 ID）
+                foreach (var detail in compositionDetails)
+                {
+                    if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                    {
+                        detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                    }
+                    if (detail.UnitId.HasValue && detail.Unit == null)
+                    {
+                        detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                    }
+                }
+            }
+            else
+            {
+                compositionDetails = new List<QuotationCompositionDetail>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+            compositionDetails = new List<QuotationCompositionDetail>();
+        }
+        finally
+        {
+            isLoading = false;
+            _dataLoadCompleted = true;  //  資料載入完成 - 觸發空行檢查
+            StateHasChanged();
+        }
+    }
+
+    private string GetModalTitle()
+    {
+        return string.IsNullOrEmpty(ProductName) 
+            ? "編輯 BOM 組成" 
+            : $"編輯 BOM 組成 - {ProductName}";
+    }
+
+    // ===== Header Buttons =====
+    private RenderFragment HeaderButtons => __builder =>
+    {
+        <div class="w-100 d-flex align-items-center px-2">
+            <div class="d-flex gap-2 ms-auto">                
+                <GenericButtonComponent Text="儲存"
+                                      Variant="ButtonVariant.Green"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@HandleSave" />
+            </div>
+        </div>
+    };
+
+    // ===== Body Content =====
+    private RenderFragment BodyContent => __builder =>
+    {
+        <div class="container-fluid">
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="QuotationCompositionDetail"
+                                      Items="@compositionDetails"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      ShowHeader="true"
+                                      ShowActions="false"
+                                      ShowBuiltInActions="true"
+                                      ShowBuiltInDeleteButton="true"
+                                      OnItemDelete="@HandleItemDelete"
+                                      EnableAutoEmptyRow="true"
+                                      CreateEmptyItem="@CreateEmptyItem"
+                                      DataLoadCompleted="@_dataLoadCompleted"
+                                      IsStriped="true"
+                                      IsHoverable="true"
+                                      IsBordered="true"
+                                      EmptyMessage="尚未新增組件" />
+        </div>
+    };
+
+    // ===== InteractiveTable 配置 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>();
+
+        // 組件產品
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "品項",
+            PropertyName = "ComponentProductId",
+            EmptyCheckPropertyName = "ComponentProduct",  //  檢查物件屬性而非 ID
+            ColumnType = InteractiveColumnType.Select,
+            Width = "40%",
+            Options = availableProducts.Select(p => new InteractiveSelectOption
+            {
+                Value = p.Id,
+                Text = $"[{p.Code}] {p.Name}"
+            }).ToList(),
+            TriggerEmptyRowOnFilled = true,
+            OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, (args) =>
+            {
+                var (item, value) = args;
+                if (item is QuotationCompositionDetail detail && value != null)
+                {
+                    var productId = Convert.ToInt32(value);
+                    var product = availableProducts.FirstOrDefault(p => p.Id == productId);
+                    
+                    if (product != null)
+                    {
+                        detail.ComponentProduct = product;
+                        detail.UnitId = product.UnitId;
+                        
+                        //  只有當品項有資料時才填入數量預設值
+                        if (detail.Quantity == 0)
+                        {
+                            detail.Quantity = 1;
+                        }
+                        
+                        StateHasChanged();
+                    }
+                }
+            })
+        });
+
+        // 數量
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "數量",
+            PropertyName = "Quantity",
+            ColumnType = InteractiveColumnType.Number,
+            Width = "15%",
+            MinValue = 0.01m,
+            NumberFormat = "N2",
+            TextAlign = "right",
+            ExcludeFromEmptyCheck = true  // 🔑 數量欄位不參與空行判斷
+        });
+
+        // 單位
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "單位",
+            PropertyName = "UnitId",
+            ColumnType = InteractiveColumnType.Select,
+            Width = "15%",
+            Options = availableUnits.Select(u => new InteractiveSelectOption
+            {
+                Value = u.Id,
+                Text = u.Name
+            }).ToList()
+        });
+
+        // 組件成本
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "組件成本",
+            PropertyName = "ComponentCost",
+            ColumnType = InteractiveColumnType.Number,
+            Width = "15%",
+            NumberFormat = "N2",
+            TextAlign = "right"
+        });
+
+        // 備註
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "備註",
+            PropertyName = "Remarks",
+            ColumnType = InteractiveColumnType.Input,
+            Width = "15%"
+        });
+
+        return columns;
+    }
+
+    private QuotationCompositionDetail CreateEmptyItem()
+    {
+        //  返回完全空的物件，不設定預設值（避免被誤判為有值）
+        return new QuotationCompositionDetail
+        {
+            QuotationDetailId = QuotationDetailId ?? 0
+            // Quantity 不設定預設值，保持 null 或 0（依據資料模型）
+        };
+    }
+
+    // ===== 事件處理 =====
+    private void HandleItemDelete(QuotationCompositionDetail item)
+    {
+        compositionDetails.Remove(item);
+        StateHasChanged();
+    }
+
+    private async Task HandleSave()
+    {
+        try
+        {
+            // 過濾掉空行（沒有選擇組件的）
+            var validDetails = compositionDetails
+                .Where(x => x.ComponentProductId > 0 && x.Quantity > 0)
+                .ToList();
+
+            // 檢查是否有重複的組件
+            var duplicates = validDetails
+                .GroupBy(x => x.ComponentProductId)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.First().ComponentProduct?.Name)
+                .ToList();
+
+            if (duplicates.Any())
+            {
+                await NotificationService.ShowWarningAsync($"組件重複：{string.Join("、", duplicates)}");
+                return;
+            }
+
+            // 儲存
+            if (OnSave.HasDelegate)
+            {
+                await OnSave.InvokeAsync(validDetails);
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}

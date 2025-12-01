@@ -51,6 +51,7 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesReturnReason> SalesReturnReasons { get; set; }
       public DbSet<Quotation> Quotations { get; set; }
       public DbSet<QuotationDetail> QuotationDetails { get; set; }
+      public DbSet<QuotationCompositionDetail> QuotationCompositionDetails { get; set; }
       public DbSet<SetoffDocument> SetoffDocuments { get; set; }
       public DbSet<SetoffPayment> SetoffPayments { get; set; }
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }

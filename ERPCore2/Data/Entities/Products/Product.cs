@@ -43,11 +43,17 @@ namespace ERPCore2.Data.Entities
         public decimal? TaxRate { get; set; }
         
         /// <summary>
-        /// 供應商 ID（直接關聯，不使用中間表）
+        /// 供應商 ID(直接關聯,不使用中間表)
         /// </summary>
         [Display(Name = "供應商")]
         [ForeignKey(nameof(Supplier))]
         public int? SupplierId { get; set; }
+        
+        /// <summary>
+        /// 是否可轉排程 - true: 需要自己製作, false: 外部購買
+        /// </summary>
+        [Display(Name = "可轉排程")]
+        public bool CanSchedule { get; set; } = false;
         
         // Navigation Properties
         public Unit? Unit { get; set; }

@@ -31,7 +31,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "部門代碼",
                             FilterPlaceholder = "輸入部門代碼搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Code), d => d.Code)
@@ -45,7 +44,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "部門名稱",
                             FilterPlaceholder = "輸入部門名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Name), d => d.Name)
                         }

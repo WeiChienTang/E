@@ -61,5 +61,10 @@ namespace ERPCore2.Data.Entities
         public Product Product { get; set; } = null!;
         public Unit? Unit { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
+        
+        /// <summary>
+        /// 報價單組合明細（客製化的 BOM 組成）
+        /// </summary>
+        public ICollection<QuotationCompositionDetail> CompositionDetails { get; set; } = new List<QuotationCompositionDetail>();
     }
 }

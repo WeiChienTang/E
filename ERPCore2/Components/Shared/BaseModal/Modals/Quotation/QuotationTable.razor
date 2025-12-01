@@ -2,7 +2,9 @@
 
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @inject IProductService ProductService
+@inject IProductCompositionService ProductCompositionService
 @inject IQuotationDetailService QuotationDetailService
+@inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject INotificationService NotificationService
 @inject ISystemParameterService SystemParameterService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -30,7 +32,7 @@ else
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
-                                      ActionsColumnWidth = "60px"
+                                      ActionsColumnWidth = "120px"
                                       EnableAutoEmptyRow="true"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateEmptyItem" />
@@ -64,7 +66,89 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- BOM 組合編輯 Modal -->
+<QuotationCompositionEditModal IsVisible="@showCompositionModal"
+                              IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
+                              QuotationDetailId="@GetSelectedQuotationDetailId()"
+                              ProductName="@selectedCompositionProductName"
+                              ProductId="@selectedCompositionProductId"
+                              OnSave="@HandleCompositionSave"
+                              OnCancel="@(() => showCompositionModal = false)"
+                              OnRequestCachedData="@GetCachedCompositionData" />
+
 @code {
+    // ===== QuotationItem 內部類別定義（必須在最前面）=====
+    public class QuotationItem
+    {
+        public ERPCore2.Data.Entities.Product? SelectedProduct { get; set; }
+        public ERPCore2.Data.Entities.Unit? SelectedUnit { get; set; }
+        public decimal Quantity { get; set; } = 0;
+        public decimal UnitPrice { get; set; } = 0;
+        public decimal DiscountPercentage { get; set; } = 0;
+        public decimal? TaxRate { get; set; } = null;
+        public decimal ConvertedQuantity { get; set; } = 0;
+        public string Remarks { get; set; } = string.Empty;
+        public TDetailEntity? ExistingDetailEntity { get; set; }
+        
+        /// <summary>
+        /// 自訂的 BOM 組合明細（用於暫存編輯結果）
+        /// </summary>
+        public List<QuotationCompositionDetail>? CustomCompositionDetails { get; set; }
+        
+        // SearchableSelect 支援屬性
+        public string ProductSearchValue { get; set; } = string.Empty;
+        public List<ERPCore2.Data.Entities.Product> FilteredProducts { get; set; } = new();
+        public bool ShowProductDropdown { get; set; } = false;
+        public int ProductSelectedIndex { get; set; } = -1;
+        
+        // Select 欄位綁定的 ID 屬性
+        public string? UnitId
+        {
+            get => SelectedUnit?.Id.ToString();
+            set
+            {
+                // 這個 setter 主要用於 InteractiveTableComponent 的 Select 綁定
+                // 實際的 SelectedUnit 物件會在 OnUnitSelectionChanged 中設定
+            }
+        }
+        
+        /// <summary>
+        /// 計算屬性：小計金額（數量 × 單價 × 折扣）
+        /// </summary>
+        public decimal SubtotalAmount => Quantity * UnitPrice * (1 - DiscountPercentage / 100);
+        
+        /// <summary>
+        /// 計算屬性：未轉單數量
+        /// </summary>
+        public decimal RemainingQuantity => Quantity - ConvertedQuantity;
+        
+        /// <summary>
+        /// 計算屬性：是否已完全轉單
+        /// </summary>
+        public bool IsFullyConverted => ConvertedQuantity >= Quantity;
+        
+        /// <summary>
+        /// 計算屬性：顯示名稱（用於唯讀模式）
+        /// </summary>
+        public string DisplayName
+        {
+            get
+            {
+                if (SelectedProduct == null) return string.Empty;
+                
+                var parts = new List<string>();
+                
+                if (!string.IsNullOrEmpty(SelectedProduct.Code))
+                    parts.Add($"[{SelectedProduct.Code}]");
+                
+                if (!string.IsNullOrEmpty(SelectedProduct.Name))
+                    parts.Add(SelectedProduct.Name);
+                
+                return string.Join(" ", parts);
+            }
+        }
+    }
+    
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
     private bool _hasLastQuotationRecord = false;  // 是否有歷史報價記錄（快取）
@@ -117,6 +201,14 @@ else
     private string selectedProductName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
+    
+    // ===== BOM 組合編輯相關 =====
+    private bool showCompositionModal = false;
+    private int? selectedQuotationItemIndex = null;
+    private string selectedCompositionProductName = string.Empty;
+    private int? selectedCompositionProductId = null;
+    private Dictionary<int, List<QuotationCompositionDetail>> compositionDetailsCache = new();
+    private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
 
     protected override async Task OnInitializedAsync()
     {
@@ -127,6 +219,9 @@ else
         
         // 檢查是否有歷史報價記錄
         await CheckLastQuotationRecordAsync();
+        
+        // 載入有 BOM 組成的商品列表
+        await LoadProductCompositionsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -168,6 +263,34 @@ else
         catch
         {
             _hasLastQuotationRecord = false;
+        }
+    }
+    
+    /// <summary>
+    /// 載入有 BOM 組成的商品列表（用於快取檢查）
+    /// </summary>
+    private async Task LoadProductCompositionsAsync()
+    {
+        try
+        {
+            // 從 Products 參數中取得所有商品 ID
+            var productIds = Products.Where(p => p.Id > 0).Select(p => p.Id).ToList();
+            
+            // 檢查每個商品是否有 ProductComposition
+            foreach (var productId in productIds)
+            {
+                var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
+                if (compositions?.Any() == true)
+                {
+                    productsWithComposition.Add(productId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // 載入失敗不影響主要功能，只是 BOM 按鈕可能不顯示
+            Console.WriteLine($"載入商品組成資料失敗：{ex.Message}");
+            productsWithComposition.Clear();
         }
     }
 
@@ -457,40 +580,56 @@ else
         var quotationItem = (QuotationItem)item;
         var isEmptyRow = quotationItem.SelectedProduct == null;
         var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+        var hasComposition = quotationItem.SelectedProduct != null && HasProductComposition(quotationItem.SelectedProduct.Id);
         
-        if (IsReadOnly)
-        {
-            // 唯讀模式：所有項目都顯示檢視按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Blue"
-                                   IconClass="bi bi-eye text-white"
-                                   Size="ButtonSize.Large"
-                                   Title="查看相關單據"
-                                   OnClick="async () => await ShowRelatedDocuments(quotationItem)"
-                                   StopPropagation="true"
-                                   CssClass="btn-square" />
-        }
-        else if (canDelete || isEmptyRow)
-        {
-            // 可編輯模式且未轉銷貨（或是空行）：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Red"
-                                   IconClass="bi bi-trash text-white"
-                                   Size="ButtonSize.Large"
-                                   Title="刪除"
-                                   OnClick="async () => await HandleItemDelete(quotationItem)"
-                                   StopPropagation="true"
-                                   CssClass="btn-square" />
-        }
-        else
-        {
-            // 已轉銷貨且非空行：顯示查看相關單據按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Blue"
-                                   IconClass="bi bi-eye text-white"
-                                   Size="ButtonSize.Large"
-                                   Title="查看相關單據"
-                                   OnClick="async () => await ShowRelatedDocuments(quotationItem)"
-                                   StopPropagation="true"
-                                   CssClass="btn-square" />
-        }
+        <div class="d-flex gap-1">
+            @* BOM 編輯按鈕（如果商品有 BOM 組成） *@
+            @if (hasComposition && !isEmptyRow)
+            {
+                <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                       IconClass="bi bi-diagram-3 text-white"
+                                       Size="ButtonSize.Large"
+                                       Title="編輯 BOM 組成"
+                                       OnClick="() => ShowCompositionEditor(quotationItem)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            
+            @* 原有的操作按鈕 *@
+            @if (IsReadOnly)
+            {
+                // 唯讀模式：所有項目都顯示檢視按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                       IconClass="bi bi-eye text-white"
+                                       Size="ButtonSize.Large"
+                                       Title="查看相關單據"
+                                       OnClick="async () => await ShowRelatedDocuments(quotationItem)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            else if (canDelete || isEmptyRow)
+            {
+                // 可編輯模式且未轉銷貨（或是空行）：顯示刪除按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                       IconClass="bi bi-trash text-white"
+                                       Size="ButtonSize.Large"
+                                       Title="刪除"
+                                       OnClick="async () => await HandleItemDelete(quotationItem)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            else
+            {
+                // 已轉銷貨且非空行：顯示查看相關單據按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                       IconClass="bi bi-eye text-white"
+                                       Size="ButtonSize.Large"
+                                       Title="查看相關單據"
+                                       OnClick="async () => await ShowRelatedDocuments(quotationItem)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+        </div>
     };
 
     private async Task HandleItemDelete(QuotationItem item)
@@ -551,6 +690,99 @@ else
                 "提示"
             );
         }
+    }
+
+    // ===== BOM 組合編輯相關方法 =====
+    
+    /// <summary>
+    /// 檢查商品是否有 BOM 組成
+    /// </summary>
+    private bool HasProductComposition(int productId)
+    {
+        // 從快取中檢查該商品是否有 ProductComposition
+        return productsWithComposition.Contains(productId);
+    }
+    
+    /// <summary>
+    /// 顯示 BOM 組合編輯器
+    /// </summary>
+    private void ShowCompositionEditor(QuotationItem item)
+    {
+        if (item.SelectedProduct == null) return;
+        
+        selectedQuotationItemIndex = QuotationItems.IndexOf(item);
+        selectedCompositionProductName = item.SelectedProduct.Name;
+        selectedCompositionProductId = item.SelectedProduct.Id;
+        showCompositionModal = true;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得選中的報價單明細 ID（用於 Modal）
+    /// </summary>
+    private int? GetSelectedQuotationDetailId()
+    {
+        if (!selectedQuotationItemIndex.HasValue || selectedQuotationItemIndex.Value < 0)
+            return null;
+            
+        var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
+        if (item?.ExistingDetailEntity is QuotationDetail detail && detail.Id > 0)
+            return detail.Id;
+            
+        // 如果是新的項目，暫時返回一個臨時 ID（負數表示尚未儲存）
+        return -(selectedQuotationItemIndex.Value + 1);
+    }
+    
+    /// <summary>
+    /// 處理 BOM 組合儲存
+    /// </summary>
+    private async Task HandleCompositionSave(List<QuotationCompositionDetail> compositionDetails)
+    {
+        if (!selectedQuotationItemIndex.HasValue || !selectedCompositionProductId.HasValue)
+            return;
+            
+        try
+        {
+            // 暫存到快取（實際儲存會在報價單儲存時一併處理）
+            compositionDetailsCache[selectedCompositionProductId.Value] = compositionDetails;
+            
+            // 同時更新 QuotationItem 的 CustomCompositionDetails（確保資料同步）
+            var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
+            if (item != null)
+            {
+                item.CustomCompositionDetails = compositionDetails;
+            }
+            
+            await NotificationService.ShowSuccessAsync("BOM 組成已更新，請記得儲存報價單以保存變更");
+            showCompositionModal = false;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存 BOM 組成時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 取得快取的組合明細資料（供 Modal 使用）
+    /// </summary>
+    private List<QuotationCompositionDetail>? GetCachedCompositionData()
+    {
+        if (!selectedQuotationItemIndex.HasValue)
+            return null;
+            
+        var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
+        if (item == null)
+            return null;
+            
+        // 優先返回 CustomCompositionDetails
+        if (item.CustomCompositionDetails?.Any() == true)
+            return item.CustomCompositionDetails;
+            
+        // 其次從快取中取得
+        if (item.SelectedProduct != null && compositionDetailsCache.ContainsKey(item.SelectedProduct.Id))
+            return compositionDetailsCache[item.SelectedProduct.Id];
+            
+        return null;
     }
 
     // ===== 內部方法 =====
@@ -1228,6 +1460,38 @@ else
         return true;
     }
 
+    /// <summary>
+    /// 取得所有報價單組合明細資料（供父組件儲存使用）
+    /// </summary>
+    public Dictionary<int, List<QuotationCompositionDetail>> GetCompositionDetails()
+    {
+        var result = new Dictionary<int, List<QuotationCompositionDetail>>();
+        
+        foreach (var item in QuotationItems.Where(x => x.SelectedProduct != null))
+        {
+            // 如果有自訂的組合明細
+            if (item.CustomCompositionDetails?.Any() == true)
+            {
+                var detailId = item.ExistingDetailEntity?.Id ?? 0;
+                if (detailId > 0)
+                {
+                    result[detailId] = item.CustomCompositionDetails;
+                }
+            }
+            // 或從快取中取得
+            else if (item.SelectedProduct != null && compositionDetailsCache.ContainsKey(item.SelectedProduct.Id))
+            {
+                var detailId = item.ExistingDetailEntity?.Id ?? 0;
+                if (detailId > 0)
+                {
+                    result[detailId] = compositionDetailsCache[item.SelectedProduct.Id];
+                }
+            }
+        }
+        
+        return result;
+    }
+
     // ===== 智能下單功能 =====
     
     /// <summary>
@@ -1374,72 +1638,6 @@ else
             // 發生錯誤也要恢復載入完成狀態
             _dataLoadCompleted = true;
             await NotificationService.ShowErrorAsync($"載入上次報價明細失敗：{ex.Message}");
-        }
-    }
-
-        public class QuotationItem
-    {
-        public Product? SelectedProduct { get; set; }
-        public Unit? SelectedUnit { get; set; }
-        public decimal Quantity { get; set; } = 0;
-        public decimal UnitPrice { get; set; } = 0;
-        public decimal DiscountPercentage { get; set; } = 0;
-        public decimal? TaxRate { get; set; } = null;
-        public decimal ConvertedQuantity { get; set; } = 0;
-        public string Remarks { get; set; } = string.Empty;
-        public TDetailEntity? ExistingDetailEntity { get; set; }
-        
-        // SearchableSelect 支援屬性
-        public string ProductSearchValue { get; set; } = string.Empty;
-        public List<Product> FilteredProducts { get; set; } = new();
-        public bool ShowProductDropdown { get; set; } = false;
-        public int ProductSelectedIndex { get; set; } = -1;
-        
-        // Select 欄位綁定的 ID 屬性
-        public string? UnitId
-        {
-            get => SelectedUnit?.Id.ToString();
-            set
-            {
-                // 這個 setter 主要用於 InteractiveTableComponent 的 Select 綁定
-                // 實際的 SelectedUnit 物件會在 OnUnitSelectionChanged 中設定
-            }
-        }
-        
-        /// <summary>
-        /// 計算屬性：小計金額（數量 × 單價 × 折扣）
-        /// </summary>
-        public decimal SubtotalAmount => Quantity * UnitPrice * (1 - DiscountPercentage / 100);
-        
-        /// <summary>
-        /// 計算屬性：未轉單數量
-        /// </summary>
-        public decimal RemainingQuantity => Quantity - ConvertedQuantity;
-        
-        /// <summary>
-        /// 計算屬性：是否已完全轉單
-        /// </summary>
-        public bool IsFullyConverted => ConvertedQuantity >= Quantity;
-        
-        /// <summary>
-        /// 計算屬性：顯示名稱（用於唯讀模式）
-        /// </summary>
-        public string DisplayName
-        {
-            get
-            {
-                if (SelectedProduct == null) return string.Empty;
-                
-                var parts = new List<string>();
-                
-                if (!string.IsNullOrEmpty(SelectedProduct.Code))
-                    parts.Add($"[{SelectedProduct.Code}]");
-                
-                if (!string.IsNullOrEmpty(SelectedProduct.Name))
-                    parts.Add(SelectedProduct.Name);
-                
-                return string.Join(" ", parts);
-            }
         }
     }
 }

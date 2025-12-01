@@ -159,28 +159,6 @@ namespace ERPCore2.FieldConfiguration
                         });
                 }
 
-                // 加入說明欄位
-                fields.Add(nameof(Quotation.Remarks),
-                    new FieldDefinition<Quotation>
-                    {
-                        PropertyName = nameof(Quotation.Remarks),
-                        DisplayName = "說明",
-                        FilterPlaceholder = "輸入說明搜尋",
-                        TableOrder = 10,
-                        NullDisplayText = "-",
-                        CustomTemplate = item => builder =>
-                        {
-                            var quotation = (Quotation)item;
-                            var desc = quotation.Remarks;
-                            var displayText = !string.IsNullOrEmpty(desc) 
-                                ? (desc.Length > 30 ? desc.Substring(0, 30) + "..." : desc)
-                                : "-";
-                            builder.AddContent(0, displayText);
-                        },
-                        FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                            model, query, nameof(Quotation.Remarks), q => q.Remarks, allowNull: true)
-                    });
-
                 return fields;
             }
             catch (Exception ex)
