@@ -301,6 +301,13 @@
                 .Where(x => x.ComponentProductId > 0 && x.Quantity > 0)
                 .ToList();
 
+            // 檢查是否至少有一個明細
+            if (!validDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("請至少新增一個組件明細");
+                return;
+            }
+
             // 檢查是否有重複的組件
             var duplicates = validDetails
                 .GroupBy(x => x.ComponentProductId)
