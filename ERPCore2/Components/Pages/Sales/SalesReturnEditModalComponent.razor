@@ -722,7 +722,7 @@
                 new()
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位
-                    Label = "篩選產品",
+                    Label = "產品",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
                     Options = await GetFilterProductOptions(),
@@ -732,7 +732,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesReturn.SalesDeliveryId),
-                    Label = "銷貨單單號",
+                    Label = "銷貨單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇銷貨單號",
                     IsRequired = false,
@@ -1515,7 +1515,7 @@
                 stateHasChanged: StateHasChanged,
                 additionalActions: async () =>
                 {
-                    // 🔑 關鍵修復：呼叫 Table 組件的公開刷新方法
+                    // 關鍵修復：呼叫 Table 組件的公開刷新方法
                     // 重新載入明細資料以更新沖款相關資訊
                     if (salesReturnDetailManager != null)
                     {

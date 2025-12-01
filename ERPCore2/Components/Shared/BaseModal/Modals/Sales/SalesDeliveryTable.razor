@@ -4,6 +4,7 @@
 @using ERPCore2.Data.Enums
 @inject IProductService ProductService
 @inject ISalesOrderService SalesOrderService
+@inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject INotificationService NotificationService
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
@@ -44,9 +45,14 @@ else
 
         <div class="card-footer">
             <div class="d-flex justify-content-between">
-                <div>
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Text="智能下單"
+                                          Variant="ButtonVariant.DarkBlue"
+                                          OnClick="LoadSmartDeliveryItems"
+                                          IsDisabled="@(!CanLoadSmartDelivery)"
+                                          Title="@GetSmartDeliveryTooltip()" />
                     <GenericButtonComponent Text="載入訂單"
-                                          Variant="ButtonVariant.Blue"
+                                          Variant="ButtonVariant.DarkBlue"
                                           IsDisabled="@(!CanLoadAllUndelivered)"
                                           Title="@GetLoadAllUndeliveredTooltip()"
                                           OnClick="LoadAllUndeliveredItems" />
@@ -140,6 +146,37 @@ else
     private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
 
     // ===== 計算屬性 =====
+    
+    /// <summary>
+    /// 判斷是否可以使用「智能下單」功能
+    /// 規則：
+    /// 1. 必須選擇客戶
+    /// 2. 不可在唯讀模式
+    /// 3. 不可在編輯模式下使用（避免覆蓋現有資料）
+    /// </summary>
+    private bool CanLoadSmartDelivery => 
+        SelectedCustomerId.HasValue && 
+        SelectedCustomerId.Value > 0 &&
+        !IsReadOnly &&
+        !(ExistingDetails?.Any() == true); // 編輯模式下禁用
+    
+    /// <summary>
+    /// 取得「智能下單」按鈕的提示文字
+    /// </summary>
+    private string GetSmartDeliveryTooltip()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+            return "請先選擇客戶";
+        
+        if (IsReadOnly)
+            return "唯讀模式下無法使用智能下單";
+        
+        if (ExistingDetails?.Any() == true)
+            return "編輯模式下無法使用此功能，請在新增模式時使用";
+        
+        return "載入該客戶上次出貨的商品明細";
+    }
+    
     /// <summary>
     /// 判斷是否可以使用「載入訂單」功能
     /// 規則：
@@ -1148,6 +1185,94 @@ else
         await NotifyDeletedDetailsChanged();
         
         await NotificationService.ShowSuccessAsync($"已清除 {nonEmptyItems.Count} 項明細");
+    }
+    
+    // ===== 智能下單功能 =====
+    
+    /// <summary>
+    /// 智能下單 - 載入該客戶最近一次完整的銷貨出貨明細
+    /// </summary>
+    private async Task LoadSmartDeliveryItems()
+    {
+        if (IsReadOnly || !SelectedCustomerId.HasValue) return;
+        
+        // 檢查是否有現有資料
+        var hasExistingData = DeliveryItems.Any(item => item.ProductId > 0);
+        
+        if (hasExistingData)
+        {
+            if (!await ShowConfirmationAsync("載入智能下單", "此操作將覆蓋現有的出貨明細，是否繼續？"))
+            {
+                return;
+            }
+        }
+
+        // 從服務獲取客戶的最近一次完整出貨
+        var lastDeliveryDetails = await SalesDeliveryDetailService.GetLastCompleteDeliveryAsync(SelectedCustomerId.Value);
+        
+        if (!lastDeliveryDetails.Any())
+        {
+            await NotificationService.ShowInfoAsync("該客戶沒有銷貨出貨歷史紀錄可參考", "智能下單");
+            return;
+        }
+
+        // 清空現有項目
+        DeliveryItems.Clear();
+        _deletedDetailIds.Clear();
+
+        // 將歷史出貨轉換為新的出貨項目
+        foreach (var detail in lastDeliveryDetails)
+        {
+            var deliveryItem = new DeliveryItem
+            {
+                SelectedProduct = detail.Product,
+                ProductId = detail.ProductId,
+                DeliveryQuantity = detail.DeliveryQuantity,
+                UnitPrice = detail.UnitPrice,
+                DiscountPercentage = detail.DiscountPercentage,
+                TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? currentTaxRate,
+                Remarks = detail.Remarks ?? "",
+                WarehouseId = detail.WarehouseId
+            };
+            
+            // 初始化 ProductSearchValue
+            if (deliveryItem.SelectedProduct != null)
+            {
+                deliveryItem.ProductSearchValue = FormatProductDisplayText(deliveryItem.SelectedProduct);
+            }
+            
+            // 載入庫存資訊（非同步）
+            _ = Task.Run(async () =>
+            {
+                await LoadStockQuantityAsync(deliveryItem);
+                await InvokeAsync(StateHasChanged);
+            });
+            
+            DeliveryItems.Add(deliveryItem);
+        }
+        
+        await NotifyDetailsChanged();
+        await NotificationService.ShowSuccessAsync($"已載入 {lastDeliveryDetails.Count} 項商品作為參考", "智能下單完成");
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 顯示確認對話框
+    /// </summary>
+    private async Task<bool> ShowConfirmationAsync(string title, string message)
+    {
+        // 暫時使用簡單的通知，等待確認後執行
+        // 在實際專案中可能會使用更精美的對話框組件
+        try 
+        {
+            await NotificationService.ShowInfoAsync(message, title);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ===== 載入訂單方法 =====

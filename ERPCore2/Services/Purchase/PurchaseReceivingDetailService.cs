@@ -349,6 +349,51 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定廠商的最後一次完整入庫明細（智能載入用）
+        /// </summary>
+        public async Task<List<PurchaseReceivingDetail>> GetLastCompleteReceivingAsync(int supplierId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢該廠商最近一次的採購入庫單
+                var lastReceiving = await context.PurchaseReceivings
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Product)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.Warehouse)
+                    .Include(pr => pr.PurchaseReceivingDetails)
+                        .ThenInclude(prd => prd.WarehouseLocation)
+                    .Where(pr => pr.SupplierId == supplierId && 
+                                 pr.PurchaseReceivingDetails.Any())
+                    .OrderByDescending(pr => pr.ReceiptDate)
+                    .ThenByDescending(pr => pr.CreatedAt)
+                    .FirstOrDefaultAsync();
+                
+                if (lastReceiving == null)
+                {
+                    return new List<PurchaseReceivingDetail>();
+                }
+                
+                // 返回該入庫單的所有明細
+                return lastReceiving.PurchaseReceivingDetails
+                    .Where(prd => prd.Product != null)
+                    .OrderBy(prd => prd.Id)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastCompleteReceivingAsync), GetType(), _logger, new { 
+                    Method = nameof(GetLastCompleteReceivingAsync),
+                    ServiceType = GetType().Name,
+                    SupplierId = supplierId 
+                });
+                return new List<PurchaseReceivingDetail>();
+            }
+        }
+
         #endregion
 
         #region 批次操作方法

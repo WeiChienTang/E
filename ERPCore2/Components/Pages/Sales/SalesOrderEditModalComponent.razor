@@ -142,6 +142,7 @@
     private List<Product> availableProducts = new();
     private List<Unit> availableUnits = new();
     private List<Warehouse> availableWarehouses = new();
+    private List<Quotation> availableQuotations = new();
     
     // 銷貨訂單明細
     private List<SalesOrderDetail> salesOrderDetails = new();
@@ -492,6 +493,9 @@
             // 載入倉庫資料
             availableWarehouses = await WarehouseService.GetAllAsync();
 
+            // 載入報價單資料
+            availableQuotations = await QuotationService.GetAllAsync();
+
             // 初始化狀態選項
             statusOptions = new List<SelectOption>
             {
@@ -515,6 +519,7 @@
                 .AddField(nameof(SalesOrder.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(SalesOrder.CompanyId), "CompanyName", availableCompanies)
                 .AddField(nameof(SalesOrder.EmployeeId), "Name", availableEmployees)
+                .AddField(nameof(SalesOrder.QuotationId), "Code", availableQuotations)
                 .Build();
         }
         catch (Exception ex)
@@ -560,6 +565,17 @@
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetCustomerActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(SalesOrder.QuotationId),
+                    Label = "報價單",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇報價單",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "此銷貨訂單所參考的報價單單號（若有）",
+                    IsReadOnly = hasUndeletableDetails,
                 },
                 new()
                 {
@@ -689,6 +705,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
                     so => so.CustomerId,
+                    so => so.QuotationId,
                     so => so.CompanyId,
                     so => so.EmployeeId,
                     so => so.OrderDate,
@@ -792,6 +809,7 @@
                                                           Products="@availableProducts"
                                                           Warehouses="@availableWarehouses"
                                                           SelectedCustomerId="@editModalComponent.Entity.CustomerId"
+                                                          SelectedQuotationId="@editModalComponent.Entity.QuotationId"
                                                           TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                           IsReadOnly="false"
                                                           MainEntityIdPropertyName="SalesOrderId"

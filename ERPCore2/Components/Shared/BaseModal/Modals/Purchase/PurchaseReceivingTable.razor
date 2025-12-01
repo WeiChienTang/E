@@ -5,6 +5,7 @@
 @using ERPCore2.Data.Enums
 @inject IProductService ProductService
 @inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -47,10 +48,17 @@ else
                 @* 左側按鈕組 *@
                 <div class="d-flex gap-2">
                     <GenericButtonComponent
-                                          Text="智能載入"
+                                          Text="智能下單"
                                           OnClick="@SmartLoadReceivingDetails"
                                           IsDisabled="@(!CanUseSmartLoad || IsReadOnly)"
                                           Title="@GetSmartLoadTooltip()"
+                                          Variant="ButtonVariant.DarkBlue"
+                                          Size="ButtonSize.Small" />
+                    <GenericButtonComponent
+                                          Text="載入採購"
+                                          OnClick="@LoadAllUnreceivedItems"
+                                          IsDisabled="@(!CanLoadPurchaseOrder || IsReadOnly)"
+                                          Title="@GetLoadPurchaseOrderTooltip()"
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small" />
                 </div>
@@ -1088,29 +1096,52 @@ else
     // ===== 按鈕功能方法 =====
     
     /// <summary>
-    /// 計算屬性：是否可以使用智能載入
+    /// 計算屬性：是否可以使用智能下單（讀取歷史入庫記錄）
     /// </summary>
     private bool CanUseSmartLoad => 
         SelectedSupplierId.HasValue && 
         SelectedSupplierId.Value > 0 &&
-        !HasReceivingItems &&
-        AvailablePurchaseDetails.Any();
+        !IsReadOnly;
     
     /// <summary>
-    /// 取得智能載入按鈕的提示文字
+    /// 取得智能下單按鈕的提示文字
     /// </summary>
     private string GetSmartLoadTooltip()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
             return "請先選擇廠商";
         
-        if (HasReceivingItems)
-            return "目前已有明細資料，無法使用智能載入";
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
         
-        if (!AvailablePurchaseDetails.Any())
-            return "此廠商沒有任何待進貨的採購明細";
+        return "載入該廠商最後一次入庫記錄作為參考";
+    }
+    
+    /// <summary>
+    /// 計算屬性：是否可以使用載入採購（載入特定採購單的待進貨明細）
+    /// </summary>
+    private bool CanLoadPurchaseOrder => 
+        SelectedSupplierId.HasValue && 
+        SelectedSupplierId.Value > 0 &&
+        SelectedPurchaseOrderId.HasValue &&
+        SelectedPurchaseOrderId.Value > 0 &&
+        !IsReadOnly;
+    
+    /// <summary>
+    /// 取得載入採購按鈕的提示文字
+    /// </summary>
+    private string GetLoadPurchaseOrderTooltip()
+    {
+        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
+            return "請先選擇廠商";
         
-        return "載入該廠商所有待進貨的採購明細";
+        if (!SelectedPurchaseOrderId.HasValue || SelectedPurchaseOrderId.Value <= 0)
+            return "請先選擇採購單";
+        
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        return "載入該採購單的待進貨明細";
     }
     
     /// <summary>
@@ -1120,7 +1151,7 @@ else
         ReceivingItems.Any(item => item.SelectedProduct != null);
     
     /// <summary>
-    /// 智能載入入庫明細
+    /// 智能下單 - 載入該廠商最後一次入庫記錄
     /// </summary>
     private async Task SmartLoadReceivingDetails()
     {
@@ -1136,8 +1167,8 @@ else
             if (ReceivingItems.Any(item => item.SelectedProduct != null))
             {
                 var confirmed = await NotificationService.ShowConfirmAsync(
-                    "此操作會清除目前的入庫明細並載入新的採購明細，是否繼續？",
-                    "智能載入確認");
+                    "此操作會清除目前的入庫明細並載入歷史記錄，是否繼續？",
+                    "智能下單確認");
                 
                 if (!confirmed)
                 {
@@ -1150,15 +1181,12 @@ else
             _deletedDetailIds.Clear();
             StateHasChanged();
             
-            // 載入採購明細（未完成進貨的）
-            var unreceivedDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
-                SelectedSupplierId.Value,
-                includeCompleted: false,
-                checkApproval: false);
+            // 從服務獲取廠商的最近一次完整入庫記錄
+            var lastReceivingDetails = await PurchaseReceivingDetailService.GetLastCompleteReceivingAsync(SelectedSupplierId.Value);
             
-            if (!unreceivedDetails.Any())
+            if (!lastReceivingDetails.Any())
             {
-                await NotificationService.ShowInfoAsync("此廠商沒有待進貨的採購明細");
+                await NotificationService.ShowInfoAsync("該廠商沒有入庫歷史紀錄可參考");
                 _dataLoadCompleted = true;
                 StateHasChanged();
                 return;
@@ -1167,18 +1195,22 @@ else
             // 取得系統預設稅率
             var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
             
-            // 轉換為 ReceivingItem
-            foreach (var detail in unreceivedDetails)
+            // 將歷史入庫轉換為新的入庫項目
+            foreach (var detail in lastReceivingDetails)
             {
+                if (detail.Product == null) continue; // 跳過沒有商品的明細
+                
                 var item = new ReceivingItem
                 {
-                    SelectedPurchaseDetail = detail,
+                    SelectedPurchaseDetail = null, // 智能下單不關聯採購明細
                     SelectedProduct = detail.Product,
-                    ProductSearchValue = FormatPurchaseDetailDisplay(detail),
-                    OrderQuantity = detail.OrderQuantity,
-                    ReceivedQuantity = detail.PendingQuantity, // 預設填入待進貨數量
+                    ProductSearchValue = FormatProductDisplay(detail.Product),
+                    OrderQuantity = 0, // 智能下單沒有採購數量
+                    ReceivedQuantity = detail.ReceivedQuantity, // 參考上次的入庫數量
                     UnitPrice = detail.UnitPrice,
                     TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? defaultTaxRate,
+                    SelectedWarehouse = detail.Warehouse,
+                    SelectedWarehouseLocation = detail.WarehouseLocation,
                     Remarks = detail.Remarks ?? ""
                 };
                 
@@ -1193,11 +1225,11 @@ else
             tableComponent?.RefreshEmptyRow();
             StateHasChanged();
             
-            await NotificationService.ShowSuccessAsync($"已載入 {ReceivingItems.Count} 筆待進貨明細");
+            await NotificationService.ShowSuccessAsync($"已載入 {ReceivingItems.Count} 項商品作為參考");
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"智能載入時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"智能下單時發生錯誤：{ex.Message}");
             _dataLoadCompleted = true;
             StateHasChanged();
         }

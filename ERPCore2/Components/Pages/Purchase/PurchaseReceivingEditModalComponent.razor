@@ -806,7 +806,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.SupplierId),
-                    Label = "篩選廠商",
+                    Label = "廠商",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
@@ -818,7 +818,7 @@
                 new()
                 {
                     PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
-                    Label = "篩選採購單",
+                    Label = "採購單",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇採購單",
                     IsRequired = false,  // 改為非必填，支援多採購單模式
@@ -828,7 +828,7 @@
                 new()
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位
-                    Label = "篩選產品",
+                    Label = "產品",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇產品",
                     IsRequired = false,

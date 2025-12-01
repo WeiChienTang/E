@@ -43,6 +43,13 @@ namespace ERPCore2.Services
         Task<List<PurchaseReceivingDetail>> GetReturnableDetailsBySupplierAsync(int supplierId);
 
         /// <summary>
+        /// 取得指定廠商的最後一次完整入庫明細（智能載入用）
+        /// </summary>
+        /// <param name="supplierId">廠商ID</param>
+        /// <returns>最後一次完整入庫的明細清單</returns>
+        Task<List<PurchaseReceivingDetail>> GetLastCompleteReceivingAsync(int supplierId);
+
+        /// <summary>
         /// 批次更新採購入庫明細
         /// </summary>
         /// <param name="purchaseReceivingId">採購入庫單ID</param>

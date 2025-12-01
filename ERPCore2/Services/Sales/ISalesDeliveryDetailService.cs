@@ -21,6 +21,11 @@ namespace ERPCore2.Services
         /// 取得指定客戶的可退貨出貨明細（已出貨但未完全退貨）
         /// </summary>
         Task<List<SalesDeliveryDetail>> GetReturnableDetailsByCustomerAsync(int customerId);
+        
+        /// <summary>
+        /// 取得指定客戶最近一次完整的銷貨出貨明細（用於智能下單）
+        /// </summary>
+        Task<List<SalesDeliveryDetail>> GetLastCompleteDeliveryAsync(int customerId);
 
         /// <summary>
         /// 取得銷貨明細的統計資訊
