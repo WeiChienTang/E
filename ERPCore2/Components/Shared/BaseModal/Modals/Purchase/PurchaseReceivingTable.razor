@@ -252,6 +252,13 @@ else
             FilteredItemsPropertyName = nameof(ReceivingItem.FilteredItems),
             ShowDropdownPropertyName = nameof(ReceivingItem.ShowDropdown),
             SelectedIndexPropertyName = nameof(ReceivingItem.SelectedIndex),
+            IsDisabledFunc = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var isEmptyRow = receivingItem.SelectedProduct == null;
+                return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+            },
             ItemDisplayFormatter = (item) =>
             {
                 if (item is PurchaseOrderDetail detail)
@@ -304,6 +311,13 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             MinValue = 0,
+            IsDisabledFunc = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var isEmptyRow = receivingItem.SelectedProduct == null;
+                return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 await OnQuantityChange((ReceivingItem)args.Item1, args.Item2);
@@ -318,6 +332,13 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             MinValue = 0,
+            IsDisabledFunc = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var isEmptyRow = receivingItem.SelectedProduct == null;
+                return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 await OnPriceChange((ReceivingItem)args.Item1, args.Item2);
@@ -333,7 +354,15 @@ else
             Width = "80px",
             MinValue = 0,
             MaxValue = 100,
-            IsDisabledFunc = item => TaxCalculationMethod == TaxCalculationMethod.NoTax,
+            IsDisabledFunc = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var isEmptyRow = receivingItem.SelectedProduct == null;
+                // 免稅模式 或 已有退貨/沖款記錄時禁用
+                return TaxCalculationMethod == TaxCalculationMethod.NoTax ||
+                       (!DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                           checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow);
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 await OnTaxRateChange((ReceivingItem)args.Item1, args.Item2);
@@ -368,6 +397,13 @@ else
                 Value = w.Id.ToString(),
                 Text = w.Name
             }).ToList(),
+            IsDisabledFunc = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var isEmptyRow = receivingItem.SelectedProduct == null;
+                return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+            },
             OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
             {
                 await OnWarehouseChange((ReceivingItem)args.Item1, args.Item2?.ToString());
@@ -390,7 +426,13 @@ else
                     ? WarehouseLocations.Where(wl => wl.WarehouseId == receivingItem.SelectedWarehouse.Id).ToList()
                     : new List<WarehouseLocation>();
                 
-                if (IsReadOnly)
+                // 檢查是否應該禁用（唯讀模式 或 已有退貨/沖款記錄）
+                var isEmptyRow = receivingItem.SelectedProduct == null;
+                var isDisabled = IsReadOnly || 
+                                (!DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+                                    checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow);
+                
+                if (isDisabled)
                 {
                     var displayText = receivingItem.SelectedWarehouseLocation?.Name ?? "未選擇";
                     return @<span class="text-muted">@displayText</span>;

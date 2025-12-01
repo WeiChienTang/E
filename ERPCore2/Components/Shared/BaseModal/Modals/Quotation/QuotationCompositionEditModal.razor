@@ -27,6 +27,7 @@
     [Parameter] public int? QuotationDetailId { get; set; }
     [Parameter] public string ProductName { get; set; } = string.Empty;
     [Parameter] public int? ProductId { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public EventCallback<List<QuotationCompositionDetail>> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Func<List<QuotationCompositionDetail>?>? OnRequestCachedData { get; set; }
@@ -144,11 +145,14 @@
     private RenderFragment HeaderButtons => __builder =>
     {
         <div class="w-100 d-flex align-items-center px-2">
-            <div class="d-flex gap-2 ms-auto">                
-                <GenericButtonComponent Text="儲存"
-                                      Variant="ButtonVariant.Green"
-                                      Size="ButtonSize.Small"
-                                      OnClick="@HandleSave" />
+            <div class="d-flex gap-2 ms-auto">
+                @if (!IsReadOnly)
+                {
+                    <GenericButtonComponent Text="儲存"
+                                          Variant="ButtonVariant.Green"
+                                          Size="ButtonSize.Small"
+                                          OnClick="@HandleSave" />
+                }
             </div>
         </div>
     };
@@ -161,6 +165,7 @@
                                       TItem="QuotationCompositionDetail"
                                       Items="@compositionDetails"
                                       ColumnDefinitions="@GetColumnDefinitions()"
+                                      IsReadOnly="@IsReadOnly"
                                       ShowHeader="true"
                                       ShowActions="false"
                                       ShowBuiltInActions="true"

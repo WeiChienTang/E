@@ -163,7 +163,7 @@
                                     @* 下拉選單 *@
                                     var value = GetPropertyValue(item, column.PropertyName);
                                     var selectedValue = value?.ToString() ?? "";
-                                    var isDisabled = IsReadOnly || column.IsDisabled;
+                                    var isDisabled = IsReadOnly || column.IsDisabled || (column.IsDisabledFunc?.Invoke(item!) ?? false);
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     
                                     <select class="form-select @validationClass"

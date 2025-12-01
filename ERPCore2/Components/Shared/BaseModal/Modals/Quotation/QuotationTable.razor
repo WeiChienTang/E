@@ -72,6 +72,7 @@ else
                               QuotationDetailId="@GetSelectedQuotationDetailId()"
                               ProductName="@selectedCompositionProductName"
                               ProductId="@selectedCompositionProductId"
+                              IsReadOnly="@GetCompositionModalReadOnlyState()"
                               OnSave="@HandleCompositionSave"
                               OnCancel="@(() => showCompositionModal = false)"
                               OnRequestCachedData="@GetCachedCompositionData" />
@@ -382,7 +383,7 @@ else
             {
                 var quotationItem = (QuotationItem)item;
                 var isEmptyRow = quotationItem.SelectedProduct == null;
-                return IsReadOnly || (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow);
+                return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
@@ -715,6 +716,24 @@ else
         selectedCompositionProductId = item.SelectedProduct.Id;
         showCompositionModal = true;
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得 BOM 編輯 Modal 的唯讀狀態
+    /// 如果全域唯讀或當前選中的明細已轉單，則 Modal 應該為唯讀
+    /// </summary>
+    private bool GetCompositionModalReadOnlyState()
+    {
+        if (IsReadOnly) return true;
+        
+        if (!selectedQuotationItemIndex.HasValue || selectedQuotationItemIndex.Value < 0)
+            return false;
+            
+        var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
+        if (item == null) return false;
+        
+        // 檢查是否已轉單（ConvertedQuantity > 0）
+        return item.ConvertedQuantity > 0;
     }
     
     /// <summary>
