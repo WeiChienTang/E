@@ -10,6 +10,11 @@
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
 @inject IQuotationService QuotationService
+@inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
+@inject IQuotationCompositionDetailService QuotationCompositionDetailService
+@inject IProductCompositionService ProductCompositionService
+
+@using ERPCore2.Helpers
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -95,6 +100,17 @@ else
                                RelatedDocuments="@relatedDocuments"
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
+
+<!-- BOM 組合編輯/查看 Modal -->
+<SalesOrderCompositionEditModal IsVisible="@showCompositionModal"
+                               IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
+                               SalesOrderDetailId="@GetSelectedSalesOrderDetailId()"
+                               ProductName="@selectedCompositionProductName"
+                               ProductId="@selectedCompositionProductId"
+                               IsReadOnly="@GetCompositionModalReadOnlyState()"
+                               OnSave="@HandleCompositionSave"
+                               OnCancel="@(() => showCompositionModal = false)"
+                               OnRequestCachedData="@GetCachedCompositionData" />
 
 @code {
     // ===== InteractiveTableComponent 參考 =====
@@ -182,6 +198,14 @@ else
     private string selectedProductName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
+    
+    // ===== BOM 組合編輯相關 =====
+    private bool showCompositionModal = false;
+    private int? selectedSalesItemIndex = null;
+    private string selectedCompositionProductName = string.Empty;
+    private int? selectedCompositionProductId = null;
+    private Dictionary<int, List<SalesOrderCompositionDetail>> compositionDetailsCache = new();
+    private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
     
     // ===== 計算屬性 =====
     
@@ -289,6 +313,9 @@ else
         
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
+        
+        // 載入有 BOM 組成的商品列表
+        await LoadProductCompositionsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -483,6 +510,158 @@ else
         }
     }
 
+    // ===== BOM 組合編輯相關方法 =====
+    
+    /// <summary>
+    /// 載入有 BOM 組成的商品列表（用於快取檢查）
+    /// </summary>
+    private async Task LoadProductCompositionsAsync()
+    {
+        try
+        {
+            // 載入所有有 BOM 組成的商品 ID
+            var allCompositions = await ProductCompositionService.GetAllAsync();
+            productsWithComposition = allCompositions
+                .Select(pc => pc.ParentProductId)
+                .ToHashSet();
+        }
+        catch (Exception ex)
+        {
+            // 載入失敗不影響主流程
+            await NotificationService.ShowErrorAsync($"載入 BOM 資料失敗：{ex.Message}");
+            productsWithComposition = new HashSet<int>();
+        }
+    }
+    
+    /// <summary>
+    /// 檢查商品是否有 BOM 組成
+    /// </summary>
+    private bool HasProductComposition(int productId)
+    {
+        return productsWithComposition.Contains(productId);
+    }
+    
+    /// <summary>
+    /// 顯示 BOM 組合編輯器
+    /// </summary>
+    private void ShowCompositionEditor(SalesItem item)
+    {
+        if (item.SelectedProduct == null)
+            return;
+        
+        // 找出 SalesItem 的索引
+        selectedSalesItemIndex = SalesItems.IndexOf(item);
+        selectedCompositionProductName = item.SelectedProduct.Name;
+        selectedCompositionProductId = item.SelectedProduct.Id;
+        
+        showCompositionModal = true;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得 BOM 編輯 Modal 的唯讀狀態
+    /// 如果全域唯讀或當前選中的明細已轉單/有退貨/有沖款，則 Modal 應該為唯讀
+    /// </summary>
+    private bool GetCompositionModalReadOnlyState()
+    {
+        // 全域唯讀模式
+        if (IsReadOnly) return true;
+        
+        // 檢查選中的項目
+        if (!selectedSalesItemIndex.HasValue || selectedSalesItemIndex.Value >= SalesItems.Count)
+            return false;
+        
+        var item = SalesItems[selectedSalesItemIndex.Value];
+        
+        // 檢查是否有退貨記錄
+        if (HasReturnRecord(item)) return true;
+        
+        // 檢查是否有沖款記錄
+        if (HasPaymentRecord(item)) return true;
+        
+        // 檢查是否已轉下一步（已出貨）
+        if (item.DeliveredQuantity > 0) return true;
+        
+        // 其他情況可編輯
+        return false;
+    }
+    
+    /// <summary>
+    /// 取得選中的銷貨訂單明細 ID（用於 Modal）
+    /// </summary>
+    private int? GetSelectedSalesOrderDetailId()
+    {
+        if (!selectedSalesItemIndex.HasValue || selectedSalesItemIndex.Value >= SalesItems.Count)
+            return null;
+        
+        var item = SalesItems[selectedSalesItemIndex.Value];
+        return (item.ExistingDetailEntity as SalesOrderDetail)?.Id;
+    }
+    
+    /// <summary>
+    /// 處理 BOM 組合儲存
+    /// </summary>
+    private async Task HandleCompositionSave(List<SalesOrderCompositionDetail> compositionDetails)
+    {
+        if (!selectedSalesItemIndex.HasValue || !selectedCompositionProductId.HasValue)
+            return;
+            
+        try
+        {
+            // 暫存到快取（實際儲存會在銷貨訂單儲存時一併處理）
+            var item = SalesItems[selectedSalesItemIndex.Value];
+            item.CustomCompositionDetails = compositionDetails;
+            
+            await NotificationService.ShowSuccessAsync("BOM 組成已更新（將在銷貨訂單儲存時一併保存）");
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存 BOM 組成失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 取得快取的組合明細資料（供 Modal 使用）
+    /// </summary>
+    private List<SalesOrderCompositionDetail>? GetCachedCompositionData()
+    {
+        ConsoleHelper.WriteTitle("取得 BOM 組成快取資料");
+        
+        if (!selectedSalesItemIndex.HasValue)
+        {
+            ConsoleHelper.WriteWarning("selectedSalesItemIndex 未設定");
+            return null;
+        }
+        
+        if (selectedSalesItemIndex.Value >= SalesItems.Count)
+        {
+            ConsoleHelper.WriteWarning($"selectedSalesItemIndex ({selectedSalesItemIndex.Value}) 超出範圍 (SalesItems.Count: {SalesItems.Count})");
+            return null;
+        }
+        
+        var item = SalesItems[selectedSalesItemIndex.Value];
+        
+        if (item.CustomCompositionDetails == null)
+        {
+            ConsoleHelper.WriteWarning($"SalesItem[{selectedSalesItemIndex.Value}] 的 CustomCompositionDetails 為 null");
+        }
+        else if (!item.CustomCompositionDetails.Any())
+        {
+            ConsoleHelper.WriteWarning($"SalesItem[{selectedSalesItemIndex.Value}] 的 CustomCompositionDetails 為空列表");
+        }
+        else
+        {
+            ConsoleHelper.WriteSuccess($"找到 {item.CustomCompositionDetails.Count} 個 BOM 組件");
+            foreach (var comp in item.CustomCompositionDetails)
+            {
+                ConsoleHelper.WriteDebug($"  - 組件: {comp.ComponentProduct?.Name ?? "N/A"}, 數量: {comp.Quantity}");
+            }
+        }
+        
+        ConsoleHelper.WriteSeparator();
+        return item.CustomCompositionDetails;
+    }
+
     // ===== 建立空項目方法 =====
     
     private Task LoadAvailableProductsAsync()
@@ -518,6 +697,47 @@ else
         await LoadExistingDetailsAsync();
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得所有銷貨訂單組合明細資料（供父組件儲存使用）
+    /// </summary>
+    public Dictionary<int, List<SalesOrderCompositionDetail>> GetCompositionDetails()
+    {
+        ConsoleHelper.WriteTitle("取得銷貨訂單 BOM 組成明細");
+        
+        var result = new Dictionary<int, List<SalesOrderCompositionDetail>>();
+        
+        ConsoleHelper.WriteInfo($"SalesItems 總數: {SalesItems.Count}");
+        
+        foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
+        {
+            ConsoleHelper.WriteDebug($"檢查商品: {item.SelectedProduct!.Name} (ID: {item.SelectedProduct.Id})");
+            
+            // 只處理有自訂 BOM 組成的項目
+            if (item.CustomCompositionDetails != null && item.CustomCompositionDetails.Any())
+            {
+                ConsoleHelper.WriteSuccess($"  ✓ 找到 BOM 組成: {item.CustomCompositionDetails.Count} 個組件");
+                
+                // 使用商品 ID 作為鍵值（在儲存時會轉換為實際的 SalesOrderDetailId）
+                result[item.SelectedProduct!.Id] = item.CustomCompositionDetails;
+                
+                // 顯示組件詳情
+                foreach (var comp in item.CustomCompositionDetails)
+                {
+                    ConsoleHelper.WriteDebug($"    - 組件: {comp.ComponentProduct?.Name ?? "N/A"}, 數量: {comp.Quantity}");
+                }
+            }
+            else
+            {
+                ConsoleHelper.WriteWarning($"  ✗ 沒有 BOM 組成");
+            }
+        }
+        
+        ConsoleHelper.WriteInfo($"最終取得 {result.Count} 個商品的 BOM 組成");
+        ConsoleHelper.WriteSeparator();
+        
+        return result;
     }
     
     private async Task LoadExistingDetailsAsync()
@@ -926,15 +1146,15 @@ else
                 }
         });
         
-        // 庫存量欄位 (只讀顯示，不儲存到資料庫)
+        // 庫存量欄位 (只讀顯示，不儲存到資料庫，加入排程狀態提示)
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "庫存量", 
+            Title = "庫存", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
+            Width = "120px",
             HideOnMobile = true,
-            Tooltip = "選擇倉庫後顯示該商品的即時可用庫存量（唯讀）",
+            Tooltip = "選擇倉庫後顯示該商品的即時可用庫存量（唯讀），並標示是否需要排程生產",
             CustomTemplate = item => 
             {
                 var salesItem = (SalesItem)item;
@@ -949,12 +1169,35 @@ else
                 if (salesItem.CurrentStockQuantity.HasValue)
                 {
                     var stockQty = salesItem.CurrentStockQuantity.Value;
-                    var textColor = stockQty <= 0 ? "text-danger" : 
-                                   stockQty < 10 ? "text-warning" : "text-success";
+                    var orderQty = salesItem.OrderQuantity;
+                    var canSchedule = salesItem.SelectedProduct.CanSchedule;
+                    var isStockEnough = stockQty >= orderQty;
                     
-                    return @<span class="@textColor fw-bold" title="即時可用庫存">
-                        @stockQty.ToString("N0")
-                    </span>;
+                    // 顏色邏輯：庫存足夠=綠色，不足=紅色
+                    var textColor = isStockEnough ? "text-success" : "text-danger";
+                    
+                    return @<div class="d-flex align-items-center gap-2">
+                        <span class="@textColor fw-bold" title="即時可用庫存">
+                            @stockQty.ToString("N0")
+                        </span>
+                        
+                        @* 可排程商品才顯示徽章 *@
+                        @if (canSchedule)
+                        {
+                            if (isStockEnough)
+                            {
+                                <span class="badge bg-success" style="font-size: 0.65rem" title="庫存充足，可直接出貨">
+                                    <i class="bi bi-check-circle"></i>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem" title="庫存不足，需要排程生產">
+                                    <i class="bi bi-calendar-event"></i>
+                                </span>
+                            }
+                        }
+                    </div>;
                 }
                 else
                 {
@@ -1177,32 +1420,53 @@ else
 
     private RenderFragment<SalesItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 檢查項目是否可以刪除（綜合退貨記錄和沖款記錄檢查）
+        var salesItem = (SalesItem)item;
+        var isEmptyRow = salesItem.SelectedProduct == null;
         var canDelete = CanDeleteItem(item, out _);
+        var hasComposition = salesItem.SelectedProduct != null && HasProductComposition(salesItem.SelectedProduct.Id);
+        var isCompositionReadOnly = GetCompositionModalReadOnlyState();
         
-        if (canDelete)
-        {
-            // 可以刪除：顯示刪除按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Red"
-                                   IconClass="bi bi-trash text-white"
-                                   Size="ButtonSize.Large"
-                                   IsDisabled="@IsReadOnly"
-                                   Title="刪除"
-                                   OnClick="async () => await HandleItemDelete(item)"
-                                   StopPropagation="true"
-                                   CssClass="btn-square" />
-        }
-        else
-        {
-            // 不能刪除：顯示查看按鈕
-            <GenericButtonComponent Variant="ButtonVariant.Blue"
-                                   IconClass="bi bi-eye text-white"
-                                   Size="ButtonSize.Large"
-                                   Title="查看相關單據"
-                                   OnClick="async () => await ShowRelatedDocuments(item)"
-                                   StopPropagation="true"
-                                   CssClass="btn-square" />
-        }
+        <div class="d-flex gap-1">
+            @* BOM 編輯/查看按鈕（如果商品有 BOM 組成） *@
+            @if (hasComposition && !isEmptyRow)
+            {
+                var buttonTitle = isCompositionReadOnly ? "查看 BOM 組成" : "編輯 BOM 組成";
+                var buttonVariant = isCompositionReadOnly ? ButtonVariant.Blue : ButtonVariant.DarkBlue;
+                
+                <GenericButtonComponent Variant="@buttonVariant"
+                                       IconClass="bi bi-diagram-3 text-white"
+                                       Size="ButtonSize.Large"
+                                       Title="@buttonTitle"
+                                       OnClick="() => ShowCompositionEditor(salesItem)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            
+            @* 原有的刪除/查看按鈕 *@
+            @if (canDelete)
+            {
+                // 可以刪除：顯示刪除按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                       IconClass="bi bi-trash text-white"
+                                       Size="ButtonSize.Large"
+                                       IsDisabled="@IsReadOnly"
+                                       Title="刪除"
+                                       OnClick="async () => await HandleItemDelete(item)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            else
+            {
+                // 不能刪除：顯示查看按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                       IconClass="bi bi-eye text-white"
+                                       Size="ButtonSize.Large"
+                                       Title="查看相關單據"
+                                       OnClick="async () => await ShowRelatedDocuments(item)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+        </div>
     };
 
     private async Task HandleItemDelete(SalesItem item)
@@ -1329,6 +1593,11 @@ else
         /// 可用的倉庫位置清單（僅顯示有庫存的位置）
         /// </summary>
         public List<InventoryStockDetail> AvailableWarehouseLocations { get; set; } = new();
+        
+        /// <summary>
+        /// 自訂的 BOM 組合明細（用於暫存編輯結果）
+        /// </summary>
+        public List<SalesOrderCompositionDetail>? CustomCompositionDetails { get; set; }
         
         // === SearchableSelect 支援屬性 ===
         public string ProductSearchValue { get; set; } = string.Empty;
@@ -2091,6 +2360,9 @@ else
             // 清空現有項目
             SalesItems.Clear();
 
+            ConsoleHelper.WriteTitle($"開始載入報價單 {quotationId} 的明細");
+            ConsoleHelper.WriteInfo($"報價單明細數量: {quotationDetails.Count}");
+
             // 將報價單明細轉換為銷貨項目
             foreach (var quotationDetail in quotationDetails)
             {
@@ -2100,8 +2372,11 @@ else
                 // 如果該明細已經全部轉完，跳過不載入
                 if (pendingQuantity <= 0)
                 {
+                    ConsoleHelper.WriteWarning($"報價單明細 {quotationDetail.Id} 已全部轉完，跳過");
                     continue;
                 }
+                
+                ConsoleHelper.WriteStep(quotationDetail.Id, $"處理明細 - 產品: {quotationDetail.Product?.Name}");
                 
                 var salesItem = new SalesItem
                 {
@@ -2116,6 +2391,49 @@ else
                     SourceQuotationDetailId = quotationDetail.Id,
                     IsQuotationApproved = isQuotationApproved
                 };
+                
+                // 🔑 載入報價單明細的 BOM 組成並轉換為銷貨訂單 BOM 組成
+                try
+                {
+                    ConsoleHelper.WriteInfo($"  → 載入報價單明細 {quotationDetail.Id} 的 BOM 組成...");
+                    var quotationCompositions = await QuotationCompositionDetailService.GetByQuotationDetailIdAsync(quotationDetail.Id);
+                    
+                    if (quotationCompositions?.Any() == true)
+                    {
+                        ConsoleHelper.WriteSuccess($"  → 找到 {quotationCompositions.Count} 個 BOM 組件，開始轉換...");
+                        
+                        // 轉換 QuotationCompositionDetail 為 SalesOrderCompositionDetail
+                        salesItem.CustomCompositionDetails = quotationCompositions.Select(qc => new SalesOrderCompositionDetail
+                        {
+                            ComponentProductId = qc.ComponentProductId,
+                            ComponentProduct = qc.ComponentProduct,
+                            Quantity = qc.Quantity,
+                            UnitId = qc.UnitId,
+                            Unit = qc.Unit,
+                            ComponentCost = qc.ComponentCost,
+                            Remarks = qc.Remarks,
+                            Status = qc.Status
+                        }).ToList();
+                        
+                        ConsoleHelper.WriteSuccess($"  → BOM 組成轉換完成: {salesItem.CustomCompositionDetails.Count} 個組件");
+                        
+                        // 詳細顯示每個組件
+                        foreach (var comp in salesItem.CustomCompositionDetails)
+                        {
+                            ConsoleHelper.WriteDebug($"    - 組件: {comp.ComponentProduct?.Name ?? "N/A"}, 數量: {comp.Quantity}");
+                        }
+                    }
+                    else
+                    {
+                        ConsoleHelper.WriteWarning($"  → 報價單明細 {quotationDetail.Id} 沒有 BOM 組成");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // BOM 載入失敗不影響主流程，僅記錄錯誤
+                    ConsoleHelper.WriteError($"  → 載入報價單明細 {quotationDetail.Id} 的 BOM 組成失敗: {ex.Message}");
+                    ConsoleHelper.WriteDebug($"  → 錯誤堆疊: {ex.StackTrace}");
+                }
                 
                 // 初始化 ProductSearchValue
                 if (salesItem.SelectedProduct != null)

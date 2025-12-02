@@ -1,5 +1,6 @@
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject IInventoryStockService InventoryStockService
 @inject ICustomerService CustomerService
@@ -21,6 +22,8 @@
 @inject IQuotationDetailService QuotationDetailService
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IDbContextFactory<AppDbContext> DbContextFactory
+
+@using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
@@ -1719,6 +1722,9 @@
             // 儲存明細
             await SaveSalesOrderDetails(result.Data.Id, isEditMode, isEditMode ? originalDetails : new List<SalesOrderDetail>());
             
+            // 🔑 儲存 BOM 組成明細
+            await SaveSalesOrderCompositionDetails(result.Data.Id);
+            
             // 💡 銷貨訂單不影響庫存，無需扣減庫存
             // 庫存扣減應發生在「銷貨出貨單」階段，而非「銷貨訂單」階段
 
@@ -1870,6 +1876,92 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(UpdateQuotationDetailConvertedQuantity), GetType(),
                 additionalData: new { QuotationDetailId = quotationDetailId, Quantity = quantity, IsAdding = isAdding });
             // 不拋出異常，避免影響主流程
+        }
+    }
+
+    /// <summary>
+    /// 儲存銷貨訂單組合明細（BOM）
+    /// </summary>
+    private async Task SaveSalesOrderCompositionDetails(int salesOrderId)
+    {
+        try
+        {
+            ConsoleHelper.WriteTitle($"開始儲存銷貨訂單 {salesOrderId} 的 BOM 組成");
+            
+            // 從 SalesOrderTable 取得所有 BOM 組成明細
+            if (salesOrderDetailManager == null)
+            {
+                ConsoleHelper.WriteWarning("salesOrderDetailManager 為 null，無法儲存 BOM");
+                return;
+            }
+            
+            var compositionDetailsMap = salesOrderDetailManager.GetCompositionDetails();
+            
+            if (!compositionDetailsMap.Any())
+            {
+                ConsoleHelper.WriteWarning("沒有 BOM 組成明細需要儲存");
+                return; // 沒有自訂 BOM，不需要儲存
+            }
+            
+            ConsoleHelper.WriteSuccess($"取得 {compositionDetailsMap.Count} 個商品的 BOM 組成");
+            
+            // 取得已儲存的明細資料（需要對應 ProductId 到實際的 SalesOrderDetailId）
+            var savedDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(salesOrderId);
+            ConsoleHelper.WriteInfo($"已儲存的明細數量: {savedDetails.Count}");
+            
+            foreach (var kvp in compositionDetailsMap)
+            {
+                var productId = kvp.Key;
+                var compositionDetails = kvp.Value;
+                
+                ConsoleHelper.WriteStep(productId, $"處理商品 ID {productId} 的 BOM ({compositionDetails.Count} 個組件)");
+                
+                // 找到對應的 SalesOrderDetail
+                var salesOrderDetail = savedDetails.FirstOrDefault(d => d.ProductId == productId);
+                if (salesOrderDetail == null)
+                {
+                    ConsoleHelper.WriteError($"  ✗ 找不到商品 ID {productId} 對應的訂單明細");
+                    continue; // 找不到對應的明細，跳過
+                }
+                
+                ConsoleHelper.WriteSuccess($"  ✓ 找到對應的訂單明細 ID: {salesOrderDetail.Id}");
+                
+                // 設定正確的 SalesOrderDetailId
+                foreach (var detail in compositionDetails)
+                {
+                    detail.SalesOrderDetailId = salesOrderDetail.Id;
+                    ConsoleHelper.WriteDebug($"    - 設定組件 {detail.ComponentProduct?.Name ?? "N/A"} 的訂單明細 ID: {salesOrderDetail.Id}");
+                }
+                
+                // 批次儲存該明細的 BOM 組成
+                ConsoleHelper.WriteInfo($"  → 開始儲存 BOM 組成...");
+                await SalesOrderCompositionDetailService.SaveBatchAsync(
+                    salesOrderDetail.Id,
+                    compositionDetails
+                );
+                ConsoleHelper.WriteSuccess($"  ✓ BOM 組成儲存成功");
+            }
+            
+            ConsoleHelper.WriteSuccess("所有 BOM 組成儲存完成");
+            ConsoleHelper.WriteSeparator();
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.WriteError($"儲存 BOM 組成時發生錯誤: {ex.Message}");
+            ConsoleHelper.WriteError($"錯誤類型: {ex.GetType().Name}");
+            ConsoleHelper.WriteError($"錯誤堆疊: {ex.StackTrace}");
+            
+            // 如果有內部異常，也顯示出來
+            if (ex.InnerException != null)
+            {
+                ConsoleHelper.WriteError($"內部異常: {ex.InnerException.Message}");
+                ConsoleHelper.WriteError($"內部異常堆疊: {ex.InnerException.StackTrace}");
+            }
+            
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveSalesOrderCompositionDetails), GetType(),
+                additionalData: $"儲存銷貨訂單 BOM 組成失敗 - OrderId: {salesOrderId}");
+            // 不拋出異常，避免影響主流程，但記錄錯誤
+            await NotificationService.ShowWarningAsync($"BOM 組成儲存時發生錯誤：{ex.Message}");
         }
     }
 

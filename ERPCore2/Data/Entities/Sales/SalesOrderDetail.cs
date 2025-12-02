@@ -84,5 +84,10 @@ namespace ERPCore2.Data.Entities
         public Warehouse? Warehouse { get; set; }
         public WarehouseLocation? WarehouseLocation { get; set; }
         public ICollection<SalesDeliveryDetail> SalesDeliveryDetails { get; set; } = new List<SalesDeliveryDetail>();
+        
+        /// <summary>
+        /// 自訂的組合明細（銷貨訂單專屬 BOM）
+        /// </summary>
+        public ICollection<SalesOrderCompositionDetail> CompositionDetails { get; set; } = new List<SalesOrderCompositionDetail>();
     }
 }

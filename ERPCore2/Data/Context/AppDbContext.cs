@@ -52,6 +52,7 @@ namespace ERPCore2.Data.Context
       public DbSet<Quotation> Quotations { get; set; }
       public DbSet<QuotationDetail> QuotationDetails { get; set; }
       public DbSet<QuotationCompositionDetail> QuotationCompositionDetails { get; set; }
+      public DbSet<SalesOrderCompositionDetail> SalesOrderCompositionDetails { get; set; }
       public DbSet<SetoffDocument> SetoffDocuments { get; set; }
       public DbSet<SetoffPayment> SetoffPayments { get; set; }
       public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
@@ -577,6 +578,62 @@ namespace ERPCore2.Data.Context
                         .WithMany()
                         .HasForeignKey(qd => qd.UnitId)
                         .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 報價單組成明細配置
+                  modelBuilder.Entity<QuotationCompositionDetail>(entity =>
+                  {
+                        entity.HasKey(qcd => qcd.Id);
+                        
+                        // 複合唯一索引：同一報價明細中，同一組成商品只能出現一次
+                        entity.HasIndex(e => new { e.QuotationDetailId, e.ComponentProductId })
+                              .IsUnique();
+
+                        // 與 QuotationDetail 的關聯
+                        entity.HasOne(qcd => qcd.QuotationDetail)
+                              .WithMany(qd => qd.CompositionDetails)
+                              .HasForeignKey(qcd => qcd.QuotationDetailId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 與 Product 的關聯
+                        entity.HasOne(qcd => qcd.ComponentProduct)
+                              .WithMany()
+                              .HasForeignKey(qcd => qcd.ComponentProductId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 與 Unit 的關聯
+                        entity.HasOne(qcd => qcd.Unit)
+                              .WithMany()
+                              .HasForeignKey(qcd => qcd.UnitId)
+                              .OnDelete(DeleteBehavior.ClientSetNull);
+                  });
+
+                  // 銷貨訂單組成明細配置
+                  modelBuilder.Entity<SalesOrderCompositionDetail>(entity =>
+                  {
+                        entity.HasKey(socd => socd.Id);
+                        
+                        // 複合唯一索引：同一銷貨訂單明細中，同一組成商品只能出現一次
+                        entity.HasIndex(e => new { e.SalesOrderDetailId, e.ComponentProductId })
+                              .IsUnique();
+
+                        // 與 SalesOrderDetail 的關聯
+                        entity.HasOne(socd => socd.SalesOrderDetail)
+                              .WithMany(sod => sod.CompositionDetails)
+                              .HasForeignKey(socd => socd.SalesOrderDetailId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 與 Product 的關聯
+                        entity.HasOne(socd => socd.ComponentProduct)
+                              .WithMany()
+                              .HasForeignKey(socd => socd.ComponentProductId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        // 與 Unit 的關聯
+                        entity.HasOne(socd => socd.Unit)
+                              .WithMany()
+                              .HasForeignKey(socd => socd.UnitId)
+                              .OnDelete(DeleteBehavior.ClientSetNull);
                   });
 
                   // Financial Management Relationships
