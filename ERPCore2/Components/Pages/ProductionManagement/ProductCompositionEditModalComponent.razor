@@ -30,7 +30,6 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCompositionData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveCompositionWithDetails"
                           SaveSuccessMessage="@(CompositionId.HasValue ? "產品合成表更新成功" : "產品合成表新增成功")"
                           SaveFailureMessage="產品合成表儲存失敗"

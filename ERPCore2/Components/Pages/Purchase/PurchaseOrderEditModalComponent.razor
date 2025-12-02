@@ -33,7 +33,6 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseOrderData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SavePurchaseOrderWrapper"
                           SaveSuccessMessage="@(PurchaseOrderId.HasValue ? "採購單更新成功" : "採購單新增成功")"
                           SaveFailureMessage="採購單儲存失敗"

@@ -41,7 +41,6 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReceivingData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           CustomValidator="@ValidatePurchaseReceivingDetailsAsync"
                           AfterSave="@SavePurchaseReceivingDetailsAsync"
@@ -174,9 +173,6 @@
         // 移除原有的建構函數初始化
         // 現在使用 ModalManagerInitHelper 在 OnInitializedAsync 中統一初始化
     }
-    
-    // 資料載入狀態標記
-    private bool isDataLoaded = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()

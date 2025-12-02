@@ -45,7 +45,6 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesOrderData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveSalesOrderWrapper"
                           SaveSuccessMessage="@(SalesOrderId.HasValue ? "銷貨訂單更新成功" : "銷貨訂單新增成功")"
                           SaveFailureMessage="銷貨訂單儲存失敗"

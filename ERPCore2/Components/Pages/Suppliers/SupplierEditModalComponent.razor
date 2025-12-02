@@ -22,7 +22,6 @@
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadSupplierData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveSupplier"
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Supplier.Read"

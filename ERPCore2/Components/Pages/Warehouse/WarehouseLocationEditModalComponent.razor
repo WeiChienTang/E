@@ -23,7 +23,6 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadWarehouseLocationData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(WarehouseLocationId.HasValue ? "倉庫內位置更新成功" : "倉庫內位置新增成功")"
                           SaveFailureMessage="倉庫內位置儲存失敗"

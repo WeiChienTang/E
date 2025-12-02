@@ -35,7 +35,6 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSalesDeliveryData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           CustomValidator="@ValidateSalesDeliveryDetailsAsync"
                           AfterSave="@SaveSalesDeliveryDetailsAsync"

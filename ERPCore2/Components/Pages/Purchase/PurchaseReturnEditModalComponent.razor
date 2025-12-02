@@ -37,7 +37,6 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadPurchaseReturnData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="false"
                           CustomValidator="@ValidatePurchaseReturnDetailsAsync"
                           SaveHandler="@SavePurchaseReturnWithDetails"

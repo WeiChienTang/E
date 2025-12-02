@@ -30,7 +30,6 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadProductData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductId.HasValue ? "編輯產品成功" : "新增產品成功")"
                           SaveFailureMessage="產品儲存失敗"

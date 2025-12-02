@@ -37,7 +37,6 @@
                           AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadQuotationData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveQuotationWithDetails"
                           SaveSuccessMessage="@(QuotationId.HasValue ? "報價單更新成功" : "報價單新增成功")"
                           SaveFailureMessage="報價單儲存失敗"

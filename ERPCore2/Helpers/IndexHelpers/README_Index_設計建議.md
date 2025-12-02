@@ -475,11 +475,14 @@ new FieldDefinition<Customer>
     private PaymentMethodEditModalComponent? paymentMethodEditModal;
     private RelatedEntityModalManager<PaymentMethod> paymentMethodModalManager = default!;
 
+    // ===== 資料載入狀態 =====
+    private bool isDataLoaded = false;
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 1. 使用 ModalManagerInitHelper 初始化所有 Manager
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
             modalManagers = ModalManagerInitHelper.CreateBuilder<Customer, ICustomerService>(
                     () => editModalComponent,
                     NotificationService,
@@ -494,21 +497,28 @@ new FieldDefinition<Customer>
             employeeModalManager = modalManagers.Get<Employee>(nameof(Customer.EmployeeId));
             paymentMethodModalManager = modalManagers.Get<PaymentMethod>(nameof(Customer.PaymentMethodId));
             
-            // 2. 載入額外資料
-            await LoadAdditionalDataAsync();
-            
-            // 3. 使用 AutoCompleteConfigHelper 建立配置
-            autoCompleteConfig = new AutoCompleteConfigBuilder<Customer>()
-                .AddField(nameof(Customer.EmployeeId), "Name", availableEmployees)
-                .AddField(nameof(Customer.PaymentMethodId), "Name", availablePaymentMethods)
-                .Build();
-            
-            // 4. 初始化表單欄位
-            await InitializeFormFieldsAsync();
+            // ⚠️ 注意：不在此載入資料，改用 Lazy Loading 模式
+            // 資料會在 OnParametersSetAsync 中當 IsVisible = true 時才載入
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化客戶編輯組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            // Modal 打開時才載入資料（Lazy Loading）
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            // Modal 關閉時重置狀態
+            isDataLoaded = false;
         }
     }
     
@@ -697,7 +707,68 @@ new FieldDefinition<Customer>
 
 ### 🎯 設計要點
 
-#### 1. 使用 `ModalManagerInitHelper` 初始化 Modal 管理器
+#### 1. **⚠️ 重要：Lazy Loading 模式（避免重複載入）**
+
+**核心原則：**
+- ❌ **不要**在 `OnInitializedAsync` 中呼叫 `LoadAdditionalDataAsync` 和 `InitializeFormFieldsAsync`
+- ❌ **不要**在 `GenericEditModalComponent` 上設定 `AdditionalDataLoader` 參數
+- ✅ **必須**實作 `OnParametersSetAsync`，使用 `isDataLoaded` 旗標控制載入時機
+- ✅ 資料只在 Modal **打開時**（`IsVisible = true`）才載入
+- ✅ Modal **關閉時**重置 `isDataLoaded` 狀態
+
+**錯誤範例（會導致重複載入）：**
+```csharp
+// ❌ 錯誤：在 GenericEditModalComponent 上設定 AdditionalDataLoader
+<GenericEditModalComponent ...
+                          DataLoader="@LoadCustomerData"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"  // ❌ 移除此行
+                          ... />
+
+// ❌ 錯誤：在 OnInitializedAsync 中載入資料
+protected override async Task OnInitializedAsync()
+{
+    modalManagers = ModalManagerInitHelper.CreateBuilder...;
+    await LoadAdditionalDataAsync();  // ❌ 移除此行
+    await InitializeFormFieldsAsync(); // ❌ 移除此行
+}
+```
+
+**正確範例（Lazy Loading）：**
+```csharp
+// ✅ 正確：移除 AdditionalDataLoader
+<GenericEditModalComponent ...
+                          DataLoader="@LoadCustomerData"
+                          UseGenericSave="true"
+                          ... />
+
+// ✅ 正確：只在 OnInitializedAsync 初始化 Manager
+private bool isDataLoaded = false;
+
+protected override async Task OnInitializedAsync()
+{
+    modalManagers = ModalManagerInitHelper.CreateBuilder...;
+    // 不載入資料，等待 OnParametersSetAsync
+}
+
+// ✅ 正確：在 OnParametersSetAsync 中實作 Lazy Loading
+protected override async Task OnParametersSetAsync()
+{
+    if (IsVisible && !isDataLoaded)
+    {
+        await LoadAdditionalDataAsync();
+        await InitializeFormFieldsAsync();
+        isDataLoaded = true;
+    }
+    else if (!IsVisible)
+    {
+        isDataLoaded = false;
+    }
+}
+```
+
+---
+
+#### 2. 使用 `ModalManagerInitHelper` 初始化 Modal 管理器
 ```csharp
 // ✅ 使用 Builder 模式建立多個 Manager
 modalManagers = ModalManagerInitHelper.CreateBuilder<Customer, ICustomerService>(

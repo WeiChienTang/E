@@ -25,7 +25,6 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadInventoryStockData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           CustomValidator="@ValidateBeforeSave"
                           SaveSuccessMessage="@(InventoryStockId.HasValue ? "庫存更新成功" : "庫存新增成功")"

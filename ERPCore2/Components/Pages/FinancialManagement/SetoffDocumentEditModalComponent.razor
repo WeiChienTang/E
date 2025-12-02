@@ -31,7 +31,6 @@
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSetoffDocumentData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(SetoffDocumentId.HasValue ? "沖款單更新成功" : "沖款單新增成功")"
                           SaveFailureMessage="沖款單儲存失敗"

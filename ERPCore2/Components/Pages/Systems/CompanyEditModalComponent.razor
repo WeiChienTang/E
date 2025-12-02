@@ -19,7 +19,6 @@
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           DataLoader="@LoadCompanyData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(CompanyId.HasValue ? "公司更新成功" : "公司新增成功")"
                           SaveFailureMessage="公司儲存失敗"

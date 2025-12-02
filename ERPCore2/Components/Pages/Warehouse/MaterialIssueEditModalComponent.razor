@@ -29,7 +29,6 @@
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           DataLoader="@LoadMaterialIssueData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           SaveHandler="@SaveMaterialIssueWrapper"
                           SaveSuccessMessage="@(MaterialIssueId.HasValue ? "領料單更新成功" : "領料單新增成功")"
                           SaveFailureMessage="領料單儲存失敗"
