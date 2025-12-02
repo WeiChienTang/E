@@ -105,6 +105,11 @@ namespace ERPCore2.Services
             {
                 detail.SalesOrderDetailId = salesOrderDetailId;
                 
+                // 🔑 清除導航屬性，避免 EF Core 嘗試插入已存在的關聯實體
+                detail.ComponentProduct = null!;
+                detail.Unit = null;
+                detail.SalesOrderDetail = null!;
+                
                 if (detail.Id == 0)
                 {
                     detail.CreatedAt = DateTime.Now;

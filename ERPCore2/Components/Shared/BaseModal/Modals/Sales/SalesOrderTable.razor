@@ -625,40 +625,18 @@ else
     /// </summary>
     private List<SalesOrderCompositionDetail>? GetCachedCompositionData()
     {
-        ConsoleHelper.WriteTitle("取得 BOM 組成快取資料");
-        
         if (!selectedSalesItemIndex.HasValue)
         {
-            ConsoleHelper.WriteWarning("selectedSalesItemIndex 未設定");
             return null;
         }
         
         if (selectedSalesItemIndex.Value >= SalesItems.Count)
         {
-            ConsoleHelper.WriteWarning($"selectedSalesItemIndex ({selectedSalesItemIndex.Value}) 超出範圍 (SalesItems.Count: {SalesItems.Count})");
             return null;
         }
         
         var item = SalesItems[selectedSalesItemIndex.Value];
         
-        if (item.CustomCompositionDetails == null)
-        {
-            ConsoleHelper.WriteWarning($"SalesItem[{selectedSalesItemIndex.Value}] 的 CustomCompositionDetails 為 null");
-        }
-        else if (!item.CustomCompositionDetails.Any())
-        {
-            ConsoleHelper.WriteWarning($"SalesItem[{selectedSalesItemIndex.Value}] 的 CustomCompositionDetails 為空列表");
-        }
-        else
-        {
-            ConsoleHelper.WriteSuccess($"找到 {item.CustomCompositionDetails.Count} 個 BOM 組件");
-            foreach (var comp in item.CustomCompositionDetails)
-            {
-                ConsoleHelper.WriteDebug($"  - 組件: {comp.ComponentProduct?.Name ?? "N/A"}, 數量: {comp.Quantity}");
-            }
-        }
-        
-        ConsoleHelper.WriteSeparator();
         return item.CustomCompositionDetails;
     }
 
@@ -704,38 +682,17 @@ else
     /// </summary>
     public Dictionary<int, List<SalesOrderCompositionDetail>> GetCompositionDetails()
     {
-        ConsoleHelper.WriteTitle("取得銷貨訂單 BOM 組成明細");
-        
         var result = new Dictionary<int, List<SalesOrderCompositionDetail>>();
-        
-        ConsoleHelper.WriteInfo($"SalesItems 總數: {SalesItems.Count}");
         
         foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
         {
-            ConsoleHelper.WriteDebug($"檢查商品: {item.SelectedProduct!.Name} (ID: {item.SelectedProduct.Id})");
-            
             // 只處理有自訂 BOM 組成的項目
             if (item.CustomCompositionDetails != null && item.CustomCompositionDetails.Any())
             {
-                ConsoleHelper.WriteSuccess($"  ✓ 找到 BOM 組成: {item.CustomCompositionDetails.Count} 個組件");
-                
                 // 使用商品 ID 作為鍵值（在儲存時會轉換為實際的 SalesOrderDetailId）
                 result[item.SelectedProduct!.Id] = item.CustomCompositionDetails;
-                
-                // 顯示組件詳情
-                foreach (var comp in item.CustomCompositionDetails)
-                {
-                    ConsoleHelper.WriteDebug($"    - 組件: {comp.ComponentProduct?.Name ?? "N/A"}, 數量: {comp.Quantity}");
-                }
-            }
-            else
-            {
-                ConsoleHelper.WriteWarning($"  ✗ 沒有 BOM 組成");
             }
         }
-        
-        ConsoleHelper.WriteInfo($"最終取得 {result.Count} 個商品的 BOM 組成");
-        ConsoleHelper.WriteSeparator();
         
         return result;
     }
@@ -2360,9 +2317,6 @@ else
             // 清空現有項目
             SalesItems.Clear();
 
-            ConsoleHelper.WriteTitle($"開始載入報價單 {quotationId} 的明細");
-            ConsoleHelper.WriteInfo($"報價單明細數量: {quotationDetails.Count}");
-
             // 將報價單明細轉換為銷貨項目
             foreach (var quotationDetail in quotationDetails)
             {
@@ -2372,11 +2326,8 @@ else
                 // 如果該明細已經全部轉完，跳過不載入
                 if (pendingQuantity <= 0)
                 {
-                    ConsoleHelper.WriteWarning($"報價單明細 {quotationDetail.Id} 已全部轉完，跳過");
                     continue;
                 }
-                
-                ConsoleHelper.WriteStep(quotationDetail.Id, $"處理明細 - 產品: {quotationDetail.Product?.Name}");
                 
                 var salesItem = new SalesItem
                 {
@@ -2395,13 +2346,10 @@ else
                 // 🔑 載入報價單明細的 BOM 組成並轉換為銷貨訂單 BOM 組成
                 try
                 {
-                    ConsoleHelper.WriteInfo($"  → 載入報價單明細 {quotationDetail.Id} 的 BOM 組成...");
                     var quotationCompositions = await QuotationCompositionDetailService.GetByQuotationDetailIdAsync(quotationDetail.Id);
                     
                     if (quotationCompositions?.Any() == true)
                     {
-                        ConsoleHelper.WriteSuccess($"  → 找到 {quotationCompositions.Count} 個 BOM 組件，開始轉換...");
-                        
                         // 轉換 QuotationCompositionDetail 為 SalesOrderCompositionDetail
                         salesItem.CustomCompositionDetails = quotationCompositions.Select(qc => new SalesOrderCompositionDetail
                         {
@@ -2414,25 +2362,11 @@ else
                             Remarks = qc.Remarks,
                             Status = qc.Status
                         }).ToList();
-                        
-                        ConsoleHelper.WriteSuccess($"  → BOM 組成轉換完成: {salesItem.CustomCompositionDetails.Count} 個組件");
-                        
-                        // 詳細顯示每個組件
-                        foreach (var comp in salesItem.CustomCompositionDetails)
-                        {
-                            ConsoleHelper.WriteDebug($"    - 組件: {comp.ComponentProduct?.Name ?? "N/A"}, 數量: {comp.Quantity}");
-                        }
-                    }
-                    else
-                    {
-                        ConsoleHelper.WriteWarning($"  → 報價單明細 {quotationDetail.Id} 沒有 BOM 組成");
                     }
                 }
                 catch (Exception ex)
                 {
                     // BOM 載入失敗不影響主流程，僅記錄錯誤
-                    ConsoleHelper.WriteError($"  → 載入報價單明細 {quotationDetail.Id} 的 BOM 組成失敗: {ex.Message}");
-                    ConsoleHelper.WriteDebug($"  → 錯誤堆疊: {ex.StackTrace}");
                 }
                 
                 // 初始化 ProductSearchValue
