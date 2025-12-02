@@ -23,6 +23,9 @@ namespace ERPCore2.Data
             services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseSqlServer(connectionString,
                     sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+            
+            // ⭐ 加入記憶體快取服務 (權限快取、參考資料快取使用)
+            services.AddMemoryCache();
         }
 
         /// <summary>

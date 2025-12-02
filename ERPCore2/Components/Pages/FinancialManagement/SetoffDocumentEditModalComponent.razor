@@ -212,6 +212,9 @@
         }
     }
     
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+    
     protected override async Task OnInitializedAsync()
     {
         try
@@ -232,8 +235,7 @@
             customerModalManager = modalManagers.Get<Customer>("CustomerId");
             supplierModalManager = modalManagers.Get<Supplier>("SupplierId");
             
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
@@ -244,7 +246,17 @@
     protected override async Task OnParametersSetAsync()
     {
         // 當 SetoffDocumentId 參數變更時，重新初始化表單欄位
-        if (formFields != null) // 只有在已經初始化過的情況下才重新設定
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+        else if (formFields != null) // 只有在已經初始化過的情況下才重新設定
         {
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();

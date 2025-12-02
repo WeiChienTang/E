@@ -102,20 +102,6 @@
 
     // ===== 生命週期 =====
     
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            // 每次開啟 Modal 時都重置明細資料
-            compositionDetails = new List<ProductCompositionDetail>();
-            
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
-        }
-
-        await base.OnParametersSetAsync();
-    }
-    
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
     /// 當上下筆切換時，重新載入對應的明細資料
@@ -146,6 +132,9 @@
         }
     }
     
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+    
     protected override async Task OnInitializedAsync()
     {
         try
@@ -164,11 +153,32 @@
             productModalManager = modalManagers.Get<Product>(nameof(ProductComposition.ParentProductId));
             customerModalManager = modalManagers.Get<Customer>(nameof(ProductComposition.CustomerId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(ProductComposition.CreatedByEmployeeId));
+            
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化產品合成表編輯組件時發生錯誤");
         }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            // 每次開啟 Modal 時都重置明細資料
+            compositionDetails = new List<ProductCompositionDetail>();
+            
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+        
+        await base.OnParametersSetAsync();
     }
 
     // ===== 事件處理 =====

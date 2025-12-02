@@ -145,6 +145,9 @@
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
     private bool showSetoffDocumentModal = false;
     private int? selectedSetoffDocumentId = null;
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -164,7 +167,7 @@
             // 取得個別 Manager 供組件使用
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesReturn.CustomerId));
             
-            await Task.CompletedTask;
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
@@ -176,10 +179,11 @@
     {
         try
         {
-            if (IsVisible)
+            if (IsVisible && !isDataLoaded)
             {
                 await LoadAdditionalDataAsync();
                 await InitializeFormFieldsAsync();
+                isDataLoaded = true;
                 
                 // 再次觸發選項更新（在表單欄位初始化後）
                 // 當從出貨單轉單時，確保銷售單選項正確篩選
@@ -190,10 +194,11 @@
                     StateHasChanged(); // 強制UI更新
                 }
             }
-            else
+            else if (!IsVisible)
             {
-                // 🔑 Modal 關閉時重置自動載入相關標記
+                // 🔑 Modal 關閉時重置自動載入相關標記和資料載入標記
                 shouldAutoLoadReturnable = false;
+                isDataLoaded = false;
             }
             
             await base.OnParametersSetAsync();

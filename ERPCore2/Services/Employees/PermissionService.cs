@@ -144,6 +144,8 @@ namespace ERPCore2.Services
                     .Include(e => e.Role)
                     .ThenInclude(r => r != null ? r.RolePermissions : null!)
                     .ThenInclude(rp => rp.Permission)
+                    .AsNoTracking()        // 不追蹤變更，提升效能
+                    .AsSplitQuery()        // 避免笛卡爾積
                     .FirstOrDefaultAsync(e => e.Id == employeeId);
 
                 if (employee == null)

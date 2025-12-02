@@ -99,6 +99,9 @@
     private List<EmployeePosition> availablePositions = new();
     private List<Role> availableRoles = new();
     
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+    
     // 注意：搜尋關鍵字追蹤已整合到 GenericEditModalComponent 中，不再需要手動追蹤
     // private string lastDepartmentSearchTerm = string.Empty;  // 已移除
     // private string lastPositionSearchTerm = string.Empty;    // 已移除
@@ -140,13 +143,25 @@
             positionModalManager = modalManagers.Get<EmployeePosition>(nameof(Employee.EmployeePositionId));
             roleModalManager = modalManagers.Get<Role>(nameof(Employee.RoleId));
             
-            await LoadAdditionalDataAsync();
-            
-            await InitializeFormFieldsAsync();
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("初始化員工編輯組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
         }
     }
 

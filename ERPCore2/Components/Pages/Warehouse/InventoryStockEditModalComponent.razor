@@ -92,6 +92,9 @@
     private RelatedEntityModalManager<Warehouse> warehouseModalManager = default!;
     private RelatedEntityModalManager<WarehouseLocation> warehouseLocationModalManager = default!;
     private ModalManagerCollection modalManagers = default!;
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
@@ -120,6 +123,8 @@
                 .WithReloadCallback(LoadAdditionalDataAsync)
                 .WithStateChangedCallback(StateHasChanged)
                 .Build();
+                
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
@@ -129,13 +134,18 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        if (IsVisible && !isDataLoaded)
         {
             // 每次開啟 Modal 時重置明細列表
             inventoryStockDetails = new List<InventoryStockDetail>();
             
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
         }
 
         await base.OnParametersSetAsync();

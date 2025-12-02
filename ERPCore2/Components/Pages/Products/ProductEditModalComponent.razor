@@ -116,6 +116,9 @@
     private List<SelectOption> supplierOptions = new();
     private List<SelectOption> unitOptions = new();
     private List<SelectOption> sizeOptions = new();
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -136,10 +139,30 @@
             productCategoryModalManager = modalManagers.Get<ProductCategory>(nameof(Product.ProductCategoryId));
             unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
             sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
+            
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化產品編輯組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            // 重置標誌，確保每次打開Modal時都會檢查
+            _entityLoadedButFieldsNotRefreshed = false;
+            _hasCheckedEntityLoad = false;
+            
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
         }
     }
     
@@ -158,19 +181,6 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
-    }
-    
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsVisible)
-        {
-            // 重置標誌，確保每次打開Modal時都會檢查
-            _entityLoadedButFieldsNotRefreshed = false;
-            _hasCheckedEntityLoad = false;
-            
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
         }
     }
 

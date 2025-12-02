@@ -2,9 +2,11 @@
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Helpers
+@using ERPCore2.Services
 @using Microsoft.JSInterop
 @inherits LayoutComponentBase
 @inject IJSRuntime JSRuntime
+@inject INavigationPermissionService NavigationPermissionService
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
@@ -59,8 +61,23 @@
     // Action 處理器註冊表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            // 預先載入當前使用者的所有權限到快取
+            var employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+            if (employeeId > 0)
+            {
+                // 這會觸發一次資料庫查詢，並將結果快取
+                _ = await NavigationPermissionService.GetAllEmployeePermissionsAsync(employeeId);
+            }
+        }
+        catch
+        {
+            // 忽略預載錯誤，不影響主要功能
+        }
+        
         // 初始化 Action 註冊表
         actionRegistry = NavigationActionHelper.CreateRegistry();
         

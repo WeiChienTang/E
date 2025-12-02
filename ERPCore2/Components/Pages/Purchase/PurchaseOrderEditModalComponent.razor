@@ -139,6 +139,9 @@
         // 移除原有的建構函數初始化
         // 現在使用 ModalManagerInitHelper 在 OnInitializedAsync 中統一初始化
     }
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -159,6 +162,7 @@
                 .Build();
             supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseOrder.SupplierId));
             
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
@@ -168,7 +172,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        if (IsVisible && !isDataLoaded)
         {
             // 打開時,如果是新增模式,重置鎖定狀態
             if (!PurchaseOrderId.HasValue)
@@ -178,6 +182,11 @@
             
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
         }
 
         await base.OnParametersSetAsync();

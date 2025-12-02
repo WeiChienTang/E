@@ -80,6 +80,9 @@
     // 付款方式編輯 Modal 相關變數 - 使用泛型管理器
     private PaymentMethodEditModalComponent? paymentMethodEditModal;
     private RelatedEntityModalManager<PaymentMethod> paymentMethodModalManager = default!;
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 必要方法 =====
     
@@ -120,6 +123,18 @@
             employeeModalManager = modalManagers.Get<Employee>(nameof(Customer.EmployeeId));
             paymentMethodModalManager = modalManagers.Get<PaymentMethod>(nameof(Customer.PaymentMethodId));
             
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化客戶編輯組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
             await LoadAdditionalDataAsync();
             
             // 使用 AutoCompleteConfigHelper 建立配置
@@ -129,10 +144,11 @@
                 .Build();
             
             await InitializeFormFieldsAsync();
+            isDataLoaded = true;
         }
-        catch (Exception)
+        else if (!IsVisible)
         {
-            await NotificationService.ShowErrorAsync("初始化客戶編輯組件時發生錯誤");
+            isDataLoaded = false;
         }
     }
     

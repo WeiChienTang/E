@@ -149,6 +149,7 @@
     
     // ===== 明細載入狀態 =====
     private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入
+    private bool isDataLoaded = false;  // 標記資料是否已載入（用於 Lazy Loading）
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -175,8 +176,9 @@
             // 載入系統參數（審核開關）
             await LoadSystemParametersAsync();
             
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
+            // await LoadAdditionalDataAsync();
+            // await InitializeFormFieldsAsync();
         }
         catch (Exception)
         {
@@ -186,9 +188,9 @@
     
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        if (IsVisible && !isDataLoaded)
         {
-            // 打開時,如果是新增模式,重置鎖定狀態
+            // 打開時，首次載入資料
             if (!QuotationId.HasValue)
             {
                 hasUndeletableDetails = false;
@@ -196,11 +198,13 @@
             
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
+            isDataLoaded = true;
         }
-        else
+        else if (!IsVisible)
         {
-            //  Modal 關閉時重置明細資料準備狀態
+            // Modal 關閉時重置狀態
             isDetailDataReady = false;
+            isDataLoaded = false;
         }
     }
 

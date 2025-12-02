@@ -142,6 +142,9 @@
     
     // 稅率快取變數
     private decimal currentTaxRate = 5.0m;
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -161,44 +164,26 @@
             // 取得個別 Manager 供組件使用
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesDelivery.CustomerId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesDelivery.EmployeeId));
+            
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化出貨單編輯組件時發生錯誤");
         }
     }
-
+    
     protected override async Task OnParametersSetAsync()
     {
-        try
+        if (IsVisible && !isDataLoaded)
         {
-            if (IsVisible)
-            {
-                await LoadAdditionalDataAsync();
-                await InitializeFormFieldsAsync();
-                
-                // 如果有預填客戶，在表單欄位初始化後再次更新選項（保持與進貨單一致）
-                if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
-                {
-                    // 未來如果需要根據客戶過濾訂單或產品，可以在這裡處理
-                    StateHasChanged(); // 強制更新 UI
-                }
-            }
-            else
-            {
-                // 🔑 Modal 關閉時重置自動載入相關標記
-                // 這樣下次開啟時就能重新觸發自動載入
-                shouldAutoLoadUndelivered = false;
-                
-                // 🔑 關鍵修正：關閉時清空明細，避免下次打開時顯示舊資料
-                salesDeliveryDetails.Clear();
-            }
-
-            await base.OnParametersSetAsync();
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
         }
-        catch (Exception ex)
+        else if (!IsVisible)
         {
-            await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
+            isDataLoaded = false;
         }
     }
 

@@ -61,17 +61,33 @@
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
         }
     }
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
+            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("初始化廠商編輯組件時發生錯誤");
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
         }
     }
 

@@ -45,15 +45,23 @@
     private GenericEditModalComponent<Company, ICompanyService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 生命週期 =====
     
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        if (IsVisible && !isDataLoaded)
         {
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
         }
 
         await base.OnParametersSetAsync();
