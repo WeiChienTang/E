@@ -11,53 +11,25 @@
 {
     <div class="dropdown-divider"></div>
 }
-else if (!string.IsNullOrEmpty(RequiredPermission))
+else if (ItemType == NavigationItemType.Action)
 {
-    <NavigationPermissionCheck Permission="@RequiredPermission">
-        @if (ItemType == NavigationItemType.Action)
+    <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" @onclick="HandleActionClickAsync">
+        @if (!string.IsNullOrEmpty(IconClass))
         {
-            <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" @onclick="HandleActionClickAsync">
-                @if (!string.IsNullOrEmpty(IconClass))
-                {
-                    <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
-                }
-                @Text
-            </button>
+            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
         }
-        else
-        {
-            <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
-                @if (!string.IsNullOrEmpty(IconClass))
-                {
-                    <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
-                }
-                @Text
-            </a>
-        }
-    </NavigationPermissionCheck>
+        @Text
+    </button>
 }
 else
 {
-    @if (ItemType == NavigationItemType.Action)
-    {
-        <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" @onclick="HandleActionClickAsync">
-            @if (!string.IsNullOrEmpty(IconClass))
-            {
-                <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
-            }
-            @Text
-        </button>
-    }
-    else
-    {
-        <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
-            @if (!string.IsNullOrEmpty(IconClass))
-            {
-                <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
-            }
-            @Text
-        </a>
-    }
+    <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" href="@Url" @onclick="OnDropdownItemClick">
+        @if (!string.IsNullOrEmpty(IconClass))
+        {
+            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+        }
+        @Text
+    </a>
 }
 
 

@@ -3,7 +3,9 @@
 @using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.GenericComponent.Auth
 @using ERPCore2.Data.Navigation
+@using ERPCore2.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject INavigationPermissionService PermissionService
 @inject IJSRuntime JSRuntime
 
 <CascadingValue Value="@this" Name="NavMenuInstance">
@@ -48,35 +50,40 @@
 
     <div class="nav-scrollable">    
         <nav class="nav flex-column">
-            @foreach (var menuItem in NavigationConfig.GetMenuGroups())
+            @if (isInitialized)
             {
-                @if (menuItem.IsParent && menuItem.Children.Any())
+                @foreach (var menuItem in filteredMenuGroups)
                 {
-                    <!-- 有子選單的項目 -->
-                    <NavMenuItem Text="@menuItem.Name" 
-                                IconClass="@menuItem.IconClass" 
-                                MenuKey="@menuItem.MenuKey">
-                        <DropdownItems>
-                            @foreach (var child in menuItem.Children)
-                            {
-                                <NavDropdownItem Text="@child.Name" 
-                                               Url="@child.Route"
-                                               ItemType="@child.ItemType"
-                                               ActionId="@child.ActionId"
-                                               RequiredPermission="@child.RequiredPermission" 
-                                               ParentMenuKey="@menuItem.MenuKey" 
-                                               IconClass="@child.IconClass"
-                                               IsDivider="@child.IsDivider" />
-                            }
-                        </DropdownItems>
-                    </NavMenuItem>
-                }
-                else
-                {
-                    <!-- 單一連結項目 -->
-                    <NavMenuItem Text="@menuItem.Name" 
-                                IconClass="@menuItem.IconClass" 
-                                Url="@menuItem.Route" />
+                    @if (menuItem.IsParent && menuItem.Children.Any())
+                    {
+                        <!-- 有子選單的項目 -->
+                        <NavMenuItem Text="@menuItem.Name" 
+                                    IconClass="@menuItem.IconClass" 
+                                    MenuKey="@menuItem.MenuKey"
+                                    AutoDetectPermissions="false">
+                            <DropdownItems>
+                                @foreach (var child in menuItem.Children)
+                                {
+                                    <NavDropdownItem Text="@child.Name" 
+                                                   Url="@child.Route"
+                                                   ItemType="@child.ItemType"
+                                                   ActionId="@child.ActionId"
+                                                   RequiredPermission="@child.RequiredPermission" 
+                                                   ParentMenuKey="@menuItem.MenuKey" 
+                                                   IconClass="@child.IconClass"
+                                                   IsDivider="@child.IsDivider" />
+                                }
+                            </DropdownItems>
+                        </NavMenuItem>
+                    }
+                    else
+                    {
+                        <!-- 單一連結項目 -->
+                        <NavMenuItem Text="@menuItem.Name" 
+                                    IconClass="@menuItem.IconClass" 
+                                    Url="@menuItem.Route"
+                                    AutoDetectPermissions="false" />
+                    }
                 }
             }
         </nav>
@@ -92,6 +99,157 @@
     /// </summary>
     [Parameter]
     public EventCallback<string> OnActionTriggered { get; set; }
+    
+    // ===== 私有欄位 =====
+    
+    private bool isInitialized = false;
+    private List<NavigationItem> filteredMenuGroups = new();
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // 在初始化時過濾出有權限的選單項目
+        await FilterMenuGroupsAsync();
+        isInitialized = true;
+    }
+    
+    /// <summary>
+    /// 過濾選單群組，只保留使用者有權限訪問的項目
+    /// </summary>
+    private async Task FilterMenuGroupsAsync()
+    {
+        var allMenuGroups = NavigationConfig.GetMenuGroups();
+        filteredMenuGroups = new List<NavigationItem>();
+        
+        // 取得當前員工ID
+        var currentEmployeeId = await PermissionService.GetCurrentEmployeeIdAsync();
+        
+        // 檢查是否為系統管理員
+        bool isAdmin = await PermissionService.CanAccessAsync("System.Admin");
+        
+        foreach (var menuGroup in allMenuGroups)
+        {
+            if (menuGroup.IsParent && menuGroup.Children.Any())
+            {
+                // 過濾子項目
+                var filteredChildren = new List<NavigationItem>();
+                
+                foreach (var child in menuGroup.Children)
+                {
+                    // 如果是分隔線，先暫存
+                    if (child.IsDivider)
+                    {
+                        filteredChildren.Add(child);
+                        continue;
+                    }
+                    
+                    // 檢查權限
+                    bool hasPermission = false;
+                    
+                    if (isAdmin)
+                    {
+                        hasPermission = true;
+                    }
+                    else if (string.IsNullOrEmpty(child.RequiredPermission))
+                    {
+                        // 沒有權限要求的項目，所有人都可訪問
+                        hasPermission = true;
+                    }
+                    else
+                    {
+                        // 檢查是否有特定權限
+                        hasPermission = await PermissionService.CanAccessAsync(child.RequiredPermission);
+                    }
+                    
+                    if (hasPermission)
+                    {
+                        filteredChildren.Add(child);
+                    }
+                }
+                
+                // 移除開頭和結尾的分隔線，以及連續的分隔線
+                filteredChildren = CleanDividers(filteredChildren);
+                
+                // 如果有子項目（不包含只有分隔線的情況），則加入父選單
+                if (filteredChildren.Any(c => !c.IsDivider))
+                {
+                    var filteredMenuGroup = new NavigationItem
+                    {
+                        Name = menuGroup.Name,
+                        IconClass = menuGroup.IconClass,
+                        IsParent = menuGroup.IsParent,
+                        MenuKey = menuGroup.MenuKey,
+                        Route = menuGroup.Route,
+                        Children = filteredChildren
+                    };
+                    
+                    filteredMenuGroups.Add(filteredMenuGroup);
+                }
+            }
+            else
+            {
+                // 單一項目，檢查權限
+                bool hasPermission = false;
+                
+                if (isAdmin)
+                {
+                    hasPermission = true;
+                }
+                else if (string.IsNullOrEmpty(menuGroup.RequiredPermission))
+                {
+                    // 沒有權限要求的項目，所有人都可訪問（如首頁）
+                    hasPermission = true;
+                }
+                else
+                {
+                    // 檢查是否有特定權限
+                    hasPermission = await PermissionService.CanAccessAsync(menuGroup.RequiredPermission);
+                }
+                
+                if (hasPermission)
+                {
+                    filteredMenuGroups.Add(menuGroup);
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 清理分隔線：移除開頭、結尾和連續的分隔線
+    /// </summary>
+    private List<NavigationItem> CleanDividers(List<NavigationItem> items)
+    {
+        if (!items.Any()) return items;
+        
+        var result = new List<NavigationItem>();
+        bool lastWasDivider = true; // 初始化為 true 以移除開頭的分隔線
+        
+        foreach (var item in items)
+        {
+            if (item.IsDivider)
+            {
+                if (!lastWasDivider)
+                {
+                    result.Add(item);
+                    lastWasDivider = true;
+                }
+            }
+            else
+            {
+                result.Add(item);
+                lastWasDivider = false;
+            }
+        }
+        
+        // 移除結尾的分隔線
+        while (result.Any() && result.Last().IsDivider)
+        {
+            result.RemoveAt(result.Count - 1);
+        }
+        
+        return result;
+    }
     
     // ===== 事件處理 =====
     
