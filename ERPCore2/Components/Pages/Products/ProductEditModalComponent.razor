@@ -1,5 +1,6 @@
 @* 可重用的產品編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Helpers
+@using ERPCore2.Models
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @inject IProductCategoryService ProductCategoryService
@@ -7,8 +8,10 @@
 @inject ISupplierService SupplierService
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
+@inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
 
 <GenericEditModalComponent TEntity="Product" 
                           TService="IProductService"
@@ -37,7 +40,8 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomActionButtons="@CustomActionButtons" />
 
 @* 產品分類編輯 Modal *@
 <ProductCategoryEditModalComponent @ref="productCategoryEditModal"
@@ -65,6 +69,24 @@
                        PrefilledValues="@sizeModalManager.PrefilledValues"
                        OnSizeSaved="@OnSizeSavedWrapper"
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
+
+@* 產品合成表編輯 Modal *@
+<ProductCompositionEditModalComponent @ref="productCompositionEditModal"
+                                     IsVisible="@productCompositionModalManager.IsModalVisible"
+                                     IsVisibleChanged="@productCompositionModalManager.HandleModalVisibilityChangedAsync"
+                                     CompositionId="@productCompositionModalManager.SelectedEntityId"
+                                     PrefilledValues="@productCompositionModalManager.PrefilledValues"
+                                     OnCompositionSaved="@OnProductCompositionSavedWrapper"
+                                     OnCancel="@productCompositionModalManager.HandleModalCancelAsync" />
+
+<!-- 相關單據查看 Modal（合成表清單）-->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick"
+                               OnAddNew="@HandleAddNewComposition" />
 
 @code {
     // ===== 必要參數 =====
@@ -108,6 +130,9 @@
     private SizeEditModalComponent? sizeEditModal;
     private RelatedEntityModalManager<Size> sizeModalManager = default!;
     
+    private ProductCompositionEditModalComponent? productCompositionEditModal;
+    private RelatedEntityModalManager<ProductComposition> productCompositionModalManager = default!;
+    
     private ModalManagerCollection modalManagers = default!;
     
     // 選項清單（向下相容）
@@ -118,6 +143,12 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
+    
+    // ===== 相關單據查看（合成表清單）=====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
 
     // ===== 必要方法 =====
     protected override async Task OnInitializedAsync()
@@ -138,6 +169,14 @@
             productCategoryModalManager = modalManagers.Get<ProductCategory>(nameof(Product.ProductCategoryId));
             unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
             sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
+            
+            // 初始化產品合成表 Modal 管理器（獨立初始化）
+            productCompositionModalManager = new RelatedEntityModalManager<ProductComposition>
+            {
+                NotificationService = NotificationService,
+                EntityDisplayName = "產品合成表",
+                StateHasChangedCallback = StateHasChanged
+            };
             
             // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
@@ -600,6 +639,21 @@
     {
         await sizeModalManager.HandleEntitySavedAsync(savedSize, shouldAutoSelect: true);
     }
+    
+    /// <summary>
+    /// 包裝產品合成表儲存事件
+    /// </summary>
+    private async Task OnProductCompositionSavedWrapper(ProductComposition savedComposition)
+    {
+        // 合成表儲存後，不需要自動選擇，只需重新載入清單
+        await NotificationService.ShowSuccessAsync("產品合成表已儲存");
+        
+        // 如果合成表清單 Modal 是開啟的，重新載入清單
+        if (showRelatedDocumentsModal && editModalComponent?.Entity != null)
+        {
+            await LoadProductCompositions();
+        }
+    }
 
     /// <summary>
     /// 處理欄位值變更事件 - 使用統一 Helper
@@ -637,6 +691,140 @@
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
+        }
+    }
+    
+    // ===== 合成表相關方法 =====
+    
+    /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
+    /// </summary>
+    private RenderFragment? CustomActionButtons => __builder =>
+    {
+        @* 合成表按鈕 *@
+        <GenericButtonComponent
+            Text="合成表"
+            OnClick="@ShowProductCompositions"
+            IsDisabled="false"
+            Title="查看或新增產品合成表"
+            Variant="ButtonVariant.Blue"
+            Size="ButtonSize.Small" />
+    };
+    
+    /// <summary>
+    /// 顯示產品合成表清單
+    /// </summary>
+    private async Task ShowProductCompositions()
+    {
+        // 🔑 關鍵檢查：產品必須先儲存
+        if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync(
+                "請先儲存產品後再建立合成表", 
+                "提示");
+            return;
+        }
+        
+        selectedProductName = editModalComponent.Entity.Name ?? "未知產品";
+        
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            await LoadProductCompositions();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入合成表清單失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 載入產品合成表清單
+    /// </summary>
+    private async Task LoadProductCompositions()
+    {
+        if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
+        {
+            relatedDocuments = new List<RelatedDocument>();
+            return;
+        }
+        
+        relatedDocuments = await RelatedDocumentsHelper.GetProductCompositionsAsync(
+            editModalComponent.Entity.Id);
+    }
+    
+    /// <summary>
+    /// 處理點擊合成表項目（開啟編輯 Modal）
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        if (document.DocumentType == RelatedDocumentType.ProductComposition)
+        {
+            // 開啟編輯 Modal
+            await productCompositionModalManager.OpenModalAsync(document.DocumentId);
+        }
+    }
+    
+    /// <summary>
+    /// 處理新增合成表按鈕
+    /// </summary>
+    private async Task HandleAddNewComposition()
+    {
+        if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync(
+                "請先儲存產品後再建立合成表", 
+                "提示");
+            return;
+        }
+        
+        // 產生新的合成表代碼
+        var newCode = await GenerateCompositionCode();
+        
+        // 設定預填值
+        var prefilledValues = new Dictionary<string, object?>
+        {
+            { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id },
+            { nameof(ProductComposition.Code), newCode }
+        };
+        
+        // 使用 OpenModalWithPrefilledValuesAsync 開啟新增 Modal
+        await productCompositionModalManager.OpenModalWithPrefilledValuesAsync(null, prefilledValues);
+    }
+    
+    /// <summary>
+    /// 產生合成表代碼
+    /// </summary>
+    private async Task<string> GenerateCompositionCode()
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+            {
+                return $"COMP-{DateTime.Now:yyyyMMddHHmmss}";
+            }
+            
+            // 取得該產品現有的合成表數量
+            var existingCompositions = await ProductCompositionService.GetByProductIdAsync(
+                editModalComponent.Entity.Id);
+            
+            var sequence = existingCompositions.Count + 1;
+            var productCode = editModalComponent.Entity.Code ?? "PROD";
+            
+            return $"{productCode}-COMP-{sequence:D3}";
+        }
+        catch
+        {
+            return $"COMP-{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
 }

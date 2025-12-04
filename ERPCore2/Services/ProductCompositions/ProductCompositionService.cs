@@ -183,6 +183,35 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得指定產品的所有合成表（用於相關單據查詢）
+        /// </summary>
+        public async Task<List<ProductComposition>> GetByProductIdAsync(int productId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ProductCompositions
+                    .Include(pc => pc.ParentProduct)
+                    .Include(pc => pc.Customer)
+                    .Include(pc => pc.CreatedByEmployee)
+                    .Include(pc => pc.CompositionCategory)
+                    .Where(pc => pc.ParentProductId == productId)
+                    .OrderByDescending(pc => pc.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByProductIdAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId
+                });
+                return new List<ProductComposition>();
+            }
+        }
+        
         public async Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId)
         {
             try

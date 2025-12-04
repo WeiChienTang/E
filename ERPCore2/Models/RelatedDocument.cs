@@ -20,13 +20,16 @@ namespace ERPCore2.Models
         /// </summary>
         ReceivingDocument,
         
-        /// <summary>
-        /// 銷貨訂單（從報價單轉入）
-        /// </summary>
-        SalesOrder
-    }
-
     /// <summary>
+    /// 銷貨訂單（從報價單轉入）
+    /// </summary>
+    SalesOrder,
+    
+    /// <summary>
+    /// 產品合成表（BOM 配方）
+    /// </summary>
+    ProductComposition
+}    /// <summary>
     /// 相關單據資訊 - 用於顯示與明細項目相關的單據列表
     /// </summary>
     public class RelatedDocument
@@ -90,6 +93,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.SetoffDocument => "bi-cash-coin",
             RelatedDocumentType.ReceivingDocument => "bi-box-seam",
             RelatedDocumentType.SalesOrder => "bi-cart-check",
+            RelatedDocumentType.ProductComposition => "bi-diagram-3",
             _ => "bi-file-text"
         };
 
@@ -102,6 +106,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.SetoffDocument => "success",
             RelatedDocumentType.ReceivingDocument => "info",
             RelatedDocumentType.SalesOrder => "primary",
+            RelatedDocumentType.ProductComposition => "purple",
             _ => "secondary"
         };
 
@@ -114,6 +119,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.SetoffDocument => "沖款單",
             RelatedDocumentType.ReceivingDocument => "入庫單",
             RelatedDocumentType.SalesOrder => "銷貨訂單",
+            RelatedDocumentType.ProductComposition => "產品合成表",
             _ => "未知單據"
         };
     }

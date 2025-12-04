@@ -40,14 +40,6 @@
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()" />
 
-@* 商品編輯 Modal *@
-<ProductEditModalComponent @ref="productEditModal"
-                          IsVisible="@productModalManager.IsModalVisible"
-                          IsVisibleChanged="@productModalManager.HandleModalVisibilityChangedAsync"
-                          ProductId="@productModalManager.SelectedEntityId"
-                          OnProductSaved="@OnProductSavedWrapper"
-                          OnCancel="@productModalManager.HandleModalCancelAsync" />
-
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"
                            IsVisible="@customerModalManager.IsModalVisible"
@@ -91,8 +83,6 @@
     private bool isDetailDataReady = false;
     
     // ===== Modal 管理器 =====
-    private ProductEditModalComponent? productEditModal;
-    private RelatedEntityModalManager<Product> productModalManager = default!;
     private CustomerEditModalComponent? customerEditModal;
     private RelatedEntityModalManager<Customer> customerModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
@@ -145,11 +135,9 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<Product>(nameof(ProductComposition.ParentProductId), "產品")
                 .AddManager<Customer>(nameof(ProductComposition.CustomerId), "客戶")
                 .AddManager<Employee>(nameof(ProductComposition.CreatedByEmployeeId), "員工")
                 .Build();
-            productModalManager = modalManagers.Get<Product>(nameof(ProductComposition.ParentProductId));
             customerModalManager = modalManagers.Get<Customer>(nameof(ProductComposition.CustomerId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(ProductComposition.CreatedByEmployeeId));
             
@@ -391,11 +379,11 @@
                     PropertyName = nameof(ProductComposition.ParentProductId),
                     Label = "產品",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇產品",
+                    Placeholder = "已選擇的產品",
                     IsRequired = true,
+                    IsReadOnly = true,  // 設為唯讀，建立後無法變更
                     MinSearchLength = 0,
-                    HelpText = "選擇此合成要生產的產品",
-                    ActionButtons = await GetProductActionButtonsAsync()
+                    HelpText = "此合成表所屬的產品（建立後無法變更）"
                 },
                 new()
                 {
@@ -712,25 +700,12 @@
     {
         return new Dictionary<string, object>
         {
-            { nameof(ProductComposition.ParentProductId), productModalManager },
             { nameof(ProductComposition.CustomerId), customerModalManager },
             { nameof(ProductComposition.CreatedByEmployeeId), employeeModalManager }
         };
     }
     
     // ===== ActionButton 產生方法 =====
-    
-    /// <summary>
-    /// 產生商品操作按鈕 - 使用統一 Helper
-    /// </summary>
-    private async Task<List<FieldActionButton>> GetProductActionButtonsAsync()
-    {
-        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
-            editModalComponent, 
-            productModalManager, 
-            nameof(ProductComposition.ParentProductId)
-        );
-    }
     
     /// <summary>
     /// 產生客戶操作按鈕 - 使用統一 Helper
@@ -759,14 +734,6 @@
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>
-    /// 包裝商品儲存事件
-    /// </summary>
-    private async Task OnProductSavedWrapper(Product savedProduct)
-    {
-        await productModalManager.HandleEntitySavedAsync(savedProduct, shouldAutoSelect: true);
-    }
-    
-    /// <summary>
     /// 包裝客戶儲存事件
     /// </summary>
     private async Task OnCustomerSavedWrapper(Customer savedCustomer)
@@ -789,21 +756,8 @@
     {
         try
         {
-            // 使用統一 Helper 處理商品欄位變更
-            if (fieldChange.PropertyName == nameof(ProductComposition.ParentProductId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    productModalManager, 
-                    formFields, 
-                    nameof(ProductComposition.ParentProductId), 
-                    fieldChange.Value
-                );
-                
-                // 商品變更時，觸發明細管理器重新渲染
-                StateHasChanged();
-            }
             // 處理客戶欄位變更
-            else if (fieldChange.PropertyName == nameof(ProductComposition.CustomerId))
+            if (fieldChange.PropertyName == nameof(ProductComposition.CustomerId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     customerModalManager, 

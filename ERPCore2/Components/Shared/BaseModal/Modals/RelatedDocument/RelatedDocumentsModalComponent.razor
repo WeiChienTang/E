@@ -26,6 +26,54 @@
             var returnDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.ReturnDocument).ToList();
             var setoffDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.SetoffDocument).ToList();
             var salesOrderDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.SalesOrder).ToList();
+            var compositionDocs = RelatedDocuments.Where(d => d.DocumentType == RelatedDocumentType.ProductComposition).ToList();
+            
+            @* 產品合成表區塊 *@
+            @if (compositionDocs.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="text-purple mb-3">
+                        <i class="bi bi-diagram-3 me-2"></i>
+                        產品合成表 (@compositionDocs.Count)
+                    </h6>
+                    <div class="list-group">
+                        @foreach (var doc in compositionDocs)
+                        {
+                            <a href="javascript:void(0)" 
+                               class="list-group-item list-group-item-action"
+                               @onclick="@(() => HandleDocumentClick(doc))">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-purple me-2">
+                                                <i class="@doc.Icon me-1"></i>
+                                                @doc.TypeDisplayName
+                                            </span>
+                                            @doc.DocumentNumber
+                                        </h6>
+                                        <p class="mb-1 text-muted small">
+                                            <span class="text-nowrap">
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                            </span>
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(doc.Remarks))
+                                        {
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                @doc.Remarks
+                                            </p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
             
             @* 銷貨訂單區塊 *@
             @if (salesOrderDocs.Any())
@@ -276,6 +324,25 @@
         }
     </BodyContent>
     
+    <FooterContent>
+        @* 如果是產品合成表類型，顯示新增按鈕 *@
+        @if (RelatedDocuments?.Any() == true && 
+             RelatedDocuments.First().DocumentType == RelatedDocumentType.ProductComposition)
+        {
+            <GenericButtonComponent
+                Text="+ 新增合成表"
+                Variant="ButtonVariant.DarkBlue"
+                OnClick="@HandleAddNew"
+                Size="ButtonSize.Small" />
+        }
+        
+        <GenericButtonComponent
+            Text="關閉"
+            Variant="ButtonVariant.Gray"
+            OnClick="@Close"
+            Size="ButtonSize.Small" />
+    </FooterContent>
+    
 </BaseModalComponent>
 
 @code {
@@ -289,6 +356,11 @@
     /// 當點擊單據時觸發,傳回單據資訊供父組件開啟對應的 EditModal
     /// </summary>
     [Parameter] public EventCallback<RelatedDocument> OnDocumentClick { get; set; }
+    
+    /// <summary>
+    /// 當點擊「新增」按鈕時觸發（僅用於產品合成表）
+    /// </summary>
+    [Parameter] public EventCallback OnAddNew { get; set; }
 
     private async Task Close()
     {
@@ -301,6 +373,14 @@
         if (OnDocumentClick.HasDelegate)
         {
             await OnDocumentClick.InvokeAsync(document);
+        }
+    }
+    
+    private async Task HandleAddNew()
+    {
+        if (OnAddNew.HasDelegate)
+        {
+            await OnAddNew.InvokeAsync();
         }
     }
 }

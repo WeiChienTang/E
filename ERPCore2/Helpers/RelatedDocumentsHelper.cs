@@ -2,6 +2,7 @@ using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Models;
+using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Helpers
@@ -12,10 +13,14 @@ namespace ERPCore2.Helpers
     public class RelatedDocumentsHelper
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
+        private readonly IProductCompositionService _productCompositionService;
 
-        public RelatedDocumentsHelper(IDbContextFactory<AppDbContext> contextFactory)
+        public RelatedDocumentsHelper(
+            IDbContextFactory<AppDbContext> contextFactory,
+            IProductCompositionService productCompositionService)
         {
             _contextFactory = contextFactory;
+            _productCompositionService = productCompositionService;
         }
 
         /// <summary>
@@ -297,6 +302,62 @@ namespace ERPCore2.Helpers
             }
 
             return documents;
+        }
+        
+        /// <summary>
+        /// 取得指定產品的所有合成表
+        /// </summary>
+        public async Task<List<RelatedDocument>> GetProductCompositionsAsync(int productId)
+        {
+            var documents = new List<RelatedDocument>();
+            
+            try
+            {
+                // 從 ProductCompositionService 取得該產品的所有合成表
+                var compositions = await _productCompositionService.GetByProductIdAsync(productId);
+                
+                foreach (var composition in compositions)
+                {
+                    // 組合備註資訊
+                    var remarksParts = new List<string>();
+                    
+                    if (composition.CompositionCategory != null)
+                    {
+                        remarksParts.Add($"類型：{composition.CompositionCategory.Name}");
+                    }
+                    
+                    if (composition.Customer != null)
+                    {
+                        remarksParts.Add($"客戶：{composition.Customer.CompanyName}");
+                    }
+                    
+                    if (!string.IsNullOrEmpty(composition.Specification))
+                    {
+                        remarksParts.Add($"規格：{composition.Specification}");
+                    }
+                    
+                    if (!string.IsNullOrEmpty(composition.Remarks))
+                    {
+                        remarksParts.Add(composition.Remarks);
+                    }
+                    
+                    documents.Add(new RelatedDocument
+                    {
+                        DocumentId = composition.Id,
+                        DocumentType = RelatedDocumentType.ProductComposition,
+                        DocumentNumber = composition.Code ?? string.Empty,
+                        DocumentDate = composition.CreatedAt,
+                        Remarks = remarksParts.Any() ? string.Join(" | ", remarksParts) : null
+                    });
+                }
+            }
+            catch
+            {
+                // 發生錯誤時返回空列表
+                return new List<RelatedDocument>();
+            }
+            
+            return documents.OrderByDescending(d => d.DocumentDate).ToList();
         }
     }
 }

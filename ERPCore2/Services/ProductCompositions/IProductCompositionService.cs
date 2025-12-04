@@ -15,14 +15,19 @@ namespace ERPCore2.Services
         /// <returns>是否已存在</returns>
         Task<bool> IsProductCompositionCodeExistsAsync(string code, int? excludeId = null);
 
-        /// <summary>
-        /// 取得指定產品的所有配方
-        /// </summary>
-        /// <param name="productId">產品 ID</param>
-        /// <returns>配方列表</returns>
-        Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId);
-
-        /// <summary>
+    /// <summary>
+    /// 取得指定產品的所有配方（用於相關單據查詢）
+    /// </summary>
+    /// <param name="productId">產品 ID</param>
+    /// <returns>配方列表</returns>
+    Task<List<ProductComposition>> GetByProductIdAsync(int productId);
+    
+    /// <summary>
+    /// 取得指定產品的所有配方
+    /// </summary>
+    /// <param name="productId">產品 ID</param>
+    /// <returns>配方列表</returns>
+    Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId);        /// <summary>
         /// 計算配方總成本
         /// </summary>
         /// <param name="compositionId">配方 ID</param>
