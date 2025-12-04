@@ -648,10 +648,18 @@
         // 合成表儲存後，不需要自動選擇，只需重新載入清單
         await NotificationService.ShowSuccessAsync("產品合成表已儲存");
         
-        // 如果合成表清單 Modal 是開啟的，重新載入清單
-        if (showRelatedDocumentsModal && editModalComponent?.Entity != null)
+        // 📝 改進：無論清單是否開啟，都更新快取資料
+        // 這樣下次開啟清單時會看到最新資料
+        if (editModalComponent?.Entity != null)
         {
+            // 重新載入合成表清單資料（更新快取）
             await LoadProductCompositions();
+            
+            // 如果清單 Modal 正在顯示，觸發 UI 更新
+            if (showRelatedDocumentsModal)
+            {
+                StateHasChanged();
+            }
         }
     }
 
@@ -701,14 +709,26 @@
     /// </summary>
     private RenderFragment? CustomActionButtons => __builder =>
     {
-        @* 合成表按鈕 *@
-        <GenericButtonComponent
-            Text="合成表"
-            OnClick="@ShowProductCompositions"
-            IsDisabled="false"
-            Title="查看或新增產品合成表"
-            Variant="ButtonVariant.Blue"
-            Size="ButtonSize.Small" />
+        @* 合成表操作按鈕組 *@
+        <div class="d-flex gap-2">
+            @* 查看合成表清單 *@
+            <GenericButtonComponent
+                Text="查看合成表"
+                OnClick="@ShowProductCompositions"
+                Title="查看產品合成表清單"
+                Variant="ButtonVariant.Blue"
+                Size="ButtonSize.Small">
+            </GenericButtonComponent>
+
+            @* 新增合成表 *@
+            <GenericButtonComponent
+                Text="新增合成表"
+                OnClick="@HandleAddNewCompositionDirect"
+                Title="直接新增產品合成表"
+                Variant="ButtonVariant.DarkBlue"
+                Size="ButtonSize.Small">
+            </GenericButtonComponent>
+        </div>
     };
     
     /// <summary>
@@ -775,7 +795,7 @@
     }
     
     /// <summary>
-    /// 處理新增合成表按鈕
+    /// 處理新增合成表按鈕（從清單 Modal 的 Footer 觸發）
     /// </summary>
     private async Task HandleAddNewComposition()
     {
@@ -787,8 +807,9 @@
             return;
         }
         
-        // 產生新的合成表代碼
-        var newCode = await GenerateCompositionCode();
+        // 🎯 使用統一的 EntityCodeGenerationHelper 產生合成表代碼
+        var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
+            ProductCompositionService, "BOM");
         
         // 設定預填值
         var prefilledValues = new Dictionary<string, object?>
@@ -802,29 +823,42 @@
     }
     
     /// <summary>
-    /// 產生合成表代碼
+    /// 直接開啟新增合成表 Modal（不經過清單，直接帶入商品）
     /// </summary>
-    private async Task<string> GenerateCompositionCode()
+    private async Task HandleAddNewCompositionDirect()
     {
         try
         {
-            if (editModalComponent?.Entity == null)
+            // 🔑 關鍵檢查：產品必須先儲存
+            if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
             {
-                return $"COMP-{DateTime.Now:yyyyMMddHHmmss}";
+                await NotificationService.ShowWarningAsync(
+                    "請先儲存產品後再建立合成表", 
+                    "提示");
+                return;
             }
             
-            // 取得該產品現有的合成表數量
-            var existingCompositions = await ProductCompositionService.GetByProductIdAsync(
-                editModalComponent.Entity.Id);
+            // 🎯 使用統一的 EntityCodeGenerationHelper 產生合成表代碼
+            var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
+                ProductCompositionService, "BOM");
             
-            var sequence = existingCompositions.Count + 1;
-            var productCode = editModalComponent.Entity.Code ?? "PROD";
+            // 🎯 核心：設定預填值，自動帶入商品
+            var prefilledValues = new Dictionary<string, object?>
+            {
+                { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id },
+                { nameof(ProductComposition.Code), newCode }
+            };
             
-            return $"{productCode}-COMP-{sequence:D3}";
+            // 使用 ModalManager 開啟新增 Modal
+            await productCompositionModalManager.OpenModalWithPrefilledValuesAsync(
+                entityId: null,  // null = 新增模式
+                prefilledValues: prefilledValues
+            );
         }
-        catch
+        catch (Exception ex)
         {
-            return $"COMP-{DateTime.Now:yyyyMMddHHmmss}";
+            await NotificationService.ShowErrorAsync($"開啟新增合成表視窗失敗：{ex.Message}");
         }
     }
 }
+
