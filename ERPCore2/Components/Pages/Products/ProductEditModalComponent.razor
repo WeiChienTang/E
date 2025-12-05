@@ -736,7 +736,7 @@
     /// </summary>
     private async Task ShowProductCompositions()
     {
-        // 🔑 關鍵檢查：商品必須先儲存
+        //  關鍵檢查：商品必須先儲存
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
@@ -824,7 +824,7 @@
     {
         try
         {
-            // 🔑 關鍵檢查：商品必須先儲存
+            //  關鍵檢查：商品必須先儲存
             if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
             {
                 await NotificationService.ShowWarningAsync(
@@ -833,11 +833,11 @@
                 return;
             }
             
-            // 🎯 使用統一的 EntityCodeGenerationHelper 產生合成表代碼
+            //  使用統一的 EntityCodeGenerationHelper 產生合成表代碼
             var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
                 ProductCompositionService, "BOM");
             
-            // 🎯 核心：設定預填值，自動帶入商品
+            //  核心：設定預填值，自動帶入商品
             var prefilledValues = new Dictionary<string, object?>
             {
                 { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id },
