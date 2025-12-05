@@ -782,31 +782,57 @@
 
     /// <summary>
     /// 儲存報價單組合明細（BOM）
+    /// 處理臨時索引（負數）映射到實際儲存後的明細ID
     /// </summary>
     private async Task SaveQuotationCompositionDetails(int quotationId)
     {
         try
         {
             // 從 QuotationTable 組件取得組合明細資料
-            if (quotationDetailManager == null) return;
+            if (quotationDetailManager == null)
+                return;
             
             var compositionDetailsMap = quotationDetailManager.GetCompositionDetails();
-            if (!compositionDetailsMap.Any()) return;
             
-            // 取得所有報價單明細
+            if (!compositionDetailsMap.Any())
+                return;
+            
+            // 取得所有報價單明細（按順序排列，與 QuotationItems 對應）
             var savedQuotationDetails = await QuotationDetailService.GetByQuotationIdAsync(quotationId);
+            var orderedDetails = savedQuotationDetails.OrderBy(d => d.Id).ToList();
             
             foreach (var kvp in compositionDetailsMap)
             {
                 var quotationDetailId = kvp.Key;
                 var compositionDetails = kvp.Value;
                 
-                // 確保報價單明細存在
-                var quotationDetail = savedQuotationDetails.FirstOrDefault(d => d.Id == quotationDetailId);
-                if (quotationDetail == null) continue;
+                QuotationDetail? quotationDetail = null;
                 
-                // 批次儲存組合明細
-                await QuotationCompositionDetailService.SaveBatchAsync(quotationDetailId, compositionDetails);
+                if (quotationDetailId > 0)
+                {
+                    // 正常 ID，直接查找
+                    quotationDetail = orderedDetails.FirstOrDefault(d => d.Id == quotationDetailId);
+                    if (quotationDetail == null)
+                        continue;
+                }
+                else
+                {
+                    // 臨時索引（負數），映射到實際明細
+                    // -1 對應第 0 個明細，-2 對應第 1 個明細...
+                    int arrayIndex = Math.Abs(quotationDetailId) - 1;
+                    
+                    if (arrayIndex < orderedDetails.Count)
+                    {
+                        quotationDetail = orderedDetails[arrayIndex];
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                
+                // 批次儲存組合明細（使用實際的明細ID）
+                await QuotationCompositionDetailService.SaveBatchAsync(quotationDetail.Id, compositionDetails);
             }
         }
         catch (Exception ex)

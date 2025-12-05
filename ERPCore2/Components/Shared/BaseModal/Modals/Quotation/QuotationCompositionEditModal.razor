@@ -33,10 +33,13 @@
     [Parameter] public Func<List<QuotationCompositionDetail>?>? OnRequestCachedData { get; set; }
     [Parameter] public int? SelectedCompositionId { get; set; }  // 選中的配方 ID
     [Parameter] public bool IsCustomMode { get; set; } = false;  // 是否為自定義模式
+    [Parameter] public bool IsReselecting { get; set; } = false;  // 是否為重新選擇模式（跳過快取和資料庫查詢）
+    [Parameter] public EventCallback OnReselect { get; set; }  // 重新選擇配方事件
 
     // ===== 私有欄位 =====
     private bool isLoading = false;
     private bool _dataLoadCompleted = true;  // 資料載入完成標記（預設 true 保持向下兼容）
+    private bool _previousIsVisible = false;  // 追蹤上一次的 IsVisible 狀態
     private List<QuotationCompositionDetail> compositionDetails = new();
     private List<ERPCore2.Data.Entities.Product> availableProducts = new();
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
@@ -46,20 +49,24 @@
     private string componentSearchTerm = string.Empty;
     private HashSet<int> selectedComponentIds = new();
     private bool showComponentSelector = false;
+    private HashSet<int> pendingComponentIds = new();  // 暫存待選擇的組件 ID（尚未確認加入明細）
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible && QuotationDetailId.HasValue)
+        // 只在 Modal 從隱藏變為顯示時載入資料
+        if (IsVisible && !_previousIsVisible && QuotationDetailId.HasValue)
         {
             await LoadDataAsync();
         }
+        
+        _previousIsVisible = IsVisible;
     }
 
     private async Task LoadDataAsync()
     {
         isLoading = true;
-        _dataLoadCompleted = false;  //  開始載入資料 - 設定為未完成
+        _dataLoadCompleted = false;
         StateHasChanged();
 
         try
@@ -68,7 +75,42 @@
             availableProducts = await ProductService.GetAllAsync();
             availableUnits = await UnitService.GetAllAsync();
 
-            //  優先從父組件的快取載入（如果有的話）
+            // 如果是重新選擇模式，跳過快取和資料庫查詢，直接使用新選擇的配方
+            if (IsReselecting)
+            {
+                if (SelectedCompositionId.HasValue)
+                {
+                    // 從新選擇的配方複製
+                    compositionDetails = await QuotationCompositionDetailService.CopyFromCompositionAsync(
+                        QuotationDetailId!.Value,
+                        SelectedCompositionId.Value
+                    );
+                    
+                    // 手動填充導航屬性
+                    foreach (var detail in compositionDetails)
+                    {
+                        if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                        {
+                            detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                        }
+                        if (detail.UnitId.HasValue && detail.Unit == null)
+                        {
+                            detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                        }
+                    }
+                    
+                    return;
+                }
+                else if (IsCustomMode)
+                {
+                    // 自定義模式 - 顯示空的組件選擇器
+                    compositionDetails = new List<QuotationCompositionDetail>();
+                    showComponentSelector = true;
+                    return;
+                }
+            }
+
+            // 優先從父組件的快取載入（如果有的話）
             if (OnRequestCachedData != null)
             {
                 var cachedData = OnRequestCachedData();
@@ -163,7 +205,7 @@
         finally
         {
             isLoading = false;
-            _dataLoadCompleted = true;  //  資料載入完成 - 觸發空行檢查
+            _dataLoadCompleted = true;
             StateHasChanged();
         }
     }
@@ -182,6 +224,15 @@
             <div class="d-flex gap-2 ms-auto">
                 @if (!IsReadOnly)
                 {
+                    // 重新選擇按鈕（僅在有資料時顯示）
+                    @if (compositionDetails.Any())
+                    {
+                        <GenericButtonComponent Text="重選"
+                                              Variant="ButtonVariant.DarkBlue"
+                                              Size="ButtonSize.Small"
+                                              OnClick="@HandleReselect" />
+                    }
+                    
                     <GenericButtonComponent Text="儲存"
                                           Variant="ButtonVariant.Green"
                                           Size="ButtonSize.Small"
@@ -195,8 +246,8 @@
     private RenderFragment BodyContent => __builder =>
     {
         <div class="container-fluid">
-            @* 自定義模式的組件選擇器 *@
-            @if (IsCustomMode && showComponentSelector && !compositionDetails.Any())
+            @* 自定義模式的組件選擇器（唯讀模式下不顯示）*@
+            @if (IsCustomMode && showComponentSelector && !IsReadOnly)
             {
                 <div class="alert alert-info mb-3">
                     <div class="d-flex align-items-center mb-2">
@@ -223,7 +274,7 @@
                                     <input class="form-check-input" 
                                            type="checkbox"
                                            id="product_@product.Id"
-                                           checked="@selectedComponentIds.Contains(product.Id)"
+                                           checked="@pendingComponentIds.Contains(product.Id)"
                                            @onchange="(e) => ToggleComponent(product, (bool)e.Value!)">
                                     <label class="form-check-label small" for="product_@product.Id">
                                         [@product.Code] @product.Name
@@ -243,33 +294,46 @@
                     
                     <!-- 操作按鈕 -->
                     <div class="mt-3 d-flex gap-2">
-                        <GenericButtonComponent Text="完成選擇"
+                        <GenericButtonComponent Text="載入"
                                               Variant="ButtonVariant.Green"
                                               Size="ButtonSize.Small"
-                                              IconClass="bi bi-check-circle"
-                                              OnClick="@(() => showComponentSelector = false)" />
-                        <GenericButtonComponent Text="全部清除"
+                                              IsDisabled="@(!pendingComponentIds.Any())"
+                                              OnClick="@ConfirmComponentSelection" />
+                        <GenericButtonComponent Text="清除選取"
                                               Variant="ButtonVariant.OutlineRed"
                                               Size="ButtonSize.Small"
-                                              IconClass="bi bi-x-circle"
                                               OnClick="@ClearAllComponents" />
                     </div>
                 </div>
             }
             
-            @* 已選組件提示 *@
-            @if (IsCustomMode && compositionDetails.Any() && showComponentSelector)
+            @* 已選組件提示（在選擇過程中顯示暫存數量）*@
+            @if (IsCustomMode && showComponentSelector && pendingComponentIds.Any())
+            {
+                <div class="alert alert-warning mb-3 d-flex align-items-center justify-content-between">
+                    <span>
+                        <i class="bi bi-check2-square me-2"></i>
+                        已勾選 <strong>@pendingComponentIds.Count</strong> 個組件（尚未確認）
+                    </span>
+                </div>
+            }
+            
+            @* 已確認加入的組件數量提示 *@
+            @if (IsCustomMode && compositionDetails.Any() && !showComponentSelector)
             {
                 <div class="alert alert-success mb-3 d-flex align-items-center justify-content-between">
                     <span>
                         <i class="bi bi-check-circle me-2"></i>
-                        已選擇 <strong>@compositionDetails.Count</strong> 個組件
+                        已加入 <strong>@compositionDetails.Count</strong> 個組件
                     </span>
-                    <GenericButtonComponent Text="繼續選擇"
-                                          Variant="ButtonVariant.OutlineGreen"
-                                          Size="ButtonSize.Small"
-                                          IconClass="bi bi-plus-circle"
-                                          OnClick="@(() => showComponentSelector = true)" />
+                    @if (!IsReadOnly)
+                    {
+                        <GenericButtonComponent Text="繼續新增"
+                                              Variant="ButtonVariant.OutlineGreen"
+                                              Size="ButtonSize.Small"
+                                              IconClass="bi bi-plus-circle"
+                                              OnClick="@OpenComponentSelector" />
+                    }
                 </div>
             }
             
@@ -291,18 +355,6 @@
                                       IsHoverable="true"
                                       IsBordered="true"
                                       EmptyMessage="@GetEmptyMessage()" />
-            
-            @* 自定義模式的新增組件按鈕 *@
-            @if (IsCustomMode && !showComponentSelector && !IsReadOnly)
-            {
-                <div class="mt-2 text-center">
-                    <GenericButtonComponent Text="新增組件"
-                                          Variant="ButtonVariant.OutlineDarkBlue"
-                                          Size="ButtonSize.Small"
-                                          IconClass="bi bi-plus-circle"
-                                          OnClick="@(() => showComponentSelector = true)" />
-                </div>
-            }
         </div>
     };
 
@@ -475,16 +527,35 @@
         await IsVisibleChanged.InvokeAsync(false);
     }
     
+    /// <summary>
+    /// 處理重新選擇配方
+    /// </summary>
+    private async Task HandleReselect()
+    {
+        if (OnReselect.HasDelegate)
+        {
+            await OnReselect.InvokeAsync();
+        }
+        
+        await CloseModal();
+    }
+    
     // ===== 自定義模式相關方法 =====
     
     /// <summary>
-    /// 過濾可用的組件產品
+    /// 過濾可用的組件產品（排除當前產品本身，避免無限迴圈）
     /// </summary>
     private List<ERPCore2.Data.Entities.Product> FilteredAvailableProducts
     {
         get
         {
             var products = availableProducts.AsEnumerable();
+            
+            // 排除當前產品本身，避免無限迴圈
+            if (ProductId.HasValue)
+            {
+                products = products.Where(p => p.Id != ProductId.Value);
+            }
             
             if (!string.IsNullOrWhiteSpace(componentSearchTerm))
             {
@@ -499,50 +570,84 @@
     }
     
     /// <summary>
-    /// 切換組件選擇
+    /// 切換組件選擇（暫存到 pendingComponentIds，等確認後才加入明細）
     /// </summary>
     private void ToggleComponent(Product product, bool isChecked)
     {
         if (isChecked)
         {
-            // 檢查是否已存在
-            if (!compositionDetails.Any(d => d.ComponentProductId == product.Id))
-            {
-                // 新增組件
-                var newDetail = new QuotationCompositionDetail
-                {
-                    QuotationDetailId = QuotationDetailId ?? 0,
-                    ComponentProductId = product.Id,
-                    ComponentProduct = product,
-                    Quantity = 1,
-                    UnitId = product.UnitId,
-                    Unit = product.Unit
-                };
-                compositionDetails.Add(newDetail);
-                selectedComponentIds.Add(product.Id);
-            }
+            pendingComponentIds.Add(product.Id);
         }
         else
         {
-            // 移除組件
-            var detail = compositionDetails.FirstOrDefault(d => d.ComponentProductId == product.Id);
-            if (detail != null)
-            {
-                compositionDetails.Remove(detail);
-                selectedComponentIds.Remove(product.Id);
-            }
+            pendingComponentIds.Remove(product.Id);
         }
         
         StateHasChanged();
     }
     
     /// <summary>
-    /// 清除所有組件
+    /// 開啟組件選擇器
+    /// </summary>
+    private void OpenComponentSelector()
+    {
+        // 將已存在於明細中的組件 ID 加入暫存列表
+        pendingComponentIds = compositionDetails
+            .Where(d => d.ComponentProductId > 0)
+            .Select(d => d.ComponentProductId)
+            .ToHashSet();
+        showComponentSelector = true;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 完成組件選擇，將暫存的選擇加入明細
+    /// </summary>
+    private void ConfirmComponentSelection()
+    {
+        // 移除不在 pendingComponentIds 中的現有明細
+        var toRemove = compositionDetails
+            .Where(d => !pendingComponentIds.Contains(d.ComponentProductId))
+            .ToList();
+        foreach (var detail in toRemove)
+        {
+            compositionDetails.Remove(detail);
+            selectedComponentIds.Remove(detail.ComponentProductId);
+        }
+        
+        // 新增 pendingComponentIds 中但不在 compositionDetails 的組件
+        foreach (var productId in pendingComponentIds)
+        {
+            if (!compositionDetails.Any(d => d.ComponentProductId == productId))
+            {
+                var product = availableProducts.FirstOrDefault(p => p.Id == productId);
+                if (product != null)
+                {
+                    var newDetail = new QuotationCompositionDetail
+                    {
+                        QuotationDetailId = QuotationDetailId ?? 0,
+                        ComponentProductId = product.Id,
+                        ComponentProduct = product,
+                        Quantity = 1,
+                        UnitId = product.UnitId,
+                        Unit = product.Unit
+                    };
+                    compositionDetails.Add(newDetail);
+                    selectedComponentIds.Add(product.Id);
+                }
+            }
+        }
+        
+        showComponentSelector = false;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 清除所有暫存的組件選擇
     /// </summary>
     private void ClearAllComponents()
     {
-        compositionDetails.Clear();
-        selectedComponentIds.Clear();
+        pendingComponentIds.Clear();
         StateHasChanged();
     }
     

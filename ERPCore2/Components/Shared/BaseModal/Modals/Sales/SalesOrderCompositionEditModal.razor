@@ -71,12 +71,10 @@
             // 優先從父組件的快取載入（如果有的話）
             if (OnRequestCachedData != null)
             {
-                Console.WriteLine($"[BOM Modal] 嘗試從快取載入 BOM (SalesOrderDetailId: {SalesOrderDetailId}, ProductId: {ProductId})");
                 var cachedData = OnRequestCachedData();
                 
                 if (cachedData?.Any() == true)
                 {
-                    Console.WriteLine($"[BOM Modal] ✓ 快取命中！載入 {cachedData.Count} 個 BOM 組件");
                     compositionDetails = cachedData;
                     
                     // 手動填充導航屬性
@@ -90,14 +88,9 @@
                         {
                             detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
                         }
-                        Console.WriteLine($"[BOM Modal]   - {detail.ComponentProduct?.Name ?? "N/A"} x {detail.Quantity}");
                     }
                     
                     return;
-                }
-                else
-                {
-                    Console.WriteLine($"[BOM Modal] ✗ 快取未命中或為空，將從資料庫載入");
                 }
             }
 
@@ -198,10 +191,8 @@
                 productStockQuantities[product.Id] = totalStock;
             }
         }
-        catch (Exception ex)
+        catch
         {
-            // 載入庫存失敗不影響主流程,只記錄錯誤
-            Console.WriteLine($"載入庫存失敗:{ex.Message}");
         }
     }
 

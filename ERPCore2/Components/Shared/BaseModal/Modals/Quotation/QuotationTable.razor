@@ -76,16 +76,18 @@ else
 
 <!-- BOM 組合編輯 Modal -->
 <QuotationCompositionEditModal IsVisible="@showCompositionModal"
-                              IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
+                              IsVisibleChanged="@((bool visible) => { showCompositionModal = visible; })"
                               QuotationDetailId="@GetSelectedQuotationDetailId()"
                               ProductName="@selectedCompositionProductName"
                               ProductId="@selectedCompositionProductId"
                               SelectedCompositionId="@selectedCompositionId"
                               IsCustomMode="@isCustomCompositionMode"
+                              IsReselecting="@isReselectingComposition"
                               IsReadOnly="@GetCompositionModalReadOnlyState()"
                               OnSave="@HandleCompositionSave"
-                              OnCancel="@(() => showCompositionModal = false)"
-                              OnRequestCachedData="@GetCachedCompositionData" />
+                              OnCancel="@HandleCompositionCancel"
+                              OnRequestCachedData="@GetCachedCompositionData"
+                              OnReselect="@HandleCompositionReselect" />
 
 @code {
     // ===== QuotationItem 內部類別定義（必須在最前面）=====
@@ -105,6 +107,21 @@ else
         /// 自訂的 BOM 組合明細（用於暫存編輯結果）
         /// </summary>
         public List<QuotationCompositionDetail>? CustomCompositionDetails { get; set; }
+        
+        /// <summary>
+        /// 選擇的配方 ID（null 表示自定義模式）
+        /// </summary>
+        public int? SelectedCompositionId { get; set; }
+        
+        /// <summary>
+        /// 是否為自定義組合模式
+        /// </summary>
+        public bool IsCustomComposition { get; set; }
+        
+        /// <summary>
+        /// 計算屬性：是否已有 BOM 組合資料
+        /// </summary>
+        public bool HasCompositionData => CustomCompositionDetails?.Any() == true;
         
         // SearchableSelect 支援屬性
         public string ProductSearchValue { get; set; } = string.Empty;
@@ -221,6 +238,7 @@ else
     private int? selectedCompositionProductId = null;
     private int? selectedCompositionId = null;
     private bool isCustomCompositionMode = false;
+    private bool isReselectingComposition = false;  // 標記是否為重新選擇配方
     private List<ProductComposition> availableCompositions = new();
     private Dictionary<int, List<QuotationCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
@@ -719,7 +737,7 @@ else
     }
     
     /// <summary>
-    /// 顯示 BOM 組合編輯器 - 先顯示配方選擇器
+    /// 顯示 BOM 組合編輯器 - 智能判斷是否需要選擇配方
     /// </summary>
     private async Task ShowCompositionEditor(QuotationItem item)
     {
@@ -729,12 +747,22 @@ else
         selectedCompositionProductName = item.SelectedProduct.Name;
         selectedCompositionProductId = item.SelectedProduct.Id;
         
-        // 載入該產品的所有配方
-        availableCompositions = await ProductCompositionService
-            .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
+        // 檢查是否已有組合資料
+        if (item.HasCompositionData)
+        {
+            // 已有資料，直接開啟編輯器
+            selectedCompositionId = item.SelectedCompositionId;
+            isCustomCompositionMode = item.IsCustomComposition;
+            showCompositionModal = true;
+        }
+        else
+        {
+            // 尚未選擇配方，顯示選擇器
+            availableCompositions = await ProductCompositionService
+                .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
+            showCompositionSelectorModal = true;
+        }
         
-        // 顯示配方選擇器
-        showCompositionSelectorModal = true;
         StateHasChanged();
     }
     
@@ -747,6 +775,27 @@ else
         
         selectedCompositionId = selection.compositionId;
         isCustomCompositionMode = selection.isCustomMode;
+        
+        // 記錄選擇資訊到 QuotationItem
+        if (selectedQuotationItemIndex.HasValue)
+        {
+            var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
+            if (item != null)
+            {
+                item.SelectedCompositionId = selection.compositionId;
+                item.IsCustomComposition = selection.isCustomMode;
+                
+                // 如果是重新選擇，清除舊的快取資料
+                if (isReselectingComposition)
+                {
+                    item.CustomCompositionDetails = null;
+                    if (item.SelectedProduct != null && compositionDetailsCache.ContainsKey(item.SelectedProduct.Id))
+                    {
+                        compositionDetailsCache.Remove(item.SelectedProduct.Id);
+                    }
+                }
+            }
+        }
         
         // 開啟 BOM 編輯器
         showCompositionModal = true;
@@ -805,15 +854,32 @@ else
             if (item != null)
             {
                 item.CustomCompositionDetails = compositionDetails;
+                
+                // 確保選擇資訊已記錄（如果還沒記錄的話）
+                if (!item.SelectedCompositionId.HasValue && !item.IsCustomComposition)
+                {
+                    item.SelectedCompositionId = selectedCompositionId;
+                    item.IsCustomComposition = isCustomCompositionMode;
+                }
             }
             
             await NotificationService.ShowSuccessAsync("BOM 組成已更新，請記得儲存報價單以保存變更");
             showCompositionModal = false;
+            isReselectingComposition = false;  // 儲存完成後重置
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"儲存 BOM 組成時發生錯誤：{ex.Message}");
         }
+    }
+    
+    /// <summary>
+    /// 處理 BOM 組合取消
+    /// </summary>
+    private void HandleCompositionCancel()
+    {
+        showCompositionModal = false;
+        isReselectingComposition = false;
     }
     
     /// <summary>
@@ -827,7 +893,7 @@ else
         var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
         if (item == null)
             return null;
-            
+        
         // 優先返回 CustomCompositionDetails
         if (item.CustomCompositionDetails?.Any() == true)
             return item.CustomCompositionDetails;
@@ -835,8 +901,36 @@ else
         // 其次從快取中取得
         if (item.SelectedProduct != null && compositionDetailsCache.ContainsKey(item.SelectedProduct.Id))
             return compositionDetailsCache[item.SelectedProduct.Id];
-            
+        
         return null;
+    }
+    
+    /// <summary>
+    /// 處理重新選擇配方
+    /// </summary>
+    private async Task HandleCompositionReselect()
+    {
+        // 先標記為重新選擇模式（在關閉 Modal 之前）
+        isReselectingComposition = true;
+        
+        // 關閉當前的 BOM 編輯 Modal
+        showCompositionModal = false;
+        
+        // 清除當前選擇的配方資訊
+        if (selectedQuotationItemIndex.HasValue)
+        {
+            var item = QuotationItems.ElementAtOrDefault(selectedQuotationItemIndex.Value);
+            if (item?.SelectedProduct != null)
+            {
+                // 重新載入配方清單
+                availableCompositions = await ProductCompositionService
+                    .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
+                
+                // 顯示配方選擇器
+                showCompositionSelectorModal = true;
+                StateHasChanged();
+            }
+        }
     }
 
     // ===== 內部方法 =====
@@ -892,6 +986,20 @@ else
                     Remarks = string.Empty,
                     ExistingDetailEntity = detail
                 };
+                
+                // 載入該明細的組合明細資料（如果有的話）
+                if (quotationDetail.Id > 0)
+                {
+                    var compositionDetails = await QuotationCompositionDetailService
+                        .GetByQuotationDetailIdAsync(quotationDetail.Id);
+                    
+                    if (compositionDetails.Any())
+                    {
+                        item.CustomCompositionDetails = compositionDetails;
+                        // 注意：無法得知原始選擇的配方ID，視為已自定義
+                        item.IsCustomComposition = true;
+                    }
+                }
                 
                 QuotationItems.Add(item);
             }
@@ -1516,29 +1624,55 @@ else
 
     /// <summary>
     /// 取得所有報價單組合明細資料（供父組件儲存使用）
+    /// 對於新增的明細（ID=0），使用臨時索引（-1, -2, -3...）來標識
     /// </summary>
     public Dictionary<int, List<QuotationCompositionDetail>> GetCompositionDetails()
     {
         var result = new Dictionary<int, List<QuotationCompositionDetail>>();
+        int tempIndex = -1; // 用於新增明細的臨時索引
         
-        foreach (var item in QuotationItems.Where(x => x.SelectedProduct != null))
+        for (int i = 0; i < QuotationItems.Count; i++)
         {
+            var item = QuotationItems[i];
+            if (item.SelectedProduct == null) continue;
+            
+            var detailId = item.ExistingDetailEntity?.Id ?? 0;
+            
             // 如果有自訂的組合明細
             if (item.CustomCompositionDetails?.Any() == true)
             {
-                var detailId = item.ExistingDetailEntity?.Id ?? 0;
                 if (detailId > 0)
                 {
+                    // 已存在的明細，使用實際 ID
                     result[detailId] = item.CustomCompositionDetails;
+                }
+                else
+                {
+                    // 新增的明細，使用臨時索引（對應明細在陣列中的順序）
+                    foreach (var detail in item.CustomCompositionDetails)
+                    {
+                        detail.QuotationDetailId = tempIndex; // 暫存臨時索引
+                    }
+                    result[tempIndex] = item.CustomCompositionDetails;
+                    tempIndex--; // 下一個新增明細使用 -2, -3...
                 }
             }
             // 或從快取中取得
             else if (item.SelectedProduct != null && compositionDetailsCache.ContainsKey(item.SelectedProduct.Id))
             {
-                var detailId = item.ExistingDetailEntity?.Id ?? 0;
+                var cachedDetails = compositionDetailsCache[item.SelectedProduct.Id];
                 if (detailId > 0)
                 {
-                    result[detailId] = compositionDetailsCache[item.SelectedProduct.Id];
+                    result[detailId] = cachedDetails;
+                }
+                else
+                {
+                    foreach (var detail in cachedDetails)
+                    {
+                        detail.QuotationDetailId = tempIndex;
+                    }
+                    result[tempIndex] = cachedDetails;
+                    tempIndex--;
                 }
             }
         }
