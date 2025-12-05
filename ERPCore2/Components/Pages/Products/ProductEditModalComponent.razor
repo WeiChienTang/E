@@ -807,15 +807,10 @@
             return;
         }
         
-        // 🎯 使用統一的 EntityCodeGenerationHelper 產生合成表代碼
-        var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
-            ProductCompositionService, "BOM");
-        
-        // 設定預填值
+        // 設定預填值（不包含 Code，讓子組件自動產生以確保唯一性）
         var prefilledValues = new Dictionary<string, object?>
         {
-            { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id },
-            { nameof(ProductComposition.Code), newCode }
+            { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id }
         };
         
         // 使用 OpenModalWithPrefilledValuesAsync 開啟新增 Modal

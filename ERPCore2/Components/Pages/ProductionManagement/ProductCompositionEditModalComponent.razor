@@ -299,12 +299,15 @@
                 // 新增模式：建立新的產品合成表實體並生成代碼
                 var newComposition = new ProductComposition
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(ProductCompositionService, "BOM"),
                     Status = EntityStatus.Active
                 };
                 
-                // 應用預填值
+                // 先應用預填值（業務邏輯需要的欄位，如 ParentProductId）
                 PrefilledValueHelper.ApplyPrefilledValues(newComposition, PrefilledValues);
+                
+                // 🔑 關鍵：Code 在應用預填值後才產生，確保每次都是新的
+                // 這樣即使 PrefilledValues 中有舊的 Code，也會被覆蓋為新產生的 Code
+                newComposition.Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(ProductCompositionService, "BOM");
                 
                 return newComposition;
             }
@@ -557,7 +560,7 @@
                 return false;
             }
             
-            // 驗證明細資料
+            // ========== 第一步：先驗證明細資料（包含 UI 驗證） ==========
             if (detailManager != null)
             {
                 var isValid = await detailManager.ValidateAsync();
@@ -567,8 +570,25 @@
                 }
             }
             
-            // 開始儲存流程
+            // ========== 第二步：進階驗證 - 檢查循環參考（成品不能包含自己） ==========
+            if (detailManager != null)
+            {
+                var validDetails = detailManager.GetNonEmptyItems();
+                
+                // 檢查是否有組件與成品相同（循環參考）
+                foreach (var detail in validDetails)
+                {
+                    if (detail.ComponentProductId == composition.ParentProductId)
+                    {
+                        await NotificationService.ShowErrorAsync("明細驗證失敗：組件不能是成品本身（會造成循環參考）");
+                        return false;
+                    }
+                }
+            }
+            
+            // ========== 第三步：儲存主檔（驗證都通過後才儲存） ==========
             ProductComposition? savedComposition = null;
+            bool isNewRecord = !CompositionId.HasValue || CompositionId.Value == 0;
             
             if (CompositionId.HasValue && CompositionId.Value > 0)
             {
@@ -591,7 +611,6 @@
                 if (createResult.IsSuccess && createResult.Data != null)
                 {
                     savedComposition = createResult.Data;
-                    CompositionId = savedComposition.Id;
                 }
                 else
                 {
@@ -606,17 +625,17 @@
                 return false;
             }
             
-            // 儲存明細
+            // ========== 第四步：儲存明細（循環參考驗證已通過） ==========
             if (detailManager != null)
             {
                 var validDetails = detailManager.GetNonEmptyItems();
                 
-                // 設定主檔ID 並清除 Navigation Properties（避免 EF Core 追蹤錯誤）
+                // 設定主檔 ID 並清除 Navigation Properties
                 foreach (var detail in validDetails)
                 {
                     detail.ProductCompositionId = savedComposition.Id;
                     
-                    // 清除 Navigation Properties，只保留外鍵 ID
+                    // 清除 Navigation Properties（避免 EF Core 追蹤錯誤）
                     detail.ProductComposition = null!;
                     detail.ComponentProduct = null!;
                     detail.Unit = null;
@@ -629,7 +648,8 @@
                     var deleteResult = await ProductCompositionDetailService.DeleteAsync(deletedId);
                     if (!deleteResult.IsSuccess)
                     {
-                        await NotificationService.ShowWarningAsync($"刪除明細失敗：{deleteResult.ErrorMessage}");
+                        await NotificationService.ShowErrorAsync($"刪除明細失敗：{deleteResult.ErrorMessage}");
+                        return false;
                     }
                 }
                 
@@ -641,7 +661,8 @@
                         var updateResult = await ProductCompositionDetailService.UpdateAsync(detail);
                         if (!updateResult.IsSuccess)
                         {
-                            await NotificationService.ShowWarningAsync($"更新明細失敗：{updateResult.ErrorMessage}");
+                            await NotificationService.ShowErrorAsync($"更新明細失敗：{updateResult.ErrorMessage}");
+                            return false;
                         }
                     }
                     else
@@ -649,10 +670,17 @@
                         var createResult = await ProductCompositionDetailService.CreateAsync(detail);
                         if (!createResult.IsSuccess)
                         {
-                            await NotificationService.ShowWarningAsync($"新增明細失敗：{createResult.ErrorMessage}");
+                            await NotificationService.ShowErrorAsync($"新增明細失敗：{createResult.ErrorMessage}");
+                            return false;
                         }
                     }
                 }
+            }
+            
+            // ========== 第五步：更新組件參數（從新增模式轉為編輯模式） ==========
+            if (isNewRecord && savedComposition.Id > 0)
+            {
+                CompositionId = savedComposition.Id;
             }
             
             return true;

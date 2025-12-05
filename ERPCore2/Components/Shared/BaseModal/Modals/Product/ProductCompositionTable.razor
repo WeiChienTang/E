@@ -146,7 +146,6 @@
                     Value = p.Id.ToString(), 
                     Text = GetProductDisplayText(p) 
                 }).ToList(),
-                Placeholder = "請選擇材料",
                 OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
                 {
                     await OnProductChanged(args);
@@ -182,7 +181,6 @@
                     Value = u.Id.ToString(), 
                     Text = u.Name 
                 }).ToList(),
-                Placeholder = "請選擇...",
                 OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
                 {
                     await OnUnitChanged(args);

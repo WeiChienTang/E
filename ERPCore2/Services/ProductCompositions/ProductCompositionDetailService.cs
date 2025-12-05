@@ -237,8 +237,9 @@ namespace ERPCore2.Services
                 if (entity.Quantity <= 0)
                     errors.Add("所需數量必須大於 0");
 
-                // 組件重複驗證
-                if (await IsComponentExistsInCompositionAsync(entity.ProductCompositionId, entity.ComponentProductId, entity.Id == 0 ? null : entity.Id))
+                // 組件重複驗證（修正：新增和更新都要正確排除自己）
+                var excludeId = entity.Id > 0 ? entity.Id : (int?)null;
+                if (await IsComponentExistsInCompositionAsync(entity.ProductCompositionId, entity.ComponentProductId, excludeId))
                     errors.Add("此組件已存在於配方中");
 
                 // 防止循環參考：組件不能是成品本身

@@ -133,6 +133,16 @@ namespace ERPCore2.Services
                 if (entity.ParentProductId <= 0)
                     errors.Add("請選擇成品");
 
+                // 檢查合成表編號是否重複（參考 PurchaseOrderService 的做法）
+                if (!string.IsNullOrWhiteSpace(entity.Code))
+                {
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    var exists = await context.ProductCompositions
+                        .AnyAsync(pc => pc.Code == entity.Code && pc.Id != entity.Id);
+                    if (exists)
+                        errors.Add("合成表編號已存在");
+                }
+
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 
@@ -145,7 +155,8 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ParentProductId = entity.ParentProductId
+                    ParentProductId = entity.ParentProductId,
+                    Code = entity.Code
                 });
                 return ServiceResult.Failure($"驗證產品合成表時發生錯誤: {ex.Message}");
             }
