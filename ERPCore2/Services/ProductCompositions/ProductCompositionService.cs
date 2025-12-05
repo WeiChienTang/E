@@ -232,8 +232,11 @@ namespace ERPCore2.Services
                     .Include(pc => pc.ParentProduct)
                     .Include(pc => pc.Customer)
                     .Include(pc => pc.CreatedByEmployee)
+                    .Include(pc => pc.CompositionCategory)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.ComponentProduct)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(pcd => pcd.Unit)
                     .Where(pc => pc.ParentProductId == productId)
                     .OrderBy(pc => pc.Code)
                     .ToListAsync();

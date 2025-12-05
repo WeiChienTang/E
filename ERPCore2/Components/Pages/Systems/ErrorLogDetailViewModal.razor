@@ -1,32 +1,23 @@
 @inject IErrorLogService ErrorLogService
 @inject INotificationService NotificationService
 
-@if (IsVisible)
-{
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-xl" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-exclamation-triangle text-danger"></i>
-                        錯誤記錄詳細資訊
-                    </h5>
-                    <button type="button" class="btn-close" @onclick="HandleClose" aria-label="Close"></button>
-                </div>
-                
-                <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
-                    @if (isLoading)
-                    {
-                        <div class="text-center p-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">載入中...</span>
-                            </div>
-                            <p class="mt-2">載入錯誤記錄詳細資訊...</p>
-                        </div>
-                    }
-                    else if (errorLog != null)
-                    {
-                        <div class="row">
+<BaseModalComponent 
+    IsVisible="@IsVisible"
+    IsVisibleChanged="@IsVisibleChanged"
+    Title="錯誤記錄詳細資訊"
+    Icon="fas fa-exclamation-triangle text-danger"
+    Size="BaseModalComponent.ModalSize.ExtraLarge"
+    HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+    IsLoading="@isLoading"
+    LoadingMessage="載入錯誤記錄詳細資訊..."
+    ShowFooter="true"
+    BodyCssClass="p-3"
+    OnClose="@OnClose">
+    
+    <BodyContent>
+        @if (errorLog != null)
+        {
+            <div class="row">
                             <!-- 基本資訊 -->
                             <div class="col-md-6">
                                 <div class="card">
@@ -41,12 +32,13 @@
                                             <div class="col-4"><strong>錯誤ID：</strong></div>
                                             <div class="col-8">
                                                 <code>@errorLog.ErrorId</code>
-                                                <button type="button" 
-                                                        class="btn btn-outline-secondary btn-sm ms-2" 
-                                                        @onclick="() => CopyToClipboard(errorLog.ErrorId)"
-                                                        title="複製錯誤ID">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
+                                                <GenericButtonComponent 
+                                                    Text="複製"
+                                                    Variant="ButtonVariant.DarkBlue"
+                                                    Size="ButtonSize.Small"
+                                                    CssClass="ms-2"
+                                                    Title="複製錯誤ID"
+                                                    OnClick="() => CopyToClipboard(errorLog.ErrorId)" />
                                             </div>
                                         </div>
                                         <div class="row mb-2">
@@ -159,13 +151,12 @@
                                             <i class="fas fa-exclamation-triangle"></i>
                                             錯誤訊息
                                         </h5>
-                                        <button type="button" 
-                                                class="btn btn-outline-secondary btn-sm" 
-                                                @onclick="() => CopyToClipboard(errorLog.Message)"
-                                                title="複製錯誤訊息">
-                                            <i class="fas fa-copy"></i>
-                                            複製
-                                        </button>
+                                        <GenericButtonComponent 
+                                            Text="複製"
+                                            Variant="ButtonVariant.DarkBlue"
+                                            Size="ButtonSize.Small"
+                                            Title="複製錯誤訊息"
+                                            OnClick="() => CopyToClipboard(errorLog.Message)" />
                                     </div>
                                     <div class="card-body">
                                         <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">@errorLog.Message</pre>
@@ -185,13 +176,12 @@
                                                 <i class="fas fa-list"></i>
                                                 堆疊追蹤
                                             </h5>
-                                            <button type="button" 
-                                                    class="btn btn-outline-secondary btn-sm" 
-                                                    @onclick="() => CopyToClipboard(errorLog.StackTrace)"
-                                                    title="複製堆疊追蹤">
-                                                <i class="fas fa-copy"></i>
-                                                複製
-                                            </button>
+                                            <GenericButtonComponent 
+                                                Text="複製"
+                                                Variant="ButtonVariant.DarkBlue"
+                                                Size="ButtonSize.Small"
+                                                Title="複製堆疊追蹤"
+                                                OnClick="() => CopyToClipboard(errorLog.StackTrace)" />
                                         </div>
                                         <div class="card-body">
                                             <pre class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 12px;">@errorLog.StackTrace</pre>
@@ -212,13 +202,12 @@
                                                 <i class="fas fa-link"></i>
                                                 內部例外
                                             </h5>
-                                            <button type="button" 
-                                                    class="btn btn-outline-secondary btn-sm" 
-                                                    @onclick="() => CopyToClipboard(errorLog.InnerException)"
-                                                    title="複製內部例外">
-                                                <i class="fas fa-copy"></i>
-                                                複製
-                                            </button>
+                                            <GenericButtonComponent 
+                                                Text="複製"
+                                                Variant="ButtonVariant.DarkBlue"
+                                                Size="ButtonSize.Small"
+                                                Title="複製內部例外"
+                                                OnClick="() => CopyToClipboard(errorLog.InnerException)" />
                                         </div>
                                         <div class="card-body">
                                             <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 12px;">@errorLog.InnerException</pre>
@@ -239,13 +228,12 @@
                                                 <i class="fas fa-database"></i>
                                                 額外資料 (JSON)
                                             </h5>
-                                            <button type="button" 
-                                                    class="btn btn-outline-secondary btn-sm" 
-                                                    @onclick="() => CopyToClipboard(errorLog.AdditionalData)"
-                                                    title="複製額外資料">
-                                                <i class="fas fa-copy"></i>
-                                                複製
-                                            </button>
+                                            <GenericButtonComponent 
+                                                Text="複製"
+                                                Variant="ButtonVariant.DarkBlue"
+                                                Size="ButtonSize.Small"
+                                                Title="複製額外資料"
+                                                OnClick="() => CopyToClipboard(errorLog.AdditionalData)" />
                                         </div>
                                         <div class="card-body">
                                             <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 12px;">@FormatJson(errorLog.AdditionalData)</pre>
@@ -290,26 +278,16 @@
                                 </div>
                             </div>
                         }
-                    }
-                    else if (!isLoading)
-                    {
-                        <div class="alert alert-warning" role="alert">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            找不到指定的錯誤記錄
-                        </div>
-                    }
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HandleClose">
-                        <i class="fas fa-times"></i>
-                        關閉
-                    </button>
-                </div>
+        }
+        else if (!isLoading)
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                找不到指定的錯誤記錄
             </div>
-        </div>
-    </div>
-}
+        }
+    </BodyContent>
+</BaseModalComponent>
 
 @code {
     [Parameter] public bool IsVisible { get; set; }

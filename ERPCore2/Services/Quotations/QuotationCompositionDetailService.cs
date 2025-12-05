@@ -54,7 +54,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從產品合成表複製 BOM 到報價單明細
+        /// 從產品合成表複製 BOM 到報價單明細（使用最新的配方）
         /// </summary>
         public async Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(int quotationDetailId, int productId)
         {
@@ -97,6 +97,52 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyFromProductCompositionAsync), GetType(), _logger);
+                return new List<QuotationCompositionDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 從指定的產品配方複製 BOM 到報價單明細
+        /// </summary>
+        public async Task<List<QuotationCompositionDetail>> CopyFromCompositionAsync(int quotationDetailId, int compositionId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 查詢指定的產品配方
+                var productComposition = await context.ProductCompositions
+                    .Include(x => x.CompositionDetails)
+                        .ThenInclude(d => d.ComponentProduct)
+                    .Include(x => x.CompositionDetails)
+                        .ThenInclude(d => d.Unit)
+                    .FirstOrDefaultAsync(x => x.Id == compositionId);
+
+                if (productComposition == null || !productComposition.CompositionDetails.Any())
+                {
+                    return new List<QuotationCompositionDetail>();
+                }
+
+                // 複製組合明細
+                var quotationCompositionDetails = new List<QuotationCompositionDetail>();
+                
+                foreach (var detail in productComposition.CompositionDetails)
+                {
+                    quotationCompositionDetails.Add(new QuotationCompositionDetail
+                    {
+                        QuotationDetailId = quotationDetailId,
+                        ComponentProductId = detail.ComponentProductId,
+                        Quantity = detail.Quantity,
+                        UnitId = detail.UnitId,
+                        ComponentCost = detail.ComponentCost
+                    });
+                }
+
+                return quotationCompositionDetails;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CopyFromCompositionAsync), GetType(), _logger);
                 return new List<QuotationCompositionDetail>();
             }
         }

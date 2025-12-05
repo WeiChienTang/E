@@ -49,7 +49,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從產品合成表複製 BOM 資料到銷貨訂單
+        /// 從產品合成表複製 BOM 資料到銷貨訂單（使用最新的配方）
         /// </summary>
         public async Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
             int salesOrderDetailId, int productId)
@@ -64,6 +64,35 @@ namespace ERPCore2.Services
                     .Where(pc => pc.ParentProductId == productId)
                     .Select(pc => pc.Id)
                     .FirstOrDefault())
+                .ToListAsync();
+
+            // 轉換為銷貨訂單組成明細
+            return productCompositions.Select(pc => new SalesOrderCompositionDetail
+            {
+                SalesOrderDetailId = salesOrderDetailId,
+                ComponentProductId = pc.ComponentProductId,
+                ComponentProduct = pc.ComponentProduct,
+                Quantity = pc.Quantity,
+                UnitId = pc.UnitId,
+                Unit = pc.Unit,
+                ComponentCost = pc.ComponentCost,
+                Status = EntityStatus.Active
+            }).ToList();
+        }
+
+        /// <summary>
+        /// 從指定的產品配方複製 BOM 資料到銷貨訂單
+        /// </summary>
+        public async Task<List<SalesOrderCompositionDetail>> CopyFromCompositionAsync(
+            int salesOrderDetailId, int compositionId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            
+            // 取得指定配方的組合明細
+            var productCompositions = await context.ProductCompositionDetails
+                .Include(p => p.ComponentProduct)
+                .Include(p => p.Unit)
+                .Where(p => p.ProductCompositionId == compositionId)
                 .ToListAsync();
 
             // 轉換為銷貨訂單組成明細

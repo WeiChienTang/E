@@ -66,12 +66,22 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- 配方選擇 Modal -->
+<CompositionSelectorModal IsVisible="@showCompositionSelectorModal"
+                         IsVisibleChanged="@((bool visible) => showCompositionSelectorModal = visible)"
+                         ProductName="@selectedCompositionProductName"
+                         Compositions="@availableCompositions"
+                         CurrentCustomerId="@SelectedCustomerId"
+                         OnSelected="@HandleCompositionSelected" />
+
 <!-- BOM 組合編輯 Modal -->
 <QuotationCompositionEditModal IsVisible="@showCompositionModal"
                               IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
                               QuotationDetailId="@GetSelectedQuotationDetailId()"
                               ProductName="@selectedCompositionProductName"
                               ProductId="@selectedCompositionProductId"
+                              SelectedCompositionId="@selectedCompositionId"
+                              IsCustomMode="@isCustomCompositionMode"
                               IsReadOnly="@GetCompositionModalReadOnlyState()"
                               OnSave="@HandleCompositionSave"
                               OnCancel="@(() => showCompositionModal = false)"
@@ -205,9 +215,13 @@ else
     
     // ===== BOM 組合編輯相關 =====
     private bool showCompositionModal = false;
+    private bool showCompositionSelectorModal = false;
     private int? selectedQuotationItemIndex = null;
     private string selectedCompositionProductName = string.Empty;
     private int? selectedCompositionProductId = null;
+    private int? selectedCompositionId = null;
+    private bool isCustomCompositionMode = false;
+    private List<ProductComposition> availableCompositions = new();
     private Dictionary<int, List<QuotationCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
 
@@ -705,15 +719,36 @@ else
     }
     
     /// <summary>
-    /// 顯示 BOM 組合編輯器
+    /// 顯示 BOM 組合編輯器 - 先顯示配方選擇器
     /// </summary>
-    private void ShowCompositionEditor(QuotationItem item)
+    private async Task ShowCompositionEditor(QuotationItem item)
     {
         if (item.SelectedProduct == null) return;
         
         selectedQuotationItemIndex = QuotationItems.IndexOf(item);
         selectedCompositionProductName = item.SelectedProduct.Name;
         selectedCompositionProductId = item.SelectedProduct.Id;
+        
+        // 載入該產品的所有配方
+        availableCompositions = await ProductCompositionService
+            .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
+        
+        // 顯示配方選擇器
+        showCompositionSelectorModal = true;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理配方選擇
+    /// </summary>
+    private void HandleCompositionSelected((int? compositionId, bool isCustomMode) selection)
+    {
+        showCompositionSelectorModal = false;
+        
+        selectedCompositionId = selection.compositionId;
+        isCustomCompositionMode = selection.isCustomMode;
+        
+        // 開啟 BOM 編輯器
         showCompositionModal = true;
         StateHasChanged();
     }

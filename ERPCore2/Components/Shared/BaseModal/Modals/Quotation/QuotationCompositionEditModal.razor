@@ -31,6 +31,8 @@
     [Parameter] public EventCallback<List<QuotationCompositionDetail>> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Func<List<QuotationCompositionDetail>?>? OnRequestCachedData { get; set; }
+    [Parameter] public int? SelectedCompositionId { get; set; }  // 選中的配方 ID
+    [Parameter] public bool IsCustomMode { get; set; } = false;  // 是否為自定義模式
 
     // ===== 私有欄位 =====
     private bool isLoading = false;
@@ -39,6 +41,11 @@
     private List<ERPCore2.Data.Entities.Product> availableProducts = new();
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
     private InteractiveTableComponent<QuotationCompositionDetail>? tableComponent;
+    
+    // ===== 自定義模式相關 =====
+    private string componentSearchTerm = string.Empty;
+    private HashSet<int> selectedComponentIds = new();
+    private bool showComponentSelector = false;
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -95,9 +102,36 @@
                 // 已有自訂的組合明細
                 compositionDetails = existingDetails;
             }
+            else if (SelectedCompositionId.HasValue)
+            {
+                // 從指定的配方複製
+                compositionDetails = await QuotationCompositionDetailService.CopyFromCompositionAsync(
+                    QuotationDetailId!.Value,
+                    SelectedCompositionId.Value
+                );
+                
+                //  手動填充導航屬性（因為 CopyFromCompositionAsync 只複製 ID）
+                foreach (var detail in compositionDetails)
+                {
+                    if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                    {
+                        detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                    }
+                    if (detail.UnitId.HasValue && detail.Unit == null)
+                    {
+                        detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                    }
+                }
+            }
+            else if (IsCustomMode)
+            {
+                // 自定義模式 - 顯示組件選擇器
+                compositionDetails = new List<QuotationCompositionDetail>();
+                showComponentSelector = true;
+            }
             else if (ProductId.HasValue)
             {
-                // 從產品合成表複製
+                // 向後相容：從產品合成表複製（使用最新的）
                 compositionDetails = await QuotationCompositionDetailService.CopyFromProductCompositionAsync(
                     QuotationDetailId!.Value,
                     ProductId.Value
@@ -161,6 +195,85 @@
     private RenderFragment BodyContent => __builder =>
     {
         <div class="container-fluid">
+            @* 自定義模式的組件選擇器 *@
+            @if (IsCustomMode && showComponentSelector && !compositionDetails.Any())
+            {
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-stars me-2"></i>
+                        <h6 class="mb-0">自定義模式 - 選擇組件</h6>
+                    </div>
+                    <p class="mb-3 small">請從下方選擇要加入的組件，勾選後可在下方表格編輯數量與單位。</p>
+                    
+                    <!-- 搜尋框 -->
+                    <div class="mb-2">
+                        <input type="text"
+                               class="form-control form-control-sm"
+                               placeholder="搜尋組件代碼或名稱..."
+                               @bind="componentSearchTerm"
+                               @bind:event="oninput" />
+                    </div>
+                    
+                    <!-- 組件選擇清單 -->
+                    <div class="row g-2" style="max-height: 250px; overflow-y: auto;">
+                        @foreach (var product in FilteredAvailableProducts)
+                        {
+                            <div class="col-md-6 col-lg-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox"
+                                           id="product_@product.Id"
+                                           checked="@selectedComponentIds.Contains(product.Id)"
+                                           @onchange="(e) => ToggleComponent(product, (bool)e.Value!)">
+                                    <label class="form-check-label small" for="product_@product.Id">
+                                        [@product.Code] @product.Name
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (!FilteredAvailableProducts.Any())
+                    {
+                        <div class="text-center text-muted small mt-2">
+                            <i class="bi bi-search me-1"></i>
+                            找不到符合條件的組件
+                        </div>
+                    }
+                    
+                    <!-- 操作按鈕 -->
+                    <div class="mt-3 d-flex gap-2">
+                        <GenericButtonComponent Text="完成選擇"
+                                              Variant="ButtonVariant.Green"
+                                              Size="ButtonSize.Small"
+                                              IconClass="bi bi-check-circle"
+                                              OnClick="@(() => showComponentSelector = false)" />
+                        <GenericButtonComponent Text="全部清除"
+                                              Variant="ButtonVariant.OutlineRed"
+                                              Size="ButtonSize.Small"
+                                              IconClass="bi bi-x-circle"
+                                              OnClick="@ClearAllComponents" />
+                    </div>
+                </div>
+            }
+            
+            @* 已選組件提示 *@
+            @if (IsCustomMode && compositionDetails.Any() && showComponentSelector)
+            {
+                <div class="alert alert-success mb-3 d-flex align-items-center justify-content-between">
+                    <span>
+                        <i class="bi bi-check-circle me-2"></i>
+                        已選擇 <strong>@compositionDetails.Count</strong> 個組件
+                    </span>
+                    <GenericButtonComponent Text="繼續選擇"
+                                          Variant="ButtonVariant.OutlineGreen"
+                                          Size="ButtonSize.Small"
+                                          IconClass="bi bi-plus-circle"
+                                          OnClick="@(() => showComponentSelector = true)" />
+                </div>
+            }
+            
+            @* 組件明細表格 *@
             <InteractiveTableComponent @ref="tableComponent"
                                       TItem="QuotationCompositionDetail"
                                       Items="@compositionDetails"
@@ -171,13 +284,25 @@
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="true"
                                       OnItemDelete="@HandleItemDelete"
-                                      EnableAutoEmptyRow="true"
+                                      EnableAutoEmptyRow="@(!IsCustomMode)"
                                       CreateEmptyItem="@CreateEmptyItem"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       IsStriped="true"
                                       IsHoverable="true"
                                       IsBordered="true"
-                                      EmptyMessage="尚未新增組件" />
+                                      EmptyMessage="@GetEmptyMessage()" />
+            
+            @* 自定義模式的新增組件按鈕 *@
+            @if (IsCustomMode && !showComponentSelector && !IsReadOnly)
+            {
+                <div class="mt-2 text-center">
+                    <GenericButtonComponent Text="新增組件"
+                                          Variant="ButtonVariant.OutlineDarkBlue"
+                                          Size="ButtonSize.Small"
+                                          IconClass="bi bi-plus-circle"
+                                          OnClick="@(() => showComponentSelector = true)" />
+                </div>
+            }
         </div>
     };
 
@@ -348,5 +473,88 @@
     private async Task CloseModal()
     {
         await IsVisibleChanged.InvokeAsync(false);
+    }
+    
+    // ===== 自定義模式相關方法 =====
+    
+    /// <summary>
+    /// 過濾可用的組件產品
+    /// </summary>
+    private List<ERPCore2.Data.Entities.Product> FilteredAvailableProducts
+    {
+        get
+        {
+            var products = availableProducts.AsEnumerable();
+            
+            if (!string.IsNullOrWhiteSpace(componentSearchTerm))
+            {
+                products = products.Where(p =>
+                    (p.Code?.Contains(componentSearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (p.Name?.Contains(componentSearchTerm, StringComparison.OrdinalIgnoreCase) ?? false)
+                );
+            }
+            
+            return products.OrderBy(p => p.Code).ToList();
+        }
+    }
+    
+    /// <summary>
+    /// 切換組件選擇
+    /// </summary>
+    private void ToggleComponent(Product product, bool isChecked)
+    {
+        if (isChecked)
+        {
+            // 檢查是否已存在
+            if (!compositionDetails.Any(d => d.ComponentProductId == product.Id))
+            {
+                // 新增組件
+                var newDetail = new QuotationCompositionDetail
+                {
+                    QuotationDetailId = QuotationDetailId ?? 0,
+                    ComponentProductId = product.Id,
+                    ComponentProduct = product,
+                    Quantity = 1,
+                    UnitId = product.UnitId,
+                    Unit = product.Unit
+                };
+                compositionDetails.Add(newDetail);
+                selectedComponentIds.Add(product.Id);
+            }
+        }
+        else
+        {
+            // 移除組件
+            var detail = compositionDetails.FirstOrDefault(d => d.ComponentProductId == product.Id);
+            if (detail != null)
+            {
+                compositionDetails.Remove(detail);
+                selectedComponentIds.Remove(product.Id);
+            }
+        }
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 清除所有組件
+    /// </summary>
+    private void ClearAllComponents()
+    {
+        compositionDetails.Clear();
+        selectedComponentIds.Clear();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得空訊息
+    /// </summary>
+    private string GetEmptyMessage()
+    {
+        if (IsCustomMode)
+        {
+            return "請點擊上方「新增組件」按鈕選擇要加入的組件";
+        }
+        return "尚未新增組件";
     }
 }
