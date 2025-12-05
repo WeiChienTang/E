@@ -94,6 +94,7 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
+    private bool isDetailDataReady = false;
 
     // ===== 生命週期 =====
     protected override async Task OnInitializedAsync()
@@ -313,6 +314,8 @@
     {
         try
         {
+            isDetailDataReady = false;
+            
             // 載入商品列表
             availableProducts = await ProductService.GetAllAsync();
             
@@ -326,6 +329,8 @@
             autoCompleteConfig = new AutoCompleteConfigBuilder<InventoryStock>()
                 .AddField(nameof(InventoryStock.ProductId), "Name", availableProducts)
                 .Build();
+            
+            isDetailDataReady = true;
         }
         catch (Exception ex)
         {
@@ -333,6 +338,7 @@
             availableProducts = new List<Product>();
             availableWarehouses = new List<Warehouse>();
             availableWarehouseLocations = new List<WarehouseLocation>();
+            isDetailDataReady = true;
         }
     }
     
@@ -367,6 +373,9 @@
         {
             if (!InventoryStockId.HasValue) 
             {
+                // 🔑 關鍵修正：新增模式時清空明細（與 PurchaseOrderEditModalComponent 一致）
+                inventoryStockDetails.Clear();
+                
                 // 新增模式：建立新的庫存實體
                 var newInventoryStock = new InventoryStock
                 {
@@ -654,27 +663,55 @@
     {
         try
         {
-            // 一律顯示庫存明細組件（不論是新增或編輯模式）
             @if (editModalComponent?.Entity != null)
             {
-                <InventoryStockTable @ref="inventoryStockDetailManager"
-                                                   TMainEntity="InventoryStock"
-                                                   TDetailEntity="InventoryStockDetail"
-                                                   MainEntity="@editModalComponent.Entity"
-                                                   ExistingDetails="@inventoryStockDetails"
-                                                   SelectedInventoryStockId="@(editModalComponent.Entity.Id > 0 ? editModalComponent.Entity.Id : null)"
-                                                   Warehouses="@availableWarehouses"
-                                                   WarehouseLocations="@availableWarehouseLocations"
-                                                   OnDetailsChanged="@HandleStockDetailsChanged"
-                                                   IsReadOnly="@false"
-                                                   ShowBatchTracking="true"
-                                                   ShowAverageCost="true" />
+                @if (!isDetailDataReady)
+                {
+                    <div class="d-flex justify-content-center align-items-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span class="text-muted">載入明細資料中...</span>
+                    </div>
+                }
+                else if (availableWarehouses != null && availableWarehouses.Any())
+                {
+                    // 檢查是否已選擇商品
+                    @if (editModalComponent.Entity.ProductId > 0)
+                    {
+                        <InventoryStockTable @ref="inventoryStockDetailManager"
+                                                       TMainEntity="InventoryStock"
+                                                       TDetailEntity="InventoryStockDetail"
+                                                       MainEntity="@editModalComponent.Entity"
+                                                       ExistingDetails="@inventoryStockDetails"
+                                                       SelectedInventoryStockId="@(editModalComponent.Entity.Id > 0 ? editModalComponent.Entity.Id : null)"
+                                                       Warehouses="@availableWarehouses"
+                                                       WarehouseLocations="@availableWarehouseLocations"
+                                                       OnDetailsChanged="@HandleStockDetailsChanged"
+                                                       IsReadOnly="@false"
+                                                       ShowBatchTracking="true"
+                                                       ShowAverageCost="true" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            請先選擇商品後再進行庫存明細管理
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning text-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        無可用的倉庫資料，請聯繫系統管理員
+                    </div>
+                }
             }
             else
             {
-                <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    正在載入庫存明細管理功能...
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
                 </div>
             }
         }

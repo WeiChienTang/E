@@ -100,20 +100,10 @@
             return;
         }
         
-        // 檢查庫存主檔是否變更（包含從null到null的新增模式切換）
+        // 🔑 簡化邏輯（與 PurchaseOrderTable 一致）：檢查庫存主檔是否變更
         if (_previousSelectedInventoryStockId != SelectedInventoryStockId)
         {
             _previousSelectedInventoryStockId = SelectedInventoryStockId;
-            StockDetailItems.Clear();
-            await LoadExistingDetailsAsync();
-            return;
-        }
-        
-        // 特殊處理：當都是新增模式(null)但ExistingDetails已清空時，也要重置明細
-        if (!SelectedInventoryStockId.HasValue && 
-            (ExistingDetails == null || !ExistingDetails.Any()) && 
-            StockDetailItems.Any(item => item.SelectedWarehouseId.HasValue && item.SelectedWarehouseId.Value > 0))
-        {
             StockDetailItems.Clear();
             await LoadExistingDetailsAsync();
             return;
