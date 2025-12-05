@@ -299,8 +299,8 @@
                                               Size="ButtonSize.Small"
                                               IsDisabled="@(!pendingComponentIds.Any())"
                                               OnClick="@ConfirmComponentSelection" />
-                        <GenericButtonComponent Text="清除選取"
-                                              Variant="ButtonVariant.OutlineRed"
+                        <GenericButtonComponent Text="清除"
+                                              Variant="ButtonVariant.Red"
                                               Size="ButtonSize.Small"
                                               OnClick="@ClearAllComponents" />
                     </div>
@@ -313,7 +313,7 @@
                 <div class="alert alert-warning mb-3 d-flex align-items-center justify-content-between">
                     <span>
                         <i class="bi bi-check2-square me-2"></i>
-                        已勾選 <strong>@pendingComponentIds.Count</strong> 個組件（尚未確認）
+                        已勾選 <strong>@pendingComponentIds.Count</strong> 個組件（尚未載入）
                     </span>
                 </div>
             }
