@@ -140,7 +140,7 @@ namespace ERPCore2.Data.Context
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
                   
-                  // 產品相關
+                  // 商品相關
                   modelBuilder.Entity<Product>(entity =>
                   {
                         // 欄位對應                        

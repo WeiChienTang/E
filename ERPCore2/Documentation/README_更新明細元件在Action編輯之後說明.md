@@ -180,9 +180,9 @@ private void InitializeSupplierModalManager()
        .Build();
    ```
 
-### 完整範例：訂單明細與產品類別
+### 完整範例：訂單明細與商品類別
 
-假設您有一個訂單編輯頁面，產品類別欄位有 ActionButton，訂單明細會根據產品類別顯示產品：
+假設您有一個訂單編輯頁面，商品類別欄位有 ActionButton，訂單明細會根據商品類別顯示商品：
 
 ```csharp
 // 1. 在明細組件中提供刷新方法
@@ -210,13 +210,13 @@ public class OrderEditModalComponent
     
     private void InitializeCategoryModalManager()
     {
-        categoryModalManager = new RelatedEntityManagerBuilder<ProductCategory>(NotificationService, "產品類別")
+        categoryModalManager = new RelatedEntityManagerBuilder<ProductCategory>(NotificationService, "商品類別")
             .WithPropertyName(nameof(Order.ProductCategoryId))
             .WithReloadCallback(LoadAdditionalDataAsync)
             .WithStateChangedCallback(StateHasChanged)
             .WithRefreshDependentComponents(async category =>
             {
-                // 當類別被編輯後，重新載入該類別的產品
+                // 當類別被編輯後，重新載入該類別的商品
                 if (orderDetailManager != null)
                 {
                     await orderDetailManager.RefreshAvailableProductsAsync();
@@ -271,8 +271,8 @@ sequenceDiagram
 1. **廠商與商品**
    - 編輯廠商的商品關聯後，採購單明細的商品列表需要更新
 
-2. **產品類別與產品**
-   - 編輯產品類別後，產品選擇器需要重新載入該類別的產品
+2. **商品類別與商品**
+   - 編輯商品類別後，商品選擇器需要重新載入該類別的商品
 
 3. **客戶與聯絡人**
    - 編輯客戶後，訂單明細的聯絡人列表需要更新

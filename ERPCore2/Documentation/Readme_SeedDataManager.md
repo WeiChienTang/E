@@ -19,7 +19,7 @@ SeedDataManager/
     ├── BasicDataSeeder.cs      # 基礎資料種子器 (Order: 3)
     ├── CustomerSeeder.cs       # 客戶資料種子器 (Order: 4)
     ├── SupplierSeeder.cs       # 供應商資料種子器 (Order: 5)
-    └── ProductSeeder.cs        # 產品資料種子器 (Order: 6)
+    └── ProductSeeder.cs        # 商品資料種子器 (Order: 6)
 ```
 
 ## 核心組件
@@ -74,8 +74,8 @@ public static class SeedDataHelper
   - 客戶管理權限 (CRUD)
   - 供應商管理權限 (CRUD)
   - 員工管理權限 (CRUD)
-  - 產品管理權限 (CRUD)
-  - 產品分類管理權限 (CRUD)
+  - 商品管理權限 (CRUD)
+  - 商品分類管理權限 (CRUD)
   - 基礎資料管理權限 (材質、天氣、顏色、尺寸、單位等)
   - 權限與角色管理權限 (CRUD)
   - 倉庫管理權限 (CRUD)
@@ -163,17 +163,17 @@ public static class SeedDataHelper
 - 支援供應商分類管理
 - 提供豐富的測試資料
 
-### ProductSeeder (Order: 6) - 產品資料種子器
+### ProductSeeder (Order: 6) - 商品資料種子器
 
-**職責：** 初始化產品相關資料（目前為預留結構）
+**職責：** 初始化商品相關資料（目前為預留結構）
 
-**當前狀態：** 預留給未來產品資料的種子初始化
+**當前狀態：** 預留給未來商品資料的種子初始化
 
 **未來規劃：**
-- 產品主檔資料
-- 產品分類
-- 產品供應商關聯
-- 產品價格資訊
+- 商品主檔資料
+- 商品分類
+- 商品供應商關聯
+- 商品價格資訊
 
 ## 執行流程
 
@@ -204,7 +204,7 @@ await SeedData.InitializeAsync(app.Services);
 3. BasicDataSeeder     → 系統基礎主檔資料
 4. CustomerSeeder      → 客戶示例資料
 5. SupplierSeeder      → 供應商示例資料
-6. ProductSeeder       → 產品資料（預留）
+6. ProductSeeder       → 商品資料（預留）
 ```
 
 ## 設計原則

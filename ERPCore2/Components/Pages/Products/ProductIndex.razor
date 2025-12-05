@@ -9,9 +9,9 @@
                           TService="IProductService"
                           Service="@ProductService"
                           EntityBasePath="/products"
-                          PageTitle="產品維護"                          
-                          PageSubtitle="管理所有產品資料與庫存資訊"
-                          EntityName="產品"
+                          PageTitle="商品維護"                          
+                          PageSubtitle="管理所有商品資料與庫存資訊"
+                          EntityName="商品"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -115,8 +115,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化產品頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化產品頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化商品頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化商品頁面失敗");
             
             // 確保關鍵變數不會是 null
             filterDefinitions ??= new List<SearchFilterDefinition>();
@@ -124,13 +124,13 @@
             breadcrumbItems ??= new List<BreadcrumbItem>();
         }
     }    
-    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("產品管理", NotificationService, GetType());
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("商品管理", NotificationService, GetType());
 
-    // 載入產品資料
-    private Task<List<Product>> LoadProductsAsync() => DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "產品", NotificationService, GetType());
+    // 載入商品資料
+    private Task<List<Product>> LoadProductsAsync() => DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "商品", NotificationService, GetType());
 
-    // 載入產品分類資料
-    private async Task LoadProductCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ProductService.GetProductCategoriesAsync(), "產品分類", NotificationService, GetType());
+    // 載入商品分類資料
+    private async Task LoadProductCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ProductService.GetProductCategoriesAsync(), "商品分類", NotificationService, GetType());
 
     // 載入供應商資料
     private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => ProductService.GetSuppliersAsync(), "供應商", NotificationService, GetType());

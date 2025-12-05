@@ -6,20 +6,20 @@ using ERPCore2.Data.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 產品合成明細檔（BOM 明細）- 記錄每個成品所需的原料/半成品及其數量
+    /// 商品合成明細檔（BOM 明細）- 記錄每個成品所需的原料/半成品及其數量
     /// </summary>
     [Index(nameof(ComponentProductId))]
     [Index(nameof(ProductCompositionId), nameof(ComponentProductId), IsUnique = true)]
     public class ProductCompositionDetail : BaseEntity
     {
         // 關聯資訊
-        [Required(ErrorMessage = "產品合成主檔為必填")]
-        [Display(Name = "產品合成主檔")]
+        [Required(ErrorMessage = "商品合成主檔為必填")]
+        [Display(Name = "商品合成主檔")]
         [ForeignKey(nameof(ProductComposition))]
         public int ProductCompositionId { get; set; }
 
-        [Required(ErrorMessage = "組件產品為必填")]
-        [Display(Name = "組件產品")]
+        [Required(ErrorMessage = "組件商品為必填")]
+        [Display(Name = "組件商品")]
         [ForeignKey(nameof(ComponentProduct))]
         public int ComponentProductId { get; set; }
 
@@ -40,12 +40,12 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         /// <summary>
-        /// 產品合成主檔
+        /// 商品合成主檔
         /// </summary>
         public ProductComposition ProductComposition { get; set; } = null!;
 
         /// <summary>
-        /// 組件產品
+        /// 組件商品
         /// </summary>
         public Product ComponentProduct { get; set; } = null!;
 

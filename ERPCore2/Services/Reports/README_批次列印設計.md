@@ -447,7 +447,7 @@ private string GenerateEmptyResultPage(BatchPrintCriteria criteria)
 **⚠️ 關鍵設計原則**：
 
 1. **重複使用現有邏輯**：不重新發明輪子，使用現有的單筆報表方法
-2. **資料預載**：共用資料（如產品字典）只載入一次
+2. **資料預載**：共用資料（如商品字典）只載入一次
 3. **自動分頁**：使用 `page-break-after: always` 確保每個單據獨立分頁
 
 ---

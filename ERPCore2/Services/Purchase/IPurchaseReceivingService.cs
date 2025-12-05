@@ -64,9 +64,9 @@ namespace ERPCore2.Services
         Task<bool> IsPurchaseReceivingCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
-        /// 取得指定產品最近一次進貨的倉庫和位置資訊
+        /// 取得指定商品最近一次進貨的倉庫和位置資訊
         /// </summary>
-        /// <param name="productId">產品ID</param>
+        /// <param name="productId">商品ID</param>
         /// <returns>倉庫ID和倉庫位置ID的元組，如無歷史記錄則回傳null</returns>
         Task<(int? WarehouseId, int? WarehouseLocationId)> GetLastReceivingLocationAsync(int productId);
 

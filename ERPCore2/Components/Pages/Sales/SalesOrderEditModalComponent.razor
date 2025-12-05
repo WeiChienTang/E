@@ -832,8 +832,8 @@
                                                           OnDetailsChanged="@HandleDetailsChanged"
                                                           OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                                           OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                                          ItemDisplayName="銷售產品"
-                                                          EmptyMessage="尚未新增銷售產品" />
+                                                          ItemDisplayName="銷售商品"
+                                                          EmptyMessage="尚未新增銷售商品" />
                     }
                     else
                     {
@@ -1683,7 +1683,7 @@
                 
                 if (invalidPriceDetails.Any())
                 {
-                    await NotificationService.ShowErrorAsync("所有產品的單價不可為負數，請檢查並修正");
+                    await NotificationService.ShowErrorAsync("所有商品的單價不可為負數，請檢查並修正");
                     return false;
                 }
             }
@@ -1753,7 +1753,7 @@
     {
         try
         {
-            // 只處理有效的明細（已選擇產品的）
+            // 只處理有效的明細（已選擇商品的）
             var validDetails = salesOrderDetails.Where(d => d.ProductId > 0).ToList();
             
 
@@ -1947,7 +1947,7 @@
     {
         try
         {
-            // 只處理有效的明細（已選擇產品和倉庫的）
+            // 只處理有效的明細（已選擇商品和倉庫的）
             var validDetails = salesOrderDetails
                 .Where(d => d.ProductId > 0 && d.OrderQuantity > 0 && d.WarehouseId.HasValue)
                 .ToList();

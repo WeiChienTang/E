@@ -279,7 +279,7 @@ namespace ERPCore2.Services
                 
                 foreach (var detail in details)
                 {
-                    // 只處理有效的明細（已選擇產品的）
+                    // 只處理有效的明細（已選擇商品的）
                     if (detail.ProductId > 0)
                     {
                         // SubtotalAmount 現在是計算屬性，由 OrderQuantity * UnitPrice 自動計算

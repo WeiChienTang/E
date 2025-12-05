@@ -14,7 +14,7 @@
 ### 業務邏輯
 1. 訂單可以不經報價單直接下單,因此必須在訂單階段提供 BOM 編輯功能
 2. 編輯 BOM 時需顯示各組件的現有庫存數量
-3. 顯示產品的 `CanSchedule` 屬性,判斷該產品是否可排程生產
+3. 顯示商品的 `CanSchedule` 屬性,判斷該商品是否可排程生產
 4. 採用「有下一步則鎖定」的彈性設計
 
 ---
@@ -133,7 +133,7 @@ dotnet ef database update
 Task<List<SalesOrderCompositionDetail>> GetBySalesOrderDetailIdAsync(int salesOrderDetailId);
 
 /// <summary>
-/// 從產品合成表複製 BOM 資料到銷貨訂單
+/// 從商品合成表複製 BOM 資料到銷貨訂單
 /// </summary>
 Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
     int salesOrderDetailId, int productId);
@@ -238,7 +238,7 @@ if (entity.SalesOrderDetailId <= 0)
     return ServiceResult.Failure("銷貨訂單明細ID無效");
 
 if (entity.ComponentProductId <= 0)
-    return ServiceResult.Failure("組件產品ID無效");
+    return ServiceResult.Failure("組件商品ID無效");
 
 if (entity.Quantity <= 0)
     return ServiceResult.Failure("數量必須大於0");
@@ -296,7 +296,7 @@ private async Task LoadProductStockQuantitiesAsync()
         
         foreach (var product in availableProducts)
         {
-            // 取得該產品在所有倉庫的庫存並加總
+            // 取得該商品在所有倉庫的庫存並加總
             var stocks = await InventoryStockService.GetByProductIdAsync(product.Id);
             var totalStock = stocks.Sum(s => s.TotalCurrentStock);
             productStockQuantities[product.Id] = totalStock;
@@ -311,7 +311,7 @@ private async Task LoadProductStockQuantitiesAsync()
 
 #### UI 呈現 - 庫存徽章
 ```html
-<!-- 產品選擇下拉選單 -->
+<!-- 商品選擇下拉選單 -->
 <option value="@product.Id">
     @product.Name (@product.Code)
     @if (productStockQuantities.TryGetValue(product.Id, out var stock))
@@ -334,7 +334,7 @@ private async Task LoadProductStockQuantitiesAsync()
     }
 </td>
 
-<!-- 產品排程提示 -->
+<!-- 商品排程提示 -->
 <td class="text-center">
     @if (detail.ComponentProduct?.CanSchedule == true)
     {
@@ -347,7 +347,7 @@ private async Task LoadProductStockQuantitiesAsync()
 </td>
 ```
 
-#### 從產品 BOM 複製功能
+#### 從商品 BOM 複製功能
 ```csharp
 private async Task CopyFromProductCompositionAsync()
 {
@@ -361,11 +361,11 @@ private async Task CopyFromProductCompositionAsync()
         if (copiedDetails.Any())
         {
             compositionDetails = copiedDetails;
-            await NotificationService.ShowSuccessAsync($"已從產品 BOM 複製 {copiedDetails.Count} 筆組成");
+            await NotificationService.ShowSuccessAsync($"已從商品 BOM 複製 {copiedDetails.Count} 筆組成");
         }
         else
         {
-            await NotificationService.ShowWarningAsync("該產品無 BOM 資料");
+            await NotificationService.ShowWarningAsync("該商品無 BOM 資料");
         }
     }
     catch (Exception ex)
@@ -707,7 +707,7 @@ catch (Exception ex)
 ```
 
 **注意事項**:
-1. BOM 組成的轉換不會影響原始的產品合成表 (`ProductCompositionDetail`)
+1. BOM 組成的轉換不會影響原始的商品合成表 (`ProductCompositionDetail`)
 2. 轉換時會複製所有 BOM 組成明細的屬性
 3. `SalesOrderDetailId` 會在儲存時自動設定(因為此時訂單明細還未存入資料庫)
 4. 即使 BOM 載入失敗,也不會影響基本明細的轉換
@@ -800,12 +800,12 @@ var totalStock = stocks.Sum(s => s.TotalCurrentStock);
 - [ ] ValidateAsync 正確驗證資料
 
 ### UI 測試
-- [ ] SalesOrderTable 正確顯示 BOM 編輯按鈕 (僅顯示有 BOM 的產品)
+- [ ] SalesOrderTable 正確顯示 BOM 編輯按鈕 (僅顯示有 BOM 的商品)
 - [ ] 點擊 BOM 按鈕可開啟編輯 Modal
 - [ ] Modal 正確載入現有 BOM 資料
 - [ ] Modal 顯示正確的庫存數量
-- [ ] Modal 顯示產品的 CanSchedule 狀態
-- [ ] 從產品 BOM 複製功能正常
+- [ ] Modal 顯示商品的 CanSchedule 狀態
+- [ ] 從商品 BOM 複製功能正常
 - [ ] 新增組件功能正常
 - [ ] 編輯組件數量功能正常
 - [ ] 刪除組件功能正常
@@ -892,7 +892,7 @@ entity.HasIndex(e => new { e.SalesOrderDetailId, e.ComponentProductId })
 ## 🎯 未來改進方向
 
 1. **效能優化**
-   - 考慮使用 Redis 快取產品 BOM 資料
+   - 考慮使用 Redis 快取商品 BOM 資料
    - 批次載入庫存資料而非逐一查詢
 
 2. **功能增強**

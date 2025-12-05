@@ -573,10 +573,10 @@ namespace ERPCore2.Controllers
 
         #endregion
 
-        #region 產品條碼列印
+        #region 商品條碼列印
 
         /// <summary>
-        /// 批次生成產品條碼列印報表
+        /// 批次生成商品條碼列印報表
         /// </summary>
         /// <param name="criteria">條碼列印條件</param>
         /// <returns>可列印的條碼 HTML</returns>

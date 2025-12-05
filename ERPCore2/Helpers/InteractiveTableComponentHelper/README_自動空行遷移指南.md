@@ -141,8 +141,8 @@ private async Task LoadExistingDetailsAsync()
 #### ~~需要遷移~~
 - ~~[ ] `MaterialIssueTable.razor` - 領料單（使用 AutoEmptyRowHelper）~~ ✅ 已完成
 - ~~[ ] `InventoryStockTable.razor` - 庫存明細（使用 AutoEmptyRowHelper）~~ ✅ 已完成
-- ~~[ ] `ProductCompositionTable.razor` - 產品組成（使用 AutoEmptyRowHelper）~~ ✅ 已完成
-- ~~[ ] `ProductSupplierTable.razor` - 產品供應商（使用 AutoEmptyRowHelper）~~ ✅ 已完成
+- ~~[ ] `ProductCompositionTable.razor` - 商品組成（使用 AutoEmptyRowHelper）~~ ✅ 已完成
+- ~~[ ] `ProductSupplierTable.razor` - 商品供應商（使用 AutoEmptyRowHelper）~~ ✅ 已完成
 - ~~[ ] `SetoffPrepaymentTable.razor` - 沖銷預付款（使用 AutoEmptyRowHelper）~~ ✅ 已完成
 - ~~[ ] `QuotationTable.razor` - 報價單（使用舊版 EnsureOneEmptyRow）~~ ✅ 已完成
 
@@ -156,10 +156,10 @@ private async Task LoadExistingDetailsAsync()
 - [x] `PurchaseReceivingTable.razor` - 採購進貨（可能不需要自動空行）
 - [x] `PurchaseReturnTable.razor` - 採購退貨（可能不需要自動空行）
 - [x] `BatchApprovalTable.razor` - 批量審核（可能不需要自動空行）
-- [x] `ProductBarcodePrintTable.razor` - 產品條碼列印（可能不需要自動空行）
+- [x] `ProductBarcodePrintTable.razor` - 商品條碼列印（可能不需要自動空行）
 - [x] `StockLevelAlertModalComponent.razor` - 庫存水位警示（檢視用）
 - [x] `StockAlertViewModalComponent.razor` - 庫存警示檢視（檢視用）
-- [x] `SetoffProductTable.razor` - 沖銷產品（可能不需要自動空行）
+- [x] `SetoffProductTable.razor` - 沖銷商品（可能不需要自動空行）
 - [x] `ShortcutKeysModalComponent.razor` - 快捷鍵說明（不需要自動空行）
 
 ---
@@ -175,9 +175,9 @@ private async Task LoadExistingDetailsAsync()
 ### 遷移的元件清單
 
 1. **MaterialIssueTable.razor** - 領料單明細管理
-2. **ProductCompositionTable.razor** - 產品組成明細管理
-3. **ProductSupplierTable.razor** - 產品供應商管理
-4. **SupplierProductTable.razor** - 供應商產品管理
+2. **ProductCompositionTable.razor** - 商品組成明細管理
+3. **ProductSupplierTable.razor** - 商品供應商管理
+4. **SupplierProductTable.razor** - 供應商商品管理
 5. **SetoffPrepaymentTable.razor** - 沖款預收付款項管理
 6. **SetoffPaymentTable.razor** - 沖款收款記錄管理
 7. **QuotationTable.razor** - 報價單明細管理（~1019 行）
@@ -297,19 +297,19 @@ private async Task LoadExistingDetailsAsync()
 - [ ] `SalesDeliveryTable.razor` - 銷貨出貨
 - [ ] `SalesReturnTable.razor` - 銷貨退回
 
-#### 產品相關 (1 個)
-- [ ] `ProductBarcodePrintTable.razor` - 產品條碼列印
+#### 商品相關 (1 個)
+- [ ] `ProductBarcodePrintTable.razor` - 商品條碼列印
 
 #### 倉庫相關 (2 個)
 - [ ] `StockLevelAlertModalComponent.razor` - 庫存水位警示（可能不需要自動空行）
 - [ ] `StockAlertViewModalComponent.razor` - 庫存警示檢視（可能不需要自動空行）
 
 #### 沖銷相關 (2 個)
-- [ ] `SetoffProductTable.razor` - 沖銷產品
+- [ ] `SetoffProductTable.razor` - 沖銷商品
 - [ ] `SetoffPaymentTable.razor` - 沖銷付款
 
 #### 供應商相關 (1 個)
-- [ ] `SupplierProductTable.razor` - 供應商產品
+- [ ] `SupplierProductTable.razor` - 供應商商品
 
 #### 其他 (1 個)
 - [ ] `ShortcutKeysModalComponent.razor` - 快捷鍵說明（可能不需要自動空行）
@@ -654,9 +654,9 @@ columns.Add(new()
 | 2025-01-12 | PurchaseOrderTable.razor | ✅ 首個範例，已完成測試 |
 | 2025-01-12 | TestTable.razor | ✅ 測試用範例 |
 | 2025-01-17 | MaterialIssueTable.razor | ✅ 領料單明細管理 |
-| 2025-01-17 | ProductCompositionTable.razor | ✅ 產品組成明細管理 + Options 類型修正 |
-| 2025-01-17 | ProductSupplierTable.razor | ✅ 產品供應商管理 |
-| 2025-01-17 | SupplierProductTable.razor | ✅ 供應商產品管理 |
+| 2025-01-17 | ProductCompositionTable.razor | ✅ 商品組成明細管理 + Options 類型修正 |
+| 2025-01-17 | ProductSupplierTable.razor | ✅ 商品供應商管理 |
+| 2025-01-17 | SupplierProductTable.razor | ✅ 供應商商品管理 |
 | 2025-01-17 | SetoffPrepaymentTable.razor | ✅ 沖款預收付款項管理 |
 | 2025-01-17 | SetoffPaymentTable.razor | ✅ 沖款收款記錄管理 |
 | 2025-01-17 | QuotationTable.razor | ✅ 報價單明細管理（UI 模板複雜） |

@@ -726,11 +726,11 @@
                 new()
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位
-                    Label = "產品",
+                    Label = "商品",
                     FieldType = FormFieldType.Select,
                     IsRequired = false,
                     Options = await GetFilterProductOptions(),
-                    HelpText = "選擇特定產品進行篩選，或留空顯示所有產品",
+                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
@@ -841,7 +841,7 @@
     }
 
     /// <summary>
-    /// 取得產品篩選選項 - 根據選擇的客戶篩選
+    /// 取得商品篩選選項 - 根據選擇的客戶篩選
     /// </summary>
     private async Task<List<SelectOption>> GetFilterProductOptions()
     {
@@ -849,7 +849,7 @@
         {
             var options = new List<SelectOption>();
             
-            // 目前暫時顯示所有產品，未來可以根據客戶-產品關聯來篩選
+            // 目前暫時顯示所有商品，未來可以根據客戶-商品關聯來篩選
             options.AddRange(products.Select(p => new SelectOption
             {
                 Value = p.Id.ToString(),
@@ -860,25 +860,25 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入產品選項時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入商品選項時發生錯誤：{ex.Message}");
             return new List<SelectOption>();
         }
     }
 
     /// <summary>
-    /// 更新產品篩選選項 - 當客戶變更時調用
+    /// 更新商品篩選選項 - 當客戶變更時調用
     /// </summary>
     private async Task UpdateFilterProductOptions(int? customerId = null)
     {
         try
         {
-            // 找到產品篩選欄位並更新其選項
+            // 找到商品篩選欄位並更新其選項
             var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
             if (filterProductField != null)
             {
                 var options = new List<SelectOption>();
                 
-                // 目前暫時顯示所有產品，未來可以根據客戶-產品關聯來篩選
+                // 目前暫時顯示所有商品，未來可以根據客戶-商品關聯來篩選
                 options.AddRange(products.Select(p => new SelectOption
                 {
                     Value = p.Id.ToString(),
@@ -887,13 +887,13 @@
                 
                 filterProductField.Options = options;
                 
-                // 清空目前的產品篩選選擇
+                // 清空目前的商品篩選選擇
                 filterProductId = null;
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"更新產品篩選選項時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"更新商品篩選選項時發生錯誤：{ex.Message}");
         }
     }
 
@@ -1068,7 +1068,7 @@
     /// 更新欄位的唯讀狀態
     /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
     /// - 客戶 (CustomerId) - 同時禁用新增/編輯按鈕
-    /// - 篩選產品 (FilterProductId)
+    /// - 篩選商品 (FilterProductId)
     /// - 退貨日期 (ReturnDate)
     /// - 退貨原因 (ReturnReasonId)
     /// - 備註 (Remarks)

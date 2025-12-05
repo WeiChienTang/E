@@ -342,7 +342,7 @@ else
         // 商品選擇欄位 - 觸發欄位（第一個欄位預設為觸發欄位）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "產品編號/名稱", 
+            Title = "商品編號/名稱", 
             PropertyName = "ProductSearchValue",
             EmptyCheckPropertyName = "SelectedProduct",  // 檢查 SelectedProduct 物件
             TriggerEmptyRowOnFilled = true,  // 選擇商品後自動新增空行
@@ -1178,7 +1178,7 @@ else
     /// </summary>
     private void OnProductFocus(QuotationItem item)
     {
-        // 只顯示產品類別標記為可販售的商品
+        // 只顯示商品類別標記為可販售的商品
         var availableProducts = Products
             .Where(p => p.ProductCategory != null && 
                        p.ProductCategory.IsSaleable)
@@ -1216,7 +1216,7 @@ else
     {
         item.ProductSearchValue = searchValue ?? string.Empty;
         
-        // 只顯示產品類別標記為可販售的商品
+        // 只顯示商品類別標記為可販售的商品
         var availableProducts = Products
             .Where(p => p.ProductCategory != null && 
                        p.ProductCategory.IsSaleable)

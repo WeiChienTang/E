@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 產品條碼報表服務實作
+    /// 商品條碼報表服務實作
     /// </summary>
     public class ProductBarcodeReportService : IProductBarcodeReportService
     {
@@ -35,7 +35,7 @@ namespace ERPCore2.Services.Reports
                     return GenerateErrorPage($"條件驗證失敗：{validation.GetAllErrors()}");
                 }
 
-                // 載入產品資料
+                // 載入商品資料
                 var products = await LoadProductsAsync(criteria);
 
                 if (products == null || !products.Any())
@@ -53,7 +53,7 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 載入產品資料
+        /// 載入商品資料
         /// </summary>
         private async Task<List<Product>> LoadProductsAsync(ProductBarcodePrintCriteria criteria)
         {
@@ -62,13 +62,13 @@ namespace ERPCore2.Services.Reports
             // 篩選條件
             var query = allProducts.AsQueryable();
 
-            // 只列印有條碼的產品
+            // 只列印有條碼的商品
             if (criteria.OnlyWithBarcode)
             {
                 query = query.Where(p => !string.IsNullOrWhiteSpace(p.Barcode));
             }
 
-            // 篩選特定產品
+            // 篩選特定商品
             if (criteria.ProductIds.Any())
             {
                 query = query.Where(p => criteria.ProductIds.Contains(p.Id));
@@ -97,7 +97,7 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("<head>");
             html.AppendLine("    <meta charset='UTF-8'>");
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine("    <title>產品條碼列印</title>");
+            html.AppendLine("    <title>商品條碼列印</title>");
             
             // 引入 JsBarcode 套件
             html.AppendLine("    <script src='https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js'></script>");
@@ -113,7 +113,7 @@ namespace ERPCore2.Services.Reports
 
             foreach (var product in products)
             {
-                // 取得該產品的列印數量
+                // 取得該商品的列印數量
                 int quantity = 1;
                 if (criteria.PrintQuantities.ContainsKey(product.Id))
                 {
@@ -363,7 +363,7 @@ namespace ERPCore2.Services.Reports
 <body>
     <div class='message'>
         <h1>📭 沒有可列印的條碼</h1>
-        <p>請確認產品是否已設定條碼號碼</p>
+        <p>請確認商品是否已設定條碼號碼</p>
     </div>
     <script>
         setTimeout(function() { window.close(); }, 3000);

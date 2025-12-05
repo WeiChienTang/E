@@ -47,8 +47,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(SalesReturn))]
         public int SalesReturnId { get; set; }
 
-        [Required(ErrorMessage = "產品為必填")]
-        [Display(Name = "產品")]
+        [Required(ErrorMessage = "商品為必填")]
+        [Display(Name = "商品")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
 

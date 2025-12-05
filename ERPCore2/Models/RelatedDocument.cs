@@ -26,7 +26,7 @@ namespace ERPCore2.Models
     SalesOrder,
     
     /// <summary>
-    /// 產品合成表（BOM 配方）
+    /// 商品合成表（BOM 配方）
     /// </summary>
     ProductComposition
 }    /// <summary>
@@ -119,7 +119,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.SetoffDocument => "沖款單",
             RelatedDocumentType.ReceivingDocument => "入庫單",
             RelatedDocumentType.SalesOrder => "銷貨訂單",
-            RelatedDocumentType.ProductComposition => "產品合成表",
+            RelatedDocumentType.ProductComposition => "商品合成表",
             _ => "未知單據"
         };
     }

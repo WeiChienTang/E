@@ -2909,7 +2909,7 @@ private async Task LoadQuotationDetails()
 **重複出現在多個檔案中**:
 
 ```csharp
-// 各個 Table 的產品/廠商/客戶下拉選單
+// 各個 Table 的商品/廠商/客戶下拉選單
 private List<Product> FilteredProducts { get; set; } = new();
 private string _productSearchText = string.Empty;
 
@@ -3016,7 +3016,7 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
         }
         
         /// <summary>
-        /// 建立標準的產品過濾邏輯
+        /// 建立標準的商品過濾邏輯
         /// </summary>
         public static List<T> FilterProducts<T>(
             List<T> products,

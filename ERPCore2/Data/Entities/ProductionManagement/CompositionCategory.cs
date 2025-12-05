@@ -14,7 +14,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         /// <summary>
-        /// 使用此類型的產品合成記錄
+        /// 使用此類型的商品合成記錄
         /// </summary>
         public ICollection<ProductComposition> ProductCompositions { get; set; } = new List<ProductComposition>();
     }

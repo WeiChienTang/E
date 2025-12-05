@@ -6,7 +6,7 @@ using ERPCore2.Helpers;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 產品合成欄位配置
+    /// 商品合成欄位配置
     /// </summary>
     public class ProductCompositionFieldConfiguration : BaseFieldConfiguration<ProductComposition>
     {
@@ -161,7 +161,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化產品合成欄位配置失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化商品合成欄位配置失敗");
                 });
 
                 // 通知使用者
@@ -169,7 +169,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("初始化產品合成欄位配置時發生錯誤，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("初始化商品合成欄位配置時發生錯誤，已使用預設配置");
                     });
                 }
 

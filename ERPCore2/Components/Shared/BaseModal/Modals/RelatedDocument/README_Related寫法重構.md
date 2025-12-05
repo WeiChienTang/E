@@ -39,10 +39,10 @@
 #### 2. **硬編碼的配置**
 - 顏色：`text-purple`, `text-primary`, `text-info`, `text-warning`, `text-success`
 - 圖示：`bi-diagram-3`, `bi-cart-check`, `bi-box-seam`, 等
-- 標題：`產品合成表`, `銷貨訂單`, `入庫記錄`, 等
+- 標題：`商品合成表`, `銷貨訂單`, `入庫記錄`, 等
 
 #### 3. **不一致的欄位顯示邏輯**
-- 產品合成表：只顯示日期和備註
+- 商品合成表：只顯示日期和備註
 - 銷貨訂單：顯示日期、數量、單價、備註
 - 入庫單：顯示日期、數量、單價、備註
 - 退貨單：顯示日期、數量、備註
@@ -53,7 +53,7 @@
 @if (RelatedDocuments?.Any() == true && 
      RelatedDocuments.First().DocumentType == RelatedDocumentType.ProductComposition)
 {
-    @* 只有產品合成表才顯示新增按鈕 *@
+    @* 只有商品合成表才顯示新增按鈕 *@
 }
 ```
 
@@ -118,7 +118,7 @@ Components/Shared/BaseModal/Modals/RelatedDocument/
 │   └── RelatedDocumentSectionComponent.razor     (可重用的區塊組件)
 │
 └── Templates/
-    ├── CompositionDetailsTemplate.razor          (產品合成表詳細欄位範本)
+    ├── CompositionDetailsTemplate.razor          (商品合成表詳細欄位範本)
     ├── SalesOrderDetailsTemplate.razor           (銷貨訂單詳細欄位範本)
     ├── ReceivingDetailsTemplate.razor            (入庫單詳細欄位範本)
     ├── ReturnDetailsTemplate.razor               (退貨單詳細欄位範本)
@@ -151,7 +151,7 @@ namespace ERPCore2.Components.Shared.BaseModal.Modals.RelatedDocument.Config;
 public class DocumentSectionConfig
 {
     /// <summary>
-    /// 區塊標題（例如：「產品合成表」）
+    /// 區塊標題（例如：「商品合成表」）
     /// </summary>
     public string Title { get; init; } = "";
     
@@ -194,7 +194,7 @@ public class DocumentSectionConfig
         {
             RelatedDocumentType.ProductComposition => new()
             {
-                Title = "產品合成表",
+                Title = "商品合成表",
                 Icon = "diagram-3",
                 TextColor = "purple",
                 BadgeColor = "purple",
@@ -356,12 +356,12 @@ public class DocumentSectionConfig
 
 ### 步驟 3：建立詳細欄位範本
 
-#### 範本 1：產品合成表
+#### 範本 1：商品合成表
 
 **檔案**：`Templates/CompositionDetailsTemplate.razor`
 
 ```razor
-@* 產品合成表詳細欄位範本 *@
+@* 商品合成表詳細欄位範本 *@
 <p class="mb-1 text-muted small">
     <span class="text-nowrap">
         <i class="bi bi-calendar3 me-1"></i>
@@ -709,7 +709,7 @@ public class DocumentSectionConfig
 
 ## 📖 使用範例
 
-### 範例 1：在產品編輯頁面中使用（與現有用法相同）
+### 範例 1：在商品編輯頁面中使用（與現有用法相同）
 
 ```razor
 <!-- 相關單據查看 Modal（合成表清單）-->
@@ -836,7 +836,7 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 
 ### 測試清單
 
-- [ ] 產品合成表顯示正確
+- [ ] 商品合成表顯示正確
 - [ ] 銷貨訂單顯示正確
 - [ ] 入庫單顯示正確
 - [ ] 退貨單顯示正確

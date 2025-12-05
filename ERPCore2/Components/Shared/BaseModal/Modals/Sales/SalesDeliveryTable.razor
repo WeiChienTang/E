@@ -535,7 +535,7 @@ else
                     includeCompleted: false,
                     checkApproval: false);
                 
-                // 載入所有啟用的商品，只顯示產品類別標記為可販售的商品
+                // 載入所有啟用的商品，只顯示商品類別標記為可販售的商品
                 var allProducts = await ProductService.GetActiveProductsAsync();
                 AvailableProducts = allProducts
                     .Where(p => p.ProductCategory != null && p.ProductCategory.IsSaleable)
@@ -964,7 +964,7 @@ else
         var combinedItems = new List<object>();
         var availableDetails = GetAvailableSalesDetails();
         
-        // 只顯示產品類別標記為可販售的商品
+        // 只顯示商品類別標記為可販售的商品
         var availableProducts = AvailableProducts
             .Where(p => p.ProductCategory != null && p.ProductCategory.IsSaleable)
             .ToList();

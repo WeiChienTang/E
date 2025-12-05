@@ -101,7 +101,7 @@
     {
         try
         {
-            // 載入產品選項
+            // 載入商品選項
             await LoadProductsAsync();
             
             // 載入倉庫選項
@@ -125,8 +125,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入產品資料失敗");
-            await NotificationService.ShowErrorAsync("載入產品資料失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入商品資料失敗");
+            await NotificationService.ShowErrorAsync("載入商品資料失敗");
             products = new List<Product>();
         }
     }

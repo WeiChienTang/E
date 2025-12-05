@@ -64,12 +64,12 @@ namespace ERPCore2.Data.Entities
         
         // Product Composition (BOM) Navigation Properties
         /// <summary>
-        /// 此產品作為成品的所有 BOM 配方
+        /// 此商品作為成品的所有 BOM 配方
         /// </summary>
         public ICollection<ProductComposition> ProductCompositions { get; set; } = new List<ProductComposition>();
         
         /// <summary>
-        /// 此產品作為組件被使用在哪些 BOM 中
+        /// 此商品作為組件被使用在哪些 BOM 中
         /// </summary>
         public ICollection<ProductCompositionDetail> ComponentInCompositions { get; set; } = new List<ProductCompositionDetail>();
     }

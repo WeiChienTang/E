@@ -5,7 +5,7 @@ using ERPCore2.Data.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 材質實體 - 用於定義產品的材質類型
+    /// 材質實體 - 用於定義商品的材質類型
     /// </summary>
     public class Material : BaseEntity
     {

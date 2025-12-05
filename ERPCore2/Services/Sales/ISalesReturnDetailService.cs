@@ -16,9 +16,9 @@ namespace ERPCore2.Services
         Task<List<SalesReturnDetail>> GetBySalesReturnIdAsync(int salesReturnId);
 
         /// <summary>
-        /// 根據產品ID取得退回明細清單
+        /// 根據商品ID取得退回明細清單
         /// </summary>
-        /// <param name="productId">產品ID</param>
+        /// <param name="productId">商品ID</param>
         /// <returns>明細清單</returns>
         Task<List<SalesReturnDetail>> GetByProductIdAsync(int productId);
 

@@ -204,7 +204,7 @@ namespace ERPCore2.Services
                     // 檢查是否有沖款記錄（TotalPaidAmount > 0 表示已有沖款）
                     if (detail.TotalPaidAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? $"產品ID:{detail.ProductId}";
+                        var productName = detail.Product?.Name ?? $"商品ID:{detail.ProductId}";
                         return ServiceResult.Failure(
                             $"無法刪除此銷貨退回單，因為商品「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N2} 元）");
                     }

@@ -15,7 +15,7 @@
 當存在不可刪除的明細時，以下主檔欄位會被設為唯讀：
 - **廠商** (`SupplierId`) - 同時移除「新增」和「編輯」操作按鈕
 - **採購單** (`PurchaseOrderId`)
-- **產品篩選** (`FilterProductId`)
+- **商品篩選** (`FilterProductId`)
 - **進貨日** (`ReceiptDate`)
 - **備註** (`Remarks`)
 
@@ -118,7 +118,7 @@ private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
 /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
 /// - 廠商 (SupplierId) - 同時禁用新增/編輯按鈕
 /// - 採購單 (PurchaseOrderId)
-/// - 產品篩選 (FilterProductId)
+/// - 商品篩選 (FilterProductId)
 /// - 進貨日 (ReceiptDate)
 /// - 備註 (Remarks)
 /// </summary>
@@ -147,7 +147,7 @@ private void UpdateFieldsReadOnlyState()
         purchaseOrderField.IsReadOnly = hasUndeletableDetails;
     }
     
-    // 產品篩選欄位
+    // 商品篩選欄位
     var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
     if (filterProductField != null)
     {
@@ -219,7 +219,7 @@ private async Task OnFieldValueChanged((string PropertyName, object? Value) fiel
 3. `LoadReturnedQuantitiesAsync()` 檢測到某些明細已退貨
 4. 觸發 `NotifyHasUndeletableDetailsChanged()` → 傳遞 `true`
 5. 父組件收到通知，調用 `UpdateFieldsReadOnlyState()`
-6. 廠商、採購單、產品篩選、進貨日、備註欄位變為唯讀
+6. 廠商、採購單、商品篩選、進貨日、備註欄位變為唯讀
 7. 用戶無法修改這些關鍵欄位
 
 ### 場景 2：新增明細後發現有不可刪除項
@@ -240,7 +240,7 @@ private async Task OnFieldValueChanged((string PropertyName, object? Value) fiel
 
 ### ✅ 數據一致性
 - 防止修改已退貨或已沖款明細的關鍵資訊
-- 避免廠商/產品不一致導致的財務錯誤
+- 避免廠商/商品不一致導致的財務錯誤
 - **防止透過操作按鈕繞過唯讀限制**
 
 ### ✅ 自動化
@@ -286,7 +286,7 @@ private async Task OnFieldValueChanged((string PropertyName, object? Value) fiel
 **被鎖定的欄位（使用者可輸入）：**
 - 廠商（同時移除操作按鈕）
 - 採購單
-- 產品篩選
+- 商品篩選
 - **進貨日**
 - **備註**
 

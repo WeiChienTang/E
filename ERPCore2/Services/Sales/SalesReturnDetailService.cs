@@ -127,7 +127,7 @@ namespace ERPCore2.Services
                     errors.Add("必須指定銷貨退回");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("必須選擇產品");
+                    errors.Add("必須選擇商品");
 
                 if (entity.ReturnQuantity <= 0)
                     errors.Add("退回數量必須大於零");

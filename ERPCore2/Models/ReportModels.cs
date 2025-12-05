@@ -240,7 +240,7 @@ namespace ERPCore2.Models
         public List<TDetailEntity>? DetailEntities { get; set; }
         
         /// <summary>
-        /// 額外的報表資料（如供應商資訊、產品資訊等）
+        /// 額外的報表資料（如供應商資訊、商品資訊等）
         /// </summary>
         public Dictionary<string, object> AdditionalData { get; set; } = new();
     }

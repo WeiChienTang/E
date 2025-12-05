@@ -167,10 +167,14 @@ app.UseAuthorization();
 app.UseMiddleware<PermissionCheckMiddleware>();
 
 // 設定靜態檔案存取 - 提供 Resources 資料夾的圖片
+var resourcesPath = Path.Combine(builder.Environment.ContentRootPath, "Resources");
+if (!Directory.Exists(resourcesPath))
+{
+    Directory.CreateDirectory(resourcesPath);
+}
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Resources")),
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(resourcesPath),
     RequestPath = "/Resources"
 });
 

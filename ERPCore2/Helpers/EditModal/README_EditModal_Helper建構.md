@@ -597,7 +597,7 @@ public class PurchaseOrder : BaseEntity
 - ✅ EmployeeEditModalComponent - "EMP"
 - ✅ CompanyEditModalComponent - "COMP"
 
-**B. 產品相關 (6 個) - Timestamp 策略**
+**B. 商品相關 (6 個) - Timestamp 策略**
 - ✅ ProductCompositionEditModalComponent - "PC"
 - ✅ SizeEditModalComponent - "SIZE"
 - ✅ UnitEditModalComponent - "UNIT"
@@ -805,7 +805,7 @@ var code = await GenerateForEntity(service, DbContext);  // 編譯錯誤
 ```
 格式: {Prefix}{yyyyMMddHHmmss}
 範例: CUST20251110143025
-用途: 基礎主檔（客戶、廠商、產品等）
+用途: 基礎主檔（客戶、廠商、商品等）
 ```
 
 **2. TimestampWithSequence（時間戳記 + 序號）** ⭐ 主推策略
@@ -971,16 +971,16 @@ private async Task<Supplier?> LoadSupplierData()
 - ✅ CurrencyEditModalComponent - 幣別設定
 - ✅ BankEditModalComponent - 銀行資料
 
-**產品相關 (3 個)**
+**商品相關 (3 個)**
 - ✅ SizeEditModalComponent - 尺寸規格
 - ✅ UnitEditModalComponent - 單位設定
-- ✅ ProductCategoryEditModalComponent - 產品分類
+- ✅ ProductCategoryEditModalComponent - 商品分類
 
 **銷售相關 (1 個)**
 - ✅ SalesReturnReasonEditModalComponent - 退貨原因
 
 **生產管理 (2 個)**
-- ✅ ProductCompositionEditModalComponent - 產品組成
+- ✅ ProductCompositionEditModalComponent - 商品組成
 - ✅ ProductionScheduleEditModalComponent - 生產排程
 
 **系統設定 (3 個)**
@@ -1312,7 +1312,7 @@ autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseOrder>()
 - ✅ EmployeeEditModalComponent - 3 個 AutoComplete 欄位 (DepartmentId, PositionId, RoleId)
 - ✅ SupplierEditModalComponent - 0 個 AutoComplete 欄位 (空配置,預留擴充)
 
-**產品相關 (1 個)**
+**商品相關 (1 個)**
 - ✅ ProductEditModalComponent - 3 個 AutoComplete 欄位 (ProductCategoryId, UnitId, SizeId)
 
 **倉庫相關 (3 個)**
@@ -1354,7 +1354,7 @@ autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseOrder>()
 
 ✅ 所有包含 AutoComplete 欄位的 EditModal  
 ✅ 客戶、廠商、員工等關聯實體選擇  
-✅ 產品、倉庫等資料選擇  
+✅ 商品、倉庫等資料選擇  
 ✅ 需要複合搜尋條件的場景（如 EmployeeEditModal 的 DepartmentId）  
 ✅ 需要根據權限動態配置的場景  
 
@@ -1698,7 +1698,7 @@ customerModalManager = modalManagers.Get<Customer>(nameof(SalesOrder.CustomerId)
 - ✅ **CustomerEditModalComponent** - 2 個 Manager (Employee, PaymentMethod)
   - 程式碼減少: 74 行 → 13 行
 
-**產品相關 (2 個)**
+**商品相關 (2 個)**
 - ✅ **ProductEditModalComponent** - 3 個 Manager (ProductCategory, Unit, Size)
   - 程式碼減少: 90 行 → 17 行
 - ✅ **ProductCompositionEditModalComponent** - 3 個 Manager (ParentProduct, Customer, CreatedByEmployee)

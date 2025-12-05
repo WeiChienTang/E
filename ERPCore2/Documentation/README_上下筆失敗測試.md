@@ -195,7 +195,7 @@ private async Task NavigateToRecordAsync(int targetId)
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@ProductId"  <!-- 🔑 關鍵：雙向綁定 -->
                           Service="@ProductService"
-                          EntityName="產品"
+                          EntityName="商品"
                           DataLoader="@LoadProductData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"

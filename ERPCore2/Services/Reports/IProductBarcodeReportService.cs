@@ -3,7 +3,7 @@ using ERPCore2.Models;
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 產品條碼報表服務介面
+    /// 商品條碼報表服務介面
     /// </summary>
     public interface IProductBarcodeReportService
     {

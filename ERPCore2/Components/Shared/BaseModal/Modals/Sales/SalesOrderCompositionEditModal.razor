@@ -107,7 +107,7 @@
                 }
                 else if (ProductId.HasValue)
                 {
-                    // 資料庫沒有資料，但有產品 ID，從產品合成表複製預設 BOM
+                    // 資料庫沒有資料，但有商品 ID，從商品合成表複製預設 BOM
                     // ⚠️ 注意：這裡不會覆蓋快取資料，因為快取檢查在前面已經 return 了
                     compositionDetails = await SalesOrderCompositionDetailService.CopyFromProductCompositionAsync(
                         SalesOrderDetailId.Value,
@@ -185,7 +185,7 @@
             
             foreach (var product in availableProducts)
             {
-                // 取得該產品在所有倉庫的庫存並加總
+                // 取得該商品在所有倉庫的庫存並加總
                 var stocks = await InventoryStockService.GetByProductIdAsync(product.Id);
                 var totalStock = stocks.Sum(s => s.TotalCurrentStock);
                 productStockQuantities[product.Id] = totalStock;
@@ -248,7 +248,7 @@
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 組件產品（加入庫存資訊）
+        // 組件商品（加入庫存資訊）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "品項",

@@ -128,7 +128,7 @@ namespace ERPCore2.Services
                     errors.Add("報價單為必選項目");
 
                 if (entity.ProductId <= 0)
-                    errors.Add("產品為必選項目");
+                    errors.Add("商品為必選項目");
 
                 if (entity.Quantity <= 0)
                     errors.Add("報價數量必須大於 0");

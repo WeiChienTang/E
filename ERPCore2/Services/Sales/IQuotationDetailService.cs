@@ -24,9 +24,9 @@ namespace ERPCore2.Services
         Task<ServiceResult> DeleteByQuotationIdAsync(int quotationId);
 
         /// <summary>
-        /// 根據產品ID取得報價單明細列表
+        /// 根據商品ID取得報價單明細列表
         /// </summary>
-        /// <param name="productId">產品ID</param>
+        /// <param name="productId">商品ID</param>
         /// <returns>報價單明細列表</returns>
         Task<List<QuotationDetail>> GetByProductIdAsync(int productId);
 

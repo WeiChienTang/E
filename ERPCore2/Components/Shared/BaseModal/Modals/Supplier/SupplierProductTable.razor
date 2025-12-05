@@ -1,4 +1,4 @@
-@* 供應商產品管理組件 - 管理供應商的多個產品資訊 - 使用 InteractiveTableComponent 統一UI *@
+@* 供應商商品管理組件 - 管理供應商的多個商品資訊 - 使用 InteractiveTableComponent 統一UI *@
 
 @inject INotificationService NotificationService
 @using ERPCore2.Helpers
@@ -30,18 +30,18 @@
 
     // ===== 基本參數 =====
     [Parameter] public List<TProductSupplierEntity> Items { get; set; } = new();
-    [Parameter] public List<TProductEntity> ProductOptions { get; set; } = new(); // 產品選項
+    [Parameter] public List<TProductEntity> ProductOptions { get; set; } = new(); // 商品選項
     [Parameter] public List<Unit> UnitOptions { get; set; } = new(); // 單位選項
     [Parameter] public int ParentEntityId { get; set; } // 供應商ID
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
     // ===== 顯示設定 =====
-    [Parameter] public string Title { get; set; } = "產品資訊";
+    [Parameter] public string Title { get; set; } = "商品資訊";
     [Parameter] public string Subtitle { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "box-seam";
-    [Parameter] public string ItemDisplayName { get; set; } = "產品";
+    [Parameter] public string ItemDisplayName { get; set; } = "商品";
     [Parameter] public string EmptyIcon { get; set; } = "box";
-    [Parameter] public string EmptyMessage { get; set; } = "尚未新增產品";
+    [Parameter] public string EmptyMessage { get; set; } = "尚未新增商品";
     
     // ===== 委派參數 - Getter =====
     [Parameter] public Func<TProductSupplierEntity, int?> GetProductId { get; set; } = item => null;
@@ -101,7 +101,7 @@
     // ===== 建立空項目方法 =====
     
     /// <summary>
-    /// 創建空的供應商產品項目
+    /// 創建空的供應商商品項目
     /// </summary>
     private TProductSupplierEntity CreateEmptyItem()
     {
@@ -115,14 +115,14 @@
     {
         return new List<InteractiveColumnDefinition>
         {
-            // 產品選擇欄位
+            // 商品選擇欄位
             new() 
             { 
-                Title = "產品", 
+                Title = "商品", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "25%",
-                Tooltip = "選擇此供應商供應的產品",
+                Tooltip = "選擇此供應商供應的商品",
                 CustomTemplate = item => 
                 {
                     var productSupplier = (TProductSupplierEntity)item;
@@ -132,9 +132,9 @@
                     return @<select class="form-select form-select-sm" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
-                                    title="選擇此供應商供應的產品"
+                                    title="選擇此供應商供應的商品"
                                     @onchange="@(async (e) => await OnProductChanged((productSupplier, e.Value)))">
-                        <option value="">請選擇產品</option>
+                        <option value="">請選擇商品</option>
                         @foreach (var product in ProductOptions)
                         {
                             <option value="@GetProductOptionId(product)">@GetProductOptionDisplayText(product)</option>
@@ -150,7 +150,7 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "20%",
-                Tooltip = "輸入供應商對此產品的商品代碼或料號",
+                Tooltip = "輸入供應商對此商品的商品代碼或料號",
                 CustomTemplate = item => 
                 {
                     var productSupplier = (TProductSupplierEntity)item;
@@ -160,7 +160,7 @@
                                    class="form-control " 
                                    value="@value"
                                    placeholder="請輸入代碼"
-                                   title="輸入供應商對此產品的商品代碼或料號"
+                                   title="輸入供應商對此商品的商品代碼或料號"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -173,7 +173,7 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
-                Tooltip = "輸入供應商對此產品的報價金額",
+                Tooltip = "輸入供應商對此商品的報價金額",
                 CustomTemplate = item => 
                 {
                     var productSupplier = (TProductSupplierEntity)item;
@@ -184,7 +184,7 @@
                                    value="@value"
                                    min="0"
                                    step="1"
-                                   title="輸入供應商對此產品的報價金額"
+                                   title="輸入供應商對此商品的報價金額"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
                 }
@@ -243,7 +243,7 @@
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "15%",
-                Tooltip = "選擇供應商供應此產品的計量單位",
+                Tooltip = "選擇供應商供應此商品的計量單位",
                 CustomTemplate = item => 
                 {
                     var productSupplier = (TProductSupplierEntity)item;
@@ -253,7 +253,7 @@
                     return @<select class="form-select form-select-sm" 
                                     value="@selectedValue"
                                     disabled="@IsReadOnly"
-                                    title="選擇供應商供應此產品的計量單位"
+                                    title="選擇供應商供應此商品的計量單位"
                                     @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
                         <option value="">請選擇單位</option>
                         @foreach (var unit in UnitOptions)
@@ -285,7 +285,7 @@
                 return GetProductOptionDisplayText(product);
             }
         }
-        return "未知產品";
+        return "未知商品";
     }
 
     private string GetUnitDisplayText(TProductSupplierEntity item)
@@ -309,11 +309,11 @@
     
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
         {
-            // 檢查是否已存在相同產品
+            // 檢查是否已存在相同商品
             var existingProductIds = Items.Where(i => i != productSupplier).Select(item => GetProductId(item)).Where(id => id.HasValue && id.Value > 0);
             if (existingProductIds.Any(id => id!.Value == productId))
             {
-                await NotificationService.ShowErrorAsync("此產品已存在，請選擇其他產品");
+                await NotificationService.ShowErrorAsync("此商品已存在，請選擇其他商品");
                 SetProductId(productSupplier, null);
             }
             else
@@ -444,15 +444,15 @@
         
         if (!nonEmptyItems.Any())
         {
-            errors.Add("至少需要一個產品");
+            errors.Add("至少需要一個商品");
         }
         else
         {
-            // 檢查重複產品
+            // 檢查重複商品
             var productIds = nonEmptyItems.Select(item => GetProductId(item)).Where(id => id.HasValue).ToList();
             if (productIds.Count != productIds.Distinct().Count())
             {
-                errors.Add("存在重複的產品");
+                errors.Add("存在重複的商品");
             }
         }
           

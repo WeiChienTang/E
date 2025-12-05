@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 顏色類型 - 產品基礎元素
+    /// 顏色類型 - 商品基礎元素
     /// </summary>
     public class Color : BaseEntity
     {

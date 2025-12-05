@@ -41,7 +41,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "RR001",
                     Name = "品質不良",
-                    Remarks = "產品品質不符合標準或有瑕疵",
+                    Remarks = "商品品質不符合標準或有瑕疵",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1,
                     CreatedBy = createdBy
@@ -50,7 +50,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "RR002",
                     Name = "規格不符",
-                    Remarks = "產品規格與訂單要求不符",
+                    Remarks = "商品規格與訂單要求不符",
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt2,
                     CreatedBy = createdBy

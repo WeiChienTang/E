@@ -303,6 +303,10 @@
                 case FormFieldType.Checkbox:
                     var checkboxValue = GetPropertyValue(Model, field.PropertyName);
                     var boolValue = checkboxValue is bool b && b;
+                    @* 顯示標籤在上方（與其他欄位一致的上下排列格式）*@
+                    <label class="form-label fw-bold" for="@field.PropertyName" title="@field.HelpText">
+                        @field.Label
+                    </label>
                     <div class="form-check">
                         <input type="checkbox"
                                class="form-check-input"
@@ -312,9 +316,6 @@
                                autocomplete="off"
                                checked="@boolValue"
                                @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value))" />
-                        <label class="form-check-label" for="@field.PropertyName">
-                            @field.Label
-                        </label>
                     </div>
                     break;
                     

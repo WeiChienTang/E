@@ -7,12 +7,12 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     /// <summary>
-    /// 產品類別資料種子類別
+    /// 商品類別資料種子類別
     /// </summary>
     public class ProductCategorySeeder : IDataSeeder
     {
         public int Order => 5;
-        public string Name => "產品類別";
+        public string Name => "商品類別";
 
         public async Task SeedAsync(AppDbContext context)
         {
@@ -33,7 +33,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PC001",
                     Name = "成品",
-                    Remarks = "已完成製造的產品",
+                    Remarks = "已完成製造的商品",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"

@@ -108,7 +108,7 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<Product>(nameof(InventoryStock.ProductId), "產品")
+                .AddManager<Product>(nameof(InventoryStock.ProductId), "商品")
                 .Build();
             productModalManager = modalManagers.Get<Product>(nameof(InventoryStock.ProductId));
             
@@ -186,6 +186,23 @@
     {
         try
         {
+            // 🔑 關鍵修正：儲存成功後刷新明細資料
+            // 這確保新增的明細會獲得正確的 ID，避免重複新增
+            if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
+            {
+                // 1. 重新載入明細資料
+                await LoadInventoryStockDetails(editModalComponent.Entity.Id);
+                
+                // 2. 觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+                StateHasChanged();
+                
+                // 3. 觸發 Table 元件刷新
+                if (inventoryStockDetailManager != null)
+                {
+                    await inventoryStockDetailManager.RefreshDetailsAsync();
+                }
+            }
+            
             // 如果父組件需要知道庫存已儲存
             if (OnInventoryStockSaved.HasDelegate && editModalComponent?.Entity != null)
             {
@@ -296,7 +313,7 @@
     {
         try
         {
-            // 載入產品列表
+            // 載入商品列表
             availableProducts = await ProductService.GetAllAsync();
             
             // 載入倉庫列表  

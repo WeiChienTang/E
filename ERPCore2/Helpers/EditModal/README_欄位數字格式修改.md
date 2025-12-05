@@ -125,7 +125,7 @@ public Func<object, string?>? TooltipFunc { get; set; }
 
 **修改詳情**:
 - 領料單: 領貨數量 → Number 類型
-- 產品組成: 所需數量 → Number 類型
+- 商品組成: 所需數量 → Number 類型
 
 ---
 

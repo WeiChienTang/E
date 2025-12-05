@@ -1,18 +1,18 @@
-# 產品合成表（BOM）選擇功能說明
+# 商品合成表（BOM）選擇功能說明
 
 ## 📋 概述
 
-本功能允許使用者在建立報價單或銷貨訂單明細時，針對具有多個 BOM 配方的產品，選擇要使用的特定配方，或選擇自定義模式手動建立組成。
+本功能允許使用者在建立報價單或銷貨訂單明細時，針對具有多個 BOM 配方的商品，選擇要使用的特定配方，或選擇自定義模式手動建立組成。
 
 ## 🎯 功能背景
 
 ### 問題描述
 
-系統對於具有多筆 BOM 配方的產品，需要讓使用者選擇要使用哪一種配方。這在以下情境非常重要：
+系統對於具有多筆 BOM 配方的商品，需要讓使用者選擇要使用哪一種配方。這在以下情境非常重要：
 
-- 同一產品針對不同客戶有不同的 BOM 配方
-- 同一產品有不同規格的 BOM 配方
-- 同一產品有不同類型的 BOM 配方（例如：標準版、加強版、經濟版）
+- 同一商品針對不同客戶有不同的 BOM 配方
+- 同一商品有不同規格的 BOM 配方
+- 同一商品有不同類型的 BOM 配方（例如：標準版、加強版、經濟版）
 
 ### 解決方案
 
@@ -458,12 +458,12 @@ private void OpenComponentSelector()
 顯示「已加入 X 個組件」（綠色成功樣式）+ 「繼續新增」按鈕
 ```
 
-### 排除當前產品本身
+### 排除當前商品本身
 
-**問題**：在自定義模式選擇組件時，可用的組件清單不應包含當前正在編輯的產品本身，否則會造成無限迴圈（A 產品的 BOM 包含 A 產品）。
+**問題**：在自定義模式選擇組件時，可用的組件清單不應包含當前正在編輯的商品本身，否則會造成無限迴圈（A 商品的 BOM 包含 A 商品）。
 
 **解決方案**：
-在 `FilteredAvailableProducts` 屬性中排除當前產品：
+在 `FilteredAvailableProducts` 屬性中排除當前商品：
 
 ```csharp
 private List<ERPCore2.Data.Entities.Product> FilteredAvailableProducts
@@ -472,7 +472,7 @@ private List<ERPCore2.Data.Entities.Product> FilteredAvailableProducts
     {
         var products = availableProducts.AsEnumerable();
         
-        // 排除當前產品本身，避免無限迴圈
+        // 排除當前商品本身，避免無限迴圈
         if (ProductId.HasValue)
         {
             products = products.Where(p => p.Id != ProductId.Value);

@@ -1,4 +1,4 @@
-@* 可重用的產品編輯組件 - 可在任何頁面中嵌入 *@
+@* 可重用的商品編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Helpers
 @using ERPCore2.Models
 @inject IProductService ProductService
@@ -20,9 +20,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@ProductId"
                           Service="@ProductService"
-                          EntityName="產品"
-                          EntityNamePlural="產品"
-                          ModalTitle="@(ProductId.HasValue ? "編輯產品" : "新增產品")"
+                          EntityName="商品"
+                          EntityNamePlural="商品"
+                          ModalTitle="@(ProductId.HasValue ? "編輯商品" : "新增商品")"
                           Size="GenericEditModalComponent<Product, IProductService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
@@ -34,8 +34,8 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadProductData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(ProductId.HasValue ? "編輯產品成功" : "新增產品成功")"
-                          SaveFailureMessage="產品儲存失敗"
+                          SaveSuccessMessage="@(ProductId.HasValue ? "編輯商品成功" : "新增商品成功")"
+                          SaveFailureMessage="商品儲存失敗"
                           RequiredPermission="Product.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
@@ -43,7 +43,7 @@
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomActionButtons="@CustomActionButtons" />
 
-@* 產品分類編輯 Modal *@
+@* 商品分類編輯 Modal *@
 <ProductCategoryEditModalComponent @ref="productCategoryEditModal"
                                   IsVisible="@productCategoryModalManager.IsModalVisible"
                                   IsVisibleChanged="@productCategoryModalManager.HandleModalVisibilityChangedAsync"
@@ -70,7 +70,7 @@
                        OnSizeSaved="@OnSizeSavedWrapper"
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
-@* 產品合成表編輯 Modal *@
+@* 商品合成表編輯 Modal *@
 <ProductCompositionEditModalComponent @ref="productCompositionEditModal"
                                      IsVisible="@productCompositionModalManager.IsModalVisible"
                                      IsVisibleChanged="@productCompositionModalManager.HandleModalVisibilityChangedAsync"
@@ -162,7 +162,7 @@
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<ProductCategory>(nameof(Product.ProductCategoryId), "產品類別")
+                .AddManager<ProductCategory>(nameof(Product.ProductCategoryId), "商品類別")
                 .AddManager<Unit>(nameof(Product.UnitId), "單位")
                 .AddManager<Size>(nameof(Product.SizeId), "尺寸")
                 .Build();
@@ -170,11 +170,11 @@
             unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
             sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
             
-            // 初始化產品合成表 Modal 管理器（獨立初始化）
+            // 初始化商品合成表 Modal 管理器（獨立初始化）
             productCompositionModalManager = new RelatedEntityModalManager<ProductComposition>
             {
                 NotificationService = NotificationService,
-                EntityDisplayName = "產品合成表",
+                EntityDisplayName = "商品合成表",
                 StateHasChangedCallback = StateHasChanged
             };
             
@@ -182,7 +182,7 @@
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("初始化產品編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化商品編輯組件時發生錯誤");
         }
     }
     
@@ -315,7 +315,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入產品資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入商品資料時發生錯誤：{ex.Message}");
             return null;
         }
     }
@@ -324,7 +324,7 @@
     {
         try
         {
-            // 載入產品分類
+            // 載入商品分類
             var productCategories = await ProductService.GetProductCategoriesAsync();
             availableProductCategories = productCategories;
             productCategoryOptions = productCategories.Select(pc => new SelectOption
@@ -398,22 +398,22 @@
             new()
             {
                 PropertyName = nameof(Product.Code),
-                Label = "產品代碼",
+                Label = "商品代碼",
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入產品代碼",
+                Placeholder = "請輸入商品代碼",
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "產品的唯一識別碼"
+                HelpText = "商品的唯一識別碼"
             },
             new()
             {
                 PropertyName = nameof(Product.Name),
-                Label = "產品名稱",
+                Label = "商品名稱",
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入產品名稱",
+                Placeholder = "請輸入商品名稱",
                 IsRequired = true,
                 MaxLength = 100,
-                HelpText = "產品的完整名稱"
+                HelpText = "商品的完整名稱"
             },
             new FormFieldDefinition()
             {
@@ -423,15 +423,15 @@
                 Placeholder = "請輸入條碼編號",
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "產品的條碼編號",
+                HelpText = "商品的條碼編號",
                 ActionButtons = _cachedBarcodeActionButtons  //  使用快取
             },
             new()
             {
                 PropertyName = nameof(Product.ProductCategoryId),
-                Label = "產品分類",
+                Label = "商品分類",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇產品分類",
+                Placeholder = "請輸入或選擇商品分類",
                 IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "輸入分類名稱進行搜尋，或直接選擇",
@@ -466,7 +466,7 @@
                 FieldType = FormFieldType.Number,
                 Placeholder = "請輸入稅率",
                 IsRequired = false,
-                HelpText = "產品的稅率，介於0到100之間，預設值來自系統參數",
+                HelpText = "商品的稅率，介於0到100之間，預設值來自系統參數",
                 Min = 0,
                 Max = 100
             },
@@ -476,7 +476,7 @@
                 Label = "可排程",
                 FieldType = FormFieldType.Checkbox,
                 IsRequired = false,
-                HelpText = "指示產品是否可用於排程"
+                HelpText = "指示商品是否可用於排程"
             },
             new()
             {
@@ -487,7 +487,7 @@
                 IsRequired = false,
                 MaxLength = 100,
                 ContainerCssClass = "col-6",
-                HelpText = "產品的規格說明資訊"
+                HelpText = "商品的規格說明資訊"
             },
 
             FormFieldConfigurationHelper.CreateRemarksField<Product>(containerCssClass: "col-6")
@@ -533,7 +533,7 @@
     // ===== ActionButton 產生方法 =====
     
     /// <summary>
-    /// 產生產品分類操作按鈕 - 使用統一 Helper
+    /// 產生商品分類操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetProductCategoryActionButtonsAsync()
     {
@@ -569,7 +569,7 @@
     }
 
     /// <summary>
-    /// 產生條碼編號操作按鈕 - 同產品編號
+    /// 產生條碼編號操作按鈕 - 同商品編號
     /// </summary>
     private Task<List<FieldActionButton>> GetBarcodeActionButtonsAsync()
     {
@@ -580,7 +580,7 @@
                 Text = "複製",
                 Variant = "OutlinePrimary",
                 Size = "Small",
-                Title = "將產品編號複製到條碼編號",
+                Title = "將商品編號複製到條碼編號",
                 OnClick = async () => await CopyCodeToBarcode(),
                 IsDisabled = false
             }
@@ -590,7 +590,7 @@
     }
 
     /// <summary>
-    /// 將產品編號複製到條碼編號欄位
+    /// 將商品編號複製到條碼編號欄位
     /// </summary>
     private async Task CopyCodeToBarcode()
     {
@@ -598,26 +598,26 @@
         {
             if (editModalComponent?.Entity != null)
             {
-                // 複製產品編號到條碼編號
+                // 複製商品編號到條碼編號
                 editModalComponent.Entity.Barcode = editModalComponent.Entity.Code;
                 
                 // 通知 UI 更新
                 StateHasChanged();
                 
                 // 顯示成功訊息
-                await NotificationService.ShowSuccessAsync("已將產品編號複製到條碼編號");
+                await NotificationService.ShowSuccessAsync("已將商品編號複製到條碼編號");
             }
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"複製產品編號時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"複製商品編號時發生錯誤：{ex.Message}");
         }
     }
 
     // ===== Modal 事件包裝器方法 =====
     
     /// <summary>
-    /// 包裝產品分類儲存事件
+    /// 包裝商品分類儲存事件
     /// </summary>
     private async Task OnProductCategorySavedWrapper(ProductCategory savedCategory)
     {
@@ -641,12 +641,12 @@
     }
     
     /// <summary>
-    /// 包裝產品合成表儲存事件
+    /// 包裝商品合成表儲存事件
     /// </summary>
     private async Task OnProductCompositionSavedWrapper(ProductComposition savedComposition)
     {
         // 合成表儲存後，不需要自動選擇，只需重新載入清單
-        await NotificationService.ShowSuccessAsync("產品合成表已儲存");
+        await NotificationService.ShowSuccessAsync("商品合成表已儲存");
         
         // 📝 改進：無論清單是否開啟，都更新快取資料
         // 這樣下次開啟清單時會看到最新資料
@@ -677,7 +677,7 @@
                 await RefreshFormFieldsAfterEntityLoadAsync();
             }
             
-            // 使用統一 Helper 處理產品分類欄位變更
+            // 使用統一 Helper 處理商品分類欄位變更
             if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
@@ -713,18 +713,18 @@
         <div class="d-flex gap-2">
             @* 查看合成表清單 *@
             <GenericButtonComponent
-                Text="查看合成表"
+                Text="查看合成"
                 OnClick="@ShowProductCompositions"
-                Title="查看產品合成表清單"
+                Title="查看商品合成表清單"
                 Variant="ButtonVariant.Blue"
                 Size="ButtonSize.Small">
             </GenericButtonComponent>
 
             @* 新增合成表 *@
             <GenericButtonComponent
-                Text="新增合成表"
+                Text="新增合成"
                 OnClick="@HandleAddNewCompositionDirect"
-                Title="直接新增產品合成表"
+                Title="直接新增商品合成表"
                 Variant="ButtonVariant.DarkBlue"
                 Size="ButtonSize.Small">
             </GenericButtonComponent>
@@ -732,20 +732,20 @@
     };
     
     /// <summary>
-    /// 顯示產品合成表清單
+    /// 顯示商品合成表清單
     /// </summary>
     private async Task ShowProductCompositions()
     {
-        // 🔑 關鍵檢查：產品必須先儲存
+        // 🔑 關鍵檢查：商品必須先儲存
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
-                "請先儲存產品後再建立合成表", 
+                "請先儲存商品後再建立合成表", 
                 "提示");
             return;
         }
         
-        selectedProductName = editModalComponent.Entity.Name ?? "未知產品";
+        selectedProductName = editModalComponent.Entity.Name ?? "未知商品";
         
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
@@ -768,7 +768,7 @@
     }
     
     /// <summary>
-    /// 載入產品合成表清單
+    /// 載入商品合成表清單
     /// </summary>
     private async Task LoadProductCompositions()
     {
@@ -802,7 +802,7 @@
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
-                "請先儲存產品後再建立合成表", 
+                "請先儲存商品後再建立合成表", 
                 "提示");
             return;
         }
@@ -824,11 +824,11 @@
     {
         try
         {
-            // 🔑 關鍵檢查：產品必須先儲存
+            // 🔑 關鍵檢查：商品必須先儲存
             if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
             {
                 await NotificationService.ShowWarningAsync(
-                    "請先儲存產品後再建立合成表", 
+                    "請先儲存商品後再建立合成表", 
                     "提示");
                 return;
             }

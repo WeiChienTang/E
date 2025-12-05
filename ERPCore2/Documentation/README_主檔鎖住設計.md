@@ -413,7 +413,7 @@ private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
 │                                                     │
 │ ┌─────────────────────────────────────────────┐   │
 │ │ 明細管理器                                   │   │
-│ │ [產品列表...]                                │   │
+│ │ [商品列表...]                                │   │
 │ └─────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────┘
 ```
@@ -723,7 +723,7 @@ private async Task LoadDetailRelatedDataAsync()
 **鎖定欄位**：
 - 廠商（SupplierId）+ 移除新增/編輯按鈕
 - 採購單（PurchaseOrderId）
-- 產品篩選（FilterProductId）
+- 商品篩選（FilterProductId）
 - 進貨日（ReceiptDate）
 - 備註（Remarks）
 

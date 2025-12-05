@@ -307,10 +307,10 @@ protected override async Task OnParametersSetAsync()
 ### 🔄 批次修正已完成的組件（21 個）
 以下組件已在 OnParametersSetAsync 最後加入 `await base.OnParametersSetAsync()`:
 
-#### 產品管理 (Products)
+#### 商品管理 (Products)
 5. ✅ **UnitEditModalComponent** - 單位
 6. ✅ **SizeEditModalComponent** - 尺寸
-7. ✅ **ProductCategoryEditModalComponent** - 產品分類
+7. ✅ **ProductCategoryEditModalComponent** - 商品分類
 
 #### 採購管理 (Purchase)
 8. ✅ **PurchaseReceivingEditModalComponent** - 進貨單（含明細表，需特別注意）
@@ -339,13 +339,13 @@ protected override async Task OnParametersSetAsync()
 #### 生產管理 (ProductionManagement)
 22. ✅ **CompositionCategoryEditModalComponent** - 組成類別
 23. ✅ **ProductionScheduleEditModalComponent** - 生產排程
-24. ✅ **ProductCompositionEditModalComponent** - 產品組成
+24. ✅ **ProductCompositionEditModalComponent** - 商品組成
 
 ### ⚠️ 需要手動處理的組件（8 個）
 以下組件批次替換失敗，需要個別檢查和手動修正：
 
-#### 產品管理 (Products)
-25. ⚠️ **ProductEditModalComponent** - 產品（格式特殊/需移除 ActionButton 快取）
+#### 商品管理 (Products)
+25. ⚠️ **ProductEditModalComponent** - 商品（格式特殊/需移除 ActionButton 快取）
 
 #### 採購管理 (Purchase)
 26. ⚠️ **PurchaseOrderEditModalComponent** - 採購單（可能是同步方法或格式異常）

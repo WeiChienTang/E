@@ -174,7 +174,7 @@ namespace ERPCore2.FieldConfiguration
 
         protected override Func<IQueryable<InventoryStock>, IOrderedQueryable<InventoryStock>> GetDefaultSort()
         {
-            // 按產品ID排序
+            // 按商品ID排序
             return query => query.OrderBy(s => s.ProductId);
         }
     }

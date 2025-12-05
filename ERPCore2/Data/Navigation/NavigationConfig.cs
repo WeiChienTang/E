@@ -154,76 +154,76 @@ public static class NavigationConfig
                 }
             },
 
-            // ==================== 產品管理 ====================
+            // ==================== 商品管理 ====================
             new NavigationItem
             {
-                Name = "產品管理",
-                Description = "產品相關功能管理",
+                Name = "商品管理",
+                Description = "商品相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-box-seam-fill",
-                Category = "產品管理",
+                Category = "商品管理",
                 IsParent = true,
                 MenuKey = "product_management",
-                SearchKeywords = new List<string> { "產品", "商品", "product", "item" },
+                SearchKeywords = new List<string> { "商品", "商品", "product", "item" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
                     {
-                        Name = "產品維護",
-                        Description = "管理產品資料和產品目錄",
+                        Name = "商品維護",
+                        Description = "管理商品資料和商品目錄",
                         Route = "/products",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "Product.Read",
-                        SearchKeywords = new List<string> { "產品維護", "產品資料", "商品目錄", "品項","條碼" }
+                        SearchKeywords = new List<string> { "商品維護", "商品資料", "商品目錄", "品項","條碼" }
                     },
                     new NavigationItem
                     {
                         Name = "類型",
-                        Description = "管理產品類型分類",
+                        Description = "管理商品類型分類",
                         Route = "/product-categories",
                         IconClass = "",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "ProductCategory.Read",
-                        SearchKeywords = new List<string> { "產品類型", "產品分類", "category" }
+                        SearchKeywords = new List<string> { "商品類型", "商品分類", "category" }
                     },
                     new NavigationItem
                     {
                         Name = "單位",
-                        Description = "管理產品計量單位",
+                        Description = "管理商品計量單位",
                         Route = "/units",
                         IconClass = "",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "Unit.Read",
                         SearchKeywords = new List<string> { "單位", "計量單位", "unit" }
                     },
                     new NavigationItem
                     {
                         Name = "尺寸",
-                        Description = "管理產品尺寸規格",
+                        Description = "管理商品尺寸規格",
                         Route = "/sizes",
                         IconClass = "",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "Size.Read",
                         SearchKeywords = new List<string> { "尺寸", "規格", "size" }
                     },
                     new NavigationItem
                     {
-                        Name = "產品合成表",
-                        Description = "管理產品的配方和組件結構",
+                        Name = "商品合成表",
+                        Description = "管理商品的配方和組件結構",
                         Route = "/product-compositions",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "ProductComposition.Read",
-                        SearchKeywords = new List<string> { "產品合成", "BOM", "合成表", "Bill of Materials" }
+                        SearchKeywords = new List<string> { "商品合成", "BOM", "合成表", "Bill of Materials" }
                     },
                     new NavigationItem
                     {
                         Name = "合成表類型",
-                        Description = "管理產品合成表的類型分類",
+                        Description = "管理商品合成表的類型分類",
                         Route = "/composition-categories",
                         IconClass = "",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "CompositionCategory.Read",
                         SearchKeywords = new List<string> { "合成表類型", "BOM類型", "category" }
                     },
@@ -233,7 +233,7 @@ public static class NavigationConfig
                         Description = "管理生產排程的詳細資料",
                         Route = "/production-schedules",
                         IconClass = "bi bi-caret-right-fill",
-                        Category = "產品管理",
+                        Category = "商品管理",
                         RequiredPermission = "ProductionSchedule.Read",
                         SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" }
                     }

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 產品合成主檔（BOM 主檔）- 定義成品與其組成零件的關係
+    /// 商品合成主檔（BOM 主檔）- 定義成品與其組成零件的關係
     /// </summary>
     public class ProductComposition : BaseEntity
     {
@@ -34,7 +34,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         /// <summary>
-        /// 成品（父產品）
+        /// 成品（父商品）
         /// </summary>
         public Product ParentProduct { get; set; } = null!;
 

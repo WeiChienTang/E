@@ -18,8 +18,8 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(ProductionSchedule))]
         public int ProductionScheduleId { get; set; }
 
-        [Required(ErrorMessage = "組件產品為必填")]
-        [Display(Name = "組件產品")]
+        [Required(ErrorMessage = "組件商品為必填")]
+        [Display(Name = "組件商品")]
         [ForeignKey(nameof(ComponentProduct))]
         public int ComponentProductId { get; set; }
 
@@ -58,7 +58,7 @@ namespace ERPCore2.Data.Entities
         public ProductionSchedule ProductionSchedule { get; set; } = null!;
 
         /// <summary>
-        /// 組件產品
+        /// 組件商品
         /// </summary>
         public Product ComponentProduct { get; set; } = null!;
 

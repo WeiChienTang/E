@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 天氣類型 - 產品基礎元素
+    /// 天氣類型 - 商品基礎元素
     /// </summary>
     public class Weather : BaseEntity
     {

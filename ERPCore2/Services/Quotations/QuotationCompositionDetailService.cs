@@ -54,7 +54,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從產品合成表複製 BOM 到報價單明細（使用最新的配方）
+        /// 從商品合成表複製 BOM 到報價單明細（使用最新的配方）
         /// </summary>
         public async Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(int quotationDetailId, int productId)
         {
@@ -62,7 +62,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 查詢該產品的產品合成表（優先取用最新的一筆）
+                // 查詢該商品的商品合成表（優先取用最新的一筆）
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)
@@ -102,7 +102,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從指定的產品配方複製 BOM 到報價單明細
+        /// 從指定的商品配方複製 BOM 到報價單明細
         /// </summary>
         public async Task<List<QuotationCompositionDetail>> CopyFromCompositionAsync(int quotationDetailId, int compositionId)
         {
@@ -110,7 +110,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 查詢指定的產品配方
+                // 查詢指定的商品配方
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)
@@ -275,7 +275,7 @@ namespace ERPCore2.Services
 
             if (entity.ComponentProductId <= 0)
             {
-                return ServiceResult.Failure("組件產品ID無效");
+                return ServiceResult.Failure("組件商品ID無效");
             }
 
             if (entity.Quantity <= 0)

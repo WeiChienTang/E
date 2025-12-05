@@ -114,7 +114,7 @@ namespace ERPCore2.Data
             services.AddScoped<IMaterialService, MaterialService>();
             services.AddScoped<ICompositionCategoryService, CompositionCategoryService>();
             
-            // 產品合成（BOM）服務
+            // 商品合成（BOM）服務
             services.AddScoped<IProductCompositionService, ProductCompositionService>();
             services.AddScoped<IProductCompositionDetailService, ProductCompositionDetailService>();
             
@@ -176,7 +176,7 @@ namespace ERPCore2.Data
             services.AddScoped<ISalesReturnReportService, SalesReturnReportService>();
             // 報價單報表服務
             services.AddScoped<IQuotationReportService, QuotationReportService>();
-            // 產品條碼報表服務
+            // 商品條碼報表服務
             services.AddScoped<IProductBarcodeReportService, ProductBarcodeReportService>();
         }
 

@@ -350,7 +350,7 @@ public enum ModalSize
             <table class="table table-hover mb-0">
                 <thead class="sticky-top bg-light">
                     <tr>
-                        <th>產品名稱</th>
+                        <th>商品名稱</th>
                         <th>倉庫</th>
                         <th>庫存數量</th>
                     </tr>
@@ -646,7 +646,7 @@ git commit -m "遷移前備份：ComponentName"
 ### 優先級分類
 
 #### 🔴 高優先級（常用 Modal）
-- [ ] `ProductSelectModalComponent.razor` - 產品選擇
+- [ ] `ProductSelectModalComponent.razor` - 商品選擇
 - [ ] `CustomerSelectModalComponent.razor` - 客戶選擇
 - [ ] `SupplierSelectModalComponent.razor` - 供應商選擇
 - [ ] `WarehouseSelectModalComponent.razor` - 倉庫選擇

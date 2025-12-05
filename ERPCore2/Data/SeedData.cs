@@ -81,7 +81,7 @@ namespace ERPCore2.Data
                     new ColorSeeder(),
                     new MaterialSeeder(),
                     new CompositionCategorySeeder(), // 合成表類型
-                    new ProductCategorySeeder(),    // 產品類別 - 必須在 ProductSeeder 之前
+                    new ProductCategorySeeder(),    // 商品類別 - 必須在 ProductSeeder 之前
                     new UnitSeeder(),
                     new UnitConversionSeeder(),     // 單位轉換關係 - 必須在 UnitSeeder 之後
                     new SizeSeeder(),

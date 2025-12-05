@@ -69,15 +69,15 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化產品分類頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化產品分類頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化商品分類頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化商品分類頁面失敗");
         }
     }
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "商品類型管理", "#", NotificationService, GetType());
 
-    // 載入產品分類資料
-    private Task<List<ProductCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => ProductCategoryService.GetAllAsync(), "產品分類", NotificationService, GetType());
+    // 載入商品分類資料
+    private Task<List<ProductCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => ProductCategoryService.GetAllAsync(), "商品分類", NotificationService, GetType());
 
     private IQueryable<ProductCategory> ApplyProductCategoryFilters(SearchFilterModel searchModel, IQueryable<ProductCategory> query)
     {

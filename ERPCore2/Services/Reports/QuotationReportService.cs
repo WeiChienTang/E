@@ -8,7 +8,7 @@ namespace ERPCore2.Services.Reports
 {
     /// <summary>
     /// 報價單報表服務實作 - A4 格式報價單
-    /// 格式包含：標題區、產品明細區、金額區、說明區、簽章區
+    /// 格式包含：標題區、商品明細區、金額區、說明區、簽章區
     /// </summary>
     public class QuotationReportService : IQuotationReportService
     {
@@ -127,7 +127,7 @@ namespace ERPCore2.Services.Reports
             // 1. 標題區
             GenerateTitleSection(html, company, quotation, customer, employee);
 
-            // 2. 產品明細區
+            // 2. 商品明細區
             GenerateProductDetailSection(html, quotationDetails, productDict, unitDict);
 
             // 3. 金額區 + 說明區（橫向排列）
@@ -224,7 +224,7 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 2. 產品明細區 - 帶黃色標題列的產品明細表格
+        /// 2. 商品明細區 - 帶黃色標題列的商品明細表格
         /// </summary>
         private void GenerateProductDetailSection(
             StringBuilder html,
@@ -232,7 +232,7 @@ namespace ERPCore2.Services.Reports
             Dictionary<int, Product> productDict,
             Dictionary<int, Unit> unitDict)
         {
-            html.AppendLine("            <!-- 產品明細區 -->");
+            html.AppendLine("            <!-- 商品明細區 -->");
             html.AppendLine("            <div class='quotation-product-section'>");
             html.AppendLine("                <table class='quotation-product-table'>");
             
@@ -252,7 +252,7 @@ namespace ERPCore2.Services.Reports
             // 明細內容
             html.AppendLine("                    <tbody>");        
             
-            // 產品明細列
+            // 商品明細列
             if (quotationDetails.Any())
             {
                 int rowNum = 1;
@@ -462,7 +462,7 @@ namespace ERPCore2.Services.Reports
             font-weight: bold;
         }
 
-        /* 2. 產品明細區 */
+        /* 2. 商品明細區 */
         .quotation-product-section {
             margin-bottom: 0;
         }

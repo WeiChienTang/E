@@ -173,7 +173,7 @@
             }
             else if (ProductId.HasValue)
             {
-                // 向後相容：從產品合成表複製（使用最新的）
+                // 向後相容：從商品合成表複製（使用最新的）
                 compositionDetails = await QuotationCompositionDetailService.CopyFromProductCompositionAsync(
                     QuotationDetailId!.Value,
                     ProductId.Value
@@ -363,7 +363,7 @@
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 組件產品
+        // 組件商品
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "品項",
@@ -543,7 +543,7 @@
     // ===== 自定義模式相關方法 =====
     
     /// <summary>
-    /// 過濾可用的組件產品（排除當前產品本身，避免無限迴圈）
+    /// 過濾可用的組件商品（排除當前商品本身，避免無限迴圈）
     /// </summary>
     private List<ERPCore2.Data.Entities.Product> FilteredAvailableProducts
     {
@@ -551,7 +551,7 @@
         {
             var products = availableProducts.AsEnumerable();
             
-            // 排除當前產品本身，避免無限迴圈
+            // 排除當前商品本身，避免無限迴圈
             if (ProductId.HasValue)
             {
                 products = products.Where(p => p.Id != ProductId.Value);

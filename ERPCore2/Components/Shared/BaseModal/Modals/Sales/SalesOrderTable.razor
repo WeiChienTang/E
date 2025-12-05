@@ -648,7 +648,7 @@ else
         {
             if (SelectedCustomerId.HasValue && SelectedCustomerId.Value > 0)
             {
-                // 只顯示產品類別標記為可販售的商品
+                // 只顯示商品類別標記為可販售的商品
                 AvailableProducts = Products
                     .Where(p => p.ProductCategory != null && 
                                p.ProductCategory.IsSaleable)

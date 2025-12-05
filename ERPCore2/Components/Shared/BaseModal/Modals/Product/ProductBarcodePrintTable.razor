@@ -1,5 +1,5 @@
 @*
-    產品條碼列印表格元件
+    商品條碼列印表格元件
     專門用於條碼列印功能的表格顯示
 *@
 @using ERPCore2.Models
@@ -22,7 +22,7 @@
                              OnSelectionChanged="@HandleSelectionChanged"
                              GetRowCssClass="@GetRowCssClass"
                              CssClass="barcode-print-table"
-                             EmptyMessage="沒有可列印的產品" />
+                             EmptyMessage="沒有可列印的商品" />
 </div>
 
 @code {
@@ -58,23 +58,23 @@
     {
         columnDefinitions = new List<InteractiveColumnDefinition>
         {
-            // 產品代碼
+            // 商品代碼
             new InteractiveColumnDefinition
             {
-                Title = "產品代碼",
+                Title = "商品代碼",
                 PropertyName = nameof(ProductBarcodeItem.Code),
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "產品的唯一識別代碼",
+                Tooltip = "商品的唯一識別代碼",
                 Width = "150px"
             },
             
-            // 產品名稱
+            // 商品名稱
             new InteractiveColumnDefinition
             {
-                Title = "產品名稱",
+                Title = "商品名稱",
                 PropertyName = nameof(ProductBarcodeItem.Name),
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "產品的名稱",
+                Tooltip = "商品的名稱",
                 Width = "auto"
             },
             
@@ -84,7 +84,7 @@
                 Title = "條碼號碼",
                 PropertyName = nameof(ProductBarcodeItem.Barcode),
                 ColumnType = InteractiveColumnType.Display,
-                Tooltip = "產品的條碼",
+                Tooltip = "商品的條碼",
                 Width = "200px"
             },
             

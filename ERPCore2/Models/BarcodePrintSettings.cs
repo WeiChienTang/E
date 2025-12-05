@@ -16,12 +16,12 @@ public class BarcodePrintSettings
     public BarcodeSize BarcodeSize { get; set; } = BarcodeSize.Medium;
     
     /// <summary>
-    /// 是否顯示產品名稱
+    /// 是否顯示商品名稱
     /// </summary>
     public bool ShowProductName { get; set; } = true;
     
     /// <summary>
-    /// 是否顯示產品代碼
+    /// 是否顯示商品代碼
     /// </summary>
     public bool ShowProductCode { get; set; } = true;
     

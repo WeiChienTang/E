@@ -8,12 +8,12 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     /// <summary>
-    /// 產品資料種子類別
+    /// 商品資料種子類別
     /// </summary>
     public class ProductSeeder : IDataSeeder
     {
         public int Order => 22;
-        public string Name => "產品資料";
+        public string Name => "商品資料";
 
         public async Task SeedAsync(AppDbContext context)
         {
@@ -54,7 +54,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // var products = new[]
             // {
-            //     // 電子產品類
+            //     // 電子商品類
             //     new Product
             //     {
             //         Code = "P001",
@@ -414,7 +414,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             //         CreatedBy = "System"
             //     },
 
-            //     // 更多電子產品
+            //     // 更多電子商品
             //     new Product
             //     {
             //         Code = "P036",

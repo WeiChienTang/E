@@ -12,7 +12,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
     /// </summary>
     public class CompositionCategorySeeder : IDataSeeder
     {
-        public int Order => 14; // 在基礎資料之後、產品相關資料之前執行
+        public int Order => 14; // 在基礎資料之後、商品相關資料之前執行
         public string Name => "合成表類型資料";
 
         public async Task SeedAsync(AppDbContext context)
