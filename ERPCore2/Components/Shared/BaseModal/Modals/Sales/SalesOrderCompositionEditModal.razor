@@ -3,6 +3,7 @@
 @using ERPCore2.Components.Shared.GenericComponent.Button
 @using ERPCore2.Data.Entities
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
+@inject ISalesOrderDetailService SalesOrderDetailService
 @inject IProductService ProductService
 @inject IUnitService UnitService
 @inject IInventoryStockService InventoryStockService
@@ -32,6 +33,21 @@
     [Parameter] public EventCallback<List<SalesOrderCompositionDetail>> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Func<List<SalesOrderCompositionDetail>?>? OnRequestCachedData { get; set; }
+    
+    /// <summary>
+    /// 銷貨訂單 ID（用於轉排程功能）
+    /// </summary>
+    [Parameter] public int? SalesOrderId { get; set; }
+    
+    /// <summary>
+    /// 銷貨訂單代碼（用於轉排程功能顯示）
+    /// </summary>
+    [Parameter] public string? SalesOrderCode { get; set; }
+    
+    /// <summary>
+    /// 訂單數量（用於轉排程功能）
+    /// </summary>
+    [Parameter] public decimal OrderQuantity { get; set; } = 1;
 
     // ===== 私有欄位 =====
     private bool isLoading = false;
@@ -41,6 +57,11 @@
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
     private Dictionary<int, decimal> productStockQuantities = new(); // 商品庫存快取
     private InteractiveTableComponent<SalesOrderCompositionDetail>? tableComponent;
+    
+    // ===== 轉排程 Modal 狀態 =====
+    private bool showTransferToScheduleModal = false;
+    private decimal? orderQuantityForSchedule;
+    private decimal? pendingScheduleQuantity;
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -208,6 +229,15 @@
     {
         <div class="w-100 d-flex align-items-center px-2">
             <div class="d-flex gap-2 ms-auto">
+                @* 轉排程按鈕 - 只有在有儲存的明細時才顯示 *@
+                @if (SalesOrderDetailId.HasValue && SalesOrderDetailId.Value > 0 && !IsReadOnly)
+                {
+                    <GenericButtonComponent Text="轉排程"
+                                          Variant="ButtonVariant.Yellow"
+                                          Size="ButtonSize.Small"
+                                          Icon="bi bi-calendar-plus"
+                                          OnClick="@HandleOpenTransferToSchedule" />
+                }
                 @if (!IsReadOnly)
                 {
                     <GenericButtonComponent Text="儲存"
@@ -241,6 +271,19 @@
                                       IsBordered="true"
                                       EmptyMessage="尚未新增組件" />
         </div>
+        
+        @* 轉排程 Modal *@
+        <TransferToScheduleModalComponent IsVisible="@showTransferToScheduleModal"
+                                          IsVisibleChanged="@((value) => showTransferToScheduleModal = value)"
+                                          SalesOrderDetailId="@SalesOrderDetailId"
+                                          SalesOrderId="@SalesOrderId"
+                                          SalesOrderCode="@SalesOrderCode"
+                                          ProductName="@ProductName"
+                                          ProductId="@ProductId"
+                                          OrderQuantity="@(orderQuantityForSchedule ?? OrderQuantity)"
+                                          ScheduledQuantity="@((orderQuantityForSchedule ?? OrderQuantity) - (pendingScheduleQuantity ?? OrderQuantity))"
+                                          CompositionDetails="@compositionDetails"
+                                          OnScheduleCreated="@HandleScheduleCreated" />
     };
 
     // ===== InteractiveTable 配置 =====
@@ -456,6 +499,66 @@
         }
 
         await CloseModal();
+    }
+
+    // ===== 轉排程功能 =====
+    private async Task HandleOpenTransferToSchedule()
+    {
+        try
+        {
+            // 驗證是否已儲存
+            if (!SalesOrderDetailId.HasValue || SalesOrderDetailId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存此 BOM 組成後再進行轉排程");
+                return;
+            }
+            
+            // 檢查是否有 BOM 項目
+            var validBomItems = compositionDetails
+                .Where(x => x.ComponentProductId > 0 && x.Quantity > 0)
+                .ToList();
+                
+            if (!validBomItems.Any())
+            {
+                await NotificationService.ShowWarningAsync("沒有可轉排程的 BOM 項目");
+                return;
+            }
+            
+            // 取得訂單明細以獲取當前的排程狀態
+            var salesOrderDetail = await SalesOrderDetailService.GetByIdAsync(SalesOrderDetailId.Value);
+            if (salesOrderDetail != null)
+            {
+                orderQuantityForSchedule = salesOrderDetail.OrderQuantity;
+                pendingScheduleQuantity = salesOrderDetail.PendingScheduleQuantity;
+                
+                // 檢查是否還有待排程數量
+                if (pendingScheduleQuantity <= 0)
+                {
+                    await NotificationService.ShowInfoAsync("此訂單明細已全部排程完成");
+                    return;
+                }
+            }
+            else
+            {
+                orderQuantityForSchedule = OrderQuantity;
+                pendingScheduleQuantity = OrderQuantity;
+            }
+            
+            showTransferToScheduleModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟轉排程視窗失敗：{ex.Message}");
+        }
+    }
+    
+    private async Task HandleScheduleCreated(ProductionSchedule schedule)
+    {
+        // 排程建立成功後重新載入資料
+        await NotificationService.ShowSuccessAsync($"排程建立成功：{schedule.Code}");
+        await LoadDataAsync();
+        StateHasChanged();
     }
 
     private async Task CloseModal()

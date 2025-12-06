@@ -56,10 +56,11 @@ namespace ERPCore2.Services
                 return await context.ProductionSchedules
                     .Include(ps => ps.CreatedByEmployee)
                     .Include(ps => ps.Customer)
-                    .Include(ps => ps.ScheduleDetails)
-                        .ThenInclude(psd => psd.ComponentProduct)
-                    .Include(ps => ps.ScheduleDetails)
-                        .ThenInclude(psd => psd.Warehouse)
+                    .Include(ps => ps.ScheduleItems)
+                        .ThenInclude(psi => psi.Product)
+                    .Include(ps => ps.ScheduleItems)
+                        .ThenInclude(psi => psi.ScheduleDetails)
+                            .ThenInclude(psd => psd.ComponentProduct)
                     .FirstOrDefaultAsync(ps => ps.Id == id);
             }
             catch (Exception ex)
@@ -254,13 +255,15 @@ namespace ERPCore2.Services
                 return await context.ProductionSchedules
                     .Include(ps => ps.CreatedByEmployee)
                     .Include(ps => ps.Customer)
-                    .Include(ps => ps.ScheduleDetails)
-                        .ThenInclude(psd => psd.ComponentProduct)
+                    .Include(ps => ps.ScheduleItems)
+                        .ThenInclude(psi => psi.Product)
                             .ThenInclude(p => p.ProductCategory)
-                    .Include(ps => ps.ScheduleDetails)
-                        .ThenInclude(psd => psd.ProductCompositionDetail)
-                    .Include(ps => ps.ScheduleDetails)
-                        .ThenInclude(psd => psd.Warehouse)
+                    .Include(ps => ps.ScheduleItems)
+                        .ThenInclude(psi => psi.ScheduleDetails)
+                            .ThenInclude(psd => psd.ComponentProduct)
+                    .Include(ps => ps.ScheduleItems)
+                        .ThenInclude(psi => psi.ScheduleDetails)
+                            .ThenInclude(psd => psd.Warehouse)
                     .FirstOrDefaultAsync(ps => ps.Id == id);
             }
             catch (Exception ex)
@@ -282,12 +285,12 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 檢查是否有明細
-                var hasDetails = await context.ProductionScheduleDetails
-                    .AnyAsync(psd => psd.ProductionScheduleId == entity.Id);
+                // 檢查是否有排程項目
+                var hasItems = await context.ProductionScheduleItems
+                    .AnyAsync(psi => psi.ProductionScheduleId == entity.Id);
 
-                if (hasDetails)
-                    return ServiceResult.Failure("無法刪除，此排程已有明細資料");
+                if (hasItems)
+                    return ServiceResult.Failure("無法刪除，此排程已有排程項目");
 
                 return ServiceResult.Success();
             }

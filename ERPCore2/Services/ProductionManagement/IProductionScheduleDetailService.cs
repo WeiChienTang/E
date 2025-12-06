@@ -5,13 +5,14 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 生產排程明細服務介面
+    /// 明細現在關聯到 ProductionScheduleItem（生產項目）
     /// </summary>
     public interface IProductionScheduleDetailService : IGenericManagementService<ProductionScheduleDetail>
     {
         /// <summary>
-        /// 根據排程主檔ID取得明細列表
+        /// 根據生產項目ID取得明細列表
         /// </summary>
-        Task<List<ProductionScheduleDetail>> GetByScheduleIdAsync(int scheduleId);
+        Task<List<ProductionScheduleDetail>> GetByScheduleItemIdAsync(int scheduleItemId);
 
         /// <summary>
         /// 根據組件商品ID取得明細列表
@@ -24,18 +25,18 @@ namespace ERPCore2.Services
         Task<List<ProductionScheduleDetail>> GetByWarehouseIdAsync(int warehouseId);
 
         /// <summary>
-        /// 批次建立明細
+        /// 批次建立明細（為生產項目）
         /// </summary>
-        Task<ServiceResult> CreateDetailsAsync(int scheduleId, List<ProductionScheduleDetail> details);
+        Task<ServiceResult> CreateDetailsForItemAsync(int scheduleItemId, List<ProductionScheduleDetail> details);
 
         /// <summary>
-        /// 批次更新明細
+        /// 批次更新明細（為生產項目）
         /// </summary>
-        Task<ServiceResult> UpdateDetailsAsync(int scheduleId, List<ProductionScheduleDetail> details);
+        Task<ServiceResult> UpdateDetailsForItemAsync(int scheduleItemId, List<ProductionScheduleDetail> details);
 
         /// <summary>
-        /// 刪除排程的所有明細
+        /// 刪除生產項目的所有明細
         /// </summary>
-        Task<ServiceResult> DeleteByScheduleIdAsync(int scheduleId);
+        Task<ServiceResult> DeleteByScheduleItemIdAsync(int scheduleItemId);
     }
 }

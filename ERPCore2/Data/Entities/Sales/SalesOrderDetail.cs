@@ -76,6 +76,20 @@ namespace ERPCore2.Data.Entities
         [ForeignKey(nameof(WarehouseLocation))]
         public int? WarehouseLocationId { get; set; }
 
+        /// <summary>
+        /// 已排程數量 - 已轉入生產排程的數量
+        /// </summary>
+        [Display(Name = "已排程數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal ScheduledQuantity { get; set; } = 0;
+
+        /// <summary>
+        /// 待排程數量 - 計算屬性
+        /// </summary>
+        [Display(Name = "待排程數量")]
+        [NotMapped]
+        public decimal PendingScheduleQuantity => OrderQuantity - ScheduledQuantity;
+
         // Navigation Properties
         public SalesOrder SalesOrder { get; set; } = null!;
         public QuotationDetail? QuotationDetail { get; set; }
@@ -89,5 +103,15 @@ namespace ERPCore2.Data.Entities
         /// 自訂的組合明細（銷貨訂單專屬 BOM）
         /// </summary>
         public ICollection<SalesOrderCompositionDetail> CompositionDetails { get; set; } = new List<SalesOrderCompositionDetail>();
+        
+        /// <summary>
+        /// 生產排程項目
+        /// </summary>
+        public ICollection<ProductionScheduleItem> ProductionScheduleItems { get; set; } = new List<ProductionScheduleItem>();
+        
+        /// <summary>
+        /// 生產排程分配（當此訂單分配到其他排程時）
+        /// </summary>
+        public ICollection<ProductionScheduleAllocation> ProductionScheduleAllocations { get; set; } = new List<ProductionScheduleAllocation>();
     }
 }

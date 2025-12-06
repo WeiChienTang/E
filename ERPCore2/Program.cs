@@ -27,7 +27,9 @@ if (isMigrationMode || isSeedDataMode || isSetupMode)
     // 註冊必要的服務進行遷移
     migrationBuilder.Services.AddDbContextFactory<AppDbContext>(options => 
         options.UseSqlServer(connectionString,
-            sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+            sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+        .ConfigureWarnings(warnings => 
+            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
     
     // 建立應用程式但不啟動 Web 服務器
     var migrationApp = migrationBuilder.Build();

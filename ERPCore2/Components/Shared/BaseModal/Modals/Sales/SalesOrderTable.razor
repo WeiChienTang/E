@@ -105,8 +105,11 @@ else
 <SalesOrderCompositionEditModal IsVisible="@showCompositionModal"
                                IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
                                SalesOrderDetailId="@GetSelectedSalesOrderDetailId()"
+                               SalesOrderId="@(MainEntity?.Id)"
+                               SalesOrderCode="@(MainEntity?.Code)"
                                ProductName="@selectedCompositionProductName"
                                ProductId="@selectedCompositionProductId"
+                               OrderQuantity="@GetSelectedCompositionOrderQuantity()"
                                IsReadOnly="@GetCompositionModalReadOnlyState()"
                                OnSave="@HandleCompositionSave"
                                OnCancel="@(() => showCompositionModal = false)"
@@ -596,6 +599,18 @@ else
         
         var item = SalesItems[selectedSalesItemIndex.Value];
         return (item.ExistingDetailEntity as SalesOrderDetail)?.Id;
+    }
+    
+    /// <summary>
+    /// 取得選中的銷貨訂單明細的訂購數量（供 BOM 編輯器傳遞給轉排程功能）
+    /// </summary>
+    private decimal GetSelectedCompositionOrderQuantity()
+    {
+        if (!selectedSalesItemIndex.HasValue || selectedSalesItemIndex.Value >= SalesItems.Count)
+            return 1;
+        
+        var item = SalesItems[selectedSalesItemIndex.Value];
+        return item.OrderQuantity;
     }
     
     /// <summary>

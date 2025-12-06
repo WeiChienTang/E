@@ -21,11 +21,18 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "總可用庫存")]
         [NotMapped]
-        public int TotalAvailableStock => TotalCurrentStock - TotalReservedStock;
+        public int TotalAvailableStock => TotalCurrentStock - TotalReservedStock - TotalInProductionStock;
         
         [Display(Name = "總在途庫存")]
         [NotMapped]
         public int TotalInTransitStock => InventoryStockDetails?.Sum(d => d.InTransitStock) ?? 0;
+        
+        /// <summary>
+        /// 總生產中庫存 - 已領料投入生產的組件總數量
+        /// </summary>
+        [Display(Name = "總生產中庫存")]
+        [NotMapped]
+        public int TotalInProductionStock => InventoryStockDetails?.Sum(d => d.InProductionStock) ?? 0;
         
         [Display(Name = "加權平均成本")]
         [Column(TypeName = "decimal(18,4)")]

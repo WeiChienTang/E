@@ -237,6 +237,9 @@
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<ProductComposition>()
                 .AddField(nameof(ProductComposition.ParentProductId), "Name", availableProducts)
+                .AddField(nameof(ProductComposition.CompositionCategoryId), "Name", availableCompositionCategories)
+                .AddField(nameof(ProductComposition.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(ProductComposition.CreatedByEmployeeId), "Name", availableEmployees)
                 .Build();
             
             // 如果是編輯模式，載入現有的明細資料
@@ -391,31 +394,32 @@
                 {
                     PropertyName = nameof(ProductComposition.CompositionCategoryId),
                     Label = "合成表類型",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇合成表類型",
-                    Options = compositionCategoryOptions,
+                    IsRequired = false,
+                    MinSearchLength = 0,
                     HelpText = "選擇合成的類型"
                 },
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CustomerId),
                     Label = "客戶",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇客戶",
-                    Options = customerOptions,
                     IsRequired = false,
-                    HelpText = "選擇此合成的客戶（選填）",
+                    MinSearchLength = 0,
+                    HelpText = "選擇此合成的客戶(選填)",
                     ActionButtons = await GetCustomerActionButtonsAsync()
                 },
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CreatedByEmployeeId),
                     Label = "製單人員",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請選擇製單人員",
-                    Options = employeeOptions,
                     IsRequired = false,
-                    HelpText = "選擇建立此合成的員工（選填）",
+                    MinSearchLength = 0,
+                    HelpText = "選擇建立此合成的員工(選填)",
                     ActionButtons = await GetEmployeeActionButtonsAsync()
                 },
                 new()

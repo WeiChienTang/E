@@ -236,6 +236,16 @@ public static class NavigationConfig
                         Category = "商品管理",
                         RequiredPermission = "ProductionSchedule.Read",
                         SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "待排程工作台",
+                        Description = "查看待排程的訂單明細，批次轉入生產排程",
+                        Route = "/production-pending-workbench",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "商品管理",
+                        RequiredPermission = "ProductionSchedule.Read",
+                        SearchKeywords = new List<string> { "待排程", "工作台", "排程", "pending", "workbench" }
                     }
                 }
             },

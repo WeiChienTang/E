@@ -1,0 +1,398 @@
+@* 組件領料 Modal - 從倉庫領取 BOM 組件用於生產 *@
+@using ERPCore2.Components.Shared.GenericComponent.Button
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IProductionScheduleDetailService ProductionScheduleDetailService
+@inject IInventoryStockService InventoryStockService
+@inject IInventoryStockDetailService InventoryStockDetailService
+@inject IWarehouseService WarehouseService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@GetModalTitle()"
+                   Icon="bi bi-box-arrow-up"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                   ShowFooter="false"
+                   CloseOnBackdropClick="false"
+                   CloseOnEscape="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="處理中..."
+                   HeaderButtons="@HeaderButtons"
+                   BodyContent="@BodyContent" />
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// 排程項目 ID
+    /// </summary>
+    [Parameter] public int? ProductionScheduleItemId { get; set; }
+    
+    /// <summary>
+    /// 領料成功回調
+    /// </summary>
+    [Parameter] public EventCallback OnMaterialIssued { get; set; }
+    
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 私有欄位 =====
+    private bool isLoading = false;
+    private ProductionScheduleItem? scheduleItem;
+    private List<MaterialIssueItem> issueItems = new();
+    private List<Warehouse> availableWarehouses = new();
+
+    // ===== 計算屬性 =====
+    private bool CanSubmit => issueItems.Any(x => x.IssueQuantity > 0);
+    private bool HasInsufficientStock => issueItems.Any(x => x.IssueQuantity > x.AvailableStock);
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && ProductionScheduleItemId.HasValue)
+        {
+            await LoadDataAsync();
+        }
+        else if (!IsVisible)
+        {
+            ResetForm();
+        }
+    }
+
+    private void ResetForm()
+    {
+        issueItems = new();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // 載入參考資料
+            availableWarehouses = await WarehouseService.GetAllAsync();
+            
+            // 載入排程項目
+            if (ProductionScheduleItemId.HasValue)
+            {
+                scheduleItem = await ProductionScheduleItemService.GetByIdAsync(ProductionScheduleItemId.Value);
+                
+                if (scheduleItem != null)
+                {
+                    // 載入組件明細
+                    var scheduleDetails = await ProductionScheduleDetailService.GetByScheduleItemIdAsync(ProductionScheduleItemId.Value);
+                    
+                    issueItems = new List<MaterialIssueItem>();
+                    
+                    foreach (var detail in scheduleDetails)
+                    {
+                        if (detail.ComponentProductId <= 0) continue;
+                        
+                        // 取得庫存
+                        var stocks = await InventoryStockService.GetByProductIdAsync(detail.ComponentProductId);
+                        var availableStock = stocks.Sum(s => s.TotalAvailableStock);
+                        var issuedQuantity = detail.IssuedQuantity;
+                        var remainingToIssue = Math.Max(0, detail.RequiredQuantity - issuedQuantity);
+                        
+                        issueItems.Add(new MaterialIssueItem
+                        {
+                            ProductionScheduleDetailId = detail.Id,
+                            ProductId = detail.ComponentProductId,
+                            ProductCode = detail.ComponentProduct?.Code ?? "-",
+                            ProductName = detail.ComponentProduct?.Name ?? "-",
+                            RequiredQuantity = detail.RequiredQuantity,
+                            IssuedQuantity = issuedQuantity,
+                            RemainingToIssue = remainingToIssue,
+                            AvailableStock = availableStock,
+                            IssueQuantity = remainingToIssue, // 預設領取剩餘數量
+                            SourceWarehouseId = scheduleItem.WarehouseId
+                        });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetModalTitle()
+    {
+        if (scheduleItem?.Product != null)
+        {
+            return $"組件領料 - {scheduleItem.Product.Name}";
+        }
+        return "組件領料";
+    }
+
+    // ===== Header Buttons =====
+    private RenderFragment HeaderButtons => __builder =>
+    {
+        <div class="w-100 d-flex align-items-center px-2">
+            <div class="d-flex gap-2 ms-auto">
+                <GenericButtonComponent Text="取消"
+                                      Variant="ButtonVariant.Gray"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@HandleCancel" />
+                <GenericButtonComponent Text="確認領料"
+                                      Variant="ButtonVariant.Yellow"
+                                      Size="ButtonSize.Small"
+                                      IsDisabled="@(!CanSubmit || isLoading)"
+                                      OnClick="@HandleSubmit" />
+            </div>
+        </div>
+    };
+
+    // ===== Body Content =====
+    private RenderFragment BodyContent => __builder =>
+    {
+        <div class="container-fluid">
+            @if (scheduleItem != null)
+            {
+                @* 排程項目摘要 *@
+                <div class="card mb-3 bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="mb-2">
+                                    <i class="bi bi-box me-2"></i>@(scheduleItem.Product?.Name ?? "-")
+                                </h6>
+                                <div class="small text-muted">
+                                    生產數量：<span class="text-primary fw-bold">@scheduleItem.ScheduledQuantity.ToString("N2")</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                @{
+                                    var statusBadge = scheduleItem.ProductionItemStatus switch
+                                    {
+                                        ProductionItemStatus.Pending => ("bg-secondary", "待生產"),
+                                        ProductionItemStatus.InProgress => ("bg-warning text-dark", "生產中"),
+                                        ProductionItemStatus.Completed => ("bg-success", "已完成"),
+                                        _ => ("bg-info", "未知")
+                                    };
+                                }
+                                <span class="badge @statusBadge.Item1">@statusBadge.Item2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* 庫存不足警告 *@
+                @if (HasInsufficientStock)
+                {
+                    <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>
+                            <strong>注意：</strong>部分組件庫存不足，請調整領料數量或先進行採購補貨。
+                        </div>
+                    </div>
+                }
+
+                @* 組件領料清單 *@
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>組件領料清單</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!issueItems.Any())
+                        {
+                            <div class="text-center py-4">
+                                <i class="bi bi-inbox display-4 text-muted"></i>
+                                <p class="mt-2 text-muted">此排程項目沒有 BOM 組件</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>組件商品</th>
+                                            <th class="text-end">需求數量</th>
+                                            <th class="text-end">已領數量</th>
+                                            <th class="text-end">待領數量</th>
+                                            <th class="text-end">可用庫存</th>
+                                            <th class="text-end" style="width: 150px;">本次領料</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in issueItems)
+                                        {
+                                            var stockClass = item.AvailableStock < item.RemainingToIssue ? "text-danger" : "text-success";
+                                            var issueClass = item.IssueQuantity > item.AvailableStock ? "is-invalid" : "";
+                                            
+                                            <tr>
+                                                <td>
+                                                    <span class="text-primary">[@item.ProductCode]</span> @item.ProductName
+                                                </td>
+                                                <td class="text-end">@item.RequiredQuantity.ToString("N2")</td>
+                                                <td class="text-end text-info">@item.IssuedQuantity.ToString("N2")</td>
+                                                <td class="text-end text-warning fw-bold">@item.RemainingToIssue.ToString("N2")</td>
+                                                <td class="text-end @stockClass fw-bold">@item.AvailableStock.ToString("N0")</td>
+                                                <td class="text-end">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number" 
+                                                               class="form-control form-control-sm text-end @issueClass" 
+                                                               @bind="item.IssueQuantity"
+                                                               min="0"
+                                                               max="@item.RemainingToIssue"
+                                                               step="1" />
+                                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                                type="button"
+                                                                @onclick="() => item.IssueQuantity = item.RemainingToIssue"
+                                                                title="全部領取">
+                                                            <i class="bi bi-check-all"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="5" class="text-end fw-bold">本次領料總數：</td>
+                                            <td class="text-end fw-bold text-primary">
+                                                @issueItems.Sum(x => x.IssueQuantity).ToString("N2")
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="mt-2 text-muted">無法載入排程項目資訊</p>
+                </div>
+            }
+        </div>
+    };
+
+    // ===== 事件處理 =====
+    private async Task HandleSubmit()
+    {
+        if (!issueItems.Any(x => x.IssueQuantity > 0))
+        {
+            await NotificationService.ShowWarningAsync("請輸入領料數量");
+            return;
+        }
+
+        // 檢查庫存是否足夠
+        var insufficientItems = issueItems.Where(x => x.IssueQuantity > x.AvailableStock).ToList();
+        if (insufficientItems.Any())
+        {
+            var names = string.Join("、", insufficientItems.Select(x => x.ProductName).Take(3));
+            await NotificationService.ShowWarningAsync($"以下組件庫存不足：{names}");
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            int successCount = 0;
+            var transactionNumber = $"MI{DateTime.Now:yyyyMMddHHmmss}";
+
+            foreach (var item in issueItems.Where(x => x.IssueQuantity > 0))
+            {
+                // 更新排程明細的已領數量
+                var detail = await ProductionScheduleDetailService.GetByIdAsync(item.ProductionScheduleDetailId);
+                if (detail != null)
+                {
+                    // 扣減庫存並建立異動記錄
+                    if (item.SourceWarehouseId.HasValue)
+                    {
+                        var reduceResult = await InventoryStockService.ReduceStockAsync(
+                            item.ProductId,
+                            item.SourceWarehouseId.Value,
+                            (int)item.IssueQuantity,
+                            InventoryTransactionTypeEnum.MaterialIssue,
+                            transactionNumber,
+                            null,
+                            $"生產排程領料 - {scheduleItem?.Product?.Name ?? "未知商品"}");
+
+                        if (!reduceResult.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync($"扣減庫存失敗：{item.ProductName} - {reduceResult.ErrorMessage}");
+                            continue;
+                        }
+                    }
+
+                    // 更新已領數量
+                    detail.IssuedQuantity += item.IssueQuantity;
+                    var updateResult = await ProductionScheduleDetailService.UpdateAsync(detail);
+                    
+                    if (updateResult.IsSuccess)
+                    {
+                        successCount++;
+                    }
+                }
+            }
+
+            await NotificationService.ShowSuccessAsync($"成功領料 {successCount} 項組件，異動單號：{transactionNumber}");
+
+            // 通知父組件
+            if (OnMaterialIssued.HasDelegate)
+            {
+                await OnMaterialIssued.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"領料失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+        
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 內部類別 =====
+    public class MaterialIssueItem
+    {
+        public int ProductionScheduleDetailId { get; set; }
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public decimal RequiredQuantity { get; set; }
+        public decimal IssuedQuantity { get; set; }
+        public decimal RemainingToIssue { get; set; }
+        public decimal AvailableStock { get; set; }
+        public decimal IssueQuantity { get; set; }
+        public int? SourceWarehouseId { get; set; }
+    }
+}

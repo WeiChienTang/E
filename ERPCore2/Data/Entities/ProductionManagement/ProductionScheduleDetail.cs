@@ -7,16 +7,17 @@ namespace ERPCore2.Data.Entities
 {
     /// <summary>
     /// 生產排程明細檔 - 記錄生產所需的組件物料資訊
+    /// 每個組件對應到一個 ProductionScheduleItem（生產項目）
     /// </summary>
-    [Index(nameof(ProductionScheduleId), nameof(ComponentProductId))]
+    [Index(nameof(ProductionScheduleItemId), nameof(ComponentProductId))]
     [Index(nameof(ComponentProductId))]
     public class ProductionScheduleDetail : BaseEntity
     {
         // 關聯資訊
-        [Required(ErrorMessage = "生產排程主檔為必填")]
-        [Display(Name = "生產排程主檔")]
-        [ForeignKey(nameof(ProductionSchedule))]
-        public int ProductionScheduleId { get; set; }
+        [Required(ErrorMessage = "生產排程項目為必填")]
+        [Display(Name = "生產排程項目")]
+        [ForeignKey(nameof(ProductionScheduleItem))]
+        public int ProductionScheduleItemId { get; set; }
 
         [Required(ErrorMessage = "組件商品為必填")]
         [Display(Name = "組件商品")]
@@ -32,6 +33,20 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "需求數量")]
         [Column(TypeName = "decimal(18,4)")]
         public decimal RequiredQuantity { get; set; } = 0;
+
+        /// <summary>
+        /// 已領數量 - 已從倉庫領取的組件數量
+        /// </summary>
+        [Display(Name = "已領數量")]
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal IssuedQuantity { get; set; } = 0;
+
+        /// <summary>
+        /// 待領數量 - 尚未從倉庫領取的組件數量
+        /// </summary>
+        [Display(Name = "待領數量")]
+        [NotMapped]
+        public decimal PendingIssueQuantity => Math.Max(0, RequiredQuantity - IssuedQuantity);
 
         // 成本資訊
         [Display(Name = "預估單位成本")]
@@ -53,9 +68,9 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         /// <summary>
-        /// 生產排程主檔
+        /// 生產排程項目
         /// </summary>
-        public ProductionSchedule ProductionSchedule { get; set; } = null!;
+        public ProductionScheduleItem ProductionScheduleItem { get; set; } = null!;
 
         /// <summary>
         /// 組件商品

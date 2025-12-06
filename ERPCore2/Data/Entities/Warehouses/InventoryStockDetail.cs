@@ -22,6 +22,12 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "在途庫存")]
         public int InTransitStock { get; set; } = 0;
         
+        /// <summary>
+        /// 生產中庫存 - 已領料投入生產的組件數量
+        /// </summary>
+        [Display(Name = "生產中庫存")]
+        public int InProductionStock { get; set; } = 0;
+        
         [Display(Name = "平均成本")]
         [Column(TypeName = "decimal(18,4)")]
         public decimal? AverageCost { get; set; }

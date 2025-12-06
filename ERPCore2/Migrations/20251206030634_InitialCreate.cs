@@ -701,6 +701,7 @@ namespace ERPCore2.Migrations
                     Specification = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     TaxRate = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: true),
+                    CanSchedule = table.Column<bool>(type: "bit", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -963,6 +964,7 @@ namespace ERPCore2.Migrations
                     CurrentStock = table.Column<int>(type: "int", nullable: false),
                     ReservedStock = table.Column<int>(type: "int", nullable: false),
                     InTransitStock = table.Column<int>(type: "int", nullable: false),
+                    InProductionStock = table.Column<int>(type: "int", nullable: false),
                     AverageCost = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
                     LastTransactionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     MinStockLevel = table.Column<int>(type: "int", nullable: true),
@@ -2145,6 +2147,47 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "QuotationCompositionDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    QuotationDetailId = table.Column<int>(type: "int", nullable: false),
+                    ComponentProductId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
+                    UnitId = table.Column<int>(type: "int", nullable: true),
+                    ComponentCost = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuotationCompositionDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuotationCompositionDetails_Products_ComponentProductId",
+                        column: x => x.ComponentProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_QuotationCompositionDetails_QuotationDetails_QuotationDetailId",
+                        column: x => x.QuotationDetailId,
+                        principalTable: "QuotationDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_QuotationCompositionDetails_Units_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ProductionSchedules",
                 columns: table => new
                 {
@@ -2270,6 +2313,7 @@ namespace ERPCore2.Migrations
                     UnitId = table.Column<int>(type: "int", nullable: true),
                     WarehouseId = table.Column<int>(type: "int", nullable: true),
                     WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    ScheduledQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -2384,57 +2428,6 @@ namespace ERPCore2.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProductionScheduleDetails",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductionScheduleId = table.Column<int>(type: "int", nullable: false),
-                    ComponentProductId = table.Column<int>(type: "int", nullable: false),
-                    ProductCompositionDetailId = table.Column<int>(type: "int", nullable: true),
-                    RequiredQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
-                    EstimatedUnitCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    ActualUnitCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    TotalCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    WarehouseId = table.Column<int>(type: "int", nullable: true),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductionScheduleDetails", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProductionScheduleDetails_ProductCompositionDetails_ProductCompositionDetailId",
-                        column: x => x.ProductCompositionDetailId,
-                        principalTable: "ProductCompositionDetails",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_ProductionScheduleDetails_ProductionSchedules_ProductionScheduleId",
-                        column: x => x.ProductionScheduleId,
-                        principalTable: "ProductionSchedules",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ProductionScheduleDetails_Products_ComponentProductId",
-                        column: x => x.ComponentProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProductionScheduleDetails_Warehouses_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "SalesReturns",
                 columns: table => new
                 {
@@ -2486,6 +2479,65 @@ namespace ERPCore2.Migrations
                         principalTable: "SalesReturnReasons",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductionScheduleItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ScheduledQuantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
+                    CompletedQuantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
+                    ProductionItemStatus = table.Column<int>(type: "int", nullable: false),
+                    PlannedStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PlannedEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Priority = table.Column<int>(type: "int", nullable: false),
+                    ProductionScheduleId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: true),
+                    WarehouseId = table.Column<int>(type: "int", nullable: true),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductionScheduleItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleItems_ProductionSchedules_ProductionScheduleId",
+                        column: x => x.ProductionScheduleId,
+                        principalTable: "ProductionSchedules",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleItems_SalesOrderDetails_SalesOrderDetailId",
+                        column: x => x.SalesOrderDetailId,
+                        principalTable: "SalesOrderDetails",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleItems_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleItems_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -2549,6 +2601,189 @@ namespace ERPCore2.Migrations
                         column: x => x.WarehouseId,
                         principalTable: "Warehouses",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SalesOrderCompositionDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: false),
+                    ComponentProductId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UnitId = table.Column<int>(type: "int", nullable: true),
+                    ComponentCost = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesOrderCompositionDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalesOrderCompositionDetails_Products_ComponentProductId",
+                        column: x => x.ComponentProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SalesOrderCompositionDetails_SalesOrderDetails_SalesOrderDetailId",
+                        column: x => x.SalesOrderDetailId,
+                        principalTable: "SalesOrderDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SalesOrderCompositionDetails_Units_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductionScheduleAllocations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AllocatedQuantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
+                    ProductionScheduleItemId = table.Column<int>(type: "int", nullable: false),
+                    SalesOrderDetailId = table.Column<int>(type: "int", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductionScheduleAllocations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleAllocations_ProductionScheduleItems_ProductionScheduleItemId",
+                        column: x => x.ProductionScheduleItemId,
+                        principalTable: "ProductionScheduleItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleAllocations_SalesOrderDetails_SalesOrderDetailId",
+                        column: x => x.SalesOrderDetailId,
+                        principalTable: "SalesOrderDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductionScheduleCompletions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompletedQuantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
+                    CompletionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ActualUnitCost = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    BatchNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    QualityCheckResult = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CompletedByEmployeeId = table.Column<int>(type: "int", nullable: true),
+                    ProductionScheduleItemId = table.Column<int>(type: "int", nullable: false),
+                    WarehouseId = table.Column<int>(type: "int", nullable: true),
+                    WarehouseLocationId = table.Column<int>(type: "int", nullable: true),
+                    InventoryTransactionId = table.Column<int>(type: "int", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductionScheduleCompletions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleCompletions_Employees_CompletedByEmployeeId",
+                        column: x => x.CompletedByEmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleCompletions_InventoryTransactions_InventoryTransactionId",
+                        column: x => x.InventoryTransactionId,
+                        principalTable: "InventoryTransactions",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleCompletions_ProductionScheduleItems_ProductionScheduleItemId",
+                        column: x => x.ProductionScheduleItemId,
+                        principalTable: "ProductionScheduleItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleCompletions_WarehouseLocations_WarehouseLocationId",
+                        column: x => x.WarehouseLocationId,
+                        principalTable: "WarehouseLocations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleCompletions_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductionScheduleDetails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductionScheduleItemId = table.Column<int>(type: "int", nullable: false),
+                    ComponentProductId = table.Column<int>(type: "int", nullable: false),
+                    ProductCompositionDetailId = table.Column<int>(type: "int", nullable: true),
+                    RequiredQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    IssuedQuantity = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
+                    EstimatedUnitCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    ActualUnitCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    TotalCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    WarehouseId = table.Column<int>(type: "int", nullable: true),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductionScheduleDetails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleDetails_ProductCompositionDetails_ProductCompositionDetailId",
+                        column: x => x.ProductCompositionDetailId,
+                        principalTable: "ProductCompositionDetails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleDetails_ProductionScheduleItems_ProductionScheduleItemId",
+                        column: x => x.ProductionScheduleItemId,
+                        principalTable: "ProductionScheduleItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleDetails_Products_ComponentProductId",
+                        column: x => x.ComponentProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductionScheduleDetails_Warehouses_WarehouseId",
+                        column: x => x.WarehouseId,
+                        principalTable: "Warehouses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -2946,6 +3181,46 @@ namespace ERPCore2.Migrations
                 column: "ParentProductId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleAllocations_ProductionScheduleItemId_SalesOrderDetailId",
+                table: "ProductionScheduleAllocations",
+                columns: new[] { "ProductionScheduleItemId", "SalesOrderDetailId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleAllocations_SalesOrderDetailId",
+                table: "ProductionScheduleAllocations",
+                column: "SalesOrderDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleCompletions_CompletedByEmployeeId",
+                table: "ProductionScheduleCompletions",
+                column: "CompletedByEmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleCompletions_CompletionDate",
+                table: "ProductionScheduleCompletions",
+                column: "CompletionDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleCompletions_InventoryTransactionId",
+                table: "ProductionScheduleCompletions",
+                column: "InventoryTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleCompletions_ProductionScheduleItemId",
+                table: "ProductionScheduleCompletions",
+                column: "ProductionScheduleItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleCompletions_WarehouseId",
+                table: "ProductionScheduleCompletions",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleCompletions_WarehouseLocationId",
+                table: "ProductionScheduleCompletions",
+                column: "WarehouseLocationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProductionScheduleDetails_ComponentProductId",
                 table: "ProductionScheduleDetails",
                 column: "ComponentProductId");
@@ -2956,14 +3231,44 @@ namespace ERPCore2.Migrations
                 column: "ProductCompositionDetailId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductionScheduleDetails_ProductionScheduleId_ComponentProductId",
+                name: "IX_ProductionScheduleDetails_ProductionScheduleItemId_ComponentProductId",
                 table: "ProductionScheduleDetails",
-                columns: new[] { "ProductionScheduleId", "ComponentProductId" });
+                columns: new[] { "ProductionScheduleItemId", "ComponentProductId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductionScheduleDetails_WarehouseId",
                 table: "ProductionScheduleDetails",
                 column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleItems_ProductId",
+                table: "ProductionScheduleItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleItems_ProductionItemStatus",
+                table: "ProductionScheduleItems",
+                column: "ProductionItemStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleItems_ProductionScheduleId_ProductId",
+                table: "ProductionScheduleItems",
+                columns: new[] { "ProductionScheduleId", "ProductId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleItems_SalesOrderDetailId",
+                table: "ProductionScheduleItems",
+                column: "SalesOrderDetailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleItems_WarehouseId",
+                table: "ProductionScheduleItems",
+                column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductionScheduleItems_WarehouseLocationId",
+                table: "ProductionScheduleItems",
+                column: "WarehouseLocationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductionSchedules_Code",
@@ -3151,6 +3456,22 @@ namespace ERPCore2.Migrations
                 columns: new[] { "SupplierId", "ReturnDate" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_QuotationCompositionDetails_ComponentProductId",
+                table: "QuotationCompositionDetails",
+                column: "ComponentProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuotationCompositionDetails_QuotationDetailId_ComponentProductId",
+                table: "QuotationCompositionDetails",
+                columns: new[] { "QuotationDetailId", "ComponentProductId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuotationCompositionDetails_UnitId",
+                table: "QuotationCompositionDetails",
+                column: "UnitId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_QuotationDetails_ProductId",
                 table: "QuotationDetails",
                 column: "ProductId");
@@ -3279,6 +3600,22 @@ namespace ERPCore2.Migrations
                 name: "IX_SalesDeliveryDetails_WarehouseLocationId",
                 table: "SalesDeliveryDetails",
                 column: "WarehouseLocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderCompositionDetails_ComponentProductId",
+                table: "SalesOrderCompositionDetails",
+                column: "ComponentProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderCompositionDetails_SalesOrderDetailId_ComponentProductId",
+                table: "SalesOrderCompositionDetails",
+                columns: new[] { "SalesOrderDetailId", "ComponentProductId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderCompositionDetails_UnitId",
+                table: "SalesOrderCompositionDetails",
+                column: "UnitId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesOrderDetails_ProductId",
@@ -3631,9 +3968,6 @@ namespace ERPCore2.Migrations
                 name: "InventoryReservations");
 
             migrationBuilder.DropTable(
-                name: "InventoryTransactions");
-
-            migrationBuilder.DropTable(
                 name: "InventoryTransactionTypes");
 
             migrationBuilder.DropTable(
@@ -3646,16 +3980,28 @@ namespace ERPCore2.Migrations
                 name: "PriceHistories");
 
             migrationBuilder.DropTable(
+                name: "ProductionScheduleAllocations");
+
+            migrationBuilder.DropTable(
+                name: "ProductionScheduleCompletions");
+
+            migrationBuilder.DropTable(
                 name: "ProductionScheduleDetails");
 
             migrationBuilder.DropTable(
                 name: "PurchaseReturnDetails");
 
             migrationBuilder.DropTable(
+                name: "QuotationCompositionDetails");
+
+            migrationBuilder.DropTable(
                 name: "ReportPrintConfigurations");
 
             migrationBuilder.DropTable(
                 name: "RolePermissions");
+
+            migrationBuilder.DropTable(
+                name: "SalesOrderCompositionDetails");
 
             migrationBuilder.DropTable(
                 name: "SalesReturnDetails");
@@ -3685,16 +4031,16 @@ namespace ERPCore2.Migrations
                 name: "Weathers");
 
             migrationBuilder.DropTable(
-                name: "InventoryStockDetails");
+                name: "MaterialIssues");
 
             migrationBuilder.DropTable(
-                name: "MaterialIssues");
+                name: "InventoryTransactions");
 
             migrationBuilder.DropTable(
                 name: "ProductCompositionDetails");
 
             migrationBuilder.DropTable(
-                name: "ProductionSchedules");
+                name: "ProductionScheduleItems");
 
             migrationBuilder.DropTable(
                 name: "PurchaseReceivingDetails");
@@ -3724,10 +4070,13 @@ namespace ERPCore2.Migrations
                 name: "StockTakings");
 
             migrationBuilder.DropTable(
-                name: "InventoryStocks");
+                name: "InventoryStockDetails");
 
             migrationBuilder.DropTable(
                 name: "ProductCompositions");
+
+            migrationBuilder.DropTable(
+                name: "ProductionSchedules");
 
             migrationBuilder.DropTable(
                 name: "PurchaseOrderDetails");
@@ -3749,6 +4098,9 @@ namespace ERPCore2.Migrations
 
             migrationBuilder.DropTable(
                 name: "PrepaymentTypes");
+
+            migrationBuilder.DropTable(
+                name: "InventoryStocks");
 
             migrationBuilder.DropTable(
                 name: "CompositionCategories");

@@ -22,7 +22,9 @@ namespace ERPCore2.Data
             // Database Configuration - 使用 DbContextFactory 註冊
             services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseSqlServer(connectionString,
-                    sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+                    sqlServerOptions => sqlServerOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+                .ConfigureWarnings(warnings => 
+                    warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
             
             // ⭐ 加入記憶體快取服務 (權限快取、參考資料快取使用)
             services.AddMemoryCache();
@@ -120,7 +122,10 @@ namespace ERPCore2.Data
             
             // 生產排程服務
             services.AddScoped<IProductionScheduleService, ProductionScheduleService>();
+            services.AddScoped<IProductionScheduleItemService, ProductionScheduleItemService>();
             services.AddScoped<IProductionScheduleDetailService, ProductionScheduleDetailService>();
+            services.AddScoped<IProductionScheduleCompletionService, ProductionScheduleCompletionService>();
+            services.AddScoped<IProductionScheduleAllocationService, ProductionScheduleAllocationService>();
 
             // 認證和授權服務
             services.AddScoped<IEmployeeService, EmployeeService>();

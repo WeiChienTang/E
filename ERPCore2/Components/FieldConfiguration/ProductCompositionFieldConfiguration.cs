@@ -49,13 +49,13 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "ParentProduct.Name",
                             FilterPropertyName = nameof(ProductComposition.ParentProductId),
-                            DisplayName = "成品",
+                            DisplayName = "商品",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             HeaderStyle = "width: 200px;",
                             Options = _products.Select(p => new SelectOption 
                             { 
-                                Text = $"{p.Code} - {p.Name}", 
+                                Text = $"{p.Name}", 
                                 Value = p.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(

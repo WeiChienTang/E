@@ -9,6 +9,16 @@ namespace ERPCore2.Data.Context
       public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
       {
       }
+
+      protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+      {
+            base.OnConfiguring(optionsBuilder);
+            
+            // 隱藏 MARS 與 Savepoints 的警告訊息
+            optionsBuilder.ConfigureWarnings(warnings =>
+                  warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS));
+      }
+
       public DbSet<Customer> Customers { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
       public DbSet<Bank> Banks { get; set; }            
@@ -69,7 +79,10 @@ namespace ERPCore2.Data.Context
       public DbSet<ProductComposition> ProductCompositions { get; set; }
       public DbSet<ProductCompositionDetail> ProductCompositionDetails { get; set; }
       public DbSet<ProductionSchedule> ProductionSchedules { get; set; }
+      public DbSet<ProductionScheduleItem> ProductionScheduleItems { get; set; }
       public DbSet<ProductionScheduleDetail> ProductionScheduleDetails { get; set; }
+      public DbSet<ProductionScheduleAllocation> ProductionScheduleAllocations { get; set; }
+      public DbSet<ProductionScheduleCompletion> ProductionScheduleCompletions { get; set; }
       public DbSet<ErrorLog> ErrorLogs { get; set; }
       public DbSet<DeletedRecord> DeletedRecords { get; set; }
       public DbSet<SystemParameter> SystemParameters { get; set; }
@@ -1000,25 +1013,137 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(ps => ps.CustomerId)
                               .OnDelete(DeleteBehavior.SetNull);
 
-                        entity.HasMany(ps => ps.ScheduleDetails)
-                              .WithOne(psd => psd.ProductionSchedule)
-                              .HasForeignKey(psd => psd.ProductionScheduleId)
-                              .OnDelete(DeleteBehavior.Cascade);
+                        // ProductionSchedule -> ProductionScheduleItem 關聯在 ProductionScheduleItem 配置中設定
 
                         // 設定索引
                         entity.HasIndex(e => e.Code)
                               .IsUnique();
                         entity.HasIndex(e => e.ScheduleDate);
+                        
+                        // ProductionSchedule -> ProductionScheduleItem 關聯
+                        entity.HasMany(ps => ps.ScheduleItems)
+                              .WithOne(psi => psi.ProductionSchedule)
+                              .HasForeignKey(psi => psi.ProductionScheduleId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  // ProductionScheduleItem 生產排程項目配置
+                  modelBuilder.Entity<ProductionScheduleItem>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(psi => psi.ProductionSchedule)
+                              .WithMany(ps => ps.ScheduleItems)
+                              .HasForeignKey(psi => psi.ProductionScheduleId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(psi => psi.Product)
+                              .WithMany()
+                              .HasForeignKey(psi => psi.ProductId)
+                              .OnDelete(DeleteBehavior.Restrict);
+
+                        entity.HasOne(psi => psi.SalesOrderDetail)
+                              .WithMany(sod => sod.ProductionScheduleItems)
+                              .HasForeignKey(psi => psi.SalesOrderDetailId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        entity.HasOne(psi => psi.Warehouse)
+                              .WithMany()
+                              .HasForeignKey(psi => psi.WarehouseId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        entity.HasOne(psi => psi.WarehouseLocation)
+                              .WithMany()
+                              .HasForeignKey(psi => psi.WarehouseLocationId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.ScheduledQuantity)
+                              .HasPrecision(18, 3);
+                        entity.Property(e => e.CompletedQuantity)
+                              .HasPrecision(18, 3);
+
+                        // 設定索引
+                        entity.HasIndex(e => new { e.ProductionScheduleId, e.ProductId });
+                        entity.HasIndex(e => e.SalesOrderDetailId);
+                        entity.HasIndex(e => e.ProductionItemStatus);
+                  });
+
+                  // ProductionScheduleAllocation 生產排程分配配置
+                  modelBuilder.Entity<ProductionScheduleAllocation>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(psa => psa.ProductionScheduleItem)
+                              .WithMany()
+                              .HasForeignKey(psa => psa.ProductionScheduleItemId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(psa => psa.SalesOrderDetail)
+                              .WithMany(sod => sod.ProductionScheduleAllocations)
+                              .HasForeignKey(psa => psa.SalesOrderDetailId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.AllocatedQuantity)
+                              .HasPrecision(18, 3);
+
+                        // 設定索引
+                        entity.HasIndex(e => new { e.ProductionScheduleItemId, e.SalesOrderDetailId });
+                  });
+
+                  // ProductionScheduleCompletion 生產完成入庫配置
+                  modelBuilder.Entity<ProductionScheduleCompletion>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 關聯設定
+                        entity.HasOne(psc => psc.ProductionScheduleItem)
+                              .WithMany(psi => psi.Completions)
+                              .HasForeignKey(psc => psc.ProductionScheduleItemId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(psc => psc.Warehouse)
+                              .WithMany()
+                              .HasForeignKey(psc => psc.WarehouseId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        entity.HasOne(psc => psc.WarehouseLocation)
+                              .WithMany()
+                              .HasForeignKey(psc => psc.WarehouseLocationId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        entity.HasOne(psc => psc.CompletedByEmployee)
+                              .WithMany()
+                              .HasForeignKey(psc => psc.CompletedByEmployeeId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        entity.HasOne(psc => psc.InventoryTransaction)
+                              .WithMany()
+                              .HasForeignKey(psc => psc.InventoryTransactionId)
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        // decimal 屬性設定
+                        entity.Property(e => e.CompletedQuantity)
+                              .HasPrecision(18, 3);
+                        entity.Property(e => e.ActualUnitCost)
+                              .HasPrecision(18, 4);
+
+                        // 設定索引
+                        entity.HasIndex(e => e.ProductionScheduleItemId);
+                        entity.HasIndex(e => e.CompletionDate);
                   });
 
                   modelBuilder.Entity<ProductionScheduleDetail>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                        // 關聯設定
-                        entity.HasOne(psd => psd.ProductionSchedule)
-                              .WithMany(ps => ps.ScheduleDetails)
-                              .HasForeignKey(psd => psd.ProductionScheduleId)
+                        // 關聯設定 - 改為關聯到 ProductionScheduleItem
+                        entity.HasOne(psd => psd.ProductionScheduleItem)
+                              .WithMany(psi => psi.ScheduleDetails)
+                              .HasForeignKey(psd => psd.ProductionScheduleItemId)
                               .OnDelete(DeleteBehavior.Cascade);
 
                         entity.HasOne(psd => psd.ComponentProduct)
@@ -1047,7 +1172,7 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(18, 2);
 
                         // 設定索引
-                        entity.HasIndex(e => new { e.ProductionScheduleId, e.ComponentProductId });
+                        entity.HasIndex(e => new { e.ProductionScheduleItemId, e.ComponentProductId });
                         entity.HasIndex(e => e.ComponentProductId);
                   });
             }

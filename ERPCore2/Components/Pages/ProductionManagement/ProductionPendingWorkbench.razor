@@ -1,0 +1,547 @@
+@page "/production-pending-workbench"
+@using ERPCore2.Components.Shared.GenericComponent.Button
+@using ERPCore2.Components.Shared.BaseModal.Modals.ProductionManagement
+@using ERPCore2.Components.Pages.Sales
+@using ERPCore2.Data.Enums
+
+@inject ISalesOrderService SalesOrderService
+@inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
+@inject IProductService ProductService
+@inject ICustomerService CustomerService
+@inject IInventoryStockService InventoryStockService
+@inject IProductionScheduleService ProductionScheduleService
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject INotificationService NotificationService
+
+@rendermode InteractiveServer
+
+<PageTitle>待排程工作台</PageTitle>
+
+<div class="container-fluid py-3">
+    @* 頁面標題和麵包屑 *@
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-1">
+                <i class="bi bi-clipboard-data me-2"></i>待排程工作台
+            </h4>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">生產管理</li>
+                    <li class="breadcrumb-item active">待排程工作台</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            @if (selectedItems.Any())
+            {
+                <GenericButtonComponent Text="@($"批次轉排程 ({selectedItems.Count})")"
+                                        Variant="ButtonVariant.Yellow"
+                                        Icon="bi bi-calendar-plus"
+                                        OnClick="@HandleBatchTransferToSchedule" />
+            }
+            <GenericButtonComponent Text="重新整理"
+                                    Variant="ButtonVariant.Blue"
+                                    Icon="bi bi-arrow-clockwise"
+                                    OnClick="@LoadDataAsync" />
+        </div>
+    </div>
+
+    @* 篩選區塊 *@
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">客戶</label>
+                    <select class="form-select" @bind="filterCustomerId" @bind:after="ApplyFilters">
+                        <option value="">全部客戶</option>
+                        @foreach (var customer in customers)
+                        {
+                            <option value="@customer.Id">@customer.CompanyName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">商品</label>
+                    <select class="form-select" @bind="filterProductId" @bind:after="ApplyFilters">
+                        <option value="">全部商品</option>
+                        @foreach (var product in products.Where(p => p.CanSchedule))
+                        {
+                            <option value="@product.Id">[@product.Code] @product.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">交貨日期（起）</label>
+                    <input type="date" class="form-control" @bind="filterDateFrom" @bind:after="ApplyFilters" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">交貨日期（迄）</label>
+                    <input type="date" class="form-control" @bind="filterDateTo" @bind:after="ApplyFilters" />
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="showOnlySchedulable" 
+                               @bind="showOnlySchedulable" @bind:after="ApplyFilters">
+                        <label class="form-check-label" for="showOnlySchedulable">
+                            僅顯示可排程商品
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="showOnlyPending" 
+                               @bind="showOnlyPending" @bind:after="ApplyFilters">
+                        <label class="form-check-label" for="showOnlyPending">
+                            僅顯示待排程項目
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 統計卡片 *@
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">待排程項目</h5>
+                    <h2>@filteredItems.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h5 class="card-title">待排程數量</h5>
+                    <h2>@filteredItems.Sum(x => x.PendingScheduleQuantity).ToString("N0")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">庫存不足項目</h5>
+                    <h2>@filteredItems.Count(x => x.StockShortage > 0)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">已選擇項目</h5>
+                    <h2>@selectedItems.Count</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 待排程清單 *@
+    <div class="card">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-task me-2"></i>待排程項目清單
+                </h6>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" @onclick="SelectAll">
+                        <i class="bi bi-check-all me-1"></i>全選
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="DeselectAll">
+                        <i class="bi bi-x-lg me-1"></i>取消全選
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                    <p class="mt-2 text-muted">載入資料中...</p>
+                </div>
+            }
+            else if (!filteredItems.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="mt-2 text-muted">沒有待排程的項目</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width: 50px;">
+                                    <input type="checkbox" class="form-check-input"
+                                           @onchange="ToggleSelectAll"
+                                           checked="@(selectedItems.Count == filteredItems.Count && filteredItems.Any())" />
+                                </th>
+                                <th>訂單編號</th>
+                                <th>客戶</th>
+                                <th>商品</th>
+                                <th class="text-end">訂購數量</th>
+                                <th class="text-end">待排程數量</th>
+                                <th class="text-end">庫存</th>
+                                <th>交貨日</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in filteredItems)
+                            {
+                                var isSelected = selectedItems.Contains(item.SalesOrderDetailId);
+                                
+                                <tr class="@(isSelected ? "table-active" : "")" 
+                                    @onclick="() => ToggleSelection(item)"
+                                    style="cursor: pointer;">
+                                    <td class="text-center" @onclick:stopPropagation="true">
+                                        <input type="checkbox" class="form-check-input"
+                                               checked="@isSelected"
+                                               @onchange="() => ToggleSelection(item)" />
+                                    </td>
+                                    <td>
+                                        <a href="javascript:void(0)" @onclick="() => OpenSalesOrder(item.SalesOrderId)" @onclick:stopPropagation="true">
+                                            @item.SalesOrderCode
+                                        </a>
+                                    </td>
+                                    <td>@item.CustomerName</td>
+                                    <td>
+                                        <span class="text-primary">[@item.ProductCode]</span> @item.ProductName
+                                        @if (item.Product?.CanSchedule == true)
+                                        {
+                                            <span class="badge bg-info ms-1" title="可排程商品">
+                                                <i class="bi bi-calendar-check"></i>
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end">@item.OrderQuantity.ToString("N2")</td>
+                                    <td class="text-end">
+                                        <span class="@(item.PendingScheduleQuantity > 0 ? "text-warning fw-bold" : "text-success")">
+                                            @item.PendingScheduleQuantity.ToString("N2")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="@(item.StockShortage > 0 ? "text-danger fw-bold" : "text-success")">
+                                            @item.CurrentStock.ToString("N0")
+                                        </span>
+                                    </td>
+                                    <td>@(item.ExpectedDeliveryDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                    <td>
+                                        @if (item.ScheduledQuantity >= item.OrderQuantity)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>已全部排程
+                                            </span>
+                                        }
+                                        else if (item.ScheduledQuantity > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split me-1"></i>部分排程
+                                            </span>
+                                        }
+                                        else if (item.StockShortage > 0)
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>庫存不足
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-clock me-1"></i>待排程
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* 批次轉排程 Modal *@
+<BatchTransferToScheduleModal IsVisible="@showBatchTransferModal"
+                              IsVisibleChanged="@((bool visible) => showBatchTransferModal = visible)"
+                              SelectedItems="@GetSelectedPendingItems()"
+                              OnScheduleCreated="@HandleBatchScheduleCreated" />
+
+@* 銷貨訂單編輯 Modal *@
+<SalesOrderEditModalComponent IsVisible="@showSalesOrderModal"
+                              IsVisibleChanged="@((bool visible) => showSalesOrderModal = visible)"
+                              SalesOrderId="@selectedSalesOrderId"
+                              OnSalesOrderSaved="@HandleSalesOrderSaved"
+                              OnCancel="@(() => showSalesOrderModal = false)" />
+
+@code {
+    // ===== 資料狀態 =====
+    private bool isLoading = false;
+    private List<PendingScheduleItem> allItems = new();
+    private List<PendingScheduleItem> filteredItems = new();
+    private HashSet<int> selectedItems = new();
+    
+    // ===== 參考資料 =====
+    private List<Customer> customers = new();
+    private List<Product> products = new();
+    
+    // ===== 篩選條件 =====
+    private int? filterCustomerId;
+    private int? filterProductId;
+    private DateTime? filterDateFrom;
+    private DateTime? filterDateTo;
+    private bool showOnlySchedulable = true;
+    private bool showOnlyPending = true;
+    
+    // ===== Modal 狀態 =====
+    private bool showBatchTransferModal = false;
+    private bool showSalesOrderModal = false;
+    private int? selectedSalesOrderId;
+
+    // ===== 生命週期 =====
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReferenceDataAsync();
+        await LoadDataAsync();
+    }
+
+    private async Task LoadReferenceDataAsync()
+    {
+        try
+        {
+            customers = await CustomerService.GetAllAsync();
+            products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入參考資料失敗：{ex.Message}");
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            allItems = new List<PendingScheduleItem>();
+            
+            // 取得所有銷貨訂單
+            var salesOrders = await SalesOrderService.GetAllAsync();
+            
+            foreach (var salesOrder in salesOrders.Where(o => o.Status == EntityStatus.Active))
+            {
+                // 取得訂單明細
+                var salesOrderDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(salesOrder.Id);
+                
+                foreach (var detail in salesOrderDetails.Where(d => d.Status == EntityStatus.Active))
+                {
+                    // 跳過已完全排程的項目
+                    if (detail.ScheduledQuantity >= detail.OrderQuantity)
+                        continue;
+                    
+                    // 取得商品
+                    var product = products.FirstOrDefault(p => p.Id == detail.ProductId);
+                    if (product == null) continue;
+                    
+                    // 取得庫存
+                    var stocks = await InventoryStockService.GetByProductIdAsync(detail.ProductId);
+                    var currentStock = stocks.Sum(s => s.TotalCurrentStock);
+                    
+                    // 取得客戶
+                    var customer = customers.FirstOrDefault(c => c.Id == salesOrder.CustomerId);
+                    
+                    allItems.Add(new PendingScheduleItem
+                    {
+                        SalesOrderDetailId = detail.Id,
+                        SalesOrderId = detail.SalesOrderId,
+                        SalesOrderCode = salesOrder.Code ?? "-",
+                        CustomerId = salesOrder.CustomerId,
+                        CustomerName = customer?.CompanyName ?? "-",
+                        ProductId = detail.ProductId,
+                        ProductCode = product.Code ?? "-",
+                        ProductName = product.Name,
+                        Product = product,
+                        OrderQuantity = detail.OrderQuantity,
+                        ScheduledQuantity = detail.ScheduledQuantity,
+                        PendingScheduleQuantity = detail.PendingScheduleQuantity,
+                        CurrentStock = currentStock,
+                        StockShortage = Math.Max(0, detail.PendingScheduleQuantity - currentStock),
+                        ExpectedDeliveryDate = salesOrder.ExpectedDeliveryDate
+                    });
+                }
+            }
+            
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料失敗：{ex.Message}");
+            allItems = new();
+            filteredItems = new();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredItems = allItems;
+        
+        // 客戶篩選
+        if (filterCustomerId.HasValue)
+        {
+            filteredItems = filteredItems.Where(x => x.CustomerId == filterCustomerId.Value).ToList();
+        }
+        
+        // 商品篩選
+        if (filterProductId.HasValue)
+        {
+            filteredItems = filteredItems.Where(x => x.ProductId == filterProductId.Value).ToList();
+        }
+        
+        // 日期篩選
+        if (filterDateFrom.HasValue)
+        {
+            filteredItems = filteredItems.Where(x => x.ExpectedDeliveryDate >= filterDateFrom.Value).ToList();
+        }
+        
+        if (filterDateTo.HasValue)
+        {
+            filteredItems = filteredItems.Where(x => x.ExpectedDeliveryDate <= filterDateTo.Value).ToList();
+        }
+        
+        // 僅顯示可排程商品
+        if (showOnlySchedulable)
+        {
+            filteredItems = filteredItems.Where(x => x.Product?.CanSchedule == true).ToList();
+        }
+        
+        // 僅顯示待排程項目
+        if (showOnlyPending)
+        {
+            filteredItems = filteredItems.Where(x => x.PendingScheduleQuantity > 0).ToList();
+        }
+        
+        // 排序：交期優先，然後庫存不足優先
+        filteredItems = filteredItems
+            .OrderBy(x => x.ExpectedDeliveryDate ?? DateTime.MaxValue)
+            .ThenByDescending(x => x.StockShortage)
+            .ToList();
+        
+        // 清除不在篩選結果中的選擇
+        selectedItems.RemoveWhere(id => !filteredItems.Any(x => x.SalesOrderDetailId == id));
+        
+        StateHasChanged();
+    }
+
+    // ===== 選擇相關 =====
+    private void ToggleSelection(PendingScheduleItem item)
+    {
+        if (selectedItems.Contains(item.SalesOrderDetailId))
+        {
+            selectedItems.Remove(item.SalesOrderDetailId);
+        }
+        else
+        {
+            selectedItems.Add(item.SalesOrderDetailId);
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        if ((bool)(e.Value ?? false))
+        {
+            SelectAll();
+        }
+        else
+        {
+            DeselectAll();
+        }
+    }
+
+    private void SelectAll()
+    {
+        selectedItems = filteredItems.Select(x => x.SalesOrderDetailId).ToHashSet();
+        StateHasChanged();
+    }
+
+    private void DeselectAll()
+    {
+        selectedItems.Clear();
+        StateHasChanged();
+    }
+
+    private List<PendingScheduleItem> GetSelectedPendingItems()
+    {
+        return filteredItems.Where(x => selectedItems.Contains(x.SalesOrderDetailId)).ToList();
+    }
+
+    // ===== 操作相關 =====
+    private void HandleBatchTransferToSchedule()
+    {
+        if (!selectedItems.Any())
+        {
+            _ = NotificationService.ShowWarningAsync("請先選擇要排程的項目");
+            return;
+        }
+        
+        showBatchTransferModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleBatchScheduleCreated(ProductionSchedule schedule)
+    {
+        showBatchTransferModal = false;
+        selectedItems.Clear();
+        await NotificationService.ShowSuccessAsync($"成功建立排程：{schedule.Code}");
+        await LoadDataAsync();
+    }
+
+    private void OpenSalesOrder(int salesOrderId)
+    {
+        selectedSalesOrderId = salesOrderId;
+        showSalesOrderModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleSalesOrderSaved(SalesOrder order)
+    {
+        showSalesOrderModal = false;
+        await LoadDataAsync();
+    }
+
+    // ===== 內部類別 =====
+    public class PendingScheduleItem
+    {
+        public int SalesOrderDetailId { get; set; }
+        public int SalesOrderId { get; set; }
+        public string SalesOrderCode { get; set; } = string.Empty;
+        public int CustomerId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public Product? Product { get; set; }
+        public decimal OrderQuantity { get; set; }
+        public decimal ScheduledQuantity { get; set; }
+        public decimal PendingScheduleQuantity { get; set; }
+        public decimal CurrentStock { get; set; }
+        public decimal StockShortage { get; set; }
+        public DateTime? ExpectedDeliveryDate { get; set; }
+    }
+}

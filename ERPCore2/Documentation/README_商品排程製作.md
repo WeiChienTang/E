@@ -12,8 +12,9 @@
 3. [設計決策摘要](#設計決策摘要)
 4. [資料模型設計](#資料模型設計)
 5. [頁面設計](#頁面設計)
-6. [實作步驟規劃](#實作步驟規劃)
-7. [相關檔案清單](#相關檔案清單)
+6. [開發規範](#開發規範)
+7. [實作步驟規劃](#實作步驟規劃)
+8. [相關檔案清單](#相關檔案清單)
 
 ---
 
@@ -639,6 +640,120 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 5. 建立 ProductionScheduleAllocation 關聯
 6. 回寫 SalesOrderDetail.ScheduledQuantity
 7. 顯示成功訊息
+
+---
+
+## 開發規範
+
+### 組件使用規範
+
+本專案所有 UI 開發必須遵循以下規範：
+
+#### Modal 組件規範
+
+**所有 Modal 必須使用 `BaseModalComponent` 作為基礎框架**
+
+檔案位置：`Components/Shared/BaseModal/BaseFrameworkComponent/BaseModalComponent.razor`
+
+```razor
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="Modal 標題"
+                   Icon="bi bi-diagram-3"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Info"
+                   ShowFooter="false"
+                   CloseOnBackdropClick="false"
+                   CloseOnEscape="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="載入中..."
+                   HeaderButtons="@HeaderButtons"
+                   BodyContent="@BodyContent" />
+```
+
+**主要參數說明：**
+
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `IsVisible` | bool | 控制 Modal 顯示/隱藏 |
+| `IsVisibleChanged` | EventCallback<bool> | 顯示狀態變更回調 |
+| `Title` | string | Modal 標題 |
+| `Icon` | string | 標題圖示（Bootstrap Icons） |
+| `HeaderColor` | HeaderVariant | Header 顏色變體 |
+| `Size` | ModalSize | Modal 尺寸（Small/Default/Large/ExtraLarge/Desktop） |
+| `HeaderButtons` | RenderFragment | Header 右側按鈕區 |
+| `BodyContent` | RenderFragment | Modal 主體內容 |
+| `ShowFooter` | bool | 是否顯示 Footer |
+| `IsLoading` | bool | 載入中狀態 |
+
+#### 表格組件規範
+
+**所有可編輯表格必須使用 `InteractiveTableComponent` 作為基礎框架**
+
+檔案位置：`Components/Shared/BaseModal/BaseTableComponent/InteractiveTableComponent.razor`
+
+```razor
+<InteractiveTableComponent TItem="ProductionScheduleItem"
+                          Items="@scheduleItems"
+                          ColumnDefinitions="@GetColumnDefinitions()"
+                          IsReadOnly="@IsReadOnly"
+                          ShowHeader="true"
+                          ShowActions="false"
+                          ShowBuiltInActions="true"
+                          ShowBuiltInDeleteButton="true"
+                          OnItemDelete="@HandleItemDelete"
+                          EnableAutoEmptyRow="true"
+                          CreateEmptyItem="@CreateEmptyItem"
+                          DataLoadCompleted="@_dataLoadCompleted"
+                          IsStriped="true"
+                          IsHoverable="true"
+                          IsBordered="true"
+                          EmptyMessage="尚未新增項目" />
+```
+
+**主要參數說明：**
+
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `TItem` | 泛型 | 資料項目類型 |
+| `Items` | List<TItem> | 資料集合 |
+| `ColumnDefinitions` | List<InteractiveColumnDefinition> | 欄位定義 |
+| `IsReadOnly` | bool | 是否唯讀模式 |
+| `ShowBuiltInActions` | bool | 顯示內建操作按鈕（刪除等） |
+| `EnableAutoEmptyRow` | bool | 自動管理空行 |
+| `CreateEmptyItem` | Func<TItem> | 建立空行的方法 |
+| `DataLoadCompleted` | bool | 資料載入完成標記 |
+| `OnItemDelete` | EventCallback<TItem> | 刪除項目事件 |
+
+**欄位類型 (InteractiveColumnType)：**
+
+| 類型 | 說明 |
+|------|------|
+| `Display` | 純顯示（唯讀） |
+| `Input` | 文字輸入 |
+| `Number` | 數字輸入 |
+| `Select` | 下拉選單 |
+| `Checkbox` | 勾選框 |
+| `Button` | 按鈕 |
+| `Custom` | 自訂模板 |
+| `SearchableSelect` | 可搜尋下拉選單 |
+
+### 本專案需要建立的 Modal
+
+| Modal 名稱 | 用途 | 基礎組件 |
+|-----------|------|---------|
+| `TransferToScheduleModal` | 單一明細轉排程確認 | BaseModalComponent |
+| `BatchTransferToScheduleModal` | 批次轉排程確認 | BaseModalComponent |
+| `StartProductionModal` | 開始生產確認（含領料） | BaseModalComponent |
+| `ProductionCompletionModal` | 完成入庫 | BaseModalComponent |
+
+### 本專案需要使用表格的頁面
+
+| 頁面/組件 | 表格用途 | 基礎組件 |
+|----------|---------|---------|
+| `ProductionScheduleEditModalComponent` | 排程項目管理 | InteractiveTableComponent |
+| `ProductionScheduleEditModalComponent` | BOM 組件展開顯示 | InteractiveTableComponent |
+| `ProductionScheduleEditModalComponent` | 訂單分配明細 | InteractiveTableComponent |
+| `ProductionPendingWorkbench` | 待排程清單 | InteractiveTableComponent |
 
 ---
 
@@ -1282,7 +1397,118 @@ public async Task<List<ProductionSchedule>> CreateSchedulesWithMerge(
 | 日期 | 版本 | 變更內容 | 作者 |
 |------|------|---------|------|
 | 2024/12/06 | v1.0 | 初版建立 | AI Assistant |
+| 2024/12/08 | v1.1 | Phase 1-2 完成：資料模型和服務層 | AI Assistant |
+| 2024/12/08 | v1.2 | Phase 3 部分完成：轉排程 UI 整合 | AI Assistant |
+| 2024/12/09 | v1.3 | Phase 3-4 完成：待排程工作台、完工登錄 | AI Assistant |
+| 2024/12/09 | v1.4 | Phase 5 完成：組件領料功能 | AI Assistant |
+| 2024/12/06 | v1.5 | Phase 6 完成：庫存交易整合（領料扣庫存、完工加庫存） | AI Assistant |
 
 ---
 
-> **下一步**：確認此設計文件後，即可開始 Phase 1 的資料模型建立工作。
+## 開發進度
+
+### ✅ Phase 1：資料模型建立 - 完成
+
+已完成項目：
+- [x] `Data/Enums/ProductionItemStatus.cs` - 生產狀態列舉
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleItem.cs` - 排程項目實體
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleAllocation.cs` - 訂單分配實體
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleCompletion.cs` - 入庫記錄實體
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleDetail.cs` - 調整關聯到 Item
+- [x] `Data/Entities/Sales/SalesOrderDetail.cs` - 新增 ScheduledQuantity 欄位
+- [x] `Data/Entities/Warehouses/InventoryStockDetail.cs` - 新增 InProductionStock 欄位
+- [x] `Data/Entities/Warehouses/InventoryStock.cs` - 調整 TotalAvailableStock 計算
+- [x] `Data/Context/AppDbContext.cs` - 註冊新實體
+- [x] Migration 建立 (`AddProductionScheduleItems`)
+
+### ✅ Phase 2：Service 層建立 - 完成
+
+已完成項目：
+- [x] `Services/ProductionManagement/IProductionScheduleItemService.cs` - 介面定義
+- [x] `Services/ProductionManagement/ProductionScheduleItemService.cs` - 服務實作
+- [x] `Services/ProductionManagement/IProductionScheduleAllocationService.cs` - 介面定義
+- [x] `Services/ProductionManagement/ProductionScheduleAllocationService.cs` - 服務實作
+- [x] `Services/ProductionManagement/IProductionScheduleCompletionService.cs` - 入庫記錄介面
+- [x] `Services/ProductionManagement/ProductionScheduleCompletionService.cs` - 入庫記錄服務
+- [x] `Services/ProductionManagement/IProductionScheduleDetailService.cs` - 更新介面（關聯到 Item）
+- [x] `Services/ProductionManagement/ProductionScheduleDetailService.cs` - 重構服務
+- [x] `Data/ServiceRegistration.cs` - 註冊新服務
+
+### ✅ Phase 3：UI 整合 - 完成
+
+已完成項目：
+- [x] `Components/Shared/BaseModal/Modals/Sales/TransferToScheduleModalComponent.razor` - 轉排程確認 Modal
+- [x] `Components/Shared/BaseModal/Modals/Sales/SalesOrderCompositionEditModal.razor` - 新增「轉排程」按鈕
+- [x] `Components/Shared/BaseModal/Modals/Sales/SalesOrderTable.razor` - 傳遞排程相關參數
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionScheduleItemEditModal.razor` - 排程項目編輯 Modal
+- [x] `Components/Pages/ProductionManagement/ProductionScheduleEditModalComponent.razor` - 增強顯示排程項目列表
+
+### ✅ Phase 4：待排程工作台與完工登錄 - 完成
+
+已完成項目：
+- [x] `Components/Pages/ProductionManagement/ProductionPendingWorkbench.razor` - 待排程工作台頁面
+  - 顯示所有待排程的銷貨訂單明細
+  - 支援客戶、商品、日期篩選
+  - 多選勾選功能
+  - 統計卡片顯示（待排程項目、數量、庫存不足、已選擇）
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/BatchTransferToScheduleModal.razor` - 批次轉排程 Modal
+  - 支援合併相同商品選項
+  - 自動複製 BOM 組成到排程明細
+  - 更新銷貨訂單明細的已排程數量
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionCompletionModal.razor` - 完工登錄 Modal
+  - 顯示進度條和完成狀態
+  - 支援分批入庫登錄
+  - BOM 組件消耗預覽
+  - 自動更新排程項目狀態
+- [x] `ProductionScheduleItemEditModal.razor` - 整合開始生產與完工登錄按鈕
+
+### ⏳ Phase 5：進階功能 - 待開發
+
+待完成項目：
+- [ ] 組件領料流程 - 消耗組件庫存
+- [ ] 入庫單整合 - 完工後自動建立入庫單
+- [ ] 狀態觸發機制 - 透過入庫單觸發完成狀態
+- [ ] 報表功能 - 生產進度報表、組件需求報表
+
+### ✅ Phase 5：組件領料功能 - 完成
+
+已完成項目：
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleDetail.cs` - 新增 IssuedQuantity 欄位
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/MaterialIssueModal.razor` - 組件領料 Modal
+  - 顯示組件需求清單
+  - 庫存不足警告
+  - 支援部分領料
+  - 自動更新已領數量
+- [x] `ProductionScheduleItemEditModal.razor` - 整合組件領料按鈕
+- [x] `Data/Navigation/NavigationConfig.cs` - 新增待排程工作台導航選單
+- [x] Migration: `AddIssuedQuantityToProductionScheduleDetail`
+
+### ✅ Phase 6：庫存交易整合 - 完成
+
+已完成項目：
+- [x] `MaterialIssueModal.razor` - 整合 InventoryStockService.ReduceStockAsync
+  - 領料時自動扣減組件庫存
+  - 交易單號格式：`MI{yyyyMMddHHmmss}`
+  - 交易類型：`InventoryTransactionTypeEnum.MaterialIssue`
+- [x] `ProductionCompletionModal.razor` - 整合 InventoryStockService.AddStockAsync
+  - 完工時自動增加成品庫存
+  - 交易單號格式：`PC{yyyyMMddHHmmss}`
+  - 交易類型：`InventoryTransactionTypeEnum.ProductionCompletion`
+- [x] `Documentation/README_生產排程庫存整合.md` - 庫存整合說明文件
+
+### ⏳ Phase 7：進階功能 - 待開發
+
+待完成項目：
+- [ ] 製程管理 - ProcessDefinition 實體與服務
+- [ ] 工作站管理 - WorkStation 實體與服務
+- [ ] 製程排程追蹤 - 工序級別的進度追蹤
+- [ ] 報表功能 - 生產進度報表、組件需求報表、領料統計報表
+
+---
+
+> **當前狀態**：Phase 6 完成。系統已具備完整的生產排程流程與庫存整合：
+> 1. 從銷貨訂單 BOM 編輯畫面或待排程工作台轉入排程
+> 2. 在生產排程中管理排程項目和查看 BOM 組件
+> 3. 開始生產前進行組件領料（自動扣減庫存）
+> 4. 生產過程中進行完工登錄（支援分批入庫，自動增加庫存）
+> 5. 所有庫存異動都有完整的交易記錄追蹤

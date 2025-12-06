@@ -1172,6 +1172,9 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("InProductionStock")
+                        .HasColumnType("int");
+
                     b.Property<int>("InTransitStock")
                         .HasColumnType("int");
 
@@ -2235,6 +2238,145 @@ namespace ERPCore2.Migrations
                     b.ToTable("ProductionSchedules");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleAllocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AllocatedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ProductionScheduleItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SalesOrderDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalesOrderDetailId");
+
+                    b.HasIndex("ProductionScheduleItemId", "SalesOrderDetailId");
+
+                    b.ToTable("ProductionScheduleAllocations");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleCompletion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("ActualUnitCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("BatchNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("CompletedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("CompletedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("CompletionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("InventoryTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductionScheduleItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QualityCheckResult")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WarehouseLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompletedByEmployeeId");
+
+                    b.HasIndex("CompletionDate");
+
+                    b.HasIndex("InventoryTransactionId");
+
+                    b.HasIndex("ProductionScheduleItemId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("WarehouseLocationId");
+
+                    b.ToTable("ProductionScheduleCompletions");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleDetail", b =>
                 {
                     b.Property<int>("Id")
@@ -2265,10 +2407,13 @@ namespace ERPCore2.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("IssuedQuantity")
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<int?>("ProductCompositionDetailId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProductionScheduleId")
+                    b.Property<int>("ProductionScheduleItemId")
                         .HasColumnType("int");
 
                     b.Property<string>("Remarks")
@@ -2304,9 +2449,100 @@ namespace ERPCore2.Migrations
 
                     b.HasIndex("WarehouseId");
 
-                    b.HasIndex("ProductionScheduleId", "ComponentProductId");
+                    b.HasIndex("ProductionScheduleItemId", "ComponentProductId");
 
                     b.ToTable("ProductionScheduleDetails");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("CompletedQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PlannedEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductionItemStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductionScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("SalesOrderDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ScheduledQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WarehouseLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductionItemStatus");
+
+                    b.HasIndex("SalesOrderDetailId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("WarehouseLocationId");
+
+                    b.HasIndex("ProductionScheduleId", "ProductId");
+
+                    b.ToTable("ProductionScheduleItems");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrder", b =>
@@ -3562,6 +3798,9 @@ namespace ERPCore2.Migrations
 
                     b.Property<int>("SalesOrderId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("ScheduledQuantity")
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -5316,6 +5555,64 @@ namespace ERPCore2.Migrations
                     b.Navigation("SalesOrder");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleAllocation", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.ProductionScheduleItem", "ProductionScheduleItem")
+                        .WithMany()
+                        .HasForeignKey("ProductionScheduleItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.SalesOrderDetail", "SalesOrderDetail")
+                        .WithMany("ProductionScheduleAllocations")
+                        .HasForeignKey("SalesOrderDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductionScheduleItem");
+
+                    b.Navigation("SalesOrderDetail");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleCompletion", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "CompletedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("CompletedByEmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ERPCore2.Data.Entities.InventoryTransaction", "InventoryTransaction")
+                        .WithMany()
+                        .HasForeignKey("InventoryTransactionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ERPCore2.Data.Entities.ProductionScheduleItem", "ProductionScheduleItem")
+                        .WithMany("Completions")
+                        .HasForeignKey("ProductionScheduleItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("WarehouseLocationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CompletedByEmployee");
+
+                    b.Navigation("InventoryTransaction");
+
+                    b.Navigation("ProductionScheduleItem");
+
+                    b.Navigation("Warehouse");
+
+                    b.Navigation("WarehouseLocation");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleDetail", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Product", "ComponentProduct")
@@ -5329,9 +5626,9 @@ namespace ERPCore2.Migrations
                         .HasForeignKey("ProductCompositionDetailId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ERPCore2.Data.Entities.ProductionSchedule", "ProductionSchedule")
+                    b.HasOne("ERPCore2.Data.Entities.ProductionScheduleItem", "ProductionScheduleItem")
                         .WithMany("ScheduleDetails")
-                        .HasForeignKey("ProductionScheduleId")
+                        .HasForeignKey("ProductionScheduleItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -5344,9 +5641,49 @@ namespace ERPCore2.Migrations
 
                     b.Navigation("ProductCompositionDetail");
 
-                    b.Navigation("ProductionSchedule");
+                    b.Navigation("ProductionScheduleItem");
 
                     b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleItem", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.ProductionSchedule", "ProductionSchedule")
+                        .WithMany("ScheduleItems")
+                        .HasForeignKey("ProductionScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.SalesOrderDetail", "SalesOrderDetail")
+                        .WithMany("ProductionScheduleItems")
+                        .HasForeignKey("SalesOrderDetailId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ERPCore2.Data.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ERPCore2.Data.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("WarehouseLocationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductionSchedule");
+
+                    b.Navigation("SalesOrderDetail");
+
+                    b.Navigation("Warehouse");
+
+                    b.Navigation("WarehouseLocation");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.PurchaseOrder", b =>
@@ -6179,6 +6516,13 @@ namespace ERPCore2.Migrations
 
             modelBuilder.Entity("ERPCore2.Data.Entities.ProductionSchedule", b =>
                 {
+                    b.Navigation("ScheduleItems");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ProductionScheduleItem", b =>
+                {
+                    b.Navigation("Completions");
+
                     b.Navigation("ScheduleDetails");
                 });
 
@@ -6245,6 +6589,10 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.SalesOrderDetail", b =>
                 {
                     b.Navigation("CompositionDetails");
+
+                    b.Navigation("ProductionScheduleAllocations");
+
+                    b.Navigation("ProductionScheduleItems");
 
                     b.Navigation("SalesDeliveryDetails");
                 });
