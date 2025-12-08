@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251206030634_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251208014446_RefactorProductProcurementType")]
+    partial class RefactorProductProcurementType
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1929,9 +1929,6 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<bool>("CanSchedule")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1947,6 +1944,9 @@ namespace ERPCore2.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ProcurementType")
+                        .HasColumnType("int");
 
                     b.Property<int?>("ProductCategoryId")
                         .HasColumnType("int");

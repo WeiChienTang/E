@@ -103,10 +103,11 @@
                 PropertyName = nameof(PurchaseOrder.OrderDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
-                DisplayFormatter = value => 
+                DisplayFormatter = item => 
                 {
-                    if (value is DateTime date)
-                        return $"<span style='font-size: 0.875rem;'>{date:yyyy/MM/dd}</span>";
+                    var order = item as PurchaseOrder;
+                    if (order?.OrderDate != null)
+                        return $"<span style='font-size: 0.875rem;'>{order.OrderDate:yyyy/MM/dd}</span>";
                     return "-";
                 }
             },
@@ -118,10 +119,11 @@
                 PropertyName = nameof(PurchaseOrder.ExpectedDeliveryDate),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
-                DisplayFormatter = value => 
+                DisplayFormatter = item => 
                 {
-                    if (value is DateTime date)
-                        return $"<span style='font-size: 0.875rem;'>{date:yyyy/MM/dd}</span>";
+                    var order = item as PurchaseOrder;
+                    if (order?.ExpectedDeliveryDate != null)
+                        return $"<span style='font-size: 0.875rem;'>{order.ExpectedDeliveryDate:yyyy/MM/dd}</span>";
                     return "<span style='font-size: 0.875rem;'>-</span>";
                 }
             },
@@ -134,11 +136,10 @@
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
                 CellCssClass = "text-end",
-                DisplayFormatter = value => 
+                DisplayFormatter = item => 
                 {
-                    if (value is decimal amount)
-                        return $"<span style='font-size: 0.875rem;' class='fw-bold'>{amount:N0}</span>";
-                    return "0";
+                    var order = item as PurchaseOrder;
+                    return $"<span style='font-size: 0.875rem;' class='fw-bold'>{order?.TotalAmount ?? 0:N0}</span>";
                 }
             },
             
@@ -149,10 +150,11 @@
                 PropertyName = nameof(PurchaseOrder.CreatedAt),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px",
-                DisplayFormatter = value => 
+                DisplayFormatter = item => 
                 {
-                    if (value is DateTime date)
-                        return $"<span style='font-size: 0.875rem;'>{date:yyyy/MM/dd HH:mm}</span>";
+                    var order = item as PurchaseOrder;
+                    if (order?.CreatedAt != null)
+                        return $"<span style='font-size: 0.875rem;'>{order.CreatedAt:yyyy/MM/dd HH:mm}</span>";
                     return "-";
                 }
             }

@@ -1,16 +1,22 @@
-@* 轉排程確認 Modal - 從銷貨訂單 BOM 轉換為生產排程 *@
+@* 批次轉排程 Modal - 從銷貨訂單批次轉換為生產排程 *@
 @using ERPCore2.Components.Shared.GenericComponent.Button
 @using ERPCore2.Data.Entities
 @using ERPCore2.Data.Enums
+@using ERPCore2.Helpers.NumericHelpers
+@using ERPCore2.Helpers
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IProductionScheduleService ProductionScheduleService
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject IProductionScheduleDetailService ProductionScheduleDetailService
 @inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject IProductService ProductService
 @inject IWarehouseService WarehouseService
 @inject IEmployeeService EmployeeService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -31,44 +37,14 @@
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     
     /// <summary>
-    /// 來源銷售訂單明細 ID
+    /// 來源銷售訂單 ID（必要參數）
     /// </summary>
-    [Parameter] public int? SalesOrderDetailId { get; set; }
-    
-    /// <summary>
-    /// 來源銷售訂單 ID（用於顯示資訊）
-    /// </summary>
-    [Parameter] public int? SalesOrderId { get; set; }
+    [Parameter, EditorRequired] public int SalesOrderId { get; set; }
     
     /// <summary>
     /// 銷售訂單代碼（用於顯示）
     /// </summary>
     [Parameter] public string? SalesOrderCode { get; set; }
-    
-    /// <summary>
-    /// 商品名稱（用於顯示）
-    /// </summary>
-    [Parameter] public string? ProductName { get; set; }
-    
-    /// <summary>
-    /// 商品 ID
-    /// </summary>
-    [Parameter] public int? ProductId { get; set; }
-    
-    /// <summary>
-    /// 訂單數量
-    /// </summary>
-    [Parameter] public decimal OrderQuantity { get; set; }
-    
-    /// <summary>
-    /// 已排程數量
-    /// </summary>
-    [Parameter] public decimal ScheduledQuantity { get; set; }
-    
-    /// <summary>
-    /// BOM 組成明細（來自 SalesOrderCompositionDetail）
-    /// </summary>
-    [Parameter] public List<SalesOrderCompositionDetail>? CompositionDetails { get; set; }
     
     /// <summary>
     /// 轉排程成功的回調
@@ -87,10 +63,10 @@
     private DateTime scheduleDate = DateTime.Today;
     private int? selectedWarehouseId;
     private int? createdByEmployeeId;
-    private decimal quantityToSchedule = 0;
+    private bool shouldMergeSchedules = true;  // 是否合併為單一排程單
     
-    // 組件預覽列表（含庫存資訊）
-    private List<ComponentPreviewItem> componentPreviews = new();
+    // 可轉排程的明細列表
+    private List<SchedulableDetailItem> schedulableDetails = new();
     
     // 參考資料
     private List<Warehouse> availableWarehouses = new();
@@ -98,6 +74,31 @@
     private Dictionary<int, decimal> productStockQuantities = new();
 
     // ===== 內部類別 =====
+    
+    /// <summary>
+    /// 可轉排程的明細項目
+    /// </summary>
+    private class SchedulableDetailItem
+    {
+        public int SalesOrderDetailId { get; set; }
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductCode { get; set; } = string.Empty;
+        public decimal OrderQuantity { get; set; }
+        public decimal ScheduledQuantity { get; set; }
+        public decimal PendingQuantity => OrderQuantity - ScheduledQuantity;
+        public bool CanSchedule { get; set; }
+        public bool HasBom { get; set; }
+        public List<SalesOrderCompositionDetail> BomDetails { get; set; } = new();
+        
+        // UI 狀態
+        public bool IsSelected { get; set; } = false;
+        public decimal QuantityToSchedule { get; set; }
+        
+        // 組件預覽
+        public List<ComponentPreviewItem> ComponentPreviews { get; set; } = new();
+    }
+    
     private class ComponentPreviewItem
     {
         public int ComponentProductId { get; set; }
@@ -113,8 +114,10 @@
     }
 
     // ===== 計算屬性 =====
-    private decimal PendingQuantity => OrderQuantity - ScheduledQuantity;
-    private bool CanSubmit => quantityToSchedule > 0 && quantityToSchedule <= PendingQuantity && componentPreviews.Any();
+    private int GetSelectedCount() => schedulableDetails.Count(d => d.IsSelected);
+    private decimal GetTotalScheduleQuantity() => schedulableDetails.Where(d => d.IsSelected).Sum(d => d.QuantityToSchedule);
+    private bool CanSubmit => GetSelectedCount() > 0 && schedulableDetails.Where(d => d.IsSelected).All(d => d.QuantityToSchedule > 0);
+    private bool IsAllSelected() => schedulableDetails.Any() && schedulableDetails.All(d => d.IsSelected);
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -137,14 +140,24 @@
             availableWarehouses = await WarehouseService.GetAllAsync();
             availableEmployees = await EmployeeService.GetAllAsync();
             
-            // 設定預設排程數量為待排程數量
-            quantityToSchedule = PendingQuantity;
+            // 自動設定當前使用者為製單人員
+            var currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (currentEmployeeId.HasValue)
+            {
+                createdByEmployeeId = currentEmployeeId.Value;
+            }
+            
+            // 載入可轉排程的明細
+            await LoadSchedulableDetailsAsync();
             
             // 載入庫存資訊
             await LoadStockQuantitiesAsync();
             
-            // 計算組件預覽
-            CalculateComponentPreviews();
+            // 計算所有明細的組件預覽
+            foreach (var detail in schedulableDetails)
+            {
+                CalculateComponentPreviews(detail);
+            }
         }
         catch (Exception ex)
         {
@@ -157,6 +170,50 @@
             StateHasChanged();
         }
     }
+    
+    /// <summary>
+    /// 載入可轉排程的明細
+    /// </summary>
+    private async Task LoadSchedulableDetailsAsync()
+    {
+        try
+        {
+            schedulableDetails.Clear();
+            
+            // 1. 載入銷貨訂單的所有明細
+            var allDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(SalesOrderId);
+            
+            // 2. 篩選可轉排程的明細（Product.ProcurementType = Manufactured 且 PendingQuantity > 0）
+            var schedulableDetailEntities = allDetails
+                .Where(d => d.Product?.ProcurementType == ProcurementType.Manufactured && d.PendingScheduleQuantity > 0)
+                .ToList();
+            
+            // 3. 為每筆明細載入 BOM
+            foreach (var detail in schedulableDetailEntities)
+            {
+                var bom = await SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync(detail.Id);
+                
+                schedulableDetails.Add(new SchedulableDetailItem
+                {
+                    SalesOrderDetailId = detail.Id,
+                    ProductId = detail.ProductId,
+                    ProductName = detail.Product?.Name ?? "未知商品",
+                    ProductCode = detail.Product?.Code ?? "",
+                    OrderQuantity = detail.OrderQuantity,
+                    ScheduledQuantity = detail.ScheduledQuantity,
+                    CanSchedule = detail.Product?.ProcurementType == ProcurementType.Manufactured,
+                    HasBom = bom.Any(),
+                    BomDetails = bom,
+                    IsSelected = false,  // 預設不勾選
+                    QuantityToSchedule = detail.PendingScheduleQuantity  // 預設為待排程數量
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入明細失敗：{ex.Message}");
+        }
+    }
 
     private async Task LoadStockQuantitiesAsync()
     {
@@ -164,12 +221,16 @@
         {
             productStockQuantities.Clear();
             
-            if (CompositionDetails == null || !CompositionDetails.Any())
+            if (!schedulableDetails.Any())
                 return;
 
-            var productIds = CompositionDetails.Select(c => c.ComponentProductId).Distinct();
+            // 收集所有 BOM 中的組件商品 ID
+            var componentProductIds = schedulableDetails
+                .SelectMany(d => d.BomDetails)
+                .Select(bom => bom.ComponentProductId)
+                .Distinct();
             
-            foreach (var productId in productIds)
+            foreach (var productId in componentProductIds)
             {
                 var stocks = await InventoryStockService.GetByProductIdAsync(productId);
                 var totalStock = stocks.Sum(s => s.TotalAvailableStock);
@@ -182,48 +243,86 @@
         }
     }
 
-    private void CalculateComponentPreviews()
+    private void CalculateComponentPreviews(SchedulableDetailItem detail)
     {
-        componentPreviews.Clear();
+        detail.ComponentPreviews.Clear();
         
-        if (CompositionDetails == null || !CompositionDetails.Any())
+        if (!detail.BomDetails.Any())
             return;
 
-        foreach (var detail in CompositionDetails.Where(d => d.ComponentProductId > 0))
+        foreach (var bomDetail in detail.BomDetails.Where(d => d.ComponentProductId > 0))
         {
-            var currentStock = productStockQuantities.GetValueOrDefault(detail.ComponentProductId, 0);
-            var totalNeeded = detail.Quantity * quantityToSchedule;
+            var currentStock = productStockQuantities.GetValueOrDefault(bomDetail.ComponentProductId, 0);
+            var totalNeeded = bomDetail.Quantity * detail.QuantityToSchedule;
             var shortage = Math.Max(0, totalNeeded - currentStock);
             
-            componentPreviews.Add(new ComponentPreviewItem
+            detail.ComponentPreviews.Add(new ComponentPreviewItem
             {
-                ComponentProductId = detail.ComponentProductId,
-                ComponentName = detail.ComponentProduct?.Name ?? "未知商品",
-                ComponentCode = detail.ComponentProduct?.Code,
-                QuantityPerUnit = detail.Quantity,
+                ComponentProductId = bomDetail.ComponentProductId,
+                ComponentName = bomDetail.ComponentProduct?.Name ?? "未知商品",
+                ComponentCode = bomDetail.ComponentProduct?.Code,
+                QuantityPerUnit = bomDetail.Quantity,
                 TotalQuantity = totalNeeded,
                 CurrentStock = currentStock,
                 Shortage = shortage,
-                NeedsProduction = shortage > 0 && (detail.ComponentProduct?.CanSchedule ?? false),
-                UnitId = detail.UnitId,
-                UnitName = detail.Unit?.Name
+                NeedsProduction = shortage > 0 && (bomDetail.ComponentProduct?.ProcurementType == ProcurementType.Manufactured),
+                UnitId = bomDetail.UnitId,
+                UnitName = bomDetail.Unit?.Name
             });
         }
     }
-
-    private void OnQuantityChanged(ChangeEventArgs e)
+    
+    /// <summary>
+    /// 全選/取消全選
+    /// </summary>
+    private void ToggleSelectAll()
+    {
+        bool newState = !IsAllSelected();
+        foreach (var detail in schedulableDetails)
+        {
+            detail.IsSelected = newState;
+        }
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 明細選擇變更時重新計算組件
+    /// </summary>
+    private void OnDetailSelectionChanged(SchedulableDetailItem detail)
+    {
+        CalculateComponentPreviews(detail);
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 數量變更時重新計算組件
+    /// </summary>
+    private void OnQuantityChanged(SchedulableDetailItem detail, ChangeEventArgs e)
     {
         if (decimal.TryParse(e.Value?.ToString(), out var value))
         {
-            quantityToSchedule = Math.Max(0, Math.Min(value, PendingQuantity));
-            CalculateComponentPreviews();
+            detail.QuantityToSchedule = Math.Max(0.01m, Math.Min(value, detail.PendingQuantity));
+            CalculateComponentPreviews(detail);
             StateHasChanged();
         }
     }
 
     private string GetModalTitle()
     {
-        return $"轉排程 - {ProductName ?? "商品"}";
+        return $"批次轉排程 - {SalesOrderCode ?? "銷貨訂單"}";
+    }
+
+    private string GetCreatedByEmployeeName()
+    {
+        if (createdByEmployeeId.HasValue)
+        {
+            var employee = availableEmployees.FirstOrDefault(e => e.Id == createdByEmployeeId.Value);
+            if (employee != null)
+            {
+                return $"{employee.Name}";
+            }
+        }
+        return "-";
     }
 
     // ===== Header Buttons =====
@@ -231,15 +330,15 @@
     {
         <div class="w-100 d-flex align-items-center px-2">
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="取消"
-                                      Variant="ButtonVariant.Gray"
-                                      Size="ButtonSize.Small"
-                                      OnClick="@HandleCancel" />
-                <GenericButtonComponent Text="確認轉排程"
-                                      Variant="ButtonVariant.Yellow"
+                <GenericButtonComponent Text="確認"
+                                      Variant="ButtonVariant.Green"
                                       Size="ButtonSize.Small"
                                       IsDisabled="@(!CanSubmit)"
                                       OnClick="@HandleSubmit" />
+                <GenericButtonComponent Text="取消"
+                                      Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Small"
+                                      OnClick="@HandleCancel" />
             </div>
         </div>
     };
@@ -248,30 +347,20 @@
     private RenderFragment BodyContent => __builder =>
     {
         <div class="container-fluid">
-            @* 來源資訊 *@
+            @* 訂單資訊 *@
             <div class="card mb-3">
                 <div class="card-header bg-light py-2">
-                    <i class="bi bi-info-circle me-2"></i>來源訂單資訊
+                    <i class="bi bi-info-circle me-2"></i>銷貨訂單資訊
                 </div>
                 <div class="card-body py-2">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <small class="text-muted">訂單單號</small>
                             <div class="fw-bold">@(SalesOrderCode ?? "-")</div>
                         </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">商品</small>
-                            <div class="fw-bold">@(ProductName ?? "-")</div>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">訂單數量 / 已排程 / 待排程</small>
-                            <div>
-                                <span class="fw-bold">@OrderQuantity.ToString("N2")</span>
-                                <span class="text-muted mx-1">/</span>
-                                <span class="text-primary">@ScheduledQuantity.ToString("N2")</span>
-                                <span class="text-muted mx-1">/</span>
-                                <span class="text-warning fw-bold">@PendingQuantity.ToString("N2")</span>
-                            </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">可轉排程明細數</small>
+                            <div class="fw-bold text-primary">@schedulableDetails.Count 筆</div>
                         </div>
                     </div>
                 </div>
@@ -284,24 +373,13 @@
                 </div>
                 <div class="card-body py-2">
                     <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label small">排程數量 <span class="text-danger">*</span></label>
-                            <input type="number" 
-                                   class="form-control form-control-sm" 
-                                   value="@quantityToSchedule"
-                                   min="0.01"
-                                   max="@PendingQuantity"
-                                   step="0.01"
-                                   @onchange="OnQuantityChanged" />
-                            <small class="text-muted">最多可排程：@PendingQuantity.ToString("N2")</small>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small">排程日期</label>
                             <input type="date" 
                                    class="form-control form-control-sm" 
                                    @bind="scheduleDate" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small">入庫倉庫</label>
                             <select class="form-select form-select-sm" @bind="selectedWarehouseId">
                                 <option value="">-- 請選擇 --</option>
@@ -311,69 +389,110 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small">製單人員</label>
-                            <select class="form-select form-select-sm" @bind="createdByEmployeeId">
-                                <option value="">-- 請選擇 --</option>
-                                @foreach (var emp in availableEmployees)
-                                {
-                                    <option value="@emp.Id">[@emp.Code] @emp.Name</option>
-                                }
-                            </select>
+                            <input type="text" 
+                                   class="form-control form-control-sm" 
+                                   value="@GetCreatedByEmployeeName()" 
+                                   readonly />
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="shouldMergeSchedules" id="mergeSchedulesCheck">
+                                <label class="form-check-label small" for="mergeSchedulesCheck">
+                                    合併為單一排程單（推薦）
+                                </label>
+                                <small class="text-muted d-block">
+                                    勾選：所有選中的明細合併為一張排程單 | 不勾選：每筆明細分別建立排程單
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            @* 組件需求預覽 *@
-            <div class="card">
+            @* 明細選擇 *@
+            <div class="card mb-3">
                 <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-list-check me-2"></i>組件需求預覽</span>
-                    <small class="text-muted">共 @componentPreviews.Count 個組件</small>
+                    <span><i class="bi bi-list-check me-2"></i>選擇要轉排程的明細</span>
+                    <GenericButtonComponent Text="@(IsAllSelected() ? "取消全選" : "全選")"
+                                          Variant="ButtonVariant.Blue"
+                                          Size="ButtonSize.Small"
+                                          OnClick="@ToggleSelectAll" />
                 </div>
                 <div class="card-body p-0">
-                    @if (componentPreviews.Any())
+                    @if (schedulableDetails.Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 30%">組件名稱</th>
-                                        <th class="text-end" style="width: 12%">單位用量</th>
-                                        <th class="text-end" style="width: 12%">總需求</th>
-                                        <th class="text-end" style="width: 12%">現有庫存</th>
-                                        <th class="text-end" style="width: 12%">缺料</th>
-                                        <th class="text-center" style="width: 12%">狀態</th>
+                                        <th style="width: 5%" class="text-center">選擇</th>
+                                        <th style="width: 30%">商品</th>
+                                        <th class="text-end" style="width: 10%">訂購</th>
+                                        <th class="text-end" style="width: 10%">已排程</th>
+                                        <th class="text-end" style="width: 10%">待排程</th>
+                                        <th style="width: 15%">轉排程數量</th>
+                                        <th class="text-center" style="width: 10%">BOM</th>
+                                        <th class="text-center" style="width: 10%">組件狀態</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in componentPreviews)
+                                    @foreach (var detail in schedulableDetails)
                                     {
-                                        <tr>
+                                        var hasShortage = detail.ComponentPreviews.Any(c => c.Shortage > 0);
+                                        <tr class="@(detail.IsSelected ? "table-primary" : "")">
+                                            <td class="text-center">
+                                                <input type="checkbox" 
+                                                       class="form-check-input" 
+                                                       @bind="detail.IsSelected"
+                                                       @onclick="() => OnDetailSelectionChanged(detail)" />
+                                            </td>
                                             <td>
-                                                <span class="text-muted small">[@(item.ComponentCode ?? "-")]</span>
-                                                @item.ComponentName
+                                                <span class="text-muted small">[@detail.ProductCode]</span>
+                                                <br/>@detail.ProductName
                                             </td>
-                                            <td class="text-end">@item.QuantityPerUnit.ToString("N2")</td>
-                                            <td class="text-end fw-bold">@item.TotalQuantity.ToString("N2")</td>
-                                            <td class="text-end @(item.CurrentStock >= item.TotalQuantity ? "text-success" : "text-danger")">
-                                                @item.CurrentStock.ToString("N2")
-                                            </td>
-                                            <td class="text-end @(item.Shortage > 0 ? "text-danger fw-bold" : "")">
-                                                @(item.Shortage > 0 ? item.Shortage.ToString("N2") : "-")
+                                            <td class="text-end">@NumberFormatHelper.FormatSmart(detail.OrderQuantity)</td>
+                                            <td class="text-end text-primary">@NumberFormatHelper.FormatSmart(detail.ScheduledQuantity)</td>
+                                            <td class="text-end text-warning fw-bold">@NumberFormatHelper.FormatSmart(detail.PendingQuantity)</td>
+                                            <td>
+                                                <input type="number" 
+                                                       class="form-control form-control-sm" 
+                                                       value="@NumberFormatHelper.FormatForInput(detail.QuantityToSchedule)"
+                                                       min="0.01"
+                                                       max="@detail.PendingQuantity"
+                                                       step="0.01"
+                                                       disabled="@(!detail.IsSelected)"
+                                                       @onchange="e => OnQuantityChanged(detail, e)" />
                                             </td>
                                             <td class="text-center">
-                                                @if (item.Shortage <= 0)
+                                                @if (detail.HasBom)
                                                 {
-                                                    <span class="badge bg-success">庫存充足</span>
-                                                }
-                                                else if (item.NeedsProduction)
-                                                {
-                                                    <span class="badge bg-warning text-dark">需排程</span>
+                                                    <span class="badge bg-success">✓ (@detail.BomDetails.Count)</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-danger">庫存不足</span>
+                                                    <span class="badge bg-warning text-dark" title="此明細無 BOM 組成">⚠ 無</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (!detail.HasBom)
+                                                {
+                                                    <span class="badge bg-secondary">-</span>
+                                                }
+                                                else if (!detail.ComponentPreviews.Any())
+                                                {
+                                                    <span class="badge bg-secondary">未計算</span>
+                                                }
+                                                else if (hasShortage)
+                                                {
+                                                    <span class="badge bg-danger" title="部分組件庫存不足">⚠ 缺料</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">✓ 充足</span>
                                                 }
                                             </td>
                                         </tr>
@@ -386,16 +505,41 @@
                     {
                         <div class="text-center text-muted py-4">
                             <i class="bi bi-inbox fs-1"></i>
-                            <p class="mt-2">尚無 BOM 組成資料</p>
+                            <p class="mt-2">沒有可轉排程的明細</p>
+                            <small>（明細的商品必須設定為「可轉排程」且有待排程數量）</small>
                         </div>
                     }
                 </div>
             </div>
             
-            @* 提示訊息 *@
-            @if (componentPreviews.Any(c => c.Shortage > 0))
+            @* 匯總資訊 *@
+            @if (GetSelectedCount() > 0)
             {
-                <div class="alert alert-warning mt-3 mb-0 py-2">
+                <div class="alert alert-info mb-3 py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>已選擇：</strong>@GetSelectedCount() 項明細
+                        </span>
+                        <span>
+                            <strong>總排程數量：</strong>@NumberFormatHelper.FormatSmart(GetTotalScheduleQuantity())
+                        </span>
+                    </div>
+                </div>
+            }
+            
+            @* 警告訊息 *@
+            @if (schedulableDetails.Any(d => d.IsSelected && !d.HasBom))
+            {
+                <div class="alert alert-warning mb-3 py-2">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>注意：</strong>有 @schedulableDetails.Count(d => d.IsSelected && !d.HasBom) 項選中的明細沒有 BOM 組成。
+                </div>
+            }
+            
+            @if (schedulableDetails.Any(d => d.IsSelected && d.ComponentPreviews.Any(c => c.Shortage > 0)))
+            {
+                <div class="alert alert-warning mb-0 py-2">
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     <strong>注意：</strong>部分組件庫存不足。開始生產時將扣除組件庫存（InProductionStock），完成後成品將入庫。
                 </div>
@@ -409,9 +553,53 @@
         if (!CanSubmit)
             return;
 
+        var selectedItems = schedulableDetails.Where(d => d.IsSelected).ToList();
+        
+        if (!selectedItems.Any())
+        {
+            await NotificationService.ShowWarningAsync("請至少選擇一項明細");
+            return;
+        }
+        
+        // 檢查是否有明細沒有 BOM
+        var itemsWithoutBom = selectedItems.Where(d => !d.HasBom).ToList();
+        if (itemsWithoutBom.Any())
+        {
+            var confirmMessage = $"有 {itemsWithoutBom.Count} 項明細沒有 BOM 組成，這些明細將不會建立組件需求。是否繼續？";
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
+            if (!confirmed) return;
+        }
+
         isLoading = true;
         StateHasChanged();
 
+        try
+        {
+            if (shouldMergeSchedules)
+            {
+                await CreateMergedSchedule(selectedItems);
+            }
+            else
+            {
+                await CreateSeparateSchedules(selectedItems);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"轉排程失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 建立合併的排程單（所有選中明細合併為一張排程單）
+    /// </summary>
+    private async Task CreateMergedSchedule(List<SchedulableDetailItem> items)
+    {
         try
         {
             // 1. 建立生產排程主檔
@@ -435,63 +623,66 @@
                 return;
             }
 
-            // 2. 建立生產排程項目
-            var scheduleItem = new ProductionScheduleItem
+            // 2. 為每個選中的明細建立 ProductionScheduleItem
+            int successCount = 0;
+            foreach (var item in items)
             {
-                ProductionScheduleId = schedule.Id,
-                ProductId = ProductId ?? 0,
-                SalesOrderDetailId = SalesOrderDetailId,
-                ScheduledQuantity = quantityToSchedule,
-                CompletedQuantity = 0,
-                ProductionItemStatus = ProductionItemStatus.Pending,
-                WarehouseId = selectedWarehouseId,
-                Status = EntityStatus.Active,
-                CreatedAt = DateTime.Now
-            };
-
-            var itemResult = await ProductionScheduleItemService.CreateAsync(scheduleItem);
-            if (!itemResult.IsSuccess)
-            {
-                await NotificationService.ShowErrorAsync($"建立排程項目失敗：{itemResult.ErrorMessage}");
-                return;
-            }
-
-            // 3. 建立生產排程明細（組件需求）
-            if (CompositionDetails != null && CompositionDetails.Any())
-            {
-                var scheduleDetails = CompositionDetails
-                    .Where(c => c.ComponentProductId > 0)
-                    .Select(c => new ProductionScheduleDetail
-                    {
-                        ProductionScheduleItemId = scheduleItem.Id,
-                        ComponentProductId = c.ComponentProductId,
-                        RequiredQuantity = c.Quantity * quantityToSchedule,
-                        WarehouseId = selectedWarehouseId,
-                        Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
-                    }).ToList();
-
-                var detailsResult = await ProductionScheduleDetailService.CreateDetailsForItemAsync(
-                    scheduleItem.Id, scheduleDetails);
-                    
-                if (!detailsResult.IsSuccess)
+                var scheduleItem = new ProductionScheduleItem
                 {
-                    await NotificationService.ShowWarningAsync($"建立組件明細時發生問題：{detailsResult.ErrorMessage}");
-                }
-            }
+                    ProductionScheduleId = schedule.Id,
+                    ProductId = item.ProductId,
+                    SalesOrderDetailId = item.SalesOrderDetailId,
+                    ScheduledQuantity = item.QuantityToSchedule,
+                    CompletedQuantity = 0,
+                    ProductionItemStatus = ProductionItemStatus.Pending,
+                    WarehouseId = selectedWarehouseId,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now
+                };
 
-            // 4. 更新銷售訂單明細的已排程數量
-            if (SalesOrderDetailId.HasValue)
-            {
-                var salesOrderDetail = await SalesOrderDetailService.GetByIdAsync(SalesOrderDetailId.Value);
+                var itemResult = await ProductionScheduleItemService.CreateAsync(scheduleItem);
+                if (!itemResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"建立排程項目失敗（{item.ProductName}）：{itemResult.ErrorMessage}");
+                    continue;
+                }
+
+                // 3. 建立生產排程明細（從 BOM 複製）
+                if (item.BomDetails.Any())
+                {
+                    var scheduleDetails = item.BomDetails
+                        .Where(bom => bom.ComponentProductId > 0)
+                        .Select(bom => new ProductionScheduleDetail
+                        {
+                            ProductionScheduleItemId = scheduleItem.Id,
+                            ComponentProductId = bom.ComponentProductId,
+                            RequiredQuantity = bom.Quantity * item.QuantityToSchedule,
+                            WarehouseId = selectedWarehouseId,
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now
+                        }).ToList();
+
+                    var detailsResult = await ProductionScheduleDetailService.CreateDetailsForItemAsync(
+                        scheduleItem.Id, scheduleDetails);
+                        
+                    if (!detailsResult.IsSuccess)
+                    {
+                        await NotificationService.ShowWarningAsync($"建立組件明細時發生問題（{item.ProductName}）：{detailsResult.ErrorMessage}");
+                    }
+                }
+
+                // 4. 更新 SalesOrderDetail.ScheduledQuantity
+                var salesOrderDetail = await SalesOrderDetailService.GetByIdAsync(item.SalesOrderDetailId);
                 if (salesOrderDetail != null)
                 {
-                    salesOrderDetail.ScheduledQuantity += quantityToSchedule;
+                    salesOrderDetail.ScheduledQuantity += item.QuantityToSchedule;
                     await SalesOrderDetailService.UpdateAsync(salesOrderDetail);
                 }
+                
+                successCount++;
             }
 
-            await NotificationService.ShowSuccessAsync($"成功建立生產排程：{schedule.Code}");
+            await NotificationService.ShowSuccessAsync($"成功建立生產排程：{schedule.Code}（包含 {successCount} 項明細）");
 
             // 通知父組件
             if (OnScheduleCreated.HasDelegate)
@@ -503,12 +694,113 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"轉排程失敗：{ex.Message}");
+            throw new Exception($"建立合併排程失敗：{ex.Message}", ex);
         }
-        finally
+    }
+    
+    /// <summary>
+    /// 建立分別的排程單（每筆明細分別建立排程單）
+    /// </summary>
+    private async Task CreateSeparateSchedules(List<SchedulableDetailItem> items)
+    {
+        try
         {
-            isLoading = false;
-            StateHasChanged();
+            int successCount = 0;
+            ProductionSchedule? lastSchedule = null;
+            
+            foreach (var item in items)
+            {
+                // 1. 建立生產排程主檔
+                var schedule = new ProductionSchedule
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductionSchedule, IProductionScheduleService>(
+                        ProductionScheduleService, "PS"),
+                    ScheduleDate = scheduleDate,
+                    SalesOrderId = SalesOrderId,
+                    SourceDocumentType = "SalesOrder",
+                    SourceDocumentId = SalesOrderId,
+                    CreatedByEmployeeId = createdByEmployeeId,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now
+                };
+
+                var scheduleResult = await ProductionScheduleService.CreateAsync(schedule);
+                if (!scheduleResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"建立排程失敗（{item.ProductName}）：{scheduleResult.ErrorMessage}");
+                    continue;
+                }
+
+                // 2. 建立生產排程項目
+                var scheduleItem = new ProductionScheduleItem
+                {
+                    ProductionScheduleId = schedule.Id,
+                    ProductId = item.ProductId,
+                    SalesOrderDetailId = item.SalesOrderDetailId,
+                    ScheduledQuantity = item.QuantityToSchedule,
+                    CompletedQuantity = 0,
+                    ProductionItemStatus = ProductionItemStatus.Pending,
+                    WarehouseId = selectedWarehouseId,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now
+                };
+
+                var itemResult = await ProductionScheduleItemService.CreateAsync(scheduleItem);
+                if (!itemResult.IsSuccess)
+                {
+                    await NotificationService.ShowWarningAsync($"建立排程項目失敗（{item.ProductName}）：{itemResult.ErrorMessage}");
+                    continue;
+                }
+
+                // 3. 建立生產排程明細（從 BOM 複製）
+                if (item.BomDetails.Any())
+                {
+                    var scheduleDetails = item.BomDetails
+                        .Where(bom => bom.ComponentProductId > 0)
+                        .Select(bom => new ProductionScheduleDetail
+                        {
+                            ProductionScheduleItemId = scheduleItem.Id,
+                            ComponentProductId = bom.ComponentProductId,
+                            RequiredQuantity = bom.Quantity * item.QuantityToSchedule,
+                            WarehouseId = selectedWarehouseId,
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now
+                        }).ToList();
+
+                    var detailsResult = await ProductionScheduleDetailService.CreateDetailsForItemAsync(
+                        scheduleItem.Id, scheduleDetails);
+                        
+                    if (!detailsResult.IsSuccess)
+                    {
+                        await NotificationService.ShowWarningAsync($"建立組件明細時發生問題（{item.ProductName}）：{detailsResult.ErrorMessage}");
+                    }
+                }
+
+                // 4. 更新 SalesOrderDetail.ScheduledQuantity
+                var salesOrderDetail = await SalesOrderDetailService.GetByIdAsync(item.SalesOrderDetailId);
+                if (salesOrderDetail != null)
+                {
+                    salesOrderDetail.ScheduledQuantity += item.QuantityToSchedule;
+                    await SalesOrderDetailService.UpdateAsync(salesOrderDetail);
+                }
+                
+                successCount++;
+                lastSchedule = schedule;
+            }
+
+            await NotificationService.ShowSuccessAsync($"成功建立 {successCount} 張生產排程");
+
+            // 通知父組件（傳遞最後一張排程）
+            if (OnScheduleCreated.HasDelegate && lastSchedule != null)
+            {
+                await OnScheduleCreated.InvokeAsync(lastSchedule);
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"建立分別排程失敗：{ex.Message}", ex);
         }
     }
 
@@ -525,10 +817,11 @@
     private async Task CloseModal()
     {
         // 重置狀態
-        quantityToSchedule = 0;
+        schedulableDetails.Clear();
         selectedWarehouseId = null;
         createdByEmployeeId = null;
-        componentPreviews.Clear();
+        productStockQuantities.Clear();
+        shouldMergeSchedules = true;
         
         await IsVisibleChanged.InvokeAsync(false);
     }

@@ -814,6 +814,7 @@
     /// <summary>
     /// 取得商品篩選選項 - 根據選擇的廠商篩選
     /// 只顯示該廠商有入庫記錄的商品（從 PurchaseReceivingDetail 中提取）
+    /// 並且只顯示「外購」類型的商品
     /// </summary>
     private async Task<List<SelectOption>> GetFilterProductOptions()
     {
@@ -821,14 +822,16 @@
         {
             var options = new List<SelectOption>();
             
-            // 如果沒有選擇廠商，顯示全部商品
+            // 如果沒有選擇廠商，顯示全部外購類型商品
             if (editModalComponent?.Entity?.SupplierId == null || editModalComponent.Entity.SupplierId <= 0)
             {
-                options.AddRange(products.Select(p => new SelectOption
-                {
-                    Value = p.Id.ToString(),
-                    Text = $"{p.Code} - {p.Name}"
-                }));
+                options.AddRange(products
+                    .Where(p => p.ProcurementType == Data.Enums.ProcurementType.Purchased)
+                    .Select(p => new SelectOption
+                    {
+                        Value = p.Id.ToString(),
+                        Text = $"{p.Code} - {p.Name}"
+                    }));
             }
             else
             {
@@ -851,9 +854,9 @@
                     }
                 }
                 
-                // 根據商品ID從 products 列表中找出對應的商品
+                // 根據商品ID從 products 列表中找出對應的商品，並且只顯示「外購」類型
                 var supplierProducts = products
-                    .Where(p => productIds.Contains(p.Id))
+                    .Where(p => productIds.Contains(p.Id) && p.ProcurementType == Data.Enums.ProcurementType.Purchased)
                     .OrderBy(p => p.Code)
                     .ToList();
                 
@@ -938,16 +941,16 @@
                     }
                 }
                 
-                // 根據商品ID從 products 列表中找出對應的商品
+                // 根據商品ID從 products 列表中找出對應的商品，並且只顯示「外購」類型
                 filteredProducts = products
-                    .Where(p => productIds.Contains(p.Id))
+                    .Where(p => productIds.Contains(p.Id) && p.ProcurementType == Data.Enums.ProcurementType.Purchased)
                     .OrderBy(p => p.Code)
                     .ToList();
             }
             else
             {
-                // 如果沒有選擇廠商，顯示全部商品
-                filteredProducts = products;
+                // 如果沒有選擇廠商，顯示全部外購類型商品
+                filteredProducts = products.Where(p => p.ProcurementType == Data.Enums.ProcurementType.Purchased).ToList();
             }
             
             // 更新 AutoComplete 的資料集合

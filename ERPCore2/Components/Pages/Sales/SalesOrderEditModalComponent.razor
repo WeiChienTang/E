@@ -111,6 +111,14 @@
                                  OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                  OnCancel="@(() => showSetoffDocumentModal = false)" />
 
+@* 批次轉排程 Modal *@
+<TransferToScheduleModalComponent IsVisible="@showBatchTransferToScheduleModal"
+                                 IsVisibleChanged="@((bool visible) => showBatchTransferToScheduleModal = visible)"
+                                 SalesOrderId="@(SalesOrderId ?? 0)"
+                                 SalesOrderCode="@(editModalComponent?.Entity?.Code)"
+                                 OnScheduleCreated="@HandleScheduleCreated"
+                                 OnCancel="@(() => showBatchTransferToScheduleModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -175,6 +183,9 @@
     private SalesDeliveryEditModalComponent? salesDeliveryEditModal;
     private bool showSalesDeliveryModal = false;
     private int? selectedSalesDeliveryId = null;
+    
+    // 批次轉排程 Modal
+    private bool showBatchTransferToScheduleModal = false;
     
     // ===== 轉單狀態 =====
     private bool canCreateDelivery = false; 
@@ -1355,6 +1366,12 @@
             <GenericButtonComponent Text="轉銷貨" 
                                   Variant="ButtonVariant.Green" 
                                   OnClick="HandleCreateDeliveryFromOrder" />
+            
+            @* 批次轉排程按鈕 *@
+            <GenericButtonComponent Text="轉排程" 
+                                  Variant="ButtonVariant.Yellow"
+                                  Icon="bi bi-calendar-plus"
+                                  OnClick="HandleBatchTransferToSchedule" />
         }
     };
 
@@ -1558,6 +1575,61 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesReturnSaved), GetType(), 
                 additionalData: $"處理銷售退貨單儲存事件失敗 - ReturnId: {savedReturn?.Id}");
+        }
+    }
+
+    /// <summary>
+    /// 批次轉排程
+    /// </summary>
+    private async Task HandleBatchTransferToSchedule()
+    {
+        try
+        {
+            // 驗證銷貨訂單資料
+            if (!SalesOrderId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉排程：銷貨訂單資料不存在");
+                return;
+            }
+            
+            // 檢查是否有明細資料
+            if (!salesOrderDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單沒有明細資料，無法轉排程");
+                return;
+            }
+            
+            // 開啟批次轉排程 Modal
+            showBatchTransferToScheduleModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchTransferToSchedule), GetType(), 
+                additionalData: $"開啟批次轉排程 Modal 失敗 - OrderId: {SalesOrderId}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理排程建立成功事件
+    /// </summary>
+    private async Task HandleScheduleCreated(ProductionSchedule schedule)
+    {
+        try
+        {
+            // 重新載入銷貨訂單明細（刷新已排程數量）
+            if (SalesOrderId.HasValue)
+            {
+                await LoadSalesOrderDetails(SalesOrderId.Value);
+            }
+            
+            await NotificationService.ShowSuccessAsync($"排程建立成功：{schedule.Code}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleScheduleCreated), GetType(), 
+                additionalData: $"處理排程建立事件失敗 - ScheduleId: {schedule?.Id}");
         }
     }
 
@@ -1886,11 +1958,15 @@
     /// <summary>
     /// 儲存銷貨訂單組合明細（BOM）
     /// </summary>
+    /// <summary>
+    /// 儲存銷貨訂單組合明細（BOM）
+    /// 處理臨時索引（負數）映射到實際儲存後的明細ID
+    /// </summary>
     private async Task SaveSalesOrderCompositionDetails(int salesOrderId)
     {
         try
         {
-            // 從 SalesOrderTable 取得所有 BOM 組成明細
+            // 從 SalesOrderTable 組件取得組合明細資料
             if (salesOrderDetailManager == null)
             {
                 return;
@@ -1903,28 +1979,41 @@
                 return; // 沒有自訂 BOM，不需要儲存
             }
             
-            // 取得已儲存的明細資料（需要對應 ProductId 到實際的 SalesOrderDetailId）
-            var savedDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(salesOrderId);
+            // 取得所有銷貨訂單明細（按順序排列，與 SalesItems 對應）
+            var savedSalesOrderDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(salesOrderId);
+            var orderedDetails = savedSalesOrderDetails.OrderBy(d => d.Id).ToList();
             
             foreach (var kvp in compositionDetailsMap)
             {
-                var productId = kvp.Key;
+                var salesOrderDetailId = kvp.Key;
                 var compositionDetails = kvp.Value;
                 
-                // 找到對應的 SalesOrderDetail
-                var salesOrderDetail = savedDetails.FirstOrDefault(d => d.ProductId == productId);
-                if (salesOrderDetail == null)
+                SalesOrderDetail? salesOrderDetail = null;
+                
+                if (salesOrderDetailId > 0)
                 {
-                    continue; // 找不到對應的明細，跳過
+                    // 正常 ID，直接查找
+                    salesOrderDetail = orderedDetails.FirstOrDefault(d => d.Id == salesOrderDetailId);
+                    if (salesOrderDetail == null)
+                        continue;
+                }
+                else
+                {
+                    // 臨時索引（負數），映射到實際明細
+                    // -1 對應第 0 個明細，-2 對應第 1 個明細...
+                    int arrayIndex = Math.Abs(salesOrderDetailId) - 1;
+                    
+                    if (arrayIndex < orderedDetails.Count)
+                    {
+                        salesOrderDetail = orderedDetails[arrayIndex];
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
                 
-                // 設定正確的 SalesOrderDetailId
-                foreach (var detail in compositionDetails)
-                {
-                    detail.SalesOrderDetailId = salesOrderDetail.Id;
-                }
-                
-                // 批次儲存該明細的 BOM 組成
+                // 批次儲存組合明細（使用實際的明細ID）
                 await SalesOrderCompositionDetailService.SaveBatchAsync(
                     salesOrderDetail.Id,
                     compositionDetails

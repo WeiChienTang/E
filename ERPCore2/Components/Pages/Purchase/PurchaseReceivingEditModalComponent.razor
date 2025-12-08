@@ -124,10 +124,6 @@
     private List<Employee> employees = new();
     private List<Product> products = new();
     
-    // ===== 防止重複調用的標記 =====
-    private int? lastLoadedSupplierId = null; // 記錄上次載入的廠商ID
-    private bool isLoadingProducts = false; // 正在載入商品的標記
-    
     // ===== 下拉選單選項 =====
     private List<SelectOption> taxCalculationMethodOptions = new();
     
@@ -137,6 +133,13 @@
     
     // ===== 篩選狀態 =====
     private int? filterProductId = null;
+    
+    // ===== 快取狀態 - 避免重複查詢 =====
+    private int? cachedSupplierId = null;  // 快取的廠商ID
+    private List<PurchaseOrder> cachedPurchaseOrders = new();  // 快取的採購單資料
+    
+    // ===== 防抖動機制 - 避免短時間內重複處理相同變更 =====
+    private CancellationTokenSource? _supplierChangeCts;  // 廠商變更的取消令牌
     
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false;
@@ -212,23 +215,13 @@
                 await LoadAdditionalDataAsync();
                 await InitializeFormFieldsAsync();
                 
-                // 如果有預填廠商，在表單欄位初始化後再次更新選項
-                if (PrefilledSupplierId.HasValue && PrefilledSupplierId.Value > 0)
-                {
-                    await UpdatePurchaseOrderOptions(PrefilledSupplierId.Value);
-                    await UpdateFilterProductCollection(PrefilledSupplierId.Value);
-                    StateHasChanged(); // 強制更新 UI
-                }
+                // 移除此處的更新呼叫，避免與 LoadPurchaseReceivingData 重複
+                // LoadPurchaseReceivingData 會在載入實體時自動處理採購單選項更新
             }
             else
             {
                 //  Modal 關閉時重置自動載入相關標記
-                // 這樣下次開啟時就能重新觸發自動載入
                 shouldAutoLoadUnreceived = false;
-                
-                //  重置防重複載入的標記
-                lastLoadedSupplierId = null;
-                isLoadingProducts = false;
             }
 
             await base.OnParametersSetAsync();
@@ -521,8 +514,12 @@
                     }
                 }
                 
-                // ✅ 移除此處的更新呼叫，因為 OnParametersSetAsync 已經處理
-                // 避免重複觸發 UpdatePurchaseOrderOptions 和 UpdateFilterProductOptions
+                // 如果有預填的廠商ID，更新採購單選項和商品篩選選項
+                if (newReceiving.SupplierId > 0)
+                {
+                    await UpdatePurchaseOrderOptions(newReceiving.SupplierId);
+                    await UpdateFilterProductOptions(newReceiving.SupplierId);
+                }
                 
                 // 清空明細
                 purchaseReceivingDetails.Clear();
@@ -551,7 +548,7 @@
                 if (purchaseReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(purchaseReceiving.SupplierId);
-                    await UpdateFilterProductCollection(purchaseReceiving.SupplierId);
+                    await UpdateFilterProductOptions(purchaseReceiving.SupplierId);
                 }
                 
                 // 載入對應的採購單明細
@@ -608,9 +605,9 @@
             // 確保 suppliers、purchaseOrders 和 products 都已載入
             autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
                 .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
-                .AddField(nameof(PurchaseReceiving.PurchaseOrderId), "Code", purchaseOrders)
+                .AddField(nameof(PurchaseReceiving.PurchaseOrderId), "Code", new List<PurchaseOrder>())  // 初始為空，等廠商選擇後才載入
                 .AddFieldWithMultipleSearchProperties(
-                    "FilterProductId", 
+                    "FilterProductId",  // 虛擬欄位，不是實體屬性
                     "Name",  // 主要顯示欄位
                     products,
                     new[] { "Code", "Name" })  // 可搜尋的欄位
@@ -701,7 +698,11 @@
     {
         try
         {
-            products = await ProductService.GetAllAsync();
+            // 只載入外購商品（自製商品由生產排程產生，不需要採購進貨）
+            var allProducts = await ProductService.GetActiveProductsAsync();
+            products = allProducts
+                .Where(p => p.ProcurementType == ProcurementType.Purchased)
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -712,6 +713,8 @@
 
     /// <summary>
     /// 更新採購單選項 - 根據廠商ID過濾，並排除已完成的採購單
+    /// 同時動態控制欄位的啟用/停用狀態
+    /// 使用快取機制避免重複查詢
     /// </summary>
     private async Task UpdatePurchaseOrderOptions(int? supplierId = null)
     {
@@ -719,29 +722,75 @@
         {
             // 找到採購單欄位並更新其選項
             var purchaseOrderField = formFields.FirstOrDefault(f => f.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId));
+            
             if (purchaseOrderField != null)
             {
-                var options = new List<SelectOption> {};
-                
                 if (supplierId.HasValue && supplierId.Value > 0)
                 {
-                    // 使用新的服務方法獲取包含完整關聯資料的採購單
-                    var supplierOrders = await PurchaseOrderService.GetIncompleteOrdersBySupplierAsync(supplierId.Value);
+                    // 有選擇廠商：啟用欄位並載入該廠商的未完成採購單
+                    purchaseOrderField.IsReadOnly = false;
+                    purchaseOrderField.Placeholder = "請輸入或選擇採購單";
                     
-                    // 過濾掉已完成的採購單
-                    var filteredPurchaseOrders = supplierOrders
+                    // 檢查快取：如果廠商ID相同，直接使用快取資料
+                    List<PurchaseOrder> supplierOrders;
+                    if (cachedSupplierId == supplierId.Value && cachedPurchaseOrders.Any())
+                    {
+                        supplierOrders = cachedPurchaseOrders;
+                    }
+                    else
+                    {
+                        // 使用新的服務方法獲取包含完整關聯資料的採購單
+                        supplierOrders = await PurchaseOrderService.GetIncompleteOrdersBySupplierAsync(supplierId.Value);
+                        
+                        // 更新快取
+                        cachedSupplierId = supplierId.Value;
+                        cachedPurchaseOrders = supplierOrders ?? new List<PurchaseOrder>();
+                    }
+                    
+                    // 過濾掉已完成的採購單（加入 null 檢查）
+                    var filteredPurchaseOrders = (supplierOrders ?? new List<PurchaseOrder>())
                         .Where(po => !IsOrderFullyCompleted(po))
                         .ToList();
                     
-                    options.AddRange(filteredPurchaseOrders.Select(po => new SelectOption
+                    // 更新 Options（用於下拉顯示）
+                    var options = filteredPurchaseOrders.Select(po => new SelectOption
                     {
                         Value = po.Id.ToString(),
                         Text = po.Code ?? string.Empty
-                    }));
+                    }).ToList();
+                    purchaseOrderField.Options = options;
+                    
+                    // 更新 AutoComplete 資料集合（用於搜尋）
+                    if (autoCompleteConfig?.Collections != null && 
+                        autoCompleteConfig.Collections.ContainsKey(nameof(PurchaseReceiving.PurchaseOrderId)))
+                    {
+                        autoCompleteConfig.Collections[nameof(PurchaseReceiving.PurchaseOrderId)] = filteredPurchaseOrders;
+                    }
                 }
-                // 如果沒有選擇廠商或選擇了無效的廠商，只顯示"請選擇..."選項
-                
-                purchaseOrderField.Options = options;
+                else
+                {
+                    // 清空快取
+                    cachedSupplierId = null;
+                    cachedPurchaseOrders.Clear();
+                    
+                    // 沒有選擇廠商：停用欄位並清空選項
+                    purchaseOrderField.IsReadOnly = true;
+                    purchaseOrderField.Placeholder = "請先選擇廠商";
+                    purchaseOrderField.Options = new List<SelectOption>();
+                    
+                    // 清空 AutoComplete 資料集合
+                    if (autoCompleteConfig?.Collections != null && 
+                        autoCompleteConfig.Collections.ContainsKey(nameof(PurchaseReceiving.PurchaseOrderId)))
+                    {
+                        autoCompleteConfig.Collections[nameof(PurchaseReceiving.PurchaseOrderId)] = new List<PurchaseOrder>();
+                    }
+                    
+                    // 清空當前選擇的採購單
+                    if (editModalComponent?.Entity != null)
+                    {
+                        editModalComponent.Entity.PurchaseOrderId = null;
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -819,10 +868,11 @@
                     PropertyName = nameof(PurchaseReceiving.PurchaseOrderId),
                     Label = "採購單",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇採購單",
+                    Placeholder = "請先選擇廠商",
                     IsRequired = false,  // 改為非必填，支援多採購單模式
                     MinSearchLength = 0,
-                    HelpText = "輸入採購單號進行搜尋，或留空使用多採購單模式"
+                    HelpText = "請先選擇廠商後，才能選擇該廠商的未完成採購單，或留空使用多採購單模式",
+                    IsReadOnly = true  // 初始為停用狀態，需先選擇廠商
                 },
                 new()
                 {
@@ -832,7 +882,8 @@
                     Placeholder = "請輸入或選擇商品",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "輸入商品代碼或名稱進行搜尋，或直接選擇"
+                    HelpText = "選擇特定商品進行篩選,或留空顯示所有商品（僅外購類型）",
+                    ActionButtons = await GetProductActionButtonsAsync()
                 },
                 new()
                 {
@@ -895,7 +946,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.Code,
                     pr => pr.SupplierId)
-                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")  // 用字串指定虛擬欄位
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.PurchaseOrderId)
                 .AddToSection(FormSectionNames.BasicInfo,
@@ -917,73 +968,33 @@
 
     /// <summary>
     /// 更新商品篩選的 AutoComplete 資料集合
-    /// 根據選擇的廠商，動態更新可選擇的商品列表（顯示該廠商的所有商品）
+    /// 進貨時顯示所有外購類型商品（不根據廠商篩選，因為可以向任何廠商採購任何外購商品）
     /// </summary>
-    private async Task UpdateFilterProductCollection(int? supplierId = null)
+    private async Task UpdateFilterProductOptions(int? supplierId = null)
     {
         try
         {
-            //  防止重複載入同一廠商的商品
-            if (supplierId.HasValue && supplierId == lastLoadedSupplierId && !isLoadingProducts)
-            {
-                return;
-            }
-            
-            //  防止並發載入
-            if (isLoadingProducts)
-            {
-                return;
-            }
-            
             if (autoCompleteConfig?.Collections == null)
-            {
                 return;
-            }
             
-            isLoadingProducts = true; // 標記開始載入
-            
-            List<Product> filteredProducts;
-            
-            if (supplierId.HasValue && supplierId.Value > 0)
-            {
-                //  修正：使用 ProductService 載入該廠商的所有商品
-                // 不再限制只顯示採購單中的商品
-                filteredProducts = await ProductService.GetBySupplierAsync(supplierId.Value);
-                
-                //  記錄已載入的廠商ID
-                lastLoadedSupplierId = supplierId;
-            }
-            else
-            {
-                // 沒有選擇廠商時，顯示全部商品
-                filteredProducts = products;
-                
-                // 清空記錄
-                lastLoadedSupplierId = null;
-            }
+            // 進貨時始終顯示所有外購商品，不限制廠商
+            // 原因：一個外購商品可能向多個廠商採購，不應該限制選擇
+            List<Product> filteredProducts = products;
             
             // 更新 AutoComplete 的資料集合
             if (autoCompleteConfig.Collections.ContainsKey("FilterProductId"))
             {
-                autoCompleteConfig.Collections["FilterProductId"] = filteredProducts.Cast<object>().ToList();
+                autoCompleteConfig.Collections["FilterProductId"] = filteredProducts;
             }
             
-            //  修正：不要清空 filterProductId，保持使用者的選擇
-            // 只在選擇的商品不在新的篩選結果中時才清空
-            if (filterProductId.HasValue && !filteredProducts.Any(p => p.Id == filterProductId.Value))
-            {
-                filterProductId = null;
-            }
+            // 清空目前的商品篩選選擇
+            filterProductId = null;
             
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"更新商品篩選選項時發生錯誤：{ex.Message}");
-        }
-        finally
-        {
-            isLoadingProducts = false; // 標記載入完成
         }
     }
 
@@ -1300,6 +1311,11 @@
             // 當廠商變更時，更新採購單選項並清空採購單選擇
             if (fieldChange.PropertyName == nameof(PurchaseReceiving.SupplierId))
             {
+                // 取消之前的變更處理（防抖動）
+                _supplierChangeCts?.Cancel();
+                _supplierChangeCts = new CancellationTokenSource();
+                var currentCts = _supplierChangeCts;
+                
                 // 清空採購單選擇
                 if (editModalComponent?.Entity != null)
                 {
@@ -1315,20 +1331,37 @@
                     supplierId = parsedSupplierId;
                 }
                 
-                await UpdatePurchaseOrderOptions(supplierId);
-                
-                // 更新商品篩選的 AutoComplete 資料集合
-                await UpdateFilterProductCollection(supplierId);
-                
-                // 更新廠商欄位的操作按鈕
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    supplierModalManager, 
-                    formFields, 
-                    nameof(PurchaseReceiving.SupplierId), 
-                    fieldChange.Value
-                );
-                
-                needsRerender = true; // 廠商變更需要重新渲染
+                // 延遲 100ms 執行，避免短時間內重複觸發
+                try
+                {
+                    await Task.Delay(100, currentCts.Token);
+                    
+                    // 檢查是否已被取消
+                    if (currentCts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    
+                    await UpdatePurchaseOrderOptions(supplierId);
+                    
+                    // 更新商品篩選的選項清單
+                    await UpdateFilterProductOptions(supplierId);
+                    
+                    // 更新廠商欄位的操作按鈕
+                    await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                        supplierModalManager, 
+                        formFields, 
+                        nameof(PurchaseReceiving.SupplierId), 
+                        fieldChange.Value
+                    );
+                    
+                    needsRerender = true; // 廠商變更需要重新渲染
+                }
+                catch (TaskCanceledException)
+                {
+                    // 正常的取消，不需要處理
+                    return;
+                }
             }
             // ⚠️ 當採購單ID變更時，只有在不是由廠商變更觸發的情況下才重新渲染
             else if (fieldChange.PropertyName == nameof(PurchaseReceiving.PurchaseOrderId))
@@ -1872,6 +1905,10 @@
     {
         try
         {
+            // 取消任何進行中的防抖動操作
+            _supplierChangeCts?.Cancel();
+            _supplierChangeCts?.Dispose();
+            
             // 清理任何需要清理的資源
             purchaseReceivingDetails?.Clear();
             formFields?.Clear();
@@ -1882,6 +1919,7 @@
             suppliers?.Clear();
             employees?.Clear();
             products?.Clear();
+            cachedPurchaseOrders?.Clear();
         }
         catch
         {

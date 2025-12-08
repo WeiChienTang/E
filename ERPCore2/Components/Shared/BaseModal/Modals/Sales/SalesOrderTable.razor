@@ -105,11 +105,8 @@ else
 <SalesOrderCompositionEditModal IsVisible="@showCompositionModal"
                                IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
                                SalesOrderDetailId="@GetSelectedSalesOrderDetailId()"
-                               SalesOrderId="@(MainEntity?.Id)"
-                               SalesOrderCode="@(MainEntity?.Code)"
                                ProductName="@selectedCompositionProductName"
                                ProductId="@selectedCompositionProductId"
-                               OrderQuantity="@GetSelectedCompositionOrderQuantity()"
                                IsReadOnly="@GetCompositionModalReadOnlyState()"
                                OnSave="@HandleCompositionSave"
                                OnCancel="@(() => showCompositionModal = false)"
@@ -602,18 +599,6 @@ else
     }
     
     /// <summary>
-    /// 取得選中的銷貨訂單明細的訂購數量（供 BOM 編輯器傳遞給轉排程功能）
-    /// </summary>
-    private decimal GetSelectedCompositionOrderQuantity()
-    {
-        if (!selectedSalesItemIndex.HasValue || selectedSalesItemIndex.Value >= SalesItems.Count)
-            return 1;
-        
-        var item = SalesItems[selectedSalesItemIndex.Value];
-        return item.OrderQuantity;
-    }
-    
-    /// <summary>
     /// 處理 BOM 組合儲存
     /// </summary>
     private async Task HandleCompositionSave(List<SalesOrderCompositionDetail> compositionDetails)
@@ -698,14 +683,33 @@ else
     public Dictionary<int, List<SalesOrderCompositionDetail>> GetCompositionDetails()
     {
         var result = new Dictionary<int, List<SalesOrderCompositionDetail>>();
+        int tempIndex = -1; // 用於新增明細的臨時索引
         
-        foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
+        for (int i = 0; i < SalesItems.Count; i++)
         {
-            // 只處理有自訂 BOM 組成的項目
-            if (item.CustomCompositionDetails != null && item.CustomCompositionDetails.Any())
+            var item = SalesItems[i];
+            if (item.SelectedProduct == null) continue;
+            
+            var detailId = item.ExistingDetailEntity?.Id ?? 0;
+            
+            // 如果有自訂的組合明細
+            if (item.CustomCompositionDetails?.Any() == true)
             {
-                // 使用商品 ID 作為鍵值（在儲存時會轉換為實際的 SalesOrderDetailId）
-                result[item.SelectedProduct!.Id] = item.CustomCompositionDetails;
+                if (detailId > 0)
+                {
+                    // 已存在的明細，使用實際 ID
+                    result[detailId] = item.CustomCompositionDetails;
+                }
+                else
+                {
+                    // 新增的明細，使用臨時索引（對應明細在陣列中的順序）
+                    foreach (var detail in item.CustomCompositionDetails)
+                    {
+                        detail.SalesOrderDetailId = tempIndex; // 暫存臨時索引
+                    }
+                    result[tempIndex] = item.CustomCompositionDetails;
+                    tempIndex--; // 下一個新增明細使用 -2, -3...
+                }
             }
         }
         
@@ -1142,7 +1146,7 @@ else
                 {
                     var stockQty = salesItem.CurrentStockQuantity.Value;
                     var orderQty = salesItem.OrderQuantity;
-                    var canSchedule = salesItem.SelectedProduct.CanSchedule;
+                    var canSchedule = salesItem.SelectedProduct.ProcurementType == ProcurementType.Manufactured;
                     var isStockEnough = stockQty >= orderQty;
                     
                     // 顏色邏輯：庫存足夠=綠色，不足=紅色

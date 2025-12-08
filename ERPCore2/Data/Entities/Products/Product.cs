@@ -50,10 +50,10 @@ namespace ERPCore2.Data.Entities
         public int? SupplierId { get; set; }
         
         /// <summary>
-        /// 是否可轉排程 - true: 需要自己製作, false: 外部購買
+        /// 採購/製造類型 - 決定商品的取得方式
         /// </summary>
-        [Display(Name = "可轉排程")]
-        public bool CanSchedule { get; set; } = false;
+        [Display(Name = "採購類型")]
+        public ProcurementType ProcurementType { get; set; } = ProcurementType.Purchased;
         
         // Navigation Properties
         public Unit? Unit { get; set; }

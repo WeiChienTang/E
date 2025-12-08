@@ -1044,7 +1044,10 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                return await context.PurchaseOrders
+                // 檢查是否啟用採購單審核功能
+                var isApprovalEnabled = await _systemParameterService.IsPurchaseOrderApprovalEnabledAsync();
+                
+                var query = context.PurchaseOrders
                     .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
@@ -1052,8 +1055,15 @@ namespace ERPCore2.Services
                     .Include(po => po.PurchaseOrderDetails)
                         .ThenInclude(pod => pod.Product)
                     .Where(po => po.SupplierId == supplierId
-                                && po.IsApproved
-                                && po.PurchaseOrderDetails.Any(pod => pod.ReceivedQuantity < pod.OrderQuantity))
+                                && po.PurchaseOrderDetails.Any(pod => pod.ReceivedQuantity < pod.OrderQuantity));
+                
+                // 如果啟用審核，只顯示已核准的採購單
+                if (isApprovalEnabled)
+                {
+                    query = query.Where(po => po.IsApproved);
+                }
+                
+                return await query
                     .OrderBy(po => po.ExpectedDeliveryDate)
                     .ThenBy(po => po.Code)
                     .ToListAsync();

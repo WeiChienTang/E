@@ -504,6 +504,7 @@
                                                                  AvailableProducts="@availableProducts"
                                                                  AvailableUnits="@availableUnits"
                                                                  ParentEntityId="@(CompositionId ?? 0)"
+                                                                 ParentProductId="@(editModalComponent.Entity.ParentProductId)"
                                                                  IsReadOnly="false"
                                                                  ItemsChanged="@HandleDetailsChanged"
                                                                  EmptyMessage="尚未新增材料" />

@@ -313,10 +313,11 @@
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
             Tooltip = "當前可用庫存數量",
-            DisplayFormatter = (value) =>
+            DisplayFormatter = (item) =>
             {
-                if (value == null) return "<span class='badge bg-secondary'>-</span>";
-                var qty = (int)value;
+                var issueItem = item as DetailItem;
+                if (issueItem?.AvailableStock == null) return "<span class='badge bg-secondary'>-</span>";
+                var qty = issueItem.AvailableStock.Value;
                 var badgeClass = qty == 0 ? "bg-danger" : qty < 10 ? "bg-warning" : "bg-success";
                 return $"<span class='badge {badgeClass}'>{qty}</span>";
             }

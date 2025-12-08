@@ -80,13 +80,14 @@
                                     var value = GetPropertyValue(item, column.PropertyName);
                                     string displayText;
                                     
-                                    if (value == null)
+                                    if (column.DisplayFormatter != null)
+                                    {
+                                        // DisplayFormatter 接收整個 item 物件，而不是屬性值
+                                        displayText = column.DisplayFormatter(item);
+                                    }
+                                    else if (value == null)
                                     {
                                         displayText = column.NullDisplayText ?? "-";
-                                    }
-                                    else if (column.DisplayFormatter != null)
-                                    {
-                                        displayText = column.DisplayFormatter(value);
                                     }
                                     // 智能數字格式化：整數不顯示小數點，有小數才顯示
                                     else if (column.SmartDecimalDisplay && decimal.TryParse(value.ToString(), out var decimalValue))

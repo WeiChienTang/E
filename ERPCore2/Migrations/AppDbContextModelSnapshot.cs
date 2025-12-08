@@ -1926,9 +1926,6 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<bool>("CanSchedule")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1944,6 +1941,9 @@ namespace ERPCore2.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ProcurementType")
+                        .HasColumnType("int");
 
                     b.Property<int?>("ProductCategoryId")
                         .HasColumnType("int");

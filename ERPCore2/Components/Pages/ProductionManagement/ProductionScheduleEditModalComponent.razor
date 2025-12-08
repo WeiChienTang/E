@@ -1,6 +1,8 @@
 @* 可重用的生產排程編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Components.Shared.GenericComponent.Button
 @using ERPCore2.Components.Shared.BaseModal.Modals.ProductionManagement
+@using ERPCore2.Components.Shared.BaseModal.BaseTableComponent
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Data.Enums
 @inject IProductionScheduleService ProductionScheduleService
 @inject IProductionScheduleItemService ProductionScheduleItemService
@@ -91,8 +93,9 @@
         {
             scheduleItems = await ProductionScheduleItemService.GetByScheduleIdAsync(scheduleId);
         }
-        catch
+        catch (Exception ex)
         {
+            await NotificationService.ShowErrorAsync($"載入排程項目失敗: {ex.Message}");
             scheduleItems = new();
         }
     }
@@ -209,11 +212,22 @@
         }
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (IsVisible)
         {
             InitializeFormFields();
+            
+            // 如果是編輯模式且有 ProductionScheduleId，載入排程項目
+            if (ProductionScheduleId.HasValue)
+            {
+                await LoadScheduleItemsAsync(ProductionScheduleId.Value);
+            }
+            else
+            {
+                // 新增模式時清空列表
+                scheduleItems = new();
+            }
         }
     }
 
@@ -347,79 +361,128 @@
     private RenderFragment CreateScheduleItemsContent() => __builder =>
     {
         <div class="card mt-3">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-list-check me-2"></i>生產排程項目
-                </h6>
-                <span class="badge bg-secondary">@scheduleItems.Count 項</span>
-            </div>
             <div class="card-body p-0">
-                @if (scheduleItems.Any())
-                {
-                    <table class="table table-sm table-striped table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 30%">商品</th>
-                                <th style="width: 12%" class="text-end">計劃數量</th>
-                                <th style="width: 12%" class="text-end">已完成</th>
-                                <th style="width: 15%">狀態</th>
-                                <th style="width: 15%">預計完成</th>
-                                <th style="width: 16%" class="text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in scheduleItems)
-                            {
-                                var product = availableProducts.FirstOrDefault(p => p.Id == item.ProductId);
-                                var progressPercent = item.ScheduledQuantity > 0 
-                                    ? (item.CompletedQuantity / item.ScheduledQuantity) * 100 
-                                    : 0;
-                                
-                                <tr @onclick="() => HandleOpenScheduleItem(item.Id)" style="cursor: pointer;">
-                                    <td>
-                                        @if (product != null)
-                                        {
-                                            <span>[@product.Code] @product.Name</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">未知商品</span>
-                                        }
-                                    </td>
-                                    <td class="text-end">@item.ScheduledQuantity.ToString("N2")</td>
-                                    <td class="text-end">
-                                        <span class="@(item.CompletedQuantity >= item.ScheduledQuantity ? "text-success fw-bold" : "")">
-                                            @item.CompletedQuantity.ToString("N2")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @GetStatusBadge(item.ProductionItemStatus)
-                                    </td>
-                                    <td>@(item.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                                    <td class="text-center">
-                                        <GenericButtonComponent Text="查看"
-                                                              Variant="ButtonVariant.Blue"
-                                                              Size="ButtonSize.Small"
-                                                              Icon="bi bi-eye"
-                                                              OnClick="@(() => HandleOpenScheduleItem(item.Id))" />
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-3 mb-2 d-block"></i>
-                        尚無排程項目
-                        <br/>
-                        <small>可從銷貨訂單的 BOM 組成轉入排程項目</small>
-                    </div>
-                }
+                <InteractiveTableComponent TItem="ProductionScheduleItem"
+                                          Items="@scheduleItems"
+                                          ColumnDefinitions="@GetScheduleItemColumns()"
+                                          ShowHeader="true"
+                                          ShowActions="true"
+                                          ActionsTemplate="@GetScheduleItemActionsTemplate()"
+                                          IsStriped="true"
+                                          IsHoverable="true"
+                                          IsBordered="true"
+                                          EnableRowClick="true"
+                                          OnRowClick="@HandleScheduleItemRowClick"
+                                          EmptyMessage="尚無排程項目"
+                                          CssClass="mb-0" />
             </div>
         </div>
     };
+
+    /// <summary>
+    /// 取得排程項目欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetScheduleItemColumns()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "商品",
+                PropertyName = nameof(ProductionScheduleItem.ProductId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "30%",
+                DisplayFormatter = item =>
+                {
+                    var scheduleItem = item as ProductionScheduleItem;
+                    if (scheduleItem?.Product == null) return "未知商品";
+                    
+                    return $"[{scheduleItem.Product.Code}] {scheduleItem.Product.Name}";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "排程數量",
+                PropertyName = nameof(ProductionScheduleItem.ScheduledQuantity),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "12%",
+                TextAlign = "right",
+                DisplayFormatter = item =>
+                {
+                    var scheduleItem = item as ProductionScheduleItem;
+                    return NumberFormatHelper.FormatSmart(scheduleItem?.ScheduledQuantity ?? 0);
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "完成數量",
+                PropertyName = nameof(ProductionScheduleItem.CompletedQuantity),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "12%",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = item as ProductionScheduleItem;
+                    if (scheduleItem == null) return __builder => { };
+                    
+                    return __builder =>
+                    {
+                        <span class="@(scheduleItem.CompletedQuantity >= scheduleItem.ScheduledQuantity ? "text-success fw-bold" : "")" style="display: block; text-align: right;">
+                            @NumberFormatHelper.FormatSmart(scheduleItem.CompletedQuantity)
+                        </span>
+                    };
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "狀態",
+                PropertyName = nameof(ProductionScheduleItem.ProductionItemStatus),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = item as ProductionScheduleItem;
+                    if (scheduleItem == null) return __builder => { };
+                    return GetStatusBadge(scheduleItem.ProductionItemStatus);
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "預計完成",
+                PropertyName = nameof(ProductionScheduleItem.PlannedEndDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "15%",
+                DisplayFormatter = item =>
+                {
+                    var scheduleItem = item as ProductionScheduleItem;
+                    return scheduleItem?.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-";
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// 取得排程項目操作按鈕模板
+    /// </summary>
+    private RenderFragment<ProductionScheduleItem> GetScheduleItemActionsTemplate()
+    {
+        return item => __builder =>
+        {
+            <GenericButtonComponent Text="查看"
+                                  Variant="ButtonVariant.Blue"
+                                  Size="ButtonSize.Small"
+                                  Icon="bi bi-eye"
+                                  OnClick="@(() => HandleOpenScheduleItem(item.Id))" />
+        };
+    }
+
+    /// <summary>
+    /// 處理排程項目行點擊事件
+    /// </summary>
+    private async Task HandleScheduleItemRowClick(ProductionScheduleItem item)
+    {
+        HandleOpenScheduleItem(item.Id);
+        await Task.CompletedTask;
+    }
 
     /// <summary>
     /// 取得狀態標籤

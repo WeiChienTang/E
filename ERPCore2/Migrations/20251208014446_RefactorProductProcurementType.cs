@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ERPCore2.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class RefactorProductProcurementType : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -701,7 +701,7 @@ namespace ERPCore2.Migrations
                     Specification = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     TaxRate = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: true),
-                    CanSchedule = table.Column<bool>(type: "bit", nullable: false),
+                    ProcurementType = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),

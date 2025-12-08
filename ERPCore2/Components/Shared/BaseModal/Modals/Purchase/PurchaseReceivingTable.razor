@@ -204,31 +204,62 @@ else
     }
     
     // ===== 生命週期 =====
+    private int? _previousPurchaseOrderId = null; // 追蹤採購單變更
+    private int? _previousFilterProductId = null; // 追蹤商品篩選變更
+    
     protected override async Task OnInitializedAsync()
     {
         _previousSupplierId = SelectedSupplierId;
+        _previousPurchaseOrderId = SelectedPurchaseOrderId;
+        _previousFilterProductId = FilterProductId;
         await LoadProductsAsync();
         await LoadExistingDetailsAsync();
     }
     
     protected override async Task OnParametersSetAsync()
     {
+        // 檢查篩選參數是否變更
+        bool needReload = false;
+        
         // 廠商變更時重新載入
         if (_previousSupplierId != SelectedSupplierId)
         {
             _previousSupplierId = SelectedSupplierId;
+            needReload = true;
+        }
+        
+        // 採購單篩選變更時重新載入
+        if (_previousPurchaseOrderId != SelectedPurchaseOrderId)
+        {
+            _previousPurchaseOrderId = SelectedPurchaseOrderId;
+            needReload = true;
+        }
+        
+        // 商品篩選變更時重新載入
+        if (_previousFilterProductId != FilterProductId)
+        {
+            _previousFilterProductId = FilterProductId;
+            needReload = true;
+        }
+        
+        if (needReload)
+        {
             await LoadProductsAsync();
             
-            ReceivingItems.Clear();
-            
-            if (ExistingDetails?.Any() != true)
+            // 只有廠商變更時才清空明細項目
+            if (_previousSupplierId != SelectedSupplierId)
             {
-                _dataLoadCompleted = true;
-                StateHasChanged();
-            }
-            else
-            {
-                await LoadExistingDetailsAsync();
+                ReceivingItems.Clear();
+                
+                if (ExistingDetails?.Any() != true)
+                {
+                    _dataLoadCompleted = true;
+                    StateHasChanged();
+                }
+                else
+                {
+                    await LoadExistingDetailsAsync();
+                }
             }
         }
     }
@@ -701,14 +732,44 @@ else
         if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
         {
             // 1. 載入採購明細（未完成進貨的，不檢查審核狀態）
-            AvailablePurchaseDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
+            var allPurchaseDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
                 SelectedSupplierId.Value,
                 includeCompleted: false,
                 checkApproval: false);
             
-            // 2. 載入所有啟用的商品（商品不限定廠商，所有商品都可選擇）
+            // 根據 SelectedPurchaseOrderId 篩選採購明細
+            if (SelectedPurchaseOrderId.HasValue && SelectedPurchaseOrderId.Value > 0)
+            {
+                AvailablePurchaseDetails = allPurchaseDetails
+                    .Where(d => d.PurchaseOrderId == SelectedPurchaseOrderId.Value)
+                    .ToList();
+            }
+            else
+            {
+                AvailablePurchaseDetails = allPurchaseDetails;
+            }
+            
+            // 根據 FilterProductId 進一步篩選採購明細
+            if (FilterProductId.HasValue && FilterProductId.Value > 0)
+            {
+                AvailablePurchaseDetails = AvailablePurchaseDetails
+                    .Where(d => d.ProductId == FilterProductId.Value)
+                    .ToList();
+            }
+            
+            // 2. 載入所有啟用的外購商品（自製商品由生產排程產生，不需要採購進貨）
             var allProducts = await ProductService.GetActiveProductsAsync();
-            AvailableProducts = allProducts.ToList();
+            AvailableProducts = allProducts
+                .Where(p => p.ProcurementType == ProcurementType.Purchased)
+                .ToList();
+            
+            // 根據 FilterProductId 篩選商品
+            if (FilterProductId.HasValue && FilterProductId.Value > 0)
+            {
+                AvailableProducts = AvailableProducts
+                    .Where(p => p.Id == FilterProductId.Value)
+                    .ToList();
+            }
         }
         else
         {

@@ -33,6 +33,7 @@
     [Parameter] public List<Product> AvailableProducts { get; set; } = new(); // 可選擇的商品清單
     [Parameter] public List<Unit> AvailableUnits { get; set; } = new(); // 可選擇的單位清單
     [Parameter] public int ParentEntityId { get; set; }
+    [Parameter] public int ParentProductId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
     // ===== 現有明細（用於編輯模式） =====
@@ -213,6 +214,16 @@
     
         if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
         {
+            // 檢查是否選到與成品相同的商品（避免循環參考）
+            if (ParentProductId > 0 && productId == ParentProductId)
+            {
+                await NotificationService.ShowErrorAsync("此材料不能是成品本身，請選擇其他材料");
+                detail.ComponentProductId = 0;
+                detail.ComponentProduct = null!;  // 清空 Navigation Property
+                await ItemsChanged.InvokeAsync(Items);
+                StateHasChanged();
+                return;
+            }
             // 檢查是否已存在相同材料（檢查 ComponentProduct 而非 ComponentProductId）
             var existingProductIds = Items.Where(i => i != detail && i.ComponentProduct != null).Select(i => i.ComponentProductId);
             if (existingProductIds.Any(id => id == productId))
@@ -338,6 +349,16 @@
             if (invalidQuantities.Any())
             {
                 errors.Add("所有材料的數量必須大於 0");
+            }
+
+            // 檢查是否包含成品本身（避免循環參考）
+            if (ParentProductId > 0)
+            {
+                var containsParent = nonEmptyItems.Any(item => item.ComponentProductId == ParentProductId);
+                if (containsParent)
+                {
+                    errors.Add("明細中不能包含成品本身");
+                }
             }
         }
           

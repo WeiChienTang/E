@@ -285,12 +285,40 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 檢查是否有排程項目
-                var hasItems = await context.ProductionScheduleItems
-                    .AnyAsync(psi => psi.ProductionScheduleId == entity.Id);
+                // 檢查排程項目是否已有「下一步動作」
+                // 只要有以下任一情況，就不允許刪除：
+                // 1. 已有完成入庫紀錄（ProductionScheduleCompletion）
+                // 2. 已有領料分配紀錄（ProductionScheduleAllocation）
+                // 3. 已開始生產（CompletedQuantity > 0）
+                
+                var scheduleItems = await context.ProductionScheduleItems
+                    .Where(psi => psi.ProductionScheduleId == entity.Id)
+                    .ToListAsync();
 
-                if (hasItems)
-                    return ServiceResult.Failure("無法刪除，此排程已有排程項目");
+                // 如果沒有排程項目，可以刪除
+                if (!scheduleItems.Any())
+                    return ServiceResult.Success();
+
+                // 檢查是否有完成入庫紀錄
+                var itemIds = scheduleItems.Select(si => si.Id).ToList();
+                var hasCompletions = await context.ProductionScheduleCompletions
+                    .AnyAsync(c => itemIds.Contains(c.ProductionScheduleItemId));
+
+                if (hasCompletions)
+                    return ServiceResult.Failure("無法刪除，部分排程項目已有完成入庫紀錄");
+
+                // 檢查是否有領料分配紀錄
+                var hasAllocations = await context.ProductionScheduleAllocations
+                    .AnyAsync(a => itemIds.Contains(a.ProductionScheduleItemId));
+
+                if (hasAllocations)
+                    return ServiceResult.Failure("無法刪除，部分排程項目已有領料分配紀錄");
+
+                // 檢查是否已開始生產（已完成數量 > 0）
+                var hasStartedProduction = scheduleItems.Any(si => si.CompletedQuantity > 0);
+
+                if (hasStartedProduction)
+                    return ServiceResult.Failure("無法刪除，部分排程項目已開始生產");
 
                 return ServiceResult.Success();
             }

@@ -24,7 +24,7 @@
 
 建立完整的生產排程系統，讓使用者可以：
 
-1. 從**待排程工作台（訂單表）**查看目前已下訂單中有哪些產品需要生產
+1. 從**銷貨訂單頁面**篩選需要生產的訂單明細
 2. 透過**生產排程（製作表）**安排哪些訂單要被列入排程
 3. 追蹤生產進度直到完成入庫
 
@@ -32,10 +32,10 @@
 
 | 功能模組 | 說明 |
 |---------|------|
-| 待排程工作台 | 顯示所有庫存不足、需要生產的訂單明細 |
+| 銷貨訂單管理 | 篩選庫存不足的訂單，支援批次轉排程 |
 | 生產排程編輯 | 管理排程項目、展開 BOM 組件、追蹤狀態 |
 | 轉排程功能 | 從銷貨訂單 BOM 編輯畫面直接轉入排程 |
-| 狀態追蹤 | 透過入庫單等單據自動更新生產狀態 |
+| 狀態追蹤 | 透過完工登錄自動更新生產狀態 |
 
 ---
 
@@ -48,32 +48,30 @@
 │                        生產排程完整流程                              │
 └─────────────────────────────────────────────────────────────────────┘
 
-  銷貨訂單                    待排程工作台                   生產排程
- ┌─────────┐               ┌─────────────┐              ┌─────────────┐
- │ 訂單明細 │──(庫存不足)──→│   訂單表     │──(勾選轉入)──→│   製作表    │
- │ + BOM   │               │ 待排程清單   │              │ 排程明細    │
- └─────────┘               └─────────────┘              └─────────────┘
-      │                           │                           │
-      │                    詢問：是否合併                       │
-      │                    相同產品？                          │
-      │                           │                           ▼
-      │                    ┌──────┴──────┐              ┌─────────────┐
-      │                    │  是    │  否 │              │ 展開 BOM    │
-      │                    └────────┴─────┘              │ 組件需求    │
+  銷貨訂單頁面                                              生產排程
+ ┌─────────────┐                                        ┌─────────────┐
+ │ 訂單明細     │──(BOM編輯→轉排程)──────────────────────→│   製作表    │
+ │ + BOM組成   │                                        │ 排程明細    │
+ └─────────────┘                                        └─────────────┘
+      │                                                        │
+      │                                                        │
+      │                                                        ▼
+      │                                                  ┌─────────────┐
+      │                                                  │ 展開 BOM    │
+      │                                                  │ 組件需求    │
       │                                                  └─────────────┘
       │                                                        │
       │    ┌───────────────────────────────────────────────────┘
       │    │
       │    ▼
       │  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-      │  │   待生產    │────→│   製作中    │────→│   已入庫    │
+      │  │   待生產    │────→│   製作中    │────→│   已完成    │
       │  └─────────────┘     └─────────────┘     └─────────────┘
-      │                                                │
-      │                                                │
-      └──────────────────(回寫已排程標記)───────────────┘
-                                                       │
-                                              透過入庫單觸發
-                                              狀態自動變更
+      │         │                   │                    │
+      │         │                   │                    │
+      │      開始生產            組件領料            完工登錄
+      │                                                  │
+      └──────────────────(回寫已排程標記)─────────────────┘
 ```
 
 ### 流程說明
@@ -84,20 +82,20 @@
 2. 編輯 BOM 組成（SalesOrderCompositionDetail）
 3. 系統自動檢查庫存狀態
 
-#### Step 2：待排程工作台
+#### Step 2：從訂單轉入排程
 
-1. 顯示所有「庫存不足」的訂單明細
-2. 使用者可依交期、客戶、產品篩選
-3. 勾選要排程的項目
-4. 點擊「轉入排程」，系統詢問是否合併相同產品
+1. 在銷貨訂單頁面篩選需要排程的訂單
+2. 開啟訂單編輯，進入 BOM 組成編輯
+3. 點擊「轉排程」按鈕
+4. 系統建立生產排程並展開 BOM
 
 #### Step 3：建立生產排程
 
 1. 系統建立 ProductionSchedule 主檔
 2. 建立 ProductionScheduleItem（成品層級）
-3. 如選擇合併，相同產品的訂單會合併成一個 Item
-4. 建立 ProductionScheduleAllocation（訂單分配追溯）
-5. 自動展開 BOM，建立 ProductionScheduleDetail（組件需求）
+3. 每個訂單明細獨立建立排程項目
+4. 自動展開 BOM，建立 ProductionScheduleDetail（組件需求）
+5. 追蹤組件庫存狀態與領料記錄
 
 #### Step 4：生產與入庫
 
@@ -142,48 +140,51 @@
 
 ```
 ┌─────────────────────────────────┐
-│ ProductionSchedule              │  (生產排程主檔) ← 現有，小幅調整
+│ ProductionSchedule              │  (生產排程主檔)
 │ ─────────────────────────────── │
 │ Id                              │
 │ Code (排程代碼)                  │
 │ ScheduleDate (排程日期)          │
 │ CustomerId (客戶，可為空)         │
 │ CreatedByEmployeeId (製單人員)   │
-│ SourceDocumentType (來源類型)    │
-│ SourceDocumentId (來源ID)        │
 │ Remarks (備註)                   │
 │ Status (EntityStatus)           │
 └───────────────┬─────────────────┘
                 │ 1:N
                 ▼
-┌─────────────────────────────────────────────────────┐
-│ ProductionScheduleItem (排程項目 - 成品層級)          │  ← 新增
-│ ─────────────────────────────────────────────────── │
-│ Id                                                  │
-│ ProductionScheduleId (FK → ProductionSchedule)      │
-│ ProductId (FK → Product，成品)                       │
-│ TotalRequiredQuantity (總需求數量)                   │
-│ CurrentStockQuantity (當時庫存 - 快照參考用)          │
-│ CompletedQuantity (已完成數量)                       │
-│ Priority (優先順序，預設 0)                          │
-│ ProductionStatus (待生產/製作中/已入庫)               │
-│ Remarks (備註)                                      │
-└───────────────┬───────────────┬─────────────────────┘
-                │ 1:N           │ 1:N
-                ▼               ▼
+┌──────────────────────────────────────────────────────────┐
+│ ProductionScheduleItem (排程項目)                         │
+│ ──────────────────────────────────────────────────────── │
+│ Id                                                       │
+│ ProductionScheduleId (FK → ProductionSchedule)           │
+│ ProductId (FK → Product，成品)                            │
+│ SalesOrderDetailId (FK → SalesOrderDetail，來源訂單)      │
+│ ScheduledQuantity (排程數量)                              │
+│ CompletedQuantity (已完成數量)                            │
+│ ProductionItemStatus (待生產/製作中/已入庫)                │
+│ Remarks (備註)                                           │
+└───────────────┬──────────────────────────────────────────┘
+                │ 1:N
+                ▼
 ┌───────────────────────────────┐  ┌─────────────────────────────────┐
-│ ProductionScheduleDetail      │  │ ProductionScheduleAllocation    │  ← 新增
-│ (組件需求 - 現有，調整關聯)    │  │ (訂單分配追溯)                   │
+│ ProductionScheduleDetail      │  │ ProductionScheduleCompletion    │
+│ (組件需求)                     │  │ (完工記錄)                       │
 │ ───────────────────────────── │  │ ───────────────────────────────  │
 │ Id                            │  │ Id                              │
 │ ProductionScheduleItemId (FK) │  │ ProductionScheduleItemId (FK)   │
-│ ComponentProductId (FK)       │  │ SalesOrderDetailId (FK)         │
-│ ProductCompositionDetailId    │  │ Quantity (此訂單的需求數量)       │
-│ RequiredQuantity (需求數量)    │  │ DeliveredQuantity (已出貨數量)   │
-│ EstimatedUnitCost (預估成本)   │  │ Remarks                         │
-│ ActualUnitCost (實際成本)      │  └─────────────────────────────────┘
-│ TotalCost (總成本)             │
-│ WarehouseId (領料倉庫)         │
+│ ComponentProductId (FK)       │  │ Quantity (入庫數量)              │
+│ ProductCompositionDetailId    │  │ WarehouseId (入庫倉庫)           │
+│ RequiredQuantity (需求數量)    │  │ CompletionDate (入庫日期)        │
+│ IssuedQuantity (已領數量)      │  │ Remarks                         │
+│ WarehouseId (領料倉庫)         │  └─────────────────────────────────┘
+└───────────────────────────────┘
+         │
+         │ FK
+         ▼
+┌───────────────────────────────┐
+│    SalesOrderDetail           │
+│ ───────────────────────────── │
+│ ScheduledQuantity (已排程數量) │
 └───────────────────────────────┘
 ```
 
@@ -230,131 +231,109 @@ using ERPCore2.Data.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 生產排程項目 - 成品層級，可合併多張訂單的相同產品
+    /// 生產排程項目 - 記錄要生產的商品項目（以產品為單位）
+    /// 每個銷售訂單明細轉排程會產生一筆 ProductionScheduleItem
     /// </summary>
     [Index(nameof(ProductionScheduleId), nameof(ProductId))]
-    [Index(nameof(ProductId))]
-    [Index(nameof(ProductionStatus))]
+    [Index(nameof(SalesOrderDetailId))]
+    [Index(nameof(ProductionItemStatus))]
     public class ProductionScheduleItem : BaseEntity
     {
-        // 關聯資訊
+        // === 生產資訊 ===
+        
+        /// <summary>
+        /// 排程數量 - 本次要生產的數量
+        /// </summary>
+        [Required(ErrorMessage = "排程數量為必填")]
+        [Display(Name = "排程數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal ScheduledQuantity { get; set; } = 0;
+        
+        /// <summary>
+        /// 已完成數量 - 已入庫的完成品數量
+        /// </summary>
+        [Display(Name = "已完成數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal CompletedQuantity { get; set; } = 0;
+        
+        /// <summary>
+        /// 待完成數量 - 計算屬性
+        /// </summary>
+        [Display(Name = "待完成數量")]
+        [NotMapped]
+        public decimal PendingQuantity => ScheduledQuantity - CompletedQuantity;
+        
+        /// <summary>
+        /// 生產項目狀態
+        /// </summary>
+        [Required(ErrorMessage = "生產狀態為必填")]
+        [Display(Name = "生產狀態")]
+        public ProductionItemStatus ProductionItemStatus { get; set; } = ProductionItemStatus.Pending;
+        
+        /// <summary>
+        /// 備註
+        /// </summary>
+        [Display(Name = "備註")]
+        [StringLength(500)]
+        public string? Remarks { get; set; }
+        
+        // === 關聯資訊 ===
+        
+        /// <summary>
+        /// 生產排程主檔ID (FK)
+        /// </summary>
         [Required(ErrorMessage = "生產排程主檔為必填")]
         [Display(Name = "生產排程主檔")]
         [ForeignKey(nameof(ProductionSchedule))]
         public int ProductionScheduleId { get; set; }
-
-        [Required(ErrorMessage = "成品為必填")]
-        [Display(Name = "成品")]
+        
+        /// <summary>
+        /// 產品ID (FK) - 要生產的成品
+        /// </summary>
+        [Required(ErrorMessage = "產品為必填")]
+        [Display(Name = "產品")]
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
-
-        // 數量資訊
-        [Required(ErrorMessage = "總需求數量為必填")]
-        [Display(Name = "總需求數量")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal TotalRequiredQuantity { get; set; } = 0;
-
-        [Display(Name = "當時庫存數量")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal CurrentStockQuantity { get; set; } = 0;
-
-        [Display(Name = "已完成數量")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal CompletedQuantity { get; set; } = 0;
-
-        // 狀態與優先序
-        [Display(Name = "優先順序")]
-        public int Priority { get; set; } = 0;
-
-        [Display(Name = "生產狀態")]
-        public ProductionItemStatus ProductionStatus { get; set; } = ProductionItemStatus.Pending;
-
-        [Display(Name = "備註")]
-        [StringLength(500)]
-        public string? Remarks { get; set; }
-
-        // Navigation Properties
+        
+        /// <summary>
+        /// 銷貨訂單明細ID (FK) - 來源訂單明細
+        /// </summary>
+        [Display(Name = "銷貨訂單明細")]
+        [ForeignKey(nameof(SalesOrderDetail))]
+        public int? SalesOrderDetailId { get; set; }
+        
+        // === Navigation Properties ===
+        
         public ProductionSchedule ProductionSchedule { get; set; } = null!;
         public Product Product { get; set; } = null!;
+        public SalesOrderDetail? SalesOrderDetail { get; set; }
         
-        // 一對多：組件需求
+        /// <summary>
+        /// 排程明細（BOM 組件需求）
+        /// </summary>
         public ICollection<ProductionScheduleDetail> ScheduleDetails { get; set; } = new List<ProductionScheduleDetail>();
         
-        // 一對多：訂單分配
-        public ICollection<ProductionScheduleAllocation> Allocations { get; set; } = new List<ProductionScheduleAllocation>();
-
-        // 計算屬性
+        /// <summary>
+        /// 完工記錄
+        /// </summary>
+        public ICollection<ProductionScheduleCompletion> Completions { get; set; } = new List<ProductionScheduleCompletion>();
+        
+        // === 計算屬性 ===
+        
         [NotMapped]
-        public decimal RemainingQuantity => TotalRequiredQuantity - CompletedQuantity;
+        public bool IsCompleted => CompletedQuantity >= ScheduledQuantity;
 
         [NotMapped]
-        public bool IsCompleted => CompletedQuantity >= TotalRequiredQuantity;
-
-        [NotMapped]
-        public decimal CompletionPercentage => TotalRequiredQuantity > 0 
-            ? Math.Round(CompletedQuantity / TotalRequiredQuantity * 100, 2) 
+        public decimal CompletionPercentage => ScheduledQuantity > 0 
+            ? Math.Round(CompletedQuantity / ScheduledQuantity * 100, 2) 
             : 0;
     }
 }
 ```
 
-### 新增實體：ProductionScheduleAllocation
+### ~~新增實體：ProductionScheduleAllocation~~（已移除）
 
-```csharp
-// 檔案：Data/Entities/ProductionManagement/ProductionScheduleAllocation.cs
-
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
-
-namespace ERPCore2.Data.Entities
-{
-    /// <summary>
-    /// 生產排程分配 - 追溯排程項目與銷貨訂單明細的關聯
-    /// </summary>
-    [Index(nameof(ProductionScheduleItemId))]
-    [Index(nameof(SalesOrderDetailId))]
-    [Index(nameof(ProductionScheduleItemId), nameof(SalesOrderDetailId), IsUnique = true)]
-    public class ProductionScheduleAllocation : BaseEntity
-    {
-        // 關聯資訊
-        [Required(ErrorMessage = "生產排程項目為必填")]
-        [Display(Name = "生產排程項目")]
-        [ForeignKey(nameof(ProductionScheduleItem))]
-        public int ProductionScheduleItemId { get; set; }
-
-        [Required(ErrorMessage = "銷貨訂單明細為必填")]
-        [Display(Name = "銷貨訂單明細")]
-        [ForeignKey(nameof(SalesOrderDetail))]
-        public int SalesOrderDetailId { get; set; }
-
-        // 數量資訊
-        [Required(ErrorMessage = "分配數量為必填")]
-        [Display(Name = "分配數量")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal Quantity { get; set; } = 0;
-
-        [Display(Name = "已出貨數量")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal DeliveredQuantity { get; set; } = 0;
-
-        [Display(Name = "備註")]
-        [StringLength(500)]
-        public string? Remarks { get; set; }
-
-        // Navigation Properties
-        public ProductionScheduleItem ProductionScheduleItem { get; set; } = null!;
-        public SalesOrderDetail SalesOrderDetail { get; set; } = null!;
-
-        // 計算屬性
-        [NotMapped]
-        public decimal RemainingQuantity => Quantity - DeliveredQuantity;
-
-        [NotMapped]
-        public bool IsFullyDelivered => DeliveredQuantity >= Quantity;
-    }
-}
-```
+**2024/12/08 更新**：此實體已在架構優化中移除。訂單追溯改為透過 `ProductionScheduleItem.SalesOrderDetailId` 直接關聯,簡化了資料結構。
 
 ### 調整現有實體：ProductionScheduleDetail
 
@@ -389,7 +368,7 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 
 ## 轉排程入口點設計
 
-### 入口點 A：BOM 編輯 Modal（單一明細）
+### 轉排程入口點：BOM 編輯 Modal
 
 **位置**：`SalesOrderCompositionEditModal.razor` 的 HeaderButtons
 
@@ -403,23 +382,8 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 
 **功能**：
 - 將當前編輯的單一訂單明細轉入排程
-- 點擊後彈出「轉排程確認 Modal」
-
-### 入口點 B：訂單編輯 Modal（整張訂單）
-
-**位置**：`SalesOrderEditModalComponent.razor` 的 CustomActionButtons
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ 📋 銷貨訂單 SO2024-001              [轉排程] [轉銷貨] [列印] [儲存] [取消]│
-├─────────────────────────────────────────────────────────────────────────┤
-│ ...訂單內容...                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-**功能**：
-- 將整張訂單所有「可排程」的明細轉入排程
-- 點擊後彈出「批次轉排程確認 Modal」
+- 直接建立生產排程並展開 BOM 組件
+- 顯示庫存檢查與警示訊息
 
 ---
 
@@ -470,94 +434,11 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 整張訂單轉排程（入口點 B）
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ 📋 批次轉入生產排程                                                [X]  │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│   訂單資訊：SO2024-001 | 客戶A | 訂單日期 2024/12/01                    │
-│                                                                         │
-│   可排程明細                                                            │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │☑│ 產品     │訂單數量│已排程│可排程│本次排程│ 庫存 │ 缺口        │  │
-│   ├─┼──────────┼───────┼─────┼─────┼───────┼─────┼──────────────┤  │
-│   │☑│ 成品X    │ 100   │ 0   │ 100 │[_100_]│ 30  │ 70           │  │
-│   │☑│ 成品Y    │ 50    │ 20  │ 30  │[__30_]│ 10  │ 20           │  │
-│   │☐│ 成品Z    │ 80    │ 80  │ 0   │ -     │ -   │ (已完全排程) │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-│   排程選項                                                              │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │ ○ 個別建立排程單（每個產品一張）                                 │  │
-│   │ ● 合併為一張排程單                                              │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-│   已選 2 項，共排程 130 個產品                                          │
-│                                                                         │
-│   ⚠️ 組件庫存檢查結果：3 項組件庫存不足 [查看詳情]                      │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                              [取消]  [確認轉排程]        │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
 ---
 
 ## 頁面設計
 
-### 1. 待排程工作台（訂單表）
-
-**檔案路徑**：`Components/Pages/ProductionManagement/ProductionPendingWorkbench.razor`
-
-**URL**：`/production/pending-workbench`
-
-#### UI 設計
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ 📋 待排程工作台                                          [重新整理]     │
-├─────────────────────────────────────────────────────────────────────────┤
-│ 篩選條件                                                                │
-│ ┌─────────────────────────────────────────────────────────────────────┐│
-│ │ 交期範圍：[起始日期] ~ [結束日期]  客戶：[選擇客戶 ▼]                  ││
-│ │ 產品：[選擇產品 ▼]                 [搜尋] [清除篩選]                  ││
-│ └─────────────────────────────────────────────────────────────────────┘│
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│ ┌─────────────────────────────────────────────────────────────────────┐│
-│ │☑│ 訂單編號     │ 客戶名稱  │ 產品名稱    │需求數量│ 庫存 │ 缺口 │交期    ││
-│ ├─┼─────────────┼──────────┼────────────┼───────┼─────┼─────┼───────┤│
-│ │☑│ SO2024-001  │ 客戶A    │ [P001]成品X│ 100   │ 30  │ 70  │12/15  ││
-│ │☑│ SO2024-002  │ 客戶B    │ [P001]成品X│ 80    │ 30  │ 50  │12/18  ││
-│ │☐│ SO2024-003  │ 客戶C    │ [P002]成品Y│ 50    │ 60  │ -   │12/20  ││
-│ │☑│ SO2024-004  │ 客戶A    │ [P003]成品Z│ 30    │ 10  │ 20  │12/15  ││
-│ │☐│ SO2024-005  │ 客戶D    │ [P001]成品X│ 40    │ 30  │ 10  │12/25  ││
-│ └─────────────────────────────────────────────────────────────────────┘│
-│                                                                         │
-│ 已選擇 3 筆，共 3 種產品                                                │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                           [轉入排程 ▼]                  │
-│                                           ├─ 個別建立排程（3張排程單）    │
-│                                           └─ 合併相同產品（2張排程單）    │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-#### 功能說明
-
-| 功能 | 說明 |
-|------|------|
-| 資料來源 | SalesOrderDetail + SalesOrderCompositionDetail |
-| 篩選條件 | 庫存不足（缺口 > 0）、未完全排程、訂單狀態有效 |
-| 庫存顯示 | 從 InventoryStock 即時計算 |
-| 缺口計算 | 需求數量 - 庫存，負數顯示 "-" |
-| 個別建立 | 每個勾選項目建立獨立的排程單 |
-| 合併相同產品 | 相同產品的不同訂單合併成一個排程項目 |
-
----
-
-### 2. 生產排程編輯（製作表）
+### 1. 生產排程編輯（製作表）
 
 **檔案路徑**：`Components/Pages/ProductionManagement/ProductionScheduleEditModalComponent.razor`（增強現有）
 
@@ -615,13 +496,13 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 
 ---
 
-### 3. 銷貨訂單 BOM 編輯（新增轉排程功能）
+### 2. 銷貨訂單 BOM 編輯（轉排程功能）
 
 **檔案路徑**：`Components/Shared/BaseModal/Modals/Sales/SalesOrderCompositionEditModal.razor`
 
-#### 新增按鈕
+#### 轉排程按鈕
 
-在 HeaderButtons 區域新增「轉排程」按鈕：
+在 BOM 編輯 Modal 的 HeaderButtons 區域新增「轉排程」按鈕：
 
 ```razor
 <GenericButtonComponent Text="轉排程"
@@ -633,13 +514,12 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 
 #### 功能流程
 
-1. 檢查是否有庫存不足的組件
-2. 如有不足，顯示確認對話框
-3. 建立 ProductionSchedule + ProductionScheduleItem
-4. 展開 BOM 建立 ProductionScheduleDetail
-5. 建立 ProductionScheduleAllocation 關聯
-6. 回寫 SalesOrderDetail.ScheduledQuantity
-7. 顯示成功訊息
+1. 檢查訂單明細是否已完全排程
+2. 建立 ProductionSchedule + ProductionScheduleItem
+3. 自動展開 BOM 建立 ProductionScheduleDetail
+4. 檢查組件庫存狀態並顯示警示
+5. 回寫 SalesOrderDetail.ScheduledQuantity
+6. 導航至生產排程編輯頁面
 
 ---
 
@@ -741,19 +621,17 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 
 | Modal 名稱 | 用途 | 基礎組件 |
 |-----------|------|---------|
-| `TransferToScheduleModal` | 單一明細轉排程確認 | BaseModalComponent |
-| `BatchTransferToScheduleModal` | 批次轉排程確認 | BaseModalComponent |
-| `StartProductionModal` | 開始生產確認（含領料） | BaseModalComponent |
-| `ProductionCompletionModal` | 完成入庫 | BaseModalComponent |
+| `ProductionScheduleItemEditModal` | 排程項目編輯與狀態管理 | BaseModalComponent |
+| `ProductionCompletionModal` | 完工登錄 | BaseModalComponent |
+| `MaterialIssueModal` | 組件領料 | BaseModalComponent |
 
 ### 本專案需要使用表格的頁面
 
 | 頁面/組件 | 表格用途 | 基礎組件 |
 |----------|---------|---------|
-| `ProductionScheduleEditModalComponent` | 排程項目管理 | InteractiveTableComponent |
-| `ProductionScheduleEditModalComponent` | BOM 組件展開顯示 | InteractiveTableComponent |
-| `ProductionScheduleEditModalComponent` | 訂單分配明細 | InteractiveTableComponent |
-| `ProductionPendingWorkbench` | 待排程清單 | InteractiveTableComponent |
+| `ProductionScheduleEditModalComponent` | 排程項目列表 | 互動式卡片展示 |
+| `ProductionScheduleItemEditModal` | BOM 組件展開顯示 | HTML Table |
+| `ProductionScheduleIndex` | 排程清單 | GenericIndexPageComponent |
 
 ---
 
@@ -865,25 +743,16 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 |---------|------|
 | `Data/Enums/ProductionItemStatus.cs` | 生產狀態列舉 |
 | `Data/Entities/ProductionManagement/ProductionScheduleItem.cs` | 排程項目實體 |
-| `Data/Entities/ProductionManagement/ProductionScheduleAllocation.cs` | 訂單分配實體 |
-| `Data/Entities/ProductionManagement/ProductionScheduleCompletion.cs` | 入庫記錄實體 |
-| `Services/ProductionManagement/IProductionScheduleItemService.cs` | 服務介面 |
-| `Services/ProductionManagement/ProductionScheduleItemService.cs` | 服務實作 |
-| `Services/ProductionManagement/IProductionScheduleAllocationService.cs` | 服務介面 |
-| `Services/ProductionManagement/ProductionScheduleAllocationService.cs` | 服務實作 |
-| `Services/ProductionManagement/IProductionScheduleCompletionService.cs` | 入庫記錄介面 |
-| `Services/ProductionManagement/ProductionScheduleCompletionService.cs` | 入庫記錄服務 |
-| `Services/ProductionManagement/IProductionTransferService.cs` | 轉排程服務介面 |
-| `Services/ProductionManagement/ProductionTransferService.cs` | 轉排程服務實作 |
-| `Services/ProductionManagement/IProductionExecutionService.cs` | 生產執行介面 |
-| `Services/ProductionManagement/ProductionExecutionService.cs` | 生產執行服務（開始生產、完成入庫、庫存處理） |
-| `Services/ProductionManagement/IPendingScheduleQueryService.cs` | 待排程查詢介面 |
-| `Services/ProductionManagement/PendingScheduleQueryService.cs` | 待排程查詢服務 |
-| `Components/Pages/ProductionManagement/ProductionPendingWorkbench.razor` | 待排程工作台頁面（Phase 2） |
-| `Components/Shared/BaseModal/Modals/ProductionManagement/TransferToScheduleModal.razor` | 單一明細轉排程確認 Modal |
-| `Components/Shared/BaseModal/Modals/ProductionManagement/BatchTransferToScheduleModal.razor` | 批次轉排程確認 Modal |
-| `Components/Shared/BaseModal/Modals/ProductionManagement/StartProductionModal.razor` | 開始生產確認 Modal |
-| `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionCompletionModal.razor` | 完成入庫 Modal |
+| `Data/Entities/ProductionManagement/ProductionScheduleCompletion.cs` | 完工記錄實體 |
+| `Services/ProductionManagement/IProductionScheduleItemService.cs` | 排程項目服務介面 |
+| `Services/ProductionManagement/ProductionScheduleItemService.cs` | 排程項目服務實作 |
+| `Services/ProductionManagement/IProductionScheduleCompletionService.cs` | 完工記錄服務介面 |
+| `Services/ProductionManagement/ProductionScheduleCompletionService.cs` | 完工記錄服務實作 |
+| `Components/Pages/ProductionManagement/ProductionScheduleIndex.razor` | 生產排程索引頁面 |
+| `Components/Pages/ProductionManagement/ProductionScheduleEditModalComponent.razor` | 生產排程編輯 Modal |
+| `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionScheduleItemEditModal.razor` | 排程項目編輯 Modal |
+| `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionCompletionModal.razor` | 完工登錄 Modal |
+| `Components/Shared/BaseModal/Modals/ProductionManagement/MaterialIssueModal.razor` | 組件領料 Modal |
 
 ---
 
@@ -1399,116 +1268,198 @@ public async Task<List<ProductionSchedule>> CreateSchedulesWithMerge(
 | 2024/12/06 | v1.0 | 初版建立 | AI Assistant |
 | 2024/12/08 | v1.1 | Phase 1-2 完成：資料模型和服務層 | AI Assistant |
 | 2024/12/08 | v1.2 | Phase 3 部分完成：轉排程 UI 整合 | AI Assistant |
-| 2024/12/09 | v1.3 | Phase 3-4 完成：待排程工作台、完工登錄 | AI Assistant |
+| 2024/12/09 | v1.3 | Phase 3-4 完成：排程項目編輯、完工登錄 | AI Assistant |
 | 2024/12/09 | v1.4 | Phase 5 完成：組件領料功能 | AI Assistant |
 | 2024/12/06 | v1.5 | Phase 6 完成：庫存交易整合（領料扣庫存、完工加庫存） | AI Assistant |
 
 ---
-
-## 開發進度
-
 ### ✅ Phase 1：資料模型建立 - 完成
 
 已完成項目：
 - [x] `Data/Enums/ProductionItemStatus.cs` - 生產狀態列舉
-- [x] `Data/Entities/ProductionManagement/ProductionScheduleItem.cs` - 排程項目實體
-- [x] `Data/Entities/ProductionManagement/ProductionScheduleAllocation.cs` - 訂單分配實體
-- [x] `Data/Entities/ProductionManagement/ProductionScheduleCompletion.cs` - 入庫記錄實體
-- [x] `Data/Entities/ProductionManagement/ProductionScheduleDetail.cs` - 調整關聯到 Item
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleItem.cs` - 排程項目實體（包含 SalesOrderDetailId 直接追溯訂單）
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleCompletion.cs` - 完工記錄實體
+- [x] `Data/Entities/ProductionManagement/ProductionScheduleDetail.cs` - 調整關聯到 Item，新增 IssuedQuantity 欄位
 - [x] `Data/Entities/Sales/SalesOrderDetail.cs` - 新增 ScheduledQuantity 欄位
-- [x] `Data/Entities/Warehouses/InventoryStockDetail.cs` - 新增 InProductionStock 欄位
-- [x] `Data/Entities/Warehouses/InventoryStock.cs` - 調整 TotalAvailableStock 計算
-- [x] `Data/Context/AppDbContext.cs` - 註冊新實體
-- [x] Migration 建立 (`AddProductionScheduleItems`)
+- [x] `Data/Context/AppDbContext.cs` - 註冊新實體，配置外鍵關聯
+- [x] Migration 建立 (`AddProductionScheduleItems`, `AddIssuedQuantityToProductionScheduleDetail`)
 
+**架構優化**：
+- ❌ 移除 `ProductionScheduleAllocation` 實體 - 改用 `ProductionScheduleItem.SalesOrderDetailId` 直接追溯
+- ✅ 簡化資料結構，每個訂單明細獨立建立排程項目，不合併相同產品ionScheduleDetail.cs` - 調整關聯到 Item
 ### ✅ Phase 2：Service 層建立 - 完成
 
 已完成項目：
 - [x] `Services/ProductionManagement/IProductionScheduleItemService.cs` - 介面定義
 - [x] `Services/ProductionManagement/ProductionScheduleItemService.cs` - 服務實作
-- [x] `Services/ProductionManagement/IProductionScheduleAllocationService.cs` - 介面定義
-- [x] `Services/ProductionManagement/ProductionScheduleAllocationService.cs` - 服務實作
-- [x] `Services/ProductionManagement/IProductionScheduleCompletionService.cs` - 入庫記錄介面
-- [x] `Services/ProductionManagement/ProductionScheduleCompletionService.cs` - 入庫記錄服務
+  - `CreateFromSalesOrderDetailAsync()` - 從銷貨訂單明細建立排程項目
+  - `UpdateStatusAsync()` - 更新生產狀態
+  - `StartProductionAsync()` - 開始生產
+  - `CompleteProductionAsync()` - 完成生產
+- [x] `Services/ProductionManagement/IProductionScheduleCompletionService.cs` - 完工記錄介面
+- [x] `Services/ProductionManagement/ProductionScheduleCompletionService.cs` - 完工記錄服務
 - [x] `Services/ProductionManagement/IProductionScheduleDetailService.cs` - 更新介面（關聯到 Item）
 - [x] `Services/ProductionManagement/ProductionScheduleDetailService.cs` - 重構服務
-- [x] `Data/ServiceRegistration.cs` - 註冊新服務
-
-### ✅ Phase 3：UI 整合 - 完成
-
-已完成項目：
-- [x] `Components/Shared/BaseModal/Modals/Sales/TransferToScheduleModalComponent.razor` - 轉排程確認 Modal
-- [x] `Components/Shared/BaseModal/Modals/Sales/SalesOrderCompositionEditModal.razor` - 新增「轉排程」按鈕
-- [x] `Components/Shared/BaseModal/Modals/Sales/SalesOrderTable.razor` - 傳遞排程相關參數
-- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionScheduleItemEditModal.razor` - 排程項目編輯 Modal
-- [x] `Components/Pages/ProductionManagement/ProductionScheduleEditModalComponent.razor` - 增強顯示排程項目列表
-
-### ✅ Phase 4：待排程工作台與完工登錄 - 完成
+  - `GetByScheduleItemIdAsync()` - 查詢排程項目的組件需求
+  - `IssueComponentsAsync()` - 組件領料處理
+### ✅ Phase 3：轉排程功能 - 完成
 
 已完成項目：
-- [x] `Components/Pages/ProductionManagement/ProductionPendingWorkbench.razor` - 待排程工作台頁面
-  - 顯示所有待排程的銷貨訂單明細
-  - 支援客戶、商品、日期篩選
-  - 多選勾選功能
-  - 統計卡片顯示（待排程項目、數量、庫存不足、已選擇）
-- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/BatchTransferToScheduleModal.razor` - 批次轉排程 Modal
-  - 支援合併相同商品選項
-  - 自動複製 BOM 組成到排程明細
-  - 更新銷貨訂單明細的已排程數量
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/TransferToScheduleModalComponent.razor` - 轉排程確認 Modal
+  - 支援從銷貨訂單明細轉入排程
+  - 自動載入可排程項目（Product.ProcurementType = Manufactured 且有待排程數量）
+  - 顯示庫存檢查與警示
+  - 支援批次選擇與數量調整
+  - 提供合併/分開建立排程選項
+- [x] `Components/Shared/BaseModal/Modals/Sales/SalesOrderEditModalComponent.razor` - 新增「轉排程」按鈕（批次轉排程入口）
+- [x] ~~`Components/Shared/BaseModal/Modals/Sales/SalesOrderCompositionEditModal.razor`~~ - 移除個別轉排程功能（已整合至訂單層級）
+
+**架構優化**：
+- ❌ 移除 `BatchTransferToScheduleModal.razor` - 功能整合至 `TransferToScheduleModalComponent.razor`
+### ✅ Phase 4：生產排程管理 - 完成
+
+已完成項目：
+- [x] `Components/Pages/ProductionManagement/ProductionScheduleIndex.razor` - 生產排程索引頁面
+  - 使用 `GenericIndexPageComponent` 顯示排程列表
+  - 支援篩選、搜尋、分頁
+- [x] `Components/Pages/ProductionManagement/ProductionScheduleEditModalComponent.razor` - 排程編輯主頁面
+  - 排程主檔資訊編輯
+  - 排程項目卡片展示（InteractiveCard）
+  - 整合排程項目編輯功能
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionScheduleItemEditModal.razor` - 排程項目詳情 Modal
+  - 顯示基本資訊（產品、數量、狀態）
+  - 自動展開 BOM 組件需求
+  - 生產進度追蹤（進度條）
+  - 來源訂單資訊追溯
+  - 整合操作按鈕：開始生產、組件領料、完工登錄
 - [x] `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionCompletionModal.razor` - 完工登錄 Modal
-  - 顯示進度條和完成狀態
-  - 支援分批入庫登錄
-  - BOM 組件消耗預覽
-  - 自動更新排程項目狀態
-- [x] `ProductionScheduleItemEditModal.razor` - 整合開始生產與完工登錄按鈕
-
-### ⏳ Phase 5：進階功能 - 待開發
-
-待完成項目：
-- [ ] 組件領料流程 - 消耗組件庫存
-- [ ] 入庫單整合 - 完工後自動建立入庫單
-- [ ] 狀態觸發機制 - 透過入庫單觸發完成狀態
-- [ ] 報表功能 - 生產進度報表、組件需求報表
-
-### ✅ Phase 5：組件領料功能 - 完成
+### ✅ Phase 5：生產執行功能 - 完成
 
 已完成項目：
-- [x] `Data/Entities/ProductionManagement/ProductionScheduleDetail.cs` - 新增 IssuedQuantity 欄位
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/MaterialIssueModal.razor` - 組件領料 Modal
+  - 顯示組件需求清單與當前庫存
+  - 庫存不足警告提示
+  - 支援部分領料（可調整領料數量）
+  - 整合庫存服務自動扣減庫存
+  - 自動更新 `IssuedQuantity` 欄位
+  - 記錄庫存交易（交易類型：MaterialIssue）
+- [x] `Components/Shared/BaseModal/Modals/ProductionManagement/ProductionCompletionModal.razor` - 完工登錄 Modal
+  - 顯示生產進度（進度條、已完成/總數量）
+  - 支援分批完工登錄
+  - 可選擇入庫倉庫
+  - 整合庫存服務自動增加成品庫存
+  - 建立完工記錄（ProductionScheduleCompletion）
+  - 自動更新排程項目狀態（Pending → InProgress → Completed）
+  - 記錄庫存交易（交易類型：ProductionCompletion）
+- [x] `ProductionScheduleItemEditModal.razor` - 整合所有操作按鈕
+  - 開始生產（狀態：Pending → InProgress）
+  - 組件領料（狀態：InProgress，可多次領料）
+  - 完工登錄（狀態：InProgress → Completed，可分批完工）
+  - 查看完工記錄
+- [x] `Data/Navigation/NavigationConfig.cs` - 生產排程導航設定tail.cs` - 新增 IssuedQuantity 欄位
 - [x] `Components/Shared/BaseModal/Modals/ProductionManagement/MaterialIssueModal.razor` - 組件領料 Modal
   - 顯示組件需求清單
   - 庫存不足警告
   - 支援部分領料
   - 自動更新已領數量
-- [x] `ProductionScheduleItemEditModal.razor` - 整合組件領料按鈕
-- [x] `Data/Navigation/NavigationConfig.cs` - 新增待排程工作台導航選單
-- [x] Migration: `AddIssuedQuantityToProductionScheduleDetail`
-
 ### ✅ Phase 6：庫存交易整合 - 完成
 
 已完成項目：
-- [x] `MaterialIssueModal.razor` - 整合 InventoryStockService.ReduceStockAsync
-  - 領料時自動扣減組件庫存
+- [x] `MaterialIssueModal.razor` - 整合庫存服務自動扣減庫存
+  - 呼叫 `InventoryStockService.ReduceStockAsync()`
   - 交易單號格式：`MI{yyyyMMddHHmmss}`
   - 交易類型：`InventoryTransactionTypeEnum.MaterialIssue`
-- [x] `ProductionCompletionModal.razor` - 整合 InventoryStockService.AddStockAsync
-  - 完工時自動增加成品庫存
+  - 備註包含排程代碼與產品資訊
+- [x] `ProductionCompletionModal.razor` - 整合庫存服務自動增加庫存
+  - 呼叫 `InventoryStockService.AddStockAsync()`
   - 交易單號格式：`PC{yyyyMMddHHmmss}`
   - 交易類型：`InventoryTransactionTypeEnum.ProductionCompletion`
-- [x] `Documentation/README_生產排程庫存整合.md` - 庫存整合說明文件
+  - 備註包含排程代碼與入庫資訊
+### 📝 架構優化記錄 - 2024/12/08
+
+**移除的組件與實體**：
+- ❌ `ProductionPendingWorkbench.razor` - 待排程工作台頁面（功能整合至銷貨訂單頁面）
+- ❌ `BatchTransferToScheduleModal.razor` - 批次轉排程 Modal（功能整合至 TransferToScheduleModalComponent）
+- ❌ `ProductionScheduleAllocation.cs` - 訂單分配實體（改用 ProductionScheduleItem.SalesOrderDetailId 直接追溯）
+- ❌ `SalesOrderCompositionEditModal` 的轉排程功能 - 個別轉排程按鈕（改為統一在訂單層級批次轉排程）
+
+**優化理由**：
+1. **簡化使用者操作流程**：統一從銷貨訂單編輯頁面批次轉排程，避免重複點擊
+2. **簡化資料結構**：直接用外鍵追溯訂單，不需要額外的分配表
+3. **減少重複功能**：銷貨訂單頁面已具備完整的篩選與查詢能力
+4. **降低維護成本**：減少不必要的中間頁面與資料表
+
+**採用的新架構**：
+- ✅ 每個訂單明細獨立建立排程項目（不合併相同產品）
+- ✅ 透過 `ProductionScheduleItem.SalesOrderDetailId` 直接追溯來源訂單
+- ✅ 批次轉排程統一在 `SalesOrderEditModalComponent` 處理
+- ✅ `TransferToScheduleModalComponent` 支援多選與數量調整
+**理由**：
+1. **簡化使用者操作流程**：直接從銷貨訂單 BOM 編輯畫面轉排程更直觀
+2. **減少重複功能**：銷貨訂單頁面已具備篩選與查詢能力
+3. **降低維護成本**：減少不必要的中間頁面與資料表
+
+**保留的核心功能**：
+- ✅ `ProductionScheduleIndex.razor` - 管理已建立的排程
+- ✅ `ProductionScheduleEditModalComponent.razor` - 編輯排程主檔
+- ✅ `ProductionScheduleItemEditModal.razor` - 管理排程項目與生產狀態
+- ✅ `ProductionCompletionModal.razor` - 完工登錄
+- ✅ `MaterialIssueModal.razor` - 組件領料
+- ✅ `TransferToScheduleModalComponent.razor` - 批次轉排程確認
 
 ### ⏳ Phase 7：進階功能 - 待開發
 
 待完成項目：
-- [ ] 製程管理 - ProcessDefinition 實體與服務
-- [ ] 工作站管理 - WorkStation 實體與服務
-- [ ] 製程排程追蹤 - 工序級別的進度追蹤
-- [ ] 報表功能 - 生產進度報表、組件需求報表、領料統計報表
+- [ ] 製程管理 - ProcessDefinition 實體與服務（工序定義）
+- [ ] 工作站管理 - WorkStation 實體與服務（產線/機台管理）
+- [ ] 製程排程追蹤 - 工序級別的進度追蹤與工時記錄
+- [ ] 報表功能：
+  - [ ] 生產進度報表（按排程、按產品、按客戶）
+  - [ ] 組件需求報表（MRP 物料需求計劃）
+  - [ ] 領料統計報表（組件消耗分析）
+  - [ ] 完工統計報表（產能分析）
+- [ ] 產能規劃：
+  - [ ] 機台產能計算
+  - [ ] 排程衝突檢測
+  - [ ] 自動排程建議
 
 ---
 
-> **當前狀態**：Phase 6 完成。系統已具備完整的生產排程流程與庫存整合：
-> 1. 從銷貨訂單 BOM 編輯畫面或待排程工作台轉入排程
-> 2. 在生產排程中管理排程項目和查看 BOM 組件
-> 3. 開始生產前進行組件領料（自動扣減庫存）
-> 4. 生產過程中進行完工登錄（支援分批入庫，自動增加庫存）
-> 5. 所有庫存異動都有完整的交易記錄追蹤
+## 系統當前狀態
+
+> **✅ Phase 1-6 已完成**（2024/12/08）
+> 
+> 系統已具備完整的生產排程核心功能：
+> 
+> **1. 轉排程流程**
+> - 從銷貨訂單編輯頁面批次選擇可排程項目
+> - 自動展開 BOM 組件需求
+> - 支援數量調整與部分排程
+> - 庫存檢查與警示提示
+> 
+> **2. 生產管理**
+> - 生產排程索引頁面（查詢、篩選、分頁）
+> - 排程編輯頁面（主檔資訊、排程項目卡片）
+> - 排程項目詳情（BOM 展開、進度追蹤、來源訂單追溯）
+> 
+> **3. 生產執行**
+> - 開始生產（狀態變更：Pending → InProgress）
+> - 組件領料（自動扣減組件庫存，支援分批領料）
+> - 完工登錄（自動增加成品庫存，支援分批入庫）
+> - 狀態自動更新（InProgress → Completed）
+> 
+> **4. 庫存整合**
+> - 領料時建立 MaterialIssue 交易記錄
+> - 完工時建立 ProductionCompletion 交易記錄
+> - 所有庫存異動可追溯（交易單號、日期、數量、倉庫）
+> 
+> **5. 資料追溯**
+> - 排程項目 → 銷貨訂單明細（SalesOrderDetailId）
+> - 組件需求 → 標準 BOM（ProductCompositionDetailId）
+> - 庫存異動 → 排程項目（透過交易備註）
+> 
+> **架構特色**：
+> - 簡化資料結構（移除 ProductionScheduleAllocation）
+> - 統一操作入口（批次轉排程）
+> - 完整庫存整合（自動扣減/增加）
+> - 分批處理支援（領料、完工均可分批）

@@ -452,11 +452,19 @@
             },
             new FormFieldDefinition()
             {
-              PropertyName = nameof(Product.CanSchedule),  
-                Label = "可排程",
-                FieldType = FormFieldType.Checkbox,
-                IsRequired = false,
-                HelpText = "指示商品是否可用於排程"
+                PropertyName = nameof(Product.ProcurementType),  
+                Label = "採購類型",
+                FieldType = FormFieldType.Select,
+                IsRequired = true,
+                HelpText = "指示商品的取得方式(外購/自製/委外)",
+                Options = Enum.GetValues(typeof(ProcurementType))
+                    .Cast<ProcurementType>()
+                    .Select(e => new SelectOption
+                    {
+                        Text = GetProcurementTypeDisplayName(e),
+                        Value = ((int)e).ToString()
+                    })
+                    .ToList()
             },
             new()
             {
@@ -482,7 +490,7 @@
                 p => p.SizeId,
                 p => p.UnitId,
                 p => p.TaxRate,
-                p => p.CanSchedule)
+                p => p.ProcurementType)
 
             .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Specification,
@@ -834,6 +842,20 @@
         {
             await NotificationService.ShowErrorAsync($"開啟新增合成表視窗失敗：{ex.Message}");
         }
+    }
+    
+    /// <summary>
+    /// 取得採購類型的顯示名稱
+    /// </summary>
+    private static string GetProcurementTypeDisplayName(ProcurementType procurementType)
+    {
+        return procurementType switch
+        {
+            ProcurementType.Purchased => "外購",
+            ProcurementType.Manufactured => "自製",
+            ProcurementType.Outsourced => "委外",
+            _ => procurementType.ToString()
+        };
     }
 }
 

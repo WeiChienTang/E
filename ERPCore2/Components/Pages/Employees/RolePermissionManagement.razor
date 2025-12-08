@@ -311,7 +311,11 @@
                 Title = "備註",
                 PropertyName = nameof(Permission.Remarks),
                 ColumnType = InteractiveColumnType.Display,
-                DisplayFormatter = value => string.IsNullOrEmpty(value?.ToString()) ? "-" : value.ToString()!
+                DisplayFormatter = item => 
+                {
+                    var permission = item as Permission;
+                    return string.IsNullOrEmpty(permission?.Remarks) ? "-" : permission.Remarks;
+                }
             }
         };
         
@@ -370,7 +374,11 @@
                 PropertyName = nameof(Permission.Remarks),
                 ColumnType = InteractiveColumnType.Display,
                 CellCssClass = "text-danger",
-                DisplayFormatter = value => string.IsNullOrEmpty(value?.ToString()) ? "-" : value.ToString()!
+                DisplayFormatter = item => 
+                {
+                    var permission = item as Permission;
+                    return string.IsNullOrEmpty(permission?.Remarks) ? "-" : permission.Remarks;
+                }
             }
         };
     }

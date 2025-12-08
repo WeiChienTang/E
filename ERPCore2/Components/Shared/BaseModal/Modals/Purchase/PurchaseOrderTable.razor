@@ -815,7 +815,7 @@ else
     }
 
     /// <summary>
-    /// 取得可用商品列表（根據廠商過濾）
+    /// 取得可用商品列表（根據廠商過濾，且只顯示外購商品）
     /// </summary>
     private List<Product> GetAvailableProducts()
     {
@@ -824,7 +824,8 @@ else
             return new List<Product>();
         }
         
-        return Products;
+        // 只顯示外購類型的商品（自製商品由生產排程產生，不需要採購）
+        return Products.Where(p => p.ProcurementType == ProcurementType.Purchased).ToList();
     }
     
     /// <summary>

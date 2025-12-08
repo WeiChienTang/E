@@ -193,6 +193,9 @@ namespace ERPCore2.Components.Shared.SubCollections
         #region Display 專用屬性
         /// <summary>
         /// 顯示格式化函數
+        /// 參數為整個資料列物件，可以訪問該物件的所有屬性和導航屬性
+        /// 返回要顯示的 HTML 字串（支援 HTML 標籤）
+        /// 範例：item => { var entity = item as MyEntity; return $"[{entity.Code}] {entity.Name}"; }
         /// </summary>
         public Func<object?, string>? DisplayFormatter { get; set; }
         

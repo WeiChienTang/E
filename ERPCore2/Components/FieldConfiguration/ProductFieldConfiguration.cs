@@ -1,7 +1,9 @@
 using ERPCore2.Components.Shared.Forms;
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
+using Microsoft.AspNetCore.Components;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -126,6 +128,46 @@ namespace ERPCore2.FieldConfiguration
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Product.UnitId), p => p.UnitId)
                         }
+                    },
+                    {
+                        nameof(Product.ProcurementType),
+                        new FieldDefinition<Product>
+                        {
+                            PropertyName = nameof(Product.ProcurementType),
+                            DisplayName = "採購類型",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 7,
+                            Options = Enum.GetValues(typeof(ProcurementType))
+                                .Cast<ProcurementType>()
+                                .Select(e => new SelectOption
+                                {
+                                    Text = GetProcurementTypeDisplayName(e),
+                                    Value = ((int)e).ToString()
+                                })
+                                .ToList(),
+                            FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
+                                model, query, nameof(Product.ProcurementType), p => (int)p.ProcurementType),
+                            CustomTemplate = new RenderFragment<object>(data => builder =>
+                            {
+                                if (data is Product product)
+                                {
+                                    var type = product.ProcurementType;
+                                    var displayName = GetProcurementTypeDisplayName(type);
+                                    var badgeClass = type switch
+                                    {
+                                        ProcurementType.Purchased => "bg-secondary",
+                                        ProcurementType.Manufactured => "bg-primary",
+                                        ProcurementType.Outsourced => "bg-info",
+                                        _ => "bg-secondary"
+                                    };
+                                    
+                                    builder.OpenElement(0, "span");
+                                    builder.AddAttribute(1, "class", $"badge {badgeClass}");
+                                    builder.AddContent(2, displayName);
+                                    builder.CloseElement();
+                                }
+                            })
+                        }
                     }
 
                 };
@@ -158,6 +200,20 @@ namespace ERPCore2.FieldConfiguration
         protected override Func<IQueryable<Product>, IQueryable<Product>> GetDefaultSort()
         {
             return query => query.OrderBy(p => p.Name);
+        }
+        
+        /// <summary>
+        /// 取得採購類型的顯示名稱
+        /// </summary>
+        private static string GetProcurementTypeDisplayName(ProcurementType procurementType)
+        {
+            return procurementType switch
+            {
+                ProcurementType.Purchased => "外購",
+                ProcurementType.Manufactured => "自製",
+                ProcurementType.Outsourced => "委外",
+                _ => procurementType.ToString()
+            };
         }
     }
 }

@@ -14,7 +14,7 @@
 ### 業務邏輯
 1. 訂單可以不經報價單直接下單,因此必須在訂單階段提供 BOM 編輯功能
 2. 編輯 BOM 時需顯示各組件的現有庫存數量
-3. 顯示商品的 `CanSchedule` 屬性,判斷該商品是否可排程生產
+3. 顯示商品的 `ProcurementType` 屬性,判斷該商品是否可排程生產（自製）
 4. 採用「有下一步則鎖定」的彈性設計
 
 ---
@@ -336,7 +336,7 @@ private async Task LoadProductStockQuantitiesAsync()
 
 <!-- 商品排程提示 -->
 <td class="text-center">
-    @if (detail.ComponentProduct?.CanSchedule == true)
+    @if (detail.ComponentProduct?.ProcurementType == ProcurementType.Manufactured)
     {
         <i class="bi bi-check-circle text-success" title="可排程生產"></i>
     }
@@ -804,7 +804,7 @@ var totalStock = stocks.Sum(s => s.TotalCurrentStock);
 - [ ] 點擊 BOM 按鈕可開啟編輯 Modal
 - [ ] Modal 正確載入現有 BOM 資料
 - [ ] Modal 顯示正確的庫存數量
-- [ ] Modal 顯示商品的 CanSchedule 狀態
+- [x] Modal 顯示商品的 ProcurementType 狀態（已重構為列舉）
 - [ ] 從商品 BOM 複製功能正常
 - [ ] 新增組件功能正常
 - [ ] 編輯組件數量功能正常
