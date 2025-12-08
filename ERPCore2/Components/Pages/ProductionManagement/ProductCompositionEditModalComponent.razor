@@ -74,7 +74,9 @@
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
-    private List<Product> availableProducts = new();
+    // 商品列表（分為主檔用和明細用）
+    private List<Product> availableParentProducts = new();    // 主檔商品選項（只顯示自製商品）
+    private List<Product> availableComponentProducts = new(); // 明細材料選項（顯示所有商品）
     private List<Unit> availableUnits = new();
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
@@ -219,8 +221,16 @@
         {
             isDetailDataReady = false;
             
-            // 載入所有商品列表
-            availableProducts = await ProductService.GetAllAsync();
+            // 載入所有商品列表（只查詢一次資料庫）
+            var allProducts = await ProductService.GetAllAsync();
+            
+            // 主檔商品選項：只顯示自製商品（需要排程生產的成品）
+            availableParentProducts = allProducts
+                .Where(p => p.ProcurementType == ProcurementType.Manufactured)
+                .ToList();
+            
+            // 明細材料選項：顯示所有商品（自製 + 外購，但會在 Table 中排除主檔商品）
+            availableComponentProducts = allProducts.ToList();
             
             // 載入可選擇的單位列表
             availableUnits = await UnitService.GetAllAsync();
@@ -236,7 +246,7 @@
             
             // 使用 AutoCompleteConfigHelper 建立配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<ProductComposition>()
-                .AddField(nameof(ProductComposition.ParentProductId), "Name", availableProducts)
+                .AddField(nameof(ProductComposition.ParentProductId), "Name", availableParentProducts)
                 .AddField(nameof(ProductComposition.CompositionCategoryId), "Name", availableCompositionCategories)
                 .AddField(nameof(ProductComposition.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(ProductComposition.CreatedByEmployeeId), "Name", availableEmployees)
@@ -257,7 +267,8 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-            availableProducts = new List<Product>();
+            availableParentProducts = new List<Product>();
+            availableComponentProducts = new List<Product>();
             availableUnits = new List<Unit>();
             availableCustomers = new List<Customer>();
             availableEmployees = new List<Employee>();
@@ -494,14 +505,14 @@
                         <span class="text-muted">載入明細資料中...</span>
                     </div>
                 }
-                else if (availableProducts != null && availableProducts.Any() && availableUnits != null && availableUnits.Any())
+                else if (availableComponentProducts != null && availableComponentProducts.Any() && availableUnits != null && availableUnits.Any())
                 {
                     // 檢查是否已選擇商品
                     @if (editModalComponent.Entity.ParentProductId > 0)
                     {
                         <ProductCompositionTable @ref="detailManager"
                                                                  Items="@compositionDetails"
-                                                                 AvailableProducts="@availableProducts"
+                                                                 AvailableProducts="@availableComponentProducts"
                                                                  AvailableUnits="@availableUnits"
                                                                  ParentEntityId="@(CompositionId ?? 0)"
                                                                  ParentProductId="@(editModalComponent.Entity.ParentProductId)"

@@ -25,6 +25,7 @@
                                       OnItemDelete="@HandleItemDelete"
                                       CssClass="mb-0"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateEmptyItem" />
         </div>
@@ -344,7 +345,7 @@
     private async Task NotifyDetailsChanged()
     {
         var details = ConvertToDetailEntities();
-        await OnDetailsChanged.InvokeAsync(details);
+        await DetailSyncHelper.SyncToParentAsync(details, OnDetailsChanged);
     }
 
     private T? GetPropertyValue<T>(object obj, string propertyName)
@@ -480,14 +481,7 @@
 
     private async Task OnAverageCostInput(StockDetailItem item, string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.AverageCost = null;
-        }
-        else if (decimal.TryParse(value, out var cost))
-        {
-            item.AverageCost = cost;
-        }
+        item.AverageCost = string.IsNullOrEmpty(value) ? null : InputEventHelper.HandlePriceInput(value);
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -495,14 +489,7 @@
 
     private async Task OnMinStockLevelInput(StockDetailItem item, string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.MinStockLevel = null;
-        }
-        else if (int.TryParse(value, out var level))
-        {
-            item.MinStockLevel = level;
-        }
+        item.MinStockLevel = string.IsNullOrEmpty(value) ? null : InputEventHelper.HandleIntegerInput(value);
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -510,14 +497,7 @@
 
     private async Task OnMaxStockLevelInput(StockDetailItem item, string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.MaxStockLevel = null;
-        }
-        else if (int.TryParse(value, out var level))
-        {
-            item.MaxStockLevel = level;
-        }
+        item.MaxStockLevel = string.IsNullOrEmpty(value) ? null : InputEventHelper.HandleIntegerInput(value);
         
         await NotifyDetailsChanged();
         StateHasChanged();

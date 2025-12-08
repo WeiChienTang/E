@@ -1,6 +1,8 @@
 @* 報價單明細管理組件 - 使用 InteractiveTableComponent 統一UI *@
 
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
+@using ERPCore2.Helpers
+@using ERPCore2.Data.Enums
 @inject IProductService ProductService
 @inject IProductCompositionService ProductCompositionService
 @inject IQuotationDetailService QuotationDetailService
@@ -8,6 +10,7 @@
 @inject INotificationService NotificationService
 @inject ISystemParameterService SystemParameterService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject IJSRuntime JSRuntime
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -23,7 +26,8 @@ else
 {
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <InteractiveTableComponent TItem="QuotationItem" 
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="QuotationItem" 
                                       Items="@QuotationItems"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -34,6 +38,7 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       ActionsColumnWidth = "120px"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateEmptyItem" />
         </div>
@@ -90,6 +95,9 @@ else
                               OnReselect="@HandleCompositionReselect" />
 
 @code {
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<QuotationItem>? tableComponent;
+    
     // ===== QuotationItem 內部類別定義（必須在最前面）=====
     public class QuotationItem
     {
@@ -179,6 +187,7 @@ else
     
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已轉訂單）
     private bool _hasLastQuotationRecord = false;  // 是否有歷史報價記錄（快取）
     
     // ===== 基本參數 =====
@@ -1038,6 +1047,14 @@ else
                 }
             }
         }
+        
+        // 檢查是否有不可刪除的明細（已轉訂單）
+        bool hasUndeletableDetails = QuotationItems.Any(item => 
+            item.SelectedProduct != null && !DetailLockHelper.CanDeleteItem(item, out _, checkConversion: true));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+        }
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()
@@ -1125,13 +1142,23 @@ else
     private async Task NotifyDetailsChanged()
     {
         var details = ConvertToDetailEntities();
-        await OnDetailsChanged.InvokeAsync(details);
+        await DetailSyncHelper.SyncToParentAsync(details, OnDetailsChanged);
         
         // 通知已刪除的明細 ID
         if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
         {
             await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
             _deletedDetailIds.Clear();
+        }
+        
+        // 檢查並更新不可刪除明細的狀態
+        bool hasUndeletableDetails = QuotationItems.Any(item => 
+            item.SelectedProduct != null && !DetailLockHelper.CanDeleteItem(item, out _, checkConversion: true));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+            tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
+            StateHasChanged();
         }
     }
 
@@ -1178,17 +1205,14 @@ else
     /// </summary>
     private void OnProductFocus(QuotationItem item)
     {
-        // 只顯示商品類別標記為可販售的商品
-        var availableProducts = Products
-            .Where(p => p.ProductCategory != null && 
-                       p.ProductCategory.IsSaleable)
-            .ToList();
+        ConsoleHelper.WriteDebug($"[OnProductFocus] 觸發，SelectedCustomerId: {SelectedCustomerId}");
         
-        // 確保當前選中的商品也在列表中
-        if (item.SelectedProduct != null && 
-            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
+        var availableProducts = GetAvailableProducts();
+        
+        ConsoleHelper.WriteInfo($"[OnProductFocus] 可用商品數量: {availableProducts.Count}");
+        if (availableProducts.Any())
         {
-            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
+            ConsoleHelper.WriteSuccess($"[OnProductFocus] 前3個商品: {string.Join(", ", availableProducts.Take(3).Select(p => p.Code))}");
         }
         
         item.FilteredProducts = availableProducts.Take(20).ToList();
@@ -1216,18 +1240,11 @@ else
     {
         item.ProductSearchValue = searchValue ?? string.Empty;
         
-        // 只顯示商品類別標記為可販售的商品
-        var availableProducts = Products
-            .Where(p => p.ProductCategory != null && 
-                       p.ProductCategory.IsSaleable)
-            .ToList();
+        ConsoleHelper.WriteDebug($"[OnProductSearchChanged] 搜尋值: '{searchValue}', SelectedCustomerId: {SelectedCustomerId}");
         
-        // 確保當前選中的商品也在列表中
-        if (item.SelectedProduct != null && 
-            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
-        {
-            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
-        }
+        var availableProducts = GetAvailableProducts();
+        
+        ConsoleHelper.WriteInfo($"[OnProductSearchChanged] 可用商品數量: {availableProducts.Count}");
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
@@ -1243,6 +1260,8 @@ else
                 .Take(20)
                 .ToList();
         }
+        
+        ConsoleHelper.WriteInfo($"[OnProductSearchChanged] 篩選後商品數量: {item.FilteredProducts.Count}");
         
         item.ShowProductDropdown = true;
         item.ProductSelectedIndex = -1;
@@ -1317,14 +1336,7 @@ else
         var isEmptyRow = item.SelectedProduct == null;
         if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
         
-        if (string.IsNullOrEmpty(value))
-        {
-            item.Quantity = 0;
-        }
-        else if (decimal.TryParse(value, out var quantity))
-        {
-            item.Quantity = quantity;
-        }
+        item.Quantity = InputEventHelper.HandleQuantityInput(value, 0);
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -1396,16 +1408,10 @@ else
         {
             item.TaxRate = null;
         }
-        else if (decimal.TryParse(valueString, out var taxRate))
+        else
         {
-            // 限制稅率在 0-100 之間
-            var limitedTaxRate = Math.Max(0, Math.Min(100, taxRate));
-            item.TaxRate = limitedTaxRate;
-            
-            if (limitedTaxRate != taxRate)
-            {
-                StateHasChanged();
-            }
+            var taxRate = InputEventHelper.HandlePercentageInput(valueString, 0, 100, 0);
+            item.TaxRate = taxRate;
         }
         
         await NotifyDetailsChanged();
@@ -1422,28 +1428,16 @@ else
             return 0;
         }
 
-        // 計算折扣後金額
-        var amountAfterDiscount = item.Quantity * item.UnitPrice * (1 - item.DiscountPercentage / 100);
-
-        // 根據稅別計算小計
-        switch (TaxCalculationMethod)
-        {
-            case TaxCalculationMethod.TaxExclusive:
-                // 外加稅：小計 = 金額 × (1 + 稅率%)
-                var taxRate = item.TaxRate ?? 0;
-                return Math.Round(amountAfterDiscount * (1 + taxRate / 100), 0, MidpointRounding.AwayFromZero);
-
-            case TaxCalculationMethod.TaxInclusive:
-                // 內含稅：小計 = 金額（四捨五入到整數）
-                return Math.Round(amountAfterDiscount, 0, MidpointRounding.AwayFromZero);
-
-            case TaxCalculationMethod.NoTax:
-                // 免稅：小計 = 金額（四捨五入到整數）
-                return Math.Round(amountAfterDiscount, 0, MidpointRounding.AwayFromZero);
-
-            default:
-                return Math.Round(amountAfterDiscount, 0, MidpointRounding.AwayFromZero);
-        }
+        var subtotal = CalculationHelper.CalculateSubtotal(
+            item.Quantity,
+            item.UnitPrice,
+            item.DiscountPercentage,
+            item.TaxRate ?? 0,
+            TaxCalculationMethod
+        );
+        
+        // 四捨五入到整數
+        return CalculationHelper.Round(subtotal, 0);
     }
 
     /// <summary>
@@ -1773,6 +1767,39 @@ else
         }
     }
 
+    /// <summary>
+    /// 取得可用商品列表（只顯示可販售且為自製類型的商品）
+    /// </summary>
+    private List<Product> GetAvailableProducts()
+    {
+        ConsoleHelper.WriteDebug($"[GetAvailableProducts] 開始篩選，總商品數: {Products.Count}");
+        ConsoleHelper.WriteDebug($"[GetAvailableProducts] SelectedCustomerId: {SelectedCustomerId}");
+        
+        // 報價單不需要檢查客戶，只要商品可販售即可
+        // 只顯示自製類型的商品（可排程生產的商品才需要報價）
+        var filtered = Products
+            .Where(p => p.ProductCategory != null && 
+                       p.ProductCategory.IsSaleable &&
+                       p.ProcurementType == ProcurementType.Manufactured)
+            .ToList();
+        
+        ConsoleHelper.WriteInfo($"[GetAvailableProducts] 可販售商品數: {Products.Count(p => p.ProductCategory?.IsSaleable == true)}");
+        ConsoleHelper.WriteInfo($"[GetAvailableProducts] 自製商品數: {Products.Count(p => p.ProcurementType == ProcurementType.Manufactured)}");
+        ConsoleHelper.WriteSuccess($"[GetAvailableProducts] 篩選後商品數: {filtered.Count}");
+        
+        if (filtered.Any())
+        {
+            ConsoleHelper.WriteSuccess($"[GetAvailableProducts] 前5個商品: {string.Join(", ", filtered.Take(5).Select(p => $"{p.Code}({p.ProcurementType})"))}");
+        }
+        else
+        {
+            ConsoleHelper.WriteError("[GetAvailableProducts] ⚠️ 沒有符合條件的商品！");
+            ConsoleHelper.WriteWarning($"[GetAvailableProducts] 請檢查: 1) 商品是否標記為可販售 2) 商品是否設為自製類型");
+        }
+        
+        return filtered;
+    }
+    
     /// <summary>
     /// 內部方法：載入上次報價明細
     /// </summary>

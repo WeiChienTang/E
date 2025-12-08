@@ -33,7 +33,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PC001",
                     Name = "成品",
-                    Remarks = "已完成製造的商品",
+                    IsSaleable = true,  // 成品可對外銷售
+                    Remarks = "已完成製造、可對外銷售的商品",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System"
@@ -42,19 +43,21 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PC002",
                     Name = "原物料",
-                    Remarks = "生產原料材料",
+                    IsSaleable = false,  // 原物料不對外銷售
+                    Remarks = "生產用原料材料，不對外銷售",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "測試"
+                    CreatedBy = "System"
                 },
                 new ProductCategory
                 {
                     Code = "PC003",
                     Name = "半成品",
-                    Remarks = "半成品",
+                    IsSaleable = false,  // 半成品不對外銷售
+                    Remarks = "生產過程中的半成品，不對外銷售",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "測試"
+                    CreatedBy = "System"
                 },
             };
 

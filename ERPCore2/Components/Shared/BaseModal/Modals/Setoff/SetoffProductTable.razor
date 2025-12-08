@@ -434,18 +434,10 @@ else
     // ===== 事件處理方法 =====
     private async Task OnSetoffAmountInput(SetoffProductDetailItem item, string? value)
     {
-        if (decimal.TryParse(value, out var amount))
-        {
-            // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
-            item.CurrentSetoffAmount = Math.Abs(amount);
-            await NotifyDetailsChanged();
-        }
-        else if (string.IsNullOrWhiteSpace(value))
-        {
-            // 如果輸入為空白，設為0
-            item.CurrentSetoffAmount = 0;
-            await NotifyDetailsChanged();
-        }
+        var amount = InputEventHelper.HandlePriceInput(value);
+        // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
+        item.CurrentSetoffAmount = Math.Abs(amount);
+        await NotifyDetailsChanged();
     }
 
     /// <summary>
@@ -500,18 +492,10 @@ else
 
     private async Task OnAllowanceAmountInput(SetoffProductDetailItem item, string? value)
     {
-        if (decimal.TryParse(value, out var amount))
-        {
-            // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
-            item.CurrentAllowanceAmount = Math.Abs(amount);
-            await NotifyDetailsChanged();
-        }
-        else if (string.IsNullOrWhiteSpace(value))
-        {
-            // 如果輸入為空白，設為0
-            item.CurrentAllowanceAmount = 0;
-            await NotifyDetailsChanged();
-        }
+        var amount = InputEventHelper.HandlePriceInput(value);
+        // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
+        item.CurrentAllowanceAmount = Math.Abs(amount);
+        await NotifyDetailsChanged();
     }
 
     /// <summary>
@@ -688,7 +672,7 @@ else
                 Remarks = item.Remarks
             }).ToList();
 
-        await OnDetailsChanged.InvokeAsync(details);
+        await DetailSyncHelper.SyncToParentAsync(details, OnDetailsChanged);
     }
     
     /// <summary>

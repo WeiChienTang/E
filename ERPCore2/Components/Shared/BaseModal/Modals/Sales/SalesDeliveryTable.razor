@@ -8,6 +8,7 @@
 @inject INotificationService NotificationService
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
+@inject IJSRuntime JSRuntime
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -39,6 +40,7 @@ else
                                       OnItemDelete="@HandleItemDelete"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@CreateNewEmptyItem" />
         </div>
@@ -75,6 +77,7 @@ else
     
     // ===== 資料載入完成標記 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有退貨記錄）
     
     // ===== 建立空項目方法 =====
     private DeliveryItem CreateNewEmptyItem()
@@ -634,6 +637,14 @@ else
             DeliveryItems.Add(deliveryItem);
         }
         
+        // 檢查是否有不可刪除的明細（已有退貨記錄）
+        bool hasUndeletableDetails = DeliveryItems.Any(item => 
+            item.ExistingDetailEntity != null && !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkReturn: true));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+        }
+        
         //  資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
         tableComponent?.RefreshEmptyRow();
@@ -699,10 +710,22 @@ else
         
         if (OnDetailsChanged.HasDelegate)
         {
-            await OnDetailsChanged.InvokeAsync(detailEntities);
+            await DetailSyncHelper.SyncToParentAsync(detailEntities, OnDetailsChanged);
+        }
+        else
+        {
+            StateHasChanged();
         }
         
-        StateHasChanged();
+        // 檢查並更新不可刪除明細的狀態
+        bool hasUndeletableDetails = DeliveryItems.Any(item => 
+            item.ExistingDetailEntity != null && !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkReturn: true));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+            tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
+            StateHasChanged();
+        }
     }
 
     private async Task NotifyDeletedDetailsChanged()
@@ -826,27 +849,13 @@ else
 
     private async Task OnQuantityInput(DeliveryItem item, string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            item.DeliveryQuantity = null;
-        }
-        else if (decimal.TryParse(value, out var quantity))
-        {
-            item.DeliveryQuantity = quantity;
-        }
+        item.DeliveryQuantity = string.IsNullOrWhiteSpace(value) ? null : InputEventHelper.HandleQuantityInput(value);
         await NotifyDetailsChanged();
     }
 
     private async Task OnUnitPriceInput(DeliveryItem item, string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            item.UnitPrice = null;
-        }
-        else if (decimal.TryParse(value, out var price))
-        {
-            item.UnitPrice = price;
-        }
+        item.UnitPrice = string.IsNullOrWhiteSpace(value) ? null : InputEventHelper.HandlePriceInput(value);
         await NotifyDetailsChanged();
     }
 
@@ -861,7 +870,7 @@ else
 
     private async Task OnRemarksInput(DeliveryItem item, string? value)
     {
-        item.Remarks = value ?? string.Empty;
+        item.Remarks = InputEventHelper.HandleTextInput(value);
         await NotifyDetailsChanged();
     }
     
@@ -912,25 +921,16 @@ else
         var discountPercentage = item.DiscountPercentage;
         var taxRate = item.TaxRate ?? 0;
         
-        // 先計算折扣後的金額：數量 × 單價 × (1 - 折扣% / 100)
-        var discountedAmount = quantity * unitPrice * (1 - discountPercentage / 100);
+        var subtotal = CalculationHelper.CalculateSubtotal(
+            quantity,
+            unitPrice,
+            discountPercentage,
+            taxRate,
+            TaxCalculationMethod
+        );
         
-        return TaxCalculationMethod switch
-        {
-            TaxCalculationMethod.TaxExclusive => 
-                // 外加稅：小計 = (數量 × 單價 × (1 - 折扣%)) × (1 + 稅率%)
-                Math.Round(discountedAmount * (1 + taxRate / 100), 0, MidpointRounding.AwayFromZero),
-            
-            TaxCalculationMethod.TaxInclusive => 
-                // 內含稅：小計 = 數量 × 單價 × (1 - 折扣%)（單價已含稅）
-                Math.Round(discountedAmount, 0, MidpointRounding.AwayFromZero),
-            
-            TaxCalculationMethod.NoTax => 
-                // 不含稅：小計 = 數量 × 單價 × (1 - 折扣%)
-                Math.Round(discountedAmount, 0, MidpointRounding.AwayFromZero),
-            
-            _ => Math.Round(discountedAmount, 0, MidpointRounding.AwayFromZero)
-        };
+        // 四捨五入到整數
+        return CalculationHelper.Round(subtotal, 0);
     }
     
     /// <summary>

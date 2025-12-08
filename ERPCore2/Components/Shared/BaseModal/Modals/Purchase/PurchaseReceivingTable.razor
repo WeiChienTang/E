@@ -10,6 +10,7 @@
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
+@inject IJSRuntime JSRuntime
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -39,6 +40,7 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       OnItemDelete="@HandleItemDelete"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@(() => new ReceivingItem())" />
         </div>
@@ -155,6 +157,7 @@ else
     private int? _previousSupplierId = null;
     private List<int> _deletedDetailIds = new(); // 追蹤已刪除的明細ID
     private Dictionary<int, decimal> _returnedQuantities = new(); // 追蹤每個明細的已退貨數量 (Key: DetailId, Value: 已退貨數量)
+    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有退貨或沖款記錄）
     
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -603,38 +606,21 @@ else
     // 數量變更
     private async Task OnQuantityChange(ReceivingItem item, string? value)
     {
-        if (int.TryParse(value, out var quantity))
-        {
-            item.ReceivedQuantity = Math.Max(0, quantity);
-        }
-        else
-        {
-            item.ReceivedQuantity = 0;
-        }
+        item.ReceivedQuantity = InputEventHelper.HandleIntegerInput(value);
         await NotifyChange();
     }
     
     // 單價變更
     private async Task OnPriceChange(ReceivingItem item, string? value)
     {
-        if (decimal.TryParse(value, out var price))
-        {
-            item.UnitPrice = Math.Max(0, price);
-        }
-        else
-        {
-            item.UnitPrice = 0;
-        }
+        item.UnitPrice = InputEventHelper.HandlePriceInput(value);
         await NotifyChange();
     }
     
     // 稅率變更
     private async Task OnTaxRateChange(ReceivingItem item, string? value)
     {
-        if (decimal.TryParse(value, out var taxRate))
-        {
-            item.TaxRate = Math.Max(0, Math.Min(100, taxRate));
-        }
+        item.TaxRate = InputEventHelper.HandlePercentageInput(value);
         await NotifyChange();
     }
     
@@ -672,7 +658,7 @@ else
     // 備註變更
     private async Task OnRemarksChange(ReceivingItem item, string? value)
     {
-        item.Remarks = value ?? string.Empty;
+        item.Remarks = InputEventHelper.HandleTextInput(value);
         await NotifyChange();
     }
     
@@ -815,11 +801,20 @@ else
             }
         }
         
-        _dataLoadCompleted = true;
-        
         // 載入退貨數量（用於鎖定檢查）
         await LoadReturnedQuantitiesAsync();
         
+        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
+        bool hasUndeletableDetails = ReceivingItems.Any(item => 
+            item.ExistingDetailEntity != null && 
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+                checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+        }
+        
+        _dataLoadCompleted = true;
         StateHasChanged();
     }
     
@@ -933,14 +928,25 @@ else
     private async Task NotifyChange()
     {
         var entities = ConvertToEntities();
-        await OnDetailsChanged.InvokeAsync(entities);
+        await DetailSyncHelper.SyncToParentAsync(entities, OnDetailsChanged);
         
         // 檢查是否有不可刪除的明細（已有退貨或沖款記錄）
         bool hasUndeletableDetails = ReceivingItems.Any(item => 
             item.ExistingDetailEntity != null && 
             !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
                 checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities));
-        await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+        
+        // 狀態變更時才通知父組件並觸發 UI 更新
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+            
+            // 🔥 關鍵：狀態變更後，立即刷新空行（移除或新增）
+            tableComponent?.RefreshEmptyRow();
+            
+            StateHasChanged();  // 觸發 UI 更新，讓 AllowAddNewRow 參數生效
+        }
     }
     
     /// <summary>

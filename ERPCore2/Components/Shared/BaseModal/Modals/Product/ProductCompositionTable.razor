@@ -18,6 +18,7 @@
                                   ShowBuiltInDeleteButton="true"
                                   OnItemDelete="@HandleItemDelete"
                                   EnableAutoEmptyRow="true"
+                                  AllowAddNewRow="@(!IsReadOnly)"
                                   DataLoadCompleted="@_dataLoadCompleted"
                                   CreateEmptyItem="@CreateEmptyItem" />
     </div>
@@ -142,11 +143,13 @@
                 TriggerEmptyRowOnFilled = true,  //  設定為觸發欄位
                 ColumnType = InteractiveColumnType.Select,
                 Width = "300px",
-                Options = AvailableProducts.Select(p => new InteractiveSelectOption 
-                { 
-                    Value = p.Id.ToString(), 
-                    Text = GetProductDisplayText(p) 
-                }).ToList(),
+                Options = AvailableProducts
+                    .Where(p => p.Id != ParentProductId) // 排除主檔商品（避免循環參考）
+                    .Select(p => new InteractiveSelectOption 
+                    { 
+                        Value = p.Id.ToString(), 
+                        Text = GetProductDisplayText(p) 
+                    }).ToList(),
                 OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
                 {
                     await OnProductChanged(args);
@@ -265,17 +268,9 @@
     private async Task OnQuantityChanged((object item, string? value) args)
     {
         var detail = (ProductCompositionDetail)args.item;
+        detail.Quantity = InputEventHelper.HandleQuantityInput(args.value);
         
-        if (!string.IsNullOrWhiteSpace(args.value) && decimal.TryParse(args.value, out var quantity))
-        {
-            detail.Quantity = quantity;
-        }
-        else
-        {
-            detail.Quantity = 0;
-        }
-        
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         StateHasChanged();
     }
 

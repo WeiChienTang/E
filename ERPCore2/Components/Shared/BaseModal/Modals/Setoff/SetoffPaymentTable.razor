@@ -17,6 +17,7 @@
                                 OnItemDelete="@HandleRemovePaymentRecord"
                                 ActionsColumnWidth = "60px"
                                 EnableAutoEmptyRow="true"
+                                AllowAddNewRow="@(!IsReadOnly && !IsEditMode())"
                                 DataLoadCompleted="@_dataLoadCompleted"
                                 CreateEmptyItem="@CreateEmptyItem" />
 </div>
@@ -361,15 +362,7 @@
 
     private async Task OnReceivedAmountInput(SetoffPaymentItem item, string? value)
     {
-        if (decimal.TryParse(value, out var amount))
-        {
-            item.ReceivedAmount = amount;
-        }
-        else if (string.IsNullOrWhiteSpace(value))
-        {
-            // 如果輸入為空白，設為0
-            item.ReceivedAmount = 0;
-        }
+        item.ReceivedAmount = InputEventHelper.HandlePriceInput(value);
         
         await NotifyPaymentsChanged();
         StateHasChanged();
@@ -377,15 +370,7 @@
 
     private async Task OnAllowanceAmountInput(SetoffPaymentItem item, string? value)
     {
-        if (decimal.TryParse(value, out var amount))
-        {
-            item.AllowanceAmount = amount;
-        }
-        else if (string.IsNullOrWhiteSpace(value))
-        {
-            // 如果輸入為空白，設為0
-            item.AllowanceAmount = 0;
-        }
+        item.AllowanceAmount = InputEventHelper.HandlePriceInput(value);
         
         await NotifyPaymentsChanged();
         StateHasChanged();
@@ -429,7 +414,7 @@
                 PaymentMethod = null
             }).ToList();
 
-        await OnPaymentsChanged.InvokeAsync(payments);
+        await DetailSyncHelper.SyncToParentAsync(payments, OnPaymentsChanged);
     }
 
     // ===== 公開方法（供父組件調用）=====

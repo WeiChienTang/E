@@ -18,6 +18,7 @@
                                   ShowBuiltInDeleteButton="true"
                                   OnItemDelete="@HandleItemDelete"
                                   EnableAutoEmptyRow="true"
+                                  AllowAddNewRow="@(!IsReadOnly)"
                                   DataLoadCompleted="@_dataLoadCompleted"
                                   CreateEmptyItem="@CreateEmptyItem" />
     </div>
@@ -319,13 +320,13 @@
             else
             {
                 SetProductId(productSupplier, productId);
-                await ItemsChanged.InvokeAsync(Items);
+                await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
             }
         }
         else
         {
             SetProductId(productSupplier, null);
-            await ItemsChanged.InvokeAsync(Items);
+            await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         }
         StateHasChanged();
     }
@@ -336,7 +337,7 @@
         
         SetSupplierProductCode(productSupplier, args.value);
         
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         StateHasChanged();
     }
 
@@ -348,46 +349,33 @@
         {
             SetSupplierPrice(productSupplier, null);
         }
-        else if (int.TryParse(args.value, out var price))
+        else
         {
+            var price = InputEventHelper.HandleIntegerInput(args.value);
             SetSupplierPrice(productSupplier, (decimal)price);
         }
         
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         StateHasChanged();
     }
 
     private async Task OnLeadTimeChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var leadTime = string.IsNullOrEmpty(args.value) ? (int?)null : InputEventHelper.HandleIntegerInput(args.value);
+        SetLeadTime(productSupplier, leadTime);
         
-        if (string.IsNullOrEmpty(args.value))
-        {
-            SetLeadTime(productSupplier, null);
-        }
-        else if (int.TryParse(args.value, out var leadTime))
-        {
-            SetLeadTime(productSupplier, leadTime);
-        }
-        
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         StateHasChanged();
     }
 
     private async Task OnMinOrderQuantityChanged((object item, string? value) args)
     {
         var productSupplier = (TProductSupplierEntity)args.item;
+        var quantity = string.IsNullOrEmpty(args.value) ? (int?)null : InputEventHelper.HandleIntegerInput(args.value);
+        SetMinOrderQuantity(productSupplier, quantity);
         
-        if (string.IsNullOrEmpty(args.value))
-        {
-            SetMinOrderQuantity(productSupplier, null);
-        }
-        else if (int.TryParse(args.value, out var quantity))
-        {
-            SetMinOrderQuantity(productSupplier, quantity);
-        }
-        
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         StateHasChanged();
     }
 
@@ -404,7 +392,7 @@
             SetUnitId(productSupplier, null);
         }
         
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         StateHasChanged();
     }
     
@@ -424,7 +412,7 @@
         Items.Remove(removedItem);
         
         await ItemRemoved.InvokeAsync(removedItem);
-        await ItemsChanged.InvokeAsync(Items);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
         
         // 🆕 通知已刪除的明細ID
         await NotifyDeletedDetailsChanged();

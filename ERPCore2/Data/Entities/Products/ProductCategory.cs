@@ -18,7 +18,7 @@ namespace ERPCore2.Data.Entities
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "可販售")]
-        public bool IsSaleable { get; set; } = false;
+        public bool IsSaleable { get; set; } = true;  // 預設為可販售（大部分分類都可販售）
         
         // Navigation Properties
         public ICollection<Product> Products { get; set; } = new List<Product>();

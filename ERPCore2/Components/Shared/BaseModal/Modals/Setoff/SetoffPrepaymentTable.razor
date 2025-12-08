@@ -20,6 +20,7 @@
                                 OnItemDelete="@HandleRemovePrepaymentRecord"
                                 ActionsColumnWidth = "60px"
                                 EnableAutoEmptyRow="true"
+                                AllowAddNewRow="@(!IsReadOnly)"
                                 DataLoadCompleted="@_dataLoadCompleted"
                                 CreateEmptyItem="@CreateEmptyItem" />
 </div>
@@ -801,7 +802,7 @@
             })
             .ToList();
 
-        await OnPrepaymentsChanged.InvokeAsync(prepayments);
+        await DetailSyncHelper.SyncToParentAsync(prepayments, OnPrepaymentsChanged);
     }
 
     // ===== 公開方法（供父組件調用）=====

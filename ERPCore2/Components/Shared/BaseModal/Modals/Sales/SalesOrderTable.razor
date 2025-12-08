@@ -13,6 +13,7 @@
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject IProductCompositionService ProductCompositionService
+@inject IJSRuntime JSRuntime
 
 @using ERPCore2.Helpers
 
@@ -62,6 +63,7 @@ else
                                       ActionsColumnWidth = "60px"
                                       OnItemDelete="HandleItemDelete"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@(() => new SalesItem())"/>
         </div>
@@ -206,6 +208,7 @@ else
     private int? selectedCompositionProductId = null;
     private Dictionary<int, List<SalesOrderCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
+    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有出貨記錄）
     
     // ===== 計算屬性 =====
     
@@ -506,7 +509,15 @@ else
         if (OnHasUndeletableDetailsChanged.HasDelegate)
         {
             var hasUndeletableDetails = HasUndeletableDetails();
-            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+            
+            // 狀態變更時才通知父組件並觸發 UI 更新
+            if (_hasUndeletableDetails != hasUndeletableDetails)
+            {
+                _hasUndeletableDetails = hasUndeletableDetails;
+                await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+                tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
+                StateHasChanged();  // 觸發 UI 更新，讓 AllowAddNewRow 參數生效
+            }
         }
     }
 
@@ -855,6 +866,13 @@ else
         // 載入退貨數量資訊（不觸發 StateHasChanged）
         await LoadReturnedQuantitiesAsync();
         
+        // 檢查是否有不可刪除的明細
+        bool hasUndeletableDetails = SalesItems.Any(p => !CanDeleteItem(p, out _));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+        }
+        
         //  資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
         tableComponent?.RefreshEmptyRow();
@@ -945,7 +963,7 @@ else
     private async Task NotifyDetailsChanged()
     {
         var details = ConvertToDetailEntities();
-        await OnDetailsChanged.InvokeAsync(details);
+        await DetailSyncHelper.SyncToParentAsync(details, OnDetailsChanged);
         
         // 通知已刪除的明細 ID
         if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
@@ -1842,15 +1860,7 @@ else
             return;
         }
         
-        if (string.IsNullOrEmpty(value))
-        {
-            item.DiscountPercentage = 0;
-        }
-        else if (decimal.TryParse(value, out var percentage))
-        {
-            // 限制折扣百分比在 0-100 之間
-            item.DiscountPercentage = Math.Max(0, Math.Min(100, percentage));
-        }
+        item.DiscountPercentage = InputEventHelper.HandlePercentageInput(value, 0, 100, 0);
         
         // 重新計算小計（會根據折扣百分比計算）
         item.CalculateSubtotal();
@@ -1876,15 +1886,7 @@ else
             return;
         }
         
-        if (string.IsNullOrWhiteSpace(valueString))
-        {
-            item.TaxRate = 0;
-        }
-        else if (decimal.TryParse(valueString, out var rate))
-        {
-            // 限制稅率在 0-100 之間
-            item.TaxRate = Math.Max(0, Math.Min(100, rate));
-        }
+        item.TaxRate = InputEventHelper.HandlePercentageInput(valueString, 0, 100, 0);
         
         // 通知父組件資料已變更
         await NotifyDetailsChanged();
@@ -1898,27 +1900,16 @@ else
         if (item.SelectedProduct == null || item.OrderQuantity <= 0 || item.UnitPrice <= 0)
             return 0;
 
-        // 計算未稅金額
-        var baseAmount = item.OrderQuantity * item.UnitPrice * (1 - item.DiscountPercentage / 100);
-
-        switch (TaxCalculationMethod)
-        {
-            case TaxCalculationMethod.TaxExclusive:
-                // 外加稅：小計 = 基礎金額 × (1 + 稅率%)
-                var amountWithTax = baseAmount * (1 + item.TaxRate / 100);
-                return Math.Round(amountWithTax, 0, MidpointRounding.AwayFromZero);
-
-            case TaxCalculationMethod.TaxInclusive:
-                // 內含稅：小計 = 基礎金額（單價已含稅，直接四捨五入）
-                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
-
-            case TaxCalculationMethod.NoTax:
-                // 免稅：小計 = 基礎金額（不計稅）
-                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
-
-            default:
-                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
-        }
+        var subtotal = CalculationHelper.CalculateSubtotal(
+            item.OrderQuantity,
+            item.UnitPrice,
+            item.DiscountPercentage,
+            item.TaxRate,
+            TaxCalculationMethod
+        );
+        
+        // 四捨五入到整數
+        return CalculationHelper.Round(subtotal, 0);
     }
 
     /// <summary>

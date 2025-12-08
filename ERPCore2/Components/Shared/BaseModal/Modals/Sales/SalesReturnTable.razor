@@ -10,6 +10,7 @@
 @inject ISystemParameterService SystemParameterService
 @inject IProductService ProductService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
+@inject IJSRuntime JSRuntime
 
 @if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
 {
@@ -39,6 +40,7 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"     
                                       ActionsColumnWidth = "60px"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@(() => new ReturnItem())"/>
         </div>
@@ -85,6 +87,7 @@ else
     
     // ===== 資料載入完成標記 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細(已有沖款記錄)
     
     // ===== 基本參數 =====
     [Parameter] public List<Product> Products { get; set; } = new List<Product>();
@@ -336,7 +339,15 @@ else
         if (OnHasUndeletableDetailsChanged.HasDelegate)
         {
             var hasUndeletableDetails = HasUndeletableDetails();
-            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+            
+            // 狀態變更時才通知父組件並觸發 UI 更新
+            if (_hasUndeletableDetails != hasUndeletableDetails)
+            {
+                _hasUndeletableDetails = hasUndeletableDetails;
+                await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+                tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
+                StateHasChanged();
+            }
         }
     }
 
@@ -758,6 +769,13 @@ else
             ReturnItems.Add(item);
         }
         
+        // 檢查是否有不可刪除的明細
+        bool hasUndeletableDetails = ReturnItems.Any(p => !CanDeleteItem(p, out _));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+        }
+        
         //  資料載入完成
         _dataLoadCompleted = true;
         tableComponent?.RefreshEmptyRow();
@@ -935,13 +953,13 @@ else
 
     private async Task OnReturnReasonInput(ReturnItem returnItem, string? value)
     {
-        returnItem.ReturnReason = value ?? string.Empty;
+        returnItem.ReturnReason = InputEventHelper.HandleTextInput(value);
         await NotifyDetailsChanged();
     }
 
     private async Task OnRemarksInput(ReturnItem returnItem, string? value)
     {
-        returnItem.Remarks = value ?? string.Empty;
+        returnItem.Remarks = InputEventHelper.HandleTextInput(value);
         await NotifyDetailsChanged();
     }
 
@@ -970,26 +988,16 @@ else
         if (item.SelectedProduct == null || item.ReturnQuantity <= 0 || item.OriginalUnitPrice <= 0)
             return 0;
         
-        // 基本金額：數量 × 單價 × (1 - 折扣%)
-        var baseAmount = item.ReturnQuantity * item.OriginalUnitPrice * (1 - item.DiscountPercentage / 100);
+        var subtotal = CalculationHelper.CalculateSubtotal(
+            item.ReturnQuantity,
+            item.OriginalUnitPrice,
+            item.DiscountPercentage,
+            item.TaxRate ?? 0,
+            TaxCalculationMethod
+        );
         
-        // 根據稅別計算小計
-        return TaxCalculationMethod switch
-        {
-            TaxCalculationMethod.TaxExclusive => 
-                // 外加稅：金額 × (1 + 稅率%)，四捨五入到整數
-                Math.Round(baseAmount * (1 + (item.TaxRate ?? 0) / 100), 0, MidpointRounding.AwayFromZero),
-            
-            TaxCalculationMethod.TaxInclusive => 
-                // 內含稅：金額已含稅，直接四捨五入到整數
-                Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero),
-            
-            TaxCalculationMethod.NoTax => 
-                // 免稅：金額不含稅，四捨五入到整數
-                Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero),
-            
-            _ => Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero)
-        };
+        // 四捨五入到整數
+        return CalculationHelper.Round(subtotal, 0);
     }
 
     /// <summary>
@@ -1113,7 +1121,7 @@ else
         
         if (EffectiveDetailsChangedCallback.HasDelegate)
         {
-            await EffectiveDetailsChangedCallback.InvokeAsync(details!);
+            await DetailSyncHelper.SyncToParentAsync(details!, EffectiveDetailsChangedCallback);
         }
         
         // 通知已刪除的明細 ID

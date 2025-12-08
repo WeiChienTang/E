@@ -8,6 +8,7 @@
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
@@ -39,6 +40,7 @@ else
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       OnItemDelete="@HandleItemDelete"
                                       EnableAutoEmptyRow="true"
+                                      AllowAddNewRow="@(!_hasUndeletableDetails && !IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       CreateEmptyItem="@(() => new ProductItem())" />
         </div>
@@ -118,6 +120,9 @@ else
     
     // ===== 資料載入狀態控制 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    
+    // ===== 不可刪除明細狀態追蹤 =====
+    private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有進貨記錄）
     
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -526,7 +531,14 @@ else
             }
         }
         
-        //  資料載入完成 - 觸發空行檢查
+        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
+        bool hasUndeletableDetails = ProductItems.Any(p => !DetailLockHelper.CanDeleteItem(p, out _, checkReceiving: true));
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+        }
+        
+        //  資料載入完成 - 觸發空行檢查（此時 _hasUndeletableDetails 已經是正確的值）
         _dataLoadCompleted = true;
         StateHasChanged();
     }
@@ -590,11 +602,22 @@ else
     private async Task NotifyDetailsChanged()
     {
         var details = ConvertToDetailEntities();
-        await OnDetailsChanged.InvokeAsync(details);
+        await DetailSyncHelper.SyncToParentAsync(details, OnDetailsChanged);
         
         // 檢查是否有不可刪除的明細(已有進貨記錄)
         bool hasUndeletableDetails = ProductItems.Any(p => !DetailLockHelper.CanDeleteItem(p, out _, checkReceiving: true));
-        await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+        
+        // 狀態變更時才通知父組件並觸發 UI 更新
+        if (_hasUndeletableDetails != hasUndeletableDetails)
+        {
+            _hasUndeletableDetails = hasUndeletableDetails;
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+            
+            // 🔥 關鍵：狀態變更後，立即刷新空行（移除或新增）
+            tableComponent?.RefreshEmptyRow();
+            
+            StateHasChanged();  // 觸發 UI 更新，讓 AllowAddNewRow 參數生效
+        }
     }
 
     /// <summary>
@@ -722,50 +745,25 @@ else
 
     private async Task OnQuantityInput(ProductItem item, string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.Quantity = 0;
-        }
-        else if (int.TryParse(value, out var quantity))
-        {
-            item.Quantity = quantity;
-        }
-        
+        item.Quantity = (int)InputEventHelper.HandleQuantityInput(value, 0);
         await NotifyDetailsChanged();
     }
 
     private async Task OnPriceInput(ProductItem item, string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.Price = 0;
-        }
-        else if (decimal.TryParse(value, out var price))
-        {
-            item.Price = price;
-        }
-        
+        item.Price = InputEventHelper.HandlePriceInput(value, 0);
         await NotifyDetailsChanged();
     }
 
     private async Task OnTaxRateInput(ProductItem item, string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            item.TaxRate = 0;
-        }
-        else if (decimal.TryParse(value, out var taxRate))
-        {
-            // 限制範圍 0 ~ 100
-            item.TaxRate = Math.Max(0, Math.Min(100, taxRate));
-        }
-        
+        item.TaxRate = InputEventHelper.HandlePercentageInput(value, 0, 100, 0);
         await NotifyDetailsChanged();
     }
 
     private async Task OnRemarksInput(ProductItem item, string? value)
     {
-        item.Remarks = value ?? string.Empty;
+        item.Remarks = InputEventHelper.HandleTextInput(value, string.Empty);
         await NotifyDetailsChanged();
     }
 
@@ -838,25 +836,16 @@ else
             return 0;
         }
         
-        var baseAmount = item.Quantity * item.Price;
+        var subtotal = CalculationHelper.CalculateSubtotal(
+            item.Quantity, 
+            item.Price, 
+            discountPercentage: 0,
+            item.TaxRate, 
+            TaxCalculationMethod
+        );
         
-        switch (TaxCalculationMethod)
-        {
-            case TaxCalculationMethod.TaxExclusive:
-                // 外加稅：小計 = 數量 × 單價 × (1 + 稅率%)（四捨五入到整數）
-                return Math.Round(baseAmount * (1 + item.TaxRate / 100m), 0, MidpointRounding.AwayFromZero);
-                
-            case TaxCalculationMethod.TaxInclusive:
-                // 內含稅：小計 = 數量 × 單價（單價已含稅，四捨五入到整數）
-                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
-                
-            case TaxCalculationMethod.NoTax:
-                // 免稅：小計 = 數量 × 單價（四捨五入到整數）
-                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
-                
-            default:
-                return Math.Round(baseAmount, 0, MidpointRounding.AwayFromZero);
-        }
+        // 四捨五入到整數
+        return CalculationHelper.Round(subtotal, 0);
     }
     
     /// <summary>
@@ -1059,11 +1048,21 @@ else
     /// </summary>
     private async Task ClearAllDetails()
     {
-        ProductItems.Clear();
-        await NotifyDetailsChanged();
-        tableComponent?.RefreshEmptyRow();
+        var cleared = await ItemManagementHelper.ClearAllDetailsAsync(
+            ProductItems,
+            JSRuntime,
+            async () =>
+            {
+                await NotifyDetailsChanged();
+                tableComponent?.RefreshEmptyRow();
+            },
+            "確定要清除所有明細嗎？"
+        );
         
-        await NotificationService.ShowSuccessAsync("已清空所有商品明細");
+        if (cleared)
+        {
+            await NotificationService.ShowSuccessAsync("已清空所有商品明細");
+        }
     }
 
     // ===== 相關單據查看方法 =====

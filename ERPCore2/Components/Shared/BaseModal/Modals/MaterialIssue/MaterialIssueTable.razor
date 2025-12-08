@@ -47,6 +47,7 @@
                                      ActionsColumnWidth="80px"
                                      CustomActionsTemplate="@GetCustomActionsTemplate"
                                      EnableAutoEmptyRow="true"
+                                     AllowAddNewRow="@(!IsReadOnly)"
                                      DataLoadCompleted="@_dataLoadCompleted"
                                      CreateEmptyItem="@CreateEmptyItem" />
         </div>
@@ -488,14 +489,7 @@
 
     private async Task OnIssueQuantityChanged(DetailItem item, object? value)
     {
-        if (string.IsNullOrWhiteSpace(value?.ToString()))
-        {
-            item.IssueQuantity = 0;
-        }
-        else if (int.TryParse(value?.ToString(), out int quantity))
-        {
-            item.IssueQuantity = quantity;
-        }
+        item.IssueQuantity = InputEventHelper.HandleIntegerInput(value?.ToString());
         
         await SyncToDetails();
         StateHasChanged();
@@ -567,6 +561,6 @@
             }
         }
         
-        await DetailsChanged.InvokeAsync(Details);
+        await DetailSyncHelper.SyncToParentAsync(Details, DetailsChanged);
     }
 }

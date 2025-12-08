@@ -378,6 +378,7 @@
     [Parameter] public bool EnableAutoEmptyRow { get; set; } = false;
     [Parameter] public Func<TItem>? CreateEmptyItem { get; set; }
     [Parameter] public bool DataLoadCompleted { get; set; } = true;  // 資料是否已載入完成(預設 true 保持向下兼容)
+    [Parameter] public bool AllowAddNewRow { get; set; } = true;  // 是否允許新增空行（預設 true 保持向下兼容）
     
     // 表格樣式設定
     [Parameter] public bool ShowHeader { get; set; } = true;
@@ -938,8 +939,10 @@
     }
     
     /// <summary>
-    /// 統一的空行檢查和新增方法
-    /// 核心邏輯：確保始終至少有一個空行,且空行永遠在最後
+    /// 統一的空行檢查和管理方法
+    /// 核心邏輯：
+    /// 1. 當 AllowAddNewRow=true 時，確保至少有一個空行且在最後
+    /// 2. 當 AllowAddNewRow=false 時，移除所有空行
     /// </summary>
     private void CheckAndAddEmptyRowIfNeeded()
     {
@@ -948,11 +951,24 @@
             return;
         }
         
-        var itemCount = Items.Count;
-        
         //  找出所有空行
         var emptyRows = Items.Where(IsRowEmpty).ToList();
         
+        // 當不允許新增時，移除所有空行
+        if (!AllowAddNewRow)
+        {
+            if (emptyRows.Any())
+            {
+                foreach (var emptyRow in emptyRows)
+                {
+                    Items.Remove(emptyRow);
+                }
+                _lastEmptyRow = default;
+            }
+            return;
+        }
+        
+        // 當允許新增時，確保有且只有一個空行在最後
         if (emptyRows.Count == 0)
         {
             var newEmptyRow = CreateEmptyItem();
@@ -1003,7 +1019,7 @@
     /// </summary>
     public void RefreshEmptyRow()
     {
-        if (!EnableAutoEmptyRow) return;
+        if (!EnableAutoEmptyRow || !AllowAddNewRow) return;
         
         // 重置最後空行的參考
         _lastEmptyRow = default;
