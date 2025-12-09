@@ -717,7 +717,24 @@ namespace ERPCore2.Services
                     .Include(c => c.Unit)
                     .ToListAsync();
 
-                // 3. 收集所有需要查詢庫存的產品ID
+                // 2.1 取得所有產品的主檔 BOM 配方（用於遞迴展開巢狀組成）
+                var productCompositions = await context.ProductCompositions
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(cd => cd.ComponentProduct)
+                            .ThenInclude(p => p.Unit)
+                    .Include(pc => pc.CompositionDetails)
+                        .ThenInclude(cd => cd.Unit)
+                    .ToListAsync();
+
+                // 建立產品組成字典，方便快速查詢
+                var productCompositionDict = productCompositions
+                    .GroupBy(pc => pc.ParentProductId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.FirstOrDefault() // 取第一個配方（如果有多個配方的話）
+                    );
+
+                // 3. 收集所有需要查詢庫存的產品ID（包含遞迴子組成）
                 var productIds = new HashSet<int>();
                 foreach (var detail in salesOrder.SalesOrderDetails)
                 {
@@ -726,6 +743,8 @@ namespace ERPCore2.Services
                 foreach (var comp in compositionDetails)
                 {
                     productIds.Add(comp.ComponentProductId);
+                    // 遞迴收集子組成的產品ID
+                    CollectProductIdsRecursively(comp.ComponentProductId, productCompositionDict, productIds);
                 }
 
                 // 4. 批次查詢所有產品的庫存
@@ -751,7 +770,9 @@ namespace ERPCore2.Services
                     var detailItem = CreateInventoryCheckItem(
                         detail,
                         compositionDetails.Where(c => c.SalesOrderDetailId == detail.Id).ToList(),
-                        stockDictionary
+                        stockDictionary,
+                        productCompositionDict,
+                        level: 1
                     );
 
                     result.Items.Add(detailItem);
@@ -780,14 +801,16 @@ namespace ERPCore2.Services
         private OrderInventoryCheckItem CreateInventoryCheckItem(
             SalesOrderDetail detail,
             List<SalesOrderCompositionDetail> compositions,
-            Dictionary<int, decimal> inventoryStocks)
+            Dictionary<int, decimal> inventoryStocks,
+            Dictionary<int, ProductComposition?> productCompositionDict,
+            int level)
         {
             var availableStock = inventoryStocks.GetValueOrDefault(detail.ProductId, 0);
             var hasComposition = compositions.Any();
 
             var item = new OrderInventoryCheckItem
             {
-                Level = 1,
+                Level = level,
                 DetailId = detail.Id,
                 ProductId = detail.ProductId,
                 ProductCode = detail.Product?.Code ?? "",
@@ -811,7 +834,7 @@ namespace ERPCore2.Services
 
                     var childItem = new OrderInventoryCheckItem
                     {
-                        Level = 2,
+                        Level = level + 1,
                         ParentDetailId = detail.Id,
                         ProductId = comp.ComponentProductId,
                         ProductCode = comp.ComponentProduct?.Code ?? "",
@@ -826,11 +849,102 @@ namespace ERPCore2.Services
                         Children = new List<OrderInventoryCheckItem>()
                     };
 
+                    // 🔑 遞迴展開：檢查子元件是否也是組合產品
+                    if (productCompositionDict.TryGetValue(comp.ComponentProductId, out var subComposition) 
+                        && subComposition != null)
+                    {
+                        childItem.IsComposition = true;
+                        childItem.Children = ExpandSubComposition(
+                            subComposition,
+                            requiredQuantity,
+                            inventoryStocks,
+                            productCompositionDict,
+                            level + 2,
+                            comp.ComponentProductId
+                        );
+                    }
+
                     item.Children.Add(childItem);
                 }
             }
 
             return item;
+        }
+
+        /// <summary>
+        /// 遞迴收集所有子組成的產品ID
+        /// </summary>
+        private void CollectProductIdsRecursively(
+            int productId,
+            Dictionary<int, ProductComposition?> productCompositionDict,
+            HashSet<int> productIds)
+        {
+            if (productCompositionDict.TryGetValue(productId, out var composition) && composition != null)
+            {
+                foreach (var detail in composition.CompositionDetails)
+                {
+                    productIds.Add(detail.ComponentProductId);
+                    // 遞迴收集更深層的組成
+                    CollectProductIdsRecursively(detail.ComponentProductId, productCompositionDict, productIds);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 遞迴展開子組成（用於巢狀 BOM）
+        /// </summary>
+        private List<OrderInventoryCheckItem> ExpandSubComposition(
+            ProductComposition composition,
+            decimal parentRequiredQuantity,
+            Dictionary<int, decimal> inventoryStocks,
+            Dictionary<int, ProductComposition?> productCompositionDict,
+            int level,
+            int parentProductId)
+        {
+            var children = new List<OrderInventoryCheckItem>();
+
+            foreach (var detail in composition.CompositionDetails.OrderBy(d => d.Id))
+            {
+                var compAvailableStock = inventoryStocks.GetValueOrDefault(detail.ComponentProductId, 0);
+                var requiredQuantity = detail.Quantity * parentRequiredQuantity;
+
+                var childItem = new OrderInventoryCheckItem
+                {
+                    Level = level,
+                    ParentDetailId = null,
+                    ProductId = detail.ComponentProductId,
+                    ProductCode = detail.ComponentProduct?.Code ?? "",
+                    ProductName = detail.ComponentProduct?.Name ?? "",
+                    ProductSpecification = detail.ComponentProduct?.Specification,
+                    UnitName = detail.Unit?.Name ?? detail.ComponentProduct?.Unit?.Name ?? "",
+                    RequiredQuantity = requiredQuantity,
+                    AvailableStock = compAvailableStock,
+                    CompositionMultiplier = detail.Quantity,
+                    IsComposition = false,
+                    Status = DetermineInventoryStatus(requiredQuantity, compAvailableStock, detail.ComponentProduct),
+                    Children = new List<OrderInventoryCheckItem>()
+                };
+
+                // 🔑 遞迴展開：檢查子元件是否也是組合產品（防止循環參照）
+                if (detail.ComponentProductId != parentProductId && 
+                    productCompositionDict.TryGetValue(detail.ComponentProductId, out var subComposition) 
+                    && subComposition != null)
+                {
+                    childItem.IsComposition = true;
+                    childItem.Children = ExpandSubComposition(
+                        subComposition,
+                        requiredQuantity,
+                        inventoryStocks,
+                        productCompositionDict,
+                        level + 1,
+                        detail.ComponentProductId
+                    );
+                }
+
+                children.Add(childItem);
+            }
+
+            return children;
         }
 
         /// <summary>

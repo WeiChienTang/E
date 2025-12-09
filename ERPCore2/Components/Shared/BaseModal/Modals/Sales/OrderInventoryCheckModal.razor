@@ -28,7 +28,7 @@
     // ===== 私有欄位 =====
     private bool isLoading = false;
     private OrderInventoryCheckResult? checkResult;
-    private Dictionary<int, bool> expandedItems = new();
+    private Dictionary<object, bool> expandedItems = new();
 
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
@@ -96,6 +96,19 @@
     private bool IsExpanded(int detailId)
     {
         return expandedItems.GetValueOrDefault(detailId, false);
+    }
+
+    private void ToggleExpandByKey(string key)
+    {
+        if (expandedItems.ContainsKey(key))
+        {
+            expandedItems[key] = !expandedItems[key];
+        }
+        else
+        {
+            expandedItems[key] = true;
+        }
+        StateHasChanged();
     }
 
     private async Task HandleClose()
@@ -306,7 +319,7 @@
             
             foreach (var child in item.Children)
             {
-                RenderChildItem(builder, child);
+                RenderChildItem(builder, child, level: 2);
             }
             
             builder.CloseElement(); // children container
@@ -316,10 +329,19 @@
         builder.CloseElement(); // card
     }
 
-    private void RenderChildItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem child)
+    private void RenderChildItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem child, int level)
     {
+        // 根據層級調整縮排和背景顏色
+        var indentClass = level > 2 ? $"ms-{(level - 2) * 3}" : "";
+        var bgClass = level switch
+        {
+            2 => "bg-light",
+            3 => "bg-white",
+            _ => "bg-light"
+        };
+        
         builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "mb-2 p-2 bg-light rounded");
+        builder.AddAttribute(1, "class", $"mb-2 p-2 {bgClass} rounded {indentClass}");
         
         // 產品資訊
         builder.OpenElement(2, "div");
@@ -331,10 +353,39 @@
         
         builder.OpenElement(6, "div");
         builder.AddAttribute(7, "class", "mb-1");
-        builder.OpenElement(8, "span");
-        builder.AddAttribute(9, "class", "me-2");
-        builder.AddContent(10, "🔩");
-        builder.CloseElement();
+        
+        // 層級指示符 & 展開/收合按鈕
+        if (child.IsComposition && child.Children.Any())
+        {
+            // 有子項目的組合產品 - 顯示展開/收合按鈕
+            var childExpandKey = $"{child.ProductId}_level{level}";
+            var isChildExpanded = expandedItems.GetValueOrDefault(childExpandKey, true);
+            
+            builder.OpenElement(8, "button");
+            builder.AddAttribute(9, "type", "button");
+            builder.AddAttribute(10, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
+            builder.AddAttribute(11, "onclick", EventCallback.Factory.Create(this, () => ToggleExpandByKey(childExpandKey)));
+            builder.AddContent(12, isChildExpanded ? "▼" : "▶");
+            builder.CloseElement(); // button
+            
+            expandedItems.TryAdd(childExpandKey, true); // 預設展開
+        }
+        else
+        {
+            // 一般元件 - 顯示層級圖示
+            var icon = level switch
+            {
+                2 => "🔩",
+                3 => "•",
+                _ => "▫"
+            };
+            
+            builder.OpenElement(13, "span");
+            builder.AddAttribute(14, "class", "me-2");
+            builder.AddContent(15, icon);
+            builder.CloseElement();
+        }
+        
         builder.OpenElement(11, "strong");
         builder.AddAttribute(12, "style", "font-size: 0.95em;");
         builder.AddContent(13, $"{child.ProductCode} - {child.ProductName}");
@@ -394,6 +445,28 @@
         builder.CloseElement();
         
         builder.CloseElement(); // d-flex
+        
+        // 🔑 遞迴渲染：如果有子項目且已展開，遞迴顯示
+        if (child.IsComposition && child.Children.Any())
+        {
+            var childExpandKey = $"{child.ProductId}_level{level}";
+            var isChildExpanded = expandedItems.GetValueOrDefault(childExpandKey, true);
+            
+            if (isChildExpanded)
+            {
+                builder.OpenElement(39, "div");
+                builder.AddAttribute(40, "class", "mt-2 ps-3 border-start border-2 border-secondary");
+                
+                foreach (var grandChild in child.Children)
+                {
+                    // 遞迴呼叫，層級 +1
+                    RenderChildItem(builder, grandChild, level + 1);
+                }
+                
+                builder.CloseElement(); // nested children container
+            }
+        }
+        
         builder.CloseElement(); // container
     }
 

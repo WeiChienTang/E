@@ -155,7 +155,7 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的明細資料
+    /// 當上下筆切換時，重新載入對應的明細資料-=098 
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
@@ -164,7 +164,7 @@
             // 1. 重新載入明細資料
             await LoadInventoryStockDetails(loadedEntityId);
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
             
@@ -187,7 +187,7 @@
     {
         try
         {
-            // 🔑 關鍵修正：儲存成功後刷新明細資料
+            //  關鍵修正：儲存成功後刷新明細資料
             // 這確保新增的明細會獲得正確的 ID，避免重複新增
             if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
             {
@@ -373,7 +373,7 @@
         {
             if (!InventoryStockId.HasValue) 
             {
-                // 🔑 關鍵修正：新增模式時清空明細（與 PurchaseOrderEditModalComponent 一致）
+                //  關鍵修正：新增模式時清空明細（與 PurchaseOrderEditModalComponent 一致）
                 inventoryStockDetails.Clear();
                 
                 // 新增模式：建立新的庫存實體
