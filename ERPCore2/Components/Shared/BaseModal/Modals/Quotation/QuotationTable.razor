@@ -49,14 +49,15 @@ else
                     <GenericButtonComponent Text="智能下單"
                                           Variant="ButtonVariant.DarkBlue"
                                           OnClick="SmartQuotation"
-                                          IsDisabled="@(!CanUseSmartQuotation || IsReadOnly)"
+                                          IsDisabled="@(!CanUseSmartQuotation || IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetSmartQuotationTooltip()" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails"
-                                          IsDisabled="@IsReadOnly" />
+                                          IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
+                                          Title="@GetClearAllDetailsTooltip()" />
                 </div>
             </div>
         </div>
@@ -80,15 +81,18 @@ else
                          OnSelected="@HandleCompositionSelected" />
 
 <!-- BOM 組合編輯 Modal -->
-<QuotationCompositionEditModal IsVisible="@showCompositionModal"
+<QuotationCompositionEditModal TCompositionDetail="QuotationCompositionDetail"
+                              IsVisible="@showCompositionModal"
                               IsVisibleChanged="@((bool visible) => { showCompositionModal = visible; })"
-                              QuotationDetailId="@GetSelectedQuotationDetailId()"
+                              DetailId="@GetSelectedQuotationDetailId()"
                               ProductName="@selectedCompositionProductName"
                               ProductId="@selectedCompositionProductId"
                               SelectedCompositionId="@selectedCompositionId"
                               IsCustomMode="@isCustomCompositionMode"
                               IsReselecting="@isReselectingComposition"
                               IsReadOnly="@GetCompositionModalReadOnlyState()"
+                              GetCompositionsByDetailId="@QuotationCompositionDetailService.GetByQuotationDetailIdAsync"
+                              CopyFromComposition="@QuotationCompositionDetailService.CopyFromCompositionAsync"
                               OnSave="@HandleCompositionSave"
                               OnCancel="@HandleCompositionCancel"
                               OnRequestCachedData="@GetCachedCompositionData"
@@ -1705,7 +1709,24 @@ else
         if (!_hasLastQuotationRecord)
             return "此客戶沒有歷史報價記錄";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已轉單，無法使用智能下單";
+        
         return "載入該客戶上次報價的商品明細";
+    }
+    
+    /// <summary>
+    /// 取得清除明細按鈕的提示文字
+    /// </summary>
+    private string GetClearAllDetailsTooltip()
+    {
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已轉單，無法清除明細";
+        
+        return "清空所有報價明細";
     }
 
     /// <summary>

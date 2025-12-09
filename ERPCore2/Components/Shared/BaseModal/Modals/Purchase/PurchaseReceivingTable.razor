@@ -52,14 +52,14 @@ else
                     <GenericButtonComponent
                                           Text="智能下單"
                                           OnClick="@SmartLoadReceivingDetails"
-                                          IsDisabled="@(!CanUseSmartLoad || IsReadOnly)"
+                                          IsDisabled="@(!CanUseSmartLoad || IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetSmartLoadTooltip()"
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small" />
                     <GenericButtonComponent
                                           Text="載入採購"
                                           OnClick="@LoadAllUnreceivedItems"
-                                          IsDisabled="@(!CanLoadPurchaseOrder || IsReadOnly)"
+                                          IsDisabled="@(!CanLoadPurchaseOrder || IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetLoadPurchaseOrderTooltip()"
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small" />
@@ -73,8 +73,8 @@ else
                                               Text="倉庫統一"
                                               Variant="ButtonVariant.Green"
                                               Size="ButtonSize.Small"
-                                              IsDisabled="@(!HasReceivingItems || IsReadOnly)"
-                                              Title="@(HasReceivingItems ? "統一設定所有明細的倉庫" : "目前無明細可設定")"
+                                              IsDisabled="@(!HasReceivingItems || IsReadOnly || _hasUndeletableDetails)"
+                                              Title="@GetUnifyWarehouseTooltip()"
                                               AdditionalAttributes="@(new Dictionary<string, object> 
                                               { 
                                                   { "data-bs-toggle", "dropdown" },
@@ -105,8 +105,8 @@ else
                     <GenericButtonComponent
                                           Text="清除明細"
                                           OnClick="@ClearAllDetails"
-                                          IsDisabled="@(!HasReceivingItems || IsReadOnly)"
-                                          Title="@(HasReceivingItems ? "清空所有入庫明細" : "目前無明細可清除")"
+                                          IsDisabled="@(!HasReceivingItems || IsReadOnly || _hasUndeletableDetails)"
+                                          Title="@GetClearDetailsTooltip()"
                                           Variant="ButtonVariant.Red"
                                           Size="ButtonSize.Small" />
                 </div>
@@ -1223,6 +1223,9 @@ else
         if (IsReadOnly)
             return "唯讀模式無法使用";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨或沖款記錄，無法使用智能下單";
+        
         return "載入該廠商最後一次入庫記錄作為參考";
     }
     
@@ -1250,6 +1253,9 @@ else
         if (IsReadOnly)
             return "唯讀模式無法使用";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨或沖款記錄，無法載入採購";
+        
         return "載入該採購單的待進貨明細";
     }
     
@@ -1258,6 +1264,40 @@ else
     /// </summary>
     private bool HasReceivingItems =>
         ReceivingItems.Any(item => item.SelectedProduct != null);
+    
+    /// <summary>
+    /// 取得倉庫統一按鈕的提示文字
+    /// </summary>
+    private string GetUnifyWarehouseTooltip()
+    {
+        if (!HasReceivingItems)
+            return "目前無明細可設定";
+        
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨或沖款記錄，無法統一設定倉庫";
+        
+        return "統一設定所有明細的倉庫";
+    }
+    
+    /// <summary>
+    /// 取得清除明細按鈕的提示文字
+    /// </summary>
+    private string GetClearDetailsTooltip()
+    {
+        if (!HasReceivingItems)
+            return "目前無明細可清除";
+        
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨或沖款記錄，無法清除明細";
+        
+        return "清空所有入庫明細";
+    }
     
     /// <summary>
     /// 智能下單 - 載入該廠商最後一次入庫記錄

@@ -1,0 +1,433 @@
+@* 訂單庫存檢視 Modal *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models
+@inject ISalesOrderService SalesOrderService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@GetModalTitle()"
+                   Icon="bi bi-box-seam"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Info"
+                   ShowFooter="true"
+                   CloseOnBackdropClick="true"
+                   CloseOnEscape="true"
+                   IsLoading="@isLoading"
+                   LoadingMessage="載入庫存資訊中..."
+                   BodyContent="@BodyContent"
+                   FooterContent="@FooterContent" />
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? SalesOrderId { get; set; }
+    [Parameter] public string OrderNumber { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    // ===== 私有欄位 =====
+    private bool isLoading = false;
+    private OrderInventoryCheckResult? checkResult;
+    private Dictionary<int, bool> expandedItems = new();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && SalesOrderId.HasValue)
+        {
+            await LoadInventoryCheckAsync();
+        }
+    }
+
+    private async Task LoadInventoryCheckAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            checkResult = await SalesOrderService.GetOrderInventoryCheckAsync(SalesOrderId!.Value);
+            
+            // 預設展開所有項目
+            if (checkResult != null)
+            {
+                foreach (var item in checkResult.Items)
+                {
+                    if (item.IsComposition && item.DetailId.HasValue)
+                    {
+                        expandedItems[item.DetailId.Value] = true;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入庫存檢查資訊失敗: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetModalTitle()
+    {
+        if (!string.IsNullOrEmpty(OrderNumber))
+        {
+            return $"庫存檢視 - {OrderNumber}";
+        }
+        return "訂單庫存檢視";
+    }
+
+    private void ToggleExpand(int detailId)
+    {
+        if (expandedItems.ContainsKey(detailId))
+        {
+            expandedItems[detailId] = !expandedItems[detailId];
+        }
+        else
+        {
+            expandedItems[detailId] = true;
+        }
+        StateHasChanged();
+    }
+
+    private bool IsExpanded(int detailId)
+    {
+        return expandedItems.GetValueOrDefault(detailId, false);
+    }
+
+    private async Task HandleClose()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== Render Fragments =====
+    private RenderFragment BodyContent => builder =>
+    {
+        if (checkResult == null)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "text-center text-muted py-4");
+            builder.AddContent(2, "無法載入庫存資訊");
+            builder.CloseElement();
+            return;
+        }
+
+        // 統計資訊卡片
+        builder.OpenElement(3, "div");
+        builder.AddAttribute(4, "class", "alert alert-" + GetOverallAlertClass() + " mb-3");
+        builder.OpenElement(5, "div");
+        builder.AddAttribute(6, "class", "d-flex justify-content-between align-items-center");
+        
+        // 左側：滿足率
+        builder.OpenElement(7, "div");
+        builder.OpenElement(8, "h5");
+        builder.AddAttribute(9, "class", "mb-1");
+        builder.AddContent(10, $"整體滿足率: {checkResult.OverallSatisfactionRate:F2}%");
+        builder.CloseElement(); // h5
+        
+        builder.OpenElement(11, "small");
+        builder.AddContent(12, $"檢查時間: {checkResult.CheckedAt:yyyy-MM-dd HH:mm:ss}");
+        builder.CloseElement(); // small
+        builder.CloseElement(); // div
+        
+        // 右側：統計
+        builder.OpenElement(13, "div");
+        builder.AddAttribute(14, "class", "text-end");
+        
+        if (checkResult.InsufficientItemCount > 0)
+        {
+            builder.OpenElement(15, "span");
+            builder.AddAttribute(16, "class", "badge bg-danger me-2");
+            builder.AddContent(17, $"🔴 不足: {checkResult.InsufficientItemCount}");
+            builder.CloseElement();
+        }
+        
+        if (checkResult.WarningItemCount > 0)
+        {
+            builder.OpenElement(18, "span");
+            builder.AddAttribute(19, "class", "badge bg-warning text-dark me-2");
+            builder.AddContent(20, $"🟡 警戒: {checkResult.WarningItemCount}");
+            builder.CloseElement();
+        }
+        
+        if (checkResult.IsFullySatisfied)
+        {
+            builder.OpenElement(21, "span");
+            builder.AddAttribute(22, "class", "badge bg-success");
+            builder.AddContent(23, "🟢 全部充足");
+            builder.CloseElement();
+        }
+        
+        builder.CloseElement(); // div (right)
+        builder.CloseElement(); // d-flex
+        builder.CloseElement(); // alert
+
+        // 明細列表
+        builder.OpenElement(24, "div");
+        builder.AddAttribute(25, "class", "inventory-check-list");
+        
+        foreach (var item in checkResult.Items)
+        {
+            RenderInventoryItem(builder, item);
+        }
+        
+        builder.CloseElement(); // inventory-check-list
+    };
+
+    private void RenderInventoryItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem item)
+    {
+        // 主項目容器
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "card mb-2");
+        
+        // 卡片內容
+        builder.OpenElement(2, "div");
+        builder.AddAttribute(3, "class", "card-body p-3");
+        
+        // 主項目資訊
+        builder.OpenElement(4, "div");
+        builder.AddAttribute(5, "class", "d-flex justify-content-between align-items-start");
+        
+        // 左側：產品資訊
+        builder.OpenElement(6, "div");
+        builder.AddAttribute(7, "class", "flex-grow-1");
+        
+        // 產品標題行
+        builder.OpenElement(8, "div");
+        builder.AddAttribute(9, "class", "d-flex align-items-center mb-2");
+        
+        // 展開/收合按鈕 (如果有子項目)
+        if (item.IsComposition && item.Children.Any() && item.DetailId.HasValue)
+        {
+            builder.OpenElement(10, "button");
+            builder.AddAttribute(11, "type", "button");
+            builder.AddAttribute(12, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
+            builder.AddAttribute(13, "onclick", EventCallback.Factory.Create(this, () => ToggleExpand(item.DetailId.Value)));
+            builder.AddContent(14, IsExpanded(item.DetailId.Value) ? "▼" : "▶");
+            builder.CloseElement(); // button
+        }
+        else if (item.IsComposition)
+        {
+            builder.OpenElement(15, "span");
+            builder.AddAttribute(16, "class", "me-2");
+            builder.AddAttribute(17, "style", "width: 20px; display: inline-block;");
+            builder.AddContent(18, "📦");
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.OpenElement(19, "span");
+            builder.AddAttribute(20, "class", "me-2");
+            builder.AddAttribute(21, "style", "width: 20px; display: inline-block;");
+            builder.AddContent(22, "📦");
+            builder.CloseElement();
+        }
+        
+        // 產品編號和名稱
+        builder.OpenElement(23, "strong");
+        builder.AddContent(24, $"{item.ProductCode} - {item.ProductName}");
+        builder.CloseElement(); // strong
+        
+        if (!string.IsNullOrEmpty(item.ProductSpecification))
+        {
+            builder.OpenElement(25, "span");
+            builder.AddAttribute(26, "class", "text-muted ms-2");
+            builder.AddAttribute(27, "style", "font-size: 0.9em;");
+            builder.AddContent(28, $"({item.ProductSpecification})");
+            builder.CloseElement();
+        }
+        
+        builder.CloseElement(); // d-flex (標題行)
+        
+        // 數量資訊
+        builder.OpenElement(29, "div");
+        builder.AddAttribute(30, "class", "row g-2 small");
+        
+        // 需求數量
+        builder.OpenElement(31, "div");
+        builder.AddAttribute(32, "class", "col-auto");
+        builder.AddContent(33, $"需求: ");
+        builder.OpenElement(34, "strong");
+        builder.AddContent(35, $"{item.RequiredQuantity:N2} {item.UnitName}");
+        builder.CloseElement();
+        builder.CloseElement(); // col
+        
+        // 庫存數量
+        builder.OpenElement(36, "div");
+        builder.AddAttribute(37, "class", "col-auto");
+        builder.AddContent(38, $"庫存: ");
+        builder.OpenElement(39, "strong");
+        builder.AddAttribute(40, "class", item.StatusClass);
+        builder.AddContent(41, $"{item.AvailableStock:N2} {item.UnitName}");
+        builder.CloseElement();
+        builder.CloseElement(); // col
+        
+        // 缺口 (如果有)
+        if (item.ShortageQuantity > 0)
+        {
+            builder.OpenElement(42, "div");
+            builder.AddAttribute(43, "class", "col-auto");
+            builder.AddContent(44, $"缺口: ");
+            builder.OpenElement(45, "strong");
+            builder.AddAttribute(46, "class", "text-danger");
+            builder.AddContent(47, $"{item.ShortageQuantity:N2} {item.UnitName}");
+            builder.CloseElement();
+            builder.CloseElement(); // col
+        }
+        
+        builder.CloseElement(); // row
+        
+        builder.CloseElement(); // flex-grow-1
+        
+        // 右側：狀態標籤
+        builder.OpenElement(48, "div");
+        builder.AddAttribute(49, "class", "ms-3");
+        builder.OpenElement(50, "span");
+        builder.AddAttribute(51, "class", "badge bg-" + GetStatusBadgeClass(item.Status));
+        builder.AddAttribute(52, "style", "font-size: 1em;");
+        builder.AddContent(53, $"{item.StatusIcon} {item.StatusText}");
+        builder.CloseElement(); // badge
+        builder.CloseElement(); // ms-3
+        
+        builder.CloseElement(); // d-flex
+        
+        // 子項目 (組成元件)
+        if (item.IsComposition && item.Children.Any() && item.DetailId.HasValue && IsExpanded(item.DetailId.Value))
+        {
+            builder.OpenElement(54, "div");
+            builder.AddAttribute(55, "class", "mt-3 ps-4 border-start border-2");
+            
+            foreach (var child in item.Children)
+            {
+                RenderChildItem(builder, child);
+            }
+            
+            builder.CloseElement(); // children container
+        }
+        
+        builder.CloseElement(); // card-body
+        builder.CloseElement(); // card
+    }
+
+    private void RenderChildItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem child)
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "mb-2 p-2 bg-light rounded");
+        
+        // 產品資訊
+        builder.OpenElement(2, "div");
+        builder.AddAttribute(3, "class", "d-flex justify-content-between align-items-start");
+        
+        // 左側
+        builder.OpenElement(4, "div");
+        builder.AddAttribute(5, "class", "flex-grow-1");
+        
+        builder.OpenElement(6, "div");
+        builder.AddAttribute(7, "class", "mb-1");
+        builder.OpenElement(8, "span");
+        builder.AddAttribute(9, "class", "me-2");
+        builder.AddContent(10, "🔩");
+        builder.CloseElement();
+        builder.OpenElement(11, "strong");
+        builder.AddAttribute(12, "style", "font-size: 0.95em;");
+        builder.AddContent(13, $"{child.ProductCode} - {child.ProductName}");
+        builder.CloseElement();
+        
+        if (!string.IsNullOrEmpty(child.ProductSpecification))
+        {
+            builder.OpenElement(14, "span");
+            builder.AddAttribute(15, "class", "text-muted ms-2");
+            builder.AddAttribute(16, "style", "font-size: 0.85em;");
+            builder.AddContent(17, $"({child.ProductSpecification})");
+            builder.CloseElement();
+        }
+        builder.CloseElement(); // mb-1
+        
+        // 數量資訊 (較小)
+        builder.OpenElement(18, "div");
+        builder.AddAttribute(19, "class", "small text-muted");
+        
+        if (child.CompositionMultiplier.HasValue)
+        {
+            builder.AddContent(20, $"每組: {child.CompositionMultiplier.Value:N2} {child.UnitName} | ");
+        }
+        
+        builder.AddContent(21, $"需求: ");
+        builder.OpenElement(22, "span");
+        builder.AddAttribute(23, "class", "fw-bold");
+        builder.AddContent(24, $"{child.RequiredQuantity:N2}");
+        builder.CloseElement();
+        builder.AddContent(25, $" {child.UnitName} | 庫存: ");
+        
+        builder.OpenElement(26, "span");
+        builder.AddAttribute(27, "class", "fw-bold " + child.StatusClass);
+        builder.AddContent(28, $"{child.AvailableStock:N2}");
+        builder.CloseElement();
+        builder.AddContent(29, $" {child.UnitName}");
+        
+        if (child.ShortageQuantity > 0)
+        {
+            builder.AddContent(30, $" | 缺口: ");
+            builder.OpenElement(31, "span");
+            builder.AddAttribute(32, "class", "fw-bold text-danger");
+            builder.AddContent(33, $"{child.ShortageQuantity:N2}");
+            builder.CloseElement();
+            builder.AddContent(34, $" {child.UnitName}");
+        }
+        
+        builder.CloseElement(); // small
+        builder.CloseElement(); // flex-grow-1
+        
+        // 右側：狀態
+        builder.OpenElement(35, "div");
+        builder.OpenElement(36, "span");
+        builder.AddAttribute(37, "class", "badge bg-" + GetStatusBadgeClass(child.Status));
+        builder.AddContent(38, $"{child.StatusIcon} {child.StatusText}");
+        builder.CloseElement();
+        builder.CloseElement();
+        
+        builder.CloseElement(); // d-flex
+        builder.CloseElement(); // container
+    }
+
+    private RenderFragment FooterContent => builder =>
+    {
+        builder.OpenElement(0, "button");
+        builder.AddAttribute(1, "type", "button");
+        builder.AddAttribute(2, "class", "btn btn-secondary");
+        builder.AddAttribute(3, "onclick", EventCallback.Factory.Create(this, HandleClose));
+        builder.AddContent(4, "關閉");
+        builder.CloseElement();
+    };
+
+    private string GetOverallAlertClass()
+    {
+        if (checkResult == null) return "secondary";
+        
+        if (checkResult.InsufficientItemCount > 0)
+            return "danger";
+        
+        if (checkResult.WarningItemCount > 0)
+            return "warning";
+        
+        return "success";
+    }
+
+    private string GetStatusBadgeClass(InventoryStatus status)
+    {
+        return status switch
+        {
+            InventoryStatus.Sufficient => "success",
+            InventoryStatus.Warning => "warning",
+            InventoryStatus.Insufficient => "danger",
+            _ => "secondary"
+        };
+    }
+}

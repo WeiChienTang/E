@@ -51,19 +51,19 @@ else
                     <GenericButtonComponent Text="智能下單"
                                           Variant="ButtonVariant.DarkBlue"
                                           OnClick="LoadSmartDeliveryItems"
-                                          IsDisabled="@(!CanLoadSmartDelivery)"
+                                          IsDisabled="@(!CanLoadSmartDelivery || _hasUndeletableDetails)"
                                           Title="@GetSmartDeliveryTooltip()" />
                     <GenericButtonComponent Text="載入訂單"
                                           Variant="ButtonVariant.DarkBlue"
-                                          IsDisabled="@(!CanLoadAllUndelivered)"
+                                          IsDisabled="@(!CanLoadAllUndelivered || _hasUndeletableDetails)"
                                           Title="@GetLoadAllUndeliveredTooltip()"
                                           OnClick="LoadAllUndeliveredItems" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="明細清除"
                                           Variant="ButtonVariant.Red"
-                                          IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0))"
-                                          Title="@(IsReadOnly ? "唯讀模式" : DeliveryItems.Any(item => item.ProductId > 0) ? "清除所有出貨明細" : "沒有可清除的明細項目")"
+                                          IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0) || _hasUndeletableDetails)"
+                                          Title="@GetClearAllDetailsTooltip()"
                                           OnClick="ClearAllDetails" />
                 </div>
             </div>
@@ -177,6 +177,9 @@ else
         if (ExistingDetails?.Any() == true)
             return "編輯模式下無法使用此功能，請在新增模式時使用";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨記錄，無法使用智能下單";
+        
         return "載入該客戶上次出貨的商品明細";
     }
     
@@ -207,7 +210,27 @@ else
         if (ExistingDetails?.Any() == true)
             return "編輯模式下無法載入訂單項目，以避免覆蓋現有資料";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨記錄，無法載入訂單";
+        
         return "載入該客戶所有未完成出貨的訂單明細";
+    }
+    
+    /// <summary>
+    /// 取得清除明細按鈕的提示文字
+    /// </summary>
+    private string GetClearAllDetailsTooltip()
+    {
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (!DeliveryItems.Any(item => item.ProductId > 0))
+            return "沒有可清除的明細項目";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有退貨記錄，無法清除明細";
+        
+        return "清除所有出貨明細";
     }
 
     protected override async Task OnInitializedAsync()

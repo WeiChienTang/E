@@ -50,7 +50,7 @@ else
                 <div>
                     <GenericButtonComponent Text="智能載入"
                                           Variant="ButtonVariant.DarkBlue"
-                                          IsDisabled="@(!CanLoadAllReturnable)"
+                                          IsDisabled="@(!CanLoadAllReturnable || _hasUndeletableDetails)"
                                           Title="@GetLoadAllReturnableTooltip()"
                                           OnClick="LoadAllReturnableItems" />
                 </div>
@@ -58,14 +58,20 @@ else
                     <GenericButtonComponent Text="退貨全填"
                                           Icon="fill-drip"
                                           Variant="ButtonVariant.DarkBlue"
+                                          IsDisabled="@(!HasReturnItems || IsReadOnly || _hasUndeletableDetails)"
+                                          Title="@GetFillAllQuantitiesTooltip()"
                                           OnClick="@FillAllQuantities" />
                     <GenericButtonComponent Text="退貨清空"
                                           Icon="eraser"
                                           Variant="ButtonVariant.Red"
+                                          IsDisabled="@(!HasReturnItems || IsReadOnly || _hasUndeletableDetails)"
+                                          Title="@GetClearAllQuantitiesTooltip()"
                                           OnClick="@ClearAllQuantities" />
                     <GenericButtonComponent Text="清除明細"
                                           Icon="trash-alt"
                                           Variant="ButtonVariant.Red"
+                                          IsDisabled="@(!HasReturnItems || IsReadOnly || _hasUndeletableDetails)"
+                                          Title="@GetClearAllDetailsTooltip()"
                                           OnClick="@ClearAllDetails" />
                 </div>
             </div>
@@ -189,7 +195,67 @@ else
         if (ReturnItems.Any(x => x.SelectedProduct != null))
             return "已有明細項目，無法再次載入以避免覆蓋現有資料";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已有沖款記錄，無法使用智能載入";
+        
         return "載入該客戶所有可退貨的出貨明細";
+    }
+    
+    /// <summary>
+    /// 計算屬性：是否有退貨明細項目
+    /// </summary>
+    private bool HasReturnItems =>
+        ReturnItems.Any(item => item.SelectedProduct != null);
+    
+    /// <summary>
+    /// 取得退貨全填按鈕的提示文字
+    /// </summary>
+    private string GetFillAllQuantitiesTooltip()
+    {
+        if (!HasReturnItems)
+            return "目前無明細可填入";
+        
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有沖款記錄，無法批次填入數量";
+        
+        return "將所有明細的退貨數量填入可退貨的最大數量";
+    }
+    
+    /// <summary>
+    /// 取得退貨清空按鈕的提示文字
+    /// </summary>
+    private string GetClearAllQuantitiesTooltip()
+    {
+        if (!HasReturnItems)
+            return "目前無明細可清空";
+        
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有沖款記錄，無法批次清空數量";
+        
+        return "清空所有明細的退貨數量";
+    }
+    
+    /// <summary>
+    /// 取得清除明細按鈕的提示文字
+    /// </summary>
+    private string GetClearAllDetailsTooltip()
+    {
+        if (!HasReturnItems)
+            return "目前無明細可清除";
+        
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有沖款記錄，無法清除明細";
+        
+        return "清空所有退貨明細";
     }
     
     /// <summary>

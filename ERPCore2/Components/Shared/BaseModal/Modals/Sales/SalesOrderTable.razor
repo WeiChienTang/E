@@ -75,20 +75,21 @@ else
                                           Variant="ButtonVariant.DarkBlue"
                                           Icon="fas fa-magic"
                                           OnClick="LoadSmartOrderItems"
-                                          IsDisabled="@(!CanLoadSmartOrder)"
+                                          IsDisabled="@(!CanLoadSmartOrder || _hasUndeletableDetails)"
                                           Title="@GetSmartOrderTooltip()" />
                     <GenericButtonComponent Text="載入報價"
                                           Variant="ButtonVariant.DarkBlue"
                                           Icon="fas fa-file-invoice"
                                           OnClick="LoadQuotationItems"
-                                          IsDisabled="@(!CanLoadQuotation)"
+                                          IsDisabled="@(!CanLoadQuotation || _hasUndeletableDetails)"
                                           Title="@GetLoadQuotationTooltip()" />
                 </div>
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails"
-                                          IsDisabled="@IsReadOnly" />
+                                          IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
+                                          Title="@GetClearAllDetailsTooltip()" />
                 </div>
             </div>
         </div>
@@ -103,16 +104,31 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- 配方選擇 Modal -->
+<CompositionSelectorModal IsVisible="@showCompositionSelectorModal"
+                         IsVisibleChanged="@((bool visible) => showCompositionSelectorModal = visible)"
+                         ProductName="@selectedCompositionProductName"
+                         Compositions="@availableCompositions"
+                         CurrentCustomerId="@SelectedCustomerId"
+                         OnSelected="@HandleCompositionSelected" />
+
 <!-- BOM 組合編輯/查看 Modal -->
-<SalesOrderCompositionEditModal IsVisible="@showCompositionModal"
-                               IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
-                               SalesOrderDetailId="@GetSelectedSalesOrderDetailId()"
-                               ProductName="@selectedCompositionProductName"
-                               ProductId="@selectedCompositionProductId"
-                               IsReadOnly="@GetCompositionModalReadOnlyState()"
-                               OnSave="@HandleCompositionSave"
-                               OnCancel="@(() => showCompositionModal = false)"
-                               OnRequestCachedData="@GetCachedCompositionData" />
+<QuotationCompositionEditModal TCompositionDetail="SalesOrderCompositionDetail"
+                              IsVisible="@showCompositionModal"
+                              IsVisibleChanged="@((bool visible) => showCompositionModal = visible)"
+                              DetailId="@GetSelectedSalesOrderDetailId()"
+                              ProductName="@selectedCompositionProductName"
+                              ProductId="@selectedCompositionProductId"
+                              SelectedCompositionId="@selectedCompositionId"
+                              IsCustomMode="@isCustomCompositionMode"
+                              IsReselecting="@isReselectingComposition"
+                              IsReadOnly="@GetCompositionModalReadOnlyState()"
+                              GetCompositionsByDetailId="@SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync"
+                              CopyFromComposition="@SalesOrderCompositionDetailService.CopyFromCompositionAsync"
+                              OnSave="@HandleCompositionSave"
+                              OnCancel="@(() => showCompositionModal = false)"
+                              OnRequestCachedData="@GetCachedCompositionData"
+                              OnReselect="@HandleCompositionReselect" />
 
 @code {
     // ===== InteractiveTableComponent 參考 =====
@@ -203,9 +219,14 @@ else
     
     // ===== BOM 組合編輯相關 =====
     private bool showCompositionModal = false;
+    private bool showCompositionSelectorModal = false;
     private int? selectedSalesItemIndex = null;
     private string selectedCompositionProductName = string.Empty;
     private int? selectedCompositionProductId = null;
+    private int? selectedCompositionId = null;
+    private bool isCustomCompositionMode = false;
+    private bool isReselectingComposition = false;
+    private List<ProductComposition> availableCompositions = new();
     private Dictionary<int, List<SalesOrderCompositionDetail>> compositionDetailsCache = new();
     private HashSet<int> productsWithComposition = new();  // 快取有 BOM 的商品 ID
     private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有出貨記錄）
@@ -243,24 +264,11 @@ else
         if (IsEditMode)
             return "編輯模式下無法使用此功能，請在新增模式時使用";
         
+        if (_hasUndeletableDetails)
+            return "部分明細已有出貨或沖款記錄，無法使用智能下單";
+        
         return "載入該客戶上次訂購的商品明細";
     }
-    
-    /// <summary>
-    /// 判斷是否可以使用「載入報價」功能
-    /// 規則：
-    /// 1. 必須選擇客戶
-    /// 2. 必須選擇報價單
-    /// 3. 不可在唯讀模式
-    /// 4. 不可在編輯模式下使用（避免覆蓋現有資料）
-    /// </summary>
-    private bool CanLoadQuotation => 
-        SelectedCustomerId.HasValue && 
-        SelectedCustomerId.Value > 0 &&
-        SelectedQuotationId.HasValue &&
-        SelectedQuotationId.Value > 0 &&
-        !IsReadOnly &&
-        !IsEditMode;
     
     /// <summary>
     /// 取得「載入報價」按鈕的提示文字
@@ -279,8 +287,39 @@ else
         if (IsEditMode)
             return "編輯模式下無法使用此功能，請在新增模式時使用";
         
-        return "載入所選報價單的明細資料（僅載入尚未轉單的數量）";
+        if (_hasUndeletableDetails)
+            return "部分明細已有出貨或沖款記錄，無法載入報價";
+        
+        return "載入該報價單的商品明細";
     }
+    
+    /// <summary>
+    /// 取得清除明細按鈕的提示文字
+    /// </summary>
+    private string GetClearAllDetailsTooltip()
+    {
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
+        
+        if (_hasUndeletableDetails)
+            return "部分明細已有出貨或沖款記錄，無法清除明細";
+        
+        return "清空所有銀貨明細";
+    }
+    /// 判斷是否可以使用「載入報價」功能
+    /// 規則：
+    /// 1. 必須選擇客戶
+    /// 2. 必須選擇報價單
+    /// 3. 不可在唯讀模式
+    /// 4. 不可在編輯模式下使用（避免覆蓋現有資料）
+    /// </summary>
+    private bool CanLoadQuotation => 
+        SelectedCustomerId.HasValue && 
+        SelectedCustomerId.Value > 0 &&
+        SelectedQuotationId.HasValue &&
+        SelectedQuotationId.Value > 0 &&
+        !IsReadOnly &&
+        !IsEditMode;
     
     /// <summary>
     /// 檢查是否有被鎖定的明細（有退貨或沖款記錄的明細）
@@ -553,9 +592,9 @@ else
     }
     
     /// <summary>
-    /// 顯示 BOM 組合編輯器
+    /// 顯示 BOM 組合編輯器 - 智能判斷是否需要選擇配方
     /// </summary>
-    private void ShowCompositionEditor(SalesItem item)
+    private async Task ShowCompositionEditor(SalesItem item)
     {
         if (item.SelectedProduct == null)
             return;
@@ -565,8 +604,83 @@ else
         selectedCompositionProductName = item.SelectedProduct.Name;
         selectedCompositionProductId = item.SelectedProduct.Id;
         
+        // 檢查是否已有組合資料
+        if (item.HasCompositionData)
+        {
+            // 已有資料，直接開啟編輯器
+            selectedCompositionId = item.SelectedCompositionId;
+            isCustomCompositionMode = item.IsCustomComposition;
+            showCompositionModal = true;
+        }
+        else
+        {
+            // 尚未選擇配方，顯示選擇器
+            availableCompositions = await ProductCompositionService
+                .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
+            showCompositionSelectorModal = true;
+        }
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理配方選擇
+    /// </summary>
+    private void HandleCompositionSelected((int? compositionId, bool isCustomMode) selection)
+    {
+        showCompositionSelectorModal = false;
+        
+        selectedCompositionId = selection.compositionId;
+        isCustomCompositionMode = selection.isCustomMode;
+        
+        // 記錄選擇資訊到 SalesItem
+        if (selectedSalesItemIndex.HasValue)
+        {
+            var item = SalesItems.ElementAtOrDefault(selectedSalesItemIndex.Value);
+            if (item != null)
+            {
+                item.SelectedCompositionId = selection.compositionId;
+                item.IsCustomComposition = selection.isCustomMode;
+                
+                // 如果是重新選擇，清除舊的快取資料
+                if (isReselectingComposition)
+                {
+                    item.CustomCompositionDetails = null;
+                }
+            }
+        }
+        
+        // 開啟 BOM 編輯器
         showCompositionModal = true;
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理重新選擇配方
+    /// </summary>
+    private async Task HandleCompositionReselect()
+    {
+        // 先標記為重新選擇模式（在關閉 Modal 之前）
+        isReselectingComposition = true;
+        
+        // 關閉當前的 BOM 編輯 Modal
+        showCompositionModal = false;
+        
+        // 清除當前選擇的配方資訊
+        if (selectedSalesItemIndex.HasValue)
+        {
+            var item = SalesItems.ElementAtOrDefault(selectedSalesItemIndex.Value);
+            if (item?.SelectedProduct != null)
+            {
+                // 重新載入配方清單
+                availableCompositions = await ProductCompositionService
+                    .GetCompositionsByProductIdAsync(item.SelectedProduct.Id);
+                
+                // 顯示配方選擇器
+                showCompositionSelectorModal = true;
+                StateHasChanged();
+            }
+        }
     }
     
     /// <summary>
@@ -637,17 +751,12 @@ else
     private List<SalesOrderCompositionDetail>? GetCachedCompositionData()
     {
         if (!selectedSalesItemIndex.HasValue)
-        {
             return null;
-        }
         
         if (selectedSalesItemIndex.Value >= SalesItems.Count)
-        {
             return null;
-        }
         
         var item = SalesItems[selectedSalesItemIndex.Value];
-        
         return item.CustomCompositionDetails;
     }
 
@@ -761,35 +870,30 @@ else
                     TaxRate = finalTaxRate,
                     Subtotal = salesDetail.SubtotalAmount,
                     DetailRemarks = salesDetail.Remarks ?? "",
-                    SelectedWarehouse = salesDetail.Warehouse ?? Warehouses.FirstOrDefault(w => w.Id == salesDetail.WarehouseId),
-                    WarehouseLocationId = salesDetail.WarehouseLocationId,
                     ExistingDetailEntity = detail
                 };
+                
+                // 🔑 載入該明細的 BOM 組成資料（如果有的話）
+                try
+                {
+                    var compositions = await SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync(salesDetail.Id);
+                    
+                    if (compositions?.Any() == true)
+                    {
+                        salesItem.CustomCompositionDetails = compositions;
+                        salesItem.IsCustomComposition = true;  // 標記為自訂組合
+                        salesItem.SelectedCompositionId = null;  // 自訂組合沒有配方 ID
+                    }
+                }
+                catch
+                {
+                    // BOM 載入失敗不影響主流程
+                }
                 
                 // 初始化 ProductSearchValue
                 if (salesItem.SelectedProduct != null)
                 {
                     salesItem.ProductSearchValue = FormatProductDisplayText(salesItem.SelectedProduct);
-                }
-                
-                // 載入該商品的可用倉庫位置清單
-                if (salesItem.SelectedProduct != null)
-                {
-                    salesItem.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(salesItem.SelectedProduct.Id);
-                    
-                    // 找到對應的庫存明細ID
-                    if (salesItem.SelectedWarehouse != null)
-                    {
-                        var stockDetail = salesItem.AvailableWarehouseLocations.FirstOrDefault(d => 
-                            d.WarehouseId == salesItem.SelectedWarehouse.Id && 
-                            d.WarehouseLocationId == salesItem.WarehouseLocationId);
-                        
-                        if (stockDetail != null)
-                        {
-                            salesItem.InventoryStockDetailId = stockDetail.Id;
-                            salesItem.CurrentStockQuantity = stockDetail.AvailableStock;
-                        }
-                    }
                 }
                 
                 SalesItems.Add(salesItem);
@@ -826,38 +930,6 @@ else
                 var detailTaxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
                 var systemTaxRate2 = await SystemParameterService.GetTaxRateAsync();
                 salesItem.TaxRate = detailTaxRate ?? salesItem.SelectedProduct?.TaxRate ?? systemTaxRate2;
-                
-                if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
-                {
-                    var warehouseId = GetPropertyValue<int?>(detail, WarehouseIdPropertyName);
-                    if (warehouseId.HasValue)
-                        salesItem.SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == warehouseId.Value);
-                }
-                
-                // 嘗試取得 WarehouseLocationId
-                var warehouseLocationId = GetPropertyValue<int?>(detail, "WarehouseLocationId");
-                if (warehouseLocationId.HasValue)
-                    salesItem.WarehouseLocationId = warehouseLocationId;
-                
-                // 載入該商品的可用倉庫位置清單
-                if (salesItem.SelectedProduct != null)
-                {
-                    salesItem.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(salesItem.SelectedProduct.Id);
-                    
-                    // 找到對應的庫存明細ID
-                    if (salesItem.SelectedWarehouse != null)
-                    {
-                        var stockDetail = salesItem.AvailableWarehouseLocations.FirstOrDefault(d => 
-                            d.WarehouseId == salesItem.SelectedWarehouse.Id && 
-                            d.WarehouseLocationId == salesItem.WarehouseLocationId);
-                        
-                        if (stockDetail != null)
-                        {
-                            salesItem.InventoryStockDetailId = stockDetail.Id;
-                            salesItem.CurrentStockQuantity = stockDetail.AvailableStock;
-                        }
-                    }
-                }
                 
                 SalesItems.Add(salesItem);
             }
@@ -905,12 +977,6 @@ else
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     SetPropertyValue(detail, SubtotalPropertyName, item.Subtotal);
                 
-                if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
-                    SetPropertyValue(detail, WarehouseIdPropertyName, item.SelectedWarehouse?.Id);
-                
-                // 更新倉庫位置ID
-                SetPropertyValue(detail, "WarehouseLocationId", item.WarehouseLocationId);
-                
                 // 更新稅率
                 SetPropertyValue(detail, "TaxRate", item.TaxRate);
                 
@@ -939,12 +1005,6 @@ else
                     
                 if (!string.IsNullOrEmpty(SubtotalPropertyName))
                     SetPropertyValue(detail, SubtotalPropertyName, item.Subtotal);
-                
-                if (!string.IsNullOrEmpty(WarehouseIdPropertyName))
-                    SetPropertyValue(detail, WarehouseIdPropertyName, item.SelectedWarehouse?.Id);
-                
-                // 設定倉庫位置ID
-                SetPropertyValue(detail, "WarehouseLocationId", item.WarehouseLocationId);
                 
                 // 設定稅率
                 SetPropertyValue(detail, "TaxRate", item.TaxRate);
@@ -1073,134 +1133,6 @@ else
             GetShowDropdown = (item) => ((SalesItem)item).ShowProductDropdown,
             SetShowDropdown = (item, show) => ((SalesItem)item).ShowProductDropdown = show,
             MaxDisplayItems = 20
-        });
-
-        // 倉庫 - 庫位選擇欄位（合併顯示，僅顯示有庫存的位置）
-        columns.Add(new InteractiveColumnDefinition
-            { 
-                Title = "倉庫 - 庫位", 
-                PropertyName = "",
-                ColumnType = InteractiveColumnType.Custom,
-                Width = "200px",
-                HideOnMobile = true,
-                Tooltip = "選擇出貨的倉庫和庫位（僅顯示有庫存的位置）。已有退貨或沖款記錄的商品將無法變更",
-                CustomTemplate = item => 
-                {
-                    var salesItem = (SalesItem)item;
-                    var hasReturnRecord = HasReturnRecord(salesItem);
-                    var hasPaymentRecord = HasPaymentRecord(salesItem);
-                    var isFieldReadOnly = IsReadOnly || hasReturnRecord || hasPaymentRecord;
-                    var selectedValue = salesItem.InventoryStockDetailId?.ToString() ?? "";
-                    var isDisabled = isFieldReadOnly || salesItem.SelectedProduct == null || !salesItem.AvailableWarehouseLocations.Any();
-                    
-                    // 組合 tooltip 訊息
-                    var tooltipMessages = new List<string>();
-                    if (hasReturnRecord)
-                        tooltipMessages.Add("此商品已有退貨記錄");
-                    if (hasPaymentRecord)
-                    {
-                        var receivedAmount = GetReceivedAmount(salesItem);
-                        tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
-                    }
-                    var title = tooltipMessages.Any()
-                        ? string.Join("；", tooltipMessages) + "，無法修改倉庫設定"
-                        : "";
-                    
-                    if (isFieldReadOnly && salesItem.SelectedWarehouse != null)
-                    {
-                        // 唯讀模式：顯示純文字
-                        var locationName = salesItem.WarehouseLocationId.HasValue 
-                            ? salesItem.AvailableWarehouseLocations
-                                .FirstOrDefault(d => d.Id == salesItem.InventoryStockDetailId)
-                                ?.WarehouseLocation?.Name ?? "預設位置"
-                            : "預設位置";
-                        var displayText = $"{salesItem.SelectedWarehouse.Name} - {locationName}";
-                        
-                        return @<span class="text-muted" title="@title">
-                            @displayText
-                        </span>;
-                    }
-                    else
-                    {
-                        // 可編輯模式：顯示下拉選單
-                        return @<select class="form-select form-select-sm"
-                                       value="@selectedValue"
-                                       disabled="@isDisabled"
-                                       @onchange="@(async (e) => await OnWarehouseLocationChanged(salesItem, e.Value))">
-                            <option value="">請選擇</option>
-                            @foreach (var stockDetail in salesItem.AvailableWarehouseLocations)
-                            {
-                                var warehouseName = stockDetail.Warehouse?.Name ?? "未知倉庫";
-                                var locationName = stockDetail.WarehouseLocation?.Name ?? "預設位置";
-                                var displayText = $"{warehouseName} - {locationName} (可用: {stockDetail.AvailableStock})";
-                                <option value="@stockDetail.Id">@displayText</option>
-                            }
-                        </select>;
-                    }
-                }
-        });
-        
-        // 庫存量欄位 (只讀顯示，不儲存到資料庫，加入排程狀態提示)
-        columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = "庫存", 
-            PropertyName = "",
-            ColumnType = InteractiveColumnType.Custom,
-            Width = "120px",
-            HideOnMobile = true,
-            Tooltip = "選擇倉庫後顯示該商品的即時可用庫存量（唯讀），並標示是否需要排程生產",
-            CustomTemplate = item => 
-            {
-                var salesItem = (SalesItem)item;
-                
-                // 只有當選擇了商品和倉庫時才顯示庫存量
-                if (salesItem.SelectedProduct == null || salesItem.SelectedWarehouse == null)
-                {
-                    return @<span class="text-muted">-</span>;
-                }
-                
-                // 顯示庫存量（有可能尚未載入）
-                if (salesItem.CurrentStockQuantity.HasValue)
-                {
-                    var stockQty = salesItem.CurrentStockQuantity.Value;
-                    var orderQty = salesItem.OrderQuantity;
-                    var canSchedule = salesItem.SelectedProduct.ProcurementType == ProcurementType.Manufactured;
-                    var isStockEnough = stockQty >= orderQty;
-                    
-                    // 顏色邏輯：庫存足夠=綠色，不足=紅色
-                    var textColor = isStockEnough ? "text-success" : "text-danger";
-                    
-                    return @<div class="d-flex align-items-center gap-2">
-                        <span class="@textColor fw-bold" title="即時可用庫存">
-                            @stockQty.ToString("N0")
-                        </span>
-                        
-                        @* 可排程商品才顯示徽章 *@
-                        @if (canSchedule)
-                        {
-                            if (isStockEnough)
-                            {
-                                <span class="badge bg-success" style="font-size: 0.65rem" title="庫存充足，可直接出貨">
-                                    <i class="bi bi-check-circle"></i>
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem" title="庫存不足，需要排程生產">
-                                    <i class="bi bi-calendar-event"></i>
-                                </span>
-                            }
-                        }
-                    </div>;
-                }
-                else
-                {
-                    // 載入中
-                    return @<span class="text-muted">
-                        <i class="bi bi-hourglass-split"></i>
-                    </span>;
-                }
-            }
         });
         
         // 訂單數量欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
@@ -1560,7 +1492,6 @@ else
         public decimal Subtotal { get; set; } = 0;
         public decimal TaxRate { get; set; } = 0;
         public string DetailRemarks { get; set; } = string.Empty;
-        public Warehouse? SelectedWarehouse { get; set; }
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
         // === 報價單來源相關屬性 ===
@@ -1569,29 +1500,24 @@ else
         public bool? IsQuotationApproved { get; set; }
         
         /// <summary>
-        /// 即時庫存量（不儲存到資料庫）
-        /// </summary>
-        public int? CurrentStockQuantity { get; set; }
-        
-        /// <summary>
-        /// 庫存明細ID（用於選擇倉庫-庫位）
-        /// </summary>
-        public int? InventoryStockDetailId { get; set; }
-        
-        /// <summary>
-        /// 倉庫位置ID
-        /// </summary>
-        public int? WarehouseLocationId { get; set; }
-        
-        /// <summary>
-        /// 可用的倉庫位置清單（僅顯示有庫存的位置）
-        /// </summary>
-        public List<InventoryStockDetail> AvailableWarehouseLocations { get; set; } = new();
-        
-        /// <summary>
         /// 自訂的 BOM 組合明細（用於暫存編輯結果）
         /// </summary>
         public List<SalesOrderCompositionDetail>? CustomCompositionDetails { get; set; }
+        
+        /// <summary>
+        /// 選擇的配方 ID（null 表示自定義模式）
+        /// </summary>
+        public int? SelectedCompositionId { get; set; }
+        
+        /// <summary>
+        /// 是否為自定義組合模式
+        /// </summary>
+        public bool IsCustomComposition { get; set; }
+        
+        /// <summary>
+        /// 計算屬性：是否已有 BOM 組合資料
+        /// </summary>
+        public bool HasCompositionData => CustomCompositionDetails?.Any() == true;
         
         // === SearchableSelect 支援屬性 ===
         public string ProductSearchValue { get; set; } = string.Empty;
@@ -1703,11 +1629,6 @@ else
             item.ProductSearchValue = string.Empty;
             item.ShowProductDropdown = false;
             item.ProductSelectedIndex = -1;
-            item.CurrentStockQuantity = null;
-            item.AvailableWarehouseLocations = new List<InventoryStockDetail>();
-            item.InventoryStockDetailId = null;
-            item.SelectedWarehouse = null;
-            item.WarehouseLocationId = null;
             await NotifyDetailsChanged();
             return;
         }
@@ -1719,15 +1640,6 @@ else
         
         // 自動帶入商品稅率（優先使用商品稅率，沒有則使用系統預設值）
         item.TaxRate = selectedProduct.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
-        
-        // 載入該商品的可用倉庫位置清單（僅有庫存的位置）
-        item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(selectedProduct.Id);
-        
-        // 重置倉庫選擇
-        item.InventoryStockDetailId = null;
-        item.SelectedWarehouse = null;
-        item.WarehouseLocationId = null;
-        item.CurrentStockQuantity = null;
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -1763,28 +1675,11 @@ else
         if (string.IsNullOrEmpty(productIdStr))
         {
             item.SelectedProduct = null;
-            item.CurrentStockQuantity = null; // 清空庫存量
-            item.AvailableWarehouseLocations = new List<InventoryStockDetail>();
-            item.InventoryStockDetailId = null;
-            item.SelectedWarehouse = null;
-            item.WarehouseLocationId = null;
         }
         else if (int.TryParse(productIdStr, out var productId))
         {
             var product = GetAvailableProducts().FirstOrDefault(p => p.Id == productId);
             item.SelectedProduct = product;
-            
-            // 載入該商品的可用倉庫位置清單（僅有庫存的位置）
-            if (product != null)
-            {
-                item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(product.Id);
-                
-                // 重置倉庫選擇
-                item.InventoryStockDetailId = null;
-                item.SelectedWarehouse = null;
-                item.WarehouseLocationId = null;
-                item.CurrentStockQuantity = null;
-            }
         }
         
         await NotifyDetailsChanged();
@@ -1926,44 +1821,6 @@ else
         };
     }
 
-    private async Task OnWarehouseLocationChanged(SalesItem item, object? value)
-    {
-        // 檢查是否可以修改
-        if (!CanDeleteItem(item, out string reason))
-        {
-            var friendlyMessage = HasReturnRecord(item)
-                ? "此商品已有退貨記錄，無法修改倉庫設定"
-                : "此商品已有沖款記錄，無法修改倉庫設定";
-            
-            await NotificationService.ShowWarningAsync(friendlyMessage, "操作限制");
-            return;
-        }
-        
-        if (value == null || !int.TryParse(value.ToString(), out int detailId))
-        {
-            item.InventoryStockDetailId = null;
-            item.SelectedWarehouse = null;
-            item.WarehouseLocationId = null;
-            item.CurrentStockQuantity = null;
-        }
-        else
-        {
-            item.InventoryStockDetailId = detailId;
-            
-            // 從可用位置清單中找到對應的明細
-            var selectedDetail = item.AvailableWarehouseLocations.FirstOrDefault(d => d.Id == detailId);
-            if (selectedDetail != null)
-            {
-                item.SelectedWarehouse = selectedDetail.Warehouse;
-                item.WarehouseLocationId = selectedDetail.WarehouseLocationId;
-                item.CurrentStockQuantity = selectedDetail.AvailableStock;
-            }
-        }
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
     private async Task OnRemarksInput(SalesItem item, string? value)
     {
         item.DetailRemarks = value ?? string.Empty;
@@ -2019,52 +1876,6 @@ else
 
     // ===== 業務邏輯方法 =====
     
-    /// <summary>
-    /// 載入指定項目的庫存量
-    /// </summary>
-    private async Task LoadStockQuantityAsync(SalesItem item)
-    {
-        // 檢查是否有選擇商品和倉庫
-        if (item.SelectedProduct == null || item.SelectedWarehouse == null)
-        {
-            item.CurrentStockQuantity = null;
-            return;
-        }
-        
-        // 查詢庫存量
-        var stockQuantity = await InventoryStockService.GetTotalAvailableStockByWarehouseAsync(
-            item.SelectedProduct.Id, 
-            item.SelectedWarehouse.Id
-        );
-        
-        item.CurrentStockQuantity = stockQuantity;
-    }
-    
-    /// <summary>
-    /// 載入所有明細項目的庫存量
-    /// </summary>
-    private async Task LoadAllStockQuantitiesAsync()
-    {
-        var tasks = new List<Task>();
-        
-        foreach (var item in SalesItems.Where(x => x.SelectedProduct != null))
-        {
-            if (item.SelectedProduct != null && item.SelectedWarehouse != null)
-            {
-                tasks.Add(LoadStockQuantityAsync(item));
-            }
-        }
-        
-        if (tasks.Any())
-        {
-            await Task.WhenAll(tasks);
-            StateHasChanged();
-        }
-    }
-    
-    /// <summary>
-    /// 統一設定所有明細項目的倉庫（只處理未鎖定的明細）
-    /// </summary>
     /// <summary>
     /// 清空所有銷貨明細（只移除未鎖定的明細，保留已鎖定的）
     /// </summary>
@@ -2212,18 +2023,9 @@ else
                 // 計算小計
                 salesItem.CalculateSubtotal();
                 
-                // 載入該商品的可用倉庫位置清單
-                if (salesItem.SelectedProduct != null)
-                {
-                    salesItem.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(salesItem.SelectedProduct.Id);
-                }
-                
                 SalesItems.Add(salesItem);
                 loadedCount++;
             }
-            
-            // 載入所有項目的庫存量
-            await LoadAllStockQuantitiesAsync();
             
             await NotifyDetailsChanged();
             
@@ -2282,9 +2084,7 @@ else
                 OrderQuantity = detail.OrderQuantity,
                 UnitPrice = detail.UnitPrice,
                 TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
-                DetailRemarks = detail.Remarks ?? "",
-                SelectedWarehouse = detail.Warehouse ?? (detail.WarehouseId.HasValue ? 
-                    Warehouses.FirstOrDefault(w => w.Id == detail.WarehouseId.Value) : null)
+                DetailRemarks = detail.Remarks ?? ""
             };
             
             // 初始化 ProductSearchValue
@@ -2296,9 +2096,6 @@ else
             salesItem.CalculateSubtotal();
             SalesItems.Add(salesItem);
         }
-        
-        // 載入所有項目的庫存量
-        await LoadAllStockQuantitiesAsync();
         
         await NotifyDetailsChanged();
         await NotificationService.ShowSuccessAsync($"已載入 {lastSalesDetails.Count} 項商品作為參考", "智能下單完成");
@@ -2372,11 +2169,15 @@ else
                             Remarks = qc.Remarks,
                             Status = qc.Status
                         }).ToList();
+                        
+                        // 🔑 設定 BOM 相關狀態（重要：讓 Modal 知道這是自訂組合）
+                        salesItem.IsCustomComposition = true;
+                        salesItem.SelectedCompositionId = null; // 自訂組合沒有配方 ID
                     }
                 }
                 catch
                 {
-                    // BOM 載入失敗不影響主流程，僅記錄錯誤
+                    // BOM 載入失敗不影響主流程
                 }
                 
                 // 初始化 ProductSearchValue
@@ -2387,12 +2188,6 @@ else
                 
                 // 計算小計
                 salesItem.CalculateSubtotal();
-                
-                // 載入該商品的可用倉庫位置清單
-                if (salesItem.SelectedProduct != null)
-                {
-                    salesItem.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(salesItem.SelectedProduct.Id);
-                }
                 
                 SalesItems.Add(salesItem);
             }

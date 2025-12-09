@@ -1,11 +1,13 @@
-@* BOM 組合編輯 Modal - 編輯報價單明細的 BOM 組成（客製化） *@
+@* BOM 組合編輯 Modal - 泛用型 BOM 組成編輯器（支援報價單和銷貨訂單） *@
+@typeparam TCompositionDetail where TCompositionDetail : BaseEntity, new()
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Components.Shared.GenericComponent.Button
 @using ERPCore2.Data.Entities
-@inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject IProductService ProductService
 @inject IUnitService UnitService
+@inject IProductCompositionService ProductCompositionService
 @inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
@@ -24,26 +26,31 @@
     // ===== 參數定義 =====
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? QuotationDetailId { get; set; }
+    [Parameter] public int? DetailId { get; set; }  // QuotationDetailId 或 SalesOrderDetailId
     [Parameter] public string ProductName { get; set; } = string.Empty;
     [Parameter] public int? ProductId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
-    [Parameter] public EventCallback<List<QuotationCompositionDetail>> OnSave { get; set; }
+    [Parameter] public EventCallback<List<TCompositionDetail>> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
-    [Parameter] public Func<List<QuotationCompositionDetail>?>? OnRequestCachedData { get; set; }
+    [Parameter] public Func<List<TCompositionDetail>?>? OnRequestCachedData { get; set; }
     [Parameter] public int? SelectedCompositionId { get; set; }  // 選中的配方 ID
     [Parameter] public bool IsCustomMode { get; set; } = false;  // 是否為自定義模式
     [Parameter] public bool IsReselecting { get; set; } = false;  // 是否為重新選擇模式（跳過快取和資料庫查詢）
     [Parameter] public EventCallback OnReselect { get; set; }  // 重新選擇配方事件
+    
+    // ===== 泛型服務委派參數 =====
+    [Parameter] public Func<int, Task<List<TCompositionDetail>>> GetCompositionsByDetailId { get; set; } = null!;
+    [Parameter] public Func<int, int, Task<List<TCompositionDetail>>> CopyFromComposition { get; set; } = null!;
 
     // ===== 私有欄位 =====
     private bool isLoading = false;
     private bool _dataLoadCompleted = true;  // 資料載入完成標記（預設 true 保持向下兼容）
     private bool _previousIsVisible = false;  // 追蹤上一次的 IsVisible 狀態
-    private List<QuotationCompositionDetail> compositionDetails = new();
+    private bool _isSaving = false;  // 避免重複觸發自動儲存
+    private List<TCompositionDetail> compositionDetails = new();
     private List<ERPCore2.Data.Entities.Product> availableProducts = new();
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
-    private InteractiveTableComponent<QuotationCompositionDetail>? tableComponent;
+    private InteractiveTableComponent<TCompositionDetail>? tableComponent;
     
     // ===== 自定義模式相關 =====
     private string componentSearchTerm = string.Empty;
@@ -54,8 +61,21 @@
     // ===== 生命週期 =====
     protected override async Task OnParametersSetAsync()
     {
+        // 檢測 Modal 從顯示變為隱藏（關閉時自動儲存）
+        if (_previousIsVisible && !IsVisible && !_isSaving)
+        {
+            // 只在非唯讀模式下自動儲存
+            if (!IsReadOnly)
+            {
+                _isSaving = true;
+                await AutoSaveOnClose();
+                _isSaving = false;
+            }
+        }
+        
         // 只在 Modal 從隱藏變為顯示時載入資料
-        if (IsVisible && !_previousIsVisible && QuotationDetailId.HasValue)
+        //  修改：即使 DetailId 為 null 也載入（新增明細依賴快取資料）
+        if (IsVisible && !_previousIsVisible)
         {
             await LoadDataAsync();
         }
@@ -81,21 +101,33 @@
                 if (SelectedCompositionId.HasValue)
                 {
                     // 從新選擇的配方複製
-                    compositionDetails = await QuotationCompositionDetailService.CopyFromCompositionAsync(
-                        QuotationDetailId!.Value,
+                    compositionDetails = await CopyFromComposition(
+                        DetailId!.Value,
                         SelectedCompositionId.Value
                     );
                     
-                    // 手動填充導航屬性
+                    // 手動填充導航屬性 - 使用反射
                     foreach (var detail in compositionDetails)
                     {
-                        if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                        var componentProductIdProp = detail.GetType().GetProperty("ComponentProductId");
+                        var componentProductProp = detail.GetType().GetProperty("ComponentProduct");
+                        var unitIdProp = detail.GetType().GetProperty("UnitId");
+                        var unitProp = detail.GetType().GetProperty("Unit");
+                        
+                        var componentProductId = (int)(componentProductIdProp?.GetValue(detail) ?? 0);
+                        var componentProduct = componentProductProp?.GetValue(detail);
+                        var unitId = unitIdProp?.GetValue(detail) as int?;
+                        var unit = unitProp?.GetValue(detail);
+                        
+                        if (componentProductId > 0 && componentProduct == null)
                         {
-                            detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                            var product = availableProducts.FirstOrDefault(p => p.Id == componentProductId);
+                            componentProductProp?.SetValue(detail, product);
                         }
-                        if (detail.UnitId.HasValue && detail.Unit == null)
+                        if (unitId.HasValue && unit == null)
                         {
-                            detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                            var foundUnit = availableUnits.FirstOrDefault(u => u.Id == unitId.Value);
+                            unitProp?.SetValue(detail, foundUnit);
                         }
                     }
                     
@@ -104,7 +136,7 @@
                 else if (IsCustomMode)
                 {
                     // 自定義模式 - 顯示空的組件選擇器
-                    compositionDetails = new List<QuotationCompositionDetail>();
+                    compositionDetails = new List<TCompositionDetail>();
                     showComponentSelector = true;
                     return;
                 }
@@ -114,20 +146,33 @@
             if (OnRequestCachedData != null)
             {
                 var cachedData = OnRequestCachedData();
+                
                 if (cachedData?.Any() == true)
                 {
                     compositionDetails = cachedData;
                     
-                    // 手動填充導航屬性
+                    // 手動填充導航屬性 - 使用反射
                     foreach (var detail in compositionDetails)
                     {
-                        if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                        var componentProductIdProp = detail.GetType().GetProperty("ComponentProductId");
+                        var componentProductProp = detail.GetType().GetProperty("ComponentProduct");
+                        var unitIdProp = detail.GetType().GetProperty("UnitId");
+                        var unitProp = detail.GetType().GetProperty("Unit");
+                        
+                        var componentProductId = (int)(componentProductIdProp?.GetValue(detail) ?? 0);
+                        var componentProduct = componentProductProp?.GetValue(detail);
+                        var unitId = unitIdProp?.GetValue(detail) as int?;
+                        var unit = unitProp?.GetValue(detail);
+                        
+                        if (componentProductId > 0 && componentProduct == null)
                         {
-                            detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                            var product = availableProducts.FirstOrDefault(p => p.Id == componentProductId);
+                            componentProductProp?.SetValue(detail, product);
                         }
-                        if (detail.UnitId.HasValue && detail.Unit == null)
+                        if (unitId.HasValue && unit == null)
                         {
-                            detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                            var foundUnit = availableUnits.FirstOrDefault(u => u.Id == unitId.Value);
+                            unitProp?.SetValue(detail, foundUnit);
                         }
                     }
                     
@@ -136,71 +181,120 @@
                 }
             }
 
-            // 沒有快取資料時才從資料庫載入
-            var existingDetails = await QuotationCompositionDetailService.GetByQuotationDetailIdAsync(QuotationDetailId!.Value);
+            //  沒有快取資料時才從資料庫載入（但只在 DetailId 存在時）
+            if (DetailId.HasValue)
+            {
+                var existingDetails = await GetCompositionsByDetailId(DetailId.Value);
 
-            if (existingDetails.Any())
-            {
-                // 已有自訂的組合明細
-                compositionDetails = existingDetails;
-            }
-            else if (SelectedCompositionId.HasValue)
-            {
-                // 從指定的配方複製
-                compositionDetails = await QuotationCompositionDetailService.CopyFromCompositionAsync(
-                    QuotationDetailId!.Value,
-                    SelectedCompositionId.Value
-                );
-                
-                //  手動填充導航屬性（因為 CopyFromCompositionAsync 只複製 ID）
-                foreach (var detail in compositionDetails)
+                if (existingDetails.Any())
                 {
-                    if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                    // 已有自訂的組合明細
+                    compositionDetails = existingDetails;
+                }
+                else if (SelectedCompositionId.HasValue)
+                {
+                    // 從指定的配方複製
+                    compositionDetails = await CopyFromComposition(
+                        DetailId.Value,
+                        SelectedCompositionId.Value
+                    );
+                    
+                    //  手動填充導航屬性（因為 CopyFromCompositionAsync 只複製 ID）- 使用反射
+                    foreach (var detail in compositionDetails)
                     {
-                        detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
-                    }
-                    if (detail.UnitId.HasValue && detail.Unit == null)
-                    {
-                        detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                        var componentProductIdProp = detail.GetType().GetProperty("ComponentProductId");
+                        var componentProductProp = detail.GetType().GetProperty("ComponentProduct");
+                        var unitIdProp = detail.GetType().GetProperty("UnitId");
+                        var unitProp = detail.GetType().GetProperty("Unit");
+                        
+                        var componentProductId = (int)(componentProductIdProp?.GetValue(detail) ?? 0);
+                        var componentProduct = componentProductProp?.GetValue(detail);
+                        var unitId = unitIdProp?.GetValue(detail) as int?;
+                        var unit = unitProp?.GetValue(detail);
+                        
+                        if (componentProductId > 0 && componentProduct == null)
+                        {
+                            var product = availableProducts.FirstOrDefault(p => p.Id == componentProductId);
+                            componentProductProp?.SetValue(detail, product);
+                        }
+                        if (unitId.HasValue && unit == null)
+                        {
+                            var foundUnit = availableUnits.FirstOrDefault(u => u.Id == unitId.Value);
+                            unitProp?.SetValue(detail, foundUnit);
+                        }
                     }
                 }
-            }
-            else if (IsCustomMode)
-            {
-                // 自定義模式 - 顯示組件選擇器
-                compositionDetails = new List<QuotationCompositionDetail>();
-                showComponentSelector = true;
-            }
-            else if (ProductId.HasValue)
-            {
-                // 向後相容：從商品合成表複製（使用最新的）
-                compositionDetails = await QuotationCompositionDetailService.CopyFromProductCompositionAsync(
-                    QuotationDetailId!.Value,
-                    ProductId.Value
-                );
-                
-                //  手動填充導航屬性（因為 CopyFromProductCompositionAsync 只複製 ID）
-                foreach (var detail in compositionDetails)
+                else if (IsCustomMode)
                 {
-                    if (detail.ComponentProductId > 0 && detail.ComponentProduct == null)
+                    // 自定義模式 - 顯示組件選擇器
+                    compositionDetails = new List<TCompositionDetail>();
+                    showComponentSelector = true;
+                }
+                else if (ProductId.HasValue)
+                {
+                    // 向後相容：從商品合成表複製預設配方（使用最新的）
+                    var defaultCompositions = await ProductCompositionService.GetCompositionsByProductIdAsync(ProductId.Value);
+                    if (defaultCompositions.Any())
                     {
-                        detail.ComponentProduct = availableProducts.FirstOrDefault(p => p.Id == detail.ComponentProductId)!;
+                        // 使用第一個配方（最新的）
+                        var defaultComposition = defaultCompositions.First();
+                        compositionDetails = await CopyFromComposition(
+                            DetailId.Value,
+                            defaultComposition.Id
+                        );
                     }
-                    if (detail.UnitId.HasValue && detail.Unit == null)
+                    else
                     {
-                        detail.Unit = availableUnits.FirstOrDefault(u => u.Id == detail.UnitId.Value);
+                        compositionDetails = new List<TCompositionDetail>();
                     }
+                    
+                    //  手動填充導航屬性（因為 CopyFromProductCompositionAsync 只複製 ID）- 使用反射
+                    foreach (var detail in compositionDetails)
+                    {
+                        var componentProductIdProp = detail.GetType().GetProperty("ComponentProductId");
+                        var componentProductProp = detail.GetType().GetProperty("ComponentProduct");
+                        var unitIdProp = detail.GetType().GetProperty("UnitId");
+                        var unitProp = detail.GetType().GetProperty("Unit");
+                    
+                    var componentProductId = (int)(componentProductIdProp?.GetValue(detail) ?? 0);
+                    var componentProduct = componentProductProp?.GetValue(detail);
+                    var unitId = unitIdProp?.GetValue(detail) as int?;
+                    var unit = unitProp?.GetValue(detail);
+                    
+                    if (componentProductId > 0 && componentProduct == null)
+                    {
+                        var product = availableProducts.FirstOrDefault(p => p.Id == componentProductId);
+                        componentProductProp?.SetValue(detail, product);
+                    }
+                    if (unitId.HasValue && unit == null)
+                    {
+                        var foundUnit = availableUnits.FirstOrDefault(u => u.Id == unitId.Value);
+                        unitProp?.SetValue(detail, foundUnit);
+                    }
+                }
                 }
             }
             else
             {
-                compositionDetails = new List<QuotationCompositionDetail>();
+                //  DetailId 為 null 的情況（新增明細，還沒儲存到資料庫）
+                // 這種情況下只能依賴快取資料或進入自定義模式
+                if (IsCustomMode)
+                {
+                    // 自定義模式 - 顯示組件選擇器
+                    compositionDetails = new List<TCompositionDetail>();
+                    showComponentSelector = true;
+                }
+                else
+                {
+                    // 沒有快取且不是自定義模式，顯示空列表
+                    compositionDetails = new List<TCompositionDetail>();
+                }
             }
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入失敗：{ex.Message}");
-            compositionDetails = new List<QuotationCompositionDetail>();
+            compositionDetails = new List<TCompositionDetail>();
         }
         finally
         {
@@ -232,11 +326,6 @@
                                               Size="ButtonSize.Small"
                                               OnClick="@HandleReselect" />
                     }
-                    
-                    <GenericButtonComponent Text="儲存"
-                                          Variant="ButtonVariant.Green"
-                                          Size="ButtonSize.Small"
-                                          OnClick="@HandleSave" />
                 }
             </div>
         </div>
@@ -293,7 +382,7 @@
                     }
                     
                     <!-- 操作按鈕 -->
-                    <div class="mt-3 d-flex gap-2">
+                    <div class="mt-3 d-flex gap-2 justify-content-end">
                         <GenericButtonComponent Text="載入"
                                               Variant="ButtonVariant.Green"
                                               Size="ButtonSize.Small"
@@ -339,7 +428,7 @@
             
             @* 組件明細表格 *@
             <InteractiveTableComponent @ref="tableComponent"
-                                      TItem="QuotationCompositionDetail"
+                                      TItem="TCompositionDetail"
                                       Items="@compositionDetails"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
@@ -347,14 +436,16 @@
                                       ShowActions="false"
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="true"
+                                      ActionsColumnWidth = "60px"
                                       OnItemDelete="@HandleItemDelete"
-                                      EnableAutoEmptyRow="@(!IsCustomMode)"
+                                      EnableAutoEmptyRow="false"
                                       CreateEmptyItem="@CreateEmptyItem"
                                       DataLoadCompleted="@_dataLoadCompleted"
                                       IsStriped="true"
                                       IsHoverable="true"
                                       IsBordered="true"
                                       EmptyMessage="@GetEmptyMessage()" />
+            
         </div>
     };
 
@@ -380,24 +471,26 @@
             OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, (args) =>
             {
                 var (item, value) = args;
-                if (item is QuotationCompositionDetail detail && value != null)
+                if (item is TCompositionDetail detail && value != null)
                 {
                     var productId = Convert.ToInt32(value);
                     var product = availableProducts.FirstOrDefault(p => p.Id == productId);
                     
-                    if (product != null)
+                    // 使用反射設定屬性（因為泛型約束無法直接存取特定屬性）
+                    detail.GetType().GetProperty("ComponentProductId")?.SetValue(detail, product?.Id ?? 0);
+                    detail.GetType().GetProperty("ComponentProduct")?.SetValue(detail, product);
+                    detail.GetType().GetProperty("UnitId")?.SetValue(detail, product?.UnitId);
+                    
+                    var quantityProp = detail.GetType().GetProperty("Quantity");
+                    var currentQuantity = (decimal)(quantityProp?.GetValue(detail) ?? 0m);
+                    
+                    //  只有當品項有資料時才填入數量預設值
+                    if (currentQuantity == 0)
                     {
-                        detail.ComponentProduct = product;
-                        detail.UnitId = product.UnitId;
-                        
-                        //  只有當品項有資料時才填入數量預設值
-                        if (detail.Quantity == 0)
-                        {
-                            detail.Quantity = 1;
-                        }
-                        
-                        StateHasChanged();
+                        quantityProp?.SetValue(detail, 1m);
                     }
+                    
+                    StateHasChanged();
                 }
             })
         });
@@ -412,7 +505,7 @@
             MinValue = 0.01m,
             NumberFormat = "N2",
             TextAlign = "right",
-            ExcludeFromEmptyCheck = true  // 🔑 數量欄位不參與空行判斷
+            ExcludeFromEmptyCheck = true  //  數量欄位不參與空行判斷
         });
 
         // 單位
@@ -429,17 +522,6 @@
             }).ToList()
         });
 
-        // 組件成本
-        columns.Add(new InteractiveColumnDefinition
-        {
-            Title = "組件成本",
-            PropertyName = "ComponentCost",
-            ColumnType = InteractiveColumnType.Number,
-            Width = "15%",
-            NumberFormat = "N2",
-            TextAlign = "right"
-        });
-
         // 備註
         columns.Add(new InteractiveColumnDefinition
         {
@@ -452,63 +534,82 @@
         return columns;
     }
 
-    private QuotationCompositionDetail CreateEmptyItem()
+    private TCompositionDetail CreateEmptyItem()
     {
         //  返回完全空的物件，不設定預設值（避免被誤判為有值）
-        return new QuotationCompositionDetail
-        {
-            QuotationDetailId = QuotationDetailId ?? 0
-            // Quantity 不設定預設值，保持 null 或 0（依據資料模型）
-        };
+        var item = new TCompositionDetail();
+        
+        // 使用反射設定 DetailId（QuotationDetailId 或 SalesOrderDetailId）
+        var detailIdProp = typeof(TCompositionDetail).GetProperty("QuotationDetailId") 
+                           ?? typeof(TCompositionDetail).GetProperty("SalesOrderDetailId");
+        detailIdProp?.SetValue(item, DetailId ?? 0);
+        
+        return item;
     }
 
     // ===== 事件處理 =====
-    private void HandleItemDelete(QuotationCompositionDetail item)
+    private void HandleItemDelete(TCompositionDetail item)
     {
         compositionDetails.Remove(item);
         StateHasChanged();
     }
-
-    private async Task HandleSave()
+    
+    /// <summary>
+    /// 關閉時自動儲存（將資料回傳給父層）
+    /// </summary>
+    private async Task AutoSaveOnClose()
     {
         try
         {
-            // 過濾掉空行（沒有選擇組件的）
+            // 過濾掉空行（沒有選擇組件的）- 使用反射檢查屬性
             var validDetails = compositionDetails
-                .Where(x => x.ComponentProductId > 0 && x.Quantity > 0)
+                .Where(x => {
+                    var componentProductIdProp = x.GetType().GetProperty("ComponentProductId");
+                    var quantityProp = x.GetType().GetProperty("Quantity");
+                    var componentProductId = (int)(componentProductIdProp?.GetValue(x) ?? 0);
+                    var quantity = (decimal)(quantityProp?.GetValue(x) ?? 0m);
+                    return componentProductId > 0 && quantity > 0;
+                })
                 .ToList();
 
-            // 檢查是否至少有一個明細
-            if (!validDetails.Any())
-            {
-                await NotificationService.ShowWarningAsync("請至少新增一個組件明細");
-                return;
-            }
-
+            // 如果沒有任何明細，也要通知父層（清空 BOM）
             // 檢查是否有重複的組件
-            var duplicates = validDetails
-                .GroupBy(x => x.ComponentProductId)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.First().ComponentProduct?.Name)
-                .ToList();
-
-            if (duplicates.Any())
+            if (validDetails.Any())
             {
-                await NotificationService.ShowWarningAsync($"組件重複：{string.Join("、", duplicates)}");
-                return;
+                var duplicates = validDetails
+                    .GroupBy(x => {
+                        var prop = x.GetType().GetProperty("ComponentProductId");
+                        return (int)(prop?.GetValue(x) ?? 0);
+                    })
+                    .Where(g => g.Count() > 1)
+                    .Select(g => {
+                        var first = g.First();
+                        var productProp = first.GetType().GetProperty("ComponentProduct");
+                        var product = productProp?.GetValue(first) as Product;
+                        return product?.Name ?? "未知組件";
+                    })
+                    .ToList();
+
+                if (duplicates.Any())
+                {
+                    await NotificationService.ShowWarningAsync($"組件重複：{string.Join("、", duplicates)}，請修正後再關閉");
+                    // 阻止關閉 Modal（重新打開）
+                    await IsVisibleChanged.InvokeAsync(true);
+                    return;
+                }
             }
 
-            // 儲存
+            // 回傳資料給父層（無論是否有明細都要回傳）
             if (OnSave.HasDelegate)
             {
                 await OnSave.InvokeAsync(validDetails);
             }
-
-            await CloseModal();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+            // 發生錯誤時重新打開 Modal
+            await IsVisibleChanged.InvokeAsync(true);
         }
     }
 
@@ -591,10 +692,14 @@
     /// </summary>
     private void OpenComponentSelector()
     {
-        // 將已存在於明細中的組件 ID 加入暫存列表
+        // 將已存在於明細中的組件 ID 加入暫存列表 - 使用反射
         pendingComponentIds = compositionDetails
-            .Where(d => d.ComponentProductId > 0)
-            .Select(d => d.ComponentProductId)
+            .Select(d => 
+            {
+                var componentProductIdProp = d.GetType().GetProperty("ComponentProductId");
+                return (int)(componentProductIdProp?.GetValue(d) ?? 0);
+            })
+            .Where(id => id > 0)
             .ToHashSet();
         showComponentSelector = true;
         StateHasChanged();
@@ -607,31 +712,47 @@
     {
         // 移除不在 pendingComponentIds 中的現有明細
         var toRemove = compositionDetails
-            .Where(d => !pendingComponentIds.Contains(d.ComponentProductId))
+            .Where(d => {
+                var prop = d.GetType().GetProperty("ComponentProductId");
+                var id = (int)(prop?.GetValue(d) ?? 0);
+                return !pendingComponentIds.Contains(id);
+            })
             .ToList();
         foreach (var detail in toRemove)
         {
+            var prop = detail.GetType().GetProperty("ComponentProductId");
+            var id = (int)(prop?.GetValue(detail) ?? 0);
             compositionDetails.Remove(detail);
-            selectedComponentIds.Remove(detail.ComponentProductId);
+            selectedComponentIds.Remove(id);
         }
         
         // 新增 pendingComponentIds 中但不在 compositionDetails 的組件
         foreach (var productId in pendingComponentIds)
         {
-            if (!compositionDetails.Any(d => d.ComponentProductId == productId))
+            var exists = compositionDetails.Any(d => {
+                var prop = d.GetType().GetProperty("ComponentProductId");
+                var id = (int)(prop?.GetValue(d) ?? 0);
+                return id == productId;
+            });
+            
+            if (!exists)
             {
                 var product = availableProducts.FirstOrDefault(p => p.Id == productId);
                 if (product != null)
                 {
-                    var newDetail = new QuotationCompositionDetail
-                    {
-                        QuotationDetailId = QuotationDetailId ?? 0,
-                        ComponentProductId = product.Id,
-                        ComponentProduct = product,
-                        Quantity = 1,
-                        UnitId = product.UnitId,
-                        Unit = product.Unit
-                    };
+                    var newDetail = new TCompositionDetail();
+                    
+                    // 使用反射設定屬性
+                    var detailIdProp = newDetail.GetType().GetProperty("QuotationDetailId") 
+                                       ?? newDetail.GetType().GetProperty("SalesOrderDetailId");
+                    detailIdProp?.SetValue(newDetail, DetailId ?? 0);
+                    
+                    newDetail.GetType().GetProperty("ComponentProductId")?.SetValue(newDetail, product.Id);
+                    newDetail.GetType().GetProperty("ComponentProduct")?.SetValue(newDetail, product);
+                    newDetail.GetType().GetProperty("Quantity")?.SetValue(newDetail, 1m);
+                    newDetail.GetType().GetProperty("UnitId")?.SetValue(newDetail, product.UnitId);
+                    newDetail.GetType().GetProperty("Unit")?.SetValue(newDetail, product.Unit);
+                    
                     compositionDetails.Add(newDetail);
                     selectedComponentIds.Add(product.Id);
                 }
@@ -661,5 +782,38 @@
             return "請點擊上方「新增組件」按鈕選擇要加入的組件";
         }
         return "尚未新增組件";
+    }
+    
+    /// <summary>
+    /// 清除所有明細
+    /// </summary>
+    private async Task ClearAllDetails()
+    {
+        if (!compositionDetails.Any())
+        {
+            return;
+        }
+        
+        // 顯示確認對話框
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "確定要清除所有明細嗎？");
+        
+        if (confirmed)
+        {
+            compositionDetails.Clear();
+            
+            // 重置自定義模式的相關狀態
+            if (IsCustomMode)
+            {
+                selectedComponentIds.Clear();
+                pendingComponentIds.Clear();
+            }
+            
+            // 刷新表格空行
+            tableComponent?.RefreshEmptyRow();
+            
+            StateHasChanged();
+            
+            await NotificationService.ShowSuccessAsync("已清空所有明細");
+        }
     }
 }

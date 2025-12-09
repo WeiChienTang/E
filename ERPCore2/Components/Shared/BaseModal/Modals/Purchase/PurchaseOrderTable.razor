@@ -57,7 +57,9 @@ else
                 <div class="d-flex gap-2">
                     <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Red"
-                                          OnClick="ClearAllDetails" />
+                                          OnClick="ClearAllDetails"
+                                          IsDisabled="@_hasUndeletableDetails"
+                                          Title="@(_hasUndeletableDetails ? "部分商品已有進貨記錄，無法清除明細" : "清除所有商品明細")" />
                 </div>
             </div>
         </div>

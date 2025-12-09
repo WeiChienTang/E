@@ -682,6 +682,201 @@ namespace ERPCore2.Services
         }
 
         #endregion
+
+        #region 訂單庫存檢查
+
+        /// <summary>
+        /// 取得訂單庫存檢查結果
+        /// </summary>
+        public async Task<OrderInventoryCheckResult?> GetOrderInventoryCheckAsync(int salesOrderId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 1. 取得訂單基本資料
+                var salesOrder = await context.SalesOrders
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Product)
+                            .ThenInclude(p => p.Unit)
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.Unit)
+                    .FirstOrDefaultAsync(so => so.Id == salesOrderId);
+
+                if (salesOrder == null)
+                {
+                    return null;
+                }
+
+                // 2. 取得所有明細的組成資料
+                var detailIds = salesOrder.SalesOrderDetails.Select(d => d.Id).ToList();
+                var compositionDetails = await context.SalesOrderCompositionDetails
+                    .Where(c => detailIds.Contains(c.SalesOrderDetailId))
+                    .Include(c => c.ComponentProduct)
+                        .ThenInclude(p => p.Unit)
+                    .Include(c => c.Unit)
+                    .ToListAsync();
+
+                // 3. 收集所有需要查詢庫存的產品ID
+                var productIds = new HashSet<int>();
+                foreach (var detail in salesOrder.SalesOrderDetails)
+                {
+                    productIds.Add(detail.ProductId);
+                }
+                foreach (var comp in compositionDetails)
+                {
+                    productIds.Add(comp.ComponentProductId);
+                }
+
+                // 4. 批次查詢所有產品的庫存
+                var inventoryStocks = await context.InventoryStocks
+                    .Where(i => productIds.Contains(i.ProductId))
+                    .Include(i => i.InventoryStockDetails)
+                    .ToListAsync();
+
+                var stockDictionary = inventoryStocks
+                    .ToDictionary(i => i.ProductId, i => (decimal)i.TotalAvailableStock);
+
+                // 5. 建立檢查結果
+                var result = new OrderInventoryCheckResult
+                {
+                    OrderId = salesOrderId,
+                    OrderNumber = salesOrder.Code ?? "",
+                    Items = new List<OrderInventoryCheckItem>()
+                };
+
+                // 6. 處理每個明細
+                foreach (var detail in salesOrder.SalesOrderDetails.OrderBy(d => d.Id))
+                {
+                    var detailItem = CreateInventoryCheckItem(
+                        detail,
+                        compositionDetails.Where(c => c.SalesOrderDetailId == detail.Id).ToList(),
+                        stockDictionary
+                    );
+
+                    result.Items.Add(detailItem);
+                }
+
+                // 7. 計算統計資訊
+                CalculateStatistics(result);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetOrderInventoryCheckAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetOrderInventoryCheckAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderId = salesOrderId
+                });
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 建立單一明細的庫存檢查項目
+        /// </summary>
+        private OrderInventoryCheckItem CreateInventoryCheckItem(
+            SalesOrderDetail detail,
+            List<SalesOrderCompositionDetail> compositions,
+            Dictionary<int, decimal> inventoryStocks)
+        {
+            var availableStock = inventoryStocks.GetValueOrDefault(detail.ProductId, 0);
+            var hasComposition = compositions.Any();
+
+            var item = new OrderInventoryCheckItem
+            {
+                Level = 1,
+                DetailId = detail.Id,
+                ProductId = detail.ProductId,
+                ProductCode = detail.Product?.Code ?? "",
+                ProductName = detail.Product?.Name ?? "",
+                ProductSpecification = detail.Product?.Specification,
+                UnitName = detail.Unit?.Name ?? detail.Product?.Unit?.Name ?? "",
+                RequiredQuantity = detail.OrderQuantity,
+                AvailableStock = availableStock,
+                IsComposition = hasComposition,
+                Status = DetermineInventoryStatus(detail.OrderQuantity, availableStock, detail.Product),
+                Children = new List<OrderInventoryCheckItem>()
+            };
+
+            // 如果有組成，加入子項目
+            if (hasComposition)
+            {
+                foreach (var comp in compositions.OrderBy(c => c.Id))
+                {
+                    var compAvailableStock = inventoryStocks.GetValueOrDefault(comp.ComponentProductId, 0);
+                    var requiredQuantity = comp.Quantity * detail.OrderQuantity;
+
+                    var childItem = new OrderInventoryCheckItem
+                    {
+                        Level = 2,
+                        ParentDetailId = detail.Id,
+                        ProductId = comp.ComponentProductId,
+                        ProductCode = comp.ComponentProduct?.Code ?? "",
+                        ProductName = comp.ComponentProduct?.Name ?? "",
+                        ProductSpecification = comp.ComponentProduct?.Specification,
+                        UnitName = comp.Unit?.Name ?? comp.ComponentProduct?.Unit?.Name ?? "",
+                        RequiredQuantity = requiredQuantity,
+                        AvailableStock = compAvailableStock,
+                        CompositionMultiplier = comp.Quantity,
+                        IsComposition = false,
+                        Status = DetermineInventoryStatus(requiredQuantity, compAvailableStock, comp.ComponentProduct),
+                        Children = new List<OrderInventoryCheckItem>()
+                    };
+
+                    item.Children.Add(childItem);
+                }
+            }
+
+            return item;
+        }
+
+        /// <summary>
+        /// 判斷庫存狀態
+        /// </summary>
+        private InventoryStatus DetermineInventoryStatus(decimal requiredQuantity, decimal availableStock, Product? product)
+        {
+            // 庫存不足
+            if (availableStock < requiredQuantity)
+            {
+                return InventoryStatus.Insufficient;
+            }
+
+            // 庫存充足 (暫時不檢查安全庫存，因為 Product 沒有此欄位)
+            // 未來如果需要，可以在 Product 新增 SafetyStock 欄位
+            return InventoryStatus.Sufficient;
+        }
+
+        /// <summary>
+        /// 計算統計資訊
+        /// </summary>
+        private void CalculateStatistics(OrderInventoryCheckResult result)
+        {
+            var allItems = new List<OrderInventoryCheckItem>();
+            foreach (var item in result.Items)
+            {
+                allItems.Add(item);
+                allItems.AddRange(item.Children);
+            }
+
+            // 計算不足和警戒項目數量
+            result.InsufficientItemCount = allItems.Count(i => i.Status == InventoryStatus.Insufficient);
+            result.WarningItemCount = allItems.Count(i => i.Status == InventoryStatus.Warning);
+
+            // 計算滿足率
+            if (allItems.Count > 0)
+            {
+                var sufficientCount = allItems.Count(i => i.Status == InventoryStatus.Sufficient);
+                result.OverallSatisfactionRate = Math.Round((decimal)sufficientCount / allItems.Count * 100, 2);
+            }
+            else
+            {
+                result.OverallSatisfactionRate = 100;
+            }
+        }
+
+        #endregion
     }
 }
-

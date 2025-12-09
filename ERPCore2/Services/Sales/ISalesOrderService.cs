@@ -56,5 +56,12 @@ namespace ERPCore2.Services
         /// <param name="checkApproval">是否檢查審核狀態（true=只載入已審核，false=不檢查審核）</param>
         /// <returns>符合條件的銷貨訂單明細列表</returns>
         Task<List<SalesOrderDetail>> GetDeliveryDetailsByCustomerAsync(int customerId, bool includeCompleted, bool checkApproval = true);
+
+        /// <summary>
+        /// 取得訂單庫存檢查結果
+        /// </summary>
+        /// <param name="salesOrderId">銷貨訂單ID</param>
+        /// <returns>庫存檢查結果</returns>
+        Task<OrderInventoryCheckResult?> GetOrderInventoryCheckAsync(int salesOrderId);
     }
 }

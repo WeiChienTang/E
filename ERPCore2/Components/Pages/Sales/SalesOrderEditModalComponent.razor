@@ -119,6 +119,13 @@
                                  OnScheduleCreated="@HandleScheduleCreated"
                                  OnCancel="@(() => showBatchTransferToScheduleModal = false)" />
 
+@* 訂單庫存檢視 Modal *@
+<OrderInventoryCheckModal IsVisible="@showInventoryCheckModal"
+                         IsVisibleChanged="@((bool visible) => showInventoryCheckModal = visible)"
+                         SalesOrderId="@SalesOrderId"
+                         OrderNumber="@(editModalComponent?.Entity?.Code)"
+                         OnClose="@(() => showInventoryCheckModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -186,6 +193,9 @@
     
     // 批次轉排程 Modal
     private bool showBatchTransferToScheduleModal = false;
+    
+    // 訂單庫存檢視 Modal
+    private bool showInventoryCheckModal = false;
     
     // ===== 轉單狀態 =====
     private bool canCreateDelivery = false; 
@@ -1363,6 +1373,7 @@
         @if (editModalComponent?.Entity != null && 
             SalesOrderId.HasValue)
         {
+            
             <GenericButtonComponent Text="轉銷貨" 
                                   Variant="ButtonVariant.Green" 
                                   OnClick="HandleCreateDeliveryFromOrder" />
@@ -1372,6 +1383,11 @@
                                   Variant="ButtonVariant.Yellow"
                                   Icon="bi bi-calendar-plus"
                                   OnClick="HandleBatchTransferToSchedule" />
+
+            <GenericButtonComponent Text="查庫存" 
+                                  Variant="ButtonVariant.Blue" 
+                                  Icon="bi bi-box-seam"
+                                  OnClick="HandleShowInventoryCheck" />
         }
     };
 
@@ -1607,6 +1623,31 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchTransferToSchedule), GetType(), 
                 additionalData: $"開啟批次轉排程 Modal 失敗 - OrderId: {SalesOrderId}");
+        }
+    }
+    
+    /// <summary>
+    /// 顯示訂單庫存檢視
+    /// </summary>
+    private async Task HandleShowInventoryCheck()
+    {
+        try
+        {
+            // 驗證銷貨訂單資料
+            if (!SalesOrderId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法檢視庫存：銷貨訂單資料不存在");
+                return;
+            }
+            
+            // 開啟庫存檢視 Modal
+            showInventoryCheckModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleShowInventoryCheck), GetType(), 
+                additionalData: $"開啟庫存檢視 Modal 失敗 - OrderId: {SalesOrderId}");
         }
     }
     
@@ -2176,6 +2217,9 @@
                 await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
                 return;
             }
+            
+            // 設定報價單ID（重要：這樣報價單欄位才會正確顯示）
+            salesOrder.QuotationId = quotationId;
             
             // 設定客戶ID
             salesOrder.CustomerId = quotation.CustomerId;
