@@ -276,9 +276,6 @@ else
         
         await LoadAvailableProductsAsync();
         await LoadExistingDetailsAsync();
-        
-        //  初始化後通知父組件是否有不可刪除的明細
-        await NotifyHasUndeletableDetailsChanged();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -382,10 +379,17 @@ else
     /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
     private bool CanDeleteItem(ReturnItem item, out string reason)
     {
-        return DetailLockHelper.CanDeleteItem(
+        var canDelete = DetailLockHelper.CanDeleteItem(
             item.ExistingDetailEntity, 
             out reason, 
             checkPayment: true);
+        
+        if (!canDelete && item.ExistingDetailEntity != null)
+        {
+            ConsoleHelper.WriteDebug($"🔒 [CanDeleteItem] 明細 ID={item.ExistingDetailEntity.Id} 被鎖定: {reason}, TotalPaidAmount={item.ExistingDetailEntity.TotalPaidAmount}");
+        }
+        
+        return canDelete;
     }
     
     /// <summary>
@@ -405,15 +409,10 @@ else
         if (OnHasUndeletableDetailsChanged.HasDelegate)
         {
             var hasUndeletableDetails = HasUndeletableDetails();
-            
-            // 狀態變更時才通知父組件並觸發 UI 更新
-            if (_hasUndeletableDetails != hasUndeletableDetails)
-            {
-                _hasUndeletableDetails = hasUndeletableDetails;
-                await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
-                tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
-                StateHasChanged();
-            }
+            _hasUndeletableDetails = hasUndeletableDetails;
+            await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
+            tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
+            StateHasChanged();
         }
     }
 
@@ -805,11 +804,17 @@ else
         ReturnItems.Clear();
         _deletedDetailIds.Clear(); // 清空已刪除ID列表
         
+        ConsoleHelper.WriteDebug($"📝 [SalesReturnTable] 開始載入 {ExistingReturnDetails.Count} 筆現有明細");
+        
         // 載入系統預設稅率
         var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
         
         foreach (var detail in ExistingReturnDetails)
         {
+            // 🔍 加入詳細日誌檢查 TotalPaidAmount
+            var productName = detail.Product?.Name ?? $"商品ID:{detail.ProductId}";
+            ConsoleHelper.WriteDebug($"  📦 明細 ID={detail.Id}, 商品={productName}, TotalPaidAmount={detail.TotalPaidAmount:N2}");
+            
             // 直接使用 Navigation Properties - 更可靠的方式
             var deliveryDetail = detail.SalesDeliveryDetail;
             
@@ -835,8 +840,21 @@ else
             ReturnItems.Add(item);
         }
         
-        // 檢查是否有不可刪除的明細
-        bool hasUndeletableDetails = ReturnItems.Any(p => !CanDeleteItem(p, out _));
+        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細（與 PurchaseReceivingTable 一致）
+        bool hasUndeletableDetails = ReturnItems.Any(item => 
+            item.ExistingDetailEntity != null && 
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkPayment: true));
+        
+        ConsoleHelper.WriteInfo($"🔍 [LoadExistingDetailsAsync] 檢查結果: hasUndeletableDetails={hasUndeletableDetails}");
+        
+        // 🔍 詳細檢查每個明細
+        foreach (var item in ReturnItems.Where(i => i.ExistingDetailEntity != null))
+        {
+            var canDelete = DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity!, out var reason, checkPayment: true);
+            var productName = item.SelectedProduct?.Name ?? "未知商品";
+            ConsoleHelper.WriteDebug($"    - 明細 ID={item.ExistingDetailEntity!.Id}, 商品={productName}, CanDelete={canDelete}, Reason={reason}");
+        }
+        
         if (_hasUndeletableDetails != hasUndeletableDetails)
         {
             _hasUndeletableDetails = hasUndeletableDetails;

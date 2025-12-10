@@ -21,6 +21,7 @@
 
 @using ERPCore2.FieldConfiguration
 @using ERPCore2.Data.Enums
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
 
 <GenericEditModalComponent TEntity="SalesReturn" 
                           TService="ISalesReturnService"
@@ -720,7 +721,7 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行篩選，或直接選擇",
-                    ActionButtons = await GetCustomerActionButtonsAsync(),
+                    ActionButtons = await GetCustomerActionButtonsAsync(), // 🔑 根據 hasUndeletableDetails 決定是否顯示
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
@@ -961,6 +962,25 @@
         try
         {
             salesReturnDetails = await SalesReturnDetailService.GetBySalesReturnIdAsync(salesReturnId);
+            
+            // ⚠️ 關鍵：載入明細後必須同步載入關聯資料（Product），否則鎖定檢查會失效
+            // 因為 DetailLockHelper 需要讀取 TotalPaidAmount 欄位
+            if (salesReturnDetails.Any())
+            {
+                ConsoleHelper.WriteDebug($"📋 [LoadSalesReturnDetails] 已載入 {salesReturnDetails.Count} 筆明細");
+                
+                // 檢查是否有不可刪除的明細（已有沖款記錄）
+                var hasUndeletable = salesReturnDetails.Any(d => 
+                    DetailLockHelper.HasPaymentRecord(d));
+                
+                ConsoleHelper.WriteDebug($"🔍 [LoadSalesReturnDetails] hasUndeletable={hasUndeletable}");
+                
+                // 同步更新鎖定狀態
+                if (hasUndeletableDetails != hasUndeletable)
+                {
+                    await HandleHasUndeletableDetailsChanged(hasUndeletable);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -1050,13 +1070,18 @@
     {
         try
         {
-            hasUndeletableDetails = hasUndeletable;
+            ConsoleHelper.WriteDebug($"🔔 [EditModal] 收到明細狀態變更通知: hasUndeletable={hasUndeletable}");
             
-            // 更新欄位的唯讀狀態
-            UpdateFieldsReadOnlyState();
-            
-            // ❌ 移除 StateHasChanged() - 避免重複渲染
-            // StateHasChanged();
+            if (hasUndeletableDetails != hasUndeletable)
+            {
+                hasUndeletableDetails = hasUndeletable;
+                ConsoleHelper.WriteInfo($"📝 [EditModal] 更新鎖定狀態: hasUndeletableDetails={hasUndeletableDetails}");
+                
+                // 更新欄位的唯讀狀態
+                UpdateFieldsReadOnlyState();
+                
+                StateHasChanged();
+            }
         }
         catch (Exception ex)
         {
@@ -1065,34 +1090,16 @@
     }
 
     /// <summary>
-    /// 更新欄位的唯讀狀態
-    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
-    /// - 客戶 (CustomerId) - 同時禁用新增/編輯按鈕
-    /// - 篩選商品 (FilterProductId)
-    /// - 退貨日期 (ReturnDate)
-    /// - 退貨原因 (ReturnReasonId)
-    /// - 備註 (Remarks)
-    /// 
-    /// 不鎖定的欄位（系統自動計算/生成）:
-    /// - 退貨單號 (SalesReturnNumber) - 已經是唯讀
-    /// - 退貨總金額 (TotalReturnAmount) - 已經是唯讀
-    /// - 退貨稅額 (ReturnTaxAmount) - 已經是唯讀
-    /// - 含稅總金額 (TotalReturnAmountWithTax) - 已經是唯讀
-    /// </summary>
-    /// <summary>
-    /// 更新欄位的唯讀狀態 - 根據是否有不可刪除的明細
-    /// 使用 FormFieldLockHelper 統一處理欄位鎖定邏輯
+    /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
     /// </summary>
     private void UpdateFieldsReadOnlyState()
     {
         // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
         var fieldsToLock = new[]
         {
-            "FilterProductId",
-            nameof(SalesReturn.SalesDeliveryId),
             nameof(SalesReturn.ReturnDate),
-            nameof(SalesReturn.TaxCalculationMethod),  // 🔑 增加稅別欄位鎖定
             nameof(SalesReturn.ReturnReasonId),
+            "FilterProductId",
             nameof(BaseEntity.Remarks)
         };
         
@@ -1454,9 +1461,16 @@
     
     /// <summary>
     /// 產生客戶操作按鈕 - 使用統一 Helper
+    /// 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons
     /// </summary>
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
     {
+        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons
+        if (hasUndeletableDetails)
+        {
+            return new List<FieldActionButton>();
+        }
+        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             customerModalManager, 
