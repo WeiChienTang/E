@@ -2,6 +2,7 @@
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
+@inject ISalesReturnDetailService SalesReturnDetailService
 @inject ICustomerService CustomerService
 @inject IProductService ProductService
 @inject IEmployeeService EmployeeService
@@ -1148,8 +1149,39 @@
                 return;
             }
             
+            // 檢查是否有客戶資料
+            if (editModalComponent.Entity.CustomerId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("出貨單缺少客戶資訊，無法轉退貨");
+                return;
+            }
+            
+            // 檢查是否有明細資料
+            if (!salesDeliveryDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("出貨單沒有明細資料，無法轉退貨");
+                return;
+            }
+            
+            // 檢查是否所有明細都已完成退貨（已退貨數量 >= 出貨數量）
+            bool hasIncompleteDetails = false;
+            foreach (var detail in salesDeliveryDetails)
+            {
+                var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByDeliveryDetailAsync(detail.Id);
+                if (detail.DeliveryQuantity > returnedQty)
+                {
+                    hasIncompleteDetails = true;
+                    break;
+                }
+            }
+            
+            if (!hasIncompleteDetails)
+            {
+                await NotificationService.ShowWarningAsync("出貨單所有明細皆已完成退貨，無需再轉單");
+                return;
+            }
+            
             // 直接開啟退貨單 Modal，使用 Entity.Id 作為出貨單 ID（最可靠的來源）
-            // 所有業務驗證（客戶、明細、已退貨等）交給 Modal 內部處理
             await salesReturnEditModal!.ShowAddModalWithPrefilledDelivery(
                 editModalComponent.Entity.CustomerId,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesDeliveryId 參數

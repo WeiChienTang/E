@@ -422,17 +422,10 @@
             }
             
             // 5. 呼叫進貨退出組件的公開方法
-            if (purchaseReturnEditModal != null)
-            {
-                await purchaseReturnEditModal.ShowAddModalWithPrefilledReceiving(
-                    editModalComponent.Entity.SupplierId,
-                    PurchaseReceivingId.Value
-                );
-            }
-            else
-            {
-                await NotificationService.ShowWarningAsync("進貨退出組件未初始化，請重新整理頁面");
-            }
+            await purchaseReturnEditModal!.ShowAddModalWithPrefilledReceiving(
+                editModalComponent.Entity.SupplierId,
+                PurchaseReceivingId.Value
+            );
         }
         catch (Exception ex)
         {

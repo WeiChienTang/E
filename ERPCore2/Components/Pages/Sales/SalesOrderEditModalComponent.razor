@@ -1344,8 +1344,32 @@
                 return;
             }
             
+            // 檢查是否有客戶資料
+            if (editModalComponent.Entity.CustomerId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單缺少客戶資訊，無法轉銷貨出貨單");
+                return;
+            }
+            
+            // 檢查是否有明細資料
+            if (!salesOrderDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單沒有明細資料，無法轉銷貨出貨單");
+                return;
+            }
+            
+            // 檢查是否所有明細都已完成出貨（已出貨數量 >= 訂購數量）
+            var hasIncompleteDetails = salesOrderDetails.Any(detail => 
+                detail.DeliveredQuantity < detail.OrderQuantity
+            );
+            
+            if (!hasIncompleteDetails)
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單所有明細皆已完成出貨，無需再轉單");
+                return;
+            }
+            
             // 直接開啟銷貨出貨單 Modal，使用 Entity.Id 作為銷貨訂單 ID（最可靠的來源）
-            // 所有業務驗證（客戶、明細、已出貨等）交給 Modal 內部處理
             await salesDeliveryEditModal!.ShowAddModalWithPrefilledOrder(
                 editModalComponent.Entity.CustomerId,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesOrderId 參數
@@ -1480,6 +1504,17 @@
             if (!salesOrderDetails.Any())
             {
                 await NotificationService.ShowWarningAsync("銷貨訂單沒有明細資料，無法轉排程");
+                return;
+            }
+            
+            // 檢查是否所有明細都已完成排程（已排程數量 >= 訂購數量）
+            var hasIncompleteDetails = salesOrderDetails.Any(detail => 
+                detail.ScheduledQuantity < detail.OrderQuantity
+            );
+            
+            if (!hasIncompleteDetails)
+            {
+                await NotificationService.ShowWarningAsync("銷貨訂單所有明細皆已完成排程，無需再轉排程");
                 return;
             }
             

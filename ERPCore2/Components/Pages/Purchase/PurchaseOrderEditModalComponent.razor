@@ -1618,8 +1618,32 @@
                 return;
             }
             
+            // 檢查是否有廠商資料
+            if (editModalComponent.Entity.SupplierId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("採購單缺少廠商資訊，無法轉進貨單");
+                return;
+            }
+            
+            // 檢查是否有明細資料
+            if (!purchaseOrderDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("採購單沒有明細資料，無法轉進貨單");
+                return;
+            }
+            
+            // 檢查是否所有明細都已完成進貨（已進數量 >= 採購數量）
+            var hasIncompleteDetails = purchaseOrderDetails.Any(detail => 
+                detail.ReceivedQuantity < detail.OrderQuantity
+            );
+            
+            if (!hasIncompleteDetails)
+            {
+                await NotificationService.ShowWarningAsync("採購單所有明細皆已完成進貨，無需再轉單");
+                return;
+            }
+            
             // 直接開啟進貨單 Modal，使用 Entity.Id 作為採購單 ID（最可靠的來源）
-            // 所有業務驗證（廠商、明細、完成進貨等）交給 Modal 內部處理
             await purchaseReceivingEditModal!.ShowAddModalWithPrefilledOrder(
                 editModalComponent.Entity.SupplierId,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 PurchaseOrderId 參數
