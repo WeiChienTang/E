@@ -96,6 +96,24 @@ public class DocumentSectionConfig
                 ShowAddButton = false
             },
             
+            RelatedDocumentType.DeliveryDocument => new()
+            {
+                Title = "出貨記錄",
+                Icon = "truck",
+                TextColor = "info",
+                BadgeColor = "info",
+                ShowAddButton = false
+            },
+            
+            RelatedDocumentType.ProductionSchedule => new()
+            {
+                Title = "生產排程",
+                Icon = "calendar-check",
+                TextColor = "dark",
+                BadgeColor = "dark",
+                ShowAddButton = false
+            },
+            
             _ => throw new ArgumentException($"未知的單據類型: {type}")
         };
     }

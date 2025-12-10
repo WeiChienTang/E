@@ -87,27 +87,71 @@ namespace ERPCore2.Helpers
 
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            // 1. 查詢退貨單 - 注意：退貨現在是從出貨單產生，不直接從訂單
-            // 這個方法可能需要重新設計
-            var returnDetails = await context.SalesReturnDetails
-                .Include(d => d.SalesReturn)
-                .Where(d => d.SalesDeliveryDetailId == salesOrderDetailId)
+            // 1. 查詢銷貨單/出貨單
+            var deliveryDetails = await context.SalesDeliveryDetails
+                .Include(d => d.SalesDelivery)
+                .Where(d => d.SalesOrderDetailId == salesOrderDetailId)
                 .ToListAsync();
 
-            foreach (var detail in returnDetails)
+            foreach (var detail in deliveryDetails)
             {
                 documents.Add(new RelatedDocument
                 {
-                    DocumentId = detail.SalesReturnId,
-                    DocumentType = RelatedDocumentType.ReturnDocument,
-                    DocumentNumber = detail.SalesReturn.Code ?? string.Empty,
-                    DocumentDate = detail.SalesReturn.ReturnDate,
-                    Quantity = detail.ReturnQuantity,
-                    Remarks = detail.SalesReturn.Remarks
+                    DocumentId = detail.SalesDeliveryId,
+                    DocumentType = RelatedDocumentType.DeliveryDocument,
+                    DocumentNumber = detail.SalesDelivery.Code ?? string.Empty,
+                    DocumentDate = detail.SalesDelivery.DeliveryDate,
+                    Quantity = detail.DeliveryQuantity,
+                    UnitPrice = detail.UnitPrice,
+                    Remarks = detail.SalesDelivery.Remarks
                 });
             }
 
-            // 2. 查詢沖款單
+            // 2. 查詢生產排程
+            var scheduleItems = await context.ProductionScheduleItems
+                .Include(i => i.ProductionSchedule)
+                .Include(i => i.Product)
+                .Where(i => i.SalesOrderDetailId == salesOrderDetailId)
+                .ToListAsync();
+
+            foreach (var item in scheduleItems)
+            {
+                documents.Add(new RelatedDocument
+                {
+                    DocumentId = item.ProductionScheduleId,
+                    DocumentType = RelatedDocumentType.ProductionSchedule,
+                    DocumentNumber = item.ProductionSchedule.Code ?? string.Empty,
+                    DocumentDate = item.ProductionSchedule.ScheduleDate,
+                    Quantity = item.ScheduledQuantity,
+                    Remarks = $"{item.Product.Name} - {item.ProductionItemStatus.ToString()}"
+                });
+            }
+
+            // 3. 查詢退貨單 - 注意：退貨現在是從出貨單產生，不直接從訂單
+            // 透過出貨明細查詢退貨明細
+            var deliveryDetailIds = deliveryDetails.Select(d => d.Id).ToList();
+            if (deliveryDetailIds.Any())
+            {
+                var returnDetails = await context.SalesReturnDetails
+                    .Include(d => d.SalesReturn)
+                    .Where(d => deliveryDetailIds.Contains(d.SalesDeliveryDetailId ?? 0))
+                    .ToListAsync();
+
+                foreach (var detail in returnDetails)
+                {
+                    documents.Add(new RelatedDocument
+                    {
+                        DocumentId = detail.SalesReturnId,
+                        DocumentType = RelatedDocumentType.ReturnDocument,
+                        DocumentNumber = detail.SalesReturn.Code ?? string.Empty,
+                        DocumentDate = detail.SalesReturn.ReturnDate,
+                        Quantity = detail.ReturnQuantity,
+                        Remarks = detail.SalesReturn.Remarks
+                    });
+                }
+            }
+
+            // 4. 查詢沖款單
             var setoffDetails = await context.SetoffProductDetails
                 .Include(d => d.SetoffDocument)
                 .Where(d => d.SourceDetailType == SetoffDetailType.SalesOrderDetail 
@@ -201,6 +245,74 @@ namespace ERPCore2.Helpers
                     TotalAmount = detail.TotalSetoffAmount,
                     Remarks = detail.SetoffDocument.Remarks
                 });
+            }
+
+            return documents.OrderByDescending(d => d.DocumentDate).ToList();
+        }
+
+        /// <summary>
+        /// 取得與銷貨出貨明細相關的單據（退貨單、收款單）
+        /// </summary>
+        public async Task<List<RelatedDocument>> GetRelatedDocumentsForSalesDeliveryDetailAsync(int salesDeliveryDetailId)
+        {
+            var documents = new List<RelatedDocument>();
+
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            // 先取得出貨明細及其關聯的訂單明細
+            var deliveryDetail = await context.SalesDeliveryDetails
+                .Include(d => d.SalesOrderDetail)
+                .FirstOrDefaultAsync(d => d.Id == salesDeliveryDetailId);
+
+            if (deliveryDetail == null)
+            {
+                return documents;
+            }
+
+            // 1. 查詢退貨單
+            var returnDetails = await context.SalesReturnDetails
+                .Include(d => d.SalesReturn)
+                .Where(d => d.SalesDeliveryDetailId == salesDeliveryDetailId)
+                .ToListAsync();
+
+            foreach (var detail in returnDetails)
+            {
+                documents.Add(new RelatedDocument
+                {
+                    DocumentId = detail.SalesReturnId,
+                    DocumentType = RelatedDocumentType.ReturnDocument,
+                    DocumentNumber = detail.SalesReturn.Code ?? string.Empty,
+                    DocumentDate = detail.SalesReturn.ReturnDate,
+                    Quantity = detail.ReturnQuantity,
+                    Remarks = detail.SalesReturn.Remarks
+                });
+            }
+
+            // 2. 查詢沖款單（透過關聯的訂單明細查詢）
+            if (deliveryDetail.SalesOrderDetailId.HasValue)
+            {
+                var setoffDetails = await context.SetoffProductDetails
+                    .Include(d => d.SetoffDocument)
+                    .Where(d => d.SourceDetailType == SetoffDetailType.SalesOrderDetail 
+                             && d.SourceDetailId == deliveryDetail.SalesOrderDetailId.Value)
+                    .ToListAsync();
+
+                foreach (var detail in setoffDetails)
+                {
+                    if (detail.SetoffDocument == null) continue;
+                    
+                    documents.Add(new RelatedDocument
+                    {
+                        DocumentId = detail.SetoffDocumentId,
+                        DocumentType = RelatedDocumentType.SetoffDocument,
+                        DocumentNumber = detail.SetoffDocument.Code ?? string.Empty,
+                        DocumentDate = detail.SetoffDocument.SetoffDate,
+                        Amount = detail.CurrentSetoffAmount,
+                        CurrentAmount = detail.CurrentSetoffAmount,
+                        TotalAmount = detail.TotalSetoffAmount,
+                        Remarks = detail.SetoffDocument.Remarks
+                    });
+                }
             }
 
             return documents.OrderByDescending(d => d.DocumentDate).ToList();

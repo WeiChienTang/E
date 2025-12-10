@@ -889,6 +889,18 @@
                 showSetoffDocumentModal = true;
                 StateHasChanged();
             }
+            else if (args.type == RelatedDocumentType.DeliveryDocument)
+            {
+                // 開啟銷貨出貨單
+                selectedSalesDeliveryId = args.id;
+                showSalesDeliveryModal = true;
+                StateHasChanged();
+            }
+            else if (args.type == RelatedDocumentType.ProductionSchedule)
+            {
+                // 開啟生產排程
+                await NotificationService.ShowInfoAsync("請在生產管理模組中查看生產排程", "提示");
+            }
             else
             {
                 await NotificationService.ShowWarningAsync("不支援的單據類型", "提示");

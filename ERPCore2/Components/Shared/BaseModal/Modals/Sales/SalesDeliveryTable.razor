@@ -2,12 +2,14 @@
 
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Enums
+@using ERPCore2.Models
 @inject IProductService ProductService
 @inject ISalesOrderService SalesOrderService
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject INotificationService NotificationService
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
+@inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject IJSRuntime JSRuntime
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
@@ -33,9 +35,9 @@ else
                                       ShowHeader="true"
                                       ShowRowNumbers="true"
                                       ShowBuiltInActions="true"
-                                      ShowBuiltInDeleteButton="true"
+                                      ShowBuiltInDeleteButton="false"
+                                      ActionsColumnWidth="60px"
                                       IsReadOnly="@IsReadOnly"
-                                      DeleteButtonTitle="刪除"
                                       EmptyMessage="@EmptyMessage"
                                       OnItemDelete="@HandleItemDelete"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
@@ -70,6 +72,14 @@ else
         </div>
     </div>
 }
+
+<!-- 相關單據查看 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
+                               IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@relatedDocuments"
+                               IsLoading="@isLoadingRelatedDocuments"
+                               OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
     // ===== InteractiveTableComponent 參考 =====
@@ -148,6 +158,15 @@ else
     
     // 稅率快取變數
     private decimal currentTaxRate = 5.0m;
+    
+    // ===== 相關單據查看 =====
+    private bool showRelatedDocumentsModal = false;
+    private string selectedProductName = string.Empty;
+    private List<RelatedDocument>? relatedDocuments = null;
+    private bool isLoadingRelatedDocuments = false;
+    
+    // ===== 相關單據開啟事件 =====
+    [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
     
     // ===== 輔助計算屬性 =====
     private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
@@ -601,7 +620,31 @@ else
 
     private RenderFragment<DeliveryItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 未來可以在此加入自訂操作按鈕（如查看相關單據等）
+        // 使用 DetailLockHelper 檢查是否可以刪除（檢查退貨和收款記錄）
+        if (DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+            checkReturn: true, checkPayment: true, returnedQuantities: ReturnedQuantities))
+        {
+            // 可以刪除：顯示刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 已被使用：顯示查看按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據（退貨、收款等）"
+                                   OnClick="async () => await ShowRelatedDocuments(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
     };
 
     private async Task HandleItemDelete(DeliveryItem item)
@@ -622,6 +665,61 @@ else
             
             DeliveryItems.RemoveAt(index);
             await NotifyDetailsChanged();
+        }
+    }
+    
+    // ===== 相關單據查看方法 =====
+    
+    /// <summary>
+    /// 顯示相關單據（退貨單、收款單）
+    /// </summary>
+    private async Task ShowRelatedDocuments(DeliveryItem item)
+    {
+        if (item.ExistingDetailEntity is not SalesDeliveryDetail detail || detail.Id <= 0)
+        {
+            await NotificationService.ShowWarningAsync("此項目尚未儲存，無法查看相關單據", "提示");
+            return;
+        }
+
+        selectedProductName = item.SelectedProduct?.Name ?? "未知商品";
+        
+        showRelatedDocumentsModal = true;
+        isLoadingRelatedDocuments = true;
+        relatedDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            relatedDocuments = await RelatedDocumentsHelper.GetRelatedDocumentsForSalesDeliveryDetailAsync(detail.Id);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入相關單據失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRelatedDocuments = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理點擊相關單據的事件
+    /// </summary>
+    private async Task HandleRelatedDocumentClick(RelatedDocument document)
+    {
+        // 觸發事件，讓父組件（EditModal）處理開啟相關單據
+        if (OnOpenRelatedDocument.HasDelegate)
+        {
+            await OnOpenRelatedDocument.InvokeAsync((document.DocumentType, document.DocumentId));
+        }
+        else
+        {
+            // 如果父組件沒有處理，顯示提示訊息
+            await NotificationService.ShowInfoAsync(
+                $"請在主畫面中開啟 {document.TypeDisplayName}: {document.DocumentNumber}", 
+                "提示"
+            );
         }
     }
 

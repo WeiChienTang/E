@@ -20,16 +20,26 @@ namespace ERPCore2.Models
         /// </summary>
         ReceivingDocument,
         
-    /// <summary>
-    /// 銷貨訂單（從報價單轉入）
-    /// </summary>
-    SalesOrder,
-    
-    /// <summary>
-    /// 商品合成表（BOM 配方）
-    /// </summary>
-    ProductComposition
-}    /// <summary>
+        /// <summary>
+        /// 銷貨訂單（從報價單轉入）
+        /// </summary>
+        SalesOrder,
+        
+        /// <summary>
+        /// 商品合成表（BOM 配方）
+        /// </summary>
+        ProductComposition,
+        
+        /// <summary>
+        /// 銷貨單/出貨單（從銷貨訂單產生）
+        /// </summary>
+        DeliveryDocument,
+        
+        /// <summary>
+        /// 生產排程（從銷貨訂單產生）
+        /// </summary>
+        ProductionSchedule
+    }    /// <summary>
     /// 相關單據資訊 - 用於顯示與明細項目相關的單據列表
     /// </summary>
     public class RelatedDocument
@@ -94,6 +104,8 @@ namespace ERPCore2.Models
             RelatedDocumentType.ReceivingDocument => "bi-box-seam",
             RelatedDocumentType.SalesOrder => "bi-cart-check",
             RelatedDocumentType.ProductComposition => "bi-diagram-3",
+            RelatedDocumentType.DeliveryDocument => "bi-truck",
+            RelatedDocumentType.ProductionSchedule => "bi-calendar-check",
             _ => "bi-file-text"
         };
 
@@ -107,6 +119,8 @@ namespace ERPCore2.Models
             RelatedDocumentType.ReceivingDocument => "info",
             RelatedDocumentType.SalesOrder => "primary",
             RelatedDocumentType.ProductComposition => "purple",
+            RelatedDocumentType.DeliveryDocument => "info",
+            RelatedDocumentType.ProductionSchedule => "dark",
             _ => "secondary"
         };
 
@@ -120,6 +134,8 @@ namespace ERPCore2.Models
             RelatedDocumentType.ReceivingDocument => "入庫單",
             RelatedDocumentType.SalesOrder => "銷貨訂單",
             RelatedDocumentType.ProductComposition => "商品合成表",
+            RelatedDocumentType.DeliveryDocument => "銷貨單",
+            RelatedDocumentType.ProductionSchedule => "生產排程",
             _ => "未知單據"
         };
     }

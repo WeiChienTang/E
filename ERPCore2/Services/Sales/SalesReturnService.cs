@@ -215,6 +215,7 @@ namespace ERPCore2.Services
                 }
 
                 // 4. 所有檢查都通過
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
