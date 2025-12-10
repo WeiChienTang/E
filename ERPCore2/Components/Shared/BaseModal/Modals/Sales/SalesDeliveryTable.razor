@@ -92,11 +92,15 @@ else
     // ===== 客戶過濾參數 =====
     [Parameter] public int? SelectedCustomerId { get; set; }
     
+    // ===== 退貨數量參數 =====
+    [Parameter] public Dictionary<int, decimal>? ReturnedQuantities { get; set; }
+    
     // ===== 泛型參數 =====
     [Parameter] public TMainEntity? MainEntity { get; set; }
     [Parameter] public List<TDetailEntity> ExistingDetails { get; set; } = new List<TDetailEntity>();
     [Parameter] public EventCallback<List<TDetailEntity>> OnDetailsChanged { get; set; }
     [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; }
+    [Parameter] public EventCallback<bool> OnHasUndeletableDetailsChanged { get; set; }
     
     // ===== 欄位映射參數 =====
     [Parameter] public string MainEntityIdPropertyName { get; set; } = string.Empty;
@@ -602,11 +606,11 @@ else
         return filteredDetails.ToList();
     }
 
-    private Task LoadExistingDetailsAsync()
+    private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true)
         {
-            return Task.CompletedTask;
+            return;
         }
         
         //  開始載入資料 - 設定為未完成
@@ -662,18 +666,20 @@ else
         
         // 檢查是否有不可刪除的明細（已有退貨記錄）
         bool hasUndeletableDetails = DeliveryItems.Any(item => 
-            item.ExistingDetailEntity != null && !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkReturn: true));
+            item.ExistingDetailEntity != null && 
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+                checkReturn: true, 
+                returnedQuantities: ReturnedQuantities));
         if (_hasUndeletableDetails != hasUndeletableDetails)
         {
             _hasUndeletableDetails = hasUndeletableDetails;
+            await NotifyHasUndeletableDetailsChanged();
         }
         
         //  資料載入完成 - 觸發空行檢查
         _dataLoadCompleted = true;
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
-        
-        return Task.CompletedTask;
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()
@@ -748,12 +754,27 @@ else
         
         // 檢查並更新不可刪除明細的狀態
         bool hasUndeletableDetails = DeliveryItems.Any(item => 
-            item.ExistingDetailEntity != null && !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkReturn: true));
+            item.ExistingDetailEntity != null && 
+            !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+                checkReturn: true, 
+                returnedQuantities: ReturnedQuantities));
         if (_hasUndeletableDetails != hasUndeletableDetails)
         {
             _hasUndeletableDetails = hasUndeletableDetails;
+            await NotifyHasUndeletableDetailsChanged();
             tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
             StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 通知父組件 hasUndeletableDetails 狀態變更
+    /// </summary>
+    private async Task NotifyHasUndeletableDetailsChanged()
+    {
+        if (OnHasUndeletableDetailsChanged.HasDelegate)
+        {
+            await OnHasUndeletableDetailsChanged.InvokeAsync(_hasUndeletableDetails);
         }
     }
 

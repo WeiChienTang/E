@@ -45,6 +45,8 @@
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
+                          GetStatusMessage="@GetSalesDeliveryStatusMessage"
+                          FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@CustomActionButtons"
                           OnEntityLoaded="@HandleEntityLoaded">
@@ -108,11 +110,18 @@
     // 明細管理組件引用
     private SalesDeliveryTable<SalesDelivery, SalesDeliveryDetail>? salesDeliveryDetailManager;
     
+    // 退貨數量快取字典（Key: DetailId, Value: 已退貨數量）
+    private Dictionary<int, decimal> returnedQuantities = new();
+    
     // ===== 明細載入狀態 =====
     private bool shouldAutoLoadUndelivered = false;  // 標記是否需要自動載入未出貨商品
+    private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入（包括退貨數量）
     
     // ===== 轉單狀態 =====
     private bool canCreateReturn = false;  // 是否可以轉退貨（新增模式需先儲存，編輯模式直接為 true）
+    
+    // ===== 鎖定狀態 =====
+    private bool hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有退貨記錄）
     
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
@@ -252,6 +261,45 @@
                 additionalData: "出貨單編輯Modal關閉失敗");
         }
     }
+
+    /// <summary>
+    /// 取得出貨單狀態訊息（顯示鎖定狀態）
+    /// </summary>
+    private async Task<(string Message, GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.BadgeVariant Variant, string IconClass)?> GetSalesDeliveryStatusMessage()
+    {
+        try
+        {
+            if (!isDetailDataReady)
+            {
+                return null;
+            }
+
+            if (hasUndeletableDetails)
+            {
+                return (
+                    "部分明細已有退貨記錄，客戶和訂單欄位已鎖定",
+                    GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.BadgeVariant.Warning,
+                    "fas fa-lock"
+                );
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSalesDeliveryStatusMessage), GetType());
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 取得警告訊息（顯示在表單最上方）
+    /// </summary>
+    private RenderFragment? GetWarningMessage() => __builder =>
+    {
+        <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
+                                  Message="部分明細已有退貨記錄，主檔的客戶和訂單欄位已被鎖定，無法修改。" />
+    };
 
     /// <summary>
     /// 開啟新增出貨單 Modal 並預填銷售訂單資訊（公開方法供外部調用）
@@ -690,11 +738,119 @@
             // 這確保 Product 等關聯物件都已載入，與 QuotationEditModalComponent 保持一致
             var salesDelivery = await SalesDeliveryService.GetByIdAsync(salesDeliveryId);
             salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDeliveryId);
+            
+            // 🔑 關鍵：載入退貨數量資料，用於判斷是否可刪除明細
+            await LoadDetailRelatedDataAsync();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesDeliveryDetailsInternal), GetType());
             salesDeliveryDetails = new List<SalesDeliveryDetail>();
+        }
+    }
+
+    /// <summary>
+    /// 載入明細相關資料（退貨數量等）
+    /// 這個方法在主檔載入時就同步執行，確保 hasUndeletableDetails 狀態在渲染前就正確
+    /// </summary>
+    private async Task LoadDetailRelatedDataAsync()
+    {
+        try
+        {
+            if (!salesDeliveryDetails.Any())
+            {
+                isDetailDataReady = true;
+                hasUndeletableDetails = false;
+                return;
+            }
+
+            // 為每個明細載入退貨數量（存入字典）
+            returnedQuantities.Clear();
+            foreach (var detail in salesDeliveryDetails)
+            {
+                var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByDeliveryDetailAsync(detail.Id);
+                if (returnedQty > 0)
+                {
+                    returnedQuantities[detail.Id] = returnedQty;
+                }
+            }
+
+            // 檢查是否有不可刪除的明細（已有退貨記錄）
+            bool hasUndeletable = salesDeliveryDetails.Any(detail => 
+                DetailLockHelper.HasReturnRecord(detail, returnedQuantities));
+
+            if (hasUndeletableDetails != hasUndeletable)
+            {
+                hasUndeletableDetails = hasUndeletable;
+                UpdateFieldsReadOnlyState();
+            }
+
+            isDetailDataReady = true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDetailRelatedDataAsync), GetType());
+            isDetailDataReady = true;
+        }
+    }
+
+    /// <summary>
+    /// 處理有不可刪除明細的狀態變更
+    /// 當有不可刪除的明細時(已退貨),鎖定主檔的客戶和訂單欄位
+    /// </summary>
+    private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
+    {
+        try
+        {
+            if (hasUndeletableDetails != hasUndeletable)
+            {
+                hasUndeletableDetails = hasUndeletable;
+                UpdateFieldsReadOnlyState();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleHasUndeletableDetailsChanged), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 根據 hasUndeletableDetails 狀態更新欄位的唯讀狀態
+    /// </summary>
+    private void UpdateFieldsReadOnlyState()
+    {
+        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
+        var fieldsToLock = new[]
+        {
+            nameof(SalesDelivery.SalesOrderId)
+        };
+        
+        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
+        FormFieldLockHelper.LockMultipleFieldsSimple(
+            formFields,
+            fieldsToLock,
+            isLocked: hasUndeletableDetails
+        );
+        
+        // 特殊處理客戶欄位（需要 ActionButtons）
+        if (hasUndeletableDetails)
+        {
+            FormFieldLockHelper.LockField(
+                formFields,
+                nameof(SalesDelivery.CustomerId),
+                isLocked: true,
+                actionButtonsGetter: null  // 鎖定時移除 ActionButtons
+            );
+        }
+        else
+        {
+            FormFieldLockHelper.LockField(
+                formFields,
+                nameof(SalesDelivery.CustomerId),
+                isLocked: false,
+                actionButtonsGetter: GetCustomerActionButtonsAsync  // 解鎖時恢復 ActionButtons
+            );
         }
     }
 
@@ -1060,6 +1216,8 @@
                                            ExistingDetails="@salesDeliveryDetails"
                                            OnDetailsChanged="@HandleDeliveryDetailsChanged"
                                            OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
+                                           OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
+                                           ReturnedQuantities="@returnedQuantities"
                                            Products="@availableProducts"
                                            Warehouses="@warehouses"
                                            WarehouseLocations="@warehouseLocations"
