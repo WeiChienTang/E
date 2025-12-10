@@ -49,7 +49,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 客戶狀態
             EntityStatus[] statuses = { EntityStatus.Active, EntityStatus.Active, EntityStatus.Active, EntityStatus.Inactive };
 
-            for (int i = 1; i <= 200; i++)
+            for (int i = 1; i <= 5; i++)
             {
                 var prefix = companyPrefixes[random.Next(companyPrefixes.Length)];
                 var type = companyTypes[random.Next(companyTypes.Length)];
