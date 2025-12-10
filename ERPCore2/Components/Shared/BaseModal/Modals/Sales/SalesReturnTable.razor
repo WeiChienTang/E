@@ -386,7 +386,7 @@ else
         
         if (!canDelete && item.ExistingDetailEntity != null)
         {
-            ConsoleHelper.WriteDebug($"🔒 [CanDeleteItem] 明細 ID={item.ExistingDetailEntity.Id} 被鎖定: {reason}, TotalPaidAmount={item.ExistingDetailEntity.TotalPaidAmount}");
+            // 明細被鎖定
         }
         
         return canDelete;
@@ -615,7 +615,6 @@ else
             PropertyName = nameof(ReturnItem.Remarks),
             ColumnType = InteractiveColumnType.Input,
             Width = "150px",
-            Placeholder = "備註",
             Tooltip = "選填。可記錄退貨相關的備註資訊（如退貨原因等）",
             IsDisabledFunc = item =>
             {
@@ -804,17 +803,11 @@ else
         ReturnItems.Clear();
         _deletedDetailIds.Clear(); // 清空已刪除ID列表
         
-        ConsoleHelper.WriteDebug($"📝 [SalesReturnTable] 開始載入 {ExistingReturnDetails.Count} 筆現有明細");
-        
         // 載入系統預設稅率
         var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
         
         foreach (var detail in ExistingReturnDetails)
         {
-            // 🔍 加入詳細日誌檢查 TotalPaidAmount
-            var productName = detail.Product?.Name ?? $"商品ID:{detail.ProductId}";
-            ConsoleHelper.WriteDebug($"  📦 明細 ID={detail.Id}, 商品={productName}, TotalPaidAmount={detail.TotalPaidAmount:N2}");
-            
             // 直接使用 Navigation Properties - 更可靠的方式
             var deliveryDetail = detail.SalesDeliveryDetail;
             
@@ -844,16 +837,6 @@ else
         bool hasUndeletableDetails = ReturnItems.Any(item => 
             item.ExistingDetailEntity != null && 
             !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, checkPayment: true));
-        
-        ConsoleHelper.WriteInfo($"🔍 [LoadExistingDetailsAsync] 檢查結果: hasUndeletableDetails={hasUndeletableDetails}");
-        
-        // 🔍 詳細檢查每個明細
-        foreach (var item in ReturnItems.Where(i => i.ExistingDetailEntity != null))
-        {
-            var canDelete = DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity!, out var reason, checkPayment: true);
-            var productName = item.SelectedProduct?.Name ?? "未知商品";
-            ConsoleHelper.WriteDebug($"    - 明細 ID={item.ExistingDetailEntity!.Id}, 商品={productName}, CanDelete={canDelete}, Reason={reason}");
-        }
         
         if (_hasUndeletableDetails != hasUndeletableDetails)
         {

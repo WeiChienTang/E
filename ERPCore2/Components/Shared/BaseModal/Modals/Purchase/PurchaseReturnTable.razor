@@ -710,7 +710,6 @@ else
             Width = "150px",
             HideOnMobile = true,
             Tooltip = "選填。可記錄退貨相關的備註資訊（如退貨原因等）",
-            Placeholder = "選填...",
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 var returnItem = (ReturnItem)args.Item1;

@@ -967,13 +967,9 @@
             // 因為 DetailLockHelper 需要讀取 TotalPaidAmount 欄位
             if (salesReturnDetails.Any())
             {
-                ConsoleHelper.WriteDebug($"📋 [LoadSalesReturnDetails] 已載入 {salesReturnDetails.Count} 筆明細");
-                
                 // 檢查是否有不可刪除的明細（已有沖款記錄）
                 var hasUndeletable = salesReturnDetails.Any(d => 
                     DetailLockHelper.HasPaymentRecord(d));
-                
-                ConsoleHelper.WriteDebug($"🔍 [LoadSalesReturnDetails] hasUndeletable={hasUndeletable}");
                 
                 // 同步更新鎖定狀態
                 if (hasUndeletableDetails != hasUndeletable)
@@ -1070,12 +1066,9 @@
     {
         try
         {
-            ConsoleHelper.WriteDebug($"🔔 [EditModal] 收到明細狀態變更通知: hasUndeletable={hasUndeletable}");
-            
             if (hasUndeletableDetails != hasUndeletable)
             {
                 hasUndeletableDetails = hasUndeletable;
-                ConsoleHelper.WriteInfo($"📝 [EditModal] 更新鎖定狀態: hasUndeletableDetails={hasUndeletableDetails}");
                 
                 // 更新欄位的唯讀狀態
                 UpdateFieldsReadOnlyState();
@@ -1168,10 +1161,8 @@
     /// </summary>
     private RenderFragment? GetWarningMessage() => __builder =>
     {
-        <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                                  Message="因部分明細有沖款記錄，為保護資料完整性主檔欄位已設唯讀。"
-                                  Type="GenericLockedFieldMessage.MessageType.Warning"
-                                  IconClass="fas fa-lock" />
+            <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
+                    Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。"/>
     };
 
     /// <summary>

@@ -2464,6 +2464,204 @@ private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
 
 ---
 
+### 陷阱 8：欄位 IsDisabledFunc 檢查不一致 ⚠️
+
+#### ❌ 問題現象
+
+在 `SalesOrderTable.razor` 中：
+- 明細項目無法刪除（刪除按鈕變成查看按鈕）✅
+- 但是**欄位仍然可以輸入**（數量、單價、折扣等）❌
+- 造成資料不一致的風險
+
+#### 🔍 根本原因
+
+**錯誤寫法**：不同欄位的 `IsDisabledFunc` 檢查條件不一致
+
+```csharp
+// ❌ 商品選擇欄位 - 使用 CanDeleteItem（正確）
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    return IsReadOnly || !CanDeleteItem(salesItem, out _);
+}
+
+// ❌ 訂單數量欄位 - 只檢查退貨和收款（漏掉出貨和排程）
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+}
+
+// ❌ 單價欄位 - 只檢查退貨和收款（漏掉出貨和排程）
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+}
+```
+
+**問題分析**：
+
+| 欄位 | 檢查方法 | 檢查項目 | 是否完整 |
+|-----|---------|---------|---------|
+| **商品選擇** | `CanDeleteItem` | 出貨✅ + 排程✅ + 退貨✅ + 收款✅ | ✅ 正確 |
+| **訂單數量** | `HasReturnRecord` + `HasPaymentRecord` | 退貨✅ + 收款✅ | ❌ 漏掉出貨和排程 |
+| **單價** | `HasReturnRecord` + `HasPaymentRecord` | 退貨✅ + 收款✅ | ❌ 漏掉出貨和排程 |
+| **折扣** | `HasReturnRecord` + `HasPaymentRecord` | 退貨✅ + 收款✅ | ❌ 漏掉出貨和排程 |
+| **稅率** | `IsTaxCalculationMethodNoTax` + `HasReturnRecord` + `HasPaymentRecord` | 免稅✅ + 退貨✅ + 收款✅ | ❌ 漏掉出貨和排程 |
+
+#### ✅ 正確寫法
+
+**核心原則**：所有可編輯欄位都應使用 `CanDeleteItem` 統一檢查 + 空行判斷
+
+```csharp
+// ✅ 商品選擇欄位
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    var isEmptyRow = salesItem.SelectedProduct == null;
+    return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
+}
+
+// ✅ 訂單數量欄位
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    var isEmptyRow = salesItem.SelectedProduct == null;
+    return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
+}
+
+// ✅ 單價欄位
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    var isEmptyRow = salesItem.SelectedProduct == null;
+    return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
+}
+
+// ✅ 折扣欄位
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    var isEmptyRow = salesItem.SelectedProduct == null;
+    return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
+}
+
+// ✅ 稅率欄位（需額外判斷免稅模式）
+IsDisabledFunc = item =>
+{
+    var salesItem = (SalesItem)item;
+    var isEmptyRow = salesItem.SelectedProduct == null;
+    // 免稅模式 或 已有下一步動作時禁用
+    return IsTaxCalculationMethodNoTax ||
+           (!CanDeleteItem(salesItem, out _) && !isEmptyRow);
+}
+```
+
+#### 🎯 關鍵要點
+
+1. **統一使用 `CanDeleteItem`**：這個方法已經整合所有檢查邏輯（出貨、排程、退貨、收款）
+2. **空行檢查**：`&& !isEmptyRow` 確保新增的空行不會被鎖定（否則無法輸入）
+3. **特殊欄位處理**：稅率欄位需要額外判斷 `IsTaxCalculationMethodNoTax`
+4. **統一的 TooltipFunc**：直接使用 `CanDeleteItem` 的輸出參數 `reason` 顯示原因
+
+#### 📝 完整範例（訂單數量欄位）
+
+```csharp
+columns.Add(new InteractiveColumnDefinition
+{ 
+    Title = "訂單數量", 
+    PropertyName = nameof(SalesItem.OrderQuantity),
+    ColumnType = InteractiveColumnType.Number,
+    Width = "120px",
+    Tooltip = "銷售的商品數量。已有下一步動作的商品將無法修改數量",
+    IsDisabledFunc = item =>
+    {
+        var salesItem = (SalesItem)item;
+        var isEmptyRow = salesItem.SelectedProduct == null;
+        return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
+    },
+    TooltipFunc = item =>
+    {
+        var salesItem = (SalesItem)item;
+        if (CanDeleteItem(salesItem, out string reason))
+            return null;
+        return reason + "，無法修改訂單數量";
+    },
+    OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+    {
+        var (item, valueString) = args;
+        await OnOrderQuantityInput((SalesItem)item, valueString);
+    })
+});
+```
+
+#### 🔍 對照：PurchaseReceivingTable 的正確做法
+
+**檔案**: `PurchaseReceivingTable.razor`
+
+所有欄位都使用一致的檢查邏輯：
+
+```csharp
+// 商品選擇欄位
+IsDisabledFunc = item =>
+{
+    var receivingItem = (ReceivingItem)item;
+    var isEmptyRow = receivingItem.SelectedProduct == null;
+    return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+        checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+}
+
+// 入庫數量欄位
+IsDisabledFunc = item =>
+{
+    var receivingItem = (ReceivingItem)item;
+    var isEmptyRow = receivingItem.SelectedProduct == null;
+    return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+        checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+}
+
+// 單價欄位
+IsDisabledFunc = item =>
+{
+    var receivingItem = (ReceivingItem)item;
+    var isEmptyRow = receivingItem.SelectedProduct == null;
+    return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+        checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+}
+
+// 倉庫欄位
+IsDisabledFunc = item =>
+{
+    var receivingItem = (ReceivingItem)item;
+    var isEmptyRow = receivingItem.SelectedProduct == null;
+    return !DetailLockHelper.CanDeleteItem(receivingItem.ExistingDetailEntity, out _, 
+        checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities) && !isEmptyRow;
+}
+```
+
+**關鍵觀察**：
+- ✅ 所有欄位都使用**相同的檢查邏輯**
+- ✅ 都包含**空行檢查** `&& !isEmptyRow`
+- ✅ 都使用 `DetailLockHelper.CanDeleteItem` 統一判斷
+
+#### 📊 修正前後對比
+
+| 狀態 | 商品選擇 | 訂單數量 | 單價 | 折扣 | 稅率 | 結果 |
+|-----|---------|---------|-----|-----|-----|-----|
+| **修正前** | 🔒 鎖定 | ✏️ 可編輯 | ✏️ 可編輯 | ✏️ 可編輯 | ✏️ 可編輯 | ❌ 不一致 |
+| **修正後** | 🔒 鎖定 | 🔒 鎖定 | 🔒 鎖定 | 🔒 鎖定 | 🔒 鎖定 | ✅ 一致 |
+
+#### 🎓 設計原則總結
+
+1. **單一真相來源**：所有鎖定邏輯集中在 `CanDeleteItem` 方法
+2. **統一檢查標準**：所有欄位使用相同的檢查邏輯
+3. **避免重複判斷**：不要在每個欄位分別檢查 `HasReturnRecord`、`HasPaymentRecord` 等
+4. **空行特殊處理**：空行必須可編輯，否則無法新增資料
+5. **提示訊息一致**：使用 `CanDeleteItem` 的 `reason` 輸出參數統一顯示原因
+
+---
+
 ### 陷阱總結表
 
 | 陷阱 | 問題現象 | 根本原因 | 解決關鍵 |
@@ -2475,6 +2673,7 @@ private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
 | **軟刪除 vs 永久刪除** | 實作錯誤方法 | 不清楚系統刪除策略 | 確認系統設計,只實作需要的 |
 | **刪除保護不完整** | FK 約束錯誤 | `CanDeleteAsync` 檢查不足 | 檢查所有追蹤欄位 |
 | **ActionButton 仍可點擊** | 鎖定欄位還能編輯 | 生成方法未檢查鎖定狀態 | 在 `GetXxxActionButtonsAsync()` 加入檢查 |
+| **欄位 IsDisabledFunc 不一致** | 欄位可輸入但不能刪除 | 部分欄位未使用 `CanDeleteItem` | 所有欄位統一使用 `CanDeleteItem` + 空行檢查 |
 | **Console 日誌不足** | 難以除錯 | 缺少關鍵步驟記錄 | 加入分層次的 Console 輸出 |
 
 ---
@@ -2489,13 +2688,16 @@ private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
 ---
 
 **📌 最後更新**: 2025-12-10  
-**🔖 版本**: v2.1  
+**🔖 版本**: v2.2  
 **✅ 更新內容**: 
+- **新增「陷阱 8：欄位 IsDisabledFunc 檢查不一致」**（修正 SalesOrderTable 欄位鎖定問題）
+- 新增 PurchaseReceivingTable 正確做法對照範例
+- 更新陷阱總結表（新增陷阱 8）
+- 補充統一檢查標準和設計原則說明
 - 新增「陷阱 7：ActionButton 生成方法缺少鎖定檢查」
 - 補充單一職責設計原則說明
-- 更新陷阱總結表（新增陷阱 7）
 - 新增「銷貨訂單系統 - SalesOrder」完整章節
-- 新增「⚠️ 實作陷阱與解決方案」章節，記錄 8 個關鍵陷阱
+- 新增「⚠️ 實作陷阱與解決方案」章節，記錄 9 個關鍵陷阱
 - 擴充 DetailLockHelper 說明（checkDelivery, checkSchedule 參數）
 - 新增 RecalculateDeliveredQuantityAsync 雙重載實作說明
 - 新增永久刪除時序與交易處理完整流程

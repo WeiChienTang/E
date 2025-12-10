@@ -493,7 +493,6 @@ else
             Width = "150px",
             HideOnMobile = true,
             ExcludeFromEmptyCheck = true,  // 備註不參與空行檢查
-            Placeholder = "選填...",
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 await OnRemarksChange((ReceivingItem)args.Item1, args.Item2);

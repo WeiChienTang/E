@@ -324,7 +324,19 @@ else
                     return FormatProductDisplayText(product);
                 return string.Empty;
             },
-            IsDisabledFunc = item => IsReadOnly,
+            IsDisabledFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var isEmptyRow = deliveryItem.SelectedProduct == null;
+                return !CanDeleteItem(deliveryItem, out _) && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                if (CanDeleteItem(deliveryItem, out string reason))
+                    return null;
+                return reason;
+            },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async (tuple) =>
             {
                 var (item, searchValue) = tuple;
@@ -352,7 +364,7 @@ else
             MaxDisplayItems = 20
         });
 
-        // 數量欄位
+        // 數量欄位 - 使用 CanDeleteItem 統一檢查（退貨、沖款）
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.DeliveryQuantity),
@@ -360,11 +372,25 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             MinValue = 0,
+            Tooltip = "出貨的商品數量。已有下一步動作的商品將無法修改數量",
+            IsDisabledFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var isEmptyRow = deliveryItem.SelectedProduct == null;
+                return !CanDeleteItem(deliveryItem, out _) && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                if (CanDeleteItem(deliveryItem, out string reason))
+                    return null;
+                return reason + "，無法修改出貨數量";
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
                 async args => await OnQuantityInput((DeliveryItem)args.Item1, args.Item2))
         });
             
-        // 單價欄位
+        // 單價欄位 - 使用 CanDeleteItem 統一檢查（退貨、沖款）
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.UnitPrice),
@@ -372,11 +398,25 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             MinValue = 0,
+            Tooltip = "商品的銷售單價。已有下一步動作的商品將無法修改價格",
+            IsDisabledFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var isEmptyRow = deliveryItem.SelectedProduct == null;
+                return !CanDeleteItem(deliveryItem, out _) && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                if (CanDeleteItem(deliveryItem, out string reason))
+                    return null;
+                return reason + "，無法修改單價";
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
                 async args => await OnUnitPriceInput((DeliveryItem)args.Item1, args.Item2))
         });
         
-        // 折扣欄位
+        // 折扣欄位 - 使用 CanDeleteItem 統一檢查（退貨、沖款）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "折扣%",
@@ -385,12 +425,25 @@ else
             Width = "100px",
             MinValue = 0,
             MaxValue = 100,
-            Tooltip = "折扣百分比（0-100%）",
+            Tooltip = "折扣百分比（0-100%）。已有下一步動作的商品將無法修改折扣",
+            IsDisabledFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var isEmptyRow = deliveryItem.SelectedProduct == null;
+                return !CanDeleteItem(deliveryItem, out _) && !isEmptyRow;
+            },
+            TooltipFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                if (CanDeleteItem(deliveryItem, out string reason))
+                    return null;
+                return reason + "，無法修改折扣";
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
                 async args => await OnDiscountPercentageInput((DeliveryItem)args.Item1, args.Item2))
         });
 
-        // 稅率欄位（新增）
+        // 稅率欄位 - 使用 CanDeleteItem 統一檢查（退貨、沖款），免稅模式單獨判斷
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.TaxRate),
@@ -399,8 +452,28 @@ else
             Width = "100px",
             MinValue = 0,
             MaxValue = 100,
-            IsDisabledFunc = item => IsReadOnly || IsTaxCalculationMethodNoTax,
-            TooltipFunc = item => IsTaxCalculationMethodNoTax ? "不含稅模式下稅率欄位被禁用" : "商品稅率(%)",
+            Tooltip = "稅率百分比（0-100%）",
+            IsDisabledFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var isEmptyRow = deliveryItem.SelectedProduct == null;
+                // 免稅模式 或 已有下一步動作時禁用
+                return IsTaxCalculationMethodNoTax ||
+                       (!CanDeleteItem(deliveryItem, out _) && !isEmptyRow);
+            },
+            TooltipFunc = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                
+                // 免稅時顯示特殊提示
+                if (IsTaxCalculationMethodNoTax)
+                    return "主檔設定為「不含稅」，稅率欄位已禁用";
+                
+                if (CanDeleteItem(deliveryItem, out string reason))
+                    return null;
+                    
+                return reason + "，無法修改稅率";
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
                 async args => await OnTaxRateInput((DeliveryItem)args.Item1, args.Item2))
         });
@@ -606,6 +679,26 @@ else
         return filteredDetails.ToList();
     }
 
+    /// <summary>
+    /// 檢查項目是否可以刪除 - 使用 DetailLockHelper 統一處理
+    /// 銷貨出貨明細需檢查：
+    /// 1. TotalReceivedAmount > 0：已有收款記錄
+    /// 2. 已有退貨記錄（透過 ReturnedQuantities）
+    /// </summary>
+    /// <param name="item">要檢查的項目</param>
+    /// <param name="reason">不可刪除的原因（輸出參數）</param>
+    /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
+    private bool CanDeleteItem(DeliveryItem item, out string reason)
+    {
+        return DetailLockHelper.CanDeleteItem(
+            item.ExistingDetailEntity,
+            out reason,
+            checkReturn: true,
+            checkPayment: true,
+            returnedQuantities: ReturnedQuantities
+        );
+    }
+    
     private async Task LoadExistingDetailsAsync()
     {
         if (ExistingDetails?.Any() != true)

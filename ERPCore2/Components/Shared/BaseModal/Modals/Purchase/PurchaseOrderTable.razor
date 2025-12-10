@@ -427,8 +427,7 @@ else
                 
                 return @<input type="text" class="form-control " 
                                value="@productItem.Remarks"
-                               @oninput="(e) => OnRemarksInput(productItem, e.Value?.ToString())"
-                               placeholder="選填..." />;
+                               @oninput="(e) => OnRemarksInput(productItem, e.Value?.ToString())"/>;
             }
         });
 

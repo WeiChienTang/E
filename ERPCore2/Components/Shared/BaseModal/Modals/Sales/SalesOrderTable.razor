@@ -1089,7 +1089,8 @@ else
             IsDisabledFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                return IsReadOnly || !CanDeleteItem(salesItem, out _);
+                var isEmptyRow = salesItem.SelectedProduct == null;
+                return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
@@ -1125,35 +1126,26 @@ else
             MaxDisplayItems = 20
         });
         
-        // 訂單數量欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
+        // 訂單數量欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "訂單數量", 
             PropertyName = nameof(SalesItem.OrderQuantity),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            Tooltip = "銷售的商品數量。已退貨或已收款的商品將無法修改數量",
+            Tooltip = "銷售的商品數量。已有下一步動作的商品將無法修改數量",
             IsDisabledFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+                var isEmptyRow = salesItem.SelectedProduct == null;
+                return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                var hasReturnRecord = HasReturnRecord(salesItem);
-                var hasPaymentRecord = HasPaymentRecord(salesItem);
-                if (!hasReturnRecord && !hasPaymentRecord) return null;
-                
-                var tooltipMessages = new List<string>();
-                if (hasReturnRecord)
-                    tooltipMessages.Add("此商品已有退貨記錄");
-                if (hasPaymentRecord)
-                {
-                    var receivedAmount = GetReceivedAmount(salesItem);
-                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
-                }
-                return string.Join("；", tooltipMessages) + "，無法修改訂單數量";
+                if (CanDeleteItem(salesItem, out string reason))
+                    return null;
+                return reason + "，無法修改訂單數量";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -1175,35 +1167,26 @@ else
             Tooltip = "已出貨的數量（唯讀）"
         });
 
-        // 單價欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
+        // 單價欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單價", 
             PropertyName = nameof(SalesItem.UnitPrice),
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
-            Tooltip = "商品的銷售單價。已退貨或已收款的商品將無法修改價格",
+            Tooltip = "商品的銷售單價。已有下一步動作的商品將無法修改價格",
             IsDisabledFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+                var isEmptyRow = salesItem.SelectedProduct == null;
+                return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                var hasReturnRecord = HasReturnRecord(salesItem);
-                var hasPaymentRecord = HasPaymentRecord(salesItem);
-                if (!hasReturnRecord && !hasPaymentRecord) return null;
-                
-                var tooltipMessages = new List<string>();
-                if (hasReturnRecord)
-                    tooltipMessages.Add("此商品已有退貨記錄");
-                if (hasPaymentRecord)
-                {
-                    var receivedAmount = GetReceivedAmount(salesItem);
-                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
-                }
-                return string.Join("；", tooltipMessages) + "，無法修改單價";
+                if (CanDeleteItem(salesItem, out string reason))
+                    return null;
+                return reason + "，無法修改單價";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -1212,7 +1195,7 @@ else
             })
         });        
 
-        // 折扣欄位 - 檢查是否有退貨或沖款記錄，如果有則鎖定
+        // 折扣欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款）
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "折扣%", 
@@ -1220,28 +1203,19 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             HideOnMobile = true,
-            Tooltip = "折扣百分比（0-100%）。已退貨或已收款的商品將無法修改折扣",
+            Tooltip = "折扣百分比（0-100%）。已有下一步動作的商品將無法修改折扣",
             IsDisabledFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                return HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+                var isEmptyRow = salesItem.SelectedProduct == null;
+                return !CanDeleteItem(salesItem, out _) && !isEmptyRow;
             },
             TooltipFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                var hasReturnRecord = HasReturnRecord(salesItem);
-                var hasPaymentRecord = HasPaymentRecord(salesItem);
-                if (!hasReturnRecord && !hasPaymentRecord) return null;
-                
-                var tooltipMessages = new List<string>();
-                if (hasReturnRecord)
-                    tooltipMessages.Add("此商品已有退貨記錄");
-                if (hasPaymentRecord)
-                {
-                    var receivedAmount = GetReceivedAmount(salesItem);
-                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
-                }
-                return string.Join("；", tooltipMessages) + "，無法修改折扣";
+                if (CanDeleteItem(salesItem, out string reason))
+                    return null;
+                return reason + "，無法修改折扣";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -1250,7 +1224,7 @@ else
             })
         });
         
-        // 稅率欄位 - 根據稅別決定是否啟用
+        // 稅率欄位 - 使用 CanDeleteItem 統一檢查（出貨、排程、退貨、收款），免稅模式單獨判斷
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "稅率%", 
@@ -1262,7 +1236,10 @@ else
             IsDisabledFunc = item =>
             {
                 var salesItem = (SalesItem)item;
-                return IsTaxCalculationMethodNoTax || HasReturnRecord(salesItem) || HasPaymentRecord(salesItem);
+                var isEmptyRow = salesItem.SelectedProduct == null;
+                // 免稅模式 或 已有下一步動作時禁用
+                return IsTaxCalculationMethodNoTax ||
+                       (!CanDeleteItem(salesItem, out _) && !isEmptyRow);
             },
             TooltipFunc = item =>
             {
@@ -1272,19 +1249,10 @@ else
                 if (IsTaxCalculationMethodNoTax)
                     return "主檔設定為「不含稅」，稅率欄位已禁用";
                 
-                var hasReturnRecord = HasReturnRecord(salesItem);
-                var hasPaymentRecord = HasPaymentRecord(salesItem);
-                if (!hasReturnRecord && !hasPaymentRecord) return null;
-                
-                var tooltipMessages = new List<string>();
-                if (hasReturnRecord)
-                    tooltipMessages.Add("此商品已有退貨記錄");
-                if (hasPaymentRecord)
-                {
-                    var receivedAmount = GetReceivedAmount(salesItem);
-                    tooltipMessages.Add($"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元）");
-                }
-                return string.Join("；", tooltipMessages) + "，無法修改稅率";
+                if (CanDeleteItem(salesItem, out string reason))
+                    return null;
+                    
+                return reason + "，無法修改稅率";
             },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
@@ -1326,8 +1294,7 @@ else
                 return @<input type="text" class="form-control "
                               value="@salesItem.DetailRemarks"
                               @oninput="(e) => OnRemarksInput(salesItem, e.Value?.ToString())"
-                              readonly="@IsReadOnly"
-                              placeholder="備註..." />;
+                              readonly="@IsReadOnly"/>;
             }
         });
 

@@ -177,20 +177,16 @@ namespace ERPCore2.Services
         {
             try
             {
-                ConsoleHelper.WriteDebug($"🔍 [CanDeleteAsync] 檢查銷貨退回單 ID={entity.Id} 是否可刪除");
-                
                 // 1. 執行基類檢查（外鍵關聯等）
                 var baseResult = await base.CanDeleteAsync(entity);
                 if (!baseResult.IsSuccess)
                 {
-                    ConsoleHelper.WriteWarning($"⚠ [CanDeleteAsync] 基類檢查失敗: {baseResult.ErrorMessage}");
                     return baseResult;
                 }
 
                 // 2. 如果實體沒有載入明細資料，從資料庫重新載入
                 if (entity.SalesReturnDetails == null || !entity.SalesReturnDetails.Any())
                 {
-                    ConsoleHelper.WriteDebug($"📋 [CanDeleteAsync] 重新載入明細資料");
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var entityWithDetails = await context.SalesReturns
                         .Include(sr => sr.SalesReturnDetails)
@@ -199,33 +195,26 @@ namespace ERPCore2.Services
 
                     if (entityWithDetails == null)
                     {
-                        ConsoleHelper.WriteError($"❌ [CanDeleteAsync] 找不到退回單 ID={entity.Id}");
                         return ServiceResult.Failure("找不到要刪除的銷貨退回單");
                     }
 
                     entity = entityWithDetails;
                 }
 
-                ConsoleHelper.WriteDebug($"📋 [CanDeleteAsync] 檢查 {entity.SalesReturnDetails.Count} 筆明細");
-                
                 // 3. 檢查每個明細是否被鎖定
                 foreach (var detail in entity.SalesReturnDetails)
                 {
                     var productName = detail.Product?.Name ?? $"商品ID:{detail.ProductId}";
-                    ConsoleHelper.WriteDebug($"  🔍 明細 ID={detail.Id}, 商品={productName}, TotalPaidAmount={detail.TotalPaidAmount:N2}, IsSettled={detail.IsSettled}");
                     
                     // 檢查是否有沖款記錄（TotalPaidAmount > 0 表示已有沖款）
                     if (detail.TotalPaidAmount > 0)
                     {
                         var errorMsg = $"無法刪除此銷貨退回單，因為商品「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N2} 元）";
-                        ConsoleHelper.WriteWarning($"⚠ [CanDeleteAsync] {errorMsg}");
                         return ServiceResult.Failure(errorMsg);
                     }
                 }
 
                 // 4. 所有檢查都通過
-                ConsoleHelper.WriteSuccess($"✓ [CanDeleteAsync] 銷貨退回單 ID={entity.Id} 可以刪除");
-                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
