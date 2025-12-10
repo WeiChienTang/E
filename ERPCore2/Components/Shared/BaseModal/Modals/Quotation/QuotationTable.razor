@@ -1209,15 +1209,7 @@ else
     /// </summary>
     private void OnProductFocus(QuotationItem item)
     {
-        ConsoleHelper.WriteDebug($"[OnProductFocus] 觸發，SelectedCustomerId: {SelectedCustomerId}");
-        
         var availableProducts = GetAvailableProducts();
-        
-        ConsoleHelper.WriteInfo($"[OnProductFocus] 可用商品數量: {availableProducts.Count}");
-        if (availableProducts.Any())
-        {
-            ConsoleHelper.WriteSuccess($"[OnProductFocus] 前3個商品: {string.Join(", ", availableProducts.Take(3).Select(p => p.Code))}");
-        }
         
         item.FilteredProducts = availableProducts.Take(20).ToList();
         item.ShowProductDropdown = true;
@@ -1244,11 +1236,7 @@ else
     {
         item.ProductSearchValue = searchValue ?? string.Empty;
         
-        ConsoleHelper.WriteDebug($"[OnProductSearchChanged] 搜尋值: '{searchValue}', SelectedCustomerId: {SelectedCustomerId}");
-        
         var availableProducts = GetAvailableProducts();
-        
-        ConsoleHelper.WriteInfo($"[OnProductSearchChanged] 可用商品數量: {availableProducts.Count}");
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
@@ -1264,8 +1252,6 @@ else
                 .Take(20)
                 .ToList();
         }
-        
-        ConsoleHelper.WriteInfo($"[OnProductSearchChanged] 篩選後商品數量: {item.FilteredProducts.Count}");
         
         item.ShowProductDropdown = true;
         item.ProductSelectedIndex = -1;
@@ -1793,9 +1779,6 @@ else
     /// </summary>
     private List<Product> GetAvailableProducts()
     {
-        ConsoleHelper.WriteDebug($"[GetAvailableProducts] 開始篩選，總商品數: {Products.Count}");
-        ConsoleHelper.WriteDebug($"[GetAvailableProducts] SelectedCustomerId: {SelectedCustomerId}");
-        
         // 報價單不需要檢查客戶，只要商品可販售即可
         // 只顯示自製類型的商品（可排程生產的商品才需要報價）
         var filtered = Products
@@ -1803,20 +1786,6 @@ else
                        p.ProductCategory.IsSaleable &&
                        p.ProcurementType == ProcurementType.Manufactured)
             .ToList();
-        
-        ConsoleHelper.WriteInfo($"[GetAvailableProducts] 可販售商品數: {Products.Count(p => p.ProductCategory?.IsSaleable == true)}");
-        ConsoleHelper.WriteInfo($"[GetAvailableProducts] 自製商品數: {Products.Count(p => p.ProcurementType == ProcurementType.Manufactured)}");
-        ConsoleHelper.WriteSuccess($"[GetAvailableProducts] 篩選後商品數: {filtered.Count}");
-        
-        if (filtered.Any())
-        {
-            ConsoleHelper.WriteSuccess($"[GetAvailableProducts] 前5個商品: {string.Join(", ", filtered.Take(5).Select(p => $"{p.Code}({p.ProcurementType})"))}");
-        }
-        else
-        {
-            ConsoleHelper.WriteError("[GetAvailableProducts] ⚠️ 沒有符合條件的商品！");
-            ConsoleHelper.WriteWarning($"[GetAvailableProducts] 請檢查: 1) 商品是否標記為可販售 2) 商品是否設為自製類型");
-        }
         
         return filtered;
     }

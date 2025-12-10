@@ -245,6 +245,8 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
         /// <param name="checkReturn">是否檢查退貨記錄</param>
         /// <param name="checkConversion">是否檢查轉單記錄</param>
         /// <param name="checkReceiving">是否檢查進貨記錄</param>
+        /// <param name="checkDelivery">是否檢查出貨記錄（DeliveredQuantity）</param>
+        /// <param name="checkSchedule">是否檢查排程記錄（ScheduledQuantity）</param>
         /// <param name="returnedQuantities">已退貨數量字典（當 checkReturn = true 時需要提供）</param>
         /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
         public static bool CanDeleteItem<TEntity>(
@@ -254,6 +256,8 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
             bool checkReturn = false,
             bool checkConversion = false,
             bool checkReceiving = false,
+            bool checkDelivery = false,
+            bool checkSchedule = false,
             Dictionary<int, decimal>? returnedQuantities = null) where TEntity : class
         {
             reason = string.Empty;
@@ -310,7 +314,89 @@ namespace ERPCore2.Helpers.InteractiveTableComponentHelper
                 return false;
             }
             
+            // 檢查出貨記錄（DeliveredQuantity）
+            if (checkDelivery && HasDeliveryRecord(entity))
+            {
+                var deliveredQty = GetDeliveredQuantity(entity);
+                reason = $"此商品已有出貨記錄（已出貨 {deliveredQty} 個），無法刪除";
+                return false;
+            }
+            
+            // 檢查排程記錄（ScheduledQuantity）
+            if (checkSchedule && HasScheduleRecord(entity))
+            {
+                var scheduledQty = GetScheduledQuantity(entity);
+                reason = $"此商品已有排程記錄（已排程 {scheduledQty} 個），無法刪除";
+                return false;
+            }
+            
             return true;
+        }
+        
+        /// <summary>
+        /// 檢查是否有出貨記錄（檢查 DeliveredQuantity 欄位）
+        /// </summary>
+        private static bool HasDeliveryRecord<TEntity>(TEntity entity) where TEntity : class
+        {
+            var type = entity.GetType();
+            var deliveredProperty = type.GetProperty("DeliveredQuantity");
+            
+            if (deliveredProperty != null && deliveredProperty.PropertyType == typeof(decimal))
+            {
+                var value = (decimal)(deliveredProperty.GetValue(entity) ?? 0m);
+                return value > 0;
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// 取得已出貨數量
+        /// </summary>
+        private static decimal GetDeliveredQuantity<TEntity>(TEntity entity) where TEntity : class
+        {
+            var type = entity.GetType();
+            var deliveredProperty = type.GetProperty("DeliveredQuantity");
+            
+            if (deliveredProperty != null && deliveredProperty.PropertyType == typeof(decimal))
+            {
+                return (decimal)(deliveredProperty.GetValue(entity) ?? 0m);
+            }
+            
+            return 0;
+        }
+        
+        /// <summary>
+        /// 檢查是否有排程記錄（檢查 ScheduledQuantity 欄位）
+        /// </summary>
+        private static bool HasScheduleRecord<TEntity>(TEntity entity) where TEntity : class
+        {
+            var type = entity.GetType();
+            var scheduledProperty = type.GetProperty("ScheduledQuantity");
+            
+            if (scheduledProperty != null && scheduledProperty.PropertyType == typeof(decimal))
+            {
+                var value = (decimal)(scheduledProperty.GetValue(entity) ?? 0m);
+                return value > 0;
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// 取得已排程數量
+        /// </summary>
+        private static decimal GetScheduledQuantity<TEntity>(TEntity entity) where TEntity : class
+        {
+            var type = entity.GetType();
+            var scheduledProperty = type.GetProperty("ScheduledQuantity");
+            
+            if (scheduledProperty != null && scheduledProperty.PropertyType == typeof(decimal))
+            {
+                return (decimal)(scheduledProperty.GetValue(entity) ?? 0m);
+            }
+            
+            return 0;
         }
     }
 }

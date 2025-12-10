@@ -517,6 +517,71 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 重新計算並更新已出貨數量和金額
+        /// 用於在銷貨出貨單儲存後，回寫已出貨數量到銷貨訂單明細
+        /// </summary>
+        public async Task<ServiceResult> RecalculateDeliveredQuantityAsync(int salesOrderDetailId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await RecalculateDeliveredQuantityAsync(salesOrderDetailId, context);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RecalculateDeliveredQuantityAsync), GetType(), _logger, new { 
+                    Method = nameof(RecalculateDeliveredQuantityAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderDetailId = salesOrderDetailId 
+                });
+                return ServiceResult.Failure("重新計算已出貨數量時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 重新計算並更新已出貨數量和金額（支援外部 DbContext）
+        /// </summary>
+        public async Task<ServiceResult> RecalculateDeliveredQuantityAsync(int salesOrderDetailId, AppDbContext context)
+        {
+            try
+            {
+                var detail = await context.SalesOrderDetails
+                    .FirstOrDefaultAsync(d => d.Id == salesOrderDetailId);
+                
+                if (detail == null)
+                {
+                    return ServiceResult.Failure("找不到指定的銷貨訂單明細");
+                }
+
+                // 重新計算已出貨數量和金額（只計算 Active 狀態且其父出貨單也是 Active 的明細）
+                var deliveryDetails = await context.SalesDeliveryDetails
+                    .Include(sdd => sdd.SalesDelivery)
+                    .Where(sdd => sdd.SalesOrderDetailId == salesOrderDetailId 
+                               && sdd.Status == EntityStatus.Active
+                               && sdd.SalesDelivery.Status == EntityStatus.Active)
+                    .ToListAsync();
+
+                var totalDeliveredQuantity = deliveryDetails.Sum(sdd => sdd.DeliveryQuantity);
+
+                detail.DeliveredQuantity = totalDeliveredQuantity;
+                detail.UpdatedAt = DateTime.UtcNow;
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RecalculateDeliveredQuantityAsync), GetType(), _logger, new { 
+                    Method = nameof(RecalculateDeliveredQuantityAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderDetailId = salesOrderDetailId 
+                });
+                return ServiceResult.Failure("重新計算已出貨數量時發生錯誤");
+            }
+        }
+
         #endregion
     }
 }

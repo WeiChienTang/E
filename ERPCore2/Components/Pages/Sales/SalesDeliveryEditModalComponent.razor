@@ -988,6 +988,25 @@
                 salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDelivery.Id);
             }
 
+            // 🔥 關鍵：更新相關銷貨訂單明細的已出貨量（僅處理有訂單的明細）
+            if (validDetails.Any())
+            {
+                var uniqueSalesOrderDetailIds = validDetails
+                    .Where(d => d.SalesOrderDetailId.HasValue && d.SalesOrderDetailId.Value > 0)
+                    .Select(d => d.SalesOrderDetailId!.Value)
+                    .Distinct();
+
+                foreach (var salesOrderDetailId in uniqueSalesOrderDetailIds)
+                {
+                    var recalculateResult = await SalesOrderDetailService.RecalculateDeliveredQuantityAsync(salesOrderDetailId);
+                    
+                    if (!recalculateResult.IsSuccess)
+                    {
+                        await NotificationService.ShowWarningAsync($"銷貨訂單明細已出貨量更新失敗：{recalculateResult.ErrorMessage}");
+                    }
+                }
+            }
+
             // 更新主檔總金額
             var totalAmount = salesDeliveryDetails.Sum(d => d.SubtotalAmount);
             if (salesDelivery.TotalAmount != totalAmount)

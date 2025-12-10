@@ -23,8 +23,6 @@
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IDbContextFactory<AppDbContext> DbContextFactory
 
-@using ERPCore2.Helpers
-
 <GenericEditModalComponent TEntity="SalesOrder" 
                           TService="ISalesOrderService"
                           @ref="editModalComponent"
@@ -53,7 +51,7 @@
                           OnCancel="@HandleCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           GetStatusMessage="@GetStatusMessage"
-                          FormHeaderContent="@GetWarningMessage()"
+                          FormHeaderContent="@WarningMessage"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
@@ -136,13 +134,7 @@
     
     // ===== 預填參數（用於從報價單轉單） =====
     [Parameter] public int? PrefilledCustomerId { get; set; }
-    [Parameter] public int? PrefilledCompanyId { get; set; }
-    [Parameter] public int? PrefilledEmployeeId { get; set; }
     [Parameter] public int? PrefilledQuotationId { get; set; }
-    
-    // ===== 審核控制 =====
-    private bool isApprovalEnabled = false; // 系統參數：是否啟用報價單審核
-    private bool? isSourceQuotationApproved = null; // 來源報價單是否已審核
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
@@ -152,14 +144,13 @@
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
-    // 原始資料集合（用於 AutoComplete）
-    private List<Customer> availableCustomers = new();
-    private List<Company> availableCompanies = new();
-    private List<Employee> availableEmployees = new();
-    private List<Product> availableProducts = new();
-    private List<Unit> availableUnits = new();
-    private List<Warehouse> availableWarehouses = new();
-    private List<Quotation> availableQuotations = new();
+    private List<Customer> customers = new();
+    private List<Company> companies = new();
+    private List<Employee> employees = new();
+    private List<Product> products = new();
+    private List<Unit> units = new();
+    private List<Warehouse> warehouses = new();
+    private List<Quotation> quotations = new();
     
     // 銷貨訂單明細
     private List<SalesOrderDetail> salesOrderDetails = new();
@@ -197,18 +188,7 @@
     // 訂單庫存檢視 Modal
     private bool showInventoryCheckModal = false;
     
-    // ===== 轉單狀態 =====
-    private bool canCreateDelivery = false; 
-    // 是否可以轉銷貨出貨單（新增模式需先儲存，編輯模式直接為 true）
-    
-    // 下拉選單選項（向下相容）
-    private List<Customer> customers = new();
-    private List<Company> companies = new();
-    private List<Employee> employees = new();
-    private List<SelectOption> customerOptions = new();
-    private List<SelectOption> companyOptions = new();
-    private List<SelectOption> employeeOptions = new();
-    private List<SelectOption> statusOptions = new();
+    // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
     
     // 稅率快取變數（一次性載入，避免每次計算都查詢資料庫）
@@ -251,23 +231,25 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible && !isDataLoaded)
+        try
         {
-            // 打開時,如果是新增模式,重置鎖定狀態
-            if (!SalesOrderId.HasValue)
+            if (IsVisible && !isDataLoaded)
             {
-                hasUndeletableDetails = false;
+                await LoadAdditionalDataAsync();
+                await InitializeFormFieldsAsync();
+                isDataLoaded = true;
             }
-            
-            await LoadAdditionalDataAsync();
-            await InitializeFormFieldsAsync();
-            isDataLoaded = true;
+            else if (!IsVisible)
+            {
+                isDetailDataReady = false;
+                isDataLoaded = false;
+            }
+
+            await base.OnParametersSetAsync();
         }
-        else if (!IsVisible)
+        catch (Exception ex)
         {
-            //  Modal 關閉時重置明細資料準備狀態
-            isDetailDataReady = false;
-            isDataLoaded = false;
+            await NotificationService.ShowErrorAsync($"參數設置時發生錯誤：{ex.Message}");
         }
     }
 
@@ -279,12 +261,11 @@
             {
                 await OnSalesOrderSaved.InvokeAsync(editModalComponent.Entity);
             }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
+            // 不需要手動關閉 Modal，GenericEditModalComponent 會處理
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(), 
-                additionalData: "銷貨訂單編輯Modal儲存成功處理失敗");
+            await NotificationService.ShowErrorAsync($"處理成功事件時發生錯誤：{ex.Message}");
         }
     }
 
@@ -300,24 +281,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(), 
-                additionalData: "銷貨訂單編輯Modal取消處理失敗");
-        }
-    }
-
-    private async Task CloseModal()
-    {
-        try
-        {
-            if (IsVisibleChanged.HasDelegate)
-            {
-                await IsVisibleChanged.InvokeAsync(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CloseModal), GetType(), 
-                additionalData: "銷貨訂單編輯Modal關閉失敗");
+            await NotificationService.ShowErrorAsync($"關閉視窗時發生錯誤：{ex.Message}");
         }
     }
 
@@ -325,67 +289,47 @@
     {
         try
         {
+            // 重置明細資料準備狀態
             isDetailDataReady = false;
             hasUndeletableDetails = false;
             
             if (!SalesOrderId.HasValue)
             {
-                // 新增模式 - 自動產生銷貨訂單號並設定預設公司
-                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, DbContext);
-                
-                // 新增模式：必須先儲存才能轉銷貨
-                canCreateDelivery = false;
-                
-                // 取得預設公司
-                var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
-                
+                // 新增模式
                 var newOrder = new SalesOrder
                 {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, DbContext),
                     OrderDate = DateTime.Today,
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
                     Status = EntityStatus.Active,
-                    TotalAmount = 0,
-                    Code = generatedCode,
-                    CompanyId = primaryCompany?.Id ?? 0 // 設定預設公司
+                    TotalAmount = 0
                 };
+                
+                // 取得預設公司
+                var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+                newOrder.CompanyId = primaryCompany?.Id ?? 0;
                 
                 // 如果是從報價單轉單，載入報價單資料
                 if (PrefilledQuotationId.HasValue)
                 {
                     await LoadDataFromQuotation(newOrder, PrefilledQuotationId.Value);
                 }
-                // 否則使用預填客戶、公司和業務員
-                else
+                else if (PrefilledCustomerId.HasValue)
                 {
-                    if (PrefilledCustomerId.HasValue)
-                    {
-                        newOrder.CustomerId = PrefilledCustomerId.Value;
-                    }
-                    if (PrefilledCompanyId.HasValue)
-                    {
-                        newOrder.CompanyId = PrefilledCompanyId.Value;
-                    }
-                    if (PrefilledEmployeeId.HasValue)
-                    {
-                        newOrder.EmployeeId = PrefilledEmployeeId.Value;
-                    }
+                    newOrder.CustomerId = PrefilledCustomerId.Value;
                 }
                 
-                // 清空明細（如果沒有從報價單載入）
+                // 清空明細
                 if (!PrefilledQuotationId.HasValue)
                 {
                     salesOrderDetails.Clear();
                 }
                 
                 isDetailDataReady = true;
-                
                 return newOrder;
             }
 
-            // 編輯模式：可以直接轉銷貨
-            canCreateDelivery = true;
-            
-            // 編輯模式 - 載入銷貨訂單和明細
+            // 編輯模式
             var salesOrder = await SalesOrderService.GetWithDetailsAsync(SalesOrderId.Value);
             
             if (salesOrder != null)
@@ -393,23 +337,10 @@
                 // 載入銷貨訂單明細
                 await LoadSalesOrderDetails(SalesOrderId.Value);
                 
-                //  關鍵：載入明細相關資料（退貨記錄、收款記錄）
+                // 載入明細相關資料（退貨記錄、收款記錄）
                 await LoadDetailRelatedDataAsync();
+                
                 isDetailDataReady = true;
-                StateHasChanged();
-                
-                // 在實體載入後重新初始化表單欄位
-                await Task.Delay(10); // 短暫延遲確保實體已設定
-                _ = Task.Run(async () =>
-                {
-                    await InvokeAsync(async () =>
-                    {
-                        await InitializeFormFieldsAsync();
-                        StateHasChanged();
-                    });
-                });
-                
-                // 觸發重新渲染以更新 ProductManagerComponent
                 StateHasChanged();
             }
             else
@@ -421,8 +352,6 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadSalesOrderData), GetType(), 
-                additionalData: $"載入銷貨訂單資料失敗 - ID: {SalesOrderId}");
             await NotificationService.ShowErrorAsync($"載入銷貨訂單資料時發生錯誤：{ex.Message}");
             isDetailDataReady = true; // 錯誤也要允許渲染
             return null;
@@ -430,8 +359,12 @@
     }
 
     /// <summary>
-    /// 載入明細相關資料（退貨記錄、收款記錄）- 用於判斷是否有不可刪除的明細
+    /// 載入明細相關資料（出貨、排程、收款記錄）- 用於判斷是否有不可刪除的明細
     /// 必須在 DataLoader 中同步執行，確保狀態訊息正確顯示
+    /// 銷貨訂單需要檢查三種下一步動作：
+    /// 1. DeliveredQuantity > 0：已有出貨記錄
+    /// 2. ScheduledQuantity > 0：已有生產排程
+    /// 3. TotalReceivedAmount > 0：已有收款記錄
     /// </summary>
     private async Task LoadDetailRelatedDataAsync()
     {
@@ -447,17 +380,18 @@
             
             foreach (var detail in salesOrderDetails.Where(d => d.Id > 0))
             {
-                // TODO: 退貨現在從出貨單產生，不直接從訂單
-                // 檢查退貨記錄
-                // var returnedQty = await SalesReturnDetailService.GetReturnedQuantityByDeliveryDetailAsync(detail.Id);
-                // if (returnedQty > 0)
-                // {
-                //     hasUndeletable = true;
-                //     break;
-                // }
+                //  使用 DetailLockHelper 檢查三種下一步動作
+                // 檢查 1：出貨記錄 (DeliveredQuantity)
+                // 檢查 2：排程記錄 (ScheduledQuantity)
+                // 檢查 3：收款記錄 (TotalReceivedAmount)
+                bool canDelete = DetailLockHelper.CanDeleteItem(
+                    detail, 
+                    out string reason, 
+                    checkDelivery: true,    // 檢查 DeliveredQuantity
+                    checkSchedule: true,    // 檢查 ScheduledQuantity
+                    checkPayment: true);    // 檢查 TotalReceivedAmount
                 
-                // 檢查收款記錄
-                if (detail.TotalReceivedAmount > 0)
+                if (!canDelete)
                 {
                     hasUndeletable = true;
                     break;
@@ -473,7 +407,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDetailRelatedDataAsync), GetType());
+            await NotificationService.ShowErrorAsync($"載入明細相關資料時發生錯誤：{ex.Message}");
             hasUndeletableDetails = false;
         }
     }
@@ -482,54 +416,22 @@
     {
         try
         {
-            // 載入客戶選項
-            customers = await CustomerService.GetAllAsync();
-            availableCustomers = customers; // 用於 AutoComplete
-            customerOptions = customers.Where(c => c.Status == EntityStatus.Active)
-                .Select(c => new SelectOption
-                {
-                    Text = c.CompanyName ?? "",
-                    Value = c.Id.ToString()
-                }).ToList();
-
-            // 載入公司選項
-            companies = await CompanyService.GetAllAsync();
-            availableCompanies = companies; // 用於 AutoComplete
-            companyOptions = companies.Where(c => c.Status == EntityStatus.Active)
-                .Select(c => new SelectOption
-                {
-                    Text = c.CompanyName,
-                    Value = c.Id.ToString()
-                }).ToList();
-
-            // 載入員工選項
-            employees = await EmployeeService.GetAllAsync();
-            availableEmployees = employees; // 用於 AutoComplete
-            employeeOptions = employees.Where(e => e.Status == EntityStatus.Active)
-                .Select(e => new SelectOption
-                {
-                    Text = e.Name ?? string.Empty,
-                    Value = e.Id.ToString()
-                }).ToList();
-
-            // 載入商品資料
-            availableProducts = await ProductService.GetAllAsync();
-
-            // 載入單位資料
-            availableUnits = await UnitService.GetAllAsync();
-
-            // 載入倉庫資料
-            availableWarehouses = await WarehouseService.GetAllAsync();
-
-            // 載入報價單資料
-            availableQuotations = await QuotationService.GetAllAsync();
-
-            // 初始化狀態選項
-            statusOptions = new List<SelectOption>
+            // 並行載入所有資料
+            var tasks = new List<Task>
             {
-                new SelectOption { Text = "啟用", Value = "Active" },
-                new SelectOption { Text = "停用", Value = "Inactive" }
+                Task.Run(async () => customers = await CustomerService.GetAllAsync()),
+                Task.Run(async () => companies = await CompanyService.GetAllAsync()),
+                Task.Run(async () => employees = await EmployeeService.GetAllAsync()),
+                Task.Run(async () => products = await ProductService.GetAllAsync()),
+                Task.Run(async () => units = await UnitService.GetAllAsync()),
+                Task.Run(async () => warehouses = await WarehouseService.GetAllAsync()),
+                Task.Run(async () => quotations = await QuotationService.GetAllAsync())
             };
+            
+            await Task.WhenAll(tasks);
+            
+            // 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
             
             // 初始化稅別選項
             taxCalculationMethodOptions = new List<SelectOption>
@@ -539,29 +441,26 @@
                 new SelectOption { Text = "不含稅", Value = ((int)TaxCalculationMethod.NoTax).ToString() }
             };
             
-            //  一次性載入系統稅率（避免每次計算都查詢資料庫）
-            currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
-            
-            // 使用 AutoCompleteConfigHelper 建立配置
+            // 建立 AutoComplete 配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesOrder>()
-                .AddField(nameof(SalesOrder.CustomerId), "CompanyName", availableCustomers)
-                .AddField(nameof(SalesOrder.CompanyId), "CompanyName", availableCompanies)
-                .AddField(nameof(SalesOrder.EmployeeId), "Name", availableEmployees)
-                .AddField(nameof(SalesOrder.QuotationId), "Code", availableQuotations)
+                .AddField(nameof(SalesOrder.CustomerId), "CompanyName", customers)
+                .AddField(nameof(SalesOrder.CompanyId), "CompanyName", companies)
+                .AddField(nameof(SalesOrder.EmployeeId), "Name", employees)
+                .AddField(nameof(SalesOrder.QuotationId), "Code", quotations)
                 .Build();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), 
-                additionalData: "銷貨訂單編輯Modal載入額外資料失敗");
+            await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
             
             // 設定安全的預設值
-            customerOptions = new List<SelectOption>();
-            companyOptions = new List<SelectOption>();
-            employeeOptions = new List<SelectOption>();
-            statusOptions = new List<SelectOption>();
-            availableProducts = new List<Product>();
-            availableUnits = new List<Unit>();
+            customers = new List<Customer>();
+            companies = new List<Company>();
+            employees = new List<Employee>();
+            products = new List<Product>();
+            units = new List<Unit>();
+            warehouses = new List<Warehouse>();
+            quotations = new List<Quotation>();
         }
     }
 
@@ -824,7 +723,7 @@
                     </div>
                 }
                 // 檢查是否有可用的商品和單位資料
-                else if (availableProducts != null && availableProducts.Any() && availableUnits != null && availableUnits.Any())
+                else if (products != null && products.Any() && units != null && units.Any())
                 {
                     // 檢查是否已選擇客戶
                     @if (editModalComponent.Entity.CustomerId > 0)
@@ -834,8 +733,8 @@
                                                           TDetailEntity="SalesOrderDetail"
                                                           MainEntity="@editModalComponent.Entity"
                                                           ExistingDetails="@salesOrderDetails"
-                                                          Products="@availableProducts"
-                                                          Warehouses="@availableWarehouses"
+                                                          Products="@products"
+                                                          Warehouses="@warehouses"
                                                           SelectedCustomerId="@editModalComponent.Entity.CustomerId"
                                                           SelectedQuotationId="@editModalComponent.Entity.QuotationId"
                                                           TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
@@ -847,9 +746,7 @@
                                                           UnitIdPropertyName="UnitId"
                                                           WarehouseIdPropertyName="WarehouseId"
                                                           RemarksPropertyName="DetailRemarks"
-                                                          IsApprovalEnabled="@isApprovalEnabled"
                                                           SourceQuotationId="@PrefilledQuotationId"
-                                                          IsSourceQuotationApproved="@isSourceQuotationApproved"
                                                           OnDetailsChanged="@HandleDetailsChanged"
                                                           OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                                           OnOpenRelatedDocument="@HandleOpenRelatedDocument"
@@ -896,6 +793,12 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
     {
+        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons（與 PurchaseOrder 一致）
+        if (hasUndeletableDetails)
+        {
+            return new List<FieldActionButton>();
+        }
+        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             customerModalManager, 
@@ -908,6 +811,12 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetCompanyActionButtonsAsync()
     {
+        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons（與 PurchaseOrder 一致）
+        if (hasUndeletableDetails)
+        {
+            return new List<FieldActionButton>();
+        }
+        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             companyModalManager, 
@@ -920,6 +829,12 @@
     /// </summary>
     private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
     {
+        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons（與 PurchaseOrder 一致）
+        if (hasUndeletableDetails)
+        {
+            return new List<FieldActionButton>();
+        }
+        
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             employeeModalManager, 
@@ -1066,9 +981,6 @@
     {
         try
         {
-            //  關鍵修復：導航到已存在的記錄時，允許轉單
-            canCreateDelivery = true;
-            
             // 1. 重新載入明細資料
             await LoadSalesOrderDetails(loadedEntityId);
             
@@ -1090,9 +1002,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
-                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
-            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+            await NotificationService.ShowErrorAsync($"處理實體載入事件時發生錯誤：{ex.Message}");
         }
     }
     
@@ -1113,6 +1023,10 @@
             {
                 salesOrderDetails = new List<SalesOrderDetail>();
             }
+            
+            //  關鍵修正：載入明細後重新檢查鎖定狀態
+            // 參考 PurchaseOrderEditModalComponent 的實作
+            await LoadDetailRelatedDataAsync();
         }
         catch (Exception ex)
         {
@@ -1234,18 +1148,19 @@
 
     /// <summary>
     /// 處理有不可刪除明細的狀態變更
-    /// 當有不可刪除的明細時(已退貨或已收款),鎖定主檔的所有使用者可輸入欄位
+    /// 當明細動態變化時（新增出貨、排程、收款記錄等），這個方法會被調用
     /// </summary>
     private async Task HandleHasUndeletableDetailsChanged(bool hasUndeletable)
     {
         try
         {
-            hasUndeletableDetails = hasUndeletable;
-            
-            // 更新欄位的唯讀狀態
-            UpdateFieldsReadOnlyState();
-            
-            StateHasChanged();
+            if (hasUndeletableDetails != hasUndeletable)
+            {
+                hasUndeletableDetails = hasUndeletable;
+                
+                // 更新欄位的唯讀狀態
+                UpdateFieldsReadOnlyState();
+            }
         }
         catch (Exception ex)
         {
@@ -1254,72 +1169,19 @@
     }
 
     /// <summary>
-    /// 更新欄位的唯讀狀態
-    /// 當有不可刪除的明細時,所有使用者可輸入的欄位都應設為唯讀:
-    /// - 銷貨單號 (SalesOrderNumber)
-    /// - 客戶 (CustomerId) - 同時禁用新增/編輯按鈕
-    /// - 業務員 (EmployeeId) - 同時禁用新增/編輯按鈕
-    /// - 訂單日期 (OrderDate)
-    /// - 預定出貨日期 (ExpectedDeliveryDate)
-    /// - 付款條件 (PaymentTerms)
-    /// - 交貨條件 (DeliveryTerms)
-    /// - 備註 (Remarks)
-    /// </summary>
-    /// <summary>
-    /// 更新欄位的唯讀狀態 - 根據是否有不可刪除的明細
+    /// 更新欄位的唯讀狀態 - 根據明細轉單狀態
     /// 使用 FormFieldLockHelper 統一處理欄位鎖定邏輯
     /// </summary>
-    private void UpdateFieldsReadOnlyState()
+    private async void UpdateFieldsReadOnlyState()
     {
-        // 使用 FormFieldLockHelper 批次鎖定/解鎖欄位
-        var fieldsToLock = new[]
+        // 🔑 關鍵：直接重新初始化表單欄位（與 PurchaseOrder 一致）
+        // InitializeFormFieldsAsync 會呼叫 GetCustomerActionButtonsAsync 等方法
+        // 這些方法內部已經檢查 hasUndeletableDetails，會自動決定是否加入 ActionButtons
+        await InvokeAsync(async () =>
         {
-            nameof(SalesOrder.Code),
-            nameof(SalesOrder.OrderDate),
-            nameof(SalesOrder.TaxCalculationMethod),
-            nameof(SalesOrder.ExpectedDeliveryDate),
-            nameof(SalesOrder.PaymentTerms),
-            nameof(SalesOrder.DeliveryTerms),
-            nameof(BaseEntity.Remarks)
-        };
-        
-        // 鎖定或解鎖一般欄位（不需要 ActionButtons）
-        FormFieldLockHelper.LockMultipleFieldsSimple(
-            formFields, 
-            fieldsToLock, 
-            isLocked: hasUndeletableDetails
-        );
-        
-        // 特殊處理有 ActionButtons 的欄位
-        var fieldsWithActionButtons = new Dictionary<string, Func<Task<List<FieldActionButton>>>>
-        {
-            { nameof(SalesOrder.CustomerId), GetCustomerActionButtonsAsync },
-            { nameof(SalesOrder.CompanyId), GetCompanyActionButtonsAsync },
-            { nameof(SalesOrder.EmployeeId), GetEmployeeActionButtonsAsync }
-        };
-
-        foreach (var kvp in fieldsWithActionButtons)
-        {
-            if (hasUndeletableDetails)
-            {
-                // 鎖定：移除 ActionButtons
-                FormFieldLockHelper.LockField(
-                    formFields,
-                    kvp.Key,
-                    isLocked: true
-                );
-            }
-            else
-            {
-                // 解鎖：恢復 ActionButtons
-                FormFieldLockHelper.LockField(
-                    formFields,
-                    kvp.Key,
-                    isLocked: false,
-                    actionButtonsGetter: kvp.Value
-                );
-            }
-        }
+            await InitializeFormFieldsAsync();
+            StateHasChanged();
+        });
     }
 
     /// <summary>
@@ -1331,37 +1193,43 @@
     {
         try
         {
+            // 如果資料還沒準備好，不顯示訊息
             if (!isDetailDataReady || editModalComponent?.Entity == null)
                 return null;
             
+            // 只有在有不可刪除的明細時才顯示鎖定訊息
             if (hasUndeletableDetails)
             {
                 return (
-                    "明細有其他動作，主檔欄位已鎖定",
+                    "部分明細有出貨/排程/收款記錄，主檔欄位已鎖定",
                     GenericEditModalComponent<SalesOrder, ISalesOrderService>.BadgeVariant.Warning,
-                    "fas fa-lock"
+                    "bi bi-lock"
                 );
             }
             
+            // 正常狀態不顯示訊息
             return null;
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetStatusMessage), GetType());
+            await NotificationService.ShowErrorAsync($"取得狀態訊息時發生錯誤：{ex.Message}");
             return null;
         }
     }
 
     /// <summary>
-    /// 取得警告訊息（表單頂部）
-    /// 當有不可刪除的明細時，顯示詳細說明
+    /// 取得警告訊息（顯示在表單欄位上方）- 作為屬性以確保正確的渲染時機
+    /// 當有不可刪除的明細時，顯示鎖定警告訊息
     /// </summary>
-    private RenderFragment? GetWarningMessage() => __builder =>
+    private RenderFragment? WarningMessage => __builder =>
     {
-        <GenericLockedFieldMessage IsVisible="@(isDetailDataReady && hasUndeletableDetails)"
-                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。"
-                                  Type="GenericLockedFieldMessage.MessageType.Warning"
-                                  IconClass="fas fa-lock" />
+        // 只在資料準備就緒後才顯示訊息
+        if (!isDetailDataReady)
+            return;
+        
+        // 明細已轉單的警告訊息
+        <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
+                                  Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。" />
     };
 
     /// <summary>
@@ -1462,14 +1330,14 @@
     {
         try
         {
-            // 唯一檢查：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
-            if (!canCreateDelivery)
+            // 檢查：確保訂單已儲存
+            if (!SalesOrderId.HasValue)
             {
                 await NotificationService.ShowWarningAsync("請先儲存銷貨訂單後，才能轉銷貨出貨單");
                 return;
             }
             
-            // 安全檢查：確保 Entity 已載入（canCreateDelivery = true 時理論上一定有值）
+            // 安全檢查：確保 Entity 已載入
             if (editModalComponent?.Entity == null)
             {
                 await NotificationService.ShowWarningAsync("銷貨訂單資料載入失敗，請重新整理頁面");
@@ -1753,15 +1621,7 @@
     /// </summary>
     private async Task<bool> SaveSalesOrderWrapper(SalesOrder salesOrder)
     {
-        var result = await SaveSalesOrderWithDetails(salesOrder);
-        
-        // 儲存成功後允許轉銷貨
-        if (result)
-        {
-            canCreateDelivery = true;
-        }
-        
-        return result;
+        return await SaveSalesOrderWithDetails(salesOrder);
     }
 
     /// <summary>
@@ -2127,8 +1987,6 @@
                 setPrefilledValues: () =>
                 {
                     PrefilledCustomerId = customerId;
-                    PrefilledCompanyId = companyId;
-                    PrefilledEmployeeId = employeeId;
                     PrefilledQuotationId = quotationId;
                 },
                 isVisibleChanged: IsVisibleChanged,
@@ -2149,7 +2007,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledQuotation), GetType(), 
-                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, CompanyId: {companyId}, EmployeeId: {employeeId}, QuotationId: {quotationId}");
+                additionalData: $"開啟預填銷貨訂單Modal失敗 - CustomerId: {customerId}, QuotationId: {quotationId}");
             await NotificationService.ShowErrorAsync("開啟銷貨訂單時發生錯誤");
         }
     }
@@ -2168,13 +2026,6 @@
                 await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
                 return;
             }
-            
-            // 記錄審核狀態
-            isSourceQuotationApproved = quotation.IsApproved;
-            
-            // 載入系統參數：是否啟用報價單審核
-            var systemParameter = await SystemParameterService.GetSystemParameterAsync();
-            isApprovalEnabled = systemParameter?.EnableQuotationApproval ?? false;
             
             // 驗證報價單明細
             if (quotation.QuotationDetails == null || !quotation.QuotationDetails.Any())
@@ -2232,13 +2083,6 @@
             
             // 設定稅別
             salesOrder.TaxCalculationMethod = quotation.TaxCalculationMethod;
-            
-            // 記錄審核狀態
-            isSourceQuotationApproved = quotation.IsApproved;
-            
-            // 載入系統參數：是否啟用報價單審核
-            var systemParameter = await SystemParameterService.GetSystemParameterAsync();
-            isApprovalEnabled = systemParameter?.EnableQuotationApproval ?? false;
             
             // 注意：明細的載入將由父組件（QuotationEditModalComponent）的 HandleCreateSalesOrderFromQuotation 處理
             // 這裡不直接處理明細轉換，只設定審核狀態和客戶

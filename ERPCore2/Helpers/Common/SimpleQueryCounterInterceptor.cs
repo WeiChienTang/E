@@ -6,7 +6,6 @@ namespace ERPCore2.Helpers;
 
 /// <summary>
 /// 簡化版 EF Core 查詢攔截器 - 統計資料庫查詢次數
-/// 使用 ConsoleHelper 輸出簡潔的查詢資訊
 /// </summary>
 public class SimpleQueryCounterInterceptor : DbCommandInterceptor
 {
@@ -68,26 +67,6 @@ public class SimpleQueryCounterInterceptor : DbCommandInterceptor
                 else
                     _tableAccessCount[table] = 1;
             }
-
-            // 使用 ConsoleHelper 輸出簡潔資訊
-            var tableList = string.Join(", ", tables);
-            ConsoleHelper.WriteInfo($"Query #{_queryCount} - {queryType} in {Math.Round(durationMs, 1)}ms - {tableList}");
-
-            // 慢查詢警告 (超過 100ms)
-            if (durationMs > 100)
-            {
-                ConsoleHelper.WriteWarning($"Slow query detected: {Math.Round(durationMs, 1)}ms");
-            }
-
-            // 重複存取警告 (同一表格超過 5 次)
-            var repeatedTables = _tableAccessCount.Where(kvp => kvp.Value > 5).ToList();
-            if (repeatedTables.Any())
-            {
-                foreach (var table in repeatedTables)
-                {
-                    ConsoleHelper.WriteWarning($"Table '{table.Key}' accessed {table.Value} times - possible N+1 query issue");
-                }
-            }
         }
     }
 
@@ -137,7 +116,6 @@ public class SimpleQueryCounterInterceptor : DbCommandInterceptor
         {
             _queryCount = 0;
             _tableAccessCount.Clear();
-            ConsoleHelper.WriteDebug("Query statistics reset");
         }
     }
 
@@ -148,21 +126,20 @@ public class SimpleQueryCounterInterceptor : DbCommandInterceptor
     {
         lock (_lock)
         {
-            ConsoleHelper.WriteSeparator('=', 60);
-            ConsoleHelper.WriteTitle("Database Query Statistics");
-            ConsoleHelper.WriteInfo($"Total Queries Executed: {_queryCount}");
+            Console.WriteLine(new string('=', 60));
+            Console.WriteLine("Database Query Statistics");
+            Console.WriteLine($"Total Queries Executed: {_queryCount}");
             
             if (_tableAccessCount.Any())
             {
-                ConsoleHelper.WriteInfo("Table Access Count:");
+                Console.WriteLine("Table Access Count:");
                 foreach (var table in _tableAccessCount.OrderByDescending(kvp => kvp.Value))
                 {
                     var icon = table.Value > 5 ? "⚠" : "✓";
-                    ConsoleHelper.WriteColor($"  {icon} {table.Key}: {table.Value} times", 
-                        table.Value > 5 ? ConsoleColor.Yellow : ConsoleColor.Gray);
+                    Console.WriteLine($"  {icon} {table.Key}: {table.Value} times");
                 }
             }
-            ConsoleHelper.WriteSeparator('=', 60);
+            Console.WriteLine(new string('=', 60));
         }
     }
 }

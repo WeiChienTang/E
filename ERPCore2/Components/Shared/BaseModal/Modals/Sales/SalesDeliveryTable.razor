@@ -697,6 +697,12 @@ else
             // 設定商品ID
             SetPropertyValue(detailEntity, nameof(DeliveryItem.ProductId), item.ProductId);
             
+            // 🔥 關鍵：設定來源銷貨訂單明細ID（如果是從訂單載入的）
+            if (item.SelectedSalesDetail != null)
+            {
+                SetPropertyValue(detailEntity, "SalesOrderDetailId", item.SelectedSalesDetail.Id);
+            }
+            
             // 設定數量
             SetPropertyValue(detailEntity, QuantityPropertyName, item.DeliveryQuantity ?? 0);
             

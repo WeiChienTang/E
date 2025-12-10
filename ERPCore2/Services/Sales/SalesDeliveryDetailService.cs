@@ -11,11 +11,15 @@ namespace ERPCore2.Services
     /// </summary>
     public class SalesDeliveryDetailService : GenericManagementService<SalesDeliveryDetail>, ISalesDeliveryDetailService
     {
+        private readonly ISalesOrderDetailService _salesOrderDetailService;
+
         public SalesDeliveryDetailService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<SalesDeliveryDetail>> logger) 
+            ILogger<GenericManagementService<SalesDeliveryDetail>> logger,
+            ISalesOrderDetailService salesOrderDetailService) 
             : base(contextFactory, logger)
         {
+            _salesOrderDetailService = salesOrderDetailService;
         }
 
         #region 覆寫基底方法
@@ -302,6 +306,64 @@ namespace ERPCore2.Services
                     CustomerId = customerId
                 });
                 return new List<SalesDeliveryDetail>();
+            }
+        }
+
+        #endregion
+
+        #region 刪除覆寫方法
+
+        /// <summary>
+        /// 覆寫永久刪除方法,加入銷貨訂單明細的已出貨數量回寫邏輯
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                // 查詢要刪除的明細,包含相關資訊
+                var entity = await context.SalesDeliveryDetails
+                    .Include(d => d.Product)
+                    .Include(d => d.SalesOrderDetail)
+                        .ThenInclude(sod => sod!.Product)
+                    .FirstOrDefaultAsync(d => d.Id == id);
+
+                if (entity == null)
+                {
+                    return ServiceResult.Failure($"找不到ID為 {id} 的銷貨出貨明細");
+                }
+
+                // 回寫銷貨訂單明細的已出貨數量
+                if (entity.SalesOrderDetailId.HasValue && entity.SalesOrderDetailId.Value > 0)
+                {
+                    var recalculateResult = await _salesOrderDetailService
+                        .RecalculateDeliveredQuantityAsync(entity.SalesOrderDetailId.Value);
+
+                    if (!recalculateResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult.Failure($"回寫銷貨訂單明細失敗: {recalculateResult.ErrorMessage}");
+                    }
+                }
+
+                // 執行實際刪除
+                context.SalesDeliveryDetails.Remove(entity);
+                await context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new {
+                    Method = nameof(PermanentDeleteAsync),
+                    ServiceType = GetType().Name,
+                    Id = id
+                });
+                return ServiceResult.Failure($"永久刪除銷貨出貨明細時發生錯誤: {ex.Message}");
             }
         }
 

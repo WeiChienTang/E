@@ -69,5 +69,21 @@ namespace ERPCore2.Services
         /// <param name="customerId">客戶ID</param>
         /// <returns>最近一次銷貨訂單的明細清單</returns>
         Task<List<SalesOrderDetail>> GetLastCompleteSalesAsync(int customerId);
+
+        /// <summary>
+        /// 重新計算並更新已出貨數量和金額
+        /// 用於在銷貨出貨單儲存後，回寫已出貨數量到銷貨訂單明細
+        /// </summary>
+        /// <param name="salesOrderDetailId">銷貨訂單明細ID</param>
+        /// <returns>執行結果</returns>
+        Task<ServiceResult> RecalculateDeliveredQuantityAsync(int salesOrderDetailId);
+        
+        /// <summary>
+        /// 重新計算並更新已出貨數量和金額（支援外部 DbContext）
+        /// </summary>
+        /// <param name="salesOrderDetailId">銷貨訂單明細ID</param>
+        /// <param name="context">外部 DbContext（用於 Transaction 內）</param>
+        /// <returns>執行結果</returns>
+        Task<ServiceResult> RecalculateDeliveredQuantityAsync(int salesOrderDetailId, Data.Context.AppDbContext context);
     }
 }

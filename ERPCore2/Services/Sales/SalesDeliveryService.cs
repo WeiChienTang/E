@@ -13,16 +13,19 @@ namespace ERPCore2.Services
     {
         private readonly ISalesDeliveryDetailService? _detailService;
         private readonly IInventoryStockService _inventoryStockService;
+        private readonly ISalesOrderDetailService? _salesOrderDetailService;
 
         public SalesDeliveryService(
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<SalesDelivery>> logger,
             IInventoryStockService inventoryStockService,
-            ISalesDeliveryDetailService? detailService = null) 
+            ISalesDeliveryDetailService? detailService = null,
+            ISalesOrderDetailService? salesOrderDetailService = null) 
             : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
+            _salesOrderDetailService = salesOrderDetailService;
         }
 
         #region 覆寫基底方法
@@ -283,6 +286,88 @@ namespace ERPCore2.Services
                     CustomerId = customerId
                 });
                 return new SalesDeliveryStatistics();
+            }
+        }
+
+        #endregion
+
+        #region 刪除方法覆寫
+
+        /// <summary>
+        /// 永久刪除銷貨出貨單（含回寫已出貨數量）
+        /// 參考 PurchaseReceivingService 的實作邏輯
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 1. 先取得主記錄（含詳細資料，包含銷貨訂單明細關聯）
+                    var entity = await context.SalesDeliveries
+                        .Include(sd => sd.DeliveryDetails)
+                            .ThenInclude(sdd => sdd.SalesOrderDetail)
+                        .FirstOrDefaultAsync(x => x.Id == id);
+                        
+                    if (entity == null)
+                    {
+                        return ServiceResult.Failure("找不到要刪除的資料");
+                    }
+                    
+                    // 2. 先收集需要回寫的銷貨訂單明細ID（在刪除之前）
+                    List<int> salesOrderDetailIdsToRecalculate = new List<int>();
+                    if (_salesOrderDetailService != null && entity.DeliveryDetails != null)
+                    {
+                        salesOrderDetailIdsToRecalculate = entity.DeliveryDetails
+                            .Where(d => d.SalesOrderDetailId.HasValue && d.SalesOrderDetailId.Value > 0)
+                            .Select(d => d.SalesOrderDetailId!.Value)
+                            .Distinct()
+                            .ToList();
+                    }
+                    
+                    // 3. 永久刪除主記錄（EF Core 會自動刪除相關的明細）
+                    context.SalesDeliveries.Remove(entity);
+                    
+                    // 4. 先保存刪除變更（重要：讓資料庫先刪除記錄）
+                    await context.SaveChangesAsync();
+                    
+                    // 5. 然後回寫銷貨訂單明細的已出貨數量（此時資料庫中已無刪除的記錄）
+                    if (_salesOrderDetailService != null && salesOrderDetailIdsToRecalculate.Any())
+                    {
+                        foreach (var salesOrderDetailId in salesOrderDetailIdsToRecalculate)
+                        {
+                            // 使用同一個 context 重新計算（此時會排除已刪除的出貨明細）
+                            var recalculateResult = await _salesOrderDetailService.RecalculateDeliveredQuantityAsync(
+                                salesOrderDetailId,
+                                context  // ← 傳入同一個 context
+                            );
+                            
+                            if (!recalculateResult.IsSuccess)
+                            {
+                                await transaction.RollbackAsync();
+                                return ServiceResult.Failure($"回寫銷貨訂單明細已出貨數量失敗：{recalculateResult.ErrorMessage}");
+                            }
+                        }
+                    }
+                    
+                    // 6. 提交交易
+                    await transaction.CommitAsync();
+                    
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger);
+                return ServiceResult.Failure($"永久刪除資料時發生錯誤: {ex.Message}");
             }
         }
 

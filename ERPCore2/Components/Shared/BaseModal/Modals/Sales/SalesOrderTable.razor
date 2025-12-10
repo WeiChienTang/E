@@ -492,43 +492,26 @@ else
     }
     
     /// <summary>
-    /// 檢查項目是否可以刪除
-    /// 綜合檢查以下條件：
-    /// 1. 退貨記錄檢查 (HasReturnRecord)
-    ///    - 資料來源：透過 SalesReturnDetailService.GetReturnedQuantityByOrderDetailAsync() 查詢
-    ///    - 檢查資料表：SalesReturnDetail (銷貨退回明細)
-    ///    - 檢查欄位：SalesOrderDetailId (關聯的銷貨訂單明細ID)
-    ///    - 限制原因：已有退貨記錄的銷貨訂單明細不可刪除，以保持資料一致性
-    /// 
-    /// 2. 沖款記錄檢查 (HasPaymentRecord)
-    ///    - 資料來源：直接讀取 SalesOrderDetail 實體
-    ///    - 檢查資料表：SalesOrderDetail (銷貨訂單明細)
-    ///    - 檢查欄位：TotalReceivedAmount (累計收款金額)
-    ///    - 限制原因：已收款的銷貨訂單明細不可刪除，避免財務資料錯亂
+    /// 檢查項目是否可以刪除 - 使用 DetailLockHelper 統一處理
+    /// 銷貨訂單明細需檢查三種下一步動作：
+    /// 1. DeliveredQuantity > 0：已有出貨記錄
+    /// 2. ScheduledQuantity > 0：已有生產排程
+    /// 3. TotalReceivedAmount > 0：已有收款記錄
     /// </summary>
     /// <param name="item">要檢查的項目</param>
     /// <param name="reason">不可刪除的原因（輸出參數）</param>
     /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
     private bool CanDeleteItem(SalesItem item, out string reason)
     {
-        // 檢查 1：退貨記錄
-        if (HasReturnRecord(item))
-        {
-            var returnedQty = GetReturnedQuantity(item);
-            reason = $"此商品已有退貨記錄（已退貨 {returnedQty} 個），無法刪除";
-            return false;
-        }
-        
-        // 檢查 2：沉款記錄
-        if (HasPaymentRecord(item))
-        {
-            var receivedAmount = GetReceivedAmount(item);
-            reason = $"此商品已有沖款記錄（已收款 {receivedAmount:N0} 元），無法刪除";
-            return false;
-        }
-        
-        reason = string.Empty;
-        return true;
+        // 🔥 使用 DetailLockHelper 統一檢查（檢查：出貨、排程、收款）
+        // 注意：銷貨訂單需要同時檢查多個條件
+        return DetailLockHelper.CanDeleteItem(
+            item.ExistingDetailEntity,
+            out reason,
+            checkDelivery: true,    // 檢查 DeliveredQuantity
+            checkSchedule: true,    // 檢查 ScheduledQuantity  
+            checkPayment: true      // 檢查 TotalReceivedAmount
+        );
     }
 
     /// <summary>
@@ -935,11 +918,18 @@ else
             }
         }
         
-        // 載入退貨數量資訊（不觸發 StateHasChanged）
-        await LoadReturnedQuantitiesAsync();
+        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
+        bool hasUndeletableDetails = SalesItems.Any(item => 
+            item.SelectedProduct != null && 
+            !DetailLockHelper.CanDeleteItem(
+                item.ExistingDetailEntity, 
+                out _, 
+                checkDelivery: true,    // 檢查 DeliveredQuantity
+                checkSchedule: true,    // 檢查 ScheduledQuantity
+                checkPayment: true      // 檢查 TotalReceivedAmount
+            )
+        );
         
-        // 檢查是否有不可刪除的明細
-        bool hasUndeletableDetails = SalesItems.Any(p => !CanDeleteItem(p, out _));
         if (_hasUndeletableDetails != hasUndeletableDetails)
         {
             _hasUndeletableDetails = hasUndeletableDetails;

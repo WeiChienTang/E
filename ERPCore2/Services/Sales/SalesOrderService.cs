@@ -386,8 +386,24 @@ namespace ERPCore2.Services
                 // 3. 檢查每個明細項目
                 foreach (var detail in orderWithDetails.SalesOrderDetails)
                 {
+                    // 檢查 1：出貨記錄檢查（新增）
+                    if (detail.DeliveredQuantity > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此銷貨訂單，因為商品「{productName}」已有出貨記錄（已出貨 {detail.DeliveredQuantity} 個）");
+                    }
+                    
+                    // 檢查 2：生產排程檢查（新增）
+                    if (detail.ScheduledQuantity > 0)
+                    {
+                        var productName = detail.Product?.Name ?? "未知商品";
+                        return ServiceResult.Failure(
+                            $"無法刪除此銷貨訂單，因為商品「{productName}」已有生產排程（已排程 {detail.ScheduledQuantity} 個）");
+                    }
+
                     // TODO: 退貨現在從出貨單產生，不直接從訂單
-                    // 檢查 1：退貨記錄檢查
+                    // 檢查 3：退貨記錄檢查
                     // if (_salesReturnDetailService != null)
                     // {
                     //     var returnDetails = await _salesReturnDetailService.GetBySalesDeliveryDetailIdAsync(detail.Id);
@@ -400,7 +416,7 @@ namespace ERPCore2.Services
                     //     }
                     // }
 
-                    // 檢查 2：收款記錄檢查
+                    // 檢查 4：收款記錄檢查
                     if (detail.TotalReceivedAmount > 0)
                     {
                         var productName = detail.Product?.Name ?? "未知商品";
