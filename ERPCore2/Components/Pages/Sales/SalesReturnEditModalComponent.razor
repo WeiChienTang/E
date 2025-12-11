@@ -1342,15 +1342,19 @@
                 return false;
             }
             
-            if (result.IsSuccess)
-            {
-                return true;
-            }
-            else
+            if (!result.IsSuccess)
             {
                 await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
                 return false;
             }
+
+            // 🔥 關鍵：儲存成功後，使用差異計算更新庫存
+            if (result.Data != null)
+            {
+                await UpdateInventoryByDifferenceAsync(result.Data.Id);
+            }
+            
+            return true;
         }
         catch (Exception ex)
         {
@@ -1539,23 +1543,32 @@
     }
 
     /// <summary>
-    /// 建立庫存交易記錄 - 新增模式
+    /// 建立庫存交易記錄 - 新增模式（已棄用，改用 UpdateInventoryByDifferenceAsync）
     /// </summary>
     private async Task CreateInventoryTransactionsAsync(List<SalesReturnDetail> details, string returnNumber)
     {
-        // 這裡應該實作庫存交易建立邏輯
-        // 退貨會增加庫存，所以交易類型為正數
+        // 🔥 新版本統一使用 UpdateInventoryByDifferenceAsync 處理新增和編輯
+        // 這個方法保留只是為了向下相容，實際不再使用
         await Task.CompletedTask;
     }
 
     /// <summary>
-    /// 使用差異比較更新庫存
+    /// 使用差異比較更新庫存（統一處理新增和編輯）
     /// </summary>
-    private async Task UpdateInventoryByDifferenceAsync(List<SalesReturnDetail> originalDetails, List<SalesReturnDetail> newDetails, string returnNumber)
+    private async Task UpdateInventoryByDifferenceAsync(int salesReturnId)
     {
-        // 這裡應該實作庫存差異更新邏輯
-        // 比較原始明細和新明細的差異，只更新變更的部分
-        await Task.CompletedTask;
+        ConsoleHelper.WriteInfo($"[Component] 開始呼叫 UpdateInventoryByDifferenceAsync - 銷貨退回單ID: {salesReturnId}");
+        
+        var inventoryUpdateResult = await SalesReturnService.UpdateInventoryByDifferenceAsync(salesReturnId);
+        
+        if (!inventoryUpdateResult.IsSuccess)
+        {
+            ConsoleHelper.WriteError($"[Component] 庫存更新失敗: {inventoryUpdateResult.ErrorMessage}");
+            await NotificationService.ShowErrorAsync($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
+            throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
+        }
+        
+        ConsoleHelper.WriteSuccess($"[Component] 庫存更新成功");
     }
 
     /// <summary>

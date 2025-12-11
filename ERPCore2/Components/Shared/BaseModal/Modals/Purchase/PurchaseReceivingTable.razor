@@ -176,6 +176,7 @@ else
         // 數量和價格
         public int OrderQuantity { get; set; }
         public int ReceivedQuantity { get; set; }
+        public int TotalReturnedQuantity { get; set; } // 累計退貨數量
         public decimal UnitPrice { get; set; }
         public decimal TaxRate { get; set; }
         
@@ -329,7 +330,7 @@ else
         // 2. 採購數量（唯讀）
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "採購數量",
+            Title = "採購量",
             PropertyName = "OrderQuantity",
             ColumnType = InteractiveColumnType.Display,
             Width = "100px",
@@ -340,7 +341,7 @@ else
         // 3. 入庫數量
         columns.Add(new InteractiveColumnDefinition
         {
-            Title = "入庫數量",
+            Title = "入庫量",
             PropertyName = "ReceivedQuantity",
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
@@ -358,7 +359,39 @@ else
             })
         });
         
-        // 4. 單價
+        // 4. 已退數量（唯讀，顯示累計退貨數量）
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "已退量",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            CustomTemplate = item =>
+            {
+                var receivingItem = (ReceivingItem)item;
+                var totalReturned = receivingItem.TotalReturnedQuantity;
+                
+                if (totalReturned > 0)
+                {
+                    // 有退貨記錄：用藍色顯示並加上圖示
+                    return @<div class="text-end text-info fw-bold" title="已有退貨記錄">
+                        <i class="bi bi-arrow-return-left me-1"></i>@totalReturned
+                    </div>;
+                }
+                else if (receivingItem.SelectedProduct != null)
+                {
+                    // 無退貨記錄：用灰色顯示
+                    return @<div class="text-end text-muted">0</div>;
+                }
+                else
+                {
+                    // 空行：不顯示
+                    return @<div class="text-end text-muted">-</div>;
+                }
+            }
+        });
+        
+        // 5. 單價
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "單價",
@@ -379,7 +412,7 @@ else
             })
         });
         
-        // 5. 稅率%
+        // 6. 稅率%
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "稅率%",
@@ -403,7 +436,7 @@ else
             })
         });
         
-        // 6. 小計（計算欄位）
+        // 7. 小計（計算欄位）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "小計",
@@ -418,7 +451,7 @@ else
             }
         });
         
-        // 7. 倉庫
+        // 8. 倉庫
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "倉庫",
@@ -444,7 +477,7 @@ else
             })
         });
         
-        // 8. 庫位
+        // 9. 庫位
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "庫位",
@@ -484,7 +517,7 @@ else
             }
         });
         
-        // 9. 備註
+        // 10. 備註
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "備註",
@@ -788,6 +821,7 @@ else
                         : (purchaseDetail.Product != null ? FormatProductDisplay(purchaseDetail.Product) : ""),
                     OrderQuantity = purchaseDetail.OrderQuantity,
                     ReceivedQuantity = purchaseDetail.ReceivedQuantity,
+                    TotalReturnedQuantity = purchaseDetail.TotalReturnedQuantity, // 🔥 載入累計退貨數量
                     UnitPrice = purchaseDetail.UnitPrice,
                     TaxRate = purchaseDetail.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
                     SelectedWarehouse = purchaseDetail.Warehouse,
@@ -1061,7 +1095,8 @@ else
     }
     
     /// <summary>
-    /// 載入退貨數量 - 查詢每個進貨明細的已退貨數量
+    /// 載入退貨數量 - 從進貨明細的 TotalReturnedQuantity 欄位直接讀取
+    /// 🔥 簡化版：不再需要查詢 PurchaseReturnDetail 表，直接從 Entity 讀取
     /// </summary>
     public async Task LoadReturnedQuantitiesAsync()
     {
@@ -1079,21 +1114,18 @@ else
                 return;
             }
             
-            // 逐一查詢每個明細的退貨數量
+            // 直接從 ReceivingItem 的 TotalReturnedQuantity 屬性讀取
+            // 這個值已經在 LoadExistingDetailsAsync 中從 Entity 載入
             foreach (var item in items)
             {
                 var detailId = GetPropertyValue<int>(item.ExistingDetailEntity!, "Id");
-                if (detailId > 0)
+                if (detailId > 0 && item.TotalReturnedQuantity > 0)
                 {
-                    var returnedQty = await PurchaseReturnDetailService
-                        .GetReturnedQuantityByReceivingDetailAsync(detailId);
-                    
-                    if (returnedQty > 0)
-                    {
-                        _returnedQuantities[detailId] = returnedQty;
-                    }
+                    _returnedQuantities[detailId] = item.TotalReturnedQuantity;
                 }
             }
+            
+            await Task.CompletedTask; // 保持非同步簽章，但實際上不需要查詢
         }
         catch (Exception)
         {

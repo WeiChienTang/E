@@ -745,7 +745,7 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     quantityDiff,
                                     InventoryTransactionTypeEnum.Return,
-                                    savedEntity.Code ?? string.Empty,
+                                    $"{savedEntity.Code}_ADJ",
                                     detail.WarehouseLocationId,
                                     operationDescription
                                 );
@@ -759,7 +759,7 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     Math.Abs(quantityDiff),
                                     InventoryTransactionTypeEnum.Return,
-                                    savedEntity.Code ?? string.Empty,
+                                    $"{savedEntity.Code}_ADJ",
                                     detail.OriginalUnitPrice,
                                     detail.WarehouseLocationId,
                                     operationDescription
@@ -909,6 +909,28 @@ namespace ERPCore2.Services
                     await context.PurchaseReturnDetails.AddRangeAsync(newDetailsToAdd);
                 }
 
+                // 🔥 更新進貨明細的累計退貨數量
+                foreach (var (detail, quantityDiff) in quantityChanges)
+                {
+                    if (detail.PurchaseReceivingDetailId.HasValue && detail.PurchaseReceivingDetailId.Value > 0)
+                    {
+                        var receivingDetail = await context.PurchaseReceivingDetails
+                            .FirstOrDefaultAsync(rd => rd.Id == detail.PurchaseReceivingDetailId.Value);
+                        
+                        if (receivingDetail != null)
+                        {
+                            // 累加退貨數量（quantityDiff 可能為正或負）
+                            receivingDetail.TotalReturnedQuantity += quantityDiff;
+                            
+                            // 確保不會變成負數
+                            if (receivingDetail.TotalReturnedQuantity < 0)
+                            {
+                                receivingDetail.TotalReturnedQuantity = 0;
+                            }
+                        }
+                    }
+                }
+
                 await context.SaveChangesAsync();
                 return ServiceResult<List<(PurchaseReturnDetail detail, int quantityDifference)>>.Success(quantityChanges);
             }
@@ -1044,6 +1066,17 @@ namespace ERPCore2.Services
                         return canDeleteResult;
                     }
                     
+                    // 🔑 關鍵：刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
+                    var code = entity.Code;
+                    var adjTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber.StartsWith(code + "_ADJ"))
+                        .ToListAsync();
+                    
+                    if (adjTransactions.Any())
+                    {
+                        context.InventoryTransactions.RemoveRange(adjTransactions);
+                    }
+                    
                     // 3. 回復庫存 - 將之前因退貨而扣減的庫存回復
                     if (_inventoryStockService != null)
                     {
@@ -1093,6 +1126,24 @@ namespace ERPCore2.Services
                                 await transaction.RollbackAsync();
                                 return ServiceResult.Failure($"回復庫存失敗：{addResult.ErrorMessage}");
                             }
+                            
+                            // 🔥 回退進貨明細的累計退貨數量
+                            if (detail.PurchaseReceivingDetailId.HasValue)
+                            {
+                                var receivingDetail = await context.PurchaseReceivingDetails
+                                    .FirstOrDefaultAsync(rd => rd.Id == detail.PurchaseReceivingDetailId.Value);
+                                
+                                if (receivingDetail != null)
+                                {
+                                    receivingDetail.TotalReturnedQuantity -= detail.ReturnQuantity;
+                                    
+                                    // 確保不會變成負數
+                                    if (receivingDetail.TotalReturnedQuantity < 0)
+                                    {
+                                        receivingDetail.TotalReturnedQuantity = 0;
+                                    }
+                                }
+                            }
                         }
                     }
                     else
@@ -1120,6 +1171,109 @@ namespace ERPCore2.Services
                     Id = id 
                 });
                 return ServiceResult.Failure($"刪除退貨單時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 確認採購退回單並更新庫存（首次新增時使用）
+        /// 功能：執行退回確認流程，將退回數量從庫存扣除（因為商品退還給供應商）
+        /// 處理流程：
+        /// 1. 驗證退回單存在性
+        /// 2. 對每個明細進行庫存扣減操作
+        /// 3. 使用原始單號作為 TransactionNumber（不帶 _ADJ 後綴）
+        /// 4. 使用資料庫交易確保資料一致性
+        /// 5. 任何步驟失敗時回滾所有變更
+        /// </summary>
+        /// <param name="id">退回單ID</param>
+        /// <param name="confirmedBy">確認人員ID（保留參數，未來可能使用）</param>
+        /// <returns>確認結果，包含成功狀態及錯誤訊息</returns>
+        public async Task<ServiceResult> ConfirmReturnAsync(int id, int confirmedBy = 0)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    var purchaseReturn = await context.PurchaseReturns
+                        .Include(pr => pr.PurchaseReturnDetails)
+                            .ThenInclude(prd => prd.PurchaseReceivingDetail)
+                        .FirstOrDefaultAsync(pr => pr.Id == id);
+                    
+                    if (purchaseReturn == null)
+                        return ServiceResult.Failure("找不到指定的退回單");
+                    
+                    // 更新庫存 - 退回會減少庫存（商品退還給供應商）
+                    foreach (var detail in purchaseReturn.PurchaseReturnDetails)
+                    {
+                        if (detail.ReturnQuantity > 0)
+                        {
+                            // 從關聯的進貨明細取得倉庫ID
+                            int? warehouseId = null;
+                            
+                            if (detail.PurchaseReceivingDetailId.HasValue)
+                            {
+                                var receivingDetail = await context.PurchaseReceivingDetails
+                                    .FirstOrDefaultAsync(prd => prd.Id == detail.PurchaseReceivingDetailId.Value);
+                                warehouseId = receivingDetail?.WarehouseId;
+                            }
+                            
+                            // 如果沒有進貨明細關聯，嘗試從倉庫位置反查
+                            if (!warehouseId.HasValue && detail.WarehouseLocationId.HasValue)
+                            {
+                                var warehouseLocation = await context.WarehouseLocations
+                                    .FirstOrDefaultAsync(wl => wl.Id == detail.WarehouseLocationId.Value);
+                                warehouseId = warehouseLocation?.WarehouseId;
+                            }
+
+                            // 如果還是沒有倉庫ID，跳過此明細
+                            if (!warehouseId.HasValue)
+                            {
+                                continue;
+                            }
+
+                            if (_inventoryStockService != null)
+                            {
+                                var reduceStockResult = await _inventoryStockService.ReduceStockAsync(
+                                    detail.ProductId,
+                                    warehouseId.Value,
+                                    detail.ReturnQuantity,
+                                    InventoryTransactionTypeEnum.Return,
+                                    purchaseReturn.Code ?? string.Empty,  // 使用原始單號，不帶 _ADJ
+                                    detail.WarehouseLocationId,
+                                    $"採購退回確認 - {purchaseReturn.Code ?? string.Empty}"
+                                    );
+                                
+                                if (!reduceStockResult.IsSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存扣減失敗：{reduceStockResult.ErrorMessage}");
+                                }
+                            }
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConfirmReturnAsync), GetType(), _logger, new { 
+                    Method = nameof(ConfirmReturnAsync),
+                    ServiceType = GetType().Name,
+                    Id = id,
+                    ConfirmedBy = confirmedBy 
+                });
+                return ServiceResult.Failure("確認退回單過程發生錯誤");
             }
         }
     }

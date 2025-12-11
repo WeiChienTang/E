@@ -43,6 +43,14 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalReceivedAmount { get; set; } = 0;
 
+        [Display(Name = "累計退貨數量")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal TotalReturnedQuantity { get; set; } = 0;
+
+        [Display(Name = "剩餘可退數量")]
+        [NotMapped]
+        public decimal RemainingReturnableQuantity => DeliveryQuantity - TotalReturnedQuantity;
+
         // Foreign Keys
         [Required(ErrorMessage = "銷貨單為必填")]
         [Display(Name = "銷貨單")]

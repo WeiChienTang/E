@@ -441,6 +441,17 @@ namespace ERPCore2.Services
                         }
                     }
                     
+                    // 🔑 關鍵：刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
+                    // 這樣重新新增同號單據時，就不會找到舊的 _ADJ 記錄
+                    var adjTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber.StartsWith(entity.Code + "_ADJ"))
+                        .ToListAsync();
+                    
+                    if (adjTransactions.Any())
+                    {
+                        context.InventoryTransactions.RemoveRange(adjTransactions);
+                    }
+                    
                     // 4. 更新對應的採購訂單明細已進貨數量
                     if (_purchaseOrderDetailService != null)
                     {
@@ -949,11 +960,10 @@ namespace ERPCore2.Services
                     if (currentReceiving == null)
                         return ServiceResult.Failure("找不到指定的進貨單");
 
-                    // 查詢所有與此進貨單相關的庫存交易記錄（排除 _DEL 交易，因為那是由 PermanentDeleteAsync 獨立處理的）
+                    // 🔑 關鍵修正：只查詢 _ADJ 後綴的交易記錄（編輯產生的調整記錄）
+                    // 這樣可以避免刪除後重新新增時找到舊的首次新增記錄
                     var existingTransactions = await context.InventoryTransactions
-                        .Where(t => (t.TransactionNumber == currentReceiving.Code ||
-                                   t.TransactionNumber.StartsWith(currentReceiving.Code + "_"))
-                                   && !t.TransactionNumber.EndsWith("_DEL"))  // 排除刪除交易，避免重複計算
+                        .Where(t => t.TransactionNumber.StartsWith(currentReceiving.Code + "_ADJ"))
                         .ToListAsync();
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）

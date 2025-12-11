@@ -620,67 +620,8 @@ namespace ERPCore2.Services
                         return ServiceResult<SalesReturn>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
                     }
 
-                    // 更新庫存邏輯 - 銷貨退回會增加庫存 (只處理有數量變更的明細)
-                    if (_inventoryStockService != null)
-                    {
-                        var stockChanges = detailResult.Data ?? new List<(SalesReturnDetail, decimal)>();
-                        
-                        foreach (var (detail, quantityDiff) in stockChanges.Where(sc => sc.Item2 != 0))
-                        {
-                            // 從關聯的銷貨出貨明細取得倉庫ID
-                            int? warehouseId = null;
-                            
-                            // 如果有關聯的銷貨出貨明細，直接從中取得倉庫ID
-                            if (detail.SalesDeliveryDetailId.HasValue)
-                            {
-                                var deliveryDetail = await context.SalesDeliveryDetails
-                                    .FirstOrDefaultAsync(sdd => sdd.Id == detail.SalesDeliveryDetailId.Value);
-                                warehouseId = deliveryDetail?.WarehouseId;
-                            }
-
-                            // 如果還是沒有倉庫ID，跳過此明細並記錄警告
-                            if (!warehouseId.HasValue)
-                            {
-                                continue;
-                            }
-
-                            // 根據數量差異進行庫存調整
-                            ServiceResult stockResult;
-                            if (quantityDiff > 0)
-                            {
-                                // 退回數量增加，需要增加庫存
-                                stockResult = await _inventoryStockService.AddStockAsync(
-                                    detail.ProductId,
-                                    warehouseId.Value,
-                                    (int)Math.Ceiling(quantityDiff), // 轉為整數，向上取整
-                                    InventoryTransactionTypeEnum.Return,
-                                    savedEntity.Code ?? string.Empty,
-                                    detail.OriginalUnitPrice, // 使用原始單價
-                                    null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
-                                    $"銷貨退回增量 - {savedEntity.Code ?? string.Empty}"
-                                );
-                            }
-                            else
-                            {
-                                // 退回數量減少，需要減少庫存 (撤銷部分退回)
-                                stockResult = await _inventoryStockService.ReduceStockAsync(
-                                    detail.ProductId,
-                                    warehouseId.Value,
-                                    (int)Math.Ceiling(Math.Abs(quantityDiff)), // 轉為正整數
-                                    InventoryTransactionTypeEnum.Return,
-                                    savedEntity.Code ?? string.Empty,
-                                    null, // 倉庫位置ID
-                                    $"銷貨退回撤銷 - {savedEntity.Code ?? string.Empty}"
-                                );
-                            }
-
-                            if (!stockResult.IsSuccess)
-                            {
-                                await transaction.RollbackAsync();
-                                return ServiceResult<SalesReturn>.Failure($"更新庫存失敗：{stockResult.ErrorMessage}");
-                            }
-                        }
-                    }
+                    // 🔥 注意：庫存更新改為由 Component 層統一呼叫 UpdateInventoryByDifferenceAsync
+                    // 這裡不處理庫存邏輯，避免與差異計算重複
 
                     // 計算並更新總金額
                     var calculateResult = await CalculateTotalsInContext(context, savedEntity.Id);
@@ -785,6 +726,28 @@ namespace ERPCore2.Services
                 if (newDetailsToAdd.Any())
                 {
                     await context.SalesReturnDetails.AddRangeAsync(newDetailsToAdd);
+                }
+
+                // 🔥 更新銷貨明細的累計退貨數量
+                foreach (var (detail, quantityDiff) in quantityChanges)
+                {
+                    if (detail.SalesDeliveryDetailId.HasValue && detail.SalesDeliveryDetailId.Value > 0)
+                    {
+                        var deliveryDetail = await context.SalesDeliveryDetails
+                            .FirstOrDefaultAsync(dd => dd.Id == detail.SalesDeliveryDetailId.Value);
+                        
+                        if (deliveryDetail != null)
+                        {
+                            // 累加退貨數量（quantityDiff 可能為正或負）
+                            deliveryDetail.TotalReturnedQuantity += quantityDiff;
+                            
+                            // 確保不會變成負數
+                            if (deliveryDetail.TotalReturnedQuantity < 0)
+                            {
+                                deliveryDetail.TotalReturnedQuantity = 0;
+                            }
+                        }
+                    }
                 }
 
                 await context.SaveChangesAsync();
@@ -930,7 +893,36 @@ namespace ERPCore2.Services
                                 await transaction.RollbackAsync();
                                 return ServiceResult.Failure($"庫存回滾失敗：{reduceResult.ErrorMessage}");
                             }
+                            
+                            // 🔥 回退銷貨明細的累計退貨數量
+                            if (detail.SalesDeliveryDetailId.HasValue)
+                            {
+                                var deliveryDetail = await context.SalesDeliveryDetails
+                                    .FirstOrDefaultAsync(dd => dd.Id == detail.SalesDeliveryDetailId.Value);
+                                
+                                if (deliveryDetail != null)
+                                {
+                                    deliveryDetail.TotalReturnedQuantity -= detail.ReturnQuantity;
+                                    
+                                    // 確保不會變成負數
+                                    if (deliveryDetail.TotalReturnedQuantity < 0)
+                                    {
+                                        deliveryDetail.TotalReturnedQuantity = 0;
+                                    }
+                                }
+                            }
                         }
+                    }
+                    
+                    // 🔑 關鍵：刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
+                    // 這樣重新新增同號單據時，就不會找到舊的 _ADJ 記錄
+                    var adjTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber.StartsWith(entity.Code + "_ADJ"))
+                        .ToListAsync();
+                    
+                    if (adjTransactions.Any())
+                    {
+                        context.InventoryTransactions.RemoveRange(adjTransactions);
                     }
 
                     // 4. 執行實際的資料刪除（硬刪除）
@@ -963,6 +955,326 @@ namespace ERPCore2.Services
                     Id = id 
                 });
                 return ServiceResult.Failure("永久刪除銷貨退回單過程發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 使用差異計算更新庫存
+        /// 退貨會增加庫存（與出貨相反）
+        /// </summary>
+        public async Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0)
+        {
+            try
+            {
+                if (_inventoryStockService == null)
+                {
+                    return ServiceResult.Failure("庫存服務未初始化");
+                }
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    ConsoleHelper.WriteSeparator('=', 60);
+                    ConsoleHelper.WriteTitle($"銷貨退回庫存差異更新 - ID: {id}");
+                    ConsoleHelper.WriteSeparator('=', 60);
+
+                    // 1. 查詢退回單及其明細（包含倉庫、庫位等完整資訊）
+                    var currentReturn = await context.SalesReturns
+                        .Include(sr => sr.SalesReturnDetails)
+                            .ThenInclude(srd => srd.Product)
+                        .FirstOrDefaultAsync(sr => sr.Id == id);
+
+                    if (currentReturn == null)
+                    {
+                        ConsoleHelper.WriteError($"找不到ID為 {id} 的銷貨退回單");
+                        return ServiceResult.Failure($"找不到ID為 {id} 的銷貨退回單");
+                    }
+
+                    ConsoleHelper.WriteInfo($"退回單: {currentReturn.Code}, 明細數量: {currentReturn.SalesReturnDetails.Count}");
+
+                    // 🔑 關鍵修正：只查詢 _ADJ 後綴的交易記錄（編輯產生的調整記錄）
+                    // 這樣可以避免刪除後重新新增時找到舊的首次新增記錄
+                    var existingTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber.StartsWith(currentReturn.Code + "_ADJ"))
+                        .ToListAsync();
+
+                    ConsoleHelper.WriteInfo($"找到 {existingTransactions.Count} 筆歷史調整記錄 (此單之前的編輯)");
+                    foreach (var trans in existingTransactions)
+                    {
+                        ConsoleHelper.WriteDebug($"  交易: {trans.TransactionNumber}, 商品ID: {trans.ProductId}, 數量: {trans.Quantity}");
+                    }
+
+                    // 3. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity)>();
+                    
+                    foreach (var trans in existingTransactions)
+                    {
+                        var key = $"{trans.ProductId}_{trans.WarehouseId}_{trans.WarehouseLocationId?.ToString() ?? "null"}";
+                        if (!processedInventory.ContainsKey(key))
+                        {
+                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0);
+                        }
+                        // 累加所有交易的淨值（退貨的 Quantity 是正數）
+                        var oldQty = processedInventory[key].NetProcessedQuantity;
+                        var newQty = oldQty + trans.Quantity;
+                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
+                                                  processedInventory[key].LocationId, newQty);
+                    }
+                    
+                    // 4. 建立當前明細字典
+                    var currentInventory = new Dictionary<string, (int ProductId, int? WarehouseId, int? LocationId, int CurrentQuantity)>();
+                    
+                    ConsoleHelper.WriteInfo("計算當前明細的目標數量:");
+                    foreach (var detail in currentReturn.SalesReturnDetails)
+                    {
+                        // 從關聯的銷貨出貨明細取得倉庫ID
+                        int? warehouseId = null;
+                        int? locationId = null;
+                        
+                        if (detail.SalesDeliveryDetailId.HasValue)
+                        {
+                            var deliveryDetail = await context.SalesDeliveryDetails
+                                .FirstOrDefaultAsync(sdd => sdd.Id == detail.SalesDeliveryDetailId.Value);
+                            warehouseId = deliveryDetail?.WarehouseId;
+                            locationId = deliveryDetail?.WarehouseLocationId;
+                        }
+                        
+                        // 如果沒有倉庫ID，跳過此明細
+                        if (!warehouseId.HasValue)
+                        {
+                            ConsoleHelper.WriteWarning($"  明細ID: {detail.Id} 沒有倉庫資訊，跳過");
+                            continue;
+                        }
+                        
+                        ConsoleHelper.WriteDebug($"  明細ID: {detail.Id}, 商品ID: {detail.ProductId}, 倉庫ID: {warehouseId}, 退貨數量: {detail.ReturnQuantity}");
+                        
+                        var key = $"{detail.ProductId}_{warehouseId}_{locationId?.ToString() ?? "null"}";
+                        if (!currentInventory.ContainsKey(key))
+                        {
+                            currentInventory[key] = (detail.ProductId, warehouseId, locationId, 0);
+                        }
+                        var oldQty = currentInventory[key].CurrentQuantity;
+                        var newQty = oldQty + (int)detail.ReturnQuantity;
+                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
+                                               currentInventory[key].LocationId, newQty);
+                        
+                        ConsoleHelper.WriteDebug($"    Key: {key}, 累計數量: {newQty}");
+                    }
+                    
+                    // 5. 處理庫存差異 - 使用淨值計算方式
+                    var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
+                    
+                    ConsoleHelper.WriteSeparator('=', 60);
+                    ConsoleHelper.WriteInfo($"開始計算庫存差異 (共 {allKeys.Count} 組商品+倉庫組合):");
+                    
+                    foreach (var key in allKeys)
+                    {
+                        var hasProcessed = processedInventory.ContainsKey(key);
+                        var hasCurrent = currentInventory.ContainsKey(key);
+                        
+                        // 🔑 關鍵：退貨是增加庫存，所以目標數量是正數
+                        int targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0;
+                        
+                        // 計算已處理的庫存數量（之前所有交易的淨值，已經是正數）
+                        int processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0;
+                        
+                        // 計算需要調整的數量
+                        int adjustmentNeeded = targetQuantity - processedQuantity;
+                        
+                        ConsoleHelper.WriteStep(0, $"Key: {key}");
+                        ConsoleHelper.WriteDebug($"  目標數量 (本次編輯後應回補): {targetQuantity}");
+                        ConsoleHelper.WriteDebug($"  歷史累計已回補: {processedQuantity}");
+                        ConsoleHelper.WriteDebug($"  本次需調整: {adjustmentNeeded} (= 目標 - 歷史累計)");
+                        
+                        if (adjustmentNeeded != 0)
+                        {
+                            var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                            var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
+                            var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
+                            
+                            // 跳過沒有指定倉庫的明細
+                            if (!warehouseId.HasValue)
+                                continue;
+                            
+                            if (adjustmentNeeded > 0)
+                            {
+                                // 需要增加更多庫存（退貨數量增加）
+                                ConsoleHelper.WriteWarning($"  → 執行增加庫存: {adjustmentNeeded} (本次編輯增加了退貨量)");
+                                
+                                var addResult = await _inventoryStockService.AddStockAsync(
+                                    productId,
+                                    warehouseId.Value,
+                                    adjustmentNeeded,
+                                    InventoryTransactionTypeEnum.Return,
+                                    currentReturn.Code + "_ADJ",
+                                    null,  // 退貨不需要成本
+                                    locationId,
+                                    $"銷貨退回編輯調增 - {currentReturn.Code}"
+                                );
+                                
+                                if (!addResult.IsSuccess)
+                                {
+                                    ConsoleHelper.WriteError($"  ✗ 庫存增加失敗: {addResult.ErrorMessage}");
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存增加失敗：{addResult.ErrorMessage}");
+                                }
+                                ConsoleHelper.WriteSuccess($"  ✓ 庫存增加成功");
+                            }
+                            else
+                            {
+                                // 需要扣減庫存（退貨數量減少）
+                                ConsoleHelper.WriteWarning($"  → 執行扣減庫存: {Math.Abs(adjustmentNeeded)} (本次編輯減少了退貨量)");
+                                
+                                var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                    productId,
+                                    warehouseId.Value,
+                                    Math.Abs(adjustmentNeeded),
+                                    InventoryTransactionTypeEnum.Return,
+                                    currentReturn.Code + "_ADJ",
+                                    locationId,
+                                    $"銷貨退回編輯調減 - {currentReturn.Code}"
+                                );
+                                
+                                if (!reduceResult.IsSuccess)
+                                {
+                                    ConsoleHelper.WriteError($"  ✗ 庫存扣減失敗: {reduceResult.ErrorMessage}");
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存扣減失敗：{reduceResult.ErrorMessage}");
+                                }
+                                ConsoleHelper.WriteSuccess($"  ✓ 庫存扣減成功");
+                            }
+                        }
+                        else
+                        {
+                            ConsoleHelper.WriteDebug($"  ○ 無需調整 (差異為 0)");
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    
+                    ConsoleHelper.WriteSeparator('=', 60);
+                    ConsoleHelper.WriteSuccess("庫存差異更新完成！");
+                    
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    ConsoleHelper.WriteError("交易失敗，執行回滾");
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInventoryByDifferenceAsync), GetType(), _logger, new { 
+                    Method = nameof(UpdateInventoryByDifferenceAsync),
+                    ServiceType = GetType().Name,
+                    Id = id 
+                });
+                return ServiceResult.Failure("更新庫存差異時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 確認銷貨退回單並更新庫存（首次新增時使用）
+        /// 功能：執行退回確認流程，將退回數量回補到庫存
+        /// 處理流程：
+        /// 1. 驗證退回單存在性
+        /// 2. 對每個明細進行庫存回補操作
+        /// 3. 使用原始單號作為 TransactionNumber（不帶 _ADJ 後綴）
+        /// 4. 使用資料庫交易確保資料一致性
+        /// 5. 任何步驟失敗時回滾所有變更
+        /// </summary>
+        /// <param name="id">退回單ID</param>
+        /// <param name="confirmedBy">確認人員ID（保留參數，未來可能使用）</param>
+        /// <returns>確認結果，包含成功狀態及錯誤訊息</returns>
+        public async Task<ServiceResult> ConfirmReturnAsync(int id, int confirmedBy = 0)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    var salesReturn = await context.SalesReturns
+                        .Include(sr => sr.SalesReturnDetails)
+                        .FirstOrDefaultAsync(sr => sr.Id == id);
+                    
+                    if (salesReturn == null)
+                        return ServiceResult.Failure("找不到指定的退回單");
+                    
+                    // 更新庫存 - 退回會增加庫存
+                    foreach (var detail in salesReturn.SalesReturnDetails)
+                    {
+                        if (detail.ReturnQuantity > 0)
+                        {
+                            // 從關聯的出貨明細取得倉庫ID和倉庫位置ID
+                            int? warehouseId = null;
+                            int? warehouseLocationId = null;
+                            
+                            if (detail.SalesDeliveryDetailId.HasValue)
+                            {
+                                var deliveryDetail = await context.SalesDeliveryDetails
+                                    .FirstOrDefaultAsync(sdd => sdd.Id == detail.SalesDeliveryDetailId.Value);
+                                if (deliveryDetail != null)
+                                {
+                                    warehouseId = deliveryDetail.WarehouseId;
+                                    warehouseLocationId = deliveryDetail.WarehouseLocationId;
+                                }
+                            }
+
+                            // 如果還是沒有倉庫ID，跳過此明細
+                            if (!warehouseId.HasValue)
+                            {
+                                continue;
+                            }
+
+                            if (_inventoryStockService != null)
+                            {
+                                var addStockResult = await _inventoryStockService.AddStockAsync(
+                                    detail.ProductId,
+                                    warehouseId.Value,
+                                    (int)detail.ReturnQuantity,
+                                    InventoryTransactionTypeEnum.Return,
+                                    salesReturn.Code ?? string.Empty,  // 使用原始單號，不帶 _ADJ
+                                    null,  // 退回不需要成本
+                                    warehouseLocationId,
+                                    $"銷貨退回確認 - {salesReturn.Code ?? string.Empty}"
+                                    );
+                                
+                                if (!addStockResult.IsSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存回補失敗：{addStockResult.ErrorMessage}");
+                                }
+                            }
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ConfirmReturnAsync), GetType(), _logger, new { 
+                    Method = nameof(ConfirmReturnAsync),
+                    ServiceType = GetType().Name,
+                    Id = id,
+                    ConfirmedBy = confirmedBy 
+                });
+                return ServiceResult.Failure("確認退回單過程發生錯誤");
             }
         }
     }

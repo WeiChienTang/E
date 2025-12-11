@@ -79,6 +79,13 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPaidAmount { get; set; } = 0;
 
+        [Display(Name = "累計退貨數量")]
+        public int TotalReturnedQuantity { get; set; } = 0;
+
+        [Display(Name = "剩餘可退數量")]
+        [NotMapped]
+        public int RemainingReturnableQuantity => ReceivedQuantity - TotalReturnedQuantity;
+
         // Navigation Properties
         public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
         public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }

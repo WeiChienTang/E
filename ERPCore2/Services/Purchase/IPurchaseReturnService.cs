@@ -25,6 +25,13 @@ namespace ERPCore2.Services
 
         // 業務邏輯
         Task<ServiceResult> CalculateTotalsAsync(int id);
+        
+        /// <summary>
+        /// 確認採購退回單並更新庫存（首次新增時使用）
+        /// 功能：執行退回確認流程，將退回數量從庫存扣除
+        /// 使用原始單號作為 TransactionNumber，不帶 _ADJ 後綴
+        /// </summary>
+        Task<ServiceResult> ConfirmReturnAsync(int id, int confirmedBy = 0);
 
         Task<ServiceResult> CreateFromPurchaseReceivingAsync(int purchaseReceivingId, List<PurchaseReturnDetail> details);
 

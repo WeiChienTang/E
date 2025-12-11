@@ -31,6 +31,20 @@ namespace ERPCore2.Services
         /// 取得銷貨單的統計資訊
         /// </summary>
         Task<SalesDeliveryStatistics> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null, int? customerId = null);
+
+        /// <summary>
+        /// 確認銷貨出貨單並更新庫存（首次新增時使用）
+        /// 功能：執行出貨確認流程，將出貨數量從庫存扣除
+        /// 使用原始單號作為 TransactionNumber，不帶 _ADJ 後綴
+        /// </summary>
+        Task<ServiceResult> ConfirmDeliveryAsync(int id, int confirmedBy = 0);
+
+        /// <summary>
+        /// 更新銷貨出貨單的庫存（編輯時使用）
+        /// 比較編輯前後的明細差異，使用淨值計算方式確保庫存準確性
+        /// 使用 Code_ADJ 作為 TransactionNumber
+        /// </summary>
+        Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
     }
 
     /// <summary>

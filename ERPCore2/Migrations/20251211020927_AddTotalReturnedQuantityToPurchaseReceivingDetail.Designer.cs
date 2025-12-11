@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251211020927_AddTotalReturnedQuantityToPurchaseReceivingDetail")]
+    partial class AddTotalReturnedQuantityToPurchaseReceivingDetail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3573,9 +3576,6 @@ namespace ERPCore2.Migrations
 
                     b.Property<decimal>("TotalReceivedAmount")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalReturnedQuantity")
-                        .HasColumnType("decimal(18,3)");
 
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");

@@ -124,14 +124,7 @@ else
     
     // ===== 顯示控制參數 =====
     [Parameter] public bool ShowWarehouse { get; set; } = true;
-    [Parameter] public bool ShowWarehouseLocation { get; set; } = true;
-    
-    // ===== 顯示標籤參數 =====
-    [Parameter] public string QuantityLabel { get; set; } = "數量";
-    [Parameter] public string PriceLabel { get; set; } = "單價";
-    [Parameter] public string RemarksLabel { get; set; } = "備註";
-    [Parameter] public string WarehouseLabel { get; set; } = "倉庫";
-    [Parameter] public string WarehouseLocationLabel { get; set; } = "庫位";
+    [Parameter] public bool ShowWarehouseLocation { get; set; } = true;    
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "出貨明細";
@@ -387,7 +380,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.DeliveryQuantity),
-            Title = QuantityLabel,
+            Title = "銷貨量",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             MinValue = 0,
@@ -408,12 +401,45 @@ else
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
                 async args => await OnQuantityInput((DeliveryItem)args.Item1, args.Item2))
         });
+        
+        // 已退數量（唯讀，顯示累計退貨數量）
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "已退數",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "100px",
+            CustomTemplate = item =>
+            {
+                var deliveryItem = (DeliveryItem)item;
+                var totalReturned = deliveryItem.TotalReturnedQuantity;
+                
+                if (totalReturned > 0)
+                {
+                    // 有退貨記錄：用藍色顯示並加上圖示
+                    // 使用 G29 格式：整數時不顯示小數點，有小數時才顯示
+                    return @<div class="text-end text-info fw-bold" title="已有退貨記錄">
+                        <i class="bi bi-arrow-return-left me-1"></i>@totalReturned.ToString("G29")
+                    </div>;
+                }
+                else if (deliveryItem.SelectedProduct != null)
+                {
+                    // 無退貨記錄：用灰色顯示
+                    return @<div class="text-end text-muted">0</div>;
+                }
+                else
+                {
+                    // 空行：不顯示
+                    return @<div class="text-end text-muted">-</div>;
+                }
+            }
+        });
             
         // 單價欄位 - 使用 CanDeleteItem 統一檢查（退貨、沖款）
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.UnitPrice),
-            Title = PriceLabel,
+            Title = "單價",
             ColumnType = InteractiveColumnType.Number,
             Width = "120px",
             MinValue = 0,
@@ -608,7 +634,7 @@ else
         columns.Add(new InteractiveColumnDefinition
         {
             PropertyName = nameof(DeliveryItem.Remarks),
-            Title = RemarksLabel,
+            Title = "備註",
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this,
@@ -830,11 +856,17 @@ else
             // 使用 AvailableProducts 而非 Products 參數（與 PurchaseReceivingTable 一致）
             var product = AvailableProducts.FirstOrDefault(p => p.Id == productId);
             
+            // 🔥 從 Entity 讀取累計退貨數量
+            var totalReturnedQuantity = detail is SalesDeliveryDetail salesDetail 
+                ? salesDetail.TotalReturnedQuantity 
+                : 0;
+            
             var deliveryItem = new DeliveryItem
             {
                 ProductId = productId,
                 SelectedProduct = product,
                 DeliveryQuantity = quantity,
+                TotalReturnedQuantity = totalReturnedQuantity, // 🔥 載入累計退貨數量
                 UnitPrice = unitPrice,
                 DiscountPercentage = discountPercentage,
                 Remarks = remarks ?? string.Empty,
@@ -1699,6 +1731,11 @@ else
         /// 數量（nullable，預設 null）
         /// </summary>
         public decimal? DeliveryQuantity { get; set; }
+        
+        /// <summary>
+        /// 累計退貨數量
+        /// </summary>
+        public decimal TotalReturnedQuantity { get; set; } = 0;
         
         /// <summary>
         /// 單價（nullable，預設 null）
