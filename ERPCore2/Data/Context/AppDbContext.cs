@@ -30,6 +30,7 @@ namespace ERPCore2.Data.Context
       public DbSet<RolePermission> RolePermissions { get; set; }
       public DbSet<Product> Products { get; set; }
       public DbSet<ProductCategory> ProductCategories { get; set; }
+      public DbSet<ProductSupplier> ProductSuppliers { get; set; }
       public DbSet<SupplierPricing> SupplierPricings { get; set; }
       public DbSet<PriceHistory> PriceHistories { get; set; }      
       public DbSet<Supplier> Suppliers { get; set; }      
@@ -172,6 +173,37 @@ namespace ERPCore2.Data.Context
                         .WithMany(s => s.Products)
                         .HasForeignKey(e => e.SupplierId)
                         .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  // 商品-供應商關聯表
+                  modelBuilder.Entity<ProductSupplier>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        
+                        // 設定複合唯一索引（ProductId + SupplierId）
+                        entity.HasIndex(e => new { e.ProductId, e.SupplierId })
+                              .IsUnique()
+                              .HasDatabaseName("UX_ProductSupplier_ProductId_SupplierId");
+                        
+                        // 設定查詢索引（ProductId + IsPreferred + Priority）
+                        entity.HasIndex(e => new { e.ProductId, e.IsPreferred, e.Priority })
+                              .HasDatabaseName("IX_ProductSupplier_ProductId_IsPreferred_Priority");
+                        
+                        // 設定供應商查詢索引
+                        entity.HasIndex(e => e.SupplierId)
+                              .HasDatabaseName("IX_ProductSupplier_SupplierId");
+                        
+                        // 商品關聯
+                        entity.HasOne(ps => ps.Product)
+                              .WithMany(p => p.ProductSuppliers)
+                              .HasForeignKey(ps => ps.ProductId)
+                              .OnDelete(DeleteBehavior.Cascade);  // 刪除商品時同時刪除綁定
+                        
+                        // 供應商關聯
+                        entity.HasOne(ps => ps.Supplier)
+                              .WithMany(s => s.ProductSuppliers)
+                              .HasForeignKey(ps => ps.SupplierId)
+                              .OnDelete(DeleteBehavior.Cascade);  // 刪除供應商時同時刪除綁定
                   });
                   
                   modelBuilder.Entity<PaymentMethod>(entity =>

@@ -72,5 +72,10 @@ namespace ERPCore2.Data.Entities
         /// 此商品作為組件被使用在哪些 BOM 中
         /// </summary>
         public ICollection<ProductCompositionDetail> ComponentInCompositions { get; set; } = new List<ProductCompositionDetail>();
+        
+        /// <summary>
+        /// 供應商關聯列表（商品-供應商綁定）
+        /// </summary>
+        public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
     }
 }

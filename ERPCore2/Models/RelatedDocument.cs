@@ -38,7 +38,12 @@ namespace ERPCore2.Models
         /// <summary>
         /// 生產排程（從銷貨訂單產生）
         /// </summary>
-        ProductionSchedule
+        ProductionSchedule,
+        
+        /// <summary>
+        /// 供應商推薦（低庫存商品的供應商建議）
+        /// </summary>
+        SupplierRecommendation
     }    /// <summary>
     /// 相關單據資訊 - 用於顯示與明細項目相關的單據列表
     /// </summary>
@@ -106,6 +111,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.ProductComposition => "bi-diagram-3",
             RelatedDocumentType.DeliveryDocument => "bi-truck",
             RelatedDocumentType.ProductionSchedule => "bi-calendar-check",
+            RelatedDocumentType.SupplierRecommendation => "bi-shop",
             _ => "bi-file-text"
         };
 
@@ -121,6 +127,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.ProductComposition => "purple",
             RelatedDocumentType.DeliveryDocument => "info",
             RelatedDocumentType.ProductionSchedule => "dark",
+            RelatedDocumentType.SupplierRecommendation => "success",
             _ => "secondary"
         };
 
@@ -136,6 +143,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.ProductComposition => "商品合成表",
             RelatedDocumentType.DeliveryDocument => "銷貨單",
             RelatedDocumentType.ProductionSchedule => "生產排程",
+            RelatedDocumentType.SupplierRecommendation => "供應商推薦",
             _ => "未知單據"
         };
     }

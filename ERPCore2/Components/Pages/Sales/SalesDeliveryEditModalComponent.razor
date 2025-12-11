@@ -1112,10 +1112,6 @@
     /// </summary>
     private async Task SaveSalesDeliveryDetailsAsync(SalesDelivery salesDelivery)
     {
-        ConsoleHelper.WriteSeparator('*', 80);
-        ConsoleHelper.WriteTitle($"[Component] 進入 SaveSalesDeliveryDetailsAsync - 出貨單ID: {salesDelivery.Id}");
-        ConsoleHelper.WriteSeparator('*', 80);
-        
         try
         {
             // 只有在出貨單ID存在時才處理明細（新增出貨單時可能ID還是0）
@@ -1150,15 +1146,12 @@
             }
 
             // 🔥 關鍵1：更新庫存（使用差異計算方式，避免重複累加）
-            ConsoleHelper.WriteInfo($"[Component] 開始呼叫 UpdateInventoryByDifferenceAsync - 出貨單ID: {salesDelivery.Id}");
             var inventoryUpdateResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(salesDelivery.Id);
             if (!inventoryUpdateResult.IsSuccess)
             {
-                ConsoleHelper.WriteError($"[Component] 庫存更新失敗: {inventoryUpdateResult.ErrorMessage}");
                 await NotificationService.ShowErrorAsync($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
                 throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
             }
-            ConsoleHelper.WriteSuccess($"[Component] 庫存更新成功");
             
             // 🔥 關鍵2：更新相關銷貨訂單明細的已出貨量（僅處理有訂單的明細）
             if (validDetails.Any())

@@ -877,12 +877,9 @@ else
                 ProductSearchValue = product != null ? FormatProductDisplayText(product) : string.Empty
             };
 
-            // 非同步載入庫存資訊（不等待，讓 UI 先顯示）
-            _ = Task.Run(async () =>
-            {
-                await LoadStockQuantityAsync(deliveryItem);
-                await InvokeAsync(StateHasChanged);
-            });
+            // ✅ 修正：同步等待庫存資訊載入完成（與 PurchaseReceivingTable、PurchaseReturnTable 保持一致）
+            // 這確保在用戶點擊儲存前，所有庫存資料都已載入完成
+            await LoadStockQuantityAsync(deliveryItem);
 
             DeliveryItems.Add(deliveryItem);
         }
@@ -1101,15 +1098,35 @@ else
             
             item.AvailableWarehouseLocations = stockDetails;
 
-            // 如果之前有選擇倉庫和庫位，更新庫存量
+            // 🔑 關鍵修正：根據不同情況設置庫存量
             if (item.InventoryStockDetailId.HasValue)
             {
+                // 情況1: 已選擇庫存明細ID（編輯模式下有倉庫和庫位）
                 var selectedDetail = item.AvailableWarehouseLocations
                     .FirstOrDefault(d => d.Id == item.InventoryStockDetailId.Value);
                 if (selectedDetail != null)
                 {
                     item.CurrentStockQuantity = selectedDetail.AvailableStock;
                 }
+                else
+                {
+                    item.CurrentStockQuantity = null;
+                }
+            }
+            else if (item.WarehouseId.HasValue && item.WarehouseId.Value > 0)
+            {
+                // 情況2: 只選擇了倉庫（編輯模式下可能只有倉庫ID沒有庫位）
+                // 計算該倉庫的總可用庫存
+                var warehouseStock = stockDetails
+                    .Where(d => d.WarehouseId == item.WarehouseId.Value)
+                    .Sum(d => d.AvailableStock);
+                
+                item.CurrentStockQuantity = warehouseStock;
+            }
+            else
+            {
+                // 情況3: 都沒選擇（新增明細）
+                item.CurrentStockQuantity = null;
             }
         }
         catch (Exception)

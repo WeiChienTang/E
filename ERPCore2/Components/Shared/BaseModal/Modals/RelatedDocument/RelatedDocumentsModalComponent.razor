@@ -121,6 +121,9 @@
             RelatedDocumentType.SetoffDocument => doc => 
                 @<SetoffDetailsTemplate Document="@doc" />,
             
+            RelatedDocumentType.SupplierRecommendation => doc => 
+                @<SupplierRecommendationDetailsTemplate Document="@doc" />,
+            
             _ => null // 使用預設範本
         };
     }

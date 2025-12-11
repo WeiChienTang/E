@@ -114,6 +114,16 @@ public class DocumentSectionConfig
                 ShowAddButton = false
             },
             
+            RelatedDocumentType.SupplierRecommendation => new()
+            {
+                Title = "供應商推薦",
+                Icon = "shop",
+                TextColor = "success",
+                BadgeColor = "success",
+                ShowAddButton = true,
+                AddButtonText = "+ 立即採購"
+            },
+            
             _ => throw new ArgumentException($"未知的單據類型: {type}")
         };
     }

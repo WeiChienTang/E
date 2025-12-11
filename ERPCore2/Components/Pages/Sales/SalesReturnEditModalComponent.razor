@@ -1557,18 +1557,13 @@
     /// </summary>
     private async Task UpdateInventoryByDifferenceAsync(int salesReturnId)
     {
-        ConsoleHelper.WriteInfo($"[Component] 開始呼叫 UpdateInventoryByDifferenceAsync - 銷貨退回單ID: {salesReturnId}");
-        
         var inventoryUpdateResult = await SalesReturnService.UpdateInventoryByDifferenceAsync(salesReturnId);
         
         if (!inventoryUpdateResult.IsSuccess)
         {
-            ConsoleHelper.WriteError($"[Component] 庫存更新失敗: {inventoryUpdateResult.ErrorMessage}");
             await NotificationService.ShowErrorAsync($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
             throw new Exception($"庫存更新失敗：{inventoryUpdateResult.ErrorMessage}");
         }
-        
-        ConsoleHelper.WriteSuccess($"[Component] 庫存更新成功");
     }
 
     /// <summary>

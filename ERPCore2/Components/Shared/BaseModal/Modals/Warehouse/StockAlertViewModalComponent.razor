@@ -8,6 +8,7 @@
 @using ERPCore2.Components.Shared.SubCollections
 @using ERPCore2.Models
 @inject IInventoryStockService InventoryStockService
+@inject ISupplierRecommendationService SupplierRecommendationService
 @inject INotificationService NotificationService
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -56,6 +57,15 @@
     
 </BaseModalComponent>
 
+@* 供應商推薦 Modal *@
+<RelatedDocumentsModalComponent IsVisible="@showSupplierRecommendationModal"
+                               IsVisibleChanged="@((bool visible) => showSupplierRecommendationModal = visible)"
+                               ProductName="@selectedProductName"
+                               RelatedDocuments="@supplierRecommendations"
+                               IsLoading="@isLoadingRecommendations"
+                               OnDocumentClick="@HandleSupplierClick"
+                               OnAddNew="@HandleCreatePurchaseOrder" />
+
 @code {
     // ===== 參數定義 =====
 
@@ -80,6 +90,13 @@
     // ===== 私有欄位 =====
     private bool isLoading = false;
     private List<StockAlertViewItem> stockAlertItems = new();
+    
+    // 供應商推薦相關
+    private bool showSupplierRecommendationModal = false;
+    private bool isLoadingRecommendations = false;
+    private string selectedProductName = string.Empty;
+    private int selectedProductId = 0;
+    private List<RelatedDocument> supplierRecommendations = new();
 
     // ===== 生命週期方法 =====
 
@@ -117,6 +134,7 @@
             stockAlertItems = details.Select(d => new StockAlertViewItem
             {
                 DetailId = d.Id,
+                ProductId = d.InventoryStock?.ProductId ?? 0,
                 ProductName = d.InventoryStock?.Product?.Name ?? "未知商品",
                 WarehouseName = d.Warehouse?.Name ?? "未知倉庫",
                 WarehouseLocationName = d.WarehouseLocation?.Name ?? "未指定",
@@ -197,6 +215,26 @@
                 CellCssClass = AlertType == StockAlertType.LowStock ? "text-warning fw-bold" : "text-info fw-bold"
             }
         };
+        
+        // 如果是低庫存警戒，加入「尋找供應商」按鈕欄位
+        if (AlertType == StockAlertType.LowStock)
+        {
+            columns.Add(new InteractiveColumnDefinition
+            {
+                Title = "操作",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "120px",
+                CustomTemplate = item =>
+                {
+                    var stockItem = (StockAlertViewItem)item;
+                    return @<GenericButtonComponent Text="下單"
+                                                   Variant="ButtonVariant.Green"
+                                                   Size="ButtonSize.Small"
+                                                   OnClick="@(async () => await HandleFindSuppliers(stockItem))" />;
+                }
+            });
+        }
 
         return columns;
     }
@@ -262,6 +300,94 @@
         stockAlertItems.Clear();
     }
 
+    /// <summary>
+    /// 處理「尋找供應商」按鈕點擊
+    /// </summary>
+    private async Task HandleFindSuppliers(StockAlertViewItem item)
+    {
+        try
+        {
+            isLoadingRecommendations = true;
+            selectedProductName = item.ProductName;
+            selectedProductId = item.ProductId;
+            showSupplierRecommendationModal = true;
+            
+            // 載入供應商推薦
+            var recommendations = await SupplierRecommendationService.GetRecommendedSuppliersAsync(selectedProductId);
+            
+            supplierRecommendations = recommendations.Select(r => new RelatedDocument
+            {
+                DocumentId = r.SupplierId,
+                DocumentType = RelatedDocumentType.SupplierRecommendation,
+                DocumentNumber = r.SupplierCode,
+                DocumentDate = r.LastPurchaseDate ?? DateTime.Now,
+                Quantity = r.PurchaseCount,
+                UnitPrice = r.LastPurchasePrice,
+                Amount = r.AveragePrice,
+                CurrentAmount = r.LowestPrice,
+                TotalAmount = r.HighestPrice,
+                Remarks = GetSupplierRemarks(r)
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入供應商推薦失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingRecommendations = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 產生供應商備註資訊
+    /// </summary>
+    private string GetSupplierRemarks(SupplierRecommendation recommendation)
+    {
+        var remarks = new List<string>();
+        
+        if (recommendation.IsPreferred)
+        {
+            remarks.Add($"⭐ 常用供應商 (優先順序: {recommendation.Priority})");
+        }
+        
+        if (recommendation.LeadTimeDays.HasValue)
+        {
+            remarks.Add($"交貨: {recommendation.LeadTimeDays}天");
+        }
+        
+        if (!string.IsNullOrEmpty(recommendation.SupplierProductCode))
+        {
+            remarks.Add($"料號: {recommendation.SupplierProductCode}");
+        }
+        
+        if (recommendation.PurchaseCount > 0)
+        {
+            remarks.Add($"採購次數: {recommendation.PurchaseCount}次");
+        }
+        
+        return string.Join(" | ", remarks);
+    }
+
+    /// <summary>
+    /// 處理供應商點擊（顯示供應商詳細資訊）
+    /// </summary>
+    private async Task HandleSupplierClick(RelatedDocument document)
+    {
+        // 這裡可以開啟供應商詳細資訊 Modal
+        await NotificationService.ShowInfoAsync($"供應商：{document.DocumentNumber}");
+    }
+
+    /// <summary>
+    /// 處理「立即採購」按鈕
+    /// </summary>
+    private async Task HandleCreatePurchaseOrder()
+    {
+        // TODO: 開啟採購單編輯 Modal，預填商品和供應商資訊
+        await NotificationService.ShowInfoAsync("開啟採購單功能尚未實作");
+    }
+
     // ===== 列舉與內部類別 =====
 
     /// <summary>
@@ -286,6 +412,7 @@
     public class StockAlertViewItem
     {
         public int DetailId { get; set; }
+        public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string WarehouseName { get; set; } = string.Empty;
         public string WarehouseLocationName { get; set; } = string.Empty;

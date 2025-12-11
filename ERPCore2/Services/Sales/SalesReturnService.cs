@@ -976,10 +976,6 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    ConsoleHelper.WriteSeparator('=', 60);
-                    ConsoleHelper.WriteTitle($"銷貨退回庫存差異更新 - ID: {id}");
-                    ConsoleHelper.WriteSeparator('=', 60);
-
                     // 1. 查詢退回單及其明細（包含倉庫、庫位等完整資訊）
                     var currentReturn = await context.SalesReturns
                         .Include(sr => sr.SalesReturnDetails)
@@ -988,23 +984,14 @@ namespace ERPCore2.Services
 
                     if (currentReturn == null)
                     {
-                        ConsoleHelper.WriteError($"找不到ID為 {id} 的銷貨退回單");
                         return ServiceResult.Failure($"找不到ID為 {id} 的銷貨退回單");
                     }
-
-                    ConsoleHelper.WriteInfo($"退回單: {currentReturn.Code}, 明細數量: {currentReturn.SalesReturnDetails.Count}");
 
                     // 🔑 關鍵修正：只查詢 _ADJ 後綴的交易記錄（編輯產生的調整記錄）
                     // 這樣可以避免刪除後重新新增時找到舊的首次新增記錄
                     var existingTransactions = await context.InventoryTransactions
                         .Where(t => t.TransactionNumber.StartsWith(currentReturn.Code + "_ADJ"))
                         .ToListAsync();
-
-                    ConsoleHelper.WriteInfo($"找到 {existingTransactions.Count} 筆歷史調整記錄 (此單之前的編輯)");
-                    foreach (var trans in existingTransactions)
-                    {
-                        ConsoleHelper.WriteDebug($"  交易: {trans.TransactionNumber}, 商品ID: {trans.ProductId}, 數量: {trans.Quantity}");
-                    }
 
                     // 3. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity)>();
@@ -1026,7 +1013,6 @@ namespace ERPCore2.Services
                     // 4. 建立當前明細字典
                     var currentInventory = new Dictionary<string, (int ProductId, int? WarehouseId, int? LocationId, int CurrentQuantity)>();
                     
-                    ConsoleHelper.WriteInfo("計算當前明細的目標數量:");
                     foreach (var detail in currentReturn.SalesReturnDetails)
                     {
                         // 從關聯的銷貨出貨明細取得倉庫ID
@@ -1044,11 +1030,8 @@ namespace ERPCore2.Services
                         // 如果沒有倉庫ID，跳過此明細
                         if (!warehouseId.HasValue)
                         {
-                            ConsoleHelper.WriteWarning($"  明細ID: {detail.Id} 沒有倉庫資訊，跳過");
                             continue;
                         }
-                        
-                        ConsoleHelper.WriteDebug($"  明細ID: {detail.Id}, 商品ID: {detail.ProductId}, 倉庫ID: {warehouseId}, 退貨數量: {detail.ReturnQuantity}");
                         
                         var key = $"{detail.ProductId}_{warehouseId}_{locationId?.ToString() ?? "null"}";
                         if (!currentInventory.ContainsKey(key))
@@ -1059,15 +1042,10 @@ namespace ERPCore2.Services
                         var newQty = oldQty + (int)detail.ReturnQuantity;
                         currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
                                                currentInventory[key].LocationId, newQty);
-                        
-                        ConsoleHelper.WriteDebug($"    Key: {key}, 累計數量: {newQty}");
                     }
                     
                     // 5. 處理庫存差異 - 使用淨值計算方式
                     var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
-                    
-                    ConsoleHelper.WriteSeparator('=', 60);
-                    ConsoleHelper.WriteInfo($"開始計算庫存差異 (共 {allKeys.Count} 組商品+倉庫組合):");
                     
                     foreach (var key in allKeys)
                     {
@@ -1083,11 +1061,6 @@ namespace ERPCore2.Services
                         // 計算需要調整的數量
                         int adjustmentNeeded = targetQuantity - processedQuantity;
                         
-                        ConsoleHelper.WriteStep(0, $"Key: {key}");
-                        ConsoleHelper.WriteDebug($"  目標數量 (本次編輯後應回補): {targetQuantity}");
-                        ConsoleHelper.WriteDebug($"  歷史累計已回補: {processedQuantity}");
-                        ConsoleHelper.WriteDebug($"  本次需調整: {adjustmentNeeded} (= 目標 - 歷史累計)");
-                        
                         if (adjustmentNeeded != 0)
                         {
                             var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
@@ -1101,8 +1074,6 @@ namespace ERPCore2.Services
                             if (adjustmentNeeded > 0)
                             {
                                 // 需要增加更多庫存（退貨數量增加）
-                                ConsoleHelper.WriteWarning($"  → 執行增加庫存: {adjustmentNeeded} (本次編輯增加了退貨量)");
-                                
                                 var addResult = await _inventoryStockService.AddStockAsync(
                                     productId,
                                     warehouseId.Value,
@@ -1116,17 +1087,13 @@ namespace ERPCore2.Services
                                 
                                 if (!addResult.IsSuccess)
                                 {
-                                    ConsoleHelper.WriteError($"  ✗ 庫存增加失敗: {addResult.ErrorMessage}");
                                     await transaction.RollbackAsync();
                                     return ServiceResult.Failure($"庫存增加失敗：{addResult.ErrorMessage}");
                                 }
-                                ConsoleHelper.WriteSuccess($"  ✓ 庫存增加成功");
                             }
                             else
                             {
                                 // 需要扣減庫存（退貨數量減少）
-                                ConsoleHelper.WriteWarning($"  → 執行扣減庫存: {Math.Abs(adjustmentNeeded)} (本次編輯減少了退貨量)");
-                                
                                 var reduceResult = await _inventoryStockService.ReduceStockAsync(
                                     productId,
                                     warehouseId.Value,
@@ -1139,30 +1106,20 @@ namespace ERPCore2.Services
                                 
                                 if (!reduceResult.IsSuccess)
                                 {
-                                    ConsoleHelper.WriteError($"  ✗ 庫存扣減失敗: {reduceResult.ErrorMessage}");
                                     await transaction.RollbackAsync();
                                     return ServiceResult.Failure($"庫存扣減失敗：{reduceResult.ErrorMessage}");
                                 }
-                                ConsoleHelper.WriteSuccess($"  ✓ 庫存扣減成功");
                             }
-                        }
-                        else
-                        {
-                            ConsoleHelper.WriteDebug($"  ○ 無需調整 (差異為 0)");
                         }
                     }
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
                     
-                    ConsoleHelper.WriteSeparator('=', 60);
-                    ConsoleHelper.WriteSuccess("庫存差異更新完成！");
-                    
                     return ServiceResult.Success();
                 }
                 catch
                 {
-                    ConsoleHelper.WriteError("交易失敗，執行回滾");
                     await transaction.RollbackAsync();
                     throw;
                 }

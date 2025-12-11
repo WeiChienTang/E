@@ -1,0 +1,699 @@
+@* 供應商商品綁定管理組件 - 使用 InteractiveTableComponent *@
+@inject INotificationService NotificationService
+@using ERPCore2.Helpers
+@using ERPCore2.Data.Entities
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent TItem="ProductSupplier" 
+                                  Items="@Items"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  ShowHeader="true"
+                                  ShowRowNumbers="true"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="true"
+                                  DeleteButtonVariant="ButtonVariant.Red"
+                                  OnItemDelete="@HandleDeleteItem"
+                                  EnableAutoEmptyRow="true"
+                                  AllowAddNewRow="true"
+                                  DataLoadCompleted="@DataLoadCompleted"
+                                  CreateEmptyItem="@CreateEmptyItem"
+                                  EmptyMessage="@EmptyMessage" />
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public List<ProductSupplier> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<ProductSupplier>> ItemsChanged { get; set; }
+    [Parameter] public List<Product> AvailableProducts { get; set; } = new();
+    [Parameter] public int SupplierId { get; set; }
+    [Parameter] public bool DataLoadCompleted { get; set; } = true;
+    [Parameter] public string EmptyMessage { get; set; } = "尚未設定供應商品";
+    [Parameter] public EventCallback<ProductSupplier> OnItemDeleted { get; set; }
+
+    /// <summary>
+    /// 建立供應商品管理的欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 商品選擇（必填，SearchableSelect）
+            new InteractiveColumnDefinition
+            {
+                Title = "商品",
+                PropertyName = "ProductSearchValue",
+                EmptyCheckPropertyName = nameof(ProductSupplier.ProductId),
+                ColumnType = InteractiveColumnType.SearchableSelect,
+                Width = "25%",
+                IsRequired = true,
+                Placeholder = "請輸入商品編號或名稱",
+                TriggerEmptyRowOnFilled = true,
+                SearchValuePropertyName = nameof(ProductSupplier.SearchText),
+                FilteredItemsPropertyName = "FilteredProducts",
+                ShowDropdownPropertyName = "ShowProductDropdown",
+                SelectedIndexPropertyName = "ProductSelectedIndex",
+                ItemDisplayFormatter = (item) =>
+                {
+                    var product = (Product)item;
+                    return $"[{product.Code}] {product.Name}";
+                },
+                OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
+                {
+                    var (item, searchValue) = tuple;
+                    OnProductSearchChanged((ProductSupplier)item, searchValue);
+                }),
+                OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
+                {
+                    var (item, selectedItem) = tuple;
+                    await OnProductSelected((ProductSupplier)item, (Product?)selectedItem);
+                }),
+                OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
+                {
+                    OnProductFocus((ProductSupplier)item);
+                }),
+                OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
+                {
+                    OnProductBlur((ProductSupplier)item);
+                })
+            },
+            
+            // 供應商料號
+            new InteractiveColumnDefinition
+            {
+                Title = "供應商料號",
+                PropertyName = nameof(ProductSupplier.SupplierProductCode),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "15%",
+                Placeholder = "供應商料號",
+                Tooltip = "供應商自己的商品編號"
+            },
+            
+            // 常用標記
+            new InteractiveColumnDefinition
+            {
+                Title = "常用",
+                PropertyName = nameof(ProductSupplier.IsPreferred),
+                ColumnType = InteractiveColumnType.Checkbox,
+                Width = "8%",
+                TextAlign = "center",
+                Tooltip = "勾選為常用供應商，優先推薦"
+            },
+            
+            // 優先順序
+            new InteractiveColumnDefinition
+            {
+                Title = "優先順序",
+                PropertyName = nameof(ProductSupplier.Priority),
+                ColumnType = InteractiveColumnType.Number,
+                Width = "10%",
+                Placeholder = "999",
+                MinValue = 1,
+                MaxValue = 999,
+                Tooltip = "數字越小越優先（1=最優先）",
+                CellCssClass = "text-center"
+            },
+            
+            // 預計交貨天數
+            new InteractiveColumnDefinition
+            {
+                Title = "交貨天數",
+                PropertyName = nameof(ProductSupplier.LeadTimeDays),
+                ColumnType = InteractiveColumnType.Number,
+                Width = "10%",
+                Placeholder = "天數",
+                MinValue = 0,
+                Tooltip = "預計交貨天數",
+                CellCssClass = "text-center"
+            },
+            
+            // 最近採購價格（唯讀，從採購歷史載入）
+            new InteractiveColumnDefinition
+            {
+                Title = "最近價格",
+                PropertyName = nameof(ProductSupplier.LastPurchasePrice),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "12%",
+                IsReadOnly = true,
+                CellCssClass = "text-end text-muted",
+                DisplayFormatter = (value) =>
+                {
+                    if (value is decimal price && price > 0)
+                    {
+                        return $"NT$ {price:N0}";
+                    }
+                    return "-";
+                },
+                Tooltip = "系統自動更新"
+            },
+            
+            // 備註
+            new InteractiveColumnDefinition
+            {
+                Title = "備註",
+                PropertyName = nameof(ProductSupplier.Remarks),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "20%",
+                Placeholder = "採購注意事項"
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建空的 ProductSupplier
+    /// </summary>
+    private ProductSupplier CreateEmptyItem()
+    {
+        return new ProductSupplier
+        {
+            SupplierId = SupplierId,
+            ProductId = 0,
+            IsPreferred = false,
+            Priority = 999,
+            Status = EntityStatus.Active,
+            SearchText = "",
+            FilteredProducts = new List<Product>(),
+            ShowProductDropdown = false,
+            ProductSelectedIndex = -1
+        };
+    }
+
+    /// <summary>
+    /// 商品搜尋輸入變更事件
+    /// </summary>
+    private void OnProductSearchChanged(ProductSupplier productSupplier, string? searchValue)
+    {
+        productSupplier.SearchText = searchValue ?? "";
+        
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            productSupplier.FilteredProducts = new List<Product>();
+            productSupplier.ShowProductDropdown = false;
+        }
+        else
+        {
+            var searchLower = searchValue.Trim().ToLower();
+            productSupplier.FilteredProducts = AvailableProducts
+                .Where(p => (p.Code?.ToLower().Contains(searchLower) ?? false) || 
+                           (p.Name?.ToLower().Contains(searchLower) ?? false))
+                .Take(20)
+                .ToList();
+            productSupplier.ShowProductDropdown = productSupplier.FilteredProducts.Any();
+        }
+        
+        productSupplier.ProductSelectedIndex = -1;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 商品選擇事件
+    /// </summary>
+    private async Task OnProductSelected(ProductSupplier productSupplier, Product? selectedProduct)
+    {
+        if (selectedProduct == null) return;
+
+        // 檢查是否已存在相同商品
+        var existingBinding = Items.FirstOrDefault(ps => 
+            ps != productSupplier && 
+            ps.ProductId == selectedProduct.Id);
+
+        if (existingBinding != null)
+        {
+            await NotificationService.ShowWarningAsync($"商品「{selectedProduct.Name}」已經綁定此供應商");
+            productSupplier.ProductId = 0;
+            productSupplier.SearchText = "";
+            productSupplier.FilteredProducts = new List<Product>();
+            productSupplier.ShowProductDropdown = false;
+            return;
+        }
+
+        productSupplier.ProductId = selectedProduct.Id;
+        productSupplier.Product = selectedProduct;
+        productSupplier.SearchText = $"[{selectedProduct.Code}] {selectedProduct.Name}";
+        productSupplier.FilteredProducts = new List<Product>();
+        productSupplier.ShowProductDropdown = false;
+        
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 商品輸入框獲得焦點
+    /// </summary>
+    private void OnProductFocus(ProductSupplier productSupplier)
+    {
+        if (productSupplier.ProductId > 0)
+        {
+            // 已選擇商品時，顯示所有商品供重新選擇
+            productSupplier.FilteredProducts = AvailableProducts.Take(20).ToList();
+            productSupplier.ShowProductDropdown = true;
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 商品輸入框失去焦點
+    /// </summary>
+    private void OnProductBlur(ProductSupplier productSupplier)
+    {
+        // 延遲關閉下拉選單，讓點擊事件能正常觸發
+        Task.Delay(200).ContinueWith(_ =>
+        {
+            productSupplier.ShowProductDropdown = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    /// <summary>
+    /// 刪除供應商品綁定
+    /// </summary>
+    private async Task HandleDeleteItem(ProductSupplier item)
+    {
+        Items.Remove(item);
+        await ItemsChanged.InvokeAsync(Items);
+        await OnItemDeleted.InvokeAsync(item);
+        await InvokeAsync(StateHasChanged);
+    }
+}
+    [Parameter] public Func<TProductSupplierEntity, decimal?> GetSupplierPrice { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetLeadTime { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetMinOrderQuantity { get; set; } = item => null;
+    [Parameter] public Func<TProductSupplierEntity, int?> GetUnitId { get; set; } = item => null;
+    [Parameter] public Func<TProductEntity, int> GetProductOptionId { get; set; } = product => product.Id;
+    [Parameter] public Func<TProductEntity, string> GetProductOptionDisplayText { get; set; } = product => 
+    {
+        // 檢查是否有 Name 和 Code 屬性並取得其值
+        var nameProperty = product.GetType().GetProperty("Name");
+        var codeProperty = product.GetType().GetProperty("Code");
+        
+        var name = nameProperty?.GetValue(product) as string ?? "";
+        var code = codeProperty?.GetValue(product) as string ?? "";
+        
+        if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(name))
+        {
+            return $"{code} - {name}";
+        }
+        else if (!string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+        else if (!string.IsNullOrEmpty(code))
+        {
+            return code;
+        }
+        
+        return product.ToString() ?? "";
+    };
+    [Parameter] public Func<Unit, int> GetUnitOptionId { get; set; } = unit => unit.Id;
+    [Parameter] public Func<Unit, string> GetUnitOptionDisplayText { get; set; } = unit => unit.Name;
+    
+    // ===== 委派參數 - Setter =====
+    [Parameter] public Action<TProductSupplierEntity, int?> SetProductId { get; set; } = (item, productId) => { };
+    [Parameter] public Action<TProductSupplierEntity, string?> SetSupplierProductCode { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, decimal?> SetSupplierPrice { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetLeadTime { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetMinOrderQuantity { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int?> SetUnitId { get; set; } = (item, value) => { };
+    [Parameter] public Action<TProductSupplierEntity, int> SetSupplierId { get; set; } = (item, supplierId) => { }; // 設定供應商ID
+    
+    // ===== 事件參數 =====
+    [Parameter] public EventCallback<List<TProductSupplierEntity>> ItemsChanged { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> ItemAdded { get; set; }
+    [Parameter] public EventCallback<TProductSupplierEntity> ItemRemoved { get; set; }
+    [Parameter] public EventCallback<List<int>> OnDeletedDetailsChanged { get; set; } // 🆕 新增
+    
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+    }
+
+    // ===== 建立空項目方法 =====
+    
+    /// <summary>
+    /// 創建空的供應商商品項目
+    /// </summary>
+    private TProductSupplierEntity CreateEmptyItem()
+    {
+        var newItem = new TProductSupplierEntity();
+        SetSupplierId(newItem, ParentEntityId); // 設定供應商ID
+        return newItem;
+    }
+
+    // ===== InteractiveTableComponent 方法 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            // 商品選擇欄位
+            new() 
+            { 
+                Title = "商品", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                Tooltip = "選擇此供應商供應的商品",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var productId = GetProductId(productSupplier);
+                    var selectedValue = productId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    title="選擇此供應商供應的商品"
+                                    @onchange="@(async (e) => await OnProductChanged((productSupplier, e.Value)))">
+                        <option value="">請選擇商品</option>
+                        @foreach (var product in ProductOptions)
+                        {
+                            <option value="@GetProductOptionId(product)">@GetProductOptionDisplayText(product)</option>
+                        }
+                    </select>;
+                }
+            },
+            
+            // 供應商商品代碼 - 文字輸入
+            new() 
+            { 
+                Title = "供應商商品代碼", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "20%",
+                Tooltip = "輸入供應商對此商品的商品代碼或料號",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetSupplierProductCode(productSupplier) ?? "";
+                    
+                    return @<input type="text" 
+                                   class="form-control " 
+                                   value="@value"
+                                   placeholder="請輸入代碼"
+                                   title="輸入供應商對此商品的商品代碼或料號"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 報價 - 數字輸入
+            new() 
+            { 
+                Title = "報價", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                Tooltip = "輸入供應商對此商品的報價金額",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetSupplierPrice(productSupplier)?.ToString("F0") ?? "";
+                    
+                    return @<input type="number" 
+                                   class="form-control " 
+                                   value="@value"
+                                   min="0"
+                                   step="1"
+                                   title="輸入供應商對此商品的報價金額"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnSupplierPriceChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 交期 - 數字輸入
+            new() 
+            { 
+                Title = "交期(天)", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                Tooltip = "輸入供應商的交貨時間（以天為單位）",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetLeadTime(productSupplier)?.ToString() ?? "";
+                    
+                    return @<input type="number" 
+                                   class="form-control " 
+                                   value="@value"
+                                   min="0"
+                                   title="輸入供應商的交貨時間（以天為單位）"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnLeadTimeChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 最小訂購量 - 數字輸入
+            new() 
+            { 
+                Title = "最小訂購量", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                Tooltip = "輸入供應商要求的最小訂購數量",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var value = GetMinOrderQuantity(productSupplier)?.ToString() ?? "";
+                    
+                    return @<input type="number" 
+                                   class="form-control " 
+                                   value="@value"
+                                   min="0"
+                                   title="輸入供應商要求的最小訂購數量"
+                                   disabled="@IsReadOnly"
+                                   @oninput="@(async (e) => await OnMinOrderQuantityChanged((productSupplier, e.Value?.ToString())))" />;
+                }
+            },
+            
+            // 單位選擇欄位
+            new() 
+            { 
+                Title = "單位", 
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                Tooltip = "選擇供應商供應此商品的計量單位",
+                CustomTemplate = item => 
+                {
+                    var productSupplier = (TProductSupplierEntity)item;
+                    var unitId = GetUnitId(productSupplier);
+                    var selectedValue = unitId?.ToString() ?? "";
+                    
+                    return @<select class="form-select form-select-sm" 
+                                    value="@selectedValue"
+                                    disabled="@IsReadOnly"
+                                    title="選擇供應商供應此商品的計量單位"
+                                    @onchange="@(async (e) => await OnUnitChanged((productSupplier, e.Value)))">
+                        <option value="">請選擇單位</option>
+                        @foreach (var unit in UnitOptions)
+                        {
+                            <option value="@GetUnitOptionId(unit)">@GetUnitOptionDisplayText(unit)</option>
+                        }
+                    </select>;
+                }
+            }
+        };
+    }
+
+    private async Task HandleItemDelete(TProductSupplierEntity item)
+    {
+        var index = Items.IndexOf(item);
+        await RemoveItemAsync(index);
+    }
+
+    // ===== 內部方法 =====
+
+    private string GetProductDisplayText(TProductSupplierEntity item)
+    {
+        var productId = GetProductId(item);
+        if (productId.HasValue)
+        {
+            var product = ProductOptions.FirstOrDefault(p => GetProductOptionId(p) == productId.Value);
+            if (product != null)
+            {
+                return GetProductOptionDisplayText(product);
+            }
+        }
+        return "未知商品";
+    }
+
+    private string GetUnitDisplayText(TProductSupplierEntity item)
+    {
+        var unitId = GetUnitId(item);
+        if (unitId.HasValue)
+        {
+            var unit = UnitOptions.FirstOrDefault(u => GetUnitOptionId(u) == unitId.Value);
+            if (unit != null)
+            {
+                return GetUnitOptionDisplayText(unit);
+            }
+        }
+        return "-";
+    }
+
+    // ===== InteractiveTableComponent 事件處理 =====
+    private async Task OnProductChanged((object item, object? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+    
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var productId) && productId > 0)
+        {
+            // 檢查是否已存在相同商品
+            var existingProductIds = Items.Where(i => i != productSupplier).Select(item => GetProductId(item)).Where(id => id.HasValue && id.Value > 0);
+            if (existingProductIds.Any(id => id!.Value == productId))
+            {
+                await NotificationService.ShowErrorAsync("此商品已存在，請選擇其他商品");
+                SetProductId(productSupplier, null);
+            }
+            else
+            {
+                SetProductId(productSupplier, productId);
+                await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+            }
+        }
+        else
+        {
+            SetProductId(productSupplier, null);
+            await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnSupplierProductCodeChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        
+        SetSupplierProductCode(productSupplier, args.value);
+        
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        StateHasChanged();
+    }
+
+    private async Task OnSupplierPriceChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        
+        if (string.IsNullOrEmpty(args.value))
+        {
+            SetSupplierPrice(productSupplier, null);
+        }
+        else
+        {
+            var price = InputEventHelper.HandleIntegerInput(args.value);
+            SetSupplierPrice(productSupplier, (decimal)price);
+        }
+        
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        StateHasChanged();
+    }
+
+    private async Task OnLeadTimeChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var leadTime = string.IsNullOrEmpty(args.value) ? (int?)null : InputEventHelper.HandleIntegerInput(args.value);
+        SetLeadTime(productSupplier, leadTime);
+        
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        StateHasChanged();
+    }
+
+    private async Task OnMinOrderQuantityChanged((object item, string? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        var quantity = string.IsNullOrEmpty(args.value) ? (int?)null : InputEventHelper.HandleIntegerInput(args.value);
+        SetMinOrderQuantity(productSupplier, quantity);
+        
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        StateHasChanged();
+    }
+
+    private async Task OnUnitChanged((object item, object? value) args)
+    {
+        var productSupplier = (TProductSupplierEntity)args.item;
+        
+        if (args.value != null && !string.IsNullOrEmpty(args.value.ToString()) && int.TryParse(args.value.ToString(), out var unitId))
+        {
+            SetUnitId(productSupplier, unitId);
+        }
+        else
+        {
+            SetUnitId(productSupplier, null);
+        }
+        
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        StateHasChanged();
+    }
+    
+    public async Task RemoveItemAsync(int index)
+    {
+        if (IsReadOnly || index < 0 || index >= Items.Count) return;
+        
+        var removedItem = Items[index];
+        if (removedItem == null) return;
+        
+        // 🆕 記錄要刪除的資料庫實體ID
+        if (removedItem.Id > 0)
+        {
+            _deletedDetailIds.Add(removedItem.Id);
+        }
+        
+        Items.Remove(removedItem);
+        
+        await ItemRemoved.InvokeAsync(removedItem);
+        await DetailSyncHelper.SyncToParentAsync(Items, ItemsChanged);
+        
+        // 🆕 通知已刪除的明細ID
+        await NotifyDeletedDetailsChanged();
+        
+        StateHasChanged();
+    }
+    
+    public async Task<bool> ValidateAsync()
+    {
+        var errors = new List<string>();
+        
+        // 取得非空的項目
+        var nonEmptyItems = Items.Where(item => {
+            var productId = GetProductId(item);
+            return productId.HasValue && productId.Value > 0;
+        }).ToList();
+        
+        if (!nonEmptyItems.Any())
+        {
+            errors.Add("至少需要一個商品");
+        }
+        else
+        {
+            // 檢查重複商品
+            var productIds = nonEmptyItems.Select(item => GetProductId(item)).Where(id => id.HasValue).ToList();
+            if (productIds.Count != productIds.Distinct().Count())
+            {
+                errors.Add("存在重複的商品");
+            }
+        }
+          
+        if (errors.Any())
+        {
+            var errorMessage = string.Join("\n", errors);
+            await NotificationService.ShowErrorAsync(errorMessage);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// 通知已刪除的明細ID
+    /// </summary>
+    private async Task NotifyDeletedDetailsChanged()
+    {
+        if (OnDeletedDetailsChanged.HasDelegate && _deletedDetailIds.Any())
+        {
+            await OnDeletedDetailsChanged.InvokeAsync(_deletedDetailIds.ToList());
+            _deletedDetailIds.Clear(); // 清空已通知的刪除ID
+        }
+    }
+}
