@@ -1066,17 +1066,6 @@ namespace ERPCore2.Services
                         return canDeleteResult;
                     }
                     
-                    // 🔑 關鍵：刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
-                    var code = entity.Code;
-                    var adjTransactions = await context.InventoryTransactions
-                        .Where(t => t.TransactionNumber.StartsWith(code + "_ADJ"))
-                        .ToListAsync();
-                    
-                    if (adjTransactions.Any())
-                    {
-                        context.InventoryTransactions.RemoveRange(adjTransactions);
-                    }
-                    
                     // 3. 回復庫存 - 將之前因退貨而扣減的庫存回復
                     if (_inventoryStockService != null)
                     {

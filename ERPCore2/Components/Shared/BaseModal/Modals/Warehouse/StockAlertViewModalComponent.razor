@@ -238,12 +238,12 @@
                 Title = "操作",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "60px",
+                Width = "80px",
                 CustomTemplate = item =>
                 {
                     var stockItem = (StockAlertViewItem)item;
                     return @<GenericButtonComponent
-                                                    IconClass="bi-cart-plus"
+                                                  Text="下單"
                                                    Variant="ButtonVariant.Green"
                                                    Size="ButtonSize.Small"
                                                    Title="立即下單"

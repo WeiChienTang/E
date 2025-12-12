@@ -16,8 +16,11 @@ namespace ERPCore2.Data.Enums
         [Description("銷貨")]
         Sale = 3,
         
-        [Description("退貨")]
+        [Description("進貨退出")]
         Return = 4,
+        
+        [Description("銷貨退回")]
+        SalesReturn = 12,
         
         [Description("調整")]
         Adjustment = 5,

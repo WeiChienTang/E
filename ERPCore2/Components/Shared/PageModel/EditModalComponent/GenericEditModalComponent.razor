@@ -1430,7 +1430,8 @@
         {
             return string.Format(DeleteConfirmMessage, displayName);
         }
-        return $"確定要刪除{EntityName}「{displayName}」嗎？";
+        // 簡化訊息
+        return $"確定刪除嗎？";
     }
     
     // ===== 通用Save方法 =====

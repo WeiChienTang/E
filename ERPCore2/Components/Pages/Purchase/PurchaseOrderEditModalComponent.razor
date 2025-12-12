@@ -376,7 +376,6 @@
                 if (prefilledSupplierId.HasValue && prefilledSupplierId.Value > 0)
                 {
                     newOrder.SupplierId = prefilledSupplierId.Value;
-                    ConsoleHelper.WriteSuccess($"[LoadPurchaseOrderData] 預填供應商 ID: {prefilledSupplierId.Value}");
                 }
                 
                 // 如果有預填的商品 ID，直接添加明細（在 LoadPurchaseOrderData 中處理，確保 UI 渲染時就有資料）
@@ -396,8 +395,6 @@
                         };
                         
                         purchaseOrderDetails.Add(newDetail);
-                        ConsoleHelper.WriteSuccess($"[LoadPurchaseOrderData] 預填商品明細 ID: {product.Id} ({product.Name})，數量: {purchaseOrderDetails.Count}");
-                        ConsoleHelper.WriteInfo($"[LoadPurchaseOrderData] 明細資料 - OrderQuantity: {newDetail.OrderQuantity}, UnitPrice: {newDetail.UnitPrice}, SubtotalAmount: {newDetail.SubtotalAmount}");
                         
                         // 直接計算 newOrder 的金額（此時 editModalComponent.Entity 還不存在）
                         // 使用預設的外加稅計算方式
@@ -408,12 +405,6 @@
                             var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
                             return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
                         });
-                        
-                        ConsoleHelper.WriteSuccess($"[LoadPurchaseOrderData] 已計算金額 - TotalAmount: {newOrder.TotalAmount}, TaxAmount: {newOrder.PurchaseTaxAmount}");
-                    }
-                    else
-                    {
-                        ConsoleHelper.WriteError($"[LoadPurchaseOrderData] 找不到商品 ID: {prefilledProductId.Value}");
                     }
                 }
                 
@@ -1719,9 +1710,6 @@
     {
         try
         {
-            ConsoleHelper.WriteTitle("開始執行 ShowAddModalWithPrefilledData");
-            ConsoleHelper.WriteInfo($"參數 - SupplierId: {supplierId}, ProductId: {productId}, UnitPrice: {suggestedUnitPrice}");
-            
             // 重置為新增模式
             PurchaseOrderId = null;
             
@@ -1729,46 +1717,29 @@
             prefilledSupplierId = supplierId;
             prefilledProductId = productId;
             prefilledUnitPrice = suggestedUnitPrice;
-            ConsoleHelper.WriteSuccess($"已設定預填資訊 - SupplierId: {supplierId}, ProductId: {productId}, UnitPrice: {suggestedUnitPrice}");
             
             // 開啟 Modal（會自動觸發 LoadPurchaseOrderData，並在其中設定供應商）
             if (IsVisibleChanged.HasDelegate)
             {
                 await IsVisibleChanged.InvokeAsync(true);
-                ConsoleHelper.WriteSuccess("已開啟 Modal - LoadPurchaseOrderData 會自動載入並設定供應商");
             }
             
             // 等待 Modal 完全渲染（供應商和明細已在 LoadPurchaseOrderData 中設定）
             await Task.Delay(100);
             
             // 檢查結果
-            if (editModalComponent?.Entity != null)
+            if (editModalComponent?.Entity != null && purchaseOrderDetails.Any())
             {
-                ConsoleHelper.WriteInfo($"驗證 - Entity.SupplierId: {editModalComponent.Entity.SupplierId}");
-                ConsoleHelper.WriteInfo($"驗證 - Entity.Supplier: {editModalComponent.Entity.Supplier?.CompanyName ?? "null"}");
-                ConsoleHelper.WriteInfo($"驗證 - purchaseOrderDetails 數量: {purchaseOrderDetails.Count}");
-                
-                if (purchaseOrderDetails.Any())
-                {
-                    var product = purchaseOrderDetails.First().Product;
-                    await NotificationService.ShowInfoAsync($"已預填供應商和商品：{product?.Name ?? "未知"}");
-                }
+                var product = purchaseOrderDetails.First().Product;
             }
-            
-            ConsoleHelper.WriteSuccess("ShowAddModalWithPrefilledData 完成");
             
             // 清除預填資訊（避免影響下次開啟）
             prefilledSupplierId = null;
             prefilledProductId = null;
             prefilledUnitPrice = null;
-            
-            ConsoleHelper.WriteSeparator('=', 60);
         }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteError($"發生例外: {ex.Message}");
-            ConsoleHelper.WriteError($"堆疊追蹤: {ex.StackTrace}");
-            
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledData), GetType(),
                 additionalData: $"開啟預填採購單Modal失敗 - SupplierId: {supplierId}, ProductId: {productId}");
             await NotificationService.ShowErrorAsync("開啟採購單時發生錯誤");

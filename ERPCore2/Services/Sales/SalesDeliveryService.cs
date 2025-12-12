@@ -329,11 +329,26 @@ namespace ERPCore2.Services
                     if (currentDelivery == null)
                         return ServiceResult.Failure("找不到指定的出貨單");
 
-                    // 🔑 關鍵修正：只查詢 _ADJ 後綴的交易記錄（編輯產生的調整記錄）
-                    // 這樣可以避免刪除後重新新增時找到舊的首次新增記錄
-                    var existingTransactions = await context.InventoryTransactions
-                        .Where(t => t.TransactionNumber.StartsWith(currentDelivery.Code + "_ADJ"))
+                    // 🔑 關鍵修正：查詢所有相關交易記錄，但只計算最後一次 _DEL 之後的記錄
+                    // 這樣可以避免刪除後重新新增時累加舊記錄
+                    var allTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber == currentDelivery.Code || 
+                                    t.TransactionNumber.StartsWith(currentDelivery.Code + "_"))
+                        .OrderBy(t => t.TransactionDate)
+                        .ThenBy(t => t.Id)
                         .ToListAsync();
+                    
+                    // 找到最後一次刪除記錄（_DEL）
+                    var lastDeleteTransaction = allTransactions
+                        .Where(t => t.TransactionNumber.EndsWith("_DEL"))
+                        .OrderByDescending(t => t.TransactionDate)
+                        .ThenByDescending(t => t.Id)
+                        .FirstOrDefault();
+                    
+                    // 只計算最後一次刪除之後的記錄（不含 _DEL 本身）
+                    var existingTransactions = lastDeleteTransaction != null
+                        ? allTransactions.Where(t => t.Id > lastDeleteTransaction.Id && !t.TransactionNumber.EndsWith("_DEL")).ToList()
+                        : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL")).ToList();
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity)>();
@@ -421,7 +436,7 @@ namespace ERPCore2.Services
                                     productId,
                                     warehouseId.Value,
                                     adjustmentNeeded,
-                                    InventoryTransactionTypeEnum.Sale,
+                                    InventoryTransactionTypeEnum.SalesReturn,
                                     currentDelivery.Code + "_ADJ",
                                     null,  // 銷貨回補不需要成本
                                     locationId,
@@ -499,7 +514,7 @@ namespace ERPCore2.Services
                                     detail.ProductId,
                                     detail.WarehouseId.Value,
                                     (int)detail.DeliveryQuantity,
-                                    InventoryTransactionTypeEnum.Sale,
+                                    InventoryTransactionTypeEnum.SalesReturn,
                                     $"{entity.Code}_DEL",
                                     null,  // 刪除回補不需要成本
                                     detail.WarehouseLocationId,
@@ -513,17 +528,6 @@ namespace ERPCore2.Services
                                 }
                             }
                         }
-                    }
-                    
-                    // 🔑 關鍵：刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
-                    // 這樣重新新增同號單據時，就不會找到舊的 _ADJ 記錄
-                    var adjTransactions = await context.InventoryTransactions
-                        .Where(t => t.TransactionNumber.StartsWith(entity.Code + "_ADJ"))
-                        .ToListAsync();
-                    
-                    if (adjTransactions.Any())
-                    {
-                        context.InventoryTransactions.RemoveRange(adjTransactions);
                     }
                     
                     // 3. 收集需要回寫的銷貨訂單明細ID（在刪除之前）
