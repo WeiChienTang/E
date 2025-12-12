@@ -935,15 +935,28 @@
     {
         try
         {
-            // 重新載入明細資料
+            // 🔑 關鍵：重置狀態標記
+            isDetailDataReady = false;
+            hasUndeletableDetails = false;
+            
+            // 1. 重新載入明細資料
             await LoadSalesReturnDetails(loadedEntityId);
             
-            // 觸發 Table 元件刷新
+            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
+            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
+            StateHasChanged();
+            
+            // 2. 載入明細相關資料（沖款記錄）以檢查鎖定狀態
+            await LoadDetailRelatedDataAsync();
+            isDetailDataReady = true;
+            
+            // 3. 觸發 Table 元件刷新（此時 ExistingReturnDetails 已經是新的資料）
             if (salesReturnDetailManager != null)
             {
                 await salesReturnDetailManager.RefreshDetailsAsync();
             }
             
+            // 4. 最後再次更新 UI（確保所有變更都反映在畫面上）
             StateHasChanged();
         }
         catch (Exception ex)
@@ -951,6 +964,7 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
                 additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
             await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+            isDetailDataReady = true; // 即使錯誤也要允許渲染
         }
     }
     

@@ -41,7 +41,10 @@ namespace ERPCore2.Data.Enums
         Scrap = 10,
         
         [Description("領料")]
-        MaterialIssue = 11
+        MaterialIssue = 11,
+        
+        [Description("領料退回")]
+        MaterialReturn = 13
     }
 
     /// <summary>
