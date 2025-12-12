@@ -1,5 +1,6 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
 
+@using ERPCore2.Helpers
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -128,6 +129,11 @@
     
     // ===== 轉單狀態 =====
     private bool canCreateReceiving = false; // 是否可以轉進貨單（新增模式需先儲存，編輯模式直接為 true）
+    
+    // ===== 預填資料（從低庫存警戒開啟採購單時使用） =====
+    private int? prefilledSupplierId = null;
+    private int? prefilledProductId = null;
+    private decimal? prefilledUnitPrice = null;
     
     // ===== 列印狀態 =====
     private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
@@ -366,6 +372,51 @@
                 // 清空明細
                 purchaseOrderDetails.Clear();
                 
+                // 如果有預填的供應商 ID，只設定 SupplierId（不設定 Supplier 導航屬性，避免 EF Core 追蹤錯誤）
+                if (prefilledSupplierId.HasValue && prefilledSupplierId.Value > 0)
+                {
+                    newOrder.SupplierId = prefilledSupplierId.Value;
+                    ConsoleHelper.WriteSuccess($"[LoadPurchaseOrderData] 預填供應商 ID: {prefilledSupplierId.Value}");
+                }
+                
+                // 如果有預填的商品 ID，直接添加明細（在 LoadPurchaseOrderData 中處理，確保 UI 渲染時就有資料）
+                if (prefilledProductId.HasValue && prefilledProductId.Value > 0)
+                {
+                    var product = availableProducts.FirstOrDefault(p => p.Id == prefilledProductId.Value);
+                    if (product != null)
+                    {
+                        // 只設定 ProductId，不設定 Product 導航屬性，避免 EF Core 追蹤錯誤
+                        var newDetail = new PurchaseOrderDetail
+                        {
+                            ProductId = product.Id,
+                            OrderQuantity = 1,
+                            UnitPrice = prefilledUnitPrice ?? 0,
+                            ReceivedQuantity = 0,
+                            Remarks = "從低庫存警戒建立"
+                        };
+                        
+                        purchaseOrderDetails.Add(newDetail);
+                        ConsoleHelper.WriteSuccess($"[LoadPurchaseOrderData] 預填商品明細 ID: {product.Id} ({product.Name})，數量: {purchaseOrderDetails.Count}");
+                        ConsoleHelper.WriteInfo($"[LoadPurchaseOrderData] 明細資料 - OrderQuantity: {newDetail.OrderQuantity}, UnitPrice: {newDetail.UnitPrice}, SubtotalAmount: {newDetail.SubtotalAmount}");
+                        
+                        // 直接計算 newOrder 的金額（此時 editModalComponent.Entity 還不存在）
+                        // 使用預設的外加稅計算方式
+                        newOrder.TotalAmount = Math.Round(purchaseOrderDetails.Sum(d => d.SubtotalAmount), 0, MidpointRounding.AwayFromZero);
+                        newOrder.PurchaseTaxAmount = purchaseOrderDetails.Sum(d => 
+                        {
+                            var detailTaxRate = d.TaxRate ?? currentTaxRate;
+                            var detailTaxAmount = d.SubtotalAmount * (detailTaxRate / 100m);
+                            return Math.Round(detailTaxAmount, 0, MidpointRounding.AwayFromZero);
+                        });
+                        
+                        ConsoleHelper.WriteSuccess($"[LoadPurchaseOrderData] 已計算金額 - TotalAmount: {newOrder.TotalAmount}, TaxAmount: {newOrder.PurchaseTaxAmount}");
+                    }
+                    else
+                    {
+                        ConsoleHelper.WriteError($"[LoadPurchaseOrderData] 找不到商品 ID: {prefilledProductId.Value}");
+                    }
+                }
+                
                 //  新增模式時,重置鎖定狀態為 false
                 hasUndeletableDetails = false;
                 
@@ -504,8 +555,9 @@
                 },
                 new()
                 {
+
                     PropertyName = nameof(PurchaseOrder.SupplierId),
-                    Label = "篩選廠商",
+                    Label = "廠商",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇廠商",
                     IsRequired = true,
@@ -1654,6 +1706,72 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReceivingFromOrder), GetType(), 
                 additionalData: $"轉進貨單失敗 - OrderId: {editModalComponent?.Entity?.Id}");
             await NotificationService.ShowErrorAsync($"轉進貨單時發生錯誤: {ex.Message}");
+        }
+    }
+    
+    // ===== 公開方法（供外部調用） =====
+    
+    /// <summary>
+    /// 開啟新增採購單 Modal 並預填供應商和商品資訊
+    /// 採用與「轉單」相同的設計模式：在 LoadPurchaseOrderData 中就設定好資料
+    /// </summary>
+    public async Task ShowAddModalWithPrefilledData(int supplierId, int productId, decimal? suggestedUnitPrice = null)
+    {
+        try
+        {
+            ConsoleHelper.WriteTitle("開始執行 ShowAddModalWithPrefilledData");
+            ConsoleHelper.WriteInfo($"參數 - SupplierId: {supplierId}, ProductId: {productId}, UnitPrice: {suggestedUnitPrice}");
+            
+            // 重置為新增模式
+            PurchaseOrderId = null;
+            
+            // 設定預填資訊（LoadPurchaseOrderData 會讀取這些值）
+            prefilledSupplierId = supplierId;
+            prefilledProductId = productId;
+            prefilledUnitPrice = suggestedUnitPrice;
+            ConsoleHelper.WriteSuccess($"已設定預填資訊 - SupplierId: {supplierId}, ProductId: {productId}, UnitPrice: {suggestedUnitPrice}");
+            
+            // 開啟 Modal（會自動觸發 LoadPurchaseOrderData，並在其中設定供應商）
+            if (IsVisibleChanged.HasDelegate)
+            {
+                await IsVisibleChanged.InvokeAsync(true);
+                ConsoleHelper.WriteSuccess("已開啟 Modal - LoadPurchaseOrderData 會自動載入並設定供應商");
+            }
+            
+            // 等待 Modal 完全渲染（供應商和明細已在 LoadPurchaseOrderData 中設定）
+            await Task.Delay(100);
+            
+            // 檢查結果
+            if (editModalComponent?.Entity != null)
+            {
+                ConsoleHelper.WriteInfo($"驗證 - Entity.SupplierId: {editModalComponent.Entity.SupplierId}");
+                ConsoleHelper.WriteInfo($"驗證 - Entity.Supplier: {editModalComponent.Entity.Supplier?.CompanyName ?? "null"}");
+                ConsoleHelper.WriteInfo($"驗證 - purchaseOrderDetails 數量: {purchaseOrderDetails.Count}");
+                
+                if (purchaseOrderDetails.Any())
+                {
+                    var product = purchaseOrderDetails.First().Product;
+                    await NotificationService.ShowInfoAsync($"已預填供應商和商品：{product?.Name ?? "未知"}");
+                }
+            }
+            
+            ConsoleHelper.WriteSuccess("ShowAddModalWithPrefilledData 完成");
+            
+            // 清除預填資訊（避免影響下次開啟）
+            prefilledSupplierId = null;
+            prefilledProductId = null;
+            prefilledUnitPrice = null;
+            
+            ConsoleHelper.WriteSeparator('=', 60);
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.WriteError($"發生例外: {ex.Message}");
+            ConsoleHelper.WriteError($"堆疊追蹤: {ex.StackTrace}");
+            
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledData), GetType(),
+                additionalData: $"開啟預填採購單Modal失敗 - SupplierId: {supplierId}, ProductId: {productId}");
+            await NotificationService.ShowErrorAsync("開啟採購單時發生錯誤");
         }
     }
 }

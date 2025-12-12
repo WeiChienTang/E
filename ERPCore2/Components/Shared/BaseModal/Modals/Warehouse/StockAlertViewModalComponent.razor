@@ -6,6 +6,7 @@
 @using ERPCore2.Services
 @using ERPCore2.Components.Shared.Modals
 @using ERPCore2.Components.Shared.SubCollections
+@using ERPCore2.Components.Pages.Purchase
 @using ERPCore2.Models
 @inject IInventoryStockService InventoryStockService
 @inject ISupplierRecommendationService SupplierRecommendationService
@@ -66,6 +67,14 @@
                                OnDocumentClick="@HandleSupplierClick"
                                OnAddNew="@HandleCreatePurchaseOrder" />
 
+@* 採購單編輯 Modal *@
+<PurchaseOrderEditModalComponent @ref="purchaseOrderEditModal"
+                                IsVisible="@showPurchaseOrderModal"
+                                IsVisibleChanged="@((bool visible) => showPurchaseOrderModal = visible)"
+                                PurchaseOrderId="@selectedPurchaseOrderId"
+                                OnPurchaseOrderSaved="@HandlePurchaseOrderSaved"
+                                OnCancel="@(() => showPurchaseOrderModal = false)" />
+
 @code {
     // ===== 參數定義 =====
 
@@ -97,6 +106,11 @@
     private string selectedProductName = string.Empty;
     private int selectedProductId = 0;
     private List<RelatedDocument> supplierRecommendations = new();
+    
+    // 採購單相關
+    private PurchaseOrderEditModalComponent? purchaseOrderEditModal;
+    private bool showPurchaseOrderModal = false;
+    private int? selectedPurchaseOrderId = null;
 
     // ===== 生命週期方法 =====
 
@@ -166,28 +180,28 @@
                 Title = "商品名稱",
                 PropertyName = nameof(StockAlertViewItem.ProductName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "20%"
+                Width = "200px"
             },
             new()
             {
                 Title = "倉庫",
                 PropertyName = nameof(StockAlertViewItem.WarehouseName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "12%"
+                Width = "120px"
             },
             new()
             {
                 Title = "倉庫位置",
                 PropertyName = nameof(StockAlertViewItem.WarehouseLocationName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "12%"
+                Width = "120px"
             },
             new()
             {
                 Title = "當前數量",
                 PropertyName = nameof(StockAlertViewItem.CurrentStock),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "10%",
+                Width = "100px",
                 CellCssClass = "text-end fw-bold"
             },
             new()
@@ -195,7 +209,7 @@
                 Title = "最低量",
                 PropertyName = nameof(StockAlertViewItem.MinStockLevel),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "10%",
+                Width = "100px",
                 CellCssClass = "text-end"
             },
             new()
@@ -203,7 +217,7 @@
                 Title = "最高量",
                 PropertyName = nameof(StockAlertViewItem.MaxStockLevel),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "10%",
+                Width = "100px",
                 CellCssClass = "text-end"
             },
             new()
@@ -211,8 +225,8 @@
                 Title = "警戒狀態",
                 PropertyName = nameof(StockAlertViewItem.AlertStatus),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "18%",
-                CellCssClass = AlertType == StockAlertType.LowStock ? "text-warning fw-bold" : "text-info fw-bold"
+                Width = "180px",
+                CellCssClass = AlertType == StockAlertType.LowStock ? "text-warning" : "text-info"
             }
         };
         
@@ -224,13 +238,15 @@
                 Title = "操作",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "120px",
+                Width = "60px",
                 CustomTemplate = item =>
                 {
                     var stockItem = (StockAlertViewItem)item;
-                    return @<GenericButtonComponent Text="下單"
+                    return @<GenericButtonComponent
+                                                    IconClass="bi-cart-plus"
                                                    Variant="ButtonVariant.Green"
                                                    Size="ButtonSize.Small"
+                                                   Title="立即下單"
                                                    OnClick="@(async () => await HandleFindSuppliers(stockItem))" />;
                 }
             });
@@ -319,7 +335,7 @@
             {
                 DocumentId = r.SupplierId,
                 DocumentType = RelatedDocumentType.SupplierRecommendation,
-                DocumentNumber = r.SupplierCode,
+                DocumentNumber = $"{r.SupplierCode} - {r.SupplierName}",
                 DocumentDate = r.LastPurchaseDate ?? DateTime.Now,
                 Quantity = r.PurchaseCount,
                 UnitPrice = r.LastPurchasePrice,
@@ -371,21 +387,61 @@
     }
 
     /// <summary>
-    /// 處理供應商點擊（顯示供應商詳細資訊）
+    /// 處理供應商點擊（開啟採購單並預填供應商和商品）
     /// </summary>
     private async Task HandleSupplierClick(RelatedDocument document)
     {
-        // 這裡可以開啟供應商詳細資訊 Modal
-        await NotificationService.ShowInfoAsync($"供應商：{document.DocumentNumber}");
+        try
+        {
+            // 關閉供應商推薦Modal
+            showSupplierRecommendationModal = false;
+            
+            // 開啟採購單並預填資料
+            if (purchaseOrderEditModal != null)
+            {
+                await purchaseOrderEditModal.ShowAddModalWithPrefilledData(
+                    supplierId: document.DocumentId,
+                    productId: selectedProductId,
+                    suggestedUnitPrice: document.UnitPrice
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟採購單失敗：{ex.Message}");
+        }
     }
 
     /// <summary>
-    /// 處理「立即採購」按鈕
+    /// 處理「立即採購」按鈕（從供應商推薦Modal的新增按鈕）
     /// </summary>
     private async Task HandleCreatePurchaseOrder()
     {
-        // TODO: 開啟採購單編輯 Modal，預填商品和供應商資訊
-        await NotificationService.ShowInfoAsync("開啟採購單功能尚未實作");
+        try
+        {
+            // 關閉供應商推薦Modal
+            showSupplierRecommendationModal = false;
+            
+            // 開啟空白採購單（讓用戶自行選擇供應商）
+            selectedPurchaseOrderId = null;
+            showPurchaseOrderModal = true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟採購單失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理採購單儲存成功
+    /// </summary>
+    private async Task HandlePurchaseOrderSaved(PurchaseOrder savedOrder)
+    {
+        showPurchaseOrderModal = false;
+        await NotificationService.ShowSuccessAsync($"採購單 {savedOrder.Code} 已建立成功");
+        
+        // 可選：重新載入庫存警戒資料
+        // await LoadStockAlertDataAsync();
     }
 
     // ===== 列舉與內部類別 =====
