@@ -399,17 +399,35 @@
             ServiceResult<MaterialIssue> result;
             if (materialIssue.Id > 0)
             {
+                // 編輯模式：分兩步驟處理
+                // 步驟 1: 更新主檔和明細（不處理庫存）
                 result = await MaterialIssueService.UpdateAsync(materialIssue);
+                
+                if (!result.IsSuccess || result.Data == null)
+                {
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "更新領料單失敗");
+                    return false;
+                }
+                
+                // 步驟 2: 單獨處理庫存差異
+                var inventoryResult = await MaterialIssueService.UpdateInventoryByDifferenceAsync(result.Data.Id, 0);
+                
+                if (!inventoryResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync(inventoryResult.ErrorMessage ?? "更新庫存失敗");
+                    return false;
+                }
             }
             else
             {
+                // 新增模式：CreateAsync 已包含庫存處理
                 result = await MaterialIssueService.CreateAsync(materialIssue);
-            }
-
-            if (!result.IsSuccess || result.Data == null)
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存領料單失敗");
-                return false;
+                
+                if (!result.IsSuccess || result.Data == null)
+                {
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存領料單失敗");
+                    return false;
+                }
             }
 
             return true;

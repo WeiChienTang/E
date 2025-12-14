@@ -14,6 +14,7 @@ namespace ERPCore2.Services
     {
         private readonly IInventoryStockService _inventoryStockService;
         private readonly IInventoryTransactionService _inventoryTransactionService;
+        private readonly IMaterialIssueDetailService? _materialIssueDetailService;
 
         public MaterialIssueService(
             IDbContextFactory<AppDbContext> contextFactory,
@@ -28,10 +29,12 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<MaterialIssue>> logger,
             IInventoryStockService inventoryStockService,
-            IInventoryTransactionService inventoryTransactionService) : base(contextFactory, logger)
+            IInventoryTransactionService inventoryTransactionService,
+            IMaterialIssueDetailService materialIssueDetailService) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _inventoryTransactionService = inventoryTransactionService;
+            _materialIssueDetailService = materialIssueDetailService;
         }
 
         #region 覆寫基底方法 - 包含庫存處理
@@ -104,123 +107,187 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 更新領料單（使用差異化調整庫存）
+        /// 更新領料單（不處理庫存，庫存由 UpdateInventoryByDifferenceAsync 單獨處理）
         /// </summary>
         public override async Task<ServiceResult<MaterialIssue>> UpdateAsync(MaterialIssue entity)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
-            using var transaction = await context.Database.BeginTransactionAsync();
-
             try
             {
-                // 1. 執行基本的更新邏輯
-                var updateResult = await base.UpdateAsync(entity);
-                if (!updateResult.IsSuccess || updateResult.Data == null)
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
                 {
-                    return updateResult;
-                }
+                    // 1. 更新主檔
+                    var existingEntity = await context.MaterialIssues
+                        .FirstOrDefaultAsync(x => x.Id == entity.Id);
+                    
+                    if (existingEntity == null)
+                        return ServiceResult<MaterialIssue>.Failure("找不到要更新的資料");
 
-                var materialIssue = updateResult.Data;
+                    // 驗證實體
+                    var validationResult = await ValidateAsync(entity);
+                    if (!validationResult.IsSuccess)
+                        return ServiceResult<MaterialIssue>.Failure(validationResult.ErrorMessage);
 
-                // 2. 取得更新後的明細資料
-                var details = await context.MaterialIssueDetails
-                    .Where(d => d.MaterialIssueId == entity.Id && d.Status == EntityStatus.Active)
-                    .ToListAsync();
+                    // 保持原建立資訊
+                    entity.CreatedAt = existingEntity.CreatedAt;
+                    entity.CreatedBy = existingEntity.CreatedBy;
+                    entity.UpdatedAt = DateTime.UtcNow;
 
-                // 3. 逐筆處理庫存差異（只調整變化的部分）
-                foreach (var detail in details)
-                {
-                    var result = await UpdateInventoryByDifferenceAsync(context, materialIssue, detail, detail.IssueQuantity);
-                    if (!result.IsSuccess)
+                    // 分離舊實體並附加新實體
+                    context.Entry(existingEntity).State = EntityState.Detached;
+                    context.Entry(entity).State = EntityState.Modified;
+                    await context.SaveChangesAsync();
+
+                    // 2. 更新明細（使用內建 context 和 transaction）
+                    if (_materialIssueDetailService != null)
                     {
-                        await transaction.RollbackAsync();
-                        return ServiceResult<MaterialIssue>.Failure(result.ErrorMessage);
+                        var detailResult = await _materialIssueDetailService.UpdateDetailsInContextAsync(
+                            context, 
+                            entity.Id, 
+                            entity.MaterialIssueDetails?.ToList() ?? new List<MaterialIssueDetail>(),
+                            transaction);
+                        
+                        if (!detailResult.IsSuccess)
+                        {
+                            await transaction.RollbackAsync();
+                            return ServiceResult<MaterialIssue>.Failure(detailResult.ErrorMessage);
+                        }
                     }
-                }
 
-                await transaction.CommitAsync();
-                return ServiceResult<MaterialIssue>.Success(updateResult.Data);
+                    await transaction.CommitAsync();
+                    return ServiceResult<MaterialIssue>.Success(entity);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, new
                 {
                     Method = nameof(UpdateAsync),
                     ServiceType = GetType().Name,
-                    MaterialIssueId = entity.Id,
-                    Code = entity.Code
+                    MaterialIssueId = entity.Id
                 });
-                return ServiceResult<MaterialIssue>.Failure($"更新領料單並處理庫存時發生錯誤：{ex.Message}");
+                return ServiceResult<MaterialIssue>.Failure($"更新領料單時發生錯誤：{ex.Message}");
             }
         }
 
         /// <summary>
-        /// 刪除領料單並還原庫存（使用 _DEL 批次邊界標記）
+        /// 永久刪除領料單並還原庫存（使用 _DEL 批次邊界標記）
+        /// 這是UI實際調用的刪除方法
         /// </summary>
-        public override async Task<ServiceResult> DeleteAsync(int id)
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
-            using var transaction = await context.Database.BeginTransactionAsync();
-
             try
             {
-                // 1. 取得領料單及明細
-                var materialIssue = await context.MaterialIssues
-                    .Include(mi => mi.MaterialIssueDetails)
-                    .FirstOrDefaultAsync(mi => mi.Id == id);
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
-                if (materialIssue == null)
+                try
                 {
-                    return ServiceResult.Failure("找不到指定的領料單");
-                }
+                    ConsoleHelper.WriteTitle($"開始刪除領料單 ID: {id}");
 
-                // 2. 還原庫存（使用 MaterialReturn 類型和 _DEL 後綴）
-                var details = materialIssue.MaterialIssueDetails
-                    .Where(d => d.Status == EntityStatus.Active)
-                    .ToList();
+                    // 1. 先取得主記錄（含明細資料）
+                    var entity = await context.MaterialIssues
+                        .Include(mi => mi.MaterialIssueDetails)
+                        .FirstOrDefaultAsync(x => x.Id == id);
 
-                foreach (var detail in details)
-                {
-                    // 使用 AddStockAsync 增加庫存（回沖）
-                    var addResult = await _inventoryStockService.AddStockAsync(
-                        productId: detail.ProductId,
-                        warehouseId: detail.WarehouseId,
-                        quantity: detail.IssueQuantity,
-                        transactionType: InventoryTransactionTypeEnum.MaterialReturn,
-                        transactionNumber: $"{materialIssue.Code}_DEL",  // 使用 _DEL 後綴作為批次邊界
-                        unitCost: detail.UnitCost,
-                        locationId: detail.WarehouseLocationId,
-                        remarks: $"刪除領料單 {materialIssue.Code}，回沖庫存");
-
-                    if (!addResult.IsSuccess)
+                    if (entity == null)
                     {
-                        await transaction.RollbackAsync();
-                        return ServiceResult.Failure($"還原庫存失敗：{addResult.ErrorMessage}");
+                        ConsoleHelper.WriteError("找不到要刪除的資料");
+                        return ServiceResult.Failure("找不到要刪除的資料");
                     }
-                }
 
-                // 3. 執行軟刪除
-                var deleteResult = await base.DeleteAsync(id);
-                if (!deleteResult.IsSuccess)
+                    ConsoleHelper.WriteInfo($"找到領料單: {entity.Code}");
+
+                    // 2. 檢查是否可以刪除
+                    var canDeleteResult = await CanDeleteAsync(entity);
+                    if (!canDeleteResult.IsSuccess)
+                    {
+                        ConsoleHelper.WriteError($"無法刪除: {canDeleteResult.ErrorMessage}");
+                        return canDeleteResult;
+                    }
+
+                    // 3. 檢查是否有庫存服務可用並進行庫存回滾
+                    if (_inventoryStockService != null)
+                    {
+                        var eligibleDetails = entity.MaterialIssueDetails
+                            .Where(d => d.Status == EntityStatus.Active && d.IssueQuantity > 0)
+                            .ToList();
+
+                        ConsoleHelper.WriteInfo($"需要回滾庫存的明細數: {eligibleDetails.Count}");
+
+                        foreach (var detail in eligibleDetails)
+                        {
+                            ConsoleHelper.WriteStep(1, $"回滾庫存 - 產品ID: {detail.ProductId}, 數量: +{detail.IssueQuantity}");
+
+                            // 使用 AddStockAsync 增加庫存（回沖領料）
+                            var addResult = await _inventoryStockService.AddStockAsync(
+                                productId: detail.ProductId,
+                                warehouseId: detail.WarehouseId,
+                                quantity: detail.IssueQuantity,
+                                transactionType: InventoryTransactionTypeEnum.MaterialReturn,
+                                transactionNumber: $"{entity.Code}_DEL",  // 使用 _DEL 後綴作為批次邊界
+                                unitCost: detail.UnitCost,
+                                locationId: detail.WarehouseLocationId,
+                                remarks: $"永久刪除領料單 - {entity.Code}");
+
+                            if (!addResult.IsSuccess)
+                            {
+                                ConsoleHelper.WriteError($"庫存回退失敗：{addResult.ErrorMessage}");
+                                await transaction.RollbackAsync();
+                                return ServiceResult.Failure($"庫存回退失敗：{addResult.ErrorMessage}");
+                            }
+
+                            ConsoleHelper.WriteSuccess($"成功回滾產品 {detail.ProductId} 庫存 +{detail.IssueQuantity}");
+                        }
+                    }
+
+                    // 4. 刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
+                    var adjTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber.StartsWith(entity.Code + "_ADJ"))
+                        .ToListAsync();
+
+                    if (adjTransactions.Any())
+                    {
+                        ConsoleHelper.WriteInfo($"刪除 {adjTransactions.Count} 筆 _ADJ 交易記錄");
+                        context.InventoryTransactions.RemoveRange(adjTransactions);
+                    }
+
+                    // 5. 永久刪除主記錄（EF Core 會自動刪除相關的明細）
+                    ConsoleHelper.WriteStep(2, "永久刪除主記錄");
+                    context.MaterialIssues.Remove(entity);
+
+                    // 6. 保存變更
+                    await context.SaveChangesAsync();
+
+                    // 7. 提交交易
+                    await transaction.CommitAsync();
+
+                    ConsoleHelper.WriteSuccess($"成功刪除領料單: {entity.Code}");
+                    return ServiceResult.Success();
+                }
+                catch
                 {
                     await transaction.RollbackAsync();
-                    return deleteResult;
+                    throw;
                 }
-
-                await transaction.CommitAsync();
-                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new
+                ConsoleHelper.WriteError($"刪除領料單時發生錯誤：{ex.Message}");
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new
                 {
-                    Method = nameof(DeleteAsync),
+                    Method = nameof(PermanentDeleteAsync),
                     ServiceType = GetType().Name,
                     MaterialIssueId = id
                 });
-                return ServiceResult.Failure($"刪除領料單並還原庫存時發生錯誤：{ex.Message}");
+                return ServiceResult.Failure($"刪除領料單時發生錯誤：{ex.Message}");
             }
         }
 
@@ -365,96 +432,224 @@ namespace ERPCore2.Services
         #region 庫存差異處理
 
         /// <summary>
-        /// 根據明細差異更新庫存（只調整變化的部分，支援有效批次追蹤）
+        /// 更新領料單的庫存（差異更新模式）
+        /// 功能：比較編輯前後的明細差異，使用淨值計算方式確保庫存準確性
+        /// 完全參照 PurchaseReceivingService 的模式，確保邏輯一致性
         /// </summary>
-        private async Task<ServiceResult> UpdateInventoryByDifferenceAsync(
-            AppDbContext context,
-            MaterialIssue currentMaterialIssue,
-            MaterialIssueDetail detail,
-            decimal targetQuantity)
+        /// <param name="id">領料單ID</param>
+        /// <param name="updatedBy">更新人員ID（保留參數）</param>
+        /// <returns>更新結果，包含成功狀態及錯誤訊息</returns>
+        public async Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0)
         {
             try
             {
-                // 1. 查詢所有相關交易記錄（包含無後綴、_ADJ、_DEL）
-                var allTransactions = await context.InventoryTransactions
-                    .Where(t => t.TransactionNumber == currentMaterialIssue.Code ||
-                                t.TransactionNumber.StartsWith(currentMaterialIssue.Code + "_"))
-                    .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
-                    .ToListAsync();
+                if (_inventoryStockService == null)
+                    return ServiceResult.Failure("庫存服務未初始化");
 
-                // 2. 找到最後一次刪除的批次邊界
-                var lastDeleteTransaction = allTransactions
-                    .Where(t => t.TransactionNumber.EndsWith("_DEL"))
-                    .OrderByDescending(t => t.TransactionDate).ThenByDescending(t => t.Id)
-                    .FirstOrDefault();
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
 
-                // 3. 只統計最後刪除之後的有效記錄（針對當前產品和倉庫）
-                var existingTransactions = lastDeleteTransaction != null
-                    ? allTransactions.Where(t => t.Id > lastDeleteTransaction.Id &&
-                                                 !t.TransactionNumber.EndsWith("_DEL") &&
-                                                 t.ProductId == detail.ProductId &&
-                                                 t.WarehouseId == detail.WarehouseId).ToList()
-                    : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL") &&
-                                                 t.ProductId == detail.ProductId &&
-                                                 t.WarehouseId == detail.WarehouseId).ToList();
-
-                // 4. 計算已處理數量（累加所有交易的數量）
-                var processedQuantity = existingTransactions.Sum(t => t.Quantity);
-
-                // 5. 計算差異
-                var quantityDiff = targetQuantity - processedQuantity;
-
-                // 6. 只調整差異部分
-                if (quantityDiff != 0)
+                try
                 {
-                    if (quantityDiff > 0)
-                    {
-                        // 需要增加領料（減少庫存）
-                        var reduceResult = await _inventoryStockService.ReduceStockAsync(
-                            productId: detail.ProductId,
-                            warehouseId: detail.WarehouseId,
-                            quantity: (int)quantityDiff,
-                            transactionType: InventoryTransactionTypeEnum.MaterialIssue,
-                            transactionNumber: $"{currentMaterialIssue.Code}_ADJ",
-                            locationId: detail.WarehouseLocationId,
-                            remarks: $"編輯領料單 {currentMaterialIssue.Code}，增加領料 {quantityDiff}");
-                        
-                        if (!reduceResult.IsSuccess)
-                        {
-                            return ServiceResult.Failure($"減少庫存失敗：{reduceResult.ErrorMessage}");
-                        }
-                    }
-                    else
-                    {
-                        // 需要減少領料（增加庫存）
-                        var addResult = await _inventoryStockService.AddStockAsync(
-                            productId: detail.ProductId,
-                            warehouseId: detail.WarehouseId,
-                            quantity: (int)Math.Abs(quantityDiff),
-                            transactionType: InventoryTransactionTypeEnum.MaterialReturn,
-                            transactionNumber: $"{currentMaterialIssue.Code}_ADJ",
-                            unitCost: detail.UnitCost,
-                            locationId: detail.WarehouseLocationId,
-                            remarks: $"編輯領料單 {currentMaterialIssue.Code}，減少領料 {Math.Abs(quantityDiff)}");
-                        
-                        if (!addResult.IsSuccess)
-                        {
-                            return ServiceResult.Failure($"增加庫存失敗：{addResult.ErrorMessage}");
-                        }
-                    }
-                }
+                    ConsoleHelper.WriteTitle($"更新領料單庫存差異 - ID: {id}");
 
-                return ServiceResult.Success();
+                    // 1. 載入領料單及明細
+                    var currentMaterialIssue = await context.MaterialIssues
+                        .Include(mi => mi.MaterialIssueDetails)
+                        .FirstOrDefaultAsync(mi => mi.Id == id);
+
+                    if (currentMaterialIssue == null)
+                    {
+                        ConsoleHelper.WriteError("找不到指定的領料單");
+                        return ServiceResult.Failure("找不到指定的領料單");
+                    }
+
+                    ConsoleHelper.WriteInfo($"領料單號: {currentMaterialIssue.Code}");
+
+                    // 2. 查詢所有相關的庫存交易記錄
+                    var allTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber == currentMaterialIssue.Code ||
+                                    t.TransactionNumber.StartsWith(currentMaterialIssue.Code + "_"))
+                        .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
+                        .ToListAsync();
+
+                    ConsoleHelper.WriteInfo($"找到 {allTransactions.Count} 筆相關交易記錄");
+
+                    // 3. 找到最後一次刪除記錄（_DEL）作為批次邊界
+                    var lastDeleteTransaction = allTransactions
+                        .Where(t => t.TransactionNumber.EndsWith("_DEL"))
+                        .OrderByDescending(t => t.TransactionDate)
+                        .ThenByDescending(t => t.Id)
+                        .FirstOrDefault();
+
+                    if (lastDeleteTransaction != null)
+                    {
+                        ConsoleHelper.WriteWarning($"找到批次邊界 _DEL (ID: {lastDeleteTransaction.Id})");
+                    }
+
+                    // 4. 只計算最後一次刪除之後的記錄（不含 _DEL 本身）
+                    var existingTransactions = lastDeleteTransaction != null
+                        ? allTransactions.Where(t => t.Id > lastDeleteTransaction.Id && !t.TransactionNumber.EndsWith("_DEL")).ToList()
+                        : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL")).ToList();
+
+                    ConsoleHelper.WriteInfo($"有效交易記錄數: {existingTransactions.Count}");
+
+                    // 5. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity, decimal UnitCost)>();
+
+                    foreach (var trans in existingTransactions)
+                    {
+                        var key = $"{trans.ProductId}_{trans.WarehouseId}_{trans.WarehouseLocationId?.ToString() ?? "null"}";
+                        if (!processedInventory.ContainsKey(key))
+                        {
+                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0, trans.UnitCost.GetValueOrDefault());
+                        }
+                        // 累加所有交易的淨值（Quantity 已經包含正負號）
+                        // MaterialIssue 是負數，MaterialReturn 是正數
+                        var oldQty = processedInventory[key].NetProcessedQuantity;
+                        var newQty = oldQty + trans.Quantity;
+                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId,
+                                                  processedInventory[key].LocationId, newQty,
+                                                  trans.UnitCost.GetValueOrDefault());
+                    }
+
+                    ConsoleHelper.WriteDebug("已處理庫存字典:");
+                    foreach (var kvp in processedInventory)
+                    {
+                        ConsoleHelper.WriteDebug($"  {kvp.Key}: 淨值={kvp.Value.NetProcessedQuantity}");
+                    }
+
+                    // 6. 建立當前明細字典
+                    var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int CurrentQuantity, decimal UnitCost)>();
+
+                    foreach (var detail in currentMaterialIssue.MaterialIssueDetails)
+                    {
+                        var key = $"{detail.ProductId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        if (!currentInventory.ContainsKey(key))
+                        {
+                            currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitCost.GetValueOrDefault());
+                        }
+                        var oldQty = currentInventory[key].CurrentQuantity;
+                        var newQty = oldQty + detail.IssueQuantity;
+                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId,
+                                               currentInventory[key].LocationId, newQty,
+                                               detail.UnitCost.GetValueOrDefault());
+                    }
+
+                    ConsoleHelper.WriteDebug("當前明細字典:");
+                    foreach (var kvp in currentInventory)
+                    {
+                        ConsoleHelper.WriteDebug($"  {kvp.Key}: 數量={kvp.Value.CurrentQuantity}");
+                    }
+
+                    // 7. 處理庫存差異 - 使用淨值計算方式
+                    var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
+
+                    foreach (var key in allKeys)
+                    {
+                        var hasProcessed = processedInventory.ContainsKey(key);
+                        var hasCurrent = currentInventory.ContainsKey(key);
+
+                        // 計算目標庫存數量（當前明細中應該有的數量）
+                        int targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0;
+
+                        // 計算已處理的庫存數量（之前所有交易的淨值的絕對值）
+                        // 對於領料：淨值是負數（如 -20+10=-10），取絕對值得到實際領了 10 個
+                        int processedQuantity = hasProcessed ? Math.Abs(processedInventory[key].NetProcessedQuantity) : 0;
+
+                        // 計算需要調整的數量
+                        int adjustmentNeeded = targetQuantity - processedQuantity;
+
+                        ConsoleHelper.WriteStep(1, $"處理 {key}:");
+                        ConsoleHelper.WriteInfo($"  目標數量: {targetQuantity}");
+                        ConsoleHelper.WriteInfo($"  已處理數量: {processedQuantity}");
+                        ConsoleHelper.WriteInfo($"  需調整: {adjustmentNeeded}");
+
+                        if (adjustmentNeeded != 0)
+                        {
+                            if (adjustmentNeeded > 0)
+                            {
+                                // 需要增加領料（減少庫存）
+                                ConsoleHelper.WriteWarning($"增加領料 {adjustmentNeeded} 個（減少庫存）");
+
+                                var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                                var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
+                                var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
+
+                                var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                    productId,
+                                    warehouseId,
+                                    adjustmentNeeded,
+                                    InventoryTransactionTypeEnum.MaterialIssue,
+                                    $"{currentMaterialIssue.Code}_ADJ",
+                                    locationId,
+                                    $"編輯領料單差異調整 - 增加領料 {adjustmentNeeded}");
+
+                                if (!reduceResult.IsSuccess)
+                                {
+                                    ConsoleHelper.WriteError($"減少庫存失敗: {reduceResult.ErrorMessage}");
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存調整失敗：{reduceResult.ErrorMessage}");
+                                }
+
+                                ConsoleHelper.WriteSuccess($"成功減少庫存 {adjustmentNeeded} 個");
+                            }
+                            else
+                            {
+                                // 需要減少領料（增加庫存）
+                                ConsoleHelper.WriteWarning($"減少領料 {Math.Abs(adjustmentNeeded)} 個（增加庫存）");
+
+                                var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                                var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
+                                var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
+                                var unitCost = hasCurrent ? currentInventory[key].UnitCost : processedInventory[key].UnitCost;
+
+                                var addResult = await _inventoryStockService.AddStockAsync(
+                                    productId,
+                                    warehouseId,
+                                    Math.Abs(adjustmentNeeded),
+                                    InventoryTransactionTypeEnum.MaterialReturn,
+                                    $"{currentMaterialIssue.Code}_ADJ",
+                                    unitCost,
+                                    locationId,
+                                    $"編輯領料單差異調整 - 減少領料 {Math.Abs(adjustmentNeeded)}");
+
+                                if (!addResult.IsSuccess)
+                                {
+                                    ConsoleHelper.WriteError($"增加庫存失敗: {addResult.ErrorMessage}");
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"庫存調整失敗：{addResult.ErrorMessage}");
+                                }
+
+                                ConsoleHelper.WriteSuccess($"成功增加庫存 {Math.Abs(adjustmentNeeded)} 個");
+                            }
+                        }
+                        else
+                        {
+                            ConsoleHelper.WriteInfo("數量無變化，無需調整");
+                        }
+                    }
+
+                    await transaction.CommitAsync();
+                    ConsoleHelper.WriteSuccess($"領料單 {currentMaterialIssue.Code} 庫存差異更新完成");
+                    ConsoleHelper.WriteSeparator();
+
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
+                ConsoleHelper.WriteError($"更新庫存差異時發生錯誤：{ex.Message}");
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInventoryByDifferenceAsync), GetType(), _logger, new
                 {
                     Method = nameof(UpdateInventoryByDifferenceAsync),
                     ServiceType = GetType().Name,
-                    MaterialIssueCode = currentMaterialIssue.Code,
-                    ProductId = detail.ProductId,
-                    TargetQuantity = targetQuantity
+                    MaterialIssueId = id
                 });
                 return ServiceResult.Failure($"更新庫存差異時發生錯誤：{ex.Message}");
             }

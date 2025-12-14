@@ -44,6 +44,20 @@ namespace ERPCore2.Services
         Task<ServiceResult> UpdateDetailsAsync(int materialIssueId, List<MaterialIssueDetail> details);
 
         /// <summary>
+        /// 批次更新領貨明細（支援外部 context 和 transaction）
+        /// </summary>
+        /// <param name="context">資料庫上下文</param>
+        /// <param name="materialIssueId">領貨主檔ID</param>
+        /// <param name="details">明細清單</param>
+        /// <param name="externalTransaction">外部交易</param>
+        /// <returns>服務結果</returns>
+        Task<ServiceResult> UpdateDetailsInContextAsync(
+            Data.Context.AppDbContext context,
+            int materialIssueId, 
+            List<MaterialIssueDetail> details,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? externalTransaction = null);
+
+        /// <summary>
         /// 檢查商品在指定領貨單中是否已存在
         /// </summary>
         /// <param name="materialIssueId">領貨主檔ID</param>

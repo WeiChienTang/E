@@ -56,5 +56,13 @@ namespace ERPCore2.Services
         /// <param name="departmentId">部門ID</param>
         /// <returns>領貨單列表</returns>
         Task<List<MaterialIssue>> GetByDepartmentAsync(int departmentId);
+
+        /// <summary>
+        /// 更新領料單的庫存（差異更新模式）
+        /// </summary>
+        /// <param name="id">領料單ID</param>
+        /// <param name="updatedBy">更新人員ID</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
     }
 }

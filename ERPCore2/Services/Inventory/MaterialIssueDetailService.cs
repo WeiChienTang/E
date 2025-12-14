@@ -324,73 +324,15 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 取得現有的明細記錄
-                    var existingDetails = await context.MaterialIssueDetails
-                        .Where(d => d.MaterialIssueId == materialIssueId)
-                        .ToListAsync();
-
-                    // 準備新的明細資料
-                    var newDetailsToAdd = new List<MaterialIssueDetail>();
-                    var newDetailIds = details?.Where(d => d.Id > 0).Select(d => d.Id).ToList() ?? new List<int>();
-                    var detailsToDelete = existingDetails
-                        .Where(ed => !newDetailIds.Contains(ed.Id))
-                        .ToList();
-
-                    // 處理傳入的明細
-                    if (details != null)
+                    var result = await UpdateDetailsInContextAsync(context, materialIssueId, details, transaction);
+                    
+                    if (!result.IsSuccess)
                     {
-                        foreach (var detail in details.Where(d => d.IssueQuantity > 0))
-                        {
-                            // 驗證必要欄位
-                            if (detail.ProductId <= 0 || detail.WarehouseId <= 0 || detail.IssueQuantity <= 0)
-                                continue;
-
-                            detail.MaterialIssueId = materialIssueId;
-                            detail.UpdatedAt = DateTime.UtcNow;
-
-                            if (detail.Id == 0)
-                            {
-                                // 新增的明細
-                                detail.CreatedAt = DateTime.UtcNow;
-                                detail.Status = EntityStatus.Active;
-                                newDetailsToAdd.Add(detail);
-                            }
-                            else
-                            {
-                                // 更新的明細
-                                var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
-                                if (existingDetail != null)
-                                {
-                                    // 更新現有明細的屬性
-                                    existingDetail.ProductId = detail.ProductId;
-                                    existingDetail.WarehouseId = detail.WarehouseId;
-                                    existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
-                                    existingDetail.IssueQuantity = detail.IssueQuantity;
-                                    existingDetail.UnitCost = detail.UnitCost;
-                                    existingDetail.Remarks = detail.Remarks;
-                                    existingDetail.UpdatedAt = DateTime.UtcNow;
-                                }
-                            }
-                        }
+                        await transaction.RollbackAsync();
+                        return result;
                     }
 
-                    // 執行資料庫操作
-                    // 新增明細
-                    if (newDetailsToAdd.Any())
-                    {
-                        await context.MaterialIssueDetails.AddRangeAsync(newDetailsToAdd);
-                    }
-
-                    // 軟刪除不需要的明細
-                    foreach (var detailToDelete in detailsToDelete)
-                    {
-                        detailToDelete.Status = EntityStatus.Deleted;
-                        detailToDelete.UpdatedAt = DateTime.UtcNow;
-                    }
-
-                    await context.SaveChangesAsync();
                     await transaction.CommitAsync();
-
                     return ServiceResult.Success();
                 }
                 catch
@@ -403,6 +345,96 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsAsync), GetType(), _logger, new { 
                     Method = nameof(UpdateDetailsAsync),
+                    ServiceType = GetType().Name,
+                    MaterialIssueId = materialIssueId,
+                    DetailsCount = details?.Count ?? 0 
+                });
+                return ServiceResult.Failure("更新領貨明細時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 批次更新領貨明細（支援外部 context 和 transaction）
+        /// </summary>
+        public async Task<ServiceResult> UpdateDetailsInContextAsync(
+            AppDbContext context,
+            int materialIssueId, 
+            List<MaterialIssueDetail> details,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? externalTransaction = null)
+        {
+            try
+            {
+                // 取得現有的明細記錄
+                var existingDetails = await context.MaterialIssueDetails
+                    .Where(d => d.MaterialIssueId == materialIssueId)
+                    .ToListAsync();
+
+                // 準備新的明細資料
+                var newDetailsToAdd = new List<MaterialIssueDetail>();
+                var newDetailIds = details?.Where(d => d.Id > 0).Select(d => d.Id).ToList() ?? new List<int>();
+                var detailsToDelete = existingDetails
+                    .Where(ed => !newDetailIds.Contains(ed.Id))
+                    .ToList();
+
+                // 處理傳入的明細
+                if (details != null)
+                {
+                    foreach (var detail in details.Where(d => d.IssueQuantity > 0))
+                    {
+                        // 驗證必要欄位
+                        if (detail.ProductId <= 0 || detail.WarehouseId <= 0 || detail.IssueQuantity <= 0)
+                            continue;
+
+                        detail.MaterialIssueId = materialIssueId;
+                        detail.UpdatedAt = DateTime.UtcNow;
+
+                        if (detail.Id == 0)
+                        {
+                            // 新增的明細
+                            detail.CreatedAt = DateTime.UtcNow;
+                            detail.Status = EntityStatus.Active;
+                            newDetailsToAdd.Add(detail);
+                        }
+                        else
+                        {
+                            // 更新的明細
+                            var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
+                            if (existingDetail != null)
+                            {
+                                // 更新現有明細的屬性
+                                existingDetail.ProductId = detail.ProductId;
+                                existingDetail.WarehouseId = detail.WarehouseId;
+                                existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
+                                existingDetail.IssueQuantity = detail.IssueQuantity;
+                                existingDetail.UnitCost = detail.UnitCost;
+                                existingDetail.Remarks = detail.Remarks;
+                                existingDetail.UpdatedAt = DateTime.UtcNow;
+                            }
+                        }
+                    }
+                }
+
+                // 執行資料庫操作
+                // 新增明細
+                if (newDetailsToAdd.Any())
+                {
+                    await context.MaterialIssueDetails.AddRangeAsync(newDetailsToAdd);
+                }
+
+                // 硬刪除不需要的明細（不再使用軟刪除）
+                if (detailsToDelete.Any())
+                {
+                    context.MaterialIssueDetails.RemoveRange(detailsToDelete);
+                }
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsInContextAsync), GetType(), _logger, new { 
+                    Method = nameof(UpdateDetailsInContextAsync),
                     ServiceType = GetType().Name,
                     MaterialIssueId = materialIssueId,
                     DetailsCount = details?.Count ?? 0 
