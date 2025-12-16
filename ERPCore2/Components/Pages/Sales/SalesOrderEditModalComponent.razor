@@ -2003,33 +2003,65 @@
                 return; // 沒有自訂 BOM，不需要儲存
             }
             
-            // 取得所有訂單明細（按順序排列，與 SalesItems 對應）
-            var savedSalesOrderDetails = await SalesOrderDetailService.GetBySalesOrderIdAsync(salesOrderId);
-            var orderedDetails = savedSalesOrderDetails.OrderBy(d => d.Id).ToList();
-            
+            // ✅ 簡化邏輯：直接使用 salesOrderDetails（SaveSalesOrderDetails 已更新所有 ID）
+            // 不需要重新查詢資料庫
             foreach (var kvp in compositionDetailsMap)
             {
                 var salesOrderDetailId = kvp.Key;
                 var compositionDetails = kvp.Value;
                 
-                SalesOrderDetail? salesOrderDetail = null;
+                int actualDetailId = 0;
                 
                 if (salesOrderDetailId > 0)
                 {
-                    // 正常 ID，直接查找
-                    salesOrderDetail = orderedDetails.FirstOrDefault(d => d.Id == salesOrderDetailId);
-                    if (salesOrderDetail == null)
-                        continue;
+                    // 已存在的明細，直接使用該 ID
+                    actualDetailId = salesOrderDetailId;
                 }
                 else
                 {
-                    // 臨時索引（負數），映射到實際明細
-                    // -1 對應第 0 個明細，-2 對應第 1 個明細...
-                    int arrayIndex = Math.Abs(salesOrderDetailId) - 1;
+                    // 🔑 臨時索引（負數），直接對應到 SalesItems 索引
+                    // -(i+1) 的反向計算：從 -1 推回索引 0，從 -2 推回索引 1
+                    int salesItemIndex = Math.Abs(salesOrderDetailId) - 1;
                     
-                    if (arrayIndex < orderedDetails.Count)
+                    if (salesItemIndex >= 0 && salesItemIndex < salesOrderDetailManager.SalesItems.Count)
                     {
-                        salesOrderDetail = orderedDetails[arrayIndex];
+                        var salesItem = salesOrderDetailManager.SalesItems[salesItemIndex];
+                        
+                        // 🔑 關鍵修正：找到新增的明細（沒有 ExistingDetailEntity 的）
+                        // 因為可能有多筆相同 ProductId，需要按順序匹配
+                        var newDetails = salesOrderDetails
+                            .Where(d => d.ProductId == salesItem.SelectedProduct?.Id)
+                            .OrderBy(d => d.Id)
+                            .ToList();
+                        
+                        // 找出這是第幾個新增的該商品明細
+                        int newItemSequence = 0;
+                        for (int idx = 0; idx <= salesItemIndex; idx++)
+                        {
+                            var checkItem = salesOrderDetailManager.SalesItems[idx];
+                            if (checkItem.SelectedProduct?.Id == salesItem.SelectedProduct?.Id && 
+                                checkItem.ExistingDetailEntity == null)
+                            {
+                                if (idx == salesItemIndex)
+                                    break;
+                                newItemSequence++;
+                            }
+                        }
+                        
+                        // 排除已存在的明細，取第 n 個新增的
+                        var existingCount = salesOrderDetailManager.SalesItems
+                            .Count(x => x.SelectedProduct?.Id == salesItem.SelectedProduct?.Id && 
+                                       x.ExistingDetailEntity != null);
+                        
+                        if (newItemSequence + existingCount < newDetails.Count)
+                        {
+                            var matchedDetail = newDetails[newItemSequence + existingCount];
+                            actualDetailId = matchedDetail.Id;
+                        }
+                        else
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
@@ -2037,9 +2069,14 @@
                     }
                 }
                 
+                if (actualDetailId <= 0)
+                {
+                    continue;
+                }
+                
                 // 批次儲存組合明細（使用實際的明細ID）
                 await SalesOrderCompositionDetailService.SaveBatchAsync(
-                    salesOrderDetail.Id,
+                    actualDetailId,
                     compositionDetails
                 );
             }

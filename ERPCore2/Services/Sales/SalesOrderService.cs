@@ -726,6 +726,7 @@ namespace ERPCore2.Services
 
                 // 2. 取得所有明細的組成資料
                 var detailIds = salesOrder.SalesOrderDetails.Select(d => d.Id).ToList();
+                
                 var compositionDetails = await context.SalesOrderCompositionDetails
                     .Where(c => detailIds.Contains(c.SalesOrderDetailId))
                     .Include(c => c.ComponentProduct)
@@ -784,8 +785,10 @@ namespace ERPCore2.Services
                 foreach (var detail in salesOrder.SalesOrderDetails.OrderBy(d => d.Id))
                 {
                     var detailItem = CreateInventoryCheckItem(
+                        salesOrder,
                         detail,
                         compositionDetails.Where(c => c.SalesOrderDetailId == detail.Id).ToList(),
+                        compositionDetails,
                         stockDictionary,
                         productCompositionDict,
                         level: 1
@@ -815,8 +818,10 @@ namespace ERPCore2.Services
         /// 建立單一明細的庫存檢查項目
         /// </summary>
         private OrderInventoryCheckItem CreateInventoryCheckItem(
+            SalesOrder salesOrder,
             SalesOrderDetail detail,
             List<SalesOrderCompositionDetail> compositions,
+            List<SalesOrderCompositionDetail> allCompositionDetails,
             Dictionary<int, decimal> inventoryStocks,
             Dictionary<int, ProductComposition?> productCompositionDict,
             int level)
@@ -865,7 +870,8 @@ namespace ERPCore2.Services
                         Children = new List<OrderInventoryCheckItem>()
                     };
 
-                    // 🔑 遞迴展開：檢查子元件是否也是組合產品
+                    // 🔑 遞迴展開：只使用主檔配方展開（ProductComposition）
+                    // 自訂組合（SalesOrderCompositionDetail）在儲存時已經是"扁平化"的，不需要遞迴
                     if (productCompositionDict.TryGetValue(comp.ComponentProductId, out var subComposition) 
                         && subComposition != null)
                     {

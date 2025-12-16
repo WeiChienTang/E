@@ -190,8 +190,6 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    ConsoleHelper.WriteTitle($"開始刪除領料單 ID: {id}");
-
                     // 1. 先取得主記錄（含明細資料）
                     var entity = await context.MaterialIssues
                         .Include(mi => mi.MaterialIssueDetails)
@@ -199,17 +197,13 @@ namespace ERPCore2.Services
 
                     if (entity == null)
                     {
-                        ConsoleHelper.WriteError("找不到要刪除的資料");
                         return ServiceResult.Failure("找不到要刪除的資料");
                     }
-
-                    ConsoleHelper.WriteInfo($"找到領料單: {entity.Code}");
 
                     // 2. 檢查是否可以刪除
                     var canDeleteResult = await CanDeleteAsync(entity);
                     if (!canDeleteResult.IsSuccess)
                     {
-                        ConsoleHelper.WriteError($"無法刪除: {canDeleteResult.ErrorMessage}");
                         return canDeleteResult;
                     }
 
@@ -220,12 +214,8 @@ namespace ERPCore2.Services
                             .Where(d => d.Status == EntityStatus.Active && d.IssueQuantity > 0)
                             .ToList();
 
-                        ConsoleHelper.WriteInfo($"需要回滾庫存的明細數: {eligibleDetails.Count}");
-
                         foreach (var detail in eligibleDetails)
                         {
-                            ConsoleHelper.WriteStep(1, $"回滾庫存 - 產品ID: {detail.ProductId}, 數量: +{detail.IssueQuantity}");
-
                             // 使用 AddStockAsync 增加庫存（回沖領料）
                             var addResult = await _inventoryStockService.AddStockAsync(
                                 productId: detail.ProductId,
@@ -239,12 +229,9 @@ namespace ERPCore2.Services
 
                             if (!addResult.IsSuccess)
                             {
-                                ConsoleHelper.WriteError($"庫存回退失敗：{addResult.ErrorMessage}");
                                 await transaction.RollbackAsync();
                                 return ServiceResult.Failure($"庫存回退失敗：{addResult.ErrorMessage}");
                             }
-
-                            ConsoleHelper.WriteSuccess($"成功回滾產品 {detail.ProductId} 庫存 +{detail.IssueQuantity}");
                         }
                     }
 
@@ -255,12 +242,10 @@ namespace ERPCore2.Services
 
                     if (adjTransactions.Any())
                     {
-                        ConsoleHelper.WriteInfo($"刪除 {adjTransactions.Count} 筆 _ADJ 交易記錄");
                         context.InventoryTransactions.RemoveRange(adjTransactions);
                     }
 
                     // 5. 永久刪除主記錄（EF Core 會自動刪除相關的明細）
-                    ConsoleHelper.WriteStep(2, "永久刪除主記錄");
                     context.MaterialIssues.Remove(entity);
 
                     // 6. 保存變更
@@ -269,7 +254,6 @@ namespace ERPCore2.Services
                     // 7. 提交交易
                     await transaction.CommitAsync();
 
-                    ConsoleHelper.WriteSuccess($"成功刪除領料單: {entity.Code}");
                     return ServiceResult.Success();
                 }
                 catch
@@ -280,7 +264,6 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteError($"刪除領料單時發生錯誤：{ex.Message}");
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new
                 {
                     Method = nameof(PermanentDeleteAsync),
@@ -451,8 +434,6 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    ConsoleHelper.WriteTitle($"更新領料單庫存差異 - ID: {id}");
-
                     // 1. 載入領料單及明細
                     var currentMaterialIssue = await context.MaterialIssues
                         .Include(mi => mi.MaterialIssueDetails)
@@ -460,11 +441,8 @@ namespace ERPCore2.Services
 
                     if (currentMaterialIssue == null)
                     {
-                        ConsoleHelper.WriteError("找不到指定的領料單");
                         return ServiceResult.Failure("找不到指定的領料單");
                     }
-
-                    ConsoleHelper.WriteInfo($"領料單號: {currentMaterialIssue.Code}");
 
                     // 2. 查詢所有相關的庫存交易記錄
                     var allTransactions = await context.InventoryTransactions
@@ -473,8 +451,6 @@ namespace ERPCore2.Services
                         .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
                         .ToListAsync();
 
-                    ConsoleHelper.WriteInfo($"找到 {allTransactions.Count} 筆相關交易記錄");
-
                     // 3. 找到最後一次刪除記錄（_DEL）作為批次邊界
                     var lastDeleteTransaction = allTransactions
                         .Where(t => t.TransactionNumber.EndsWith("_DEL"))
@@ -482,17 +458,10 @@ namespace ERPCore2.Services
                         .ThenByDescending(t => t.Id)
                         .FirstOrDefault();
 
-                    if (lastDeleteTransaction != null)
-                    {
-                        ConsoleHelper.WriteWarning($"找到批次邊界 _DEL (ID: {lastDeleteTransaction.Id})");
-                    }
-
                     // 4. 只計算最後一次刪除之後的記錄（不含 _DEL 本身）
                     var existingTransactions = lastDeleteTransaction != null
                         ? allTransactions.Where(t => t.Id > lastDeleteTransaction.Id && !t.TransactionNumber.EndsWith("_DEL")).ToList()
                         : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL")).ToList();
-
-                    ConsoleHelper.WriteInfo($"有效交易記錄數: {existingTransactions.Count}");
 
                     // 5. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity, decimal UnitCost)>();
@@ -513,12 +482,6 @@ namespace ERPCore2.Services
                                                   trans.UnitCost.GetValueOrDefault());
                     }
 
-                    ConsoleHelper.WriteDebug("已處理庫存字典:");
-                    foreach (var kvp in processedInventory)
-                    {
-                        ConsoleHelper.WriteDebug($"  {kvp.Key}: 淨值={kvp.Value.NetProcessedQuantity}");
-                    }
-
                     // 6. 建立當前明細字典
                     var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int CurrentQuantity, decimal UnitCost)>();
 
@@ -534,12 +497,6 @@ namespace ERPCore2.Services
                         currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId,
                                                currentInventory[key].LocationId, newQty,
                                                detail.UnitCost.GetValueOrDefault());
-                    }
-
-                    ConsoleHelper.WriteDebug("當前明細字典:");
-                    foreach (var kvp in currentInventory)
-                    {
-                        ConsoleHelper.WriteDebug($"  {kvp.Key}: 數量={kvp.Value.CurrentQuantity}");
                     }
 
                     // 7. 處理庫存差異 - 使用淨值計算方式
@@ -560,18 +517,11 @@ namespace ERPCore2.Services
                         // 計算需要調整的數量
                         int adjustmentNeeded = targetQuantity - processedQuantity;
 
-                        ConsoleHelper.WriteStep(1, $"處理 {key}:");
-                        ConsoleHelper.WriteInfo($"  目標數量: {targetQuantity}");
-                        ConsoleHelper.WriteInfo($"  已處理數量: {processedQuantity}");
-                        ConsoleHelper.WriteInfo($"  需調整: {adjustmentNeeded}");
-
                         if (adjustmentNeeded != 0)
                         {
                             if (adjustmentNeeded > 0)
                             {
                                 // 需要增加領料（減少庫存）
-                                ConsoleHelper.WriteWarning($"增加領料 {adjustmentNeeded} 個（減少庫存）");
-
                                 var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
                                 var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                                 var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
@@ -587,18 +537,13 @@ namespace ERPCore2.Services
 
                                 if (!reduceResult.IsSuccess)
                                 {
-                                    ConsoleHelper.WriteError($"減少庫存失敗: {reduceResult.ErrorMessage}");
                                     await transaction.RollbackAsync();
                                     return ServiceResult.Failure($"庫存調整失敗：{reduceResult.ErrorMessage}");
                                 }
-
-                                ConsoleHelper.WriteSuccess($"成功減少庫存 {adjustmentNeeded} 個");
                             }
                             else
                             {
                                 // 需要減少領料（增加庫存）
-                                ConsoleHelper.WriteWarning($"減少領料 {Math.Abs(adjustmentNeeded)} 個（增加庫存）");
-
                                 var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
                                 var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                                 var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
@@ -616,23 +561,14 @@ namespace ERPCore2.Services
 
                                 if (!addResult.IsSuccess)
                                 {
-                                    ConsoleHelper.WriteError($"增加庫存失敗: {addResult.ErrorMessage}");
                                     await transaction.RollbackAsync();
                                     return ServiceResult.Failure($"庫存調整失敗：{addResult.ErrorMessage}");
                                 }
-
-                                ConsoleHelper.WriteSuccess($"成功增加庫存 {Math.Abs(adjustmentNeeded)} 個");
                             }
-                        }
-                        else
-                        {
-                            ConsoleHelper.WriteInfo("數量無變化，無需調整");
                         }
                     }
 
                     await transaction.CommitAsync();
-                    ConsoleHelper.WriteSuccess($"領料單 {currentMaterialIssue.Code} 庫存差異更新完成");
-                    ConsoleHelper.WriteSeparator();
 
                     return ServiceResult.Success();
                 }
@@ -644,7 +580,6 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteError($"更新庫存差異時發生錯誤：{ex.Message}");
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInventoryByDifferenceAsync), GetType(), _logger, new
                 {
                     Method = nameof(UpdateInventoryByDifferenceAsync),

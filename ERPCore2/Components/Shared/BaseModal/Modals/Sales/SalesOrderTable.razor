@@ -125,7 +125,7 @@ else
                               GetCompositionsByDetailId="@SalesOrderCompositionDetailService.GetBySalesOrderDetailIdAsync"
                               CopyFromComposition="@SalesOrderCompositionDetailService.CopyFromCompositionAsync"
                               OnSave="@HandleCompositionSave"
-                              OnCancel="@(() => showCompositionModal = false)"
+                              OnCancel="@HandleCompositionCancel"
                               OnRequestCachedData="@GetCachedCompositionData"
                               OnReselect="@HandleCompositionReselect" />
 
@@ -200,7 +200,7 @@ else
     [Parameter] public int? SourceQuotationId { get; set; } // 來源報價單ID（用於從報價單轉單時）
     [Parameter] public bool? IsSourceQuotationApproved { get; set; } // 來源報價單是否已審核
 
-    private List<SalesItem> SalesItems { get; set; } = new List<SalesItem>();
+    public List<SalesItem> SalesItems { get; set; } = new List<SalesItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
     private int? _previousSelectedCustomerId = null;
     private int? _previousFilterProductId = null;
@@ -579,15 +579,28 @@ else
     private async Task ShowCompositionEditor(SalesItem item)
     {
         if (item.SelectedProduct == null)
+        {
             return;
+        }
         
         // 找出 SalesItem 的索引
         selectedSalesItemIndex = SalesItems.IndexOf(item);
         selectedCompositionProductName = item.SelectedProduct.Name;
         selectedCompositionProductId = item.SelectedProduct.Id;
         
-        // 檢查是否已有組合資料
-        if (item.HasCompositionData)
+        // 取得明細 ID
+        var detailId = (item.ExistingDetailEntity as SalesOrderDetail)?.Id ?? 0;
+        
+        // 🔑 關鍵修正：如果是已儲存的明細（DetailId > 0）但沒有快取資料，直接開啟 Modal
+        // Modal 會自動從資料庫載入 BOM 組合明細
+        if (detailId > 0 && !item.HasCompositionData)
+        {
+            selectedCompositionId = null;  // 讓 Modal 自己判斷
+            isCustomCompositionMode = false;
+            showCompositionModal = true;
+        }
+        // 檢查是否已有組合資料（快取）
+        else if (item.HasCompositionData)
         {
             // 已有資料，直接開啟編輯器
             selectedCompositionId = item.SelectedCompositionId;
@@ -608,7 +621,7 @@ else
     /// <summary>
     /// 處理配方選擇
     /// </summary>
-    private void HandleCompositionSelected((int? compositionId, bool isCustomMode) selection)
+    private async Task HandleCompositionSelected((int? compositionId, bool isCustomMode) selection)
     {
         showCompositionSelectorModal = false;
         
@@ -628,6 +641,26 @@ else
                 if (isReselectingComposition)
                 {
                     item.CustomCompositionDetails = null;
+                }
+                
+                // 🔑 關鍵：如果選擇的是配方（非自定義），立即從配方複製組合明細
+                if (selection.compositionId.HasValue && !selection.isCustomMode)
+                {
+                    try
+                    {
+                        // 使用臨時 DetailId（新增明細時用負數表示）
+                        var tempDetailId = item.ExistingDetailEntity?.Id ?? -(selectedSalesItemIndex.Value + 1);
+                        var copiedDetails = await SalesOrderCompositionDetailService.CopyFromCompositionAsync(
+                            tempDetailId,
+                            selection.compositionId.Value
+                        );
+                        
+                        item.CustomCompositionDetails = copiedDetails;
+                    }
+                    catch (Exception ex)
+                    {
+                        await NotificationService.ShowErrorAsync($"載入配方失敗：{ex.Message}");
+                    }
                 }
             }
         }
@@ -699,10 +732,14 @@ else
     private int? GetSelectedSalesOrderDetailId()
     {
         if (!selectedSalesItemIndex.HasValue || selectedSalesItemIndex.Value >= SalesItems.Count)
+        {
             return null;
+        }
         
         var item = SalesItems[selectedSalesItemIndex.Value];
-        return (item.ExistingDetailEntity as SalesOrderDetail)?.Id;
+        var detailId = (item.ExistingDetailEntity as SalesOrderDetail)?.Id;
+        
+        return detailId;
     }
     
     /// <summary>
@@ -711,7 +748,9 @@ else
     private async Task HandleCompositionSave(List<SalesOrderCompositionDetail> compositionDetails)
     {
         if (!selectedSalesItemIndex.HasValue || !selectedCompositionProductId.HasValue)
+        {
             return;
+        }
             
         try
         {
@@ -719,7 +758,16 @@ else
             var item = SalesItems[selectedSalesItemIndex.Value];
             item.CustomCompositionDetails = compositionDetails;
             
+            // 確保選擇資訊已記錄（如果還沒記錄的話）
+            if (!item.SelectedCompositionId.HasValue && !item.IsCustomComposition)
+            {
+                item.SelectedCompositionId = selectedCompositionId;
+                item.IsCustomComposition = isCustomCompositionMode;
+            }
+            
             await NotificationService.ShowSuccessAsync("BOM 組成已更新（將在銷貨訂單儲存時一併保存）");
+            showCompositionModal = false;
+            isReselectingComposition = false;  // 儲存完成後重置
         }
         catch (Exception ex)
         {
@@ -728,18 +776,33 @@ else
     }
     
     /// <summary>
+    /// 處理 BOM 組合取消
+    /// </summary>
+    private void HandleCompositionCancel()
+    {
+        showCompositionModal = false;
+        isReselectingComposition = false;
+    }
+    
+    /// <summary>
     /// 取得快取的組合明細資料（供 Modal 使用）
     /// </summary>
     private List<SalesOrderCompositionDetail>? GetCachedCompositionData()
     {
         if (!selectedSalesItemIndex.HasValue)
+        {
             return null;
+        }
         
         if (selectedSalesItemIndex.Value >= SalesItems.Count)
+        {
             return null;
+        }
         
         var item = SalesItems[selectedSalesItemIndex.Value];
-        return item.CustomCompositionDetails;
+        var data = item.CustomCompositionDetails;
+        
+        return data;
     }
 
     // ===== 建立空項目方法 =====
@@ -785,7 +848,6 @@ else
     public Dictionary<int, List<SalesOrderCompositionDetail>> GetCompositionDetails()
     {
         var result = new Dictionary<int, List<SalesOrderCompositionDetail>>();
-        int tempIndex = -1; // 用於新增明細的臨時索引
         
         for (int i = 0; i < SalesItems.Count; i++)
         {
@@ -804,13 +866,15 @@ else
                 }
                 else
                 {
-                    // 新增的明細，使用臨時索引（對應明細在陣列中的順序）
+                    // 使用負的 SalesItems 索引作為臨時 ID
+                    // -(i+1) 確保從 -1 開始，避免與 0 混淆
+                    int tempIndex = -(i + 1);
+                    
                     foreach (var detail in item.CustomCompositionDetails)
                     {
                         detail.SalesOrderDetailId = tempIndex; // 暫存臨時索引
                     }
                     result[tempIndex] = item.CustomCompositionDetails;
-                    tempIndex--; // 下一個新增明細使用 -2, -3...
                 }
             }
         }
@@ -975,6 +1039,7 @@ else
             }
             else
             {
+                
                 // 新增明細
                 detail = new TDetailEntity();
                 
