@@ -188,6 +188,10 @@
     // 訂單庫存檢視 Modal
     private bool showInventoryCheckModal = false;
     
+    // 庫存不足狀態
+    private bool hasInventoryShortage = false;
+    private bool isInventoryCheckLoading = false;
+    
     // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
     
@@ -339,6 +343,9 @@
                 
                 // 載入明細相關資料（退貨記錄、收款記錄）
                 await LoadDetailRelatedDataAsync();
+                
+                // 檢查庫存不足狀態
+                await CheckInventoryShortageAsync();
                 
                 isDetailDataReady = true;
                 StateHasChanged();
@@ -1039,6 +1046,9 @@
             //  關鍵修正：載入明細後重新檢查鎖定狀態
             // 參考 PurchaseOrderEditModalComponent 的實作
             await LoadDetailRelatedDataAsync();
+            
+            // 檢查庫存不足狀態
+            await CheckInventoryShortageAsync();
         }
         catch (Exception ex)
         {
@@ -1264,10 +1274,28 @@
                                   Icon="bi bi-calendar-plus"
                                   OnClick="HandleBatchTransferToSchedule" />
 
-            <GenericButtonComponent Text="查庫存" 
-                                  Variant="ButtonVariant.Blue" 
-                                  Icon="bi bi-box-seam"
-                                  OnClick="HandleShowInventoryCheck" />
+            @* 庫存檢視按鈕 - 有不足時顯示警告樣式 *@
+            @if (isInventoryCheckLoading)
+            {
+                <GenericButtonComponent Text="檢查中..." 
+                                      Variant="ButtonVariant.Gray" 
+                                      Icon="bi bi-hourglass-split"
+                                      IsDisabled="true" />
+            }
+            else if (hasInventoryShortage)
+            {
+                <GenericButtonComponent Text="⚠️ 查庫存" 
+                                      Variant="ButtonVariant.Yellow" 
+                                      Icon="bi bi-exclamation-triangle-fill"
+                                      OnClick="HandleShowInventoryCheck" />
+            }
+            else
+            {
+                <GenericButtonComponent Text="查庫存" 
+                                      Variant="ButtonVariant.Blue" 
+                                      Icon="bi bi-box-seam"
+                                      OnClick="HandleShowInventoryCheck" />
+            }
         }
     };
 
@@ -1538,6 +1566,54 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchTransferToSchedule), GetType(), 
                 additionalData: $"開啟批次轉排程 Modal 失敗 - OrderId: {SalesOrderId}");
+        }
+    }
+    
+    /// <summary>
+    /// 檢查訂單是否有庫存不足的狀況
+    /// 只檢查第一層主要明細，不包含子材料
+    /// </summary>
+    private async Task CheckInventoryShortageAsync()
+    {
+        try
+        {
+            // 新增模式或沒有明細時不檢查
+            if (!SalesOrderId.HasValue || !salesOrderDetails.Any())
+            {
+                hasInventoryShortage = false;
+                return;
+            }
+            
+            isInventoryCheckLoading = true;
+            StateHasChanged();
+            
+            // 呼叫 API 取得庫存檢查結果
+            var checkResult = await SalesOrderService.GetOrderInventoryCheckAsync(SalesOrderId.Value);
+            
+            if (checkResult != null)
+            {
+                // 只計算第一層主要明細（非子材料）的不足數量
+                var mainItems = checkResult.Items.Where(x => x.Level == 1 || x.ParentDetailId == null).ToList();
+                var insufficientCount = mainItems.Count(x => x.Status == InventoryStatus.Insufficient);
+                
+                hasInventoryShortage = insufficientCount > 0;
+            }
+            else
+            {
+                hasInventoryShortage = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // 檢查失敗不影響主流程，預設為沒有不足
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CheckInventoryShortageAsync), GetType(),
+                additionalData: $"檢查庫存不足狀態失敗 - OrderId: {SalesOrderId}");
+            hasInventoryShortage = false;
+        }
+        finally
+        {
+            isInventoryCheckLoading = false;
+            StateHasChanged();
         }
     }
     
