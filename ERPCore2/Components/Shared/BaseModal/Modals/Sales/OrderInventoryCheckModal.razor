@@ -132,59 +132,9 @@
             return;
         }
 
-        // 統計資訊卡片
-        builder.OpenElement(3, "div");
-        builder.AddAttribute(4, "class", "alert alert-" + GetOverallAlertClass() + " mb-3");
-        builder.OpenElement(5, "div");
-        builder.AddAttribute(6, "class", "d-flex justify-content-between align-items-center");
-        
-        // 左側：滿足率
-        builder.OpenElement(7, "div");
-        builder.OpenElement(8, "h5");
-        builder.AddAttribute(9, "class", "mb-1");
-        builder.AddContent(10, $"整體滿足率: {checkResult.OverallSatisfactionRate:F2}%");
-        builder.CloseElement(); // h5
-        
-        builder.OpenElement(11, "small");
-        builder.AddContent(12, $"檢查時間: {checkResult.CheckedAt:yyyy-MM-dd HH:mm:ss}");
-        builder.CloseElement(); // small
-        builder.CloseElement(); // div
-        
-        // 右側：統計
-        builder.OpenElement(13, "div");
-        builder.AddAttribute(14, "class", "text-end");
-        
-        if (checkResult.InsufficientItemCount > 0)
-        {
-            builder.OpenElement(15, "span");
-            builder.AddAttribute(16, "class", "badge bg-danger me-2");
-            builder.AddContent(17, $"🔴 不足: {checkResult.InsufficientItemCount}");
-            builder.CloseElement();
-        }
-        
-        if (checkResult.WarningItemCount > 0)
-        {
-            builder.OpenElement(18, "span");
-            builder.AddAttribute(19, "class", "badge bg-warning text-dark me-2");
-            builder.AddContent(20, $"🟡 警戒: {checkResult.WarningItemCount}");
-            builder.CloseElement();
-        }
-        
-        if (checkResult.IsFullySatisfied)
-        {
-            builder.OpenElement(21, "span");
-            builder.AddAttribute(22, "class", "badge bg-success");
-            builder.AddContent(23, "🟢 全部充足");
-            builder.CloseElement();
-        }
-        
-        builder.CloseElement(); // div (right)
-        builder.CloseElement(); // d-flex
-        builder.CloseElement(); // alert
-
         // 明細列表
-        builder.OpenElement(24, "div");
-        builder.AddAttribute(25, "class", "inventory-check-list");
+        builder.OpenElement(3, "div");
+        builder.AddAttribute(4, "class", "inventory-check-list");
         
         foreach (var item in checkResult.Items)
         {

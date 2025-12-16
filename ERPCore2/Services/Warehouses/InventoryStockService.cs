@@ -918,16 +918,19 @@ namespace ERPCore2.Services
                         detail.ExpiryDate = expiryDate.Value;
 
                     // 4. 更新平均成本
-                    if (unitCost.HasValue && unitCost.Value > 0)
+                    // 🔥 修正：允許價格為 0 也能更新平均成本（移除 > 0 的檢查）
+                    if (unitCost.HasValue)
                     {
                         if (detail.AverageCost.HasValue && stockBefore > 0)
                         {
+                            // 加權平均計算：(原庫存成本 + 新進庫存成本) / 總庫存
                             var totalCostBefore = detail.AverageCost.Value * stockBefore;
                             var newTotalCost = totalCostBefore + (unitCost.Value * quantity);
                             detail.AverageCost = newTotalCost / detail.CurrentStock;
                         }
                         else
                         {
+                            // 首次入庫或庫存為 0 時，直接使用新的單位成本
                             detail.AverageCost = unitCost.Value;
                         }
                     }

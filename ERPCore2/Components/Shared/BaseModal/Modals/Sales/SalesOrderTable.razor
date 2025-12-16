@@ -2,6 +2,7 @@
 
 @using ERPCore2.Models
 @using ERPCore2.Data.Enums
+@using ERPCore2.Helpers
 @inject IProductService ProductService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesReturnDetailService SalesReturnDetailService
@@ -14,8 +15,6 @@
 @inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject IProductCompositionService ProductCompositionService
 @inject IJSRuntime JSRuntime
-
-@using ERPCore2.Helpers
 
 @typeparam TMainEntity where TMainEntity : BaseEntity
 @typeparam TDetailEntity where TDetailEntity : BaseEntity, new()

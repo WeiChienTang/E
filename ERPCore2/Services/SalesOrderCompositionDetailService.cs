@@ -118,8 +118,9 @@ namespace ERPCore2.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             
-            // 取得現有資料
+            // 取得現有資料（使用 AsNoTracking 避免追蹤衝突）
             var existingDetails = await context.SalesOrderCompositionDetails
+                .AsNoTracking()
                 .Where(x => x.SalesOrderDetailId == salesOrderDetailId)
                 .ToListAsync();
             
@@ -127,7 +128,12 @@ namespace ERPCore2.Services
             var toDelete = existingDetails
                 .Where(e => !compositionDetails.Any(n => n.Id == e.Id && e.Id > 0))
                 .ToList();
-            context.SalesOrderCompositionDetails.RemoveRange(toDelete);
+            
+            if (toDelete.Any())
+            {
+                // 需要重新 Attach 才能刪除（因為用了 AsNoTracking）
+                context.SalesOrderCompositionDetails.RemoveRange(toDelete);
+            }
             
             // 新增或更新
             foreach (var detail in compositionDetails)
@@ -146,8 +152,21 @@ namespace ERPCore2.Services
                 }
                 else
                 {
-                    detail.UpdatedAt = DateTime.Now;
-                    context.SalesOrderCompositionDetails.Update(detail);
+                    // 檢查是否已被追蹤
+                    var tracked = context.SalesOrderCompositionDetails.Local
+                        .FirstOrDefault(e => e.Id == detail.Id);
+                    
+                    if (tracked != null)
+                    {
+                        // 更新已追蹤的實體
+                        context.Entry(tracked).CurrentValues.SetValues(detail);
+                        tracked.UpdatedAt = DateTime.Now;
+                    }
+                    else
+                    {
+                        detail.UpdatedAt = DateTime.Now;
+                        context.SalesOrderCompositionDetails.Update(detail);
+                    }
                 }
             }
             

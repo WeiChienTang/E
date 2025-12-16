@@ -1033,14 +1033,21 @@ namespace ERPCore2.Services
                         // 計算需要調整的數量
                         int adjustmentNeeded = targetQuantity - processedQuantity;
                         
-                        if (adjustmentNeeded != 0)
+                        // 檢查價格是否變化（用於更新平均成本）
+                        decimal? currentPrice = hasCurrent ? currentInventory[key].UnitPrice : (decimal?)null;
+                        decimal? processedPrice = hasProcessed ? processedInventory[key].UnitPrice : (decimal?)null;
+                        bool priceChanged = currentPrice.HasValue && processedPrice.HasValue && currentPrice.Value != processedPrice.Value;
+                        
+                        // 只有數量有變化，或者價格有變化時才需要處理
+                        if (adjustmentNeeded != 0 || (priceChanged && targetQuantity > 0))
                         {
+                            var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                            var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
+                            var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
+                            
                             if (adjustmentNeeded > 0)
                             {
                                 // 需要增加庫存
-                                var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
-                                var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
-                                var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
                                 var unitPrice = hasCurrent ? currentInventory[key].UnitPrice : processedInventory[key].UnitPrice;
                                 
                                 var addResult = await _inventoryStockService.AddStockAsync(
@@ -1060,13 +1067,9 @@ namespace ERPCore2.Services
                                     return ServiceResult.Failure($"庫存調增失敗：{addResult.ErrorMessage}");
                                 }
                             }
-                            else
+                            else if (adjustmentNeeded < 0)
                             {
                                 // 需要減少庫存
-                                var productId = hasProcessed ? processedInventory[key].ProductId : currentInventory[key].ProductId;
-                                var warehouseId = hasProcessed ? processedInventory[key].WarehouseId : currentInventory[key].WarehouseId;
-                                var locationId = hasProcessed ? processedInventory[key].LocationId : currentInventory[key].LocationId;
-                                
                                 var reduceResult = await _inventoryStockService.ReduceStockAsync(
                                     productId,
                                     warehouseId,
@@ -1081,6 +1084,47 @@ namespace ERPCore2.Services
                                 {
                                     await transaction.RollbackAsync();
                                     return ServiceResult.Failure($"庫存調減失敗：{reduceResult.ErrorMessage}");
+                                }
+                            }
+                            else if (priceChanged && targetQuantity > 0)
+                            {
+                                // 🔥 重要修正：數量沒變但價格有變，需要重新計算平均成本
+                                // 策略：先減去舊庫存，再加回新庫存（使用新價格）
+                                var newUnitPrice = currentInventory[key].UnitPrice;
+                                
+                                // 先減去所有庫存
+                                var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                    productId,
+                                    warehouseId,
+                                    targetQuantity,
+                                    InventoryTransactionTypeEnum.Return,
+                                    currentReceiving.Code + "_PRICE_ADJ_OUT",
+                                    locationId,
+                                    $"採購進貨價格調整-先減出 - {currentReceiving.Code}"
+                                );
+                                
+                                if (!reduceResult.IsSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"價格調整-減庫存失敗：{reduceResult.ErrorMessage}");
+                                }
+                                
+                                // 再用新價格加回庫存
+                                var addResult = await _inventoryStockService.AddStockAsync(
+                                    productId,
+                                    warehouseId,
+                                    targetQuantity,
+                                    InventoryTransactionTypeEnum.Purchase,
+                                    currentReceiving.Code + "_PRICE_ADJ_IN",
+                                    newUnitPrice,
+                                    locationId,
+                                    $"採購進貨價格調整-再加入 - {currentReceiving.Code}"
+                                );
+                                
+                                if (!addResult.IsSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return ServiceResult.Failure($"價格調整-加庫存失敗：{addResult.ErrorMessage}");
                                 }
                             }
                         }

@@ -65,6 +65,7 @@
     [Parameter] public string ExpiryDatePropertyName { get; set; } = "ExpiryDate";
     [Parameter] public string WarehouseIdPropertyName { get; set; } = "WarehouseId";
     [Parameter] public string WarehouseLocationIdPropertyName { get; set; } = "WarehouseLocationId";
+    [Parameter] public string RemarksPropertyName { get; set; } = "Remarks";
     
     // ===== 顯示設定 =====
     [Parameter] public string Title { get; set; } = "庫存明細";
@@ -233,6 +234,21 @@
             })
         });
 
+// 備註欄位
+        columns.Add(new() 
+        { 
+            Title = "備註", 
+            PropertyName = "Remarks",
+            ColumnType = InteractiveColumnType.Input,
+            Width = "200px",
+            Placeholder = "",
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (item, valueString) = args;
+                await OnRemarksInput((StockDetailItem)item, valueString);
+            })
+        });
+
         return columns;
     }
 
@@ -286,6 +302,7 @@
                 BatchNumber = GetPropertyValue<string>(detail, BatchNumberPropertyName),
                 BatchDate = GetPropertyValue<DateTime?>(detail, BatchDatePropertyName),
                 ExpiryDate = GetPropertyValue<DateTime?>(detail, ExpiryDatePropertyName),
+                Remarks = GetPropertyValue<string>(detail, RemarksPropertyName),
                 ExistingDetailEntity = detail
             };
             
@@ -335,6 +352,7 @@
             SetPropertyValue(detail, BatchNumberPropertyName, item.BatchNumber);
             SetPropertyValue(detail, BatchDatePropertyName, item.BatchDate);
             SetPropertyValue(detail, ExpiryDatePropertyName, item.ExpiryDate);
+            SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
             
             details.Add(detail);
         }
@@ -536,6 +554,14 @@
         {
             item.ExpiryDate = date;
         }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    private async Task OnRemarksInput(StockDetailItem item, string? value)
+    {
+        item.Remarks = value ?? string.Empty;
         
         await NotifyDetailsChanged();
         StateHasChanged();
@@ -754,6 +780,8 @@
                         // 日期：取最早的
                         BatchDate = group.Where(i => i.BatchDate.HasValue).OrderBy(i => i.BatchDate).FirstOrDefault()?.BatchDate,
                         ExpiryDate = group.Where(i => i.ExpiryDate.HasValue).OrderBy(i => i.ExpiryDate).FirstOrDefault()?.ExpiryDate,
+                        // 備註：合併（如果有多個不同的備註）
+                        Remarks = MergeRemarks(group.Select(i => i.Remarks).ToList()),
                         // 保留第一個的 ExistingDetailEntity（如果有的話）
                         ExistingDetailEntity = firstItem.ExistingDetailEntity
                     };
@@ -820,6 +848,23 @@
     }
 
     /// <summary>
+    /// 合併備註（如果有多個不同備註）
+    /// </summary>
+    private string? MergeRemarks(List<string?> remarks)
+    {
+        var validRemarks = remarks
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Distinct()
+            .ToList();
+        
+        if (!validRemarks.Any()) return null;
+        if (validRemarks.Count == 1) return validRemarks[0];
+        
+        // 多個備註，用分號連接
+        return string.Join("; ", validRemarks);
+    }
+
+    /// <summary>
     /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
     /// </summary>
     public async Task RefreshDetailsAsync()
@@ -842,6 +887,7 @@
         public string? BatchNumber { get; set; }
         public DateTime? BatchDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
+        public string? Remarks { get; set; }
         public TDetailEntity? ExistingDetailEntity { get; set; }
     }
 }
