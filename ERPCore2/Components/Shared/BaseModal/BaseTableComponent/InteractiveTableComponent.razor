@@ -579,8 +579,11 @@
             styles.Add($"width: {column.Width}");
         }
         
-        // 文字對齊設定 (只對 Display 類型有效)
-        if (column.ColumnType == InteractiveColumnType.Display && !string.IsNullOrEmpty(column.TextAlign))
+        // 文字對齊設定 (支援 Display、Button 和 Custom 類型)
+        if ((column.ColumnType == InteractiveColumnType.Display || 
+             column.ColumnType == InteractiveColumnType.Button || 
+             column.ColumnType == InteractiveColumnType.Custom) 
+            && !string.IsNullOrEmpty(column.TextAlign))
         {
             styles.Add($"text-align: {column.TextAlign}");
         }

@@ -167,7 +167,18 @@ namespace ERPCore2.Data.Context
 
                         entity.HasOne(e => e.Unit)
                         .WithMany(u => u.Products)
+                        .HasForeignKey(e => e.UnitId)
                         .OnDelete(DeleteBehavior.SetNull);
+                        
+                        entity.HasOne(e => e.PurchaseUnit)
+                        .WithMany()
+                        .HasForeignKey(e => e.PurchaseUnitId)
+                        .OnDelete(DeleteBehavior.NoAction);
+                        
+                        entity.HasOne(e => e.ProductionUnit)
+                        .WithMany()
+                        .HasForeignKey(e => e.ProductionUnitId)
+                        .OnDelete(DeleteBehavior.NoAction);
                         
                         entity.HasOne(e => e.Supplier)
                         .WithMany(s => s.Products)

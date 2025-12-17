@@ -25,7 +25,8 @@
 @* 全域頁面搜尋 Modal *@
 <PageSearchModalComponent @ref="pageSearchModal" 
                          IsVisible="@showPageSearch"
-                         IsVisibleChanged="@((bool visible) => showPageSearch = visible)" />
+                         IsVisibleChanged="@((bool visible) => showPageSearch = visible)"
+                         ActionRegistry="@actionRegistry" />
 
 @* 快捷鍵說明 Modal *@
 <ShortcutKeysModalComponent IsVisible="@showShortcutKeys"
@@ -38,6 +39,10 @@
 @* 角色權限管理 Modal *@
 <RolePermissionManagement IsVisible="@showRolePermissionManagement"
                          IsVisibleChanged="@((bool visible) => showRolePermissionManagement = visible)" />
+
+@* 單位換算管理 Modal *@
+<UnitConversionManagementModal IsVisible="@showUnitConversionManagement"
+                              IsVisibleChanged="@((bool visible) => showUnitConversionManagement = visible)" />
 
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer" 
@@ -57,6 +62,9 @@
     
     // 角色權限管理 Modal 狀態
     private bool showRolePermissionManagement = false;
+    
+    // 單位換算管理 Modal 狀態
+    private bool showUnitConversionManagement = false;
     
     // Action 處理器註冊表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;
@@ -84,6 +92,7 @@
         // 註冊所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
         actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);
+        actionRegistry.Register("OpenUnitConversionManagement", OpenUnitConversionManagement);
         
         // 未來可在此繼續註冊其他 Action
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
@@ -206,6 +215,24 @@
         catch
         {
             // 忽略開啟角色權限管理失敗
+        }
+    }
+    
+    /// <summary>
+    /// 開啟單位換算管理 Modal
+    /// JavaScript 可呼叫此方法
+    /// </summary>
+    [JSInvokable]
+    public void OpenUnitConversionManagement()
+    {
+        try
+        {
+            showUnitConversionManagement = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // 忽略開啟單位換算管理失敗
         }
     }
     

@@ -42,13 +42,13 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "員工維護",
+                        Name = "員工管理",
                         Description = "管理員工資料和人事資訊",
                         Route = "/employees",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "人力資源管理",
                         RequiredPermission = "Employee.Read",
-                        SearchKeywords = new List<string> { "員工維護", "員工資料", "人員管理" }
+                        SearchKeywords = new List<string> { "員工管理", "員工資料", "人員管理" }
                     },
                     new NavigationItem
                     {
@@ -117,13 +117,13 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "廠商維護",
+                        Name = "廠商管理",
                         Description = "管理供應商和廠商資料",
                         Route = "/suppliers",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "供應鏈管理",
                         RequiredPermission = "Supplier.Read",
-                        SearchKeywords = new List<string> { "廠商維護", "供應商資料", "廠商管理" }
+                        SearchKeywords = new List<string> { "廠商管理", "供應商資料", "廠商管理" }
                     },
                 }
             },
@@ -143,13 +143,13 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "客戶維護",
+                        Name = "客戶管理",
                         Description = "管理客戶資料、聯絡資訊和客戶關係",
                         Route = "/customers",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "客戶關係管理",
                         RequiredPermission = "Customer.Read",
-                        SearchKeywords = new List<string> { "客戶維護", "客戶資料", "客戶管理", "聯絡人" }
+                        SearchKeywords = new List<string> { "客戶管理", "客戶資料", "客戶管理", "聯絡人" }
                     },
                 }
             },
@@ -169,14 +169,23 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "商品維護",
+                        Name = "商品管理",
                         Description = "管理商品資料和商品目錄",
                         Route = "/products",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "商品管理",
                         RequiredPermission = "Product.Read",
-                        SearchKeywords = new List<string> { "商品維護", "商品資料", "商品目錄", "品項","條碼" }
+                        SearchKeywords = new List<string> { "商品管理", "商品資料", "商品目錄", "品項","條碼" }
                     },
+                    NavigationActionHelper.CreateActionItem(
+                        name: "單位換算",
+                        description: "管理單位之間的換算規則（如：包→公斤）",
+                        iconClass: "bi bi-arrow-left-right",
+                        actionId: "OpenUnitConversionManagement",
+                        category: "商品管理",
+                        requiredPermission: "Unit.Read",
+                        searchKeywords: new List<string> { "單位換算", "單位轉換", "unit conversion", "換算", "包裝單位" }
+                    ),
                     new NavigationItem
                     {
                         Name = "類型",
@@ -197,6 +206,7 @@ public static class NavigationConfig
                         RequiredPermission = "Unit.Read",
                         SearchKeywords = new List<string> { "單位", "計量單位", "unit" }
                     },
+
                     new NavigationItem
                     {
                         Name = "尺寸",
@@ -321,7 +331,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "採購單維護",
+                        Name = "採購單管理",
                         Description = "管理採購訂單",
                         Route = "/purchase/orders",
                         IconClass = "bi bi-caret-right-fill",
@@ -367,7 +377,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "報價單維護",
+                        Name = "報價單管理",
                         Description = "管理銷售報價單",
                         Route = "/quotations",
                         IconClass = "bi bi-caret-right-fill",
@@ -505,7 +515,7 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "系統管理",
-                Description = "系統管理和維護功能",
+                Description = "系統管理和管理功能",
                 Route = "#",
                 IconClass = "bi bi-gear-fill",
                 Category = "系統管理",
@@ -516,7 +526,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "公司維護",
+                        Name = "公司管理",
                         Description = "管理公司基本資料",
                         Route = "/companies",
                         IconClass = "bi bi-caret-right-fill",

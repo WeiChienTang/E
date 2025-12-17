@@ -734,9 +734,114 @@ private List<InteractiveColumnDefinition> GetColumnDefinitions()
    - 原因：刪除事件中沒有呼叫 `EnsureOneEmptyRow()`
    - 解決：使用內建刪除功能或手動呼叫 `tableComponent.RefreshEmptyRow()`
 
-3. **非觸發欄位也新增空行**
+5. **非觸發欄位也新增空行**
    - 原因：沒有設定任何 `TriggerEmptyRowOnFilled`，使用傳統模式
    - 解決：明確設定關鍵欄位的 `TriggerEmptyRowOnFilled = true`
+
+6. **❌ Entity 類別使用 int 屬性時，空行判斷失效（預設值 0 被視為有值）**
+   - **原因**：當資料模型是 Entity 類別（如 `UnitConversion`），其屬性通常是 `int FromUnitId`（預設值 0），`IsValueNullOrEmpty` 會將 0 視為「有值」，導致空行判斷錯誤
+   - **影響**：
+     * 初始載入時可能出現 2 個空行（因為第一個空行被誤判為有值）
+     * 每次輸入任何欄位都會新增空行（因為空行檢查失效）
+   - **解決方案：使用包裝類別（Wrapper Class）**
+   
+   **✅ 方案：創建包裝類別使用 nullable 類型**
+   
+   當無法修改 Entity 類別本身時（如資料庫 Entity），創建一個包裝類別：
+   
+   ```csharp
+   // ❌ 問題：Entity 無法修改為 nullable
+   public class UnitConversion : BaseEntity  // 資料庫 Entity
+   {
+       public int FromUnitId { get; set; }  // ⚠️ 預設值 0 會被視為有值
+       public int ToUnitId { get; set; }
+       public decimal ConversionRate { get; set; }
+       public bool IsActive { get; set; }
+   }
+   
+   // ✅ 解決：創建包裝類別
+   public class UnitConversionItem  // 包裝類別
+   {
+       public int? FromUnitId { get; set; }  // 🔑 nullable！null 表示未選擇
+       public int? ToUnitId { get; set; }
+       public decimal? ConversionRate { get; set; }
+       public bool IsActive { get; set; } = true;
+       public UnitConversion? ExistingEntity { get; set; }  // 保存原始 Entity
+   }
+   
+   // 使用包裝類別
+   private List<UnitConversionItem> conversions = new();
+   
+   // 載入資料時轉換
+   private async Task LoadDataAsync()
+   {
+       var dbConversions = await UnitConversionService.GetAllAsync();
+       conversions = dbConversions.Select(c => new UnitConversionItem
+       {
+           FromUnitId = c.FromUnitId,
+           ToUnitId = c.ToUnitId,
+           ConversionRate = c.ConversionRate,
+           IsActive = c.IsActive,
+           ExistingEntity = c  // 保存原始 Entity
+       }).ToList();
+   }
+   
+   // 建立空項目
+   private UnitConversionItem CreateEmptyConversion()
+   {
+       return new UnitConversionItem
+       {
+           FromUnitId = null,  // 🔑 null 表示未選擇
+           ToUnitId = null,
+           ConversionRate = null,
+           IsActive = true,
+           ExistingEntity = null  // 新增項目沒有 Entity
+       };
+   }
+   
+   // 儲存時轉換回 Entity
+   private async Task HandleSaveConversion(UnitConversionItem item)
+   {
+       // 建立 Entity
+       var conversion = new UnitConversion
+       {
+           FromUnitId = item.FromUnitId.Value,  // 已驗證非 null
+           ToUnitId = item.ToUnitId.Value,
+           ConversionRate = item.ConversionRate.Value,
+           IsActive = item.IsActive
+       };
+       
+       var result = await UnitConversionService.CreateAsync(conversion);
+       if (result.IsSuccess)
+       {
+           // 重新載入以更新包裝類別列表
+           await LoadDataAsync();
+       }
+   }
+   
+   // InteractiveTableComponent 使用包裝類別
+   builder.OpenComponent<InteractiveTableComponent<UnitConversionItem>>(sequence++);
+   builder.AddAttribute(sequence++, nameof(InteractiveTableComponent<UnitConversionItem>.Items), conversions);
+   builder.AddAttribute(sequence++, nameof(InteractiveTableComponent<UnitConversionItem>.CreateEmptyItem), 
+       (Func<UnitConversionItem>)CreateEmptyConversion);
+   ```
+   
+   **包裝類別的優勢**：
+   - ✅ 使用 nullable 類型確保空值判斷正確（`null` 是真正的空）
+   - ✅ 不需要修改資料庫 Entity（保持資料層完整性）
+   - ✅ 編輯和新增使用相同的資料結構
+   - ✅ 通過 `ExistingEntity` 區分新增行（null）和編輯行（有值）
+   - ✅ 可在包裝類別中添加 UI 專用屬性（如搜尋狀態）
+   
+   **適用場景**：
+   - 使用 EF Core Entity（無法修改為 nullable）
+   - 需要管理現有資料的 CRUD Modal
+   - 需要區分新增和編輯狀態
+   - 單位換算、參數設定等系統設定類功能
+   
+   **實際案例參考**：
+   - `UnitConversionManagementModal.razor` - 單位換算管理（使用 `UnitConversionItem` 包裝 `UnitConversion`）
+   - `PurchaseOrderTable.razor` - 採購訂單明細（使用 `ProductItem` 包裝採購明細）
 
 4. **❌ 使用 CustomTemplate 時，選擇或輸入後不會自動新增空行**
    - **原因**：`CustomTemplate` 使用自訂的 `@onchange` 或 `@oninput` 事件，繞過了 InteractiveTableComponent 的內建事件處理機制（`HandleInputChange`、`HandleSelectionChange`），因此**無法觸發自動空行檢查**

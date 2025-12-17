@@ -362,6 +362,7 @@
             autoCompleteConfig = new AutoCompleteConfigBuilder<Product>()
                 .AddField(nameof(Product.ProductCategoryId), "Name", availableProductCategories)
                 .AddField(nameof(Product.UnitId), "Name", availableUnits)
+                .AddField(nameof(Product.ProductionUnitId), "Name", availableUnits)
                 .AddField(nameof(Product.SizeId), "Name", availableSizes)
                 .Build();
         }
@@ -433,11 +434,22 @@
                 PropertyName = nameof(Product.UnitId),
                 Label = "單位",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇計量單位",
+                Placeholder = "請輸入或選擇基本計量單位",
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "輸入單位名稱進行搜尋，或直接選擇",
+                HelpText = "商品的基本計量單位（庫存單位）",
                 ActionButtons = await GetUnitActionButtonsAsync()
+            },
+            new()
+            {
+                PropertyName = nameof(Product.ProductionUnitId),
+                Label = "製程單位",
+                FieldType = FormFieldType.AutoComplete,
+                Placeholder = "請輸入或選擇製程單位",
+                IsRequired = false,
+                MinSearchLength = 0,
+                HelpText = "生產製造時使用的單位（可與基本單位不同）",
+                ActionButtons = await GetProductionUnitActionButtonsAsync()
             },
             new FormFieldDefinition()
             {
@@ -488,9 +500,12 @@
                 p => p.Barcode,
                 p => p.ProductCategoryId,
                 p => p.SizeId,
-                p => p.UnitId,
                 p => p.TaxRate,
                 p => p.ProcurementType)
+            
+            .AddToSection(FormSectionNames.UnitSettings,
+                p => p.UnitId,
+                p => p.ProductionUnitId)
 
             .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Specification,
@@ -533,7 +548,7 @@
     }
 
     /// <summary>
-    /// 產生單位操作按鈕 - 使用統一 Helper
+    /// 產生基本單位操作按鈕 - 使用統一 Helper
     /// </summary>
     private async Task<List<FieldActionButton>> GetUnitActionButtonsAsync()
     {
@@ -541,6 +556,30 @@
             editModalComponent, 
             unitModalManager, 
             nameof(Product.UnitId)
+        );
+    }
+
+    /// <summary>
+    /// 產生採購單位操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetPurchaseUnitActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            unitModalManager, 
+            nameof(Product.PurchaseUnitId)
+        );
+    }
+
+    /// <summary>
+    /// 產生製程單位操作按鈕 - 使用統一 Helper
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetProductionUnitActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            unitModalManager, 
+            nameof(Product.ProductionUnitId)
         );
     }
 
@@ -673,6 +712,12 @@
             }
             // 使用統一 Helper 處理單位欄位變更
             else if (fieldChange.PropertyName == nameof(Product.UnitId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+            // 使用統一 Helper 處理製程單位欄位變更
+            else if (fieldChange.PropertyName == nameof(Product.ProductionUnitId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);

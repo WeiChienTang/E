@@ -170,5 +170,8 @@ namespace ERPCore2.Helpers.EditModal
 
         /// <summary>交易條件</summary>
         public const string TradingTerms = "交易條件";
+
+        /// <summary>單位設定</summary>
+        public const string UnitSettings = "單位設定";
     }
 }

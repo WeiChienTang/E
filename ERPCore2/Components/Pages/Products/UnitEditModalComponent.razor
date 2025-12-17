@@ -134,6 +134,16 @@
                 MaxLength = 20,
                 HelpText = "單位的顯示名稱"
             },
+            new()
+            {
+                PropertyName = nameof(Unit.EnglishName),
+                Label = "英文名稱",
+                FieldType = FormFieldType.Text,
+                Placeholder = "請輸入英文名稱",
+                IsRequired = false,
+                MaxLength = 50,
+                HelpText = "單位的英文名稱"
+            },
 
             FormFieldConfigurationHelper.CreateRemarksField<Unit>()
         };
@@ -141,7 +151,8 @@
         formSections = FormSectionHelper<Unit>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 u => u.Code,
-                u => u.Name)
+                u => u.Name,
+                u => u.EnglishName)
             .AddToSection(FormSectionNames.AdditionalInfo,
                 u => u.Remarks)
             .Build();

@@ -21,9 +21,17 @@ namespace ERPCore2.Data.Entities
         public string? Barcode { get; set; }
 
         // Foreign Keys
-        [Display(Name = "單位")]
+        [Display(Name = "基本單位")]
         [ForeignKey(nameof(Unit))]
         public int? UnitId { get; set; }
+        
+        [Display(Name = "採購單位")]
+        [ForeignKey(nameof(PurchaseUnit))]
+        public int? PurchaseUnitId { get; set; }
+        
+        [Display(Name = "製程單位")]
+        [ForeignKey(nameof(ProductionUnit))]
+        public int? ProductionUnitId { get; set; }
         
         [Display(Name = "尺寸")]
         [ForeignKey(nameof(Size))]
@@ -57,6 +65,8 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         public Unit? Unit { get; set; }
+        public Unit? PurchaseUnit { get; set; }
+        public Unit? ProductionUnit { get; set; }
         public Size? Size { get; set; }
         public ProductCategory? ProductCategory { get; set; }
         public Supplier? Supplier { get; set; }

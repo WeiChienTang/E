@@ -4,6 +4,7 @@
 *@
 @using ERPCore2.Models
 @using ERPCore2.Components.Shared.Modals
+@using ERPCore2.Helpers
 @inject INavigationSearchService NavigationSearchService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
@@ -108,6 +109,7 @@
     
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public NavigationActionHelper.ActionHandlerRegistry? ActionRegistry { get; set; }
 
     // ===== 私有欄位 =====
     
@@ -280,7 +282,9 @@
         else
         {
             searchResults = NavigationSearchService.SearchNavigationItems(searchTerm)
-                .Where(item => !item.IsParent && !string.IsNullOrEmpty(item.Route) && item.Route != "#")
+                .Where(item => !item.IsParent && 
+                    (item.ItemType == NavigationItemType.Action || 
+                     (!string.IsNullOrEmpty(item.Route) && item.Route != "#")))
                 .ToList();
             hasSearched = true;
             
@@ -308,8 +312,20 @@
     /// </summary>
     private async Task HandleNavigationCardClick(NavigationItem item)
     {
-        if (!string.IsNullOrEmpty(item.Route) && item.Route != "#")
+        if (item.ItemType == NavigationItemType.Action && !string.IsNullOrWhiteSpace(item.ActionId))
         {
+            // 處理 Action 類型項目
+            await HandleClose();
+            
+            // 使用 ActionHandlerRegistry 執行 Action
+            if (ActionRegistry != null)
+            {
+                ActionRegistry.Execute(item.ActionId);
+            }
+        }
+        else if (!string.IsNullOrEmpty(item.Route) && item.Route != "#")
+        {
+            // 處理路由類型項目
             await HandleClose();
             NavigationManager.NavigateTo(item.Route);
         }
