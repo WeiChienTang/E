@@ -76,11 +76,5 @@ namespace ERPCore2.Helpers.FieldConfiguration
         }
 
         /// <summary>
-        /// 覆寫預設排序：按原因名稱排序
-        /// </summary>
-        protected override Func<IQueryable<SalesReturnReason>, IQueryable<SalesReturnReason>> GetDefaultSort()
-        {
-            return q => q.OrderBy(r => r.Name);
-        }
     }
 }

@@ -123,13 +123,6 @@ namespace ERPCore2.FieldConfiguration
         }
 
         /// <summary>
-        /// 自訂預設排序
-        /// </summary>
-        protected override Func<IQueryable<SetoffDocument>, IOrderedQueryable<SetoffDocument>> GetDefaultSort()
-        {
-            return query => query
-                .OrderByDescending(s => s.SetoffDate)
-                .ThenByDescending(s => s.Code);
-        }
+
     }
 }

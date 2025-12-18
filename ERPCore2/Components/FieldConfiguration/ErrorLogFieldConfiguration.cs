@@ -301,11 +301,6 @@ namespace ERPCore2.FieldConfiguration
             return query;
         }
 
-        protected override Func<IQueryable<ErrorLog>, IQueryable<ErrorLog>> GetDefaultSort()
-        {
-            return q => q.OrderByDescending(e => e.OccurredAt); // 預設依發生時間降序排列
-        }
-
         #region 樣式和顯示文本輔助方法
         
         /// <summary>

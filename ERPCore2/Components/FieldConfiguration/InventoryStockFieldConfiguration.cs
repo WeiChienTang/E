@@ -171,11 +171,5 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<InventoryStock>>();
             }
         }
-
-        protected override Func<IQueryable<InventoryStock>, IOrderedQueryable<InventoryStock>> GetDefaultSort()
-        {
-            // 按商品ID排序
-            return query => query.OrderBy(s => s.ProductId);
-        }
     }
 }

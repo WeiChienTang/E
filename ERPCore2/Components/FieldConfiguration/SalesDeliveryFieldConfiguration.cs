@@ -148,11 +148,5 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<SalesDelivery>>();
             }
         }
-
-        protected override Func<IQueryable<SalesDelivery>, IQueryable<SalesDelivery>> GetDefaultSort()
-        {
-            return query => query.OrderByDescending(sd => sd.DeliveryDate)
-                                 .ThenByDescending(sd => sd.Code);
-        }
     }
 }

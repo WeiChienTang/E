@@ -150,12 +150,5 @@ namespace ERPCore2.FieldConfiguration
         }
 
         /// <summary>
-        /// 取得預設排序
-        /// </summary>
-        protected override Func<IQueryable<PurchaseReturn>, IQueryable<PurchaseReturn>> GetDefaultSort()
-        {
-            return q => q.OrderByDescending(pr => pr.ReturnDate)
-                         .ThenByDescending(pr => pr.Code);
-        }
     }
 }

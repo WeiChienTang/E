@@ -183,10 +183,5 @@ namespace ERPCore2.FieldConfiguration
                 _ => connectionType.ToString()
             };
         }
-
-        protected override Func<IQueryable<PrinterConfiguration>, IQueryable<PrinterConfiguration>> GetDefaultSort()
-        {
-            return query => query.OrderByDescending(p => p.IsDefault).ThenBy(p => p.Name);
-        }
     }
 }

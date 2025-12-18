@@ -174,10 +174,5 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<WarehouseLocation>>();
             }
         }
-
-        protected override Func<IQueryable<WarehouseLocation>, IOrderedQueryable<WarehouseLocation>> GetDefaultSort()
-        {
-            return query => query.OrderBy(wl => wl.Warehouse.Name).ThenBy(wl => wl.Code);
-        }
     }
 }

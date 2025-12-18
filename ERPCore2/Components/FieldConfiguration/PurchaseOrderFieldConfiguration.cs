@@ -187,13 +187,5 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<PurchaseOrder>>();
             }
         }
-
-        /// <summary>
-        /// 採購單預設排序：依 ID 降序（最新建立的在最上面）
-        /// </summary>
-        protected override Func<IQueryable<PurchaseOrder>, IQueryable<PurchaseOrder>> GetDefaultSort()
-        {
-            return q => q.OrderByDescending(po => po.Id);
-        }
     }
 }

@@ -78,38 +78,5 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<PaymentMethod>>();
             }
         }
-
-        protected override Func<IQueryable<PaymentMethod>, IQueryable<PaymentMethod>> GetDefaultSort()
-        {
-            try
-            {
-                return query => query.OrderByDescending(pm => pm.IsDefault)
-                                    .ThenBy(pm => pm.Name);
-            }
-            catch (Exception ex)
-            {
-                // 非同步錯誤處理
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetDefaultSort), GetType(), new { 
-                            ServiceType = GetType().Name,
-                            Method = nameof(GetDefaultSort)
-                        });
-                        
-                        if (_notificationService != null)
-                            await _notificationService.ShowErrorAsync("載入付款方式排序設定時發生錯誤");
-                    }
-                    catch
-                    {
-                        // 避免錯誤處理本身產生例外
-                    }
-                });
-
-                // 回傳安全的預設排序
-                return query => query.OrderBy(pm => pm.Name);
-            }
-        }
     }
 }

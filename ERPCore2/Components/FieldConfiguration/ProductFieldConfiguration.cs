@@ -195,14 +195,6 @@ namespace ERPCore2.FieldConfiguration
         }
         
         /// <summary>
-        /// 覆寫預設排序 - 按商品名稱升序排列（與 Service 層一致）
-        /// </summary>
-        protected override Func<IQueryable<Product>, IQueryable<Product>> GetDefaultSort()
-        {
-            return query => query.OrderBy(p => p.Name);
-        }
-        
-        /// <summary>
         /// 取得採購類型的顯示名稱
         /// </summary>
         private static string GetProcurementTypeDisplayName(ProcurementType procurementType)

@@ -147,11 +147,5 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<MaterialIssue>>();
             }
         }
-
-        protected override Func<IQueryable<MaterialIssue>, IOrderedQueryable<MaterialIssue>> GetDefaultSort()
-        {
-            return query => query.OrderByDescending(mi => mi.IssueDate)
-                                 .ThenByDescending(mi => mi.Code);
-        }
     }
 }

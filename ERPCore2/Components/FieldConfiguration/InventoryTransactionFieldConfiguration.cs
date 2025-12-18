@@ -343,12 +343,5 @@ namespace ERPCore2.FieldConfiguration
         }
 
         /// <summary>
-        /// 取得預設排序
-        /// </summary>
-        protected override Func<IQueryable<InventoryTransaction>, IQueryable<InventoryTransaction>> GetDefaultSort()
-        {
-            return query => query.OrderByDescending(t => t.TransactionDate)
-                                 .ThenByDescending(t => t.Id);
-        }
     }
 }
