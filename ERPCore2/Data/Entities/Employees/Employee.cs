@@ -54,9 +54,9 @@ namespace ERPCore2.Data.Entities
         public int? EmployeePositionId { get; set; }
 
         /// <summary>
-        /// 角色ID
+        /// 權限組ID
         /// </summary>
-        [Display(Name = "角色")]
+        [Display(Name = "權限組")]
         [ForeignKey(nameof(Role))]
         public int? RoleId { get; set; }
 

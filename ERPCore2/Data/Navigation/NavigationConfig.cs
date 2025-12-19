@@ -71,23 +71,23 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "職位", "職稱", "position" }
                     },
                     NavigationActionHelper.CreateActionItem(
-                        name: "身分權限",
-                        description: "管理角色與權限關係",
+                        name: "權限分配管理",
+                        description: "管理權限組與權限關係",
                         iconClass: "bi bi-shield-lock",
                         actionId: "OpenRolePermissionManagement",
                         category: "人力資源管理",
                         requiredPermission: "Role.Read",
-                        searchKeywords: new List<string> { "身分權限", "角色權限", "role permission", "權限設定" }
+                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" }
                     ),
                     new NavigationItem
                     {
-                        Name = "身分",
-                        Description = "管理使用者角色身分",
+                        Name = "權限組",
+                        Description = "管理使用者權限組",
                         Route = "/roles",
                         IconClass = "",
                         Category = "人力資源管理",
                         RequiredPermission = "Role.Read",
-                        SearchKeywords = new List<string> { "身分", "角色", "role" }
+                        SearchKeywords = new List<string> { "權限組", "角色", "role" }
                     },
                     new NavigationItem
                     {

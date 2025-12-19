@@ -6,7 +6,7 @@ using ERPCore2.Helpers;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 權限欄位配置
+    /// 權限明細欄位配置
     /// </summary>
     public class PermissionFieldConfiguration : BaseFieldConfiguration<Permission>
     {
@@ -28,10 +28,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Permission>
                         {
                             PropertyName = nameof(Permission.Code),
-                            DisplayName = "權限代碼",
-                            FilterPlaceholder = "輸入權限代碼搜尋",
+                            DisplayName = "權限明細代碼",
+                            FilterPlaceholder = "輸入權限明細代碼搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Permission.Code), p => p.Code)
@@ -42,12 +41,46 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Permission>
                         {
                             PropertyName = nameof(Permission.Name),
-                            DisplayName = "權限名稱",
-                            FilterPlaceholder = "輸入權限名稱搜尋",
+                            DisplayName = "權限明細名稱",
+                            FilterPlaceholder = "輸入權限明細名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Permission.Name), p => p.Name)
+                        }
+                    },
+                    {
+                        nameof(Permission.Level),
+                        new FieldDefinition<Permission>
+                        {
+                            PropertyName = nameof(Permission.Level),
+                            DisplayName = "權限級別",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 3,
+                            HeaderStyle = "width: 120px;",
+                            Options = new List<SelectOption>
+                            {
+                                new SelectOption { Text = "一般權限", Value = ((int)Data.Enums.PermissionLevel.Normal).ToString() },
+                                new SelectOption { Text = "敏感權限", Value = ((int)Data.Enums.PermissionLevel.Sensitive).ToString() }
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var levelFilter = model.GetFilterValue(nameof(Permission.Level))?.ToString();
+                                if (!string.IsNullOrWhiteSpace(levelFilter) && int.TryParse(levelFilter, out int levelValue))
+                                {
+                                    query = query.Where(p => (int)p.Level == levelValue);
+                                }
+                                return query;
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var permission = (Permission)item;
+                                var isSensitive = permission.Level == Data.Enums.PermissionLevel.Sensitive;
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", "badge text-white");
+                                builder.AddAttribute(2, "style", isSensitive ? "background-color: #dc3545;" : "background-color: #28a745;");
+                                builder.AddContent(3, isSensitive ? "敏感權限" : "一般權限");
+                                builder.CloseElement();
+                            }
                         }
                     }
                 };
@@ -57,7 +90,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化權限欄位配置失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化權限明細欄位配置失敗");
                 });
 
                 // 通知使用者
@@ -65,7 +98,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("初始化權限欄位配置時發生錯誤，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("初始化權限明細欄位配置時發生錯誤，已使用預設配置");
                     });
                 }
 

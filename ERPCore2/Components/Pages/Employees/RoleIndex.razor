@@ -7,9 +7,9 @@
                           TService="IRoleService"
                           Service="@RoleService"
                           EntityBasePath="/roles"
-                          PageTitle="身分設定"
-                          PageSubtitle="管理系統身分與權限設定"
-                          EntityName="身分"
+                          PageTitle="權限組設定"
+                          PageSubtitle="管理系統權限組與權限設定"
+                          EntityName="權限組"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -21,7 +21,7 @@
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
-@* 身分編輯 Modal *@
+@* 權限組編輯 Modal *@
 <RoleEditModalComponent IsVisible="@showEditModal"
                         IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                         RoleId="@editingRoleId"
@@ -70,15 +70,15 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化身分頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化身分頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化權限組頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化權限組頁面失敗");
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "身分設定", "#", NotificationService, GetType());
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "權限組設定", "#", NotificationService, GetType());
 
-    // 載入身分資料
-    private Task<List<Role>> LoadRolesAsync() => DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "身分", NotificationService, GetType());
+    // 載入權限組資料
+    private Task<List<Role>> LoadRolesAsync() => DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "權限組", NotificationService, GetType());
 
     private IQueryable<Role> ApplyRoleFilters(SearchFilterModel searchModel, IQueryable<Role> query)
     {

@@ -1,14 +1,14 @@
-@* 身分權限管理 Modal 組件 - 不使用路由，純 Modal 彈窗 *@
+@* 權限組權限管理 Modal 組件 - 不使用路由，純 Modal 彈窗 *@
 @using ERPCore2.Data.Entities
 @inject IRoleService RoleService
 @inject IPermissionManagementService PermissionManagementService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 
-@* 身分權限管理 Modal *@
+@* 權限組權限管理 Modal *@
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@HandleModalVisibilityChanged"
-                   Title="身分權限設定"
+                   Title="權限組管理"
                    Icon="bi bi-shield-lock"
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
@@ -16,15 +16,15 @@
                    ShowCloseButton="true"
                    CloseOnBackdropClick="true">
     <BodyContent>
-        @* 區塊 1: 身分選擇區域 *@
-        <div class="mb-4">
+        @* 區塊 1: 權限組選擇區域 *@
+        <div class="mb-2">
             @if (isLoadingRoles)
             {
                 <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">載入中...</span>
                     </div>
-                    <p class="mt-2 text-muted">載入身分資料中...</p>
+                    <p class="mt-2 text-muted">載入權限組資料中...</p>
                 </div>
             }
             else if (roles.Any())
@@ -35,7 +35,7 @@
                                 class="form-select" 
                                 @onchange="HandleRoleSelectionChanged"
                                 disabled="@isSaving">
-                            <option value="">請選擇要設定的身分 ... </option>
+                            <option value="">請選擇要設定的權限組 ... </option>
                             @foreach (var role in roles)
                             {
                                 <option value="@role.Id" selected="@(role.Id == selectedRole?.Id)">
@@ -46,7 +46,7 @@
                     </div>
                     
                     @* 操作按鈕組 *@
-                    @if (selectedRole != null && !IsAdminRole(selectedRole))
+                    @if (selectedRole != null)
                     {
                         <div class="col-md-4">
                             <div class="d-flex gap-2 justify-content-end flex-wrap mt-3 mt-md-0">
@@ -54,12 +54,8 @@
                                     <GenericButtonComponent Text="複製"
                                                         Variant="ButtonVariant.Gray"
                                                         Size="ButtonSize.Small"
-                                                        IsDisabled="@isSaving"
-                                                        AdditionalAttributes="@(new Dictionary<string, object> 
-                                                        { 
-                                                            { "data-bs-toggle", "dropdown" },
-                                                            { "aria-expanded", "false" }
-                                                        })" />
+                                                        IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
+                                                        AdditionalAttributes="@GetCopyButtonAttributes()" />
                                     <ul class="dropdown-menu">
                                         <li><h6 class="dropdown-header">選擇複製對象</h6></li>
                                         @foreach (var role in roles.Where(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
@@ -72,7 +68,7 @@
                                         }
                                         @if (!roles.Any(r => r.Id != selectedRole.Id && !IsAdminRole(r)))
                                         {
-                                            <li><span class="dropdown-item-text text-muted">沒有可複製的對象</span></li>
+                                            <li><span class="dropdown-item-text text-muted">無</span></li>
                                         }
                                     </ul>
                                 </div>
@@ -80,20 +76,21 @@
                                                     Variant="ButtonVariant.Green"
                                                     Size="ButtonSize.Small"
                                                     OnClick="SelectAllPermissions"
-                                                    IsDisabled="@isSaving"
-                                                    Tooltip="僅選擇一般權限，系統權限需手動選擇" />
+                                                    IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
+                                                    AdditionalAttributes="@GetSelectAllButtonAttributes()" />
                                 <GenericButtonComponent Text="全清"
                                                     Variant="ButtonVariant.Yellow"
                                                     Size="ButtonSize.Small"
                                                     OnClick="ClearAllPermissions"
-                                                    IsDisabled="@isSaving"
-                                                    Tooltip="僅清除一般權限，系統權限需手動取消" />
+                                                    IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
+                                                    AdditionalAttributes="@GetClearAllButtonAttributes()" />
                                 <GenericButtonComponent Text="儲存"
                                                     Variant="ButtonVariant.DarkBlue"
                                                     Size="ButtonSize.Small"
                                                     OnClick="SaveRolePermissions"
-                                                    IsDisabled="@isSaving"
-                                                    IsLoading="@isSaving" />
+                                                    IsDisabled="@(isSaving || IsAdminRole(selectedRole))"
+                                                    IsLoading="@isSaving"
+                                                    AdditionalAttributes="@GetSaveButtonAttributes()" />
                             </div>
                         </div>
                     }
@@ -102,8 +99,8 @@
             else
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    尚未建立任何身分
+                    <i class="bi bi-info-circle me-1"></i>
+                    尚未建立任何權限組
                 </div>
             }
         </div>
@@ -111,7 +108,7 @@
         @* 區塊 2: 權限設定區域 *@
         @if (selectedRole != null)
         {
-            <div class="border-top pt-4">
+            <div class="border-top pt-2">
                 @if (isLoadingPermissions)
                 {
                     <div class="text-center py-4">
@@ -123,27 +120,24 @@
                 }
                 else
                 {
-                    @* 操作說明（僅非管理員身分顯示） *@
+                    @* 操作說明（僅非管理員權限組顯示） *@
                     @if (!IsAdminRole(selectedRole))
                     {
                         <div class="alert alert-info mb-1">
                             <i class="bi bi-lightbulb me-1"></i>
-                            <strong>提示：</strong>「全選」/「全清」按鈕僅影響一般權限，系統權限需要手動點擊個別選擇以確保安全性。
+                            <strong>提示：</strong>「全選」/「全清」按鈕僅影響一般權限，敏感權限需要手動點擊個別選擇以確保安全性。
                         </div>
                     }
                     else
                     {
                         <div class="alert alert-info mb-1">
                             <i class="bi bi-lightbulb me-1"></i>
-                            <strong>提示：</strong> 管理員身分擁有所有權限。
+                            <strong>提示：</strong> 管理員權限組擁有所有權限。
                         </div>
                     }
                     
                     @* 一般權限表格 *@
                     <div class="mb-4">
-                        <h6 class="mb-3">
-                            <i class="bi bi-list-ul me-2"></i>一般權限
-                        </h6>
                         <InteractiveTableComponent TItem="Permission"
                                                   Items="@GetNormalPermissions()"
                                                   ColumnDefinitions="@normalPermissionColumns"
@@ -165,12 +159,9 @@
                     {
                         <div class="mt-4">
                             <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>注意：</strong>以下為系統核心權限，@(IsAdminRole(selectedRole) ? "管理員身分擁有所有權限。" : "請謹慎授權！這些權限可能影響系統安全性和穩定性。")
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                <strong>注意：</strong>以下為敏感權限，@(IsAdminRole(selectedRole) ? "管理員權限組擁有所有權限。" : "請謹慎授權！這些權限可能影響系統安全性和穩定性。")
                             </div>
-                            <h6 class="mb-3 text-danger">
-                                <i class="bi bi-shield-exclamation me-2"></i>系統權限
-                            </h6>
                             <InteractiveTableComponent TItem="Permission"
                                                       Items="@GetSystemPermissions()"
                                                       ColumnDefinitions="@systemPermissionColumns"
@@ -247,7 +238,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType(), 
-                additionalData: "初始化身分權限管理資料失敗");
+                additionalData: "初始化權限組權限管理資料失敗");
             await NotificationService.ShowErrorAsync("初始化資料失敗");
         }
         finally
@@ -389,7 +380,7 @@
         {
             roles = (await DataLoaderHelper.LoadAsync(
                 RoleService.GetAllAsync, 
-                "身分", 
+                "權限組", 
                 NotificationService, 
                 GetType()))
                 .OrderBy(r => r.Name)
@@ -398,7 +389,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRolesAsync), GetType());
-            await NotificationService.ShowErrorAsync("載入身分資料失敗");
+            await NotificationService.ShowErrorAsync("載入權限組資料失敗");
             roles = new List<Role>();
         }
     }
@@ -419,7 +410,7 @@
                 permissions = allPermissions.OrderBy(p => p.Code).ToList();
             }
             
-            // 載入身分已有的權限
+            // 載入權限組已有的權限
             var roleData = await RoleService.GetByIdAsync(selectedRole.Id);
             if (roleData != null)
             {
@@ -460,7 +451,7 @@
     }
     
     /// <summary>
-    /// 處理身分選擇變更
+    /// 處理權限組選擇變更
     /// </summary>
     private async Task HandleRoleSelectionChanged(ChangeEventArgs e)
     {
@@ -563,7 +554,7 @@
     }
     
     /// <summary>
-    /// 複製其他身分的權限
+    /// 複製其他權限組的權限
     /// </summary>
     private async Task CopyPermissionsFromRole(int sourceRoleId)
     {
@@ -580,22 +571,22 @@
             var sourceRole = roles.FirstOrDefault(r => r.Id == sourceRoleId);
             if (sourceRole == null)
             {
-                await NotificationService.ShowErrorAsync("來源身分不存在");
+                await NotificationService.ShowErrorAsync("來源權限組不存在");
                 return;
             }
             
-            // 檢查來源身分是否為管理員身分
+            // 檢查來源權限組是否為管理員權限組
             if (IsAdminRole(sourceRole))
             {
-                await NotificationService.ShowWarningAsync("無法複製管理員身分的權限");
+                await NotificationService.ShowWarningAsync("無法複製管理員權限組的權限");
                 return;
             }
             
-            // 取得來源身分的權限
+            // 取得來源權限組的權限
             var sourceRoleData = await RoleService.GetByIdAsync(sourceRoleId);
             if (sourceRoleData == null)
             {
-                await NotificationService.ShowErrorAsync("載入來源身分權限時發生錯誤");
+                await NotificationService.ShowErrorAsync("載入來源權限組權限時發生錯誤");
                 return;
             }
             
@@ -612,7 +603,7 @@
             }
             
             StateHasChanged();
-            await NotificationService.ShowSuccessAsync($"已成功複製身分「{sourceRole.Name}」的權限設定");
+            await NotificationService.ShowSuccessAsync($"已成功複製權限組「{sourceRole.Name}」的權限設定");
         }
         catch (Exception ex)
         {
@@ -627,20 +618,20 @@
     }
     
     /// <summary>
-    /// 儲存身分權限
+    /// 儲存權限組權限
     /// </summary>
     private async Task SaveRolePermissions()
     {
         if (selectedRole == null)
         {
-            await NotificationService.ShowWarningAsync("請先選擇一個身分");
+            await NotificationService.ShowWarningAsync("請先選擇一個權限組");
             return;
         }
         
-        // 檢查是否為管理員身分
+        // 檢查是否為管理員權限組
         if (IsAdminRole(selectedRole))
         {
-            await NotificationService.ShowWarningAsync("管理員身分的權限無法修改");
+            await NotificationService.ShowWarningAsync("管理員權限組的權限無法修改");
             return;
         }
         
@@ -669,14 +660,14 @@
                 var systemPermissionNames = systemPermissions.Select(p => $"• {p.Name} ({p.Code})").ToList();
                 var permissionList = string.Join("\n", systemPermissionNames);
                 
-                var confirmMessage = $"您即將為身分「{selectedRole.Name}」授予以下系統核心權限：\n\n{permissionList}\n\n" +
+                var confirmMessage = $"您即將為權限組「{selectedRole.Name}」授予以下敏感權限：\n\n{permissionList}\n\n" +
                                    "⚠️ 警告：\n" +
-                                   "• 系統權限可能影響系統安全性和穩定性\n" +
+                                   "• 敏感權限可能影響系統安全性和穩定性\n" +
                                    "• 擁有這些權限的用戶可以執行敏感的系統操作\n" +
-                                   "• 包括但不限於：系統設定修改、權限管理、身分管理等\n\n" +
+                                   "• 包括但不限於：系統設定修改、權限管理、權限組管理、審核功能等\n\n" +
                                    "請確認您了解這些權限的影響，是否繼續執行授權？";
                 
-                var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, "系統權限授權確認");
+                var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, "敏感權限授權確認");
                 
                 if (!confirmed)
                 {
@@ -692,12 +683,12 @@
             {
                 // 根據是否包含系統權限顯示不同的成功訊息
                 var successMessage = systemPermissions.Any() 
-                    ? $"已成功更新身分「{selectedRole.Name}」的權限（包含 {systemPermissions.Count} 個系統權限）"
-                    : $"已成功更新身分「{selectedRole.Name}」的權限";
+                    ? $"已成功更新權限組「{selectedRole.Name}」的權限（包含 {systemPermissions.Count} 個系統權限）"
+                    : $"已成功更新權限組「{selectedRole.Name}」的權限";
                 
                 await NotificationService.ShowSuccessAsync(successMessage);
                 
-                // 重新載入身分權限
+                // 重新載入權限組權限
                 await LoadPermissionsAsync();
             }
             else
@@ -720,7 +711,7 @@
     // ===== 輔助方法 =====
     
     /// <summary>
-    /// 判斷是否為管理員身分
+    /// 判斷是否為管理員權限組
     /// </summary>
     private bool IsAdminRole(Role? role)
     {
@@ -730,19 +721,11 @@
     }
     
     /// <summary>
-    /// 判斷是否為系統權限
+    /// 判斷是否為敏感權限（系統權限）
     /// </summary>
     private bool IsSystemPermission(Permission permission)
     {
-        var code = permission.Code;
-        return code != null && (
-            code.StartsWith("System.") || 
-            code.StartsWith("EmployeeEdit_Account_Password.") ||
-            code.StartsWith("SystemControl.") || 
-            code.StartsWith("Permission.") || 
-            code.StartsWith("Role.") || 
-            code.StartsWith("Company.") ||
-            code.StartsWith("PurchaseOrder_Approve."));
+        return permission.Level == PermissionLevel.Sensitive;
     }
     
     /// <summary>
@@ -782,5 +765,69 @@
         }
         
         return string.Join(" ", classes);
+    }
+    
+    /// <summary>
+    /// 取得複製按鈕的額外屬性
+    /// </summary>
+    private Dictionary<string, object> GetCopyButtonAttributes()
+    {
+        var attributes = new Dictionary<string, object>
+        {
+            { "data-bs-toggle", "dropdown" },
+            { "aria-expanded", "false" }
+        };
+        
+        if (IsAdminRole(selectedRole))
+        {
+            attributes.Add("title", "管理員權限組無法複製權限");
+        }
+        
+        return attributes;
+    }
+    
+    /// <summary>
+    /// 取得全選按鈕的額外屬性
+    /// </summary>
+    private Dictionary<string, object> GetSelectAllButtonAttributes()
+    {
+        var tooltip = IsAdminRole(selectedRole) 
+            ? "管理員權限組無法修改權限" 
+            : "僅選擇一般權限，敏感權限需手動選擇";
+        
+        return new Dictionary<string, object>
+        {
+            { "title", tooltip }
+        };
+    }
+    
+    /// <summary>
+    /// 取得全清按鈕的額外屬性
+    /// </summary>
+    private Dictionary<string, object> GetClearAllButtonAttributes()
+    {
+        var tooltip = IsAdminRole(selectedRole) 
+            ? "管理員權限組無法修改權限" 
+            : "僅清除一般權限，敏感權限需手動取消";
+        
+        return new Dictionary<string, object>
+        {
+            { "title", tooltip }
+        };
+    }
+    
+    /// <summary>
+    /// 取得儲存按鈕的額外屬性
+    /// </summary>
+    private Dictionary<string, object> GetSaveButtonAttributes()
+    {
+        var attributes = new Dictionary<string, object>();
+        
+        if (IsAdminRole(selectedRole))
+        {
+            attributes.Add("title", "管理員權限組無法修改權限");
+        }
+        
+        return attributes;
     }
 }

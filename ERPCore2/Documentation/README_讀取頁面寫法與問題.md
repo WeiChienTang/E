@@ -2,7 +2,7 @@
 
 ## 問題描述
 
-在導航選單中使用 `NavigationActionHelper.CreateActionItem` 建立的 Action 類型項目（例如：單位換算、身分權限、應收帳款報表），無法透過全域頁面搜尋功能（Ctrl+K）查詢到。
+在導航選單中使用 `NavigationActionHelper.CreateActionItem` 建立的 Action 類型項目（例如：單位換算、權限組權限、應收帳款報表），無法透過全域頁面搜尋功能（Ctrl+K）查詢到。
 
 ### 問題範例
 

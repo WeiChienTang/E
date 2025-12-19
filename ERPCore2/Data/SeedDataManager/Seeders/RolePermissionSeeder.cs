@@ -30,6 +30,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 取得角色和權限
             var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "管理員");
+            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "一般員工");
             var allPermissions = await context.Permissions.ToListAsync();
             var rolePermissions = new List<RolePermission>();
 
@@ -39,6 +40,20 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 rolePermissions.AddRange(allPermissions.Select(p => new RolePermission
                 {
                     RoleId = adminRole.Id,
+                    PermissionId = p.Id,
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "System"
+                }));
+            }
+
+            // 一般員工只擁有 Normal 級別的權限
+            if (employeeRole != null)
+            {
+                var normalPermissions = allPermissions.Where(p => p.Level == PermissionLevel.Normal);
+                rolePermissions.AddRange(normalPermissions.Select(p => new RolePermission
+                {
+                    RoleId = employeeRole.Id,
                     PermissionId = p.Id,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,

@@ -119,6 +119,7 @@
             FormFieldType.Number => true,
             FormFieldType.AutoComplete => true,
             FormFieldType.Select => true,
+            FormFieldType.MobilePhone => true,
             _ => false
         };
     }
@@ -182,6 +183,25 @@
                            value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
                            @oninput="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                     break;
+                
+                case FormFieldType.MobilePhone:
+                    @* 台灣手機號碼專用欄位：固定 10 碼，開頭為 09，只允許數字，自動格式化為 0912-345-678 *@
+                    var mobileFieldId = $"mobile_{field.PropertyName}";
+                    <input type="tel"
+                           class="@inputClass"
+                           id="@mobileFieldId"
+                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
+                           placeholder="@(field.Placeholder ?? "0912-345-678")"
+                           readonly="@field.IsReadOnly"
+                           disabled="@field.IsDisabled"
+                           autocomplete="tel"
+                           required="@field.IsRequired"
+                           maxlength="12"
+                           inputmode="numeric"
+                           title="請輸入有效的台灣手機號碼（10碼，以09開頭）"
+                           value="@FormatMobilePhoneDisplay(GetPropertyValue(Model, field.PropertyName)?.ToString())"
+                           @oninput="@(async e => await HandleMobilePhoneInputWithJS(mobileFieldId, field.PropertyName))" />
+                    break;
                     
                 case FormFieldType.Number:
                     var numberValue = GetPropertyValue(Model, field.PropertyName);
@@ -227,6 +247,8 @@
                            readonly="@field.IsReadOnly"
                            disabled="@field.IsDisabled"
                            autocomplete="off"
+                           min="1900-01-01"
+                           max="2099-12-31"
                            value="@(dateValue is DateTime dt ? dt.ToString("yyyy-MM-dd") : "")"
                            @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
                     break;
@@ -286,10 +308,6 @@
                             disabled="@(field.IsReadOnly || field.IsDisabled)"
                             autocomplete="off"
                             @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))">
-                        @if (!field.IsRequired)
-                        {
-                            <option value="">請選擇...</option>
-                        }
                         @if (field.Options != null)
                         {
                             @foreach (var option in field.Options)
@@ -935,7 +953,80 @@
             FormFieldType.Date => "date",
             FormFieldType.DateTime => "datetime-local",
             FormFieldType.Time => "time",
+            FormFieldType.MobilePhone => "tel",
             _ => "text"
+        };
+    }
+
+    /// <summary>
+    /// 處理台灣手機號碼輸入，使用 JS 互操作過濾非數字並自動格式化
+    /// </summary>
+    private async Task HandleMobilePhoneInputWithJS(string elementId, string propertyName)
+    {
+        try
+        {
+            // 調用 JS 過濾並格式化，取得純數字
+            var digitsOnly = await JSRuntime.InvokeAsync<string>("formatMobilePhoneInput", 
+                await JSRuntime.InvokeAsync<IJSObjectReference>("eval", $"document.getElementById('{elementId}')"));
+            
+            // 儲存純數字到 Model
+            SetPropertyValue(Model, propertyName, string.IsNullOrEmpty(digitsOnly) ? null : digitsOnly);
+        }
+        catch
+        {
+            // JS 調用失敗時的回退處理（靠純 C# 處理）
+        }
+    }
+    
+    /// <summary>
+    /// 處理台灣手機號碼輸入，自動過濾非數字字元並儲存純數字
+    /// 顯示格式為 0912-345-678，儲存格式為 0912345678
+    /// </summary>
+    private async Task HandleMobilePhoneInput(string propertyName, string? value)
+    {
+        if (value == null)
+        {
+            SetPropertyValue(Model, propertyName, null);
+            return;
+        }
+        
+        // 移除所有非數字字元（包含連字符）
+        var digitsOnly = new string(value.Where(char.IsDigit).ToArray());
+        
+        // 限制最大長度為 10 碼
+        if (digitsOnly.Length > 10)
+        {
+            digitsOnly = digitsOnly.Substring(0, 10);
+        }
+        
+        // 儲存純數字格式到資料庫
+        SetPropertyValue(Model, propertyName, string.IsNullOrEmpty(digitsOnly) ? null : digitsOnly);
+        
+        // 強制重新渲染以更新輸入框顯示（過濾掉非數字字元）
+        await Task.Yield();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 格式化手機號碼顯示為 0912-345-678 格式
+    /// </summary>
+    private string FormatMobilePhoneDisplay(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+        
+        // 移除所有非數字字元
+        var digitsOnly = new string(value.Where(char.IsDigit).ToArray());
+        
+        if (string.IsNullOrEmpty(digitsOnly))
+            return string.Empty;
+        
+        // 根據數字長度進行格式化
+        return digitsOnly.Length switch
+        {
+            <= 4 => digitsOnly,
+            <= 7 => $"{digitsOnly.Substring(0, 4)}-{digitsOnly.Substring(4)}",
+            _ => $"{digitsOnly.Substring(0, 4)}-{digitsOnly.Substring(4, 3)}-{digitsOnly.Substring(7, Math.Min(3, digitsOnly.Length - 7))}"
         };
     }
 

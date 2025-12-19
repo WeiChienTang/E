@@ -18,6 +18,12 @@ namespace ERPCore2.Data.Entities
         [MaxLength(100, ErrorMessage = "權限名稱不可超過100個字元")]
         public string Name { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 權限級別 (一般/敏感)
+        /// </summary>
+        [Display(Name = "權限級別")]
+        public PermissionLevel Level { get; set; } = PermissionLevel.Normal;
+
         // 導航屬性
         public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }

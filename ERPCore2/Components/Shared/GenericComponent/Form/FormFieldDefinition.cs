@@ -245,6 +245,8 @@ public enum FormFieldType
     /// </summary>
     AutoComplete,
     
+    MobilePhone,
+    
     /// <summary>
     /// 自定義
     /// </summary>

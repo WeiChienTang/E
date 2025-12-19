@@ -119,7 +119,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Role.Name",
                             FilterPropertyName = nameof(Employee.RoleId),
-                            DisplayName = "角色",
+                            DisplayName = "權限組",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
                             FilterOrder = 5,

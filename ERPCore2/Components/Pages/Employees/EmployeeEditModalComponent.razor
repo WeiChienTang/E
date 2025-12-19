@@ -56,7 +56,7 @@
                                    OnEmployeePositionSaved="@OnEmployeePositionSavedWrapper"
                                    OnCancel="@positionModalManager.HandleModalCancelAsync" />
 
-@* 角色編輯 Modal *@
+@* 權限組編輯 Modal *@
 <RoleEditModalComponent @ref="roleEditModal"
                        IsVisible="@roleModalManager.IsModalVisible"
                        IsVisibleChanged="@roleModalManager.HandleModalVisibilityChangedAsync"
@@ -306,12 +306,11 @@
                     new()
                     {
                         PropertyName = nameof(Employee.RoleId),
-                        Label = "身分/權限",
+                        Label = "權限組",
                         FieldType = FormFieldType.AutoComplete,
-                        Placeholder = "請輸入或選擇身分",
+                        Placeholder = "請選擇權限組",
                         MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
-                        HelpText = "設定此員工在系統中的權限角色（有帳號才需要設定）",
-                        ActionButtons = await GetRoleActionButtonsAsync()
+                        HelpText = "設定此員工在系統中的權限組（有帳號才需要設定）"
                     }
                 });
             }
@@ -323,10 +322,9 @@
                 {
                     PropertyName = nameof(Employee.Mobile),
                     Label = "手機號碼",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入手機號碼",
-                    MaxLength = 20,
-                    HelpText = "員工個人手機號碼"
+                    FieldType = FormFieldType.MobilePhone,
+                    Placeholder = "0912-345-678",
+                    HelpText = "員工個人手機號碼（10碼，以09開頭）"
                 },
                 new()
                 {
@@ -391,7 +389,6 @@
                     Label = "到職日期",
                     FieldType = FormFieldType.Date,
                     Placeholder = "請選擇到職日期",
-                    IsReadOnly = EmployeeId.HasValue, // 編輯模式下唯讀
                     HelpText = "員工正式到職的日期"
                 },
                 new()
@@ -479,7 +476,7 @@
             {
                 // 新增模式：建立新的員工實體並生成代碼
                 
-                // 找出預設的身分 (Employee-非系統使用者)
+                // 找出預設的權限組 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
                     r.Name.Contains("Employee") && r.Name.Contains("非系統使用者"));
                 
@@ -540,7 +537,7 @@
             {
                 entity.Account = null;
                 entity.Password = null;
-                entity.RoleId = null; // 非系統使用者不需要身分
+                entity.RoleId = null; // 非系統使用者不需要權限組
             }
 
             // 基本驗證 - 使用通知服務
@@ -582,10 +579,10 @@
                     return false;
                 }
 
-                // 身分必填
+                // 權限組必填
                 if (!entity.RoleId.HasValue)
                 {
-                    await NotificationService.ShowErrorAsync("設定帳號時必須指派身分");
+                    await NotificationService.ShowErrorAsync("設定帳號時必須指派權限組");
                     return false;
                 }
             }
@@ -674,12 +671,13 @@
                     positionModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
             
-            // 使用統一 Helper 處理角色欄位變更
-            if (fieldChange.PropertyName == nameof(Employee.RoleId))
-            {
-                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
-                    roleModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
-            }
+            // 注意：RoleId 欄位不需要 ActionButtons，所以不在此處理
+            // 如果需要為 RoleId 加上操作按鈕，請在欄位定義中設定 ActionButtons 並取消以下註解
+            // if (fieldChange.PropertyName == nameof(Employee.RoleId))
+            // {
+            //     await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+            //         roleModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            // }
         }
         catch (Exception)
         {
@@ -704,7 +702,7 @@
     }
     
     /// <summary>
-    /// 包裝角色儲存事件以符合原有介面
+    /// 包裝權限組儲存事件以符合原有介面
     /// </summary>
     private async Task OnRoleSavedWrapper(Role savedRole)
     {
@@ -736,7 +734,7 @@
     }
 
     /// <summary>
-    /// 使用統一 Helper 產生角色操作按鈕
+    /// 使用統一 Helper 產生權限組操作按鈕
     /// </summary>
     private async Task<List<FieldActionButton>> GetRoleActionButtonsAsync()
     {

@@ -9,9 +9,9 @@
                           TService="IPermissionManagementService"
                           Service="@PermissionService"
                           EntityBasePath="/permissions"
-                          PageTitle="權限管理"
-                          PageSubtitle="管理系統功能權限設定"
-                          EntityName="權限"
+                          PageTitle="權限明細管理"
+                          PageSubtitle="管理系統功能權限明細設定"
+                          EntityName="權限明細"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
@@ -72,15 +72,15 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化權限頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化權限頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化權限明細頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化權限明細頁面失敗");
         }
     }
 
-    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "權限管理", "#", NotificationService, GetType());
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("員工管理", "權限明細管理", "#", NotificationService, GetType());
 
-    // 載入權限資料
-    private Task<List<Permission>> LoadPermissionsAsync() => DataLoaderHelper.LoadAsync(() => PermissionService.GetAllAsync(), "權限", NotificationService, GetType());
+    // 載入權限明細資料
+    private Task<List<Permission>> LoadPermissionsAsync() => DataLoaderHelper.LoadAsync(() => PermissionService.GetAllAsync(), "權限明細", NotificationService, GetType());
 
     private IQueryable<Permission> ApplyPermissionFilters(SearchFilterModel searchModel, IQueryable<Permission> query)
     {

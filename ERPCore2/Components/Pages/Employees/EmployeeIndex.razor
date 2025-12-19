@@ -96,8 +96,8 @@
     // 載入部門資料
     private async Task LoadDepartmentsAsync() => departments = await DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllAsync(), "部門", NotificationService, GetType());
 
-    // 載入角色資料
-    private async Task LoadRolesAsync() => roles = await DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "角色", NotificationService, GetType());
+    // 載入權限組資料
+    private async Task LoadRolesAsync() => roles = await DataLoaderHelper.LoadAsync(() => RoleService.GetAllAsync(), "權限組", NotificationService, GetType());
 
     // 載入員工職位資料
     private async Task LoadEmployeePositionsAsync() => employeePositions = await DataLoaderHelper.LoadAsync(() => EmployeePositionService.GetAllAsync(), "員工職位", NotificationService, GetType());

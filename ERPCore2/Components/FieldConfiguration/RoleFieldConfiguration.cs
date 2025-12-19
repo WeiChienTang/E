@@ -6,7 +6,7 @@ using ERPCore2.Helpers;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 身分欄位配置
+    /// 權限組欄位配置
     /// </summary>
     public class RoleFieldConfiguration : BaseFieldConfiguration<Role>
     {
@@ -28,8 +28,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Role>
                         {
                             PropertyName = nameof(Role.Code),
-                            DisplayName = "身分代碼",
-                            FilterPlaceholder = "輸入身分代碼搜尋",
+                            DisplayName = "權限組代碼",
+                            FilterPlaceholder = "輸入權限組代碼搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
                             HeaderStyle = "width: 180px;",
@@ -43,8 +43,8 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(Role.Name),
                             FilterPropertyName = "RoleName", // 保持原有的篩選器屬性名稱
-                            DisplayName = "身分名稱",
-                            FilterPlaceholder = "輸入身分名稱搜尋",
+                            DisplayName = "權限組名稱",
+                            FilterPlaceholder = "輸入權限組名稱搜尋",
                             TableOrder = 2,
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -58,7 +58,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化身分欄位配置失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化權限組欄位配置失敗");
                 });
 
                 // 通知使用者
@@ -66,7 +66,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("初始化身分欄位配置時發生錯誤，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("初始化權限組欄位配置時發生錯誤，已使用預設配置");
                     });
                 }
 

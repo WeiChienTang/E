@@ -1,4 +1,4 @@
-@* 可重用的身分編輯組件 - 可在任何頁面中嵌入 *@
+@* 可重用的權限組編輯組件 - 可在任何頁面中嵌入 *@
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
 
@@ -9,9 +9,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@RoleId"
                           Service="@RoleService"
-                          EntityName="身分"
-                          EntityNamePlural="身分"
-                          ModalTitle="@(RoleId.HasValue ? "編輯身分" : "新增身分")"
+                          EntityName="權限組"
+                          EntityNamePlural="權限組"
+                          ModalTitle="@(RoleId.HasValue ? "編輯權限組" : "新增權限組")"
                           Size="GenericEditModalComponent<Role, IRoleService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
@@ -19,8 +19,8 @@
                           DataLoader="@LoadRoleData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(RoleId.HasValue ? "身分更新成功" : "身分新增成功")"
-                          SaveFailureMessage="身分儲存失敗"
+                          SaveSuccessMessage="@(RoleId.HasValue ? "權限組更新成功" : "權限組新增成功")"
+                          SaveFailureMessage="權限組儲存失敗"
                           RequiredPermission="Role.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
@@ -65,7 +65,7 @@
     {
         try
         {
-            // 如果父組件需要知道身分已儲存
+            // 如果父組件需要知道權限組已儲存
             if (OnRoleSaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 await OnRoleSaved.InvokeAsync(editModalComponent.Entity);
@@ -109,7 +109,7 @@
     {
         try
         {
-            // 身分編輯通常不需要額外載入其他資料
+            // 權限組編輯通常不需要額外載入其他資料
             // 如果未來需要載入權限清單等資料，可以在這裡實作
             await Task.CompletedTask;
         }
@@ -125,7 +125,7 @@
         {
             if (!RoleId.HasValue)
             {
-                // 新增模式 - 建立新的身分實體並設定預設值
+                // 新增模式 - 建立新的權限組實體並設定預設值
                 var newRole = new Role
                 {
                     Code = await EntityCodeGenerationHelper.GenerateForEntity<Role, IRoleService>(RoleService, "ROLE"),
@@ -138,12 +138,12 @@
                 return newRole;
             }
 
-            // 編輯模式 - 載入現有身分資料
+            // 編輯模式 - 載入現有權限組資料
             return await RoleService.GetByIdAsync(RoleId.Value);
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入身分資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入權限組資料時發生錯誤：{ex.Message}");
             return null;
         }
     }
@@ -166,22 +166,22 @@
                 new()
                 {
                     PropertyName = nameof(Role.Code),
-                    Label = "身分代碼",
+                    Label = "權限組代碼",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入身分代碼",
+                    Placeholder = "請輸入權限組代碼",
                     IsRequired = true,
                     MaxLength = 20,
-                    HelpText = "身分的唯一代碼，用於區別不同的系統權限群組，新增時系統會自動產生，也可手動修改，最多20個字元"
+                    HelpText = "權限組的唯一代碼，用於區別不同的系統權限群組，新增時系統會自動產生，也可手動修改，最多20個字元"
                 },
                 new()
                 {
                     PropertyName = nameof(Role.Name),
-                    Label = "身分名稱",
+                    Label = "權限組名稱",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入身分名稱",
+                    Placeholder = "請輸入權限組名稱",
                     IsRequired = true,
                     MaxLength = 50,
-                    HelpText = "身分的唯一名稱，用於區別不同的系統權限群組，最多50個字元"
+                    HelpText = "權限組的唯一名稱，用於區別不同的系統權限群組，最多50個字元"
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<Role>()
