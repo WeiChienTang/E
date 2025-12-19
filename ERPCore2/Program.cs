@@ -207,4 +207,34 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// 自動執行資料庫遷移（生產環境）
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        var context = services.GetRequiredService<AppDbContext>();
+        
+        // 檢查是否有待處理的遷移
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation("偵測到待處理的資料庫遷移，開始執行自動遷移...");
+            await context.Database.MigrateAsync();
+            logger.LogInformation("資料庫遷移完成");
+        }
+        else
+        {
+            logger.LogInformation("資料庫架構已是最新版本");
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "自動資料庫遷移失敗。請檢查資料庫連接或手動執行遷移。");
+        // 不中斷應用程式啟動，讓使用者看到錯誤訊息
+    }
+}
+
 app.Run();

@@ -30,7 +30,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // 取得角色和權限
             var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "管理員");
-            var employeeRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "辦公室員工");
             var allPermissions = await context.Permissions.ToListAsync();
             var rolePermissions = new List<RolePermission>();
 
@@ -40,29 +39,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 rolePermissions.AddRange(allPermissions.Select(p => new RolePermission
                 {
                     RoleId = adminRole.Id,
-                    PermissionId = p.Id,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                }));
-            }
-
-            // 辦公室員工擁有除了系統管理、角色管理、權限管理相關權限之外的所有權限
-            if (employeeRole != null)
-            {
-                var officeEmployeePermissions = allPermissions
-                    .Where(p => p.Code != null && 
-                               !p.Code.StartsWith("System") && 
-                               !p.Code.StartsWith("Role") && 
-                               !p.Code.StartsWith("EmployeeEdit_Account_Password") &&
-                               !p.Code.StartsWith("Permission") &&
-                               !p.Code.StartsWith("Company") &&
-                               !p.Code.StartsWith("PurchaseOrder_Approve"))
-                    .ToList();
-
-                rolePermissions.AddRange(officeEmployeePermissions.Select(p => new RolePermission
-                {
-                    RoleId = employeeRole.Id,
                     PermissionId = p.Id,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,

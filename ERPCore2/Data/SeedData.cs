@@ -65,34 +65,20 @@ namespace ERPCore2.Data
             {
                 return new List<IDataSeeder>
                 {
-                    new CompanySeeder(),            // 公司資料 - 基礎資料，優先執行
-                    new SystemParameterSeeder(),    // 系統參數 - 系統基礎設定
-                    new PermissionSeeder(),
+                    new CompanySeeder(),            
+                    new SystemParameterSeeder(),    
+                    new PermissionSeeder(),                    
                     new RoleSeeder(),
-                    new RolePermissionSeeder(),
-                    new PaymentMethodSeeder(),      // 付款方式
-                    new PrepaymentTypeSeeder(),     // 預收付款項類型
-                    new BankSeeder(),               // 銀行別
-                    new PaperSettingSeeder(),       // 紙張設定
-                    new PrinterConfigurationSeeder(), // 印表機配置
+                    new RolePermissionSeeder(),     // 在 Role 和 Permission 之後執行
+                    new PaymentMethodSeeder(),      
+                    new PrepaymentTypeSeeder(),     
                     new EmployeeSeeder(),
-                    new EmployeePositionSeeder(),
-                    new DepartmentSeeder(),
-                    new ColorSeeder(),
-                    new MaterialSeeder(),
-                    new CompositionCategorySeeder(), // 合成表類型
-                    new ProductCategorySeeder(),    // 商品類別 - 必須在 ProductSeeder 之前
+                    new ProductCategorySeeder(),    
                     new UnitSeeder(),
-                    new UnitConversionSeeder(),     // 單位轉換關係 - 必須在 UnitSeeder 之後
-                    new SizeSeeder(),
-                    new WarehouseSeeder(),
-                    new CustomerSeeder(),           // 依賴 CustomerTypes
-                    new SupplierSeeder(),           // 依賴 SupplierTypes
-                    new ProductSeeder(),            // 依賴 ProductCategory, Unit, Supplier
+                    new ProductSeeder(),            
                     new InventorySeeder(),
-                    new WeatherSeeder(),
-                    new SalesReturnReasonSeeder(),  // 銷貨退貨原因
-                    new CurrencySeeder(),           // 貨幣資料
+                    new SalesReturnReasonSeeder(),  
+                    new CurrencySeeder(),          
                 };
             }
 
@@ -102,7 +88,6 @@ namespace ERPCore2.Data
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
                 new PaymentMethodSeeder(),
-                new EmployeePositionSeeder(),
             };
         }
     }

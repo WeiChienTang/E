@@ -25,15 +25,14 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             if (await context.PaymentMethods.AnyAsync()) return;
 
             var (createdAt1, createdBy) = SeedDataHelper.GetSystemCreateInfo(30);
-            var (createdAt2, _) = SeedDataHelper.GetSystemCreateInfo(25);
             var (createdAt3, _) = SeedDataHelper.GetSystemCreateInfo(20);
-            var (createdAt4, _) = SeedDataHelper.GetSystemCreateInfo(15);
             var (createdAt5, _) = SeedDataHelper.GetSystemCreateInfo(10);
 
             var paymentMethods = new[]
             {
                 new PaymentMethod
                 {
+                    Code = "CASH",
                     Name = "現金",
                     IsDefault = true, // 現金設為預設付款方式
                     Status = EntityStatus.Active,
@@ -42,6 +41,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new PaymentMethod
                 {
+                    Code = "BANK",
                     Name = "轉帳",
                     IsDefault = false,
                     Status = EntityStatus.Active,
@@ -50,6 +50,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 },
                 new PaymentMethod
                 {
+                    Code = "CHECK",
                     Name = "支票",
                     IsDefault = false,
                     Status = EntityStatus.Active,

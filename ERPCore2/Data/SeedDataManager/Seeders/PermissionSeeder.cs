@@ -31,7 +31,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             {
                 // 系統管理權限 (請勿刪除，此為最高權限)
                 new Permission { Code = "System.Admin", Name = "系統管理", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "系統最高管理權限，擁有所有功能存取權限" },
-                new Permission {Code ="Company.Read", Name = "檢視公司", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視公司基本資料與相關資訊"},
+                new Permission { Code = "Company.Read", Name = "檢視公司", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視公司基本資料與相關資訊"},
                 new Permission { Code = "SystemControl.Read", Name = "檢視系統控制", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視系統設定與控制功能" },
                 new Permission { Code = "PaperSetting.Read", Name = "檢視紙張設定", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視紙張設定基本資料與相關資訊" },
                 new Permission { Code = "PrinterSetting.Read", Name = "檢視印表機設定", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視印表機設定基本資料與相關資訊" },
@@ -47,7 +47,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 // 供應商管理權限
                 new Permission { Code = "Supplier.Read", Name = "檢視供應商", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視供應商基本資料與相關資訊" },
                 
-                // 員工相關管理權限 (根據資料夾內容排列)
+                // 員工相關管理權限
                 new Permission { Code = "Employee.Read", Name = "檢視員工", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視員工基本資料與組織架構" },
                 new Permission { Code = "EmployeeEdit_Account_Password.Read", Name = "編輯員工帳號密碼", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "編輯員工系統帳號、密碼與角色設定權限" },
                 new Permission { Code = "Department.Read", Name = "檢視部門", Status = EntityStatus.Active, CreatedAt = DateTime.Now, CreatedBy = "System", Remarks = "檢視公司部門組織架構資料" },

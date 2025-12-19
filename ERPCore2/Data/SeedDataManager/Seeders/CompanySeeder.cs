@@ -42,7 +42,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Status = EntityStatus.Active,
                     CreatedAt = currentTime,
                     CreatedBy = createdBy,
-                    Remarks = "預設公司資料"
+                    Remarks = ""
                 }
             };
 
