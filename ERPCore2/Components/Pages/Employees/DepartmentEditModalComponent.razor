@@ -16,6 +16,9 @@
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           DataLoader="@LoadDepartmentData"
                           AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
@@ -40,6 +43,9 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<Employee> availableManagers = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
 
     // ===== 生命週期 =====
     
@@ -112,6 +118,21 @@
         {
             // 載入可選擇的主管員工列表
             availableManagers = await DepartmentService.GetAvailableManagersAsync();
+            
+            // 使用 AutoCompleteConfigHelper 建立配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Department>()
+                .AddFieldWithMultipleSearchProperties<Employee>(
+                    nameof(Department.ManagerId),
+                    "Name",
+                    availableManagers,
+                    new[] { "Name", "Code" })
+                .Build();
+            
+            // 重新初始化表單欄位，確保下拉選項已更新
+            InitializeFormFields();
+            
+            // 觸發 UI 更新
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -179,13 +200,6 @@
     {
         try
         {
-            // 準備主管選項
-            var managerOptions = availableManagers.Select(e => new SelectOption
-            {
-                Text = $"{e.Code} - {e.Name}".Trim(),
-                Value = e.Id.ToString()
-            }).ToList();
-
             formFields = new List<FormFieldDefinition>
             {
                 // 基本資訊區段
@@ -196,7 +210,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入部門代碼",
                     IsRequired = true,
-                    HelpText = "部門的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "部門的唯一識別代碼,新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
@@ -211,9 +225,9 @@
                 {
                     PropertyName = nameof(Department.ManagerId),
                     Label = "部門主管",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇部門主管",
-                    Options = managerOptions,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇部門主管",
+                    MinSearchLength = 0, // 允許空白搜尋以顯示所有選項
                     HelpText = "選擇負責管理此部門的員工"
                 },
 

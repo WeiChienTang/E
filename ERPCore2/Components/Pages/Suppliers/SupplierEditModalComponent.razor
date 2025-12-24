@@ -256,7 +256,8 @@
                     IsRequired = false,
                     MaxLength = 50,
                     HelpText = "公司地址",
-                    ContainerCssClass = "col-4"
+                    ContainerCssClass = "col-4",
+                    ActionButtons = await GetSupplierAddressActionButtonsAsync()
                 },
                 new()
                 {
@@ -548,7 +549,7 @@
         {
             new GenericEditModalComponent<Supplier, ISupplierService>.CustomModule
             {
-                Title = "供應商品管理",
+                Title = "",
                 Order = 1,
                 Content = CreateProductSupplierContent()
             }
@@ -647,6 +648,52 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"匯入發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 產生公司地址操作按鈕 - 同聯絡地址
+    /// </summary>
+    private Task<List<FieldActionButton>> GetSupplierAddressActionButtonsAsync()
+    {
+        var buttons = new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "複製",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將聯絡地址複製到公司地址",
+                OnClick = async () => await CopyContactAddressToSupplierAddress(),
+                IsDisabled = false
+            }
+        };
+        
+        return Task.FromResult(buttons);
+    }
+
+    /// <summary>
+    /// 將聯絡地址複製到公司地址欄位
+    /// </summary>
+    private async Task CopyContactAddressToSupplierAddress()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                // 複製聯絡地址到公司地址
+                editModalComponent.Entity.SupplierAddress = editModalComponent.Entity.ContactAddress;
+                
+                // 通知 UI 更新
+                StateHasChanged();
+                
+                // 顯示成功訊息
+                await NotificationService.ShowSuccessAsync("已將聯絡地址複製到公司地址");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製聯絡地址時發生錯誤：{ex.Message}");
         }
     }
 

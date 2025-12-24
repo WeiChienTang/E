@@ -1,5 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using Microsoft.EntityFrameworkCore;
@@ -222,7 +223,9 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Employees
-                    .Where(e => e.IsSystemUser)
+                    .Where(e => e.Status == EntityStatus.Active && 
+                                e.EmploymentStatus == EmployeeStatus.Active &&
+                                e.Account != "admin") // 排除系統預設管理員帳號
                     .OrderBy(e => e.Code)
                     .ToListAsync();
             }
