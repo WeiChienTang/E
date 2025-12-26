@@ -2,6 +2,7 @@
 @inject ISupplierService SupplierService
 @inject IProductSupplierService ProductSupplierService
 @inject IProductService ProductService
+@inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 
@@ -23,13 +24,23 @@
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
+                          ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadSupplierData"
                           SaveHandler="@SaveSupplier"
                           OnSaveSuccess="@OnSaveSuccess"
                           RequiredPermission="Supplier.Read"
                           OnCancel="@OnCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()" />
+
+@* 付款方式編輯 Modal *@
+<PaymentMethodEditModalComponent @ref="paymentMethodEditModal"
+                                IsVisible="@paymentMethodModalManager.IsModalVisible"
+                                IsVisibleChanged="@paymentMethodModalManager.HandleModalVisibilityChangedAsync"
+                                PaymentMethodId="@paymentMethodModalManager.SelectedEntityId"
+                                OnPaymentMethodSaved="@OnPaymentMethodSavedWrapper"
+                                OnCancel="@paymentMethodModalManager.HandleModalCancelAsync" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -51,6 +62,16 @@
     private List<ProductSupplier> deletedProductSuppliers = new();
     private List<Product> availableProducts = new();
     private bool isProductSupplierDataReady = false;
+    
+    // 付款方式選項
+    private List<PaymentMethod> availablePaymentMethods = new();
+    
+    // Modal Manager 集合
+    private ModalManagerCollection? modalManagers;
+    
+    // 付款方式編輯 Modal 相關變數 - 使用泛型管理器
+    private PaymentMethodEditModalComponent? paymentMethodEditModal;
+    private RelatedEntityModalManager<PaymentMethod> paymentMethodModalManager = default!;
 
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
@@ -78,7 +99,18 @@
     {
         try
         {
-            // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
+            // 使用 ModalManagerInitHelper 初始化所有 Manager
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Supplier, ISupplierService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<PaymentMethod>(nameof(Supplier.PaymentMethodId), "付款方式")
+                .Build();
+            
+            // 取得個別 Manager 供組件使用
+            paymentMethodModalManager = modalManagers.Get<PaymentMethod>(nameof(Supplier.PaymentMethodId));
         }
         catch (Exception)
         {
@@ -104,20 +136,22 @@
         }
     }
 
-    private Task LoadAdditionalDataAsync()
+    private async Task LoadAdditionalDataAsync()
     {
         try
         {
-            // 配置 AutoComplete (目前廠商沒有 AutoComplete 欄位,保留空配置以便未來擴充)
-            autoCompleteConfig = new AutoCompleteConfigBuilder<Supplier>()
-                .Build();
+            // 載入可選擇的付款方式列表
+            availablePaymentMethods = await PaymentMethodService.GetAllAsync();
             
-            return Task.CompletedTask;
+            // 配置 AutoComplete
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Supplier>()
+                .AddField(nameof(Supplier.PaymentMethodId), "Name", availablePaymentMethods)
+                .Build();
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("載入廠商編輯相關資料時發生錯誤");
-            return Task.CompletedTask;
+            availablePaymentMethods = new List<PaymentMethod>();
         }
     }
 
@@ -140,12 +174,12 @@
                 new()
                 {
                     PropertyName = nameof(Supplier.CompanyName),
-                    Label = "公司名稱",
+                    Label = "廠商名稱",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入公司名稱",
+                    Placeholder = "請輸入廠商名稱",
                     IsRequired = false,
                     MaxLength = 100,
-                    HelpText = "廠商的正式公司名稱（公司名稱、負責人或聯絡人至少需填寫一項）"
+                    HelpText = "廠商的正式廠商名稱（廠商名稱、負責人或聯絡人至少需填寫一項）"
                 },
                 new()
                 {
@@ -155,7 +189,8 @@
                     Placeholder = "請輸入聯絡人姓名",
                     IsRequired = false,
                     MaxLength = 50,
-                    HelpText = "主要聯絡人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
+                    HelpText = "主要聯絡人姓名（廠商名稱、負責人或聯絡人至少需填寫一項）",
+                    ActionButtons = await GetContactPersonActionButtonsAsync()
                 },
                 new()
                 {
@@ -174,7 +209,7 @@
                     Placeholder = "請輸入負責人姓名",
                     IsRequired = false,
                     MaxLength = 10,
-                    HelpText = "公司負責人姓名（公司名稱、負責人或聯絡人至少需填寫一項）"
+                    HelpText = "公司負責人姓名（廠商名稱、負責人或聯絡人至少需填寫一項）"
                 },
                 new()
                 {
@@ -200,11 +235,9 @@
                 {
                     PropertyName = nameof(Supplier.MobilePhone),
                     Label = "行動電話",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入行動電話",
-                    IsRequired = false,
-                    MaxLength = 20,
-                    HelpText = "聯絡人行動電話"
+                    FieldType = FormFieldType.MobilePhone,
+                    Placeholder = "0912-345-678",
+                    HelpText = "聯絡人行動電話（10碼，以09開頭）"
                 },
                 new()
                 {
@@ -261,13 +294,14 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Supplier.PaymentMethod),
+                    PropertyName = nameof(Supplier.PaymentMethodId),
                     Label = "付款方式",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入付款方式",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇付款方式",
                     IsRequired = false,
-                    MaxLength = 10,
-                    HelpText = "客戶的付款方式（例如：現金、支票、匯款等）"
+                    MinSearchLength = 0,
+                    HelpText = "廠商的付款方式（例如：現金、支票、匯款等）",
+                    ActionButtons = await GetPaymentMethodActionButtonsAsync()
                 },
                 new()
                 {
@@ -282,9 +316,9 @@
                 new FormFieldDefinition()
                 {
                     PropertyName = nameof(Supplier.SupplierContactPhone),
-                    Label = "聯絡電話",
+                    Label = "廠商電話",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入聯絡電話",
+                    Placeholder = "請輸入廠商電話",
                     IsRequired = false,
                     MaxLength = 20,
                     HelpText = "負責人或是公司聯絡電話"
@@ -312,7 +346,7 @@
                     s => s.MobilePhone,
                     s => s.Email)
                 .AddToSection(FormSectionNames.PaymentInfo,
-                    s => s.PaymentMethod,
+                    s => s.PaymentMethodId,
                     s => s.PaymentTerms)
                 .AddToSection(FormSectionNames.OtherInfo,
                     s => s.Remarks)
@@ -566,10 +600,9 @@
                 <div class="d-flex justify-content-between align-items-center">
                     @if (SupplierId.HasValue && SupplierId.Value > 0)
                     {
-                        <GenericButtonComponent Text="匯入"
+                        <GenericButtonComponent Text="匯入歷史採購商品"
                                               Variant="ButtonVariant.Blue"
-                                              Size="ButtonSize.Small"
-                                              IconClass="bi bi-upload"
+                                              Size="ButtonSize.Small"                                              
                                               OnClick="@HandleBatchImportFromHistory" />
                     }
                 </div>
@@ -652,6 +685,65 @@
     }
 
     /// <summary>
+    /// 產生聯絡人操作按鈕 - 複製負責人資料
+    /// </summary>
+    private Task<List<FieldActionButton>> GetContactPersonActionButtonsAsync()
+    {
+        var buttons = new List<FieldActionButton>
+        {
+            new FieldActionButton
+            {
+                Text = "複製",
+                Variant = "OutlinePrimary",
+                Size = "Small",
+                Title = "將負責人姓名與聯絡電話複製到聯絡人資訊",
+                OnClick = async () => await CopyResponsiblePersonToContactPerson(),
+                IsDisabled = false
+            }
+        };
+        
+        return Task.FromResult(buttons);
+    }
+
+    /// <summary>
+    /// 將負責人資料複製到聯絡人欄位（包含姓名與電話）
+    /// </summary>
+    private async Task CopyResponsiblePersonToContactPerson()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                var entity = editModalComponent.Entity;
+                
+                // 檢查是否有資料可複製
+                if (string.IsNullOrWhiteSpace(entity.ResponsiblePerson) && 
+                    string.IsNullOrWhiteSpace(entity.SupplierContactPhone))
+                {
+                    await NotificationService.ShowWarningAsync("負責人姓名與聯絡電話皆為空，無資料可複製");
+                    return;
+                }
+                
+                // 複製負責人姓名到聯絡人
+                entity.ContactPerson = entity.ResponsiblePerson;
+                
+                // 複製負責人聯絡電話到聯絡人電話
+                entity.ContactPhone = entity.SupplierContactPhone;
+                
+                // 通知 UI 更新
+                StateHasChanged();
+                
+                // 顯示成功訊息
+                await NotificationService.ShowSuccessAsync("已將負責人資料複製到聯絡人資訊");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製負責人資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// 產生公司地址操作按鈕 - 同聯絡地址
     /// </summary>
     private Task<List<FieldActionButton>> GetSupplierAddressActionButtonsAsync()
@@ -681,8 +773,17 @@
         {
             if (editModalComponent?.Entity != null)
             {
+                var entity = editModalComponent.Entity;
+                
+                // 檢查是否有資料可複製
+                if (string.IsNullOrWhiteSpace(entity.ContactAddress))
+                {
+                    await NotificationService.ShowWarningAsync("聯絡地址為空，無資料可複製");
+                    return;
+                }
+                
                 // 複製聯絡地址到公司地址
-                editModalComponent.Entity.SupplierAddress = editModalComponent.Entity.ContactAddress;
+                entity.SupplierAddress = entity.ContactAddress;
                 
                 // 通知 UI 更新
                 StateHasChanged();
@@ -694,6 +795,57 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"複製聯絡地址時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 配置 Modal 管理器
+    /// </summary>
+    private Dictionary<string, object> GetModalManagers()
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(Supplier.PaymentMethodId), paymentMethodModalManager }
+        };
+    }
+    
+    /// <summary>
+    /// 使用統一 Helper 產生付款方式操作按鈕
+    /// </summary>
+    private async Task<List<FieldActionButton>> GetPaymentMethodActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent, 
+            paymentMethodModalManager, 
+            nameof(Supplier.PaymentMethodId)
+        );
+    }
+    
+    /// <summary>
+    /// 包裝付款方式儲存事件以符合原有介面
+    /// </summary>
+    private async Task OnPaymentMethodSavedWrapper(PaymentMethod savedPaymentMethod)
+    {
+        await paymentMethodModalManager.HandleEntitySavedAsync(savedPaymentMethod, shouldAutoSelect: true);
+    }
+    
+    /// <summary>
+    /// 處理欄位值變更事件
+    /// </summary>
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 使用統一 Helper 處理付款方式欄位變更
+            if (fieldChange.PropertyName == nameof(Supplier.PaymentMethodId))
+            {
+                await ActionButtonHelper.UpdateFieldActionButtonsAsync(
+                    paymentMethodModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+            }
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("欄位變更處理時發生錯誤");
         }
     }
 

@@ -280,11 +280,9 @@
             {
                 PropertyName = nameof(Customer.MobilePhone),
                 Label = "行動電話",
-                FieldType = FormFieldType.Text,
-                Placeholder = "請輸入行動電話",
-                IsRequired = false,
-                MaxLength = 20,
-                HelpText = "聯絡人行動電話"
+                FieldType = FormFieldType.MobilePhone,
+                Placeholder = "0912-345-678",
+                HelpText = "聯絡人行動電話（10碼，以09開頭）"
             },
             new()
             {
@@ -368,6 +366,8 @@
                 FieldType = FormFieldType.Number,
                 Placeholder = "收款日1-30，30 表示每月最後一天",
                 IsRequired = false,
+                Min = 0,
+                Max = 30,
                 HelpText = "每月固定收款日期 (1-30)，輸入 0 表示月底收款。例如：12 表示每月12日、30 表示每月最後一天",
             },
             new FormFieldDefinition()

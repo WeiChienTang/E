@@ -222,9 +222,10 @@
                     {
                         // 可編輯模式：保持原有的 number input（不使用千分位）
                         var formattedNumberValue = FormatNumberForInput(numberValue);
+                        var numberFieldId = $"number_{field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                         <input type="number"
                                class="@inputClass"
-                               id="@field.PropertyName"
+                               id="@numberFieldId"
                                name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
                                placeholder="@field.Placeholder"
                                disabled="@field.IsDisabled"
@@ -234,7 +235,8 @@
                                max="@field.Max"
                                step="@field.Step"
                                value="@formattedNumberValue"
-                               @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
+                               @onchange="@(e => SetNumericPropertyValue(Model, field, e.Value?.ToString()))"
+                               @onfocus="@(async () => await InitNumberInputRangeLimit(numberFieldId, field.Min, field.Max))" />
                     }
                     break;
                     
@@ -933,6 +935,37 @@
         }
     }
 
+    // 追蹤已初始化的數字輸入欄位
+    private HashSet<string> initializedNumberInputs = new();
+    
+    /// <summary>
+    /// 初始化數字輸入欄位的即時範圍限制
+    /// </summary>
+    private async Task InitNumberInputRangeLimit(string elementId, decimal? min, decimal? max)
+    {
+        try
+        {
+            // 避免重複初始化
+            if (initializedNumberInputs.Contains(elementId))
+                return;
+            
+            // 只有當有設定 min 或 max 時才初始化
+            if (min.HasValue || max.HasValue)
+            {
+                await JSRuntime.InvokeVoidAsync("NumberInputHelper.initRangeLimitById", 
+                    elementId, 
+                    min.HasValue ? (object)(double)min.Value : null, 
+                    max.HasValue ? (object)(double)max.Value : null);
+                
+                initializedNumberInputs.Add(elementId);
+            }
+        }
+        catch
+        {
+            // 靜默處理 JS 互操作錯誤
+        }
+    }
+
     public void Dispose()
     {
         // 清理所有計時器
@@ -1061,6 +1094,46 @@
         }
         
         return currentValue;
+    }
+
+    /// <summary>
+    /// 處理數字欄位的值設定，包含 Min/Max 範圍驗證
+    /// </summary>
+    private void SetNumericPropertyValue(TModel model, FormFieldDefinition field, string? value)
+    {
+        if (model == null || field == null || string.IsNullOrEmpty(field.PropertyName))
+            return;
+
+        // 如果值為空或空白，直接設定為 null
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            SetPropertyValue(model, field.PropertyName, null);
+            return;
+        }
+
+        // 嘗試解析數值
+        if (decimal.TryParse(value, out decimal numericValue))
+        {
+            // 進行範圍驗證
+            if (field.Min.HasValue && numericValue < field.Min.Value)
+            {
+                numericValue = field.Min.Value;
+            }
+            if (field.Max.HasValue && numericValue > field.Max.Value)
+            {
+                numericValue = field.Max.Value;
+            }
+
+            SetPropertyValue(model, field.PropertyName, numericValue.ToString());
+            
+            // 強制 UI 更新以反映修正後的值
+            StateHasChanged();
+        }
+        else
+        {
+            // 無法解析則設為 null
+            SetPropertyValue(model, field.PropertyName, null);
+        }
     }
 
     private async void SetPropertyValue(TModel model, string propertyName, object? value)

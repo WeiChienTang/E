@@ -65,9 +65,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "職稱")]
         public string? JobTitle { get; set; }
         
-        [MaxLength(50, ErrorMessage = "付款方式不可超過50個字元")]
         [Display(Name = "付款方式")]
-        public string? PaymentMethod { get; set; }
+        public int? PaymentMethodId { get; set; }
+        
+        public PaymentMethod? PaymentMethod { get; set; }
         
         [MaxLength(100, ErrorMessage = "付款條件不可超過100個字元")]
         [Display(Name = "付款條件")]

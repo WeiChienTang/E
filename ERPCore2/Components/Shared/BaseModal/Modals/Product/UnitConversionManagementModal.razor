@@ -3,7 +3,9 @@
 @inject INotificationService NotificationService
 
 <BaseModalComponent Title="單位換算管理"
+                   Icon="bi bi-arrow-left-right"
                    Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                    IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
                    ShowFooter="false"
@@ -29,14 +31,24 @@
         <!-- 資料表 -->
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
-                <InteractiveTableComponent TItem="UnitConversionItem"
-                                         Items="@conversions"
-                                         ColumnDefinitions="@GetColumnDefinitions()"
-                                         EnableAutoEmptyRow="true"
-                                         CreateEmptyItem="@CreateEmptyConversion"
-                                         ShowRowNumbers="false"
-                                         EmptyMessage="尚無換算規則，請在下方空行輸入新規則"
-                                         OnItemDelete="@HandleItemDelete" />
+                @if (isDataLoaded)
+                {
+                    <InteractiveTableComponent TItem="UnitConversionItem"
+                                             Items="@conversions"
+                                             ColumnDefinitions="@GetColumnDefinitions()"
+                                             EnableAutoEmptyRow="true"
+                                             CreateEmptyItem="@CreateEmptyConversion"
+                                             ShowRowNumbers="false"
+                                             EmptyMessage="尚無換算規則，請在下方空行輸入新規則"
+                                             OnItemDelete="@HandleItemDelete" />
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        <span class="text-muted">載入中...</span>
+                    </div>
+                }
             </div>
         </div>
     </BodyContent>
@@ -56,6 +68,7 @@
     private List<UnitConversionItem> conversions = new();
     private List<Unit> allUnits = new();
     private List<UnitConversion> pendingDeletions = new();  // 待刪除的現有實體
+    private bool isDataLoaded = false;  // 資料是否已載入完成
     
     // === 包裝類別（使用 nullable 類型確保空值判斷正確）===
     public class UnitConversionItem
@@ -76,12 +89,20 @@
         {
             await LoadDataAsync();
         }
+        else
+        {
+            // Modal 關閉時重置狀態，確保下次開啟時重新載入
+            isDataLoaded = false;
+        }
     }
     
     private async Task LoadDataAsync()
     {
         try
         {
+            // 重置載入狀態
+            isDataLoaded = false;
+            
             // 載入單位資料
             allUnits = await UnitService.GetAllAsync();
             
@@ -95,6 +116,9 @@
                 IsActive = c.IsActive,
                 ExistingEntity = c
             }).ToList();
+            
+            // 標記資料已載入完成
+            isDataLoaded = true;
         }
         catch (Exception ex)
         {

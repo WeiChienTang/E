@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo Cleaning old publish files...
 if exist "publish" rmdir /s /q "publish"
 
