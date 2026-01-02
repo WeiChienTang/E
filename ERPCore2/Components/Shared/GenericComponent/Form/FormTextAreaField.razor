@@ -1,0 +1,35 @@
+@* 文字區域欄位子組件 *@
+@using ERPCore2.Components.Shared.Forms
+
+<textarea class="@InputCssClass"
+          id="@Field.PropertyName"
+          name="@($"{Field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
+          placeholder="@Field.Placeholder"
+          readonly="@Field.IsReadOnly"
+          disabled="@Field.IsDisabled"
+          autocomplete="@FormConstants.AutoCompleteAttributes.Off"
+          rows="@(Field.Rows ?? FormConstants.Defaults.TextAreaRows)"
+          maxlength="@Field.MaxLength"
+          minlength="@Field.MinLength"
+          @onchange="HandleChange">@Value</textarea>
+
+@code {
+    [Parameter, EditorRequired]
+    public FormFieldDefinition Field { get; set; } = default!;
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = FormConstants.CssClasses.FormControl;
+
+    private string InputCssClass => CssClass;
+
+    private async Task HandleChange(ChangeEventArgs e)
+    {
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+    }
+}

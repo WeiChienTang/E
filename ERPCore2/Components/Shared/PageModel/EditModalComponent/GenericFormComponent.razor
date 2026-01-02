@@ -1,14 +1,14 @@
 @* 通用表單組件 - 基於配置驅動的動態表單 *@
+@* 使用子組件架構重構版本 *@
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.Forms
 @using ERPCore2.Components.Shared.GenericComponent.Button
+@using ERPCore2.Components.Shared.GenericComponent.Form
 @using ERPCore2.Helpers.NumericHelpers
-@inject IJSRuntime JSRuntime
 @typeparam TModel
-@implements IDisposable
 
 <div class="generic-form-container">
     @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
@@ -107,7 +107,7 @@
         }
         else
         {
-            <div class="row g-1"> @* 縮小欄位間距從 g-3 改為 g-1 *@
+            <div class="row g-1">
                 @if (FieldDefinitions != null)
                 {
                     @foreach (var field in FieldDefinitions)
@@ -122,7 +122,9 @@
 
 @code
 {
-    // 渲染欄位標記的輔助方法
+    /// <summary>
+    /// 渲染欄位標記的輔助方法
+    /// </summary>
     private RenderFragment RenderFieldMarkup(FormFieldDefinition field) => __builder =>
     {
         var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
@@ -131,7 +133,7 @@
         <div class="@containerCssClass">
             @if (!string.IsNullOrEmpty(field.Label) && field.FieldType != FormFieldType.Checkbox)
             {
-                <label class="form-label fw-bold" for="@field.PropertyName" title="@field.HelpText">
+                <label class="@FormConstants.CssClasses.FormLabel" for="@field.PropertyName" title="@field.HelpText">
                     @field.Label
                     @if (field.IsRequired)
                     {
@@ -143,8 +145,8 @@
             @* 判斷是否需要包裝 input 與按鈕的容器 *@
             @if (hasActionButtons && ShouldWrapWithActionButtons(field.FieldType))
             {
-                var multipleButtonsClass = field.ActionButtons?.Count > 1 ? "multiple-buttons" : "";
-                <div class="position-relative input-with-action-buttons @multipleButtonsClass">
+                var multipleButtonsClass = field.ActionButtons?.Count > 1 ? FormConstants.CssClasses.MultipleButtons : "";
+                <div class="@FormConstants.CssClasses.PositionRelative @FormConstants.CssClasses.InputWithActionButtons @multipleButtonsClass">
                     @RenderInputField(field, hasActionButtons)
                     
                     @* 在 Input 右側渲染圖示按鈕 *@
@@ -156,7 +158,7 @@
                                     title="@(actionButton.Title ?? actionButton.Text)"
                                     disabled="@actionButton.IsDisabled"
                                     @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">
-                                <i class="@GetActionButtonIcon(actionButton.Text)"></i>
+                                <i class="@FormConstants.GetIconForButtonText(actionButton.Text)"></i>
                             </button>
                         }
                     </div>
@@ -168,1232 +170,127 @@
             }
         </div>
     };
-    
-    // 新增：判斷欄位類型是否應該包裝 ActionButtons
-    private bool ShouldWrapWithActionButtons(FormFieldType fieldType)
-    {
-        return fieldType switch
-        {
-            FormFieldType.Text => true,
-            FormFieldType.Email => true,
-            FormFieldType.Number => true,
-            FormFieldType.AutoComplete => true,
-            FormFieldType.Select => true,
-            FormFieldType.MobilePhone => true,
-            _ => false
-        };
-    }
-    
-    // 新增：根據按鈕文字返回對應的圖示
-    private string GetActionButtonIcon(string buttonText)
-    {
-        return buttonText switch
-        {
-            "新增" => "fas fa-plus-circle",
-            "編輯" => "fas fa-edit",
-            "複製" => "fas fa-copy",
-            "同產編" => "fas fa-copy",
-            "前往" => "fas fa-external-link-alt",
-            "刪除" => "fas fa-trash-alt",
-            "搜尋" => "fas fa-search",
-            _ => "fas fa-ellipsis-h"
-        };
-    }
-    
-    // 新增：根據 Variant 返回顏色 class
-    private string GetActionButtonColorClass(string variant)
-    {
-        return variant switch
-        {
-            "OutlinePrimary" or "Primary" => "primary",
-            "OutlineSecondary" or "Secondary" => "secondary",
-            "OutlineSuccess" or "Success" => "success",
-            "OutlineDanger" or "Danger" => "danger",
-            "OutlineWarning" or "Warning" => "warning",
-            "OutlineInfo" or "Info" => "info",
-            _ => "primary"
-        };
-    }
-    
-    // 新增：渲染輸入欄位的通用方法
+
+    /// <summary>
+    /// 渲染輸入欄位 - 使用子組件
+    /// </summary>
     private RenderFragment RenderInputField(FormFieldDefinition field, bool hasActionButtons) => __builder =>
     {
-        var inputClass = GetInputCssClass(field);
-        if (hasActionButtons)
-        {
-            inputClass += " has-action-buttons";
-        }
+        var cssClass = GetInputCssClass(field);
         
         @switch (field.FieldType)
-            {
-                case FormFieldType.Text:
-                case FormFieldType.Email:
-                case FormFieldType.Password:
-                    <input type="@GetInputType(field.FieldType)"
-                           class="@inputClass"
-                           id="@field.PropertyName"
-                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                           placeholder="@field.Placeholder"
-                           readonly="@field.IsReadOnly"
-                           disabled="@field.IsDisabled"
-                           autocomplete="@GetAutocompleteValue(field)"
-                           required="@field.IsRequired"
-                           maxlength="@field.MaxLength"
-                           minlength="@field.MinLength"
-                           value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
-                           @oninput="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
-                    break;
+        {
+            case FormFieldType.Text:
+            case FormFieldType.Email:
+            case FormFieldType.Password:
+                <FormTextField Field="@field"
+                               Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                               ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                               HasActionButtons="@hasActionButtons"
+                               CssClass="@cssClass" />
+                break;
+            
+            case FormFieldType.MobilePhone:
+                <FormMobilePhoneField Field="@field"
+                                      Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                                      ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                                      HasActionButtons="@hasActionButtons"
+                                      CssClass="@cssClass" />
+                break;
                 
-                case FormFieldType.MobilePhone:
-                    @* 台灣手機號碼專用欄位：固定 10 碼，開頭為 09，只允許數字，自動格式化為 0912-345-678 *@
-                    var mobileFieldId = $"mobile_{field.PropertyName}";
-                    <input type="tel"
-                           class="@inputClass"
-                           id="@mobileFieldId"
-                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                           placeholder="@(field.Placeholder ?? "0912-345-678")"
-                           readonly="@field.IsReadOnly"
-                           disabled="@field.IsDisabled"
-                           autocomplete="tel"
-                           required="@field.IsRequired"
-                           maxlength="12"
-                           inputmode="numeric"
-                           title="請輸入有效的台灣手機號碼（10碼，以09開頭）"
-                           value="@FormatMobilePhoneDisplay(GetPropertyValue(Model, field.PropertyName)?.ToString())"
-                           @oninput="@(async e => await HandleMobilePhoneInputWithJS(mobileFieldId, field.PropertyName))" />
-                    break;
-                    
-                case FormFieldType.Number:
-                    var numberValue = GetPropertyValue(Model, field.PropertyName);
-                    
-                    if (field.IsReadOnly)
-                    {
-                        // 唯讀模式：使用 text input + 千分位格式（保留邊框樣式）
-                        var displayValue = FormatNumberForDisplay(numberValue, field.DecimalPlaces, field.UseThousandsSeparator);
-                        <input type="text"
-                               class="@inputClass"
-                               id="@field.PropertyName"
-                               name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                               readonly
-                               tabindex="-1"
-                               value="@displayValue" />
-                    }
-                    else
-                    {
-                        // 可編輯模式：保持原有的 number input（不使用千分位）
-                        var formattedNumberValue = FormatNumberForInput(numberValue);
-                        var numberFieldId = $"number_{field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-                        <input type="number"
-                               class="@inputClass"
-                               id="@numberFieldId"
-                               name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                               placeholder="@field.Placeholder"
-                               disabled="@field.IsDisabled"
-                               autocomplete="off"
-                               required="@field.IsRequired"
-                               min="@field.Min"
-                               max="@field.Max"
-                               step="@field.Step"
-                               value="@formattedNumberValue"
-                               @onchange="@(e => SetNumericPropertyValue(Model, field, e.Value?.ToString()))"
-                               @onfocus="@(async () => await InitNumberInputRangeLimit(numberFieldId, field.Min, field.Max))" />
-                    }
-                    break;
-                    
-                case FormFieldType.Date:
-                    var dateValue = GetPropertyValue(Model, field.PropertyName);
-                    <input type="date"
-                           class="@inputClass"
-                           id="@field.PropertyName"
-                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                           readonly="@field.IsReadOnly"
-                           disabled="@field.IsDisabled"
-                           autocomplete="off"
-                           min="1900-01-01"
-                           max="2099-12-31"
-                           value="@(dateValue is DateTime dt ? dt.ToString("yyyy-MM-dd") : "")"
-                           @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
-                    break;
-                    
-                case FormFieldType.DateTime:
-                    var dateTimeValue = GetPropertyValue(Model, field.PropertyName);
-                    <input type="datetime-local"
-                           class="@inputClass"
-                           id="@field.PropertyName"
-                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                           readonly="@field.IsReadOnly"
-                           disabled="@field.IsDisabled"
-                           autocomplete="off"
-                           value="@(dateTimeValue is DateTime dtValue ? dtValue.ToString("yyyy-MM-ddTHH:mm") : "")"
-                           @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
-                    break;
-                    
-                case FormFieldType.TextArea:
-                    <textarea class="@inputClass"
-                              id="@field.PropertyName"
-                              name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                              placeholder="@field.Placeholder"
-                              readonly="@field.IsReadOnly"
-                              disabled="@field.IsDisabled"
-                              autocomplete="off"
-                              rows="@(field.Rows ?? 3)"
-                              maxlength="@field.MaxLength"
-                              minlength="@field.MinLength"
-                              @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))">@GetPropertyValue(Model, field.PropertyName)?.ToString()</textarea>
-                    break;
-                    
-                case FormFieldType.TextAreaWithCharacterCount:
-                    <CharacterCountTextAreaComponent 
-                        Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
-                        ValueChanged="@(value => SetPropertyValue(Model, field.PropertyName, value))"
-                        Id="@field.PropertyName"
-                        CssClass="@inputClass"
-                        Placeholder="@field.Placeholder"
-                        HelpText="@field.HelpText"
-                        IsReadOnly="@field.IsReadOnly"
-                        IsDisabled="@field.IsDisabled"
-                        Rows="@(field.Rows ?? 3)"
-                        MaxCharacters="@(field.MaxLength ?? 500)"
-                        MaxBytes="@(field.MaxBytes ?? 500)" />
-                    break;
-                    
-                case FormFieldType.Select:
-                    var currentValueObj = GetPropertyValue(Model, field.PropertyName);
-                    var currentValue = currentValueObj?.ToString();
-                    if (currentValueObj != null && currentValueObj.GetType().IsEnum)
-                    {
-                        currentValue = ((int)currentValueObj).ToString();
-                    }
-                    <select class="@inputClass"
-                            id="@field.PropertyName"
-                            name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                            disabled="@(field.IsReadOnly || field.IsDisabled)"
-                            autocomplete="off"
-                            @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))">
-                        @if (field.Options != null)
-                        {
-                            @foreach (var option in field.Options)
-                            {
-                                <option value="@option.Value" selected="@(option.Value == currentValue)">@option.Text</option>
-                            }
-                        }
-                    </select>
-                    break;
-                    
-                case FormFieldType.Checkbox:
-                    var checkboxValue = GetPropertyValue(Model, field.PropertyName);
-                    var boolValue = checkboxValue is bool b && b;
-                    @* 顯示標籤在上方（與其他欄位一致的上下排列格式）*@
-                    <label class="form-label fw-bold" for="@field.PropertyName" title="@field.HelpText">
-                        @field.Label
-                    </label>
-                    <div class="form-check">
-                        <input type="checkbox"
-                               class="form-check-input"
-                               id="@field.PropertyName"
-                               name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                               disabled="@(field.IsReadOnly || field.IsDisabled)"
-                               autocomplete="off"
-                               checked="@boolValue"
-                               @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value))" />
-                    </div>
-                    break;
-                    
-                case FormFieldType.Radio:
-                    @if (field.Options != null)
-                    {
-                        var radioValue = GetPropertyValue(Model, field.PropertyName)?.ToString();
-                        var radioGroupName = field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
-                        @foreach (var option in field.Options)
-                        {
-                            <div class="form-check">
-                                <input type="radio"
-                                       class="form-check-input"
-                                       id="@($"{field.PropertyName}_{option.Value}")"
-                                       name="@radioGroupName"
-                                       value="@option.Value"
-                                       disabled="@(field.IsReadOnly || field.IsDisabled)"
-                                       autocomplete="off"
-                                       checked="@(option.Value == radioValue)"
-                                       @onchange="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
-                                <label class="form-check-label" for="@($"{field.PropertyName}_{option.Value}")">
-                                    @option.Text
-                                </label>
-                            </div>
-                        }
-                    }
-                    break;
-                    
-                case FormFieldType.AutoComplete:
-                    @RenderAutoCompleteFieldWithButtons(field, hasActionButtons)
-                    break;
-                    
-                default:
-                    <input type="text"
-                           class="@inputClass"
-                           id="@field.PropertyName"
-                           name="@(field.PropertyName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                           placeholder="@field.Placeholder"
-                           readonly="@field.IsReadOnly"
-                           disabled="@field.IsDisabled"
-                           autocomplete="off"
-                           value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
-                           @oninput="@(e => SetPropertyValue(Model, field.PropertyName, e.Value?.ToString()))" />
-                    break;
-            }
+            case FormFieldType.Number:
+                <FormNumberField Field="@field"
+                                 Value="@GetPropertyValue(Model, field.PropertyName)"
+                                 ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                                 HasActionButtons="@hasActionButtons"
+                                 CssClass="@cssClass" />
+                break;
+                
+            case FormFieldType.Date:
+            case FormFieldType.DateTime:
+                var dateValue = GetPropertyValue(Model, field.PropertyName);
+                <FormDateField Field="@field"
+                               Value="@(dateValue is DateTime dt ? dt : null)"
+                               ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                               HasActionButtons="@hasActionButtons"
+                               CssClass="@cssClass" />
+                break;
+                
+            case FormFieldType.TextArea:
+                <FormTextAreaField Field="@field"
+                                   Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                                   ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                                   CssClass="@cssClass" />
+                break;
+                
+            case FormFieldType.TextAreaWithCharacterCount:
+                <CharacterCountTextAreaComponent 
+                    Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                    ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                    Id="@field.PropertyName"
+                    CssClass="@cssClass"
+                    Placeholder="@field.Placeholder"
+                    HelpText="@field.HelpText"
+                    IsReadOnly="@field.IsReadOnly"
+                    IsDisabled="@field.IsDisabled"
+                    Rows="@(field.Rows ?? FormConstants.Defaults.TextAreaRows)"
+                    MaxCharacters="@(field.MaxLength ?? FormConstants.Defaults.MaxCharacters)"
+                    MaxBytes="@(field.MaxBytes ?? FormConstants.Defaults.MaxBytes)" />
+                break;
+                
+            case FormFieldType.Select:
+                <FormSelectField Field="@field"
+                                 Value="@GetPropertyValue(Model, field.PropertyName)"
+                                 ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                                 HasActionButtons="@hasActionButtons"
+                                 CssClass="@cssClass" />
+                break;
+                
+            case FormFieldType.Checkbox:
+                var checkboxValue = GetPropertyValue(Model, field.PropertyName);
+                <FormCheckboxField Field="@field"
+                                   Value="@(checkboxValue is bool b && b)"
+                                   ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))" />
+                break;
+                
+            case FormFieldType.Radio:
+                <FormRadioField Field="@field"
+                                Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                                ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))" />
+                break;
+                
+            case FormFieldType.AutoComplete:
+                <FormAutoCompleteField Field="@field"
+                                       Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                                       ValueChanged="@(value => HandleAutoCompleteFieldChanged(field.PropertyName, value))"
+                                       InitialDisplayValue="@GetAutoCompleteDisplayValue(field.PropertyName)"
+                                       HasActionButtons="@hasActionButtons"
+                                       CssClass="@cssClass" />
+                break;
+                
+            default:
+                <FormTextField Field="@field"
+                               Value="@GetPropertyValue(Model, field.PropertyName)?.ToString()"
+                               ValueChanged="@(value => HandleFieldChanged(field.PropertyName, value))"
+                               HasActionButtons="@hasActionButtons"
+                               CssClass="@cssClass" />
+                break;
+        }
     };
-    
-    // AutoComplete 欄位的渲染（因為比較複雜，單獨處理）- 帶 ActionButtons 支援
-    private RenderFragment RenderAutoCompleteFieldWithButtons(FormFieldDefinition field, bool hasActionButtons) => __builder =>
-    {
-        var fieldId = field.PropertyName;
-        var currentValue = GetPropertyValue(Model, field.PropertyName);
-        var displayValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, currentValue?.ToString() ?? "");
-        var inputClass = GetInputCssClass(field);
-        if (hasActionButtons)
-        {
-            inputClass += " has-action-buttons";
-        }
-        
-        <div class="position-relative">
-            <input type="text"
-                   class="@inputClass"
-                   id="@fieldId"
-                   name="@(fieldId + "_" + Guid.NewGuid().ToString("N").Substring(0, 8))"
-                   placeholder="@field.Placeholder"
-                   readonly="@field.IsReadOnly"
-                   disabled="@field.IsDisabled"
-                   autocomplete="off"
-                   maxlength="@field.MaxLength"
-                   minlength="@field.MinLength"
-                   value="@displayValue"
-                   @oninput="@(e => HandleAutoCompleteInputEvent(field, e.Value?.ToString() ?? ""))"
-                   @onfocus="@(() => HandleAutoCompleteFocus(field))"
-                   @onblur="@(async () => await HandleAutoCompleteBlur(field))"
-                   @onkeydown="@(async (e) => await HandleKeyDown(field, e))" />
-            
-            @if (!field.IsReadOnly && !field.IsDisabled)
-            {
-                @if (autoCompleteLoading.GetValueOrDefault(fieldId, false))
-                {
-                    <div class="position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);">
-                        <span class="spinner-border" style="width: 2rem; height: 2rem; border-width: 0.15em;"></span> @* 載入中指示器 *@
-                    </div>
-                }
-                
-                @if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && autoCompleteOptions.ContainsKey(fieldId))
-                {
-                    var options = autoCompleteOptions[fieldId];
-                    if (options.Any())
-                    {
-                        <div class="list-group position-absolute w-100" style="max-height: 200px; overflow-y: auto; z-index: 1000;">
-                            @for (int i = 0; i < options.Count; i++)
-                            {
-                                var index = i;
-                                var option = options[i];
-                                var isHighlighted = highlightedOptionIndex.GetValueOrDefault(fieldId, -1) == index;
-                                var cssClass = isHighlighted ? "list-group-item list-group-item-action active" : "list-group-item list-group-item-action";
-                                
-                                <button type="button"
-                                        class="@cssClass"
-                                        id="@($"{fieldId}_option_{index}")"
-                                        @onmousemove="@(() => { highlightedOptionIndex[fieldId] = index; keyboardNavigationActive[fieldId] = false; StateHasChanged(); })"
-                                        @onmousedown="@(async () => await SelectAutoCompleteOption(field, option))">
-                                    @option.Text
-                                </button>
-                            }
-                        </div>
-                    }
-                }
-            }
-        </div>
-    };
-}
 
-@code {
-    [Parameter] public TModel Model { get; set; } = default!;
-    [Parameter] public List<FormFieldDefinition>? FieldDefinitions { get; set; }
-    [Parameter] public Dictionary<string, string>? FieldSections { get; set; }
-    [Parameter] public EventCallback<TModel> OnFormSubmit { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
-    [Parameter] public EventCallback<(string PropertyName, object? Value)> OnFieldChanged { get; set; }
-    [Parameter] public bool IsSubmitting { get; set; } = false;
-    [Parameter] public bool ShowValidationSummary { get; set; } = true;
-    [Parameter] public string FieldContainerCssClass { get; set; } = "col-md-2";
-    
     /// <summary>
-    /// 是否啟用 Tab 佈局（當有多個區段時）
+    /// 處理欄位變更
     /// </summary>
-    [Parameter] public bool EnableTabLayout { get; set; } = true;
-
-    private EditForm? editForm;
-    
-    // Tab 相關狀態
-    private int _activeTabIndex = 0;
-    
-    // 自動完成相關狀態
-    private readonly Dictionary<string, List<SelectOption>> autoCompleteOptions = new();
-    private readonly Dictionary<string, bool> autoCompleteLoading = new();
-    private readonly Dictionary<string, bool> autoCompleteVisible = new();
-    private readonly Dictionary<string, Timer?> autoCompleteTimers = new();
-    private readonly Dictionary<string, string> autoCompleteDisplayValues = new();
-    private readonly HashSet<string> blurredFields = new(); // 追蹤失去焦點的欄位
-    
-    // 鍵盤導航狀態
-    private readonly Dictionary<string, int> highlightedOptionIndex = new();
-    private readonly Dictionary<string, bool> keyboardNavigationActive = new();
-
-    protected override void OnParametersSet()
+    private void HandleFieldChanged(string propertyName, object? value)
     {
-        // 初始化 AutoComplete 欄位的顯示值
-        if (FieldDefinitions != null && Model != null)
-        {
-            foreach (var field in FieldDefinitions.Where(f => f.FieldType == FormFieldType.AutoComplete))
-            {
-                var fieldId = field.PropertyName;
-                var value = GetPropertyValue(Model, field.PropertyName);
-                
-                if (value != null && !autoCompleteDisplayValues.ContainsKey(fieldId))
-                {
-                    // 對於新加載的資料，先設置 ID 值作為顯示值
-                    // 實際的顯示文字會在使用者與欄位互動時通過搜索獲取
-                    autoCompleteDisplayValues[fieldId] = "";
-                    
-                    // 如果我們能夠快速查找顯示文字，則設置它
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            if (field.SearchFunction != null)
-                            {
-                                // 嘗試使用空字符串搜索來獲取所有選項，然後找到匹配的項目
-                                var options = await field.SearchFunction("");
-                                var matchingOption = options.FirstOrDefault(o => o.Value == value.ToString());
-                                if (matchingOption != null)
-                                {
-                                    await InvokeAsync(() =>
-                                    {
-                                        autoCompleteDisplayValues[fieldId] = matchingOption.Text;
-                                        StateHasChanged();
-                                    });
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            // 靜默處理，保持原來的顯示值
-                        }
-                    });
-                }
-            }
-            
-            // 處理欄位的預設值
-            foreach (var field in FieldDefinitions)
-            {
-                if (field.DefaultValue != null)
-                {
-                    var currentValue = GetPropertyValue(Model, field.PropertyName);
-                    
-                    // 只有當屬性值為 null 或是預設值時才設定預設值
-                    if (ShouldApplyDefaultValue(currentValue, field))
-                    {
-                        SetPropertyValue(Model, field.PropertyName, field.DefaultValue);
-                    }
-                }
-            }
-        }
-        
-        base.OnParametersSet();
+        SetPropertyValue(Model, propertyName, value);
     }
 
     /// <summary>
-    /// 判斷是否應該應用預設值
+    /// 處理 AutoComplete 欄位變更
     /// </summary>
-    private bool ShouldApplyDefaultValue(object? currentValue, FormFieldDefinition field)
+    private void HandleAutoCompleteFieldChanged(string propertyName, string? value)
     {
-        // 如果當前值是 null，則應用預設值
-        if (currentValue == null)
-            return true;
-            
-        // 對於字串類型，如果是空字串也應用預設值
-        if (currentValue is string str && string.IsNullOrEmpty(str))
-            return true;
-            
-        // 對於數值類型，如果是預設值（如 0）也可以應用預設值（這部分可以根據需求調整）
-        // 這裡我們保守一點，只有當值確實是 null 或空字串時才應用預設值
-        
-        return false;
-    }
-
-    // 按照 FieldDefinitions 中的欄位順序來排列區段
-    private IEnumerable<IGrouping<string, KeyValuePair<string, string>>> GetOrderedSections()
-    {
-        if (FieldDefinitions == null || FieldSections == null)
-            return Enumerable.Empty<IGrouping<string, KeyValuePair<string, string>>>();
-
-        // 建立區段出現順序的對應表
-        var sectionOrderMap = new Dictionary<string, int>();
-        var sectionOrder = 0;
-        
-        foreach (var field in FieldDefinitions)
-        {
-            if (FieldSections.TryGetValue(field.PropertyName, out var sectionName))
-            {
-                if (!sectionOrderMap.ContainsKey(sectionName))
-                {
-                    sectionOrderMap[sectionName] = sectionOrder++;
-                }
-            }
-        }
-
-        // 按照區段在 FieldDefinitions 中的出現順序排列
-        return FieldSections
-            .GroupBy(kvp => kvp.Value)
-            .OrderBy(g => sectionOrderMap.GetValueOrDefault(g.Key, int.MaxValue));
-    }
-
-    /// <summary>
-    /// 設定當前啟用的 Tab 索引
-    /// </summary>
-    private void SetActiveTab(int index)
-    {
-        _activeTabIndex = index;
-        StateHasChanged();
-    }
-
-    // AutoComplete 事件處理輔助方法
-    private void HandleAutoCompleteInputEvent(FormFieldDefinition field, string inputValue)
-    {
-        var fieldId = field.PropertyName;
-        autoCompleteDisplayValues[fieldId] = inputValue;
-        _ = HandleAutoCompleteInput(field, inputValue);
-    }
-
-    private void HandleAutoCompleteFocus(FormFieldDefinition field)
-    {
-        var fieldId = field.PropertyName;
-        blurredFields.Remove(fieldId);
-        
-        var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-        if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
-        {
-            _ = HandleAutoCompleteInput(field, inputValue);
-        }
-    }
-
-    private async Task HandleAutoCompleteBlur(FormFieldDefinition field)
-    {
-        var fieldId = field.PropertyName;
-        blurredFields.Add(fieldId);
-        
-        if (autoCompleteTimers.ContainsKey(fieldId))
-        {
-            autoCompleteTimers[fieldId]?.Dispose();
-            autoCompleteTimers[fieldId] = null;
-        }
-        
-        autoCompleteLoading[fieldId] = false;
-        await TrySmartMatch(field);
-        
-        Timer? timer = null;
-        timer = new Timer(_ =>
-        {
-            autoCompleteVisible[fieldId] = false;
-            InvokeAsync(StateHasChanged);
-            timer?.Dispose();
-        }, null, 300, Timeout.Infinite);
-    }
-
-    private async Task SelectAutoCompleteOption(FormFieldDefinition field, SelectOption option)
-    {
-        var fieldId = field.PropertyName;
-        autoCompleteDisplayValues[fieldId] = option.Text;
-        SetPropertyValue(Model, field.PropertyName, option.Value);
-        autoCompleteVisible[fieldId] = false;
-        ResetKeyboardNavigation(fieldId);
-        
-        await OnFieldChanged.InvokeAsync((field.PropertyName, option.Value));
-        StateHasChanged();
-    }
-
-    private string GetAutocompleteValue(FormFieldDefinition field)
-    {
-        return !string.IsNullOrEmpty(field.AutoCompleteAttribute) 
-            ? field.AutoCompleteAttribute 
-            : (field.FieldType == FormFieldType.Password ? "new-password" : "off");
-    }
-    
-    private async Task HandleAutoCompleteInput(FormFieldDefinition field, string inputValue)
-    {
-        var fieldId = field.PropertyName;
-        
-        // 清除之前的計時器和載入狀態
-        if (autoCompleteTimers.ContainsKey(fieldId))
-        {
-            autoCompleteTimers[fieldId]?.Dispose();
-            autoCompleteTimers[fieldId] = null; // 重要：清空引用
-        }
-        autoCompleteLoading[fieldId] = false; // 清除可能殘留的載入狀態
-        
-        // 如果欄位已經失去焦點，不要進行搜尋
-        if (blurredFields.Contains(fieldId))
-        {
-            return;
-        }
-        
-        // 如果輸入為空，清空實體值
-        if (string.IsNullOrEmpty(inputValue))
-        {
-            // 檢查目前實體值是否不為空，如果不為空才清空
-            var currentValue = GetPropertyValue(Model, field.PropertyName);
-            if (currentValue != null)
-            {
-                SetPropertyValue(Model, field.PropertyName, null);
-                await OnFieldChanged.InvokeAsync((field.PropertyName, null));
-            }
-            
-            // 如果 MinSearchLength > 0，隱藏下拉選單並返回
-            if (field.MinSearchLength > 0)
-            {
-                autoCompleteVisible[fieldId] = false;
-                StateHasChanged();
-                return;
-            }
-            // 如果 MinSearchLength = 0，繼續執行搜尋以顯示所有選項
-        }
-        
-        // 如果輸入長度不足，隱藏下拉選單
-        if (inputValue.Length < field.MinSearchLength)
-        {
-            autoCompleteVisible[fieldId] = false;
-            StateHasChanged();
-            return;
-        }
-        
-        // 設置載入狀態
-        autoCompleteLoading[fieldId] = true;
-        StateHasChanged();
-        
-        // 設置延遲搜尋計時器
-        autoCompleteTimers[fieldId] = new Timer(async _ =>
-        {
-            await InvokeAsync(async () =>
-            {
-                try
-                {
-                    if (field.SearchFunction != null)
-                    {
-                        var results = await field.SearchFunction(inputValue);
-                        autoCompleteOptions[fieldId] = results;
-                        autoCompleteVisible[fieldId] = results.Any();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"AutoComplete search error: {ex.Message}");
-                    autoCompleteOptions[fieldId] = new List<SelectOption>();
-                    autoCompleteVisible[fieldId] = false;
-                }
-                finally
-                {
-                    autoCompleteLoading[fieldId] = false;
-                    StateHasChanged();
-                }
-            });
-        }, null, field.AutoCompleteDelayMs, Timeout.Infinite);
-    }
-    
-    private async Task HandleKeyDown(FormFieldDefinition field, KeyboardEventArgs args)
-    {
-        var fieldId = field.PropertyName;
-        var options = autoCompleteOptions.GetValueOrDefault(fieldId, new List<SelectOption>());
-        
-        switch (args.Key)
-        {
-            case "ArrowDown":
-                // 如果下拉選單未顯示，顯示它
-                if (!autoCompleteVisible.GetValueOrDefault(fieldId, false))
-                {
-                    var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "");
-                    // 當 MinSearchLength 為 0 時，允許空輸入觸發搜尋
-                    if (field.MinSearchLength == 0 || (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= field.MinSearchLength))
-                    {
-                        await HandleAutoCompleteInput(field, inputValue);
-                    }
-                }
-                else if (options.Any())
-                {
-                    // 移動到下一個選項
-                    MoveHighlight(fieldId, options, 1);
-                }
-                break;
-                
-            case "ArrowUp":
-                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
-                {
-                    MoveHighlight(fieldId, options, -1);
-                }
-                break;
-                
-            case "Enter":
-                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && options.Any())
-                {
-                    // 如果只有一個選項，直接選擇它
-                    if (options.Count == 1)
-                    {
-                        var singleOption = options[0];
-                        autoCompleteDisplayValues[fieldId] = singleOption.Text;
-                        SetPropertyValue(Model, field.PropertyName, singleOption.Value);
-                        HideDropdown(fieldId);
-                        
-                        // 觸發欄位變更事件
-                        await OnFieldChanged.InvokeAsync((field.PropertyName, singleOption.Value));
-                    }
-                    else
-                    {
-                        // 多個選項時，選擇高亮的選項
-                        await SelectHighlightedOption(field, options);
-                    }
-                }
-                break;
-                
-            case "Escape":
-                HideDropdown(fieldId);
-                break;
-                
-            case "Tab":
-                // 如果只有一個選項，自動填入並隱藏下拉選單
-                if (autoCompleteVisible.GetValueOrDefault(fieldId, false) && 
-                    options.Count == 1)
-                {
-                    var singleOption = options[0];
-                    autoCompleteDisplayValues[fieldId] = singleOption.Text;
-                    SetPropertyValue(Model, field.PropertyName, singleOption.Value);
-                    HideDropdown(fieldId);
-                    
-                    // 觸發欄位變更事件
-                    await OnFieldChanged.InvokeAsync((field.PropertyName, singleOption.Value));
-                }
-                else
-                {
-                    // 嘗試智能匹配
-                    await TrySmartMatch(field);
-                    HideDropdown(fieldId);
-                }
-                // 不阻止 Tab，讓它正常移動到下一個欄位
-                break;
-        }
-        
-        StateHasChanged();
-    }
-      private void MoveHighlight(string fieldId, List<SelectOption> options, int direction)
-    {
-        if (!options.Any()) return;
-        
-        var currentIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
-        var newIndex = currentIndex + direction;
-        
-        // 循環導航
-        if (newIndex < 0)
-            newIndex = options.Count - 1;
-        else if (newIndex >= options.Count)
-            newIndex = 0;
-            
-        highlightedOptionIndex[fieldId] = newIndex;
-        keyboardNavigationActive[fieldId] = true;
-        
-        // 滾動到可見區域
-        _ = ScrollToHighlightedOption(fieldId, newIndex);
-    }
-    
-    private async Task ScrollToHighlightedOption(string fieldId, int optionIndex)
-    {
-        try
-        {
-            var optionId = $"{fieldId}_option_{optionIndex}";
-            await JSRuntime.InvokeVoidAsync("scrollToElement", optionId);
-        }
-        catch (Exception ex)
-        {
-            // 靜默處理滾動錯誤，不影響主要功能
-            Console.Error.WriteLine($"ScrollToHighlightedOption error: {ex.Message}");
-        }
-    }
-      private async Task SelectHighlightedOption(FormFieldDefinition field, List<SelectOption> options)
-    {
-        var fieldId = field.PropertyName;
-        var highlightedIndex = highlightedOptionIndex.GetValueOrDefault(fieldId, -1);
-        
-        if (highlightedIndex >= 0 && highlightedIndex < options.Count)
-        {
-            var selectedOption = options[highlightedIndex];
-            autoCompleteDisplayValues[fieldId] = selectedOption.Text;
-            SetPropertyValue(Model, field.PropertyName, selectedOption.Value);
-            HideDropdown(fieldId);
-            
-            // 觸發欄位變更事件
-            await OnFieldChanged.InvokeAsync((field.PropertyName, selectedOption.Value));
-        }
-    }
-    
-    private void HideDropdown(string fieldId)
-    {
-        autoCompleteVisible[fieldId] = false;
-        autoCompleteLoading[fieldId] = false; // 清除載入狀態
-        ResetKeyboardNavigation(fieldId);
-    }
-    
-    private void ResetKeyboardNavigation(string fieldId)
-    {
-        highlightedOptionIndex[fieldId] = -1;
-        keyboardNavigationActive[fieldId] = false;
-    }
-
-    /// <summary>
-    /// 嘗試智能匹配 AutoComplete 輸入值
-    /// </summary>
-    private async Task TrySmartMatch(FormFieldDefinition field)
-    {
-        var fieldId = field.PropertyName;
-        var inputValue = autoCompleteDisplayValues.GetValueOrDefault(fieldId, "").Trim();
-        
-        // 如果輸入為空，清空欄位值並通知父組件
-        if (string.IsNullOrEmpty(inputValue))
-        {
-            var currentValue = GetPropertyValue(Model, field.PropertyName);
-            if (currentValue != null)
-            {
-                SetPropertyValue(Model, field.PropertyName, null);
-                await OnFieldChanged.InvokeAsync((field.PropertyName, null));
-            }
-            return;
-        }
-        
-        try
-        {
-            if (field.SearchFunction != null)
-            {
-                var results = await field.SearchFunction(inputValue);
-                
-                // 精確匹配優先
-                var exactMatch = results.FirstOrDefault(r => 
-                    string.Equals(r.Text, inputValue, StringComparison.OrdinalIgnoreCase));
-                    
-                if (exactMatch != null)
-                {
-                    // 自動選擇精確匹配
-                    autoCompleteDisplayValues[fieldId] = exactMatch.Text;
-                    SetPropertyValue(Model, field.PropertyName, exactMatch.Value);
-                    await OnFieldChanged.InvokeAsync((field.PropertyName, exactMatch.Value));
-                    return;
-                }
-                
-                // 如果只有一個結果，也自動選擇
-                if (results.Count == 1)
-                {
-                    var singleResult = results[0];
-                    autoCompleteDisplayValues[fieldId] = singleResult.Text;
-                    SetPropertyValue(Model, field.PropertyName, singleResult.Value);
-                    await OnFieldChanged.InvokeAsync((field.PropertyName, singleResult.Value));
-                    return;
-                }
-                
-                // 如果有輸入但找不到匹配，也清空值並通知
-                var currentValue = GetPropertyValue(Model, field.PropertyName);
-                if (currentValue != null)
-                {
-                    SetPropertyValue(Model, field.PropertyName, null);
-                    await OnFieldChanged.InvokeAsync((field.PropertyName, null));
-                }
-            }
-        }
-        catch
-        {
-            // 靜默處理錯誤
-        }
-    }
-
-    // 追蹤已初始化的數字輸入欄位
-    private HashSet<string> initializedNumberInputs = new();
-    
-    /// <summary>
-    /// 初始化數字輸入欄位的即時範圍限制
-    /// </summary>
-    private async Task InitNumberInputRangeLimit(string elementId, decimal? min, decimal? max)
-    {
-        try
-        {
-            // 避免重複初始化
-            if (initializedNumberInputs.Contains(elementId))
-                return;
-            
-            // 只有當有設定 min 或 max 時才初始化
-            if (min.HasValue || max.HasValue)
-            {
-                await JSRuntime.InvokeVoidAsync("NumberInputHelper.initRangeLimitById", 
-                    elementId, 
-                    min.HasValue ? (object)(double)min.Value : null, 
-                    max.HasValue ? (object)(double)max.Value : null);
-                
-                initializedNumberInputs.Add(elementId);
-            }
-        }
-        catch
-        {
-            // 靜默處理 JS 互操作錯誤
-        }
-    }
-
-    public void Dispose()
-    {
-        // 清理所有計時器
-        foreach (var timer in autoCompleteTimers.Values)
-        {
-            timer?.Dispose();
-        }
-        autoCompleteTimers.Clear();
-    }
-
-    private string GetInputType(FormFieldType fieldType)
-    {
-        return fieldType switch
-        {
-            FormFieldType.Email => "email",
-            FormFieldType.Password => "password",
-            FormFieldType.Number => "number",
-            FormFieldType.Date => "date",
-            FormFieldType.DateTime => "datetime-local",
-            FormFieldType.Time => "time",
-            FormFieldType.MobilePhone => "tel",
-            _ => "text"
-        };
-    }
-
-    /// <summary>
-    /// 處理台灣手機號碼輸入，使用 JS 互操作過濾非數字並自動格式化
-    /// </summary>
-    private async Task HandleMobilePhoneInputWithJS(string elementId, string propertyName)
-    {
-        try
-        {
-            // 調用 JS 過濾並格式化，取得純數字
-            var digitsOnly = await JSRuntime.InvokeAsync<string>("formatMobilePhoneInput", 
-                await JSRuntime.InvokeAsync<IJSObjectReference>("eval", $"document.getElementById('{elementId}')"));
-            
-            // 儲存純數字到 Model
-            SetPropertyValue(Model, propertyName, string.IsNullOrEmpty(digitsOnly) ? null : digitsOnly);
-        }
-        catch
-        {
-            // JS 調用失敗時的回退處理（靠純 C# 處理）
-        }
-    }
-    
-    /// <summary>
-    /// 處理台灣手機號碼輸入，自動過濾非數字字元並儲存純數字
-    /// 顯示格式為 0912-345-678，儲存格式為 0912345678
-    /// </summary>
-    private async Task HandleMobilePhoneInput(string propertyName, string? value)
-    {
-        if (value == null)
-        {
-            SetPropertyValue(Model, propertyName, null);
-            return;
-        }
-        
-        // 移除所有非數字字元（包含連字符）
-        var digitsOnly = new string(value.Where(char.IsDigit).ToArray());
-        
-        // 限制最大長度為 10 碼
-        if (digitsOnly.Length > 10)
-        {
-            digitsOnly = digitsOnly.Substring(0, 10);
-        }
-        
-        // 儲存純數字格式到資料庫
-        SetPropertyValue(Model, propertyName, string.IsNullOrEmpty(digitsOnly) ? null : digitsOnly);
-        
-        // 強制重新渲染以更新輸入框顯示（過濾掉非數字字元）
-        await Task.Yield();
-        StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 格式化手機號碼顯示為 0912-345-678 格式
-    /// </summary>
-    private string FormatMobilePhoneDisplay(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return string.Empty;
-        
-        // 移除所有非數字字元
-        var digitsOnly = new string(value.Where(char.IsDigit).ToArray());
-        
-        if (string.IsNullOrEmpty(digitsOnly))
-            return string.Empty;
-        
-        // 根據數字長度進行格式化
-        return digitsOnly.Length switch
-        {
-            <= 4 => digitsOnly,
-            <= 7 => $"{digitsOnly.Substring(0, 4)}-{digitsOnly.Substring(4)}",
-            _ => $"{digitsOnly.Substring(0, 4)}-{digitsOnly.Substring(4, 3)}-{digitsOnly.Substring(7, Math.Min(3, digitsOnly.Length - 7))}"
-        };
-    }
-
-    private string GetInputCssClass(FormFieldDefinition field)
-    {
-        var classes = new List<string> { "form-control" };
-        
-        if (!string.IsNullOrEmpty(field.CssClass))
-            classes.Add(field.CssClass);
-            
-        return string.Join(" ", classes);
-    }
-
-    private object? GetPropertyValue(TModel model, string propertyName)
-    {
-        if (model == null || string.IsNullOrEmpty(propertyName))
-            return null;
-
-        var parts = propertyName.Split('.');
-        object? currentValue = model;
-        
-        foreach (var part in parts)
-        {
-            if (currentValue == null) return null;
-            
-            var currentType = currentValue.GetType();
-            var property = currentType.GetProperty(part);
-            
-            if (property == null) return null;
-            
-            currentValue = property.GetValue(currentValue);
-        }
-        
-        return currentValue;
-    }
-
-    /// <summary>
-    /// 處理數字欄位的值設定，包含 Min/Max 範圍驗證
-    /// </summary>
-    private void SetNumericPropertyValue(TModel model, FormFieldDefinition field, string? value)
-    {
-        if (model == null || field == null || string.IsNullOrEmpty(field.PropertyName))
-            return;
-
-        // 如果值為空或空白，直接設定為 null
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            SetPropertyValue(model, field.PropertyName, null);
-            return;
-        }
-
-        // 嘗試解析數值
-        if (decimal.TryParse(value, out decimal numericValue))
-        {
-            // 進行範圍驗證
-            if (field.Min.HasValue && numericValue < field.Min.Value)
-            {
-                numericValue = field.Min.Value;
-            }
-            if (field.Max.HasValue && numericValue > field.Max.Value)
-            {
-                numericValue = field.Max.Value;
-            }
-
-            SetPropertyValue(model, field.PropertyName, numericValue.ToString());
-            
-            // 強制 UI 更新以反映修正後的值
-            StateHasChanged();
-        }
-        else
-        {
-            // 無法解析則設為 null
-            SetPropertyValue(model, field.PropertyName, null);
-        }
-    }
-
-    private async void SetPropertyValue(TModel model, string propertyName, object? value)
-    {
-        if (model == null || string.IsNullOrEmpty(propertyName))
-            return;
-
-        var parts = propertyName.Split('.');
-        object? currentValue = model;
-        
-        // 導航到最後一個屬性的父物件
-        for (int i = 0; i < parts.Length - 1; i++)
-        {
-            if (currentValue == null) return;
-            
-            var currentType = currentValue.GetType();
-            var property = currentType.GetProperty(parts[i]);
-            
-            if (property == null) return;
-            
-            currentValue = property.GetValue(currentValue);
-        }
-        
-        // 設定最後一個屬性的值
-        if (currentValue != null)
-        {
-            var finalType = currentValue.GetType();
-            var finalProperty = finalType.GetProperty(parts[^1]);
-            
-            if (finalProperty != null && finalProperty.CanWrite)
-            {
-                var convertedValue = ConvertValue(value, finalProperty.PropertyType);
-                finalProperty.SetValue(currentValue, convertedValue);
-                
-                // 觸發欄位變更事件
-                if (OnFieldChanged.HasDelegate)
-                {
-                    await OnFieldChanged.InvokeAsync((PropertyName: propertyName, Value: convertedValue));
-                }
-            }
-            else
-            {
-                // 即使屬性不存在，也觸發欄位變更事件（用於虛擬欄位如 Password、ConfirmPassword）
-                if (OnFieldChanged.HasDelegate)
-                {
-                    await OnFieldChanged.InvokeAsync((propertyName, value));
-                }
-            }
-        }
-    }
-
-    private object? ConvertValue(object? value, Type targetType)
-    {
-        if (value == null)
-            return null;
-
-        // 處理空字串：對於可空型別，空字串應該轉換為 null
-        if (value is string stringValue && string.IsNullOrWhiteSpace(stringValue))
-        {
-            // 如果是可空型別，返回 null
-            if (Nullable.GetUnderlyingType(targetType) != null)
-            {
-                return null;
-            }
-            // 如果不是可空型別但允許空字串（如 string 本身），保留空字串
-            if (targetType == typeof(string))
-            {
-                return stringValue;
-            }
-            // 其他非可空型別，嘗試使用預設值或 null
-            return null;
-        }
-
-        if (targetType.IsAssignableFrom(value.GetType()))
-            return value;
-
-        var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-
-        try
-        {
-            // 特別處理枚舉類型
-            if (underlyingType.IsEnum)
-            {
-                if (value is string enumStringValue)
-                {
-                    // 嘗試轉換字串為枚舉（支援數字字串和名稱字串）
-                    if (int.TryParse(enumStringValue, out var intValue))
-                    {
-                        return Enum.ToObject(underlyingType, intValue);
-                    }
-                    return Enum.Parse(underlyingType, enumStringValue, true);
-                }
-                else if (value is int intValue)
-                {
-                    return Enum.ToObject(underlyingType, intValue);
-                }
-            }
-            
-            return Convert.ChangeType(value, underlyingType);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// 格式化數字欄位用於輸入框顯示
-    /// </summary>
-    /// <remarks>
-    /// - 整數不顯示小數點（100 而非 100.00）
-    /// - 有小數才顯示小數點（100.5）
-    /// - 零值顯示為空字串
-    /// - 不使用千分位（避免影響 input type="number"）
-    /// </remarks>
-    private string FormatNumberForInput(object? value)
-    {
-        if (value == null)
-            return string.Empty;
-
-        // 嘗試轉換為 decimal
-        if (decimal.TryParse(value.ToString(), out decimal decimalValue))
-        {
-            return NumberFormatHelper.FormatForInput(decimalValue);
-        }
-
-        // 如果無法轉換，返回原始字串
-        return value.ToString() ?? string.Empty;
-    }
-
-    /// <summary>
-    /// 格式化數字欄位用於唯讀顯示（帶千分位）
-    /// </summary>
-    /// <remarks>
-    /// - 支援千分位分隔符號（1,234,567）
-    /// - 可指定小數位數
-    /// - 智能顯示：整數不顯示小數點，有小數才顯示
-    /// - 零值顯示為 0（而非空字串）
-    /// </remarks>
-    private string FormatNumberForDisplay(object? value, int decimalPlaces = 0, bool useThousandsSeparator = true)
-    {
-        if (value == null)
-            return string.Empty;
-
-        // 嘗試轉換為 decimal
-        if (decimal.TryParse(value.ToString(), out decimal decimalValue))
-        {
-            return NumberFormatHelper.FormatSmart(decimalValue, decimalPlaces, useThousandsSeparator);
-        }
-
-        // 如果無法轉換，返回原始字串
-        return value.ToString() ?? string.Empty;
-    }
-
-    private ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant GetButtonVariant(string variant)
-    {
-        return variant switch
-        {
-            "Primary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.DarkBlue,
-            "Secondary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Gray,
-            "Success" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Green,
-            "Danger" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Red,
-            "Warning" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Yellow,
-            "Info" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.Blue,
-            "OutlinePrimary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineDarkBlue,
-            "OutlineSecondary" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineGray,
-            "OutlineSuccess" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineGreen,
-            "OutlineDanger" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineRed,
-            "OutlineWarning" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineYellow,
-            "OutlineInfo" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineBlue,
-            _ => ERPCore2.Components.Shared.GenericComponent.Button.ButtonVariant.OutlineDarkBlue
-        };
-    }
-
-    private ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize GetButtonSize(string size)
-    {
-        return size switch
-        {
-            "Large" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Large,
-            "Normal" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Normal,
-            "Small" => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Small,
-            _ => ERPCore2.Components.Shared.GenericComponent.Button.ButtonSize.Small
-        };
+        SetPropertyValue(Model, propertyName, value);
     }
 }

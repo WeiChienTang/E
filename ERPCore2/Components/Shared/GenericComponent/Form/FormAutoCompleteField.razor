@@ -1,0 +1,375 @@
+@* AutoComplete 欄位子組件 *@
+@using Microsoft.AspNetCore.Components.Web
+@using ERPCore2.Components.Shared.Forms
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="@FormConstants.CssClasses.PositionRelative">
+    <input type="text"
+           class="@InputCssClass"
+           id="@FieldId"
+           name="@($"{FieldId}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
+           placeholder="@Field.Placeholder"
+           readonly="@Field.IsReadOnly"
+           disabled="@Field.IsDisabled"
+           autocomplete="@FormConstants.AutoCompleteAttributes.Off"
+           maxlength="@Field.MaxLength"
+           minlength="@Field.MinLength"
+           value="@_state.DisplayValue"
+           @oninput="@(e => HandleInput(e.Value?.ToString() ?? ""))"
+           @onfocus="HandleFocus"
+           @onblur="HandleBlur"
+           @onkeydown="HandleKeyDown" />
+    
+    @if (!Field.IsReadOnly && !Field.IsDisabled)
+    {
+        @if (_state.IsLoading)
+        {
+            <div class="position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);">
+                <span class="spinner-border" style="width: 2rem; height: 2rem; border-width: 0.15em;"></span>
+            </div>
+        }
+        
+        @if (_state.IsVisible && _state.Options.Any())
+        {
+            <div class="@FormConstants.CssClasses.ListGroup position-absolute w-100" 
+                 style="max-height: @(FormConstants.Defaults.DropdownMaxHeight)px; overflow-y: auto; z-index: @FormConstants.Defaults.DropdownZIndex;">
+                @for (int i = 0; i < _state.Options.Count; i++)
+                {
+                    var index = i;
+                    var option = _state.Options[i];
+                    var isHighlighted = _state.HighlightedIndex == index;
+                    var cssClass = isHighlighted 
+                        ? FormConstants.CssClasses.ListGroupItemActive 
+                        : FormConstants.CssClasses.ListGroupItem;
+                    
+                    <button type="button"
+                            class="@cssClass"
+                            id="@($"{FieldId}_option_{index}")"
+                            @onmousemove="@(() => SetHighlightedIndex(index))"
+                            @onmousedown="@(async () => await SelectOption(option))">
+                        @option.Text
+                    </button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public FormFieldDefinition Field { get; set; } = default!;
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? InitialDisplayValue { get; set; }
+
+    [Parameter]
+    public bool HasActionButtons { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = FormConstants.CssClasses.FormControl;
+
+    private string FieldId => Field.PropertyName;
+    
+    private string InputCssClass => HasActionButtons 
+        ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}" 
+        : CssClass;
+
+    private readonly AutoCompleteFieldState _state = new();
+
+    protected override void OnParametersSet()
+    {
+        // 初始化顯示值
+        if (!string.IsNullOrEmpty(InitialDisplayValue) && string.IsNullOrEmpty(_state.DisplayValue))
+        {
+            _state.DisplayValue = InitialDisplayValue;
+        }
+        else if (!string.IsNullOrEmpty(Value) && string.IsNullOrEmpty(_state.DisplayValue))
+        {
+            // 嘗試載入顯示文字
+            _ = LoadDisplayValueAsync();
+        }
+    }
+
+    private async Task LoadDisplayValueAsync()
+    {
+        if (Field.SearchFunction == null || string.IsNullOrEmpty(Value)) return;
+
+        try
+        {
+            var options = await Field.SearchFunction("");
+            var match = options.FirstOrDefault(o => o.Value == Value);
+            if (match != null)
+            {
+                _state.DisplayValue = match.Text;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // 靜默處理
+        }
+    }
+
+    private void HandleInput(string inputValue)
+    {
+        _state.DisplayValue = inputValue;
+        _ = PerformSearchAsync(inputValue);
+    }
+
+    private void HandleFocus()
+    {
+        _state.HasBlurred = false;
+        var inputValue = _state.DisplayValue;
+        
+        if (Field.MinSearchLength == 0 || 
+            (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= Field.MinSearchLength))
+        {
+            _ = PerformSearchAsync(inputValue);
+        }
+    }
+
+    private async Task HandleBlur()
+    {
+        _state.HasBlurred = true;
+        _state.ClearTimer();
+        _state.IsLoading = false;
+
+        await TrySmartMatchAsync();
+
+        // 延遲隱藏下拉選單
+        Timer? timer = null;
+        timer = new Timer(_ =>
+        {
+            _state.IsVisible = false;
+            InvokeAsync(StateHasChanged);
+            timer?.Dispose();
+        }, null, FormConstants.Defaults.BlurDelayMs, Timeout.Infinite);
+    }
+
+    private async Task PerformSearchAsync(string inputValue)
+    {
+        _state.ClearTimer();
+        _state.IsLoading = false;
+
+        if (_state.HasBlurred) return;
+
+        // 處理空輸入
+        if (string.IsNullOrEmpty(inputValue))
+        {
+            if (!string.IsNullOrEmpty(Value))
+            {
+                await ValueChanged.InvokeAsync(null);
+            }
+
+            if (Field.MinSearchLength > 0)
+            {
+                _state.IsVisible = false;
+                StateHasChanged();
+                return;
+            }
+        }
+
+        // 檢查最小搜尋長度
+        if (inputValue.Length < Field.MinSearchLength)
+        {
+            _state.IsVisible = false;
+            StateHasChanged();
+            return;
+        }
+
+        _state.IsLoading = true;
+        StateHasChanged();
+
+        // 延遲搜尋
+        _state.SearchTimer = new Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                try
+                {
+                    if (Field.SearchFunction != null)
+                    {
+                        var results = await Field.SearchFunction(inputValue);
+                        _state.Options = results;
+                        _state.IsVisible = results.Any();
+                    }
+                }
+                catch
+                {
+                    _state.Options = new List<SelectOption>();
+                    _state.IsVisible = false;
+                }
+                finally
+                {
+                    _state.IsLoading = false;
+                    StateHasChanged();
+                }
+            });
+        }, null, Field.AutoCompleteDelayMs, Timeout.Infinite);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        var options = _state.Options;
+
+        switch (args.Key)
+        {
+            case "ArrowDown":
+                if (!_state.IsVisible)
+                {
+                    await PerformSearchAsync(_state.DisplayValue);
+                }
+                else if (options.Any())
+                {
+                    MoveHighlight(1);
+                }
+                break;
+
+            case "ArrowUp":
+                if (_state.IsVisible && options.Any())
+                {
+                    MoveHighlight(-1);
+                }
+                break;
+
+            case "Enter":
+                if (_state.IsVisible && options.Any())
+                {
+                    if (options.Count == 1)
+                    {
+                        await SelectOption(options[0]);
+                    }
+                    else if (_state.HighlightedIndex >= 0 && _state.HighlightedIndex < options.Count)
+                    {
+                        await SelectOption(options[_state.HighlightedIndex]);
+                    }
+                }
+                break;
+
+            case "Escape":
+                _state.HideDropdown();
+                break;
+
+            case "Tab":
+                if (_state.IsVisible && options.Count == 1)
+                {
+                    await SelectOption(options[0]);
+                }
+                else
+                {
+                    await TrySmartMatchAsync();
+                    _state.HideDropdown();
+                }
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private void MoveHighlight(int direction)
+    {
+        if (!_state.Options.Any()) return;
+
+        var newIndex = _state.HighlightedIndex + direction;
+
+        if (newIndex < 0)
+            newIndex = _state.Options.Count - 1;
+        else if (newIndex >= _state.Options.Count)
+            newIndex = 0;
+
+        _state.HighlightedIndex = newIndex;
+        _state.IsKeyboardNavigating = true;
+
+        _ = ScrollToOptionAsync(newIndex);
+    }
+
+    private async Task ScrollToOptionAsync(int index)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToElement", $"{FieldId}_option_{index}");
+        }
+        catch
+        {
+            // 靜默處理
+        }
+    }
+
+    private void SetHighlightedIndex(int index)
+    {
+        _state.HighlightedIndex = index;
+        _state.IsKeyboardNavigating = false;
+        StateHasChanged();
+    }
+
+    private async Task SelectOption(SelectOption option)
+    {
+        _state.DisplayValue = option.Text;
+        _state.HideDropdown();
+        await ValueChanged.InvokeAsync(option.Value);
+        StateHasChanged();
+    }
+
+    private async Task TrySmartMatchAsync()
+    {
+        var inputValue = _state.DisplayValue.Trim();
+
+        if (string.IsNullOrEmpty(inputValue))
+        {
+            if (!string.IsNullOrEmpty(Value))
+            {
+                await ValueChanged.InvokeAsync(null);
+            }
+            return;
+        }
+
+        try
+        {
+            if (Field.SearchFunction != null)
+            {
+                var results = await Field.SearchFunction(inputValue);
+
+                // 精確匹配
+                var exactMatch = results.FirstOrDefault(r =>
+                    string.Equals(r.Text, inputValue, StringComparison.OrdinalIgnoreCase));
+
+                if (exactMatch != null)
+                {
+                    _state.DisplayValue = exactMatch.Text;
+                    await ValueChanged.InvokeAsync(exactMatch.Value);
+                    return;
+                }
+
+                // 單一結果
+                if (results.Count == 1)
+                {
+                    _state.DisplayValue = results[0].Text;
+                    await ValueChanged.InvokeAsync(results[0].Value);
+                    return;
+                }
+
+                // 無匹配則清空
+                if (!string.IsNullOrEmpty(Value))
+                {
+                    await ValueChanged.InvokeAsync(null);
+                }
+            }
+        }
+        catch
+        {
+            // 靜默處理
+        }
+    }
+
+    public void Dispose()
+    {
+        _state.Dispose();
+    }
+}

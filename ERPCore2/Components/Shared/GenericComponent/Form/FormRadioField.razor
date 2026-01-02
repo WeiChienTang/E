@@ -1,0 +1,41 @@
+@* 單選按鈕欄位子組件 *@
+@using ERPCore2.Components.Shared.Forms
+
+@if (Field.Options != null)
+{
+    var radioGroupName = $"{Field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+    
+    @foreach (var option in Field.Options)
+    {
+        <div class="@FormConstants.CssClasses.FormCheck">
+            <input type="radio"
+                   class="@FormConstants.CssClasses.FormCheckInput"
+                   id="@($"{Field.PropertyName}_{option.Value}")"
+                   name="@radioGroupName"
+                   value="@option.Value"
+                   disabled="@(Field.IsReadOnly || Field.IsDisabled)"
+                   autocomplete="@FormConstants.AutoCompleteAttributes.Off"
+                   checked="@(option.Value == Value)"
+                   @onchange="@(e => HandleChange(option.Value))" />
+            <label class="@FormConstants.CssClasses.FormCheckLabel" for="@($"{Field.PropertyName}_{option.Value}")">
+                @option.Text
+            </label>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public FormFieldDefinition Field { get; set; } = default!;
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    private async Task HandleChange(string? value)
+    {
+        await ValueChanged.InvokeAsync(value);
+    }
+}

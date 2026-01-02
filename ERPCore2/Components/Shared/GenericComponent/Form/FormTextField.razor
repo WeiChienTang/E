@@ -1,0 +1,55 @@
+@* 文字欄位子組件 - 支援 Text, Email, Password *@
+@using ERPCore2.Components.Shared.Forms
+
+<input type="@InputType"
+       class="@InputCssClass"
+       id="@Field.PropertyName"
+       name="@($"{Field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
+       placeholder="@Field.Placeholder"
+       readonly="@Field.IsReadOnly"
+       disabled="@Field.IsDisabled"
+       autocomplete="@AutoCompleteValue"
+       required="@Field.IsRequired"
+       maxlength="@Field.MaxLength"
+       minlength="@Field.MinLength"
+       value="@Value"
+       @oninput="HandleInput" />
+
+@code {
+    [Parameter, EditorRequired]
+    public FormFieldDefinition Field { get; set; } = default!;
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool HasActionButtons { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = FormConstants.CssClasses.FormControl;
+
+    private string InputType => Field.FieldType switch
+    {
+        FormFieldType.Email => "email",
+        FormFieldType.Password => "password",
+        _ => "text"
+    };
+
+    private string InputCssClass => HasActionButtons 
+        ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}" 
+        : CssClass;
+
+    private string AutoCompleteValue => !string.IsNullOrEmpty(Field.AutoCompleteAttribute)
+        ? Field.AutoCompleteAttribute
+        : (Field.FieldType == FormFieldType.Password 
+            ? FormConstants.AutoCompleteAttributes.NewPassword 
+            : FormConstants.AutoCompleteAttributes.Off);
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+    }
+}
