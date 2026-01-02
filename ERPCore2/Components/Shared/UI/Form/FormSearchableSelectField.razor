@@ -1,0 +1,299 @@
+@* 可搜尋下拉選單欄位元件 - 從 InteractiveTableComponent 抽離 *@
+@using Microsoft.AspNetCore.Components.Web
+@using ERPCore2.Components.Shared.UI.Form
+@inject IJSRuntime JSRuntime
+
+<div class="position-relative">
+    <input type="text" 
+           class="@InputCssClass" 
+           id="@FieldId"
+           value="@SearchValue"
+           placeholder="@Placeholder"
+           title="@Tooltip"
+           disabled="@IsDisabled"
+           readonly="@IsReadOnly"
+           autocomplete="off"
+           @oninput="HandleSearchInput"
+           @onfocus="HandleFocus"
+           @onblur="HandleBlur"
+           @onkeydown="HandleKeyDown" />
+    
+    @if (ShowDropdown && FilteredItems != null && FilteredItems.Any() && !IsDisabled)
+    {
+        <div class="dropdown-menu show position-absolute w-auto shadow searchable-dropdown" 
+             id="@DropdownId"
+             style="z-index: 10000; max-height: @DropdownMaxHeight; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; min-width: @DropdownMinWidth; max-width: @DropdownMaxWidth;"
+             @onmousedown:preventDefault="true">
+            @{
+                var itemIndex = 0;
+            }
+            @foreach (var item in FilteredItems.Take(MaxDisplayItems))
+            {
+                var currentIndex = itemIndex;
+                var isSelected = SelectedIndex == currentIndex;
+                var displayText = ItemDisplayFormatter?.Invoke(item) ?? item?.ToString() ?? "";
+                var itemId = $"{DropdownId}-item-{currentIndex}";
+                
+                <a class="dropdown-item @(isSelected ? "active bg-primary text-white" : "")" 
+                   id="@itemId"
+                   href="#" 
+                   @onclick="async () => await HandleItemClick(item)" 
+                   @onclick:preventDefault="true"
+                   style="cursor: pointer; padding: 8px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                   @onmouseenter="() => HandleItemMouseEnter(currentIndex)">
+                    @((MarkupString)displayText)
+                </a>
+                itemIndex++;
+            }
+        </div>
+    }
+</div>
+
+@code {
+    #region 基本參數
+    
+    /// <summary>
+    /// 唯一識別碼，用於生成 DOM ID
+    /// </summary>
+    [Parameter]
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
+    
+    /// <summary>
+    /// 搜尋輸入值
+    /// </summary>
+    [Parameter]
+    public string? SearchValue { get; set; }
+    
+    /// <summary>
+    /// 搜尋值變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<string?> SearchValueChanged { get; set; }
+    
+    /// <summary>
+    /// 佔位符文字
+    /// </summary>
+    [Parameter]
+    public string? Placeholder { get; set; }
+    
+    /// <summary>
+    /// 工具提示
+    /// </summary>
+    [Parameter]
+    public string? Tooltip { get; set; }
+    
+    /// <summary>
+    /// 是否禁用
+    /// </summary>
+    [Parameter]
+    public bool IsDisabled { get; set; }
+    
+    /// <summary>
+    /// 是否唯讀
+    /// </summary>
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    
+    /// <summary>
+    /// CSS 類別
+    /// </summary>
+    [Parameter]
+    public string CssClass { get; set; } = "form-control";
+    
+    /// <summary>
+    /// 驗證 CSS 類別（如 is-invalid）
+    /// </summary>
+    [Parameter]
+    public string? ValidationCssClass { get; set; }
+    
+    #endregion
+    
+    #region 下拉選單參數
+    
+    /// <summary>
+    /// 篩選後的項目列表
+    /// </summary>
+    [Parameter]
+    public IEnumerable<object>? FilteredItems { get; set; }
+    
+    /// <summary>
+    /// 是否顯示下拉選單
+    /// </summary>
+    [Parameter]
+    public bool ShowDropdown { get; set; }
+    
+    /// <summary>
+    /// 下拉選單顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> ShowDropdownChanged { get; set; }
+    
+    /// <summary>
+    /// 當前選中的索引
+    /// </summary>
+    [Parameter]
+    public int SelectedIndex { get; set; } = -1;
+    
+    /// <summary>
+    /// 選中索引變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> SelectedIndexChanged { get; set; }
+    
+    /// <summary>
+    /// 項目顯示格式化函數
+    /// </summary>
+    [Parameter]
+    public Func<object, string>? ItemDisplayFormatter { get; set; }
+    
+    /// <summary>
+    /// 最大顯示項目數
+    /// </summary>
+    [Parameter]
+    public int MaxDisplayItems { get; set; } = 50;
+    
+    /// <summary>
+    /// 下拉選單最大高度
+    /// </summary>
+    [Parameter]
+    public string DropdownMaxHeight { get; set; } = "300px";
+    
+    /// <summary>
+    /// 下拉選單最小寬度
+    /// </summary>
+    [Parameter]
+    public string DropdownMinWidth { get; set; } = "200px";
+    
+    /// <summary>
+    /// 下拉選單最大寬度
+    /// </summary>
+    [Parameter]
+    public string DropdownMaxWidth { get; set; } = "400px";
+    
+    #endregion
+    
+    #region 事件回調
+    
+    /// <summary>
+    /// 項目被選擇時的回調
+    /// </summary>
+    [Parameter]
+    public EventCallback<object> OnItemSelected { get; set; }
+    
+    /// <summary>
+    /// 輸入框獲得焦點時的回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnFocus { get; set; }
+    
+    /// <summary>
+    /// 輸入框失去焦點時的回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnBlur { get; set; }
+    
+    #endregion
+    
+    #region 私有屬性
+    
+    private string FieldId => $"searchable-select-{Id}";
+    private string DropdownId => $"dropdown-{Id}";
+    
+    private string InputCssClass => string.IsNullOrEmpty(ValidationCssClass) 
+        ? CssClass 
+        : $"{CssClass} {ValidationCssClass}";
+    
+    #endregion
+    
+    #region 事件處理
+    
+    private async Task HandleSearchInput(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        await SearchValueChanged.InvokeAsync(value);
+    }
+    
+    private async Task HandleFocus()
+    {
+        if (OnFocus.HasDelegate)
+        {
+            await OnFocus.InvokeAsync();
+        }
+    }
+    
+    private async Task HandleBlur()
+    {
+        if (OnBlur.HasDelegate)
+        {
+            await OnBlur.InvokeAsync();
+        }
+    }
+    
+    private async Task HandleItemClick(object? item)
+    {
+        if (item != null && OnItemSelected.HasDelegate)
+        {
+            await OnItemSelected.InvokeAsync(item);
+        }
+        
+        // 關閉下拉選單
+        await ShowDropdownChanged.InvokeAsync(false);
+        await SelectedIndexChanged.InvokeAsync(-1);
+    }
+    
+    private async Task HandleItemMouseEnter(int index)
+    {
+        await SelectedIndexChanged.InvokeAsync(index);
+    }
+    
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (!ShowDropdown || FilteredItems == null || !FilteredItems.Any())
+            return;
+        
+        var itemsList = FilteredItems.Take(MaxDisplayItems).ToList();
+        
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                var newDownIndex = Math.Min(SelectedIndex + 1, itemsList.Count - 1);
+                await SelectedIndexChanged.InvokeAsync(newDownIndex);
+                await ScrollSelectedItemIntoView(newDownIndex);
+                break;
+                
+            case "ArrowUp":
+                var newUpIndex = Math.Max(SelectedIndex - 1, 0);
+                await SelectedIndexChanged.InvokeAsync(newUpIndex);
+                await ScrollSelectedItemIntoView(newUpIndex);
+                break;
+                
+            case "Enter":
+                if (SelectedIndex >= 0 && SelectedIndex < itemsList.Count)
+                {
+                    var selectedItem = itemsList[SelectedIndex];
+                    await HandleItemClick(selectedItem);
+                }
+                break;
+                
+            case "Escape":
+                await ShowDropdownChanged.InvokeAsync(false);
+                await SelectedIndexChanged.InvokeAsync(-1);
+                break;
+        }
+    }
+    
+    private async Task ScrollSelectedItemIntoView(int selectedIndex)
+    {
+        try
+        {
+            var itemId = $"{DropdownId}-item-{selectedIndex}";
+            await JSRuntime.InvokeVoidAsync("scrollDropdownItemIntoView", DropdownId, itemId);
+        }
+        catch
+        {
+            // 忽略 JavaScript 錯誤
+        }
+    }
+    
+    #endregion
+}

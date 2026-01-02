@@ -34,6 +34,7 @@ Components/Shared/
 │   │   ├── FormTextField.razor
 │   │   ├── FormNumberField.razor
 │   │   ├── FormSelectField.razor
+│   │   ├── FormSearchableSelectField.razor  # 可搜尋下拉選單（獨立元件）
 │   │   ├── FormDateField.razor
 │   │   ├── FormCheckboxField.razor
 │   │   ├── FormRadioField.razor
