@@ -10,7 +10,7 @@
 @typeparam TModel
 @implements IDisposable
 
-<div>
+<div class="generic-form-container">
     @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
     <input type="text" style="display:none" autocomplete="off" />
     <input type="password" style="display:none" autocomplete="new-password" />
@@ -25,24 +25,84 @@
         
         @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
         {
-            @* 按照 FieldDefinitions 中的欄位順序來排列區段 *@
-            @foreach (var section in GetOrderedSections())
+            @* Tab 式區段佈局 *@
+            var orderedSections = GetOrderedSections().ToList();
+            
+            @if (orderedSections.Count > 1 && EnableTabLayout)
             {
-                <div class="mb-2 form-section-wrapper">
-                    <h6 class="text-primary fw-bold section-title-compact">@(section.Key)</h6> @* 區段標題 *@
-                    
-                    
-                    <div class="row g-1">
-                        @foreach (var fieldKvp in section)
+                @* Tab 標籤列 - 桌面版 *@
+                <div class="form-tabs-container d-none d-md-block">
+                    <ul class="nav nav-tabs form-section-tabs" role="tablist">
+                        @for (var i = 0; i < orderedSections.Count; i++)
                         {
-                            var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                            if (field != null)
-                            {
-                                @RenderFieldMarkup(field)
-                            }
+                            var sectionGroup = orderedSections[i];
+                            var isActive = i == _activeTabIndex;
+                            var tabIndex = i;
+                            <li class="nav-item" role="presentation">
+                                <button type="button" 
+                                        class="nav-link @(isActive ? "active" : "")" 
+                                        role="tab"
+                                        aria-selected="@isActive"
+                                        @onclick="@(() => SetActiveTab(tabIndex))">
+                                    @sectionGroup.Key
+                                </button>
+                            </li>
                         }
-                    </div>
+                    </ul>
                 </div>
+                
+                @* 手機版 - 下拉選單切換 *@
+                <div class="form-tabs-mobile d-block d-md-none mb-2">
+                    <select class="form-select form-select-sm" 
+                            @onchange="@(e => SetActiveTab(int.Parse(e.Value?.ToString() ?? "0")))">
+                        @for (var i = 0; i < orderedSections.Count; i++)
+                        {
+                            var sectionGroup = orderedSections[i];
+                            <option value="@i" selected="@(i == _activeTabIndex)">@sectionGroup.Key</option>
+                        }
+                    </select>
+                </div>
+                
+                @* Tab 內容區域 *@
+                <div class="tab-content form-tab-content">
+                    @for (var i = 0; i < orderedSections.Count; i++)
+                    {
+                        var sectionGroup = orderedSections[i];
+                        var isActive = i == _activeTabIndex;
+                        <div class="tab-pane @(isActive ? "show active" : "")" role="tabpanel">
+                            <div class="row g-1">
+                                @foreach (var fieldKvp in sectionGroup)
+                                {
+                                    var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                    if (field != null)
+                                    {
+                                        @RenderFieldMarkup(field)
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                @* 單一區段或停用 Tab 時，使用原始區段佈局 *@
+                @foreach (var sectionGroup in orderedSections)
+                {
+                    <div class="mb-2 form-section-wrapper">
+                        <h6 class="text-primary fw-bold section-title-compact">@(sectionGroup.Key)</h6>
+                        <div class="row g-1">
+                            @foreach (var fieldKvp in sectionGroup)
+                            {
+                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                if (field != null)
+                                {
+                                    @RenderFieldMarkup(field)
+                                }
+                            }
+                        </div>
+                    </div>
+                }
             }
         }
         else
@@ -460,9 +520,18 @@
     [Parameter] public bool IsSubmitting { get; set; } = false;
     [Parameter] public bool ShowValidationSummary { get; set; } = true;
     [Parameter] public string FieldContainerCssClass { get; set; } = "col-md-2";
+    
+    /// <summary>
+    /// 是否啟用 Tab 佈局（當有多個區段時）
+    /// </summary>
+    [Parameter] public bool EnableTabLayout { get; set; } = true;
 
     private EditForm? editForm;
-      // 自動完成相關狀態
+    
+    // Tab 相關狀態
+    private int _activeTabIndex = 0;
+    
+    // 自動完成相關狀態
     private readonly Dictionary<string, List<SelectOption>> autoCompleteOptions = new();
     private readonly Dictionary<string, bool> autoCompleteLoading = new();
     private readonly Dictionary<string, bool> autoCompleteVisible = new();
@@ -581,6 +650,15 @@
         return FieldSections
             .GroupBy(kvp => kvp.Value)
             .OrderBy(g => sectionOrderMap.GetValueOrDefault(g.Key, int.MaxValue));
+    }
+
+    /// <summary>
+    /// 設定當前啟用的 Tab 索引
+    /// </summary>
+    private void SetActiveTab(int index)
+    {
+        _activeTabIndex = index;
+        StateHasChanged();
     }
 
     // AutoComplete 事件處理輔助方法
