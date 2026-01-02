@@ -24,84 +24,24 @@
         
         @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
         {
-            @* Tab 式區段佈局 *@
+            @* 區段佈局 - 所有區段在同一頁面顯示 *@
             var orderedSections = GetOrderedSections().ToList();
             
-            @if (orderedSections.Count > 1 && EnableTabLayout)
+            @foreach (var sectionGroup in orderedSections)
             {
-                @* Tab 標籤列 - 桌面版 *@
-                <div class="form-tabs-container d-none d-md-block">
-                    <ul class="nav nav-tabs form-section-tabs" role="tablist">
-                        @for (var i = 0; i < orderedSections.Count; i++)
+                <div class="mb-2 form-section-wrapper">
+                    <h6 class="text-primary fw-bold section-title-compact">@(sectionGroup.Key)</h6>
+                    <div class="row g-1">
+                        @foreach (var fieldKvp in sectionGroup)
                         {
-                            var sectionGroup = orderedSections[i];
-                            var isActive = i == _activeTabIndex;
-                            var tabIndex = i;
-                            <li class="nav-item" role="presentation">
-                                <button type="button" 
-                                        class="nav-link @(isActive ? "active" : "")" 
-                                        role="tab"
-                                        aria-selected="@isActive"
-                                        @onclick="@(() => SetActiveTab(tabIndex))">
-                                    @sectionGroup.Key
-                                </button>
-                            </li>
-                        }
-                    </ul>
-                </div>
-                
-                @* 手機版 - 下拉選單切換 *@
-                <div class="form-tabs-mobile d-block d-md-none mb-2">
-                    <select class="form-select form-select-sm" 
-                            @onchange="@(e => SetActiveTab(int.Parse(e.Value?.ToString() ?? "0")))">
-                        @for (var i = 0; i < orderedSections.Count; i++)
-                        {
-                            var sectionGroup = orderedSections[i];
-                            <option value="@i" selected="@(i == _activeTabIndex)">@sectionGroup.Key</option>
-                        }
-                    </select>
-                </div>
-                
-                @* Tab 內容區域 *@
-                <div class="tab-content form-tab-content">
-                    @for (var i = 0; i < orderedSections.Count; i++)
-                    {
-                        var sectionGroup = orderedSections[i];
-                        var isActive = i == _activeTabIndex;
-                        <div class="tab-pane @(isActive ? "show active" : "")" role="tabpanel">
-                            <div class="row g-1">
-                                @foreach (var fieldKvp in sectionGroup)
-                                {
-                                    var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                                    if (field != null)
-                                    {
-                                        @RenderFieldMarkup(field)
-                                    }
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                @* 單一區段或停用 Tab 時，使用原始區段佈局 *@
-                @foreach (var sectionGroup in orderedSections)
-                {
-                    <div class="mb-2 form-section-wrapper">
-                        <h6 class="text-primary fw-bold section-title-compact">@(sectionGroup.Key)</h6>
-                        <div class="row g-1">
-                            @foreach (var fieldKvp in sectionGroup)
+                            var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                            if (field != null)
                             {
-                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                                if (field != null)
-                                {
-                                    @RenderFieldMarkup(field)
-                                }
+                                @RenderFieldMarkup(field)
                             }
-                        </div>
+                        }
                     </div>
-                }
+                </div>
             }
         }
         else

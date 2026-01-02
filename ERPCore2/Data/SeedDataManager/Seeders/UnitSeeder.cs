@@ -32,7 +32,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Pieces",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -41,7 +41,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Kilogram",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -49,8 +49,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "包",
                     EnglishName = "Pack",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    CreatedAt = DateTime.Now,                    
                 },
                 new Unit
                 {
@@ -59,7 +58,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Meter",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -68,7 +67,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Centimeter",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -77,7 +76,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Square Meter",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
 
                 // 商品相關的額外單位
@@ -88,7 +87,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Piece",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -97,7 +96,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Pen",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -106,7 +105,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Bag",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -115,7 +114,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Roll",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -124,7 +123,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Box",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -133,7 +132,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Dozen",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -142,7 +141,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Set",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -151,7 +150,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Bottle",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -160,7 +159,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Can",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -169,7 +168,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Sheet",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -178,7 +177,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Book",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -187,7 +186,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Drum",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -196,7 +195,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Liter",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -205,7 +204,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Milliliter",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -214,7 +213,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Gram",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -223,7 +222,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Ton",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -232,7 +231,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Pound",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -241,7 +240,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Pair",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -250,7 +249,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Carton",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -259,7 +258,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Reel",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -268,7 +267,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Strip",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -277,7 +276,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Pallet",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -286,7 +285,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Case",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -295,7 +294,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Tube",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -304,7 +303,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Bundle",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -313,7 +312,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Tray",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -322,16 +321,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Package",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
-                },
-                new Unit
-                {
-                    Code = "CARTON",
-                    Name = "卡通箱",
-                    EnglishName = "Carton Box",
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -340,7 +330,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Sack",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -349,7 +339,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Block",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -358,7 +348,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Foot",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -367,7 +357,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Inch",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -376,7 +366,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Yard",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -385,7 +375,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Gallon",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -394,7 +384,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Ounce",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -403,7 +393,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Bale",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -412,7 +402,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Plate",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -421,7 +411,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Unit",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -430,7 +420,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Pail",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -439,7 +429,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Skid",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
                 new Unit
                 {
@@ -448,7 +438,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     EnglishName = "Lot",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    
                 },
             };
 
