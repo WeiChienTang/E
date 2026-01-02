@@ -497,18 +497,20 @@
             .AddToSection(FormSectionNames.BasicInfo,
                 p => p.Code,
                 p => p.Name,
-                p => p.Barcode,
+                p => p.Barcode)
+            
+            .AddToSection(FormSectionNames.CategoryAndSpecification,
                 p => p.ProductCategoryId,
                 p => p.SizeId,
-                p => p.TaxRate,
-                p => p.ProcurementType)
+                p => p.Specification)
             
             .AddToSection(FormSectionNames.UnitSettings,
                 p => p.UnitId,
-                p => p.ProductionUnitId)
+                p => p.ProductionUnitId,
+                p => p.ProcurementType)
 
-            .AddToSection(FormSectionNames.AdditionalInfo,
-                p => p.Specification,
+            .AddToSection(FormSectionNames.FinanceAndRemarks,
+                p => p.TaxRate,
                 p => p.Remarks)
             .Build();
     }

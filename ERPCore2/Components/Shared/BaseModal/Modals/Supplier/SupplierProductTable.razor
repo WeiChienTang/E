@@ -1,11 +1,13 @@
 @* 供應商商品綁定管理組件 - 使用 InteractiveTableComponent *@
 @inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <InteractiveTableComponent TItem="ProductSupplier" 
+        <InteractiveTableComponent @ref="tableComponent"
+                                  TItem="ProductSupplier" 
                                   Items="@Items"
                                   ColumnDefinitions="@GetColumnDefinitions()"
                                   ShowHeader="true"
@@ -19,9 +21,20 @@
                                   OnItemDelete="@HandleDeleteItem"
                                   EnableAutoEmptyRow="true"
                                   AllowAddNewRow="true"
+                                  ActionsColumnWidth = "60px"
                                   DataLoadCompleted="@DataLoadCompleted"
                                   CreateEmptyItem="@CreateEmptyItem"
                                   EmptyMessage="@EmptyMessage" />
+    </div>
+    
+    <div class="card-footer">
+        <div class="d-flex justify-content-end">
+            <GenericButtonComponent Text="清除明細"
+                                  Variant="ButtonVariant.Red"
+                                  OnClick="ClearAllDetails"
+                                  IsDisabled="@(!HasProductItems)"
+                                  Title="@(!HasProductItems ? "目前沒有明細可清除" : "清除所有供應商品明細")" />
+        </div>
     </div>
 </div>
 
@@ -34,6 +47,14 @@
     [Parameter] public bool DataLoadCompleted { get; set; } = true;
     [Parameter] public string EmptyMessage { get; set; } = "尚未設定供應商品";
     [Parameter] public EventCallback<ProductSupplier> OnItemDeleted { get; set; }
+    
+    // ===== InteractiveTableComponent 參考 =====
+    private InteractiveTableComponent<ProductSupplier>? tableComponent;
+    
+    /// <summary>
+    /// 計算屬性：是否有供應商品項目
+    /// </summary>
+    private bool HasProductItems => Items.Any(item => item.Product != null);
 
     /// <summary>
     /// 建立供應商品管理的欄位定義
@@ -46,10 +67,10 @@
             new InteractiveColumnDefinition
             {
                 Title = "商品",
-                PropertyName = nameof(ProductSupplier.SearchText),  // 🔑 修正：綁定實際存在的屬性
-                EmptyCheckPropertyName = nameof(ProductSupplier.Product),  // 🔑 修正：檢查物件屬性（null = 空行）
+                PropertyName = nameof(ProductSupplier.SearchText),  //  修正：綁定實際存在的屬性
+                EmptyCheckPropertyName = nameof(ProductSupplier.Product),  //  修正：檢查物件屬性（null = 空行）
                 ColumnType = InteractiveColumnType.SearchableSelect,
-                Width = "25%",
+                Width = "300px",
                 Placeholder = "請輸入商品編號或名稱",
                 TriggerEmptyRowOnFilled = true,
                 SearchValuePropertyName = nameof(ProductSupplier.SearchText),
@@ -94,67 +115,9 @@
                 Title = "供應商料號",
                 PropertyName = nameof(ProductSupplier.SupplierProductCode),
                 ColumnType = InteractiveColumnType.Input,
-                Width = "15%",
+                Width = "150px",
                 Placeholder = "供應商料號",
                 Tooltip = "供應商自己的商品編號"
-            },
-            
-            // 常用標記
-            new InteractiveColumnDefinition
-            {
-                Title = "常用",
-                PropertyName = nameof(ProductSupplier.IsPreferred),
-                ColumnType = InteractiveColumnType.Checkbox,
-                Width = "8%",
-                TextAlign = "center",
-                Tooltip = "勾選為常用供應商，優先推薦"
-            },
-            
-            // 優先順序
-            new InteractiveColumnDefinition
-            {
-                Title = "優先順序",
-                PropertyName = nameof(ProductSupplier.Priority),
-                ColumnType = InteractiveColumnType.Number,
-                Width = "10%",
-                Placeholder = "999",
-                MinValue = 1,
-                MaxValue = 999,
-                Tooltip = "數字越小越優先（1=最優先）",
-                CellCssClass = "text-center"
-            },
-            
-            // 預計交貨天數
-            new InteractiveColumnDefinition
-            {
-                Title = "交貨天數",
-                PropertyName = nameof(ProductSupplier.LeadTimeDays),
-                ColumnType = InteractiveColumnType.Number,
-                Width = "10%",
-                Placeholder = "天數",
-                MinValue = 0,
-                Tooltip = "預計交貨天數",
-                CellCssClass = "text-center"
-            },
-            
-            // 最近採購價格（唯讀，從採購歷史載入）
-            new InteractiveColumnDefinition
-            {
-                Title = "最近價格",
-                PropertyName = nameof(ProductSupplier.LastPurchasePrice),
-                ColumnType = InteractiveColumnType.Display,
-                Width = "12%",
-                IsReadOnly = true,
-                CellCssClass = "text-end text-muted",
-                DisplayFormatter = (value) =>
-                {
-                    if (value is decimal price && price > 0)
-                    {
-                        return $"NT$ {price:N0}";
-                    }
-                    return "-";
-                },
-                Tooltip = "系統自動更新"
             },
             
             // 備註
@@ -163,7 +126,7 @@
                 Title = "備註",
                 PropertyName = nameof(ProductSupplier.Remarks),
                 ColumnType = InteractiveColumnType.Input,
-                Width = "20%",
+                Width = "200px",
                 Placeholder = "採購注意事項"
             }
         };
@@ -178,7 +141,7 @@
         {
             SupplierId = SupplierId,
             ProductId = 0,
-            Product = null,  // 🔑 重要：空行判斷依據（Product = null 表示空行）
+            Product = null,  //  重要：空行判斷依據（Product = null 表示空行）
             IsPreferred = false,
             Priority = 999,
             Status = EntityStatus.Active,
@@ -283,5 +246,36 @@
         await ItemsChanged.InvokeAsync(Items);
         await OnItemDeleted.InvokeAsync(item);
         await InvokeAsync(StateHasChanged);
+    }
+    
+    /// <summary>
+    /// 清空所有供應商品明細
+    /// </summary>
+    private async Task ClearAllDetails()
+    {
+        //  關鍵：在清除前，先收集需要刪除的項目（有 Id 的項目需通知父組件以便從資料庫刪除）
+        var itemsToDelete = Items.Where(item => item.Id > 0 && item.Product != null).ToList();
+        
+        var cleared = await ItemManagementHelper.ClearAllDetailsAsync(
+            Items,
+            JSRuntime,
+            async () =>
+            {
+                //  通知父組件哪些項目需要從資料庫刪除
+                foreach (var item in itemsToDelete)
+                {
+                    await OnItemDeleted.InvokeAsync(item);
+                }
+                
+                await ItemsChanged.InvokeAsync(Items);
+                tableComponent?.RefreshEmptyRow();
+            },
+            "確定要清除所有供應商品明細嗎？"
+        );
+        
+        if (cleared)
+        {
+            await NotificationService.ShowSuccessAsync("已清空所有供應商品明細");
+        }
     }
 }

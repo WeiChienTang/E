@@ -1,5 +1,19 @@
 /* InteractiveTableComponent 專用樣式 */
 
+/* ===== 序號欄位固定寬度 ===== */
+.row-number-column {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    box-sizing: border-box !important;
+}
+
+/* ===== 表格基礎佈局 ===== */
+.interactive-table {
+    table-layout: fixed; /* 固定佈局，讓寬度設定生效 */
+    width: 100%;
+}
+
 /* ===== 表頭樣式 - 參考 GenericEditModalComponent Header 但保持適當字體大小 ===== */
 
 .interactive-table thead {
@@ -197,7 +211,7 @@
         min-width: 900px; /* 進一步增加表格最小寬度以確保操作欄位有足夠空間 */
         margin-bottom: 0;
         white-space: nowrap; /* 防止文字換行 */
-        table-layout: auto; /* 使用自動佈局讓欄位能根據內容自動調整 */
+        table-layout: fixed; /* 使用固定佈局讓欄位能嚴格遵守寬度設定 */
     }
     
     /* 表格儲存格在手機版的樣式調整 */
@@ -244,13 +258,15 @@
         min-width: 120px;
     }
     
-    /* 行號欄位保持較小寬度 */
-    .table-responsive .table td:first-child,
-    .table-responsive .table th:first-child {
-        min-width: 50px;
-        padding: 0.5rem 0.25rem;
+    /* 行號欄位保持固定寬度 */
+    .row-number-column {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+        padding: 0.5rem 0.25rem !important;
+        box-sizing: border-box !important;
     }
-    
+
     /* 操作欄位適當樣式 */
     .table-responsive .table .table-actions-column {
         min-width: 120px !important; /* 增加最小寬度以確保有足夠空間容納按鈕 */

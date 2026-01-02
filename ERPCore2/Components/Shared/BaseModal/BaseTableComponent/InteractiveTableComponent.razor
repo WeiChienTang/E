@@ -13,7 +13,7 @@
                 <tr>
                     @if (ShowRowNumbers)
                     {
-                        <th scope="col" class="text-center" style="width: 60px;">#</th>
+                        <th scope="col" class="text-center row-number-column">#</th>
                     }
                     @foreach (var column in ColumnDefinitions)
                     {
@@ -62,7 +62,7 @@
                         
                         @if (ShowRowNumbers)
                         {
-                            <td class="text-center text-muted">
+                            <td class="text-center text-muted row-number-column">
                                 <small>@(currentIndex + 1)</small>
                             </td>
                         }
@@ -340,7 +340,7 @@
                 <tr class="table-info">
                     @if (ShowRowNumbers)
                     {
-                        <th></th>
+                        <th class="row-number-column"></th>
                     }
                     @foreach (var column in ColumnDefinitions ?? new List<InteractiveColumnDefinition>())
                     {
@@ -383,7 +383,7 @@
     // 表格樣式設定
     [Parameter] public bool ShowHeader { get; set; } = true;
     [Parameter] public bool ShowActions { get; set; } = false;
-    [Parameter] public bool ShowRowNumbers { get; set; } = false;
+    [Parameter] public bool ShowRowNumbers { get; set; } = true;
     [Parameter] public bool ShowTotalRow { get; set; } = false;
     [Parameter] public bool IsStriped { get; set; } = true;
     [Parameter] public bool IsHoverable { get; set; } = true;

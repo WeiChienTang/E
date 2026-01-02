@@ -173,5 +173,11 @@ namespace ERPCore2.Helpers.EditModal
 
         /// <summary>單位設定</summary>
         public const string UnitSettings = "單位設定";
+
+        /// <summary>分類與規格</summary>
+        public const string CategoryAndSpecification = "分類與規格";
+
+        /// <summary>財務與備註</summary>
+        public const string FinanceAndRemarks = "財務與備註";
     }
 }
