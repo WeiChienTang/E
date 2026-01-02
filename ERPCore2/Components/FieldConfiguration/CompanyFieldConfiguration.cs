@@ -1,10 +1,11 @@
-using ERPCore2.Components.Shared.Forms;
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using ERPCore2.Helpers;
+using ERPCore2.Components.Shared.PageTemplate;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -105,7 +106,7 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 if (data is Company company)
                                 {
-                                    builder.OpenComponent<ERPCore2.Components.Shared.GenericComponent.Badge.GenericStatusBadgeComponent>(0);
+                                    builder.OpenComponent<ERPCore2.Components.Shared.UI.Badge.GenericStatusBadgeComponent>(0);
                                     builder.AddAttribute(1, "Status", company.Status);
                                     builder.CloseComponent();
                                 }
@@ -133,3 +134,5 @@ namespace ERPCore2.FieldConfiguration
         }
     }
 }
+
+

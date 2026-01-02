@@ -1,0 +1,151 @@
+@* 通用導航選單項目元件 *@
+@using ERPCore2.Components.Shared.UI.Auth
+@using ERPCore2.Services
+@inject INavigationPermissionCollector PermissionCollector
+@inject ILogger<NavMenuItem> Logger
+
+<div class="nav-item px-3">
+    @if (HasDropdownItems)
+    {
+        @if (AutoDetectPermissions)
+        {
+            <!-- 先渲染子組件來觸發權限註冊，但完全隱藏 -->
+            <div style="position: absolute; left: -9999px; visibility: hidden;">
+                @DropdownItems
+            </div>
+            
+            <!-- 自動權限檢查的下拉選單容器 -->
+            <NavigationPermissionCheck AnyPermissions="@GetCollectedPermissions()">
+                <div class="nav-menu-dropdown-container @(isDropdownOpen ? "expanded" : "")">
+                    <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
+                        <span class="@IconClass" aria-hidden="true"></span> 
+                        @Text
+                        @if (ShowDropdownArrow)
+                        {
+                            <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                        }
+                    </div>
+                    <div class="nav-menu-dropdown-content @(isDropdownOpen ? "show" : "")">
+                        @DropdownItems
+                    </div>
+                </div>
+            </NavigationPermissionCheck>
+        }
+        else
+        {
+            <!-- 傳統下拉選單容器（無自動權限檢查） -->
+            <div class="nav-menu-dropdown-container @(isDropdownOpen ? "expanded" : "")">
+                <div class="nav-menu-dropdown-toggle-btn" @onclick="ToggleDropdown">
+                    <span class="@IconClass" aria-hidden="true"></span> 
+                    @Text
+                    @if (ShowDropdownArrow)
+                    {
+                        <span class="nav-menu-dropdown-arrow @(isDropdownOpen ? "up" : "down")">▼</span>
+                    }
+                </div>
+                <div class="nav-menu-dropdown-content @(isDropdownOpen ? "show" : "")">
+                    @DropdownItems
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <!-- 簡單連結 -->
+        <a class="nav-menu-nav-link" href="@Url" @onclick="OnNavLinkClick">
+            <span class="@IconClass" aria-hidden="true"></span> @Text
+        </a>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// 選單項目顯示的文字
+    /// </summary>
+    [Parameter] public string Text { get; set; } = "";
+
+    /// <summary>
+    /// 圖示的 CSS 類別（例如 "bi bi-house-door-fill-nav-menu"）
+    /// </summary>
+    [Parameter] public string IconClass { get; set; } = "";
+
+    /// <summary>
+    /// 簡單連結的 URL（當 HasDropdownItems 為 false 時使用）
+    /// </summary>
+    [Parameter] public string Url { get; set; } = "";
+
+    /// <summary>
+    /// 下拉選單的內容（RenderFragment）
+    /// </summary>
+    [Parameter] public RenderFragment? DropdownItems { get; set; }
+
+    /// <summary>
+    /// 是否自動偵測子項目權限（預設為 true）
+    /// </summary>
+    [Parameter] public bool AutoDetectPermissions { get; set; } = true;
+
+    /// <summary>
+    /// 菜單識別鍵，用於權限收集
+    /// </summary>
+    [Parameter] public string? MenuKey { get; set; }
+
+    /// <summary>
+    /// 是否顯示下拉箭頭（預設為 true）
+    /// </summary>
+    [Parameter] public bool ShowDropdownArrow { get; set; } = true;
+
+    /// <summary>
+    /// 是否有下拉選單項目
+    /// </summary>
+    private bool HasDropdownItems => DropdownItems != null;
+
+    private bool isDropdownOpen = false;
+    private string GeneratedMenuKey => MenuKey ?? $"menu_{Text.Replace(" ", "_")}";
+
+    protected override void OnParametersSet()
+    {
+        if (AutoDetectPermissions && HasDropdownItems)
+        {
+            // 清除舊的權限記錄
+            PermissionCollector.ClearPermissions(GeneratedMenuKey);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AutoDetectPermissions && HasDropdownItems)
+        {
+            // 等待一小段時間確保所有子組件都已註冊權限
+            await Task.Delay(200);
+            
+            // 在首次渲染後重新檢查權限並更新UI
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理導航連結點擊事件
+    /// </summary>
+    private void OnNavLinkClick()
+    {
+        // 這裡可以添加任何需要的邏輯
+        // JavaScript 會自動處理手機模式下的選單隱藏
+    }
+
+    /// <summary>
+    /// 取得收集到的權限
+    /// </summary>
+    private string[] GetCollectedPermissions()
+    {
+        var permissions = PermissionCollector.GetPermissions(GeneratedMenuKey);
+        var result = permissions.Length > 0 ? permissions : new[] { "___NO_PERMISSIONS___" };
+            
+        return result;
+    }
+}

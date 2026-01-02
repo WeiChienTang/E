@@ -1,0 +1,789 @@
+@* 沖銷商品明細管理組件 - 支援應收/應付雙模式 *@
+
+@inject ISetoffProductDetailService SetoffProductDetailService
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+@using ERPCore2.Components.Shared.Base
+
+@if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="warning-message">
+                <i class="bi bi-exclamation-triangle text-warning fs-1 mb-3"></i>
+                <p class="text-muted">@GetRelatedPartyWarningMessage()</p>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    @* 本次沖款明細編輯 - 直接顯示所有未結清明細 *@
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <InteractiveTableComponent TItem="SetoffProductDetailItem" 
+                                      Items="@SetoffItems"
+                                      ColumnDefinitions="@GetSetoffColumnDefinitions()"
+                                      IsReadOnly="@IsReadOnly"
+                                      ShowRowNumbers="false"
+                                      EmptyMessage="@GetUnsettledEmptyMessage()"
+                                      ShowBuiltInActions="@(!IsEditMode())"
+                                      ShowBuiltInDeleteButton="@(!IsEditMode())"
+                                      OnItemDelete="@HandleRemoveItem"
+                                      ShowActions="false"
+                                      ActionsColumnWidth = "60px" />
+        </div>
+
+        <div class="card-footer">
+            <div class="d-flex justify-content-end gap-2">
+                <GenericButtonComponent Text="全部沖款"
+                                      Variant="ButtonVariant.Green"
+                                      OnClick="FillAllSetoffAmounts"
+                                      IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+                <GenericButtonComponent Text="沖款清空"
+                                      Variant="ButtonVariant.Red"
+                                      OnClick="ClearAllSetoffAmounts"
+                                      IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ===== 參數定義 =====
+    [Parameter] public int? SetoffDocumentId { get; set; }
+    [Parameter] public SetoffType SetoffType { get; set; }
+    [Parameter] public int? RelatedPartyId { get; set; }
+    [Parameter] public string RelatedPartyType { get; set; } = string.Empty;
+    [Parameter] public DateTime? StartDate { get; set; }
+    [Parameter] public DateTime? EndDate { get; set; }
+    
+    // 資料綁定
+    [Parameter] public List<SetoffProductDetail> ExistingDetails { get; set; } = new();
+    [Parameter] public EventCallback<List<SetoffProductDetail>> OnDetailsChanged { get; set; }
+    
+    // 顯示控制
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public bool ShowAllowance { get; set; } = true;
+    
+    // ===== 內部狀態 =====
+    private List<UnsettledDetailDto> UnsettledDetails { get; set; } = new();
+    private List<SetoffProductDetailItem> SetoffItems { get; set; } = new();
+    private List<Product> Products { get; set; } = new();
+
+    // ===== 生命週期方法 =====
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsAsync();
+        await LoadUnsettledDetailsAsync();
+        LoadExistingDetails();
+    }
+
+    private int? _lastRelatedPartyId;
+    private DateTime? _lastStartDate;
+    private DateTime? _lastEndDate;
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 只有當關聯方或日期篩選真正變更時，才重新載入未結清明細
+        bool relatedPartyChanged = _lastRelatedPartyId != RelatedPartyId;
+        bool dateFilterChanged = _lastStartDate != StartDate || _lastEndDate != EndDate;
+        
+        if (relatedPartyChanged)
+        {
+            await LoadUnsettledDetailsAsync();
+            LoadExistingDetails();
+            _lastRelatedPartyId = RelatedPartyId;
+        }
+        else if (dateFilterChanged)
+        {
+            // 日期篩選變更時，只需重新套用篩選，不需重新載入未結清明細
+            LoadExistingDetails();
+            _lastStartDate = StartDate;
+            _lastEndDate = EndDate;
+        }
+        
+        await base.OnParametersSetAsync();
+    }
+
+    // ===== 資料載入方法 =====
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            Products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入商品資料失敗：{ex.Message}");
+            Products = new List<Product>();
+        }
+    }
+
+    private async Task LoadUnsettledDetailsAsync()
+    {
+        if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+        {
+            UnsettledDetails = new List<UnsettledDetailDto>();
+            return;
+        }
+
+        try
+        {
+            UnsettledDetails = SetoffType == SetoffType.AccountsReceivable
+                ? await SetoffProductDetailService.GetUnsettledReceivableDetailsAsync(RelatedPartyId.Value)
+                : await SetoffProductDetailService.GetUnsettledPayableDetailsAsync(RelatedPartyId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入未結清明細失敗：{ex.Message}");
+            UnsettledDetails = new List<UnsettledDetailDto>();
+        }
+    }
+
+    private void LoadExistingDetails()
+    {
+        // 判斷是否為編輯模式（SetoffDocumentId 有值且大於 0）
+        bool isEditMode = SetoffDocumentId.HasValue && SetoffDocumentId.Value > 0;
+        
+        // 如果有已存在的明細（編輯模式），則顯示已存在的明細
+        if (ExistingDetails.Any())
+        {
+            SetoffItems = ExistingDetails.Select(detail =>
+            {
+                // 嘗試從未結清明細中找到對應的來源明細資訊
+                var unsettledDetail = UnsettledDetails.FirstOrDefault(u => 
+                    u.SourceDetailType == detail.SourceDetailType && 
+                    u.SourceDetailId == detail.SourceDetailId);
+                
+                return new SetoffProductDetailItem
+                {
+                    SourceDetailType = detail.SourceDetailType,
+                    SourceDetailId = detail.SourceDetailId,
+                    ProductId = detail.ProductId,
+                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    CurrentSetoffAmount = detail.CurrentSetoffAmount,
+                    CurrentAllowanceAmount = detail.CurrentAllowanceAmount,
+                    Remarks = detail.Remarks,
+                    ExistingDetail = detail,
+                    UnsettledDetail = unsettledDetail, // 保留未結清明細資訊以顯示來源單號等資料
+                    NeedsSourceDetailLoad = unsettledDetail == null // 標記需要額外載入來源明細
+                };
+            }).ToList();
+            
+            // 對於需要載入來源明細的項目，非同步載入
+            _ = LoadMissingSourceDetailsAsync();
+        }
+        else if (!isEditMode)
+        {
+            // 新增模式：將所有未結清明細轉換為 SetoffItems，預設本次沖款和折讓為0
+            SetoffItems = UnsettledDetails
+                .Where(d => !StartDate.HasValue || d.DocumentDate >= StartDate.Value)
+                .Where(d => !EndDate.HasValue || d.DocumentDate <= EndDate.Value)
+                .Select(detail => new SetoffProductDetailItem
+                {
+                    SourceDetailType = detail.SourceDetailType,
+                    SourceDetailId = detail.SourceDetailId,
+                    ProductId = detail.ProductId,
+                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    CurrentSetoffAmount = 0, // 預設為0
+                    CurrentAllowanceAmount = 0, // 預設為0
+                    Remarks = null,
+                    ExistingDetail = null,
+                    UnsettledDetail = detail, // 保留未結清明細資訊
+                    NeedsSourceDetailLoad = false
+                }).ToList();
+        }
+        else
+        {
+            // 編輯模式但沒有任何已儲存的商品明細：顯示空列表
+            SetoffItems = new List<SetoffProductDetailItem>();
+        }
+    }
+    
+    /// <summary>
+    /// 載入缺少的來源明細資訊（針對已結清的明細）
+    /// </summary>
+    private async Task LoadMissingSourceDetailsAsync()
+    {
+        var itemsNeedingLoad = SetoffItems.Where(i => i.NeedsSourceDetailLoad).ToList();
+        
+        foreach (var item in itemsNeedingLoad)
+        {
+            try
+            {
+                var sourceDetail = await SetoffProductDetailService.GetSourceDetailInfoAsync(
+                    item.SourceDetailType, 
+                    item.SourceDetailId);
+                
+                if (sourceDetail != null)
+                {
+                    item.UnsettledDetail = sourceDetail;
+                    item.NeedsSourceDetailLoad = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await NotificationService.ShowErrorAsync($"載入來源明細失敗：{ex.Message}");
+            }
+        }
+        
+        // 強制重新渲染以顯示載入的資料
+        StateHasChanged();
+    }
+
+    // ===== UI 輔助方法 =====
+    private string GetRelatedPartyWarningMessage()
+    {
+        return SetoffType == SetoffType.AccountsReceivable
+            ? "請先選擇客戶才能管理應收沖款明細"
+            : "請先選擇廠商才能管理應付沖款明細";
+    }
+
+    private string GetUnsettledEmptyMessage()
+    {
+        return SetoffType == SetoffType.AccountsReceivable
+            ? "該客戶沒有未結清的應收帳款"
+            : "該廠商沒有未結清的應付帳款";
+    }
+
+    // ===== InteractiveTable 欄位定義 =====
+    private List<InteractiveColumnDefinition> GetSetoffColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "來源單號",
+                Tooltip = "原始銷售或進貨單據的單號",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var setoffItem = (SetoffProductDetailItem)item;
+                    return @<div class="text-start">@setoffItem.UnsettledDetail?.SourceDocumentNumber</div>;
+                }
+            },
+            new()
+            {
+                Title = "商品編號/名稱",
+                Tooltip = "顯示商品的編號與名稱",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "200px",
+                CustomTemplate = item =>
+                {
+                    var setoffItem = (SetoffProductDetailItem)item;
+                    return @<div>@setoffItem.Product?.Code @setoffItem.Product?.Name</div>;
+                }
+            },
+            new()
+            {
+                Title = "應收/付金額",
+                Tooltip = "來源單據的原始應收或應付金額（退貨單顯示為負數）",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var setoffItem = (SetoffProductDetailItem)item;
+                    var detail = setoffItem.UnsettledDetail;
+                    var cssClass = detail?.IsReturn == true ? "text-danger" : "text-success";
+                    var amount = detail?.TotalAmount ?? 0;
+                    var displayAmount = detail?.IsReturn == true ? -amount : amount;
+                    var formattedValue = NumberFormatHelper.FormatSmart(displayAmount);
+                    return @<div class="text-end fw-bold @cssClass">@formattedValue</div>;
+                }
+            },
+            new()
+            {
+                Title = "未沖款餘額",
+                Tooltip = "尚未沖銷的餘額金額（編輯模式下會動態調整）",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var setoffItem = (SetoffProductDetailItem)item;
+                    var detail = setoffItem.UnsettledDetail;
+                    var baseRemainingAmount = detail?.RemainingAmount ?? 0;
+                    
+                    // 使用 AdjustedBalanceHelper 計算動態調整後的未沖款餘額
+                    var originalTotalUsed = 0m;
+                    var currentOtherFieldsUsed = 0m;
+                    
+                    if (IsEditMode() && setoffItem.ExistingDetail != null)
+                    {
+                        // 編輯模式：原有的總使用金額（沖款 + 折讓）
+                        originalTotalUsed = setoffItem.ExistingDetail.CurrentSetoffAmount + 
+                                          setoffItem.ExistingDetail.CurrentAllowanceAmount;
+                    }
+                    
+                    // 無論新增或編輯模式，都計算當前使用金額以動態顯示未沖款餘額
+                    currentOtherFieldsUsed = setoffItem.CurrentSetoffAmount + 
+                                            setoffItem.CurrentAllowanceAmount;
+                    
+                    var adjustedRemainingAmount = AdjustedBalanceHelper.CalculateAdjustedBalance(
+                        baseRemainingAmount,
+                        originalTotalUsed,
+                        currentOtherFieldsUsed,
+                        IsEditMode());
+                    
+                    var displayAmount = detail?.IsReturn == true ? -adjustedRemainingAmount : adjustedRemainingAmount;
+                    var cssClass = adjustedRemainingAmount > 0 ? "text-warning fw-bold" : 
+                                   adjustedRemainingAmount < 0 ? "text-danger fw-bold" : "text-muted";
+                    var formattedValue = NumberFormatHelper.FormatSmart(displayAmount);
+                    return @<div class="text-end @cssClass">@formattedValue</div>;
+                }
+            },
+            new()
+            {
+                Title = "本次沖款",
+                Tooltip = "本次要沖銷的金額（不可超過未沖款餘額）💡 雙擊可快速填入未沖款餘額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = ShowAllowance ? "150px" : "200px",
+                CustomTemplate = item =>
+                {
+                    var setoffItem = (SetoffProductDetailItem)item;
+                    var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
+                    var displayValue = NumberFormatHelper.FormatForInput(setoffItem.CurrentSetoffAmount, isReturn);
+                    return @<input type="number"
+                                  class="form-control  text-end"
+                                  min="0"
+                                  step="1"
+                                  value="@displayValue"
+                                  placeholder=""
+                                  @oninput="@(e => OnSetoffAmountInput(setoffItem, e.Value?.ToString()))"
+                                  @ondblclick="@(async () => await OnSetoffAmountDoubleClick(setoffItem))"
+                                  readonly="@IsReadOnly" />;
+                }
+            }
+        };
+
+        if (ShowAllowance)
+        {
+            columns.Add(new InteractiveColumnDefinition
+            {
+                Title = "本次折讓",
+                Tooltip = "本次給予的折讓金額（不計入實際收付款）💡 雙擊可快速填入未沖款餘額",
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "150px",
+                CustomTemplate = item =>
+                {
+                    var setoffItem = (SetoffProductDetailItem)item;
+                    var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
+                    var displayValue = NumberFormatHelper.FormatForInput(setoffItem.CurrentAllowanceAmount, isReturn);
+                    return @<input type="number"
+                                  class="form-control  text-end"
+                                  min="0"
+                                  step="1"
+                                  value="@displayValue"
+                                  placeholder=""
+                                  @oninput="@(e => OnAllowanceAmountInput(setoffItem, e.Value?.ToString()))"
+                                  @ondblclick="@(async () => await OnAllowanceAmountDoubleClick(setoffItem))"
+                                  readonly="@IsReadOnly" />;
+                }
+            });
+        }
+
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "小計",
+            Tooltip = "本次沖款 + 本次折讓的總計金額",
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "150px",
+            CustomTemplate = item =>
+            {
+                var setoffItem = (SetoffProductDetailItem)item;
+                var subtotal = setoffItem.CurrentSetoffAmount + setoffItem.CurrentAllowanceAmount;
+                // 如果是退貨單據，小計需要顯示為負數
+                var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
+                var displaySubtotal = isReturn ? -subtotal : subtotal;
+                var displayValue = NumberFormatHelper.FormatSmartZeroAsEmpty(displaySubtotal);
+                // 根據正負數決定顏色：正數為綠色，負數為紅色
+                var cssClass = displaySubtotal >= 0 ? "text-success" : "text-danger";
+                return @<div class="text-end fw-bold @cssClass">@displayValue</div>;
+            }
+        });
+
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = "備註",
+            Tooltip = "備註說明",
+            PropertyName = nameof(SetoffProductDetailItem.Remarks),
+            ColumnType = InteractiveColumnType.Input,
+            Width = "200px",
+            IsRequired = false,
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var (itemObj, value) = args;
+                var item = (SetoffProductDetailItem)itemObj;
+                item.Remarks = value;
+                await NotifyDetailsChanged();
+            })
+        });
+
+        return columns;
+    }
+
+
+    // ===== 事件處理方法 =====
+    private async Task OnSetoffAmountInput(SetoffProductDetailItem item, string? value)
+    {
+        var amount = InputEventHelper.HandlePriceInput(value);
+        // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
+        item.CurrentSetoffAmount = Math.Abs(amount);
+        await NotifyDetailsChanged();
+    }
+
+    /// <summary>
+    /// 雙擊本次沖款輸入框時，自動填入未沖款餘額
+    /// </summary>
+    private async Task OnSetoffAmountDoubleClick(SetoffProductDetailItem item)
+    {
+        // 如果是唯讀模式，不執行任何操作
+        if (IsReadOnly) return;
+
+        try
+        {
+            var detail = item.UnsettledDetail;
+            if (detail == null) return;
+
+            var baseRemainingAmount = detail.RemainingAmount;
+            
+            // 使用 AdjustedBalanceHelper 計算可填入的最大金額
+            var originalTotalUsed = 0m;
+            var otherFieldsUsed = item.CurrentAllowanceAmount; // 本次折讓
+            
+            if (IsEditMode() && item.ExistingDetail != null)
+            {
+                // 原有的總使用金額（沖款 + 折讓）
+                originalTotalUsed = item.ExistingDetail.CurrentSetoffAmount + 
+                                  item.ExistingDetail.CurrentAllowanceAmount;
+            }
+            
+            var maxFillableAmount = AdjustedBalanceHelper.GetMaxFillableAmount(
+                baseRemainingAmount,
+                originalTotalUsed,
+                otherFieldsUsed,
+                IsEditMode());
+            
+            // 檢查是否有可填入的金額
+            if (maxFillableAmount <= 0)
+            {
+                await NotificationService.ShowInfoAsync("沒有可填入的未沖款餘額", "提示");
+                return;
+            }
+            
+            // 填入金額（絕對值）
+            item.CurrentSetoffAmount = Math.Abs(maxFillableAmount);
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"填入金額失敗：{ex.Message}", "錯誤");
+        }
+    }
+
+    private async Task OnAllowanceAmountInput(SetoffProductDetailItem item, string? value)
+    {
+        var amount = InputEventHelper.HandlePriceInput(value);
+        // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
+        item.CurrentAllowanceAmount = Math.Abs(amount);
+        await NotifyDetailsChanged();
+    }
+
+    /// <summary>
+    /// 雙擊本次折讓輸入框時，自動填入未沖款餘額
+    /// </summary>
+    private async Task OnAllowanceAmountDoubleClick(SetoffProductDetailItem item)
+    {
+        // 如果是唯讀模式，不執行任何操作
+        if (IsReadOnly) return;
+
+        try
+        {
+            var detail = item.UnsettledDetail;
+            if (detail == null) return;
+
+            var baseRemainingAmount = detail.RemainingAmount;
+            
+            // 使用 AdjustedBalanceHelper 計算可填入的最大金額
+            var originalTotalUsed = 0m;
+            var otherFieldsUsed = item.CurrentSetoffAmount; // 本次沖款
+            
+            if (IsEditMode() && item.ExistingDetail != null)
+            {
+                // 原有的總使用金額（沖款 + 折讓）
+                originalTotalUsed = item.ExistingDetail.CurrentSetoffAmount + 
+                                  item.ExistingDetail.CurrentAllowanceAmount;
+            }
+            
+            var maxFillableAmount = AdjustedBalanceHelper.GetMaxFillableAmount(
+                baseRemainingAmount,
+                originalTotalUsed,
+                otherFieldsUsed,
+                IsEditMode());
+            
+            // 檢查是否有可填入的金額
+            if (maxFillableAmount <= 0)
+            {
+                await NotificationService.ShowInfoAsync("沒有可填入的未沖款餘額", "提示");
+                return;
+            }
+            
+            // 填入金額（絕對值）
+            item.CurrentAllowanceAmount = Math.Abs(maxFillableAmount);
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"填入金額失敗：{ex.Message}", "錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 全部沖款 - 將所有未結清項目的本次沖款填滿至未沖款餘額
+    /// </summary>
+    private async Task FillAllSetoffAmounts()
+    {
+        if (IsReadOnly) return;
+
+        try
+        {
+            int filledCount = 0;
+            
+            foreach (var item in SetoffItems)
+            {
+                if (item.UnsettledDetail != null)
+                {
+                    var baseRemainingAmount = item.UnsettledDetail.RemainingAmount;
+                    
+                    // 使用 AdjustedBalanceHelper 計算可填入的最大金額
+                    var originalTotalUsed = 0m;
+                    
+                    if (IsEditMode() && item.ExistingDetail != null)
+                    {
+                        // 原有的總使用金額（沖款 + 折讓）
+                        originalTotalUsed = item.ExistingDetail.CurrentSetoffAmount + 
+                                          item.ExistingDetail.CurrentAllowanceAmount;
+                    }
+                    
+                    var maxFillableAmount = AdjustedBalanceHelper.GetMaxFillableAmount(
+                        baseRemainingAmount,
+                        originalTotalUsed,
+                        0, // 不考慮其他欄位，直接填滿
+                        IsEditMode());
+                    
+                    // 只有當可填入金額大於0時才填入
+                    if (maxFillableAmount > 0)
+                    {
+                        item.CurrentSetoffAmount = maxFillableAmount;
+                        item.CurrentAllowanceAmount = 0; // 清空折讓
+                        filledCount++;
+                    }
+                }
+            }
+
+            await NotifyDetailsChanged();
+            
+            if (filledCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已自動填入 {filledCount} 項沖款金額", "全部沖款完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("沒有可填入的沖款項目", "提示");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"全部沖款失敗：{ex.Message}", "錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 沖款清空 - 清空所有本次沖款和本次折讓金額
+    /// </summary>
+    private async Task ClearAllSetoffAmounts()
+    {
+        if (IsReadOnly) return;
+
+        try
+        {
+            int clearedCount = 0;
+            
+            foreach (var item in SetoffItems)
+            {
+                if (item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+                {
+                    item.CurrentSetoffAmount = 0;
+                    item.CurrentAllowanceAmount = 0;
+                    clearedCount++;
+                }
+            }
+
+            await NotifyDetailsChanged();
+            
+            if (clearedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已清空 {clearedCount} 項沖款金額", "沖款清空完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("沒有需要清空的沖款項目", "提示");
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"沖款清空失敗：{ex.Message}", "錯誤");
+        }
+    }
+
+    private async Task NotifyDetailsChanged()
+    {
+        var details = SetoffItems
+            .Where(item => 
+                item.CurrentSetoffAmount > 0 || 
+                item.CurrentAllowanceAmount > 0 || 
+                !string.IsNullOrWhiteSpace(item.Remarks) || // 包含有備註的項目
+                item.ExistingDetail != null) // 編輯模式下包含所有已存在的明細
+            .Select(item => new SetoffProductDetail
+            {
+                Id = item.ExistingDetail?.Id ?? 0,
+                SetoffDocumentId = SetoffDocumentId ?? 0,
+                ProductId = item.ProductId,
+                SourceDetailType = item.SourceDetailType,
+                SourceDetailId = item.SourceDetailId,
+                CurrentSetoffAmount = item.CurrentSetoffAmount,
+                CurrentAllowanceAmount = item.CurrentAllowanceAmount,
+                TotalSetoffAmount = item.ExistingDetail?.TotalSetoffAmount ?? 0,
+                TotalAllowanceAmount = item.ExistingDetail?.TotalAllowanceAmount ?? 0,
+                Remarks = item.Remarks
+            }).ToList();
+
+        await DetailSyncHelper.SyncToParentAsync(details, OnDetailsChanged);
+    }
+    
+    /// <summary>
+    /// 取得本期沖銷總額（只計算本次沖款，不包含折讓，考慮退貨為負數）
+    /// </summary>
+    public decimal GetCurrentSetoffTotal()
+    {
+        return SetoffItems
+            .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+            .Sum(item =>
+            {
+                var total = item.CurrentSetoffAmount; // 只計算本次沖款
+                // 如果是退貨單據，金額取負值
+                var isReturn = item.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                              item.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                return isReturn ? -total : total;
+            });
+    }
+    
+    /// <summary>
+    /// 取得本期折讓總額（考慮退貨為負數）
+    /// </summary>
+    public decimal GetCurrentAllowanceTotal()
+    {
+        return SetoffItems
+            .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+            .Sum(item =>
+            {
+                var total = item.CurrentAllowanceAmount;
+                // 如果是退貨單據，金額取負值
+                var isReturn = item.SourceDetailType == SetoffDetailType.SalesReturnDetail || 
+                              item.SourceDetailType == SetoffDetailType.PurchaseReturnDetail;
+                return isReturn ? -total : total;
+            });
+    }
+    
+    /// <summary>
+    /// 處理移除明細項目
+    /// </summary>
+    private async Task HandleRemoveItem(SetoffProductDetailItem item)
+    {
+        // 如果是編輯模式中的已存在明細，將金額清零而不移除項目（保留在列表中以便恢復）
+        if (item.ExistingDetail != null)
+        {
+            item.CurrentSetoffAmount = 0;
+            item.CurrentAllowanceAmount = 0;
+            await NotificationService.ShowInfoAsync("已清除此項目的沖款金額");
+        }
+        else
+        {
+            // 新增模式下的項目可以直接移除（實際上是將金額清零）
+            item.CurrentSetoffAmount = 0;
+            item.CurrentAllowanceAmount = 0;
+            await NotificationService.ShowInfoAsync("已清除此項目的沖款金額");
+        }
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得當前選中明細的來源總金額（用於計算本期應收）
+    /// 退貨單據會以負數計算
+    /// </summary>
+    public decimal GetSourceTotalAmount()
+    {
+        return SetoffItems
+            .Where(item => item.CurrentSetoffAmount > 0 || item.CurrentAllowanceAmount > 0)
+            .Sum(item => 
+            {
+                var amount = item.SourceTotalAmount;
+                // 如果是退貨單據，金額取負值
+                return item.UnsettledDetail?.IsReturn == true ? -amount : amount;
+            });
+    }
+    
+    /// <summary>
+    /// 公開的刷新方法，用於外部觸發明細刷新（例如：上下筆切換時）
+    /// </summary>
+    public async Task RefreshDetailsAsync()
+    {
+        await LoadUnsettledDetailsAsync();
+        LoadExistingDetails();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 判斷是否為編輯模式（編輯模式下不允許刪除明細）
+    /// </summary>
+    private bool IsEditMode()
+    {
+        return SetoffDocumentId.HasValue && SetoffDocumentId.Value > 0;
+    }
+
+    // ===== 內部資料類別 =====
+    private class SetoffProductDetailItem
+    {
+        public SetoffDetailType SourceDetailType { get; set; }
+        public int SourceDetailId { get; set; }
+        public int ProductId { get; set; }
+        public Product? Product { get; set; }
+        public decimal CurrentSetoffAmount { get; set; }
+        public decimal CurrentAllowanceAmount { get; set; }
+        public string? Remarks { get; set; }
+        public SetoffProductDetail? ExistingDetail { get; set; }
+        public UnsettledDetailDto? UnsettledDetail { get; set; } // 保留未結清明細資訊
+        public bool NeedsSourceDetailLoad { get; set; } // 標記是否需要額外載入來源明細（針對已結清的明細）
+        
+        /// <summary>
+        /// 來源明細的原始總金額（用於計算本期應收）
+        /// </summary>
+        public decimal SourceTotalAmount => UnsettledDetail?.TotalAmount ?? 0;
+    }
+}

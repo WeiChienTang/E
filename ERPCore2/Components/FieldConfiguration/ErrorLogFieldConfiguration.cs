@@ -1,4 +1,5 @@
-using ERPCore2.Components.Shared.Forms;
+using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.Components.Shared.PageTemplate;
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Services;
@@ -260,7 +261,7 @@ namespace ERPCore2.FieldConfiguration
         /// <summary>
         /// 錯誤等級篩選器
         /// </summary>
-        private IQueryable<ErrorLog> ApplyErrorLevelFilter(ERPCore2.Components.Shared.Forms.SearchFilterModel searchModel, IQueryable<ErrorLog> query)
+        private IQueryable<ErrorLog> ApplyErrorLevelFilter(SearchFilterModel searchModel, IQueryable<ErrorLog> query)
         {
             var levelValue = searchModel.SelectFilters.TryGetValue(nameof(ErrorLog.Level), out var value) ? value : null;
             if (!string.IsNullOrEmpty(levelValue) && int.TryParse(levelValue, out var levelInt))
@@ -274,7 +275,7 @@ namespace ERPCore2.FieldConfiguration
         /// <summary>
         /// 錯誤來源篩選器
         /// </summary>
-        private IQueryable<ErrorLog> ApplyErrorSourceFilter(ERPCore2.Components.Shared.Forms.SearchFilterModel searchModel, IQueryable<ErrorLog> query)
+        private IQueryable<ErrorLog> ApplyErrorSourceFilter(SearchFilterModel searchModel, IQueryable<ErrorLog> query)
         {
             var sourceValue = searchModel.SelectFilters.TryGetValue(nameof(ErrorLog.Source), out var value) ? value : null;
             if (!string.IsNullOrEmpty(sourceValue) && int.TryParse(sourceValue, out var sourceInt))
@@ -288,7 +289,7 @@ namespace ERPCore2.FieldConfiguration
         /// <summary>
         /// 布林值篩選器
         /// </summary>
-        private IQueryable<ErrorLog> ApplyBooleanFilter(ERPCore2.Components.Shared.Forms.SearchFilterModel searchModel, IQueryable<ErrorLog> query, string fieldName)
+        private IQueryable<ErrorLog> ApplyBooleanFilter(SearchFilterModel searchModel, IQueryable<ErrorLog> query, string fieldName)
         {
             var value = searchModel.SelectFilters.TryGetValue(fieldName, out var val) ? val : null;
             if (!string.IsNullOrEmpty(value) && bool.TryParse(value, out var boolValue))

@@ -1,0 +1,89 @@
+@* 可重用的單據區塊組件 *@
+@using ERPCore2.Components.Shared.RelatedDocument.Config
+@using ERPCore2.Models
+
+@if (Documents.Any())
+{
+    <div class="mb-4">
+        @* 區塊標題 *@
+        <h6 class="text-@Config.TextColor mb-3">
+            <i class="bi bi-@Config.Icon me-2"></i>
+            @Config.Title (@Documents.Count)
+        </h6>
+        
+        @* 單據清單 *@
+        <div class="list-group">
+            @foreach (var doc in Documents)
+            {
+                <a href="javascript:void(0)" 
+                   class="list-group-item list-group-item-action"
+                   @onclick="@(() => OnDocumentClick.InvokeAsync(doc))">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div>
+                            @* 單據標題 *@
+                            <h6 class="mb-1">
+                                <span class="badge bg-@Config.BadgeColor @Config.BadgeTextClass me-2">
+                                    <i class="@doc.Icon me-1"></i>
+                                    @doc.TypeDisplayName
+                                </span>
+                                @doc.DocumentNumber
+                            </h6>
+                            
+                            @* 詳細資訊（由父組件通過 RenderFragment 提供） *@
+                            @if (DetailsTemplate != null)
+                            {
+                                @DetailsTemplate(doc)
+                            }
+                            else
+                            {
+                                @* 預設顯示：日期和備註 *@
+                                <p class="mb-1 text-muted small">
+                                    <span class="text-nowrap">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        @doc.DocumentDate.ToString("yyyy-MM-dd")
+                                    </span>
+                                </p>
+                                @if (!string.IsNullOrEmpty(doc.Remarks))
+                                {
+                                    <p class="mb-0 text-muted small">
+                                        <i class="bi bi-chat-left-text me-1"></i>
+                                        @doc.Remarks
+                                    </p>
+                                }
+                            }
+                        </div>
+                        <div>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// 要顯示的單據清單
+    /// </summary>
+    [Parameter, EditorRequired]
+    public List<RelatedDocument> Documents { get; set; } = new();
+    
+    /// <summary>
+    /// 區塊配置
+    /// </summary>
+    [Parameter, EditorRequired]
+    public DocumentSectionConfig Config { get; set; } = null!;
+    
+    /// <summary>
+    /// 詳細欄位的自訂範本（可選）
+    /// </summary>
+    [Parameter]
+    public RenderFragment<RelatedDocument>? DetailsTemplate { get; set; }
+    
+    /// <summary>
+    /// 當點擊單據時觸發
+    /// </summary>
+    [Parameter]
+    public EventCallback<RelatedDocument> OnDocumentClick { get; set; }
+}

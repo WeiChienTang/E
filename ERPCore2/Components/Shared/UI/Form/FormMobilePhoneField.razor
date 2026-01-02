@@ -1,0 +1,94 @@
+@* 手機號碼欄位子組件 - 台灣手機格式 *@
+@using ERPCore2.Components.Shared.UI.Form
+@inject IJSRuntime JSRuntime
+
+<input type="tel"
+       class="@InputCssClass"
+       id="@_fieldId"
+       name="@($"{Field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
+       placeholder="@(Field.Placeholder ?? FormConstants.Defaults.MobilePhonePlaceholder)"
+       readonly="@Field.IsReadOnly"
+       disabled="@Field.IsDisabled"
+       autocomplete="@FormConstants.AutoCompleteAttributes.Tel"
+       required="@Field.IsRequired"
+       maxlength="@FormConstants.Defaults.MobilePhoneMaxLength"
+       inputmode="numeric"
+       title="@FormConstants.Defaults.MobilePhoneTitle"
+       value="@FormattedDisplayValue"
+       @oninput="HandleInput" />
+
+@code {
+    [Parameter, EditorRequired]
+    public FormFieldDefinition Field { get; set; } = default!;
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool HasActionButtons { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = FormConstants.CssClasses.FormControl;
+
+    private string _fieldId = string.Empty;
+
+    private string InputCssClass => HasActionButtons 
+        ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}" 
+        : CssClass;
+
+    private string FormattedDisplayValue => FormatMobilePhone(Value);
+
+    protected override void OnInitialized()
+    {
+        _fieldId = $"mobile_{Field.PropertyName}";
+    }
+
+    /// <summary>
+    /// 格式化手機號碼顯示為 0912-345-678 格式
+    /// </summary>
+    private string FormatMobilePhone(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        var digitsOnly = new string(value.Where(char.IsDigit).ToArray());
+
+        if (string.IsNullOrEmpty(digitsOnly))
+            return string.Empty;
+
+        return digitsOnly.Length switch
+        {
+            <= 4 => digitsOnly,
+            <= 7 => $"{digitsOnly.Substring(0, 4)}-{digitsOnly.Substring(4)}",
+            _ => $"{digitsOnly.Substring(0, 4)}-{digitsOnly.Substring(4, 3)}-{digitsOnly.Substring(7, Math.Min(3, digitsOnly.Length - 7))}"
+        };
+    }
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        try
+        {
+            var digitsOnly = await JSRuntime.InvokeAsync<string>("formatMobilePhoneInput",
+                await JSRuntime.InvokeAsync<IJSObjectReference>("eval", $"document.getElementById('{_fieldId}')"));
+
+            await ValueChanged.InvokeAsync(string.IsNullOrEmpty(digitsOnly) ? null : digitsOnly);
+        }
+        catch
+        {
+            // JS 調用失敗時，使用 C# 處理
+            var value = e.Value?.ToString();
+            if (value != null)
+            {
+                var digitsOnly = new string(value.Where(char.IsDigit).ToArray());
+                if (digitsOnly.Length > 10)
+                {
+                    digitsOnly = digitsOnly.Substring(0, 10);
+                }
+                await ValueChanged.InvokeAsync(string.IsNullOrEmpty(digitsOnly) ? null : digitsOnly);
+            }
+        }
+    }
+}

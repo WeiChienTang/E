@@ -1,9 +1,10 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Components.Shared;
-using ERPCore2.Components.Shared.Forms;
+using ERPCore2.Components.Shared.UI.Form;
 using Microsoft.AspNetCore.Components;
 using ERPCore2.Services;
+using ERPCore2.Components.Shared.PageTemplate;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -189,3 +190,5 @@ namespace ERPCore2.FieldConfiguration
         }
     }
 }
+
+

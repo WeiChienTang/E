@@ -1,7 +1,5 @@
 using ERPCore2.Data;
-using ERPCore2.Components.Shared.Forms;
-using ERPCore2.Components.Shared.Modals;
-using ERPCore2.Components.Shared.PageModel.EditModalComponent;
+using ERPCore2.Components.Shared.PageTemplate;
 using ERPCore2.Services;
 
 namespace ERPCore2.Helpers;

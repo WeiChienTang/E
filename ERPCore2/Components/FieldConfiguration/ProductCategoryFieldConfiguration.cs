@@ -1,9 +1,10 @@
-using ERPCore2.Components.Shared.Forms;
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.AspNetCore.Components;
 using ERPCore2.Data.Enums;
+using ERPCore2.Components.Shared.PageTemplate;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -76,7 +77,7 @@ namespace ERPCore2.FieldConfiguration
                                 
                                 return builder =>
                                 {
-                                    builder.OpenComponent<ERPCore2.Components.Shared.GenericComponent.Badge.GenericStatusBadgeComponent>(0);
+                                    builder.OpenComponent<ERPCore2.Components.Shared.UI.Badge.GenericStatusBadgeComponent>(0);
                                     builder.AddAttribute(1, "Status", category.IsSaleable ? EntityStatus.Active : EntityStatus.Inactive);
                                     builder.AddAttribute(2, "CustomText", category.IsSaleable ? "可販售" : "不販售");
                                     builder.CloseComponent();
@@ -109,3 +110,5 @@ namespace ERPCore2.FieldConfiguration
         }
     }
 }
+
+

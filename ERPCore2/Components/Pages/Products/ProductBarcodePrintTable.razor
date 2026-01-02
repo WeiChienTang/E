@@ -1,0 +1,140 @@
+@*
+    商品條碼列印表格元件
+    專門用於條碼列印功能的表格顯示
+*@
+@using ERPCore2.Models
+@using ERPCore2.Components.Shared.Base
+
+<div class="table-responsive">
+    <InteractiveTableComponent TItem="ProductBarcodeItem"
+                             Items="@Items"
+                             ColumnDefinitions="@columnDefinitions"
+                             ShowHeader="true"
+                             ShowActions="false"
+                             ShowRowNumbers="true"
+                             IsStriped="true"
+                             IsHoverable="true"
+                             IsBordered="true"
+                             EnableRowClick="true"
+                             EnableRowSelection="true"
+                             AllowMultipleSelection="true"
+                             SelectedItems="@SelectedItems"
+                             OnSelectionChanged="@HandleSelectionChanged"
+                             GetRowCssClass="@GetRowCssClass"
+                             CssClass="barcode-print-table"
+                             EmptyMessage="沒有可列印的商品" />
+</div>
+
+@code {
+    // ===== 參數定義 =====
+    
+    [Parameter] public List<ProductBarcodeItem> Items { get; set; } = new();
+    [Parameter] public HashSet<ProductBarcodeItem>? SelectedItems { get; set; }
+    [Parameter] public EventCallback<HashSet<ProductBarcodeItem>> OnSelectionChanged { get; set; }
+    [Parameter] public Func<ProductBarcodeItem, int, string>? GetRowCssClass { get; set; }
+    
+    /// <summary>
+    /// 列印數量變更事件 - 讓父元件處理統計更新
+    /// </summary>
+    [Parameter] public EventCallback<(ProductBarcodeItem item, string? value)> OnPrintQuantityChanged { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private List<InteractiveColumnDefinition> columnDefinitions = new();
+    
+    // ===== 生命週期方法 =====
+    
+    protected override void OnInitialized()
+    {
+        BuildTableColumns();
+    }
+    
+    // ===== 初始化方法 =====
+    
+    /// <summary>
+    /// 建立表格欄位定義
+    /// </summary>
+    private void BuildTableColumns()
+    {
+        columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            // 商品代碼
+            new InteractiveColumnDefinition
+            {
+                Title = "商品代碼",
+                PropertyName = nameof(ProductBarcodeItem.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Tooltip = "商品的唯一識別代碼",
+                Width = "150px"
+            },
+            
+            // 商品名稱
+            new InteractiveColumnDefinition
+            {
+                Title = "商品名稱",
+                PropertyName = nameof(ProductBarcodeItem.Name),
+                ColumnType = InteractiveColumnType.Display,
+                Tooltip = "商品的名稱",
+                Width = "auto"
+            },
+            
+            // 條碼
+            new InteractiveColumnDefinition
+            {
+                Title = "條碼號碼",
+                PropertyName = nameof(ProductBarcodeItem.Barcode),
+                ColumnType = InteractiveColumnType.Display,
+                Tooltip = "商品的條碼",
+                Width = "200px"
+            },
+            
+            // 列印數量
+            new InteractiveColumnDefinition
+            {
+                Title = "列印數量",
+                PropertyName = nameof(ProductBarcodeItem.PrintQuantity),
+                ColumnType = InteractiveColumnType.Number,
+                Tooltip = "列印的數量",
+                Width = "120px",
+                MinValue = 1,
+                MaxValue = 100,
+                Step = 1,
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(
+                    this, HandlePrintQuantityChanged)
+            }
+        };
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    /// <summary>
+    /// 處理選取狀態變更事件
+    /// </summary>
+    private async Task HandleSelectionChanged(HashSet<ProductBarcodeItem> selectedItems)
+    {
+        if (OnSelectionChanged.HasDelegate)
+        {
+            await OnSelectionChanged.InvokeAsync(selectedItems);
+        }
+    }
+    
+    /// <summary>
+    /// 處理列印數量變更事件
+    /// </summary>
+    private async Task HandlePrintQuantityChanged((object item, string? value) args)
+    {
+        var barcodeItem = (ProductBarcodeItem)args.item;
+        
+        // 先在本地更新數值
+        if (int.TryParse(args.value, out int quantity) && quantity > 0)
+        {
+            barcodeItem.PrintQuantity = quantity;
+        }
+        
+        // 通知父元件更新統計
+        if (OnPrintQuantityChanged.HasDelegate)
+        {
+            await OnPrintQuantityChanged.InvokeAsync((barcodeItem, args.value));
+        }
+    }
+}

@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.Forms;
+using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Helpers

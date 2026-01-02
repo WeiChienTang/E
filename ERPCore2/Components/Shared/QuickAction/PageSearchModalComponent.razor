@@ -1,0 +1,367 @@
+@*
+    頁面搜尋 Modal 組件
+    用於快速搜尋並導航到系統中的功能頁面
+*@
+@using ERPCore2.Models
+@using ERPCore2.Components.Shared.PageTemplate
+@using ERPCore2.Helpers
+@inject INavigationSearchService NavigationSearchService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@implements IDisposable
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="頁面搜尋"
+                   Icon="bi-search"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   UseWhiteCloseButton="true"
+                   BodyCssClass="pt-3"
+                   OnClose="@HandleClose"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true">
+    
+    <BodyContent>
+        @* 搜尋輸入框 *@
+        <div class="search-input-wrapper mb-3">
+            <i class="bi bi-search search-icon"></i>
+            <input @ref="searchInput"
+                   type="text" 
+                   class="form-control ps-5" 
+                   placeholder="輸入功能名稱或關鍵字搜尋..."
+                   @bind="searchTerm"
+                   @bind:event="oninput"
+                   @bind:after="OnSearchTermChanged"
+                   @onkeydown="HandleKeyDown" />
+            @if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                <button type="button" 
+                        class="btn btn-sm btn-link clear-button" 
+                        @onclick="ClearSearch"
+                        title="清除搜尋">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            }
+        </div>
+
+        @* 搜尋結果區域 *@
+        <div class="search-results-container">
+            @if (searchResults.Any())
+            {
+                <div class="search-results-section">
+                    <h6 class="mb-3">
+                        <i class="bi bi-list-ul me-2"></i>
+                        搜尋結果 (共 @searchResults.Count 個功能)
+                    </h6>
+                    <div class="search-results-list">
+                        @for (int i = 0; i < searchResults.Count; i++)
+                        {
+                            var index = i;
+                            var item = searchResults[i];
+                            var isSelected = index == selectedIndex;
+                            
+                            <div class="search-result-item @(isSelected ? "keyboard-selected" : "")" 
+                                 id="search-result-@index"
+                                 @onclick="@(() => HandleNavigationCardClick(item))"
+                                 @onmouseenter="@(() => HandleMouseEnter(index))"
+                                 @onmouseleave="@HandleMouseLeave">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="result-arrow">›</span>
+                                    <span class="result-name">@item.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.Description))
+                                    {
+                                        <span class="result-description">@item.Description</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.Category))
+                                    {
+                                        <span class="result-category">@item.Category</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else if (hasSearched)
+            {
+                <div class="search-empty-state text-center py-5">
+                    <i class="bi bi-emoji-frown fs-1 text-muted d-block mb-3"></i>
+                    <p class="text-muted mb-0">沒有找到符合條件的功能，請嘗試使用其他關鍵字</p>
+                </div>
+            }
+            else
+            {
+                <div class="search-empty-state text-center py-5">
+                    <i class="bi bi-lightning-charge fs-1 text-primary d-block mb-3"></i>
+                    <p class="text-muted mb-1">開始輸入以搜尋功能頁面</p>
+                    <small class="text-muted">支援功能名稱、關鍵字搜尋</small>
+                </div>
+            }
+        </div>
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+    
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public NavigationActionHelper.ActionHandlerRegistry? ActionRegistry { get; set; }
+
+    // ===== 私有欄位 =====
+    
+    private ElementReference searchInput;
+    private List<NavigationItem> searchResults = new();
+    private string searchTerm = "";
+    private bool hasSearched = false;
+    private bool _isDisposed = false;
+    private int selectedIndex = -1; // 目前選中的項目索引
+    private bool isUsingKeyboard = false; // 追蹤是否正在使用鍵盤導航
+    
+    // 防抖計時器
+    private System.Threading.Timer? _searchDebounceTimer;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // 當 Modal 顯示時，自動聚焦到搜尋框
+        if (IsVisible && !_isDisposed)
+        {
+            try
+            {
+                await Task.Delay(100);
+                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.search-input-wrapper input')?.focus()");
+            }
+            catch
+            {
+                // 忽略聚焦錯誤
+            }
+        }
+    }
+
+    // ===== 公開方法 =====
+
+    /// <summary>
+    /// 開啟 Modal
+    /// </summary>
+    public async Task Open()
+    {
+        IsVisible = true;
+        searchTerm = "";
+        searchResults.Clear();
+        hasSearched = false;
+        selectedIndex = -1; // 重置選取
+        await IsVisibleChanged.InvokeAsync(true);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    public async Task Close()
+    {
+        await HandleClose();
+    }
+
+    // ===== 事件處理方法 =====
+    
+    /// <summary>
+    /// 處理 Modal 關閉事件
+    /// </summary>
+    private async Task HandleClose()
+    {
+        searchTerm = "";
+        searchResults.Clear();
+        hasSearched = false;
+        selectedIndex = -1;
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    /// <summary>
+    /// 處理鍵盤事件（支援方向鍵選取、Enter 確認）
+    /// ESC 關閉功能由 BaseModalComponent 統一處理（透過 CloseOnEscape="true"）
+    /// </summary>
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        // 移除 ESC 處理，改由 BaseModalComponent 統一管理
+        if (e.Key == "ArrowDown" || e.Key == "Down")
+        {
+            // 向下移動選取
+            if (searchResults.Any())
+            {
+                isUsingKeyboard = true; // 標記為鍵盤導航
+                selectedIndex = (selectedIndex + 1) % searchResults.Count;
+                await ScrollToSelectedItem();
+                StateHasChanged();
+            }
+        }
+        else if (e.Key == "ArrowUp" || e.Key == "Up")
+        {
+            // 向上移動選取
+            if (searchResults.Any())
+            {
+                isUsingKeyboard = true; // 標記為鍵盤導航
+                selectedIndex = selectedIndex <= 0 ? searchResults.Count - 1 : selectedIndex - 1;
+                await ScrollToSelectedItem();
+                StateHasChanged();
+            }
+        }
+        else if (e.Key == "Enter")
+        {
+            // Enter 導航到選中的項目
+            if (selectedIndex >= 0 && selectedIndex < searchResults.Count)
+            {
+                var selectedItem = searchResults[selectedIndex];
+                await HandleNavigationCardClick(selectedItem);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 處理滑鼠移入事件
+    /// </summary>
+    private void HandleMouseEnter(int index)
+    {
+        // 滑鼠移入時，清除鍵盤導航狀態並設定新的選取
+        isUsingKeyboard = false;
+        selectedIndex = index;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理滑鼠移出事件
+    /// </summary>
+    private void HandleMouseLeave()
+    {
+        // 滑鼠移出時，如果不是鍵盤導航模式，則清除選取
+        if (!isUsingKeyboard)
+        {
+            selectedIndex = -1;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 當搜尋字串改變時觸發（帶防抖）
+    /// </summary>
+    private void OnSearchTermChanged()
+    {
+        // 取消之前的計時器
+        _searchDebounceTimer?.Dispose();
+        
+        // 設置新的計時器（300ms 防抖）
+        _searchDebounceTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(async () =>
+            {
+                await PerformSearch();
+                StateHasChanged();
+            });
+        }, null, 300, Timeout.Infinite);
+    }
+
+    /// <summary>
+    /// 執行搜尋
+    /// </summary>
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            searchResults.Clear();
+            hasSearched = false;
+            selectedIndex = -1; // 重置選取
+        }
+        else
+        {
+            searchResults = NavigationSearchService.SearchNavigationItems(searchTerm)
+                .Where(item => !item.IsParent && 
+                    (item.ItemType == NavigationItemType.Action || 
+                     (!string.IsNullOrEmpty(item.Route) && item.Route != "#")))
+                .ToList();
+            hasSearched = true;
+            
+            // 自動選取第一個項目
+            selectedIndex = searchResults.Any() ? 0 : -1;
+        }
+        
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 清除搜尋
+    /// </summary>
+    private void ClearSearch()
+    {
+        searchTerm = "";
+        searchResults.Clear();
+        hasSearched = false;
+        selectedIndex = -1; // 重置選取
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理導航卡片點擊事件
+    /// </summary>
+    private async Task HandleNavigationCardClick(NavigationItem item)
+    {
+        if (item.ItemType == NavigationItemType.Action && !string.IsNullOrWhiteSpace(item.ActionId))
+        {
+            // 處理 Action 類型項目
+            await HandleClose();
+            
+            // 使用 ActionHandlerRegistry 執行 Action
+            if (ActionRegistry != null)
+            {
+                ActionRegistry.Execute(item.ActionId);
+            }
+        }
+        else if (!string.IsNullOrEmpty(item.Route) && item.Route != "#")
+        {
+            // 處理路由類型項目
+            await HandleClose();
+            NavigationManager.NavigateTo(item.Route);
+        }
+    }
+
+    /// <summary>
+    /// 滾動到選中的項目
+    /// </summary>
+    private async Task ScrollToSelectedItem()
+    {
+        if (selectedIndex >= 0 && !_isDisposed)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", 
+                    $"document.getElementById('search-result-{selectedIndex}')?.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }})");
+            }
+            catch
+            {
+                // 忽略滾動錯誤
+            }
+        }
+    }
+
+    // ===== 資源清理 =====
+    
+    public void Dispose()
+    {
+        try
+        {
+            _isDisposed = true;
+            _searchDebounceTimer?.Dispose();
+        }
+        catch
+        {
+            // 忽略清理過程中的錯誤
+        }
+    }
+}

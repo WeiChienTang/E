@@ -1,0 +1,59 @@
+@* 下拉選單欄位子組件 *@
+@using ERPCore2.Components.Shared.UI.Form
+
+<select class="@InputCssClass"
+        id="@Field.PropertyName"
+        name="@($"{Field.PropertyName}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
+        disabled="@(Field.IsReadOnly || Field.IsDisabled)"
+        autocomplete="@FormConstants.AutoCompleteAttributes.Off"
+        @onchange="HandleChange">
+    @if (Field.Options != null)
+    {
+        @foreach (var option in Field.Options)
+        {
+            <option value="@option.Value" selected="@(option.Value == CurrentValue)">@option.Text</option>
+        }
+    }
+</select>
+
+@code {
+    [Parameter, EditorRequired]
+    public FormFieldDefinition Field { get; set; } = default!;
+
+    [Parameter]
+    public object? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool HasActionButtons { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = FormConstants.CssClasses.FormControl;
+
+    private string InputCssClass => HasActionButtons 
+        ? $"{CssClass} {FormConstants.CssClasses.HasActionButtons}" 
+        : CssClass;
+
+    private string? CurrentValue
+    {
+        get
+        {
+            if (Value == null) return null;
+            
+            // 處理枚舉類型
+            if (Value.GetType().IsEnum)
+            {
+                return ((int)Value).ToString();
+            }
+            
+            return Value.ToString();
+        }
+    }
+
+    private async Task HandleChange(ChangeEventArgs e)
+    {
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+    }
+}

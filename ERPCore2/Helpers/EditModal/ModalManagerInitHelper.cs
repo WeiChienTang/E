@@ -1,5 +1,4 @@
-using ERPCore2.Components.Shared.Modals;
-using ERPCore2.Components.Shared.PageModel.EditModalComponent;
+using ERPCore2.Components.Shared.PageTemplate;
 using ERPCore2.Data;
 using ERPCore2.Services;
 using System.Linq.Expressions;
