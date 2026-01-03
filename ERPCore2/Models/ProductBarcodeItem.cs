@@ -11,7 +11,7 @@ public class ProductBarcodeItem
     public int ProductId { get; set; }
     
     /// <summary>
-    /// 商品代碼
+    /// 商品編號
     /// </summary>
     public string Code { get; set; } = string.Empty;
     

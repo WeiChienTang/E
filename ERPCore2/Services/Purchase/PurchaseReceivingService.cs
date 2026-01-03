@@ -697,9 +697,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查進貨代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// 檢查進貨編號是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        /// <param name="code">進貨代碼</param>
+        /// <param name="code">進貨編號</param>
         /// <param name="excludeId">要排除的ID（編輯模式時使用）</param>
         /// <returns>true表示已存在，false表示不存在</returns>
         public async Task<bool> IsPurchaseReceivingCodeExistsAsync(string code, int? excludeId = null)
@@ -1235,7 +1235,7 @@ namespace ERPCore2.Services
         /// 3. 已有進貨數量的明細
         /// 4. 進貨數量大於已退貨數量（部分或完全未退貨）
         /// 用途：供應商退貨作業的資料來源
-        /// 排序：依進貨日期、進貨單號、商品代碼排序
+        /// 排序：依進貨日期、進貨單號、商品編號排序
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
         /// <returns>可退貨的進貨明細清單</returns>

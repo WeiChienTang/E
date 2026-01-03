@@ -37,7 +37,7 @@ public enum RelatedDocumentType
     SetoffDocument,        // 沖款單
     ReceivingDocument,     // 入庫單
     SalesOrder,            // 銷貨訂單
-    ProductComposition,    // 商品合成表
+    ProductComposition,    // 商品物料清單
     DeliveryDocument,      // 銷貨單/出貨單 ✅ 新增
     ProductionSchedule     // 生產排程 ✅ 新增
 }
@@ -83,7 +83,7 @@ public string TypeDisplayName => DocumentType switch
     RelatedDocumentType.SetoffDocument => "沖款單",
     RelatedDocumentType.ReceivingDocument => "入庫單",
     RelatedDocumentType.SalesOrder => "銷貨訂單",
-    RelatedDocumentType.ProductComposition => "商品合成表",
+    RelatedDocumentType.ProductComposition => "商品物料清單",
     RelatedDocumentType.DeliveryDocument => "銷貨單",       // ✅ 新增
     RelatedDocumentType.ProductionSchedule => "生產排程",   // ✅ 新增
     _ => "未知單據"

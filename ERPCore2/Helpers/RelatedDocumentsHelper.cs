@@ -417,7 +417,7 @@ namespace ERPCore2.Helpers
         }
         
         /// <summary>
-        /// 取得指定商品的所有合成表
+        /// 取得指定商品的所有物料清單
         /// </summary>
         public async Task<List<RelatedDocument>> GetProductCompositionsAsync(int productId)
         {
@@ -425,7 +425,7 @@ namespace ERPCore2.Helpers
             
             try
             {
-                // 從 ProductCompositionService 取得該商品的所有合成表
+                // 從 ProductCompositionService 取得該商品的所有物料清單
                 var compositions = await _productCompositionService.GetByProductIdAsync(productId);
                 
                 foreach (var composition in compositions)

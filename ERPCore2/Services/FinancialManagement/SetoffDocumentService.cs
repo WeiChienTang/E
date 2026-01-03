@@ -205,7 +205,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查沖款單代碼是否已存在（別名方法，供 EntityCodeGenerationHelper 使用）
+        /// 檢查沖款單編號是否已存在（別名方法，供 EntityCodeGenerationHelper 使用）
         /// </summary>
         public async Task<bool> IsSetoffDocumentCodeExistsAsync(string code, int? excludeId = null)
         {

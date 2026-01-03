@@ -1,4 +1,4 @@
-@* 可重用的合成表類型編輯組件 - 可在任何頁面中嵌入 *@
+@* 可重用的物料清單類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 
@@ -9,17 +9,17 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CompositionCategoryId"
                           Service="@CompositionCategoryService"
-                          EntityName="合成表類型"
-                          EntityNamePlural="合成表類型"
-                          ModalTitle="@(CompositionCategoryId.HasValue ? "編輯合成表類型" : "新增合成表類型")"
+                          EntityName="物料清單類型"
+                          EntityNamePlural="物料清單類型"
+                          ModalTitle="@(CompositionCategoryId.HasValue ? "編輯物料清單類型" : "新增物料清單類型")"
                           Size="GenericEditModalComponent<CompositionCategory, ICompositionCategoryService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
                           FormSections="@formSections"
                           DataLoader="@LoadCompositionCategoryData"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(CompositionCategoryId.HasValue ? "合成表類型更新成功" : "合成表類型新增成功")"
-                          SaveFailureMessage="合成表類型儲存失敗"
+                          SaveSuccessMessage="@(CompositionCategoryId.HasValue ? "物料清單類型更新成功" : "物料清單類型新增成功")"
+                          SaveFailureMessage="物料清單類型儲存失敗"
                           RequiredPermission="CompositionCategory.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
@@ -64,7 +64,7 @@
     {
         try
         {
-            // 如果父組件需要知道合成表類型已儲存
+            // 如果父組件需要知道物料清單類型已儲存
             if (OnCompositionCategorySaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 await OnCompositionCategorySaved.InvokeAsync(editModalComponent.Entity);
@@ -110,7 +110,7 @@
         {
             if (!CompositionCategoryId.HasValue) 
             {
-                // 新增模式：建立新的合成表類型實體並生成代碼
+                // 新增模式：建立新的物料清單類型實體並生成編號
                 var newCategory = new CompositionCategory
                 {
                     Name = string.Empty,
@@ -128,7 +128,7 @@
             
             if (category == null)
             {
-                // 如果找不到合成表類型，建立新的預設實體
+                // 如果找不到物料清單類型，建立新的預設實體
                 return new CompositionCategory
                 {
                     Status = EntityStatus.Active
@@ -138,7 +138,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入合成表類型資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入物料清單類型資料時發生錯誤：{ex.Message}");
             
             // 設定安全的預設值，確保程式不會崩潰
             return new CompositionCategory
@@ -169,11 +169,11 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(CompositionCategory.Code),
-                    Label = "類型代碼",
+                    Label = "類型編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入合成表類型代碼",
+                    Placeholder = "請輸入物料清單類型編號",
                     IsRequired = true,
-                    HelpText = "合成表類型的唯一代碼，例如：STD、ALT、SIM、CUST，系統會自動產生，也可手動修改"
+                    HelpText = "物料清單類型的唯一編號，例如：STD、ALT、SIM、CUST，系統會自動產生，也可手動修改"
                 },
 
                 new()
@@ -181,9 +181,9 @@
                     PropertyName = nameof(CompositionCategory.Name),
                     Label = "類型名稱",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入合成表類型名稱",
+                    Placeholder = "請輸入物料清單類型名稱",
                     IsRequired = true,
-                    HelpText = "合成表類型的名稱，例如：標準配方、替代配方、簡化配方、客製配方"
+                    HelpText = "物料清單類型的名稱，例如：標準配方、替代配方、簡化配方、客製配方"
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<CompositionCategory>()
@@ -211,7 +211,7 @@
     // ===== 公開方法 (供父組件調用) =====
 
     /// <summary>
-    /// 開啟新增合成表類型 Modal
+    /// 開啟新增物料清單類型 Modal
     /// </summary>
     public async Task ShowAddModal()
     {
@@ -223,7 +223,7 @@
     }
 
     /// <summary>
-    /// 開啟編輯合成表類型 Modal
+    /// 開啟編輯物料清單類型 Modal
     /// </summary>
     public async Task ShowEditModal(int categoryId)
     {

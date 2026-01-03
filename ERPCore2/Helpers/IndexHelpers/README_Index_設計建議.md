@@ -271,8 +271,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Customer>
                         {
                             PropertyName = nameof(Customer.Code),
-                            DisplayName = "客戶代碼",
-                            FilterPlaceholder = "輸入客戶代碼搜尋",
+                            DisplayName = "客戶編號",
+                            FilterPlaceholder = "輸入客戶編號搜尋",
                             TableOrder = 1,
                             HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -381,8 +381,8 @@ FilterFunction = (model, query) => FilterHelper.ApplyForeignKeyFilter(
 new FieldDefinition<Customer>
 {
     PropertyName = nameof(Customer.Code),       // 屬性名稱
-    DisplayName = "客戶代碼",                    // 顯示名稱
-    FilterPlaceholder = "輸入客戶代碼搜尋",      // 篩選欄位提示文字
+    DisplayName = "客戶編號",                    // 顯示名稱
+    FilterPlaceholder = "輸入客戶編號搜尋",      // 篩選欄位提示文字
     TableOrder = 1,                             // 表格欄位順序
     HeaderStyle = "width: 180px;",              // 表頭樣式（可選）
     FilterFunction = ...                        // 篩選函數
@@ -531,12 +531,12 @@ new FieldDefinition<Customer>
                 new()
                 {
                     PropertyName = nameof(Customer.Code),
-                    Label = "客戶代碼",
+                    Label = "客戶編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入客戶代碼",
+                    Placeholder = "請輸入客戶編號",
                     IsRequired = true,
                     MaxLength = 20,
-                    HelpText = "客戶的唯一識別代碼"
+                    HelpText = "客戶的唯一識別編號"
                 },
                 new()
                 {
@@ -851,9 +851,9 @@ private async Task OnFieldValueChanged((string PropertyName, object? Value) fiel
 }
 ```
 
-#### 5. 使用 `EntityCodeGenerationHelper` 產生代碼
+#### 5. 使用 `EntityCodeGenerationHelper` 產生編號
 ```csharp
-// ✅ 新增模式時自動產生代碼
+// ✅ 新增模式時自動產生編號
 var newCustomer = new Customer
 {
     Code = await EntityCodeGenerationHelper.GenerateForEntity<Customer, ICustomerService>(
@@ -868,7 +868,7 @@ var newCustomer = new Customer
 formFields.Add(FormFieldConfigurationHelper.CreateRemarksField<Customer>());
 
 // 也有其他預設欄位
-formFields.Add(FormFieldConfigurationHelper.CreateCodeField<Customer>("客戶代碼", "CUST"));
+formFields.Add(FormFieldConfigurationHelper.CreateCodeField<Customer>("客戶編號", "CUST"));
 formFields.Add(FormFieldConfigurationHelper.CreateStatusField<Customer>());
 ```
 
@@ -891,8 +891,8 @@ formFields.Add(FormFieldConfigurationHelper.CreateStatusField<Customer>());
 | **ApprovalConfigHelper** | 審核流程配置 | 需要審核機制的單據 |
 | **AutoCompleteConfigHelper** | AutoComplete 配置建立 | 所有 AutoComplete 欄位 |
 | **ChildDocumentRefreshHelper** | 子文件刷新處理 | 有明細資料的主檔單據 |
-| **CodeGenerationHelper** | 代碼生成邏輯 | 需要自動產生代碼的實體 |
-| **EntityCodeGenerationHelper** | 實體代碼生成（泛型） | 新增模式時自動產生代碼 |
+| **CodeGenerationHelper** | 編號生成邏輯 | 需要自動產生編號的實體 |
+| **EntityCodeGenerationHelper** | 實體編號生成（泛型） | 新增模式時自動產生編號 |
 | **FormFieldLockHelper** | 表單欄位鎖定控制 | 需要根據狀態鎖定欄位 |
 | **FormSectionHelper** | 表單區段定義 | 所有 EditModal |
 | **ModalManagerInitHelper** | Modal 管理器初始化 | 有關聯實體編輯的 Modal |
@@ -927,7 +927,7 @@ formFields.Add(FormFieldConfigurationHelper.CreateStatusField<Customer>());
 
 **範例：**
 ```csharp
-// ❌ 在多個 EditModal 中重複的代碼
+// ❌ 在多個 EditModal 中重複的編號
 private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
 {
     var currentId = editModalComponent?.Entity?.EmployeeId;
@@ -1074,7 +1074,7 @@ private async Task<Customer?> LoadCustomerData()
         // ===== 新增模式 =====
         return new Customer
         {
-            // 使用 Helper 自動產生代碼
+            // 使用 Helper 自動產生編號
             Code = await EntityCodeGenerationHelper.GenerateForEntity<Customer, ICustomerService>(
                 CustomerService, "CUST"),
             // 設定預設值

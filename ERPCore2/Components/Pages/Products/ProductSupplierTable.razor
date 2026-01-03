@@ -129,14 +129,14 @@
                 }
             },
             
-            // 廠商商品代碼 - 文字輸入
+            // 廠商商品編號 - 文字輸入
             new() 
             { 
-                Title = "廠商商品代碼", 
+                Title = "廠商商品編號", 
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "20%",
-                Tooltip = "輸入廠商對此商品的商品代碼或料號",
+                Tooltip = "輸入廠商對此商品的商品編號或料號",
                 CustomTemplate = item => 
                 {
                     var productSupplier = (TProductSupplierEntity)item;
@@ -145,8 +145,8 @@
                     return @<input type="text" 
                                    class="form-control" 
                                    value="@value"
-                                   placeholder="請輸入代碼"
-                                   title="輸入廠商對此商品的商品代碼或料號"
+                                   placeholder="請輸入編號"
+                                   title="輸入廠商對此商品的商品編號或料號"
                                    disabled="@IsReadOnly"
                                    @oninput="@(async (e) => await OnSupplierProductCodeChanged((productSupplier, e.Value?.ToString())))" />;
                 }

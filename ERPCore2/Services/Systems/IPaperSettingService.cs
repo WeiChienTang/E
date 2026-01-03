@@ -14,24 +14,24 @@ namespace ERPCore2.Services
         Task<PaperSetting?> GetDefaultPaperSettingAsync();
 
         /// <summary>
-        /// 根據代碼取得紙張設定
+        /// 根據編號取得紙張設定
         /// </summary>
-        /// <param name="code">紙張設定代碼</param>
+        /// <param name="code">紙張設定編號</param>
         /// <returns>紙張設定資料</returns>
         Task<PaperSetting?> GetByCodeAsync(string code);
 
         /// <summary>
-        /// 檢查代碼是否已存在
+        /// 檢查編號是否已存在
         /// </summary>
-        /// <param name="code">紙張設定代碼</param>
+        /// <param name="code">紙張設定編號</param>
         /// <param name="excludeId">排除的ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
         Task<bool> IsCodeExistsAsync(string code, int? excludeId = null);
 
         /// <summary>
-        /// 檢查紙張設定代碼是否已存在
+        /// 檢查紙張設定編號是否已存在
         /// </summary>
-        /// <param name="code">紙張設定代碼</param>
+        /// <param name="code">紙張設定編號</param>
         /// <param name="excludeId">排除的ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
         Task<bool> IsPaperSettingCodeExistsAsync(string code, int? excludeId = null);

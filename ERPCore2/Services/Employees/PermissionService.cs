@@ -46,7 +46,7 @@ namespace ERPCore2.Services
             {
                 if (string.IsNullOrWhiteSpace(permissionCode))
                 {
-                    return ServiceResult<bool>.Failure("權限代碼不能為空");
+                    return ServiceResult<bool>.Failure("權限編號不能為空");
                 }
 
                 var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
@@ -181,7 +181,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得員工的所有權限代碼
+        /// 取得員工的所有權限編號
         /// </summary>
         public async Task<ServiceResult<List<string>>> GetEmployeePermissionCodesAsync(int employeeId)
         {            try
@@ -206,7 +206,7 @@ namespace ERPCore2.Services
                     _logger, 
                     new { EmployeeId = employeeId });
                 
-                return ServiceResult<List<string>>.Failure($"取得員工權限代碼時發生錯誤：{ex.Message}");
+                return ServiceResult<List<string>>.Failure($"取得員工權限編號時發生錯誤：{ex.Message}");
             }
         }
 
@@ -254,9 +254,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查權限代碼是否存在
+        /// 檢查權限編號是否存在
         /// </summary>        /// <summary>
-        /// 檢查權限代碼是否存在 - 簡化版本，不支援排除特定ID
+        /// 檢查權限編號是否存在 - 簡化版本，不支援排除特定ID
         /// 如需更完整功能請使用 PermissionManagementService.IsPermissionCodeExistsAsync
         /// </summary>
         public async Task<ServiceResult<bool>> PermissionExistsAsync(string permissionCode)
@@ -264,7 +264,7 @@ namespace ERPCore2.Services
             try
             {
                 if (string.IsNullOrWhiteSpace(permissionCode))
-                    return ServiceResult<bool>.Failure("權限代碼不能為空");
+                    return ServiceResult<bool>.Failure("權限編號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var exists = await context.Permissions
@@ -281,7 +281,7 @@ namespace ERPCore2.Services
                     _logger, 
                     new { PermissionCode = permissionCode });
                 
-                return ServiceResult<bool>.Failure($"檢查權限代碼時發生錯誤：{ex.Message}");
+                return ServiceResult<bool>.Failure($"檢查權限編號時發生錯誤：{ex.Message}");
             }
         }
 

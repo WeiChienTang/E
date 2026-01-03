@@ -62,7 +62,7 @@ BatchPrintCriteria
 ├── WarehouseId          // 倉庫ID
 ├── DocumentNumberKeyword // 單據編號關鍵字
 ├── CustomFilters        // 自訂篩選（Dictionary）
-├── ReportType           // 報表類型代碼
+├── ReportType           // 報表類型編號
 ├── PrintConfigurationId // 列印配置ID
 ├── SortBy               // 排序欄位
 ├── SortDirection        // 排序方向
@@ -671,7 +671,7 @@ public async Task<IActionResult> BatchPrintPurchaseOrdersWithAutoPrint(
                 StartDate = batchPrintStartDate,
                 EndDate = batchPrintEndDate,
                 RelatedEntityIds = selectedEntities.Select(e => e.Id).ToList(),
-                ReportType = "{單據類型代碼}", // 例如：PurchaseOrder
+                ReportType = "{單據類型編號}", // 例如：PurchaseOrder
                 MaxResults = 100,
                 IncludeCancelled = false
             };
@@ -735,7 +735,7 @@ public async Task<IActionResult> BatchPrintPurchaseOrdersWithAutoPrint(
 
 - `{單據}`：例如 `PurchaseOrder`、`PurchaseReceiving`
 - `{path}`：例如 `purchase`、`sales`
-- `{單據類型代碼}`：例如 `"PurchaseOrder"`
+- `{單據類型編號}`：例如 `"PurchaseOrder"`
 - `RelatedEntity`：例如 `Supplier`、`Customer`
 
 ---

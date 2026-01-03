@@ -37,8 +37,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Employee>
                         {
                             PropertyName = nameof(Employee.Code),
-                            DisplayName = "員工代碼",
-                            FilterPlaceholder = "輸入員工代碼搜尋",
+                            DisplayName = "員工編號",
+                            FilterPlaceholder = "輸入員工編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -142,7 +142,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "系統操控",
                             ShowInFilter = false,
                             TableOrder = 6,
-                            HeaderStyle = "width: 90px;",
                             CustomTemplate = item => builder =>
                             {
                                 var employee = (Employee)item;

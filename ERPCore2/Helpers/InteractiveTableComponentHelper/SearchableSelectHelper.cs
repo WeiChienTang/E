@@ -144,18 +144,18 @@ public static class SearchableSelectHelper
     /// 格式化商品顯示文字
     /// </summary>
     /// <param name="product">商品</param>
-    /// <returns>格式化後的文字（格式：[代碼] 名稱）</returns>
+    /// <returns>格式化後的文字（格式：[編號] 名稱）</returns>
     public static string FormatProductDisplayText(Product? product)
     {
         if (product == null) return string.Empty;
         
-        // 同時有代碼和名稱：[代碼] 名稱
+        // 同時有編號和名稱：[編號] 名稱
         if (!string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name))
         {
             return $"[{product.Code}] {product.Name}";
         }
         
-        // 只有代碼：[代碼]
+        // 只有編號：[編號]
         if (!string.IsNullOrEmpty(product.Code))
         {
             return $"[{product.Code}]";

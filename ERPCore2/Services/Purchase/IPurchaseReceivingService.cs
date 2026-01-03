@@ -56,9 +56,9 @@ namespace ERPCore2.Services
         Task<string> GenerateReceiptNumberAsync();
 
         /// <summary>
-        /// 檢查進貨代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// 檢查進貨編號是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        /// <param name="code">進貨代碼</param>
+        /// <param name="code">進貨編號</param>
         /// <param name="excludeId">排除的ID（用於編輯模式）</param>
         /// <returns>是否存在</returns>
         Task<bool> IsPurchaseReceivingCodeExistsAsync(string code, int? excludeId = null);

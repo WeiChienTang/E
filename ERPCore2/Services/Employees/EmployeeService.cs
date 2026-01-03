@@ -494,7 +494,7 @@ namespace ERPCore2.Services
                     errors.Add("名字為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("員工代碼為必填");
+                    errors.Add("員工編號為必填");
 
                 // 檢查長度限制
                 if (entity.Account?.Length > 50)
@@ -504,7 +504,7 @@ namespace ERPCore2.Services
                     errors.Add("名字不可超過50個字元");
 
                 if (!string.IsNullOrEmpty(entity.Code) && entity.Code.Length > 20)
-                    errors.Add("員工代碼不可超過20個字元");
+                    errors.Add("員工編號不可超過20個字元");
 
                 // 檢查帳號是否重複（只有系統使用者需要檢查帳號唯一性）
                 if (entity.IsSystemUser && !string.IsNullOrWhiteSpace(entity.Account))
@@ -518,7 +518,7 @@ namespace ERPCore2.Services
                         errors.Add("此帳號已被其他員工使用");
                 }
 
-                // 檢查員工代碼是否重複
+                // 檢查員工編號是否重複
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isCodeDuplicate = await context.Employees
@@ -527,7 +527,7 @@ namespace ERPCore2.Services
                         .AnyAsync();
 
                     if (isCodeDuplicate)
-                        errors.Add("員工代碼已存在");
+                        errors.Add("員工編號已存在");
                 }
 
                 // 檢查角色是否存在（只有當指定了角色時才檢查）

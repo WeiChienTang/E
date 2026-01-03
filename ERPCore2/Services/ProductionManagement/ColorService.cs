@@ -82,9 +82,9 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("顏色名稱為必填");
 
-                // 檢查代碼是否重複（只有在提供代碼時才檢查）
+                // 檢查編號是否重複（只有在提供編號時才檢查）
                 if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCodeExistsAsync(entity.Code, entity.Id))
-                    return ServiceResult.Failure("顏色代碼已存在");
+                    return ServiceResult.Failure("顏色編號已存在");
 
                 // 檢查名稱是否重複
                 if (await IsNameExistsAsync(entity.Name, entity.Id))
@@ -132,7 +132,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查顏色代碼是否已存在
+        /// 檢查顏色編號是否已存在
         /// </summary>
         public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
         {
@@ -159,7 +159,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據代碼取得顏色資料
+        /// 根據編號取得顏色資料
         /// </summary>
         public async Task<Color?> GetByCodeAsync(string code)
         {

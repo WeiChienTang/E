@@ -15,7 +15,7 @@
 ## 🎯 修改原因
 
 ### 問題背景
-專案中存在 **88+ 個 Modal 組件**，每個 Modal 都包含大量重複的基礎設施代碼：
+專案中存在 **88+ 個 Modal 組件**，每個 Modal 都包含大量重複的基礎設施編號：
 
 1. **ESC 鍵處理邏輯**：每個 Modal 都實作 150+ 行相同的 ESC 關閉功能
 2. **HTML 模板結構**：每個 Modal 都重複定義 Header、Body、Footer 的 HTML 結構
@@ -26,7 +26,7 @@
 - **重複代碼總量**：約 13,200+ 行 (88 個 Modal × 150 行/Modal)
 - **維護成本**：修改 ESC 處理邏輯需要更新 88 個檔案
 - **bug 風險**：相同邏輯分散在多處，容易出現不一致的問題
-- **開發效率**：每新增一個 Modal 需要複製貼上 150+ 行代碼
+- **開發效率**：每新增一個 Modal 需要複製貼上 150+ 行程式碼
 
 ---
 
@@ -34,7 +34,7 @@
 
 ### 1. ESC 鍵處理的重複代碼
 
-每個 Modal 都包含以下完全相同的代碼：
+每個 Modal 都包含以下完全相同的編號：
 
 ```csharp
 // 私有欄位 (約 10 行)
@@ -152,7 +152,7 @@ BaseModalComponent (基礎模板)
 #### 1. ESC 鍵自動處理
 ```razor
 <BaseModalComponent CloseOnEscape="true">
-    @* 自動支援 ESC 鍵關閉，無需額外代碼 *@
+    @* 自動支援 ESC 鍵關閉，無需額外編號 *@
 </BaseModalComponent>
 ```
 
@@ -452,7 +452,7 @@ git commit -m "遷移前備份：ComponentName"
 
 #### 步驟 4：套用 BaseModalComponent
 
-**原始代碼**：
+**原始編號**：
 ```razor
 @implements IDisposable
 
@@ -487,7 +487,7 @@ git commit -m "遷移前備份：ComponentName"
 </div>
 
 @code {
-    // 150+ 行 ESC 處理代碼
+    // 150+ 行 ESC 處理編號
     private DotNetObjectReference<ComponentName>? _escKeyDotNetRef;
     ...
     public void Dispose() { ... }
@@ -549,7 +549,7 @@ git commit -m "遷移前備份：ComponentName"
 
 **檢查項目**：
 - [ ] 無編譯錯誤
-- [ ] 無 ESC 相關的殘留代碼
+- [ ] 無 ESC 相關的殘留編號
 - [ ] 參數命名一致（`IsVisible`, `IsVisibleChanged`, `Title`）
 - [ ] 事件回調正確綁定（`OnClose`）
 - [ ] RenderFragment 內容完整
@@ -635,7 +635,7 @@ git commit -m "遷移前備份：ComponentName"
 | 項目 | 數量 | 說明 |
 |------|------|------|
 | 已遷移組件 | 2 | StockAlertView + StockLevelAlert |
-| 減少代碼行數 | 453 行 | -37.0% 平均減少 |
+| 減少編號行數 | 453 行 | -37.0% 平均減少 |
 | 消除重複代碼 | ~330 行 | ESC 處理 + HTML 模板 |
 | 剩餘待遷移 | 86+ 個 | 預估可再減少 12,900+ 行 |
 
@@ -682,22 +682,22 @@ Get-ChildItem -Path "Components" -Recurse -Filter "*Modal*.razor" | Select-Objec
 | 指標 | 遷移前 | 遷移後 | 改善 |
 |------|--------|--------|------|
 | 平均 Modal 行數 | 600 行 | 380 行 | -37% |
-| ESC 處理代碼 | 165 行/Modal | 0 行 | -100% |
-| HTML 模板代碼 | 31 行/Modal | 0 行 | -100% |
+| ESC 處理編號 | 165 行/Modal | 0 行 | -100% |
+| HTML 模板編號 | 31 行/Modal | 0 行 | -100% |
 | 維護複雜度 | 88 個檔案 | 1 個基礎模板 | -98.9% |
 
 ### 開發效率提升
 
 | 場景 | 遷移前 | 遷移後 | 節省時間 |
 |------|--------|--------|----------|
-| 新增 Modal | 複製 600 行代碼 | 使用 `<BaseModalComponent>` | 節省 80% |
+| 新增 Modal | 複製 600 行程式碼 | 使用 `<BaseModalComponent>` | 節省 80% |
 | 修改 ESC 邏輯 | 修改 88 個檔案 | 修改 1 個檔案 | 節省 98% |
 | 修改 Modal 樣式 | 修改 88 個檔案 | 修改 CSS 檔案 | 節省 98% |
 | Bug 修復 | 逐一檢查 88 個檔案 | 統一修復 | 節省 95% |
 
 ### 預估總效益（全部遷移完成後）
 
-- **減少代碼量**：~13,200 行 → ~2,000 行（減少 85%）
+- **減少程式碼量**：~13,200 行 → ~2,000 行（減少 85%）
 - **維護成本**：降低 90% 以上
 - **開發速度**：新增 Modal 快 80%
 - **Bug 風險**：降低 95%（集中管理）
@@ -807,9 +807,9 @@ Get-ChildItem -Path "Components" -Recurse -Filter "*Modal*.razor" | Select-Objec
 ---
 
 ### Q7：原有的 OnAfterRenderAsync 有其他邏輯，怎麼處理？
-**A**：保留 OnAfterRenderAsync，只移除 ESC 相關代碼。
+**A**：保留 OnAfterRenderAsync，只移除 ESC 相關編號。
 
-**原始代碼**：
+**原始編號**：
 ```csharp
 protected override async Task OnAfterRenderAsync(bool firstRender)
 {

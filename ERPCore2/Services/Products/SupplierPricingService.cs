@@ -86,7 +86,7 @@ namespace ERPCore2.Services
                     errors.Add("採購價格不能為負數");
 
                 if (string.IsNullOrWhiteSpace(entity.Currency))
-                    errors.Add("貨幣代碼為必填欄位");
+                    errors.Add("貨幣編號為必填欄位");
 
                 if (entity.MinOrderQuantity.HasValue && entity.MinOrderQuantity < 0)
                     errors.Add("最小訂購量不能為負數");
@@ -120,12 +120,12 @@ namespace ERPCore2.Services
                         errors.Add("指定的供應商不存在");
                 }
 
-                // 檢查供應商商品代碼是否重複
+                // 檢查供應商商品編號是否重複
                 if (!string.IsNullOrWhiteSpace(entity.SupplierProductCode) && entity.SupplierId > 0)
                 {
                     var isCodeExists = await IsSupplierProductCodeExistsAsync(entity.SupplierId, entity.SupplierProductCode, entity.Id == 0 ? null : entity.Id);
                     if (isCodeExists)
-                        errors.Add("供應商商品代碼已存在");
+                        errors.Add("供應商商品編號已存在");
                 }
 
                 if (errors.Any())
@@ -314,7 +314,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查供應商商品代碼是否已存在
+        /// 檢查供應商商品編號是否已存在
         /// </summary>
         public async Task<bool> IsSupplierProductCodeExistsAsync(int supplierId, string supplierProductCode, int? excludeId = null)
         {
@@ -347,7 +347,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據供應商商品代碼查詢
+        /// 根據供應商商品編號查詢
         /// </summary>
         public async Task<List<SupplierPricing>> GetBySupplierProductCodeAsync(int supplierId, string supplierProductCode)
         {

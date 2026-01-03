@@ -11,7 +11,7 @@
 
 ### 實際成果 ✅
 - **已完成**：15/18 Table 遷移完成（83%）
-- **代碼減少**：共減少 **109 行**
+- **程式碼減少**：共減少 **109 行**
 - **編譯狀態**：✅ 全部通過
 - **未遷移**：3 個純顯示/測試 Table 無需遷移
   - BatchApprovalTable（批次審核顯示）
@@ -19,7 +19,7 @@
   - ProductBarcodePrintTable（條碼列印顯示）
 
 ### 核心效益
-1. **代碼重用**：15 個 Table 共用 7 個 Helper（1,499 行，63 方法）
+1. **編號重用**：15 個 Table 共用 7 個 Helper（1,499 行，63 方法）
 2. **一致性**：統一的輸入處理、計算邏輯、資料同步模式
 3. **可維護性**：集中管理共用邏輯，修改一處影響全局
 4. **可測試性**：Helper 類別可獨立單元測試
@@ -35,7 +35,7 @@
 #### **銷售相關 (Sales) - 3 個**
 1. `Components/Shared/BaseModal/Modals/Sales/SalesOrderTable.razor`
    - 銷貨訂單明細管理
-   - 2514 行代碼
+   - 2514 行程式碼
    - 支援 BOM 組成編輯、庫存查詢、報價單載入
 
 2. `Components/Shared/BaseModal/Modals/Sales/SalesDeliveryTable.razor`
@@ -49,7 +49,7 @@
 #### **採購相關 (Purchase) - 6 個**
 4. `Components/Shared/BaseModal/Modals/Purchase/PurchaseOrderTable.razor`
    - 採購訂單明細管理
-   - 1179 行代碼
+   - 1179 行程式碼
    - 支援智能下單、歷史記錄查詢
 
 5. `Components/Shared/BaseModal/Modals/Purchase/PurchaseReceivingTable.razor`
@@ -69,7 +69,7 @@
 #### **報價相關 (Quotation) - 1 個**
 9. `Components/Shared/BaseModal/Modals/Quotation/QuotationTable.razor`
    - 報價單明細管理
-   - 1832 行代碼
+   - 1832 行程式碼
    - 支援 BOM 組成編輯、配方選擇、智能下單
 
 #### **商品相關 (Product) - 3 個**
@@ -1116,7 +1116,7 @@ public static class ItemManagementHelper
    - ⚪ `TestTable` - 測試用途
    - ⚪ `ProductBarcodePrintTable` - 純顯示用途
    
-   **統計**：15 個 Table 共減少 **109 行**代碼 ✅ 編譯通過
+   **統計**：15 個 Table 共減少 **109 行**編號 ✅ 編譯通過
    
 11. ✅ 驗證功能正確性 - 所有 Table 編譯通過
 12. ✅ 遷移完成

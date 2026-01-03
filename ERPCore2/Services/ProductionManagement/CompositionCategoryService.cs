@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 合成表類型服務實作
+    /// 物料清單類型服務實作
     /// </summary>
     public class CompositionCategoryService : GenericManagementService<CompositionCategory>, ICompositionCategoryService
     {
@@ -78,14 +78,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
                 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("合成表類型代碼不能為空");
+                    errors.Add("物料清單類型編號不能為空");
                 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("名稱為必填欄位");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 
                     await IsCompositionCategoryCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("合成表類型代碼已存在");
+                    errors.Add("物料清單類型編號已存在");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 
                     await IsCompositionCategoryNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))

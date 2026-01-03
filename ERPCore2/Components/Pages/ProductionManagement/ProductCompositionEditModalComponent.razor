@@ -17,9 +17,9 @@
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CompositionId"
                           Service="@ProductCompositionService"
-                          EntityName="商品合成表"
-                          EntityNamePlural="商品合成表"
-                          ModalTitle="@(CompositionId.HasValue ? "編輯商品合成表" : "新增商品合成表")"
+                          EntityName="商品物料清單"
+                          EntityNamePlural="商品物料清單"
+                          ModalTitle="@(CompositionId.HasValue ? "編輯商品物料清單" : "新增商品物料清單")"
                           Size="GenericEditModalComponent<ProductComposition, IProductCompositionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
@@ -31,8 +31,8 @@
                           ModalManagers="@GetModalManagers()"
                           DataLoader="@LoadCompositionData"
                           SaveHandler="@SaveCompositionWithDetails"
-                          SaveSuccessMessage="@(CompositionId.HasValue ? "商品合成表更新成功" : "商品合成表新增成功")"
-                          SaveFailureMessage="商品合成表儲存失敗"
+                          SaveSuccessMessage="@(CompositionId.HasValue ? "商品物料清單更新成功" : "商品物料清單新增成功")"
+                          SaveFailureMessage="商品物料清單儲存失敗"
                           RequiredPermission="ProductComposition.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
@@ -147,7 +147,7 @@
         }
         catch (Exception)
         {
-            await NotificationService.ShowErrorAsync("初始化商品合成表編輯組件時發生錯誤");
+            await NotificationService.ShowErrorAsync("初始化商品物料清單編輯組件時發生錯誤");
         }
     }
     
@@ -175,7 +175,7 @@
     {
         try
         {
-            // 如果父組件需要知道商品合成表已儲存
+            // 如果父組件需要知道商品物料清單已儲存
             if (OnCompositionSaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 await OnCompositionSaved.InvokeAsync(editModalComponent.Entity);
@@ -241,7 +241,7 @@
             // 載入員工列表
             availableEmployees = await EmployeeService.GetAllAsync();
             
-            // 載入合成表類型列表
+            // 載入物料清單類型列表
             availableCompositionCategories = await CompositionCategoryService.GetAllAsync();
             
             // 使用 AutoCompleteConfigHelper 建立配置
@@ -310,7 +310,7 @@
         {
             if (!CompositionId.HasValue) 
             {
-                // 新增模式：建立新的商品合成表實體並生成代碼
+                // 新增模式：建立新的商品物料清單實體並生成編號
                 var newComposition = new ProductComposition
                 {
                     Status = EntityStatus.Active
@@ -330,7 +330,7 @@
             
             if (composition == null)
             {
-                // 如果找不到商品合成表，建立新的預設實體
+                // 如果找不到商品物料清單，建立新的預設實體
                 return new ProductComposition
                 {
                     Status = EntityStatus.Active
@@ -340,7 +340,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入商品合成表資料時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入商品物料清單資料時發生錯誤：{ex.Message}");
             
             // 設定安全的預設值，確保程式不會崩潰
             return new ProductComposition
@@ -385,11 +385,11 @@
                 new()
                 {
                     PropertyName = nameof(ProductComposition.Code),
-                    Label = "合成代碼",
+                    Label = "合成編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入合成代碼",
+                    Placeholder = "請輸入合成編號",
                     IsRequired = false,
-                    HelpText = "合成的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "合成的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
@@ -399,14 +399,14 @@
                     Placeholder = "請輸入或選擇商品",
                     IsRequired = true,
                     MinSearchLength = 0,
-                    HelpText = "此合成表所屬的商品（建立後無法變更）"
+                    HelpText = "此物料清單所屬的商品（建立後無法變更）"
                 },
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CompositionCategoryId),
-                    Label = "合成表類型",
+                    Label = "物料清單類型",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇合成表類型",
+                    Placeholder = "請選擇物料清單類型",
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇合成的類型"
@@ -440,7 +440,7 @@
                     FieldType = FormFieldType.Text,
                     Placeholder = "請輸入規格",
                     IsRequired = false,
-                    HelpText = "商品合成表的規格說明",
+                    HelpText = "商品物料清單的規格說明",
                     ContainerCssClass = "col-6"
                 },
 
@@ -572,7 +572,7 @@
         {
             if (composition == null)
             {
-                await NotificationService.ShowErrorAsync("沒有要儲存的商品合成表資料");
+                await NotificationService.ShowErrorAsync("沒有要儲存的商品物料清單資料");
                 return false;
             }
             
@@ -616,7 +616,7 @@
                 }
                 else
                 {
-                    await NotificationService.ShowErrorAsync($"更新商品合成表主檔失敗：{updateResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync($"更新商品物料清單主檔失敗：{updateResult.ErrorMessage}");
                     return false;
                 }
             }
@@ -630,14 +630,14 @@
                 }
                 else
                 {
-                    await NotificationService.ShowErrorAsync($"新增商品合成表主檔失敗：{createResult.ErrorMessage}");
+                    await NotificationService.ShowErrorAsync($"新增商品物料清單主檔失敗：{createResult.ErrorMessage}");
                     return false;
                 }
             }
             
             if (savedComposition == null)
             {
-                await NotificationService.ShowErrorAsync("儲存商品合成表主檔失敗");
+                await NotificationService.ShowErrorAsync("儲存商品物料清單主檔失敗");
                 return false;
             }
             
@@ -703,7 +703,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"儲存商品合成表時發生錯誤：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"儲存商品物料清單時發生錯誤：{ex.Message}");
             return false;
         }
     }
@@ -711,7 +711,7 @@
     // ===== 公開方法 (供父組件調用) =====
 
     /// <summary>
-    /// 開啟新增商品合成表 Modal
+    /// 開啟新增商品物料清單 Modal
     /// </summary>
     public async Task ShowAddModal()
     {
@@ -723,7 +723,7 @@
     }
 
     /// <summary>
-    /// 開啟編輯商品合成表 Modal
+    /// 開啟編輯商品物料清單 Modal
     /// </summary>
     public async Task ShowEditModal(int compositionId)
     {

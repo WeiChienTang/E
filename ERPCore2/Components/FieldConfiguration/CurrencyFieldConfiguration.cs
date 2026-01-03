@@ -30,11 +30,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Currency>
                         {
                             PropertyName = nameof(Currency.Code),
-                            DisplayName = "貨幣代碼",
-                            FilterPlaceholder = "輸入貨幣代碼搜尋",
+                            DisplayName = "貨幣編號",
+                            FilterPlaceholder = "輸入貨幣編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Currency.Code), c => c.Code)
                         }
@@ -60,7 +59,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "符號",
                             ShowInFilter = false,
                             TableOrder = 3,
-                            HeaderStyle = "width: 100px;",
                             NullDisplayText = "-"
                         }
                     },
@@ -72,7 +70,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "匯率",
                             ShowInFilter = false,
                             TableOrder = 4,
-                            HeaderStyle = "width: 150px;",
                             CustomTemplate = item => builder =>
                             {
                                 var currency = (Currency)item;
@@ -99,7 +96,6 @@ namespace ERPCore2.FieldConfiguration
                             ShowInFilter = true,
                             TableOrder = 5,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {

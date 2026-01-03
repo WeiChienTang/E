@@ -75,7 +75,7 @@ namespace ERPCore2.Services
                     errors.Add("職位名稱不能為空");
                 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("職位代碼不能為空");
+                    errors.Add("職位編號不能為空");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 
                     await IsNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
@@ -83,7 +83,7 @@ namespace ERPCore2.Services
                 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 
                     await IsEmployeePositionCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("職位代碼已存在");
+                    errors.Add("職位編號已存在");
                 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

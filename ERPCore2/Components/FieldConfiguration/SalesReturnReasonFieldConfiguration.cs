@@ -31,10 +31,9 @@ namespace ERPCore2.Helpers.FieldConfiguration
                         new FieldDefinition<SalesReturnReason>
                         {
                             PropertyName = nameof(SalesReturnReason.Code),
-                            DisplayName = "原因代碼",
-                            FilterPlaceholder = "輸入原因代碼搜尋",
+                            DisplayName = "原因編號",
+                            FilterPlaceholder = "輸入原因編號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesReturnReason.Code), r => r.Code)
                         }
@@ -47,7 +46,6 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             DisplayName = "原因名稱",
                             FilterPlaceholder = "輸入原因名稱搜尋",
                             TableOrder = 2,
-                            HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesReturnReason.Name), r => r.Name)
                         }

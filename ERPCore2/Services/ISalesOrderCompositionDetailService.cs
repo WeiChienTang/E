@@ -14,7 +14,7 @@ namespace ERPCore2.Services
         Task<List<SalesOrderCompositionDetail>> GetBySalesOrderDetailIdAsync(int salesOrderDetailId);
         
         /// <summary>
-        /// 從商品合成表複製 BOM 資料到銷貨訂單（使用最新的配方）
+        /// 從商品物料清單複製 BOM 資料到銷貨訂單（使用最新的配方）
         /// </summary>
         Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
             int salesOrderDetailId, 

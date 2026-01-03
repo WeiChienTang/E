@@ -29,10 +29,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.Code),
-                            DisplayName = "銀行代碼",
-                            FilterPlaceholder = "輸入銀行代碼搜尋",
+                            DisplayName = "銀行編號",
+                            FilterPlaceholder = "輸入銀行編號搜尋",
                             TableOrder = 0,
-                            HeaderStyle = "width: 100px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.Code), b => b.Code)
                         }  
@@ -45,7 +44,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "銀行名稱",
                             FilterPlaceholder = "輸入銀行名稱搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.BankName), b => b.BankName)
                         }
@@ -58,7 +56,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "英文名稱",
                             FilterPlaceholder = "輸入英文名稱搜尋",
                             TableOrder = 2,
-                            HeaderStyle = "width: 200px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.BankNameEn), b => b.BankNameEn)
@@ -69,10 +66,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Bank>
                         {
                             PropertyName = nameof(Bank.SwiftCode),
-                            DisplayName = "SWIFT代碼",
-                            FilterPlaceholder = "輸入SWIFT代碼搜尋",
+                            DisplayName = "SWIFT編號",
+                            FilterPlaceholder = "輸入SWIFT編號搜尋",
                             TableOrder = 3,
-                            HeaderStyle = "width: 150px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.SwiftCode), b => b.SwiftCode)
@@ -86,7 +82,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "電話",
                             FilterPlaceholder = "輸入電話搜尋",
                             TableOrder = 4,
-                            HeaderStyle = "width: 150px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.Phone), b => b.Phone)

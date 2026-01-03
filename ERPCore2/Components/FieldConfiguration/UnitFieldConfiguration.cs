@@ -29,11 +29,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Unit>
                         {
                             PropertyName = nameof(Unit.Code),
-                            DisplayName = "單位代碼",
-                            FilterPlaceholder = "輸入單位代碼搜尋",
+                            DisplayName = "單位編號",
+                            FilterPlaceholder = "輸入單位編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", u => u.Code, allowNull: true)
                         }

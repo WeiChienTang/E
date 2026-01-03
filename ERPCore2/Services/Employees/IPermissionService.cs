@@ -12,7 +12,7 @@ namespace ERPCore2.Services
         /// 檢查員工是否具有特定權限
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <param name="permissionCode">權限代碼</param>
+        /// <param name="permissionCode">權限編號</param>
         /// <returns>權限檢查結果</returns>
         Task<ServiceResult<bool>> HasPermissionAsync(int employeeId, string permissionCode);
 
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         /// 檢查員工是否具有多個權限（需全部具備）
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <param name="permissionCodes">權限代碼清單</param>
+        /// <param name="permissionCodes">權限編號清單</param>
         /// <returns>權限檢查結果</returns>
         Task<ServiceResult<bool>> HasAllPermissionsAsync(int employeeId, IEnumerable<string> permissionCodes);
 
@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         /// 檢查員工是否具有任一權限（至少一個）
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <param name="permissionCodes">權限代碼清單</param>
+        /// <param name="permissionCodes">權限編號清單</param>
         /// <returns>權限檢查結果</returns>
         Task<ServiceResult<bool>> HasAnyPermissionAsync(int employeeId, IEnumerable<string> permissionCodes);
 
@@ -40,10 +40,10 @@ namespace ERPCore2.Services
         Task<ServiceResult<List<Permission>>> GetEmployeePermissionsAsync(int employeeId);
 
         /// <summary>
-        /// 取得員工的所有權限代碼
+        /// 取得員工的所有權限編號
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <returns>員工權限代碼清單</returns>
+        /// <returns>員工權限編號清單</returns>
         Task<ServiceResult<List<string>>> GetEmployeePermissionCodesAsync(int employeeId);
 
         /// <summary>
@@ -54,9 +54,9 @@ namespace ERPCore2.Services
         Task<ServiceResult<List<Permission>>> GetRolePermissionsAsync(int roleId);
 
         /// <summary>
-        /// 檢查權限代碼是否存在
+        /// 檢查權限編號是否存在
         /// </summary>
-        /// <param name="permissionCode">權限代碼</param>
+        /// <param name="permissionCode">權限編號</param>
         /// <returns>檢查結果</returns>
         Task<ServiceResult<bool>> PermissionExistsAsync(string permissionCode);
 

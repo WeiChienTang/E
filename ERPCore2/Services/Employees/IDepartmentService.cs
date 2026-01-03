@@ -9,9 +9,9 @@ namespace ERPCore2.Services
     public interface IDepartmentService : IGenericManagementService<Department>
     {
         /// <summary>
-        /// 檢查部門代碼是否已存在
+        /// 檢查部門編號是否已存在
         /// </summary>
-        /// <param name="departmentCode">部門代碼</param>
+        /// <param name="departmentCode">部門編號</param>
         /// <param name="excludeId">排除的ID（用於編輯時檢查）</param>
         /// <returns>是否存在</returns>
         Task<bool> IsDepartmentCodeExistsAsync(string departmentCode, int? excludeId = null);

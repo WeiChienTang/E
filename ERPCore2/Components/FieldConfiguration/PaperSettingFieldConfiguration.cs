@@ -32,11 +32,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PaperSetting>
                         {
                             PropertyName = nameof(PaperSetting.Code),
-                            DisplayName = "紙張代碼",
-                            FilterPlaceholder = "輸入紙張代碼搜尋",
+                            DisplayName = "紙張編號",
+                            FilterPlaceholder = "輸入紙張編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaperSetting.Code), p => p.Code)
                         }
@@ -63,7 +62,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入寬度搜尋",
                             TableOrder = 3,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 100px; text-align: right;",
                             // 自訂模板顯示數值並右對齊
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -88,7 +86,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入高度搜尋",
                             TableOrder = 4,
                             FilterOrder = 4,
-                            HeaderStyle = "width: 100px; text-align: right;",
                             // 自訂模板顯示數值並右對齊
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {

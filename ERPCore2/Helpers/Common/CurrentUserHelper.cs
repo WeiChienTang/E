@@ -63,10 +63,10 @@ namespace ERPCore2.Helpers
         }
         
         /// <summary>
-        /// 取得當前使用者的員工代碼
+        /// 取得當前使用者的員工編號
         /// </summary>
         /// <param name="authenticationStateProvider">身份驗證狀態提供者</param>
-        /// <returns>員工代碼</returns>
+        /// <returns>員工編號</returns>
         public static async Task<string> GetCurrentEmployeeCodeAsync(AuthenticationStateProvider authenticationStateProvider)
         {
             try

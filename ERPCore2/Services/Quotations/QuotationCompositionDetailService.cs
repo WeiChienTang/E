@@ -54,7 +54,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從商品合成表複製 BOM 到報價單明細（使用最新的配方）
+        /// 從商品物料清單複製 BOM 到報價單明細（使用最新的配方）
         /// </summary>
         public async Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(int quotationDetailId, int productId)
         {
@@ -62,7 +62,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 查詢該商品的商品合成表（優先取用最新的一筆）
+                // 查詢該商品的商品物料清單（優先取用最新的一筆）
                 var productComposition = await context.ProductCompositions
                     .Include(x => x.CompositionDetails)
                         .ThenInclude(d => d.ComponentProduct)

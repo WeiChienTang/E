@@ -29,11 +29,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Role>
                         {
                             PropertyName = nameof(Role.Code),
-                            DisplayName = "權限組代碼",
-                            FilterPlaceholder = "輸入權限組代碼搜尋",
+                            DisplayName = "權限組編號",
+                            FilterPlaceholder = "輸入權限組編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Role.Code), r => r.Code)
                         }

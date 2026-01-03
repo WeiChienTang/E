@@ -232,7 +232,7 @@
                 }
                 else if (ProductId.HasValue)
                 {
-                    // 向後相容：從商品合成表複製預設配方（使用最新的）
+                    // 向後相容：從商品物料清單複製預設配方（使用最新的）
                     var defaultCompositions = await ProductCompositionService.GetCompositionsByProductIdAsync(ProductId.Value);
                     if (defaultCompositions.Any())
                     {
@@ -349,7 +349,7 @@
                     <div class="mb-2">
                         <input type="text"
                                class="form-control form-control-sm"
-                               placeholder="搜尋組件代碼或名稱..."
+                               placeholder="搜尋組件編號或名稱..."
                                @bind="componentSearchTerm"
                                @bind:event="oninput" />
                     </div>

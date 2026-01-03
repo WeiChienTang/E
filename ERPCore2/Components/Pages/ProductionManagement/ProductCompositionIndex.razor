@@ -17,14 +17,14 @@
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="商品合成表"
-                        GetEntityDisplayName="@(comp => comp.Code ?? $"合成表{comp.Id}")"
+                        EntityName="商品物料清單"
+                        GetEntityDisplayName="@(comp => comp.Code ?? $"物料清單{comp.Id}")"
                         RequiredPermission="ProductComposition.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>
 
-@* 商品合成表編輯 Modal *@
+@* 商品物料清單編輯 Modal *@
 <ProductCompositionEditModalComponent IsVisible="@showEditModal"
                                      IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                      CompositionId="@editingCompositionId"
@@ -81,8 +81,8 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化商品合成表頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化商品合成表頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化商品物料清單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化商品物料清單頁面失敗");
         }
     }
 
@@ -90,14 +90,14 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "物料清單", null, NotificationService, GetType());
 
-    // 載入商品合成表資料
-    private async Task<List<ProductComposition>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(ProductCompositionService.GetAllAsync, "商品合成表", NotificationService, GetType());
+    // 載入商品物料清單資料
+    private async Task<List<ProductComposition>> LoadDataAsync() => await DataLoaderHelper.LoadAsync(ProductCompositionService.GetAllAsync, "商品物料清單", NotificationService, GetType());
 
     // 載入商品資料（用於篩選器）
     private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(ProductService.GetAllAsync, "商品", NotificationService, GetType());
 
-    // 載入合成表類型資料（用於篩選器）
-    private async Task LoadCompositionCategoriesAsync() => compositionCategories = await DataLoaderHelper.LoadAsync(CompositionCategoryService.GetAllAsync, "合成表類型", NotificationService, GetType());
+    // 載入物料清單類型資料（用於篩選器）
+    private async Task LoadCompositionCategoriesAsync() => compositionCategories = await DataLoaderHelper.LoadAsync(CompositionCategoryService.GetAllAsync, "物料清單類型", NotificationService, GetType());
 
     private IQueryable<ProductComposition> ApplyCompositionFilters(SearchFilterModel searchModel, IQueryable<ProductComposition> query)
     {

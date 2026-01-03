@@ -8,7 +8,7 @@ namespace ERPCore2.Services
     public interface IWarehouseService : IGenericManagementService<Warehouse>
     {
         /// <summary>
-        /// 檢查倉庫代碼是否存在
+        /// 檢查倉庫編號是否存在
         /// </summary>
         Task<bool> IsWarehouseCodeExistsAsync(string warehouseCode, int? excludeId = null);
         

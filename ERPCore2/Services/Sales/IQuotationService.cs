@@ -10,7 +10,7 @@ namespace ERPCore2.Services
     public interface IQuotationService : IGenericManagementService<Quotation>
     {
         /// <summary>
-        /// 檢查報價代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// 檢查報價編號是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
         Task<bool> IsQuotationCodeExistsAsync(string code, int? excludeId = null);
 

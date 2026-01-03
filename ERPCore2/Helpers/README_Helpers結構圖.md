@@ -54,7 +54,7 @@ Helpers/
 │   ├── ApprovalConfigHelper.cs          # 審核流程配置
 │   ├── AutoCompleteConfigHelper.cs      # AutoComplete 配置生成（Builder 模式）
 │   ├── ChildDocumentRefreshHelper.cs    # 子單據儲存後刷新父單據
-│   ├── CodeGenerationHelper.cs          # 基礎代碼生成
+│   ├── CodeGenerationHelper.cs          # 基礎編號生成
 │   ├── DocumentConversionHelper.cs      # 轉單邏輯（A單轉B單）
 │   ├── EntityCodeGenerationHelper.cs    # 實體編碼生成（支援 5 種策略）
 │   ├── FormFieldLockHelper.cs           # 表單欄位鎖定/解鎖

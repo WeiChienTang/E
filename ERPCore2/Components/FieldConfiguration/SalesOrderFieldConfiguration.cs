@@ -40,7 +40,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "訂單單號",
                             FilterPlaceholder = "輸入訂單單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesOrder.Code), so => so.Code)
                         }
@@ -55,7 +54,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "客戶",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 200px;",
                             Options = _customers.Select(c => new SelectOption 
                             { 
                                 Text = c.CompanyName ?? "", 
@@ -74,7 +72,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px; text-align: right;",
                             ShowInFilter = false, // 金額欄位暫時不提供篩選功能
                             CustomTemplate = item => builder =>
                             {
@@ -95,7 +92,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 5,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(SalesOrder.OrderDate), so => so.OrderDate)
                         }
@@ -109,7 +105,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 6,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "未設定",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(SalesOrder.ExpectedDeliveryDate), so => so.ExpectedDeliveryDate)

@@ -357,14 +357,14 @@ private async Task HandlePurchaseReceivingSaved(PurchaseReceiving savedReceiving
 
 ---
 
-### 5. EntityCodeGenerationHelper - 單號/代碼生成統一介面 ✅
+### 5. EntityCodeGenerationHelper - 單號/編號生成統一介面 ✅
 
 **📁 檔案位置**: `Helpers/EditModal/EntityCodeGenerationHelper.cs`
 
 **🎯 用途**: 提供多種單號生成策略，支援 Attribute 標記自動識別策略，完全消除手動編寫單號生成邏輯
 
 **📊 影響範圍**: 
-- 基礎代碼生成: 26+ 個 EditModal
+- 基礎編號生成: 26+ 個 EditModal
 - 進階策略（TimestampWithSequence）: 7+ 個單據 Modal
   
 **🔄 重複度**: ⭐⭐⭐⭐⭐ (100%)  
@@ -1245,7 +1245,7 @@ autoCompleteConfig = new AutoCompleteConfigBuilder<SalesOrder>()
 
 **進階用法 - 自訂 Prefiller**
 ```csharp
-// 自訂搜尋邏輯（例如：搜尋代碼或名稱）
+// 自訂搜尋邏輯（例如：搜尋編號或名稱）
 autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseOrder>()
     .AddField<Supplier>(
         nameof(PurchaseOrder.SupplierId),
@@ -1265,7 +1265,7 @@ autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseOrder>()
 |------|------|---------|
 | `AddField<TRelated>()` | 新增單一欄位配置 | 90% 場景 |
 | `AddMultipleFields<TRelated>()` | 批次新增相同類型欄位 | 多個員工欄位 |
-| `AddFieldWithMultipleSearchProperties<TRelated>()` | 複合搜尋條件 | 搜尋代碼或名稱 |
+| `AddFieldWithMultipleSearchProperties<TRelated>()` | 複合搜尋條件 | 搜尋編號或名稱 |
 | `AddFieldIf<TRelated>()` | 條件式新增 | 權限控制 |
 | `CreateBuilder<TEntity>()` | 建立標準建構器 | 開始配置 |
 | `ValidateConfig()` | 驗證配置完整性 | 除錯 |

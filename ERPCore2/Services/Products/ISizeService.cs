@@ -10,12 +10,12 @@ namespace ERPCore2.Services
         #region 業務特定查詢方法
         
         /// <summary>
-        /// 根據尺寸代碼取得尺寸
+        /// 根據尺寸編號取得尺寸
         /// </summary>
         Task<Size?> GetBySizeCodeAsync(string sizeCode);
         
         /// <summary>
-        /// 檢查尺寸代碼是否存在
+        /// 檢查尺寸編號是否存在
         /// </summary>
         Task<bool> IsSizeCodeExistsAsync(string sizeCode, int? excludeId = null);
         

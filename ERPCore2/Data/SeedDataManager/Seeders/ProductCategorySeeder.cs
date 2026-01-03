@@ -36,8 +36,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsSaleable = true,  // 成品可對外銷售
                     Remarks = "已完成製造、可對外銷售的商品",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    CreatedAt = DateTime.Now,                    
                 },
                 new ProductCategory
                 {
@@ -46,8 +45,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsSaleable = false,  // 原物料不對外銷售
                     Remarks = "生產用原料材料，不對外銷售",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    CreatedAt = DateTime.Now,                    
                 },
                 new ProductCategory
                 {
@@ -56,8 +54,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsSaleable = false,  // 半成品不對外銷售
                     Remarks = "生產過程中的半成品，不對外銷售",
                     Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now,
-                    CreatedBy = "System"
+                    CreatedAt = DateTime.Now,                    
                 },
             };
 

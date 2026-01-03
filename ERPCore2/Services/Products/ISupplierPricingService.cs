@@ -28,12 +28,12 @@ namespace ERPCore2.Services
         Task<List<SupplierPricing>> GetEffectivePricingAsync(int productId, DateTime? asOfDate = null);
 
         /// <summary>
-        /// 檢查供應商商品代碼是否已存在
+        /// 檢查供應商商品編號是否已存在
         /// </summary>
         Task<bool> IsSupplierProductCodeExistsAsync(int supplierId, string supplierProductCode, int? excludeId = null);
 
         /// <summary>
-        /// 根據供應商商品代碼查詢
+        /// 根據供應商商品編號查詢
         /// </summary>
         Task<List<SupplierPricing>> GetBySupplierProductCodeAsync(int supplierId, string supplierProductCode);
 

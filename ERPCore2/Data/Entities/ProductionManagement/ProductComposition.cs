@@ -28,7 +28,7 @@ namespace ERPCore2.Data.Entities
         public int? CreatedByEmployeeId { get; set; }
 
         // 設定
-        [Display(Name = "合成表類型")]
+        [Display(Name = "物料清單類型")]
         [ForeignKey(nameof(CompositionCategory))]
         public int? CompositionCategoryId { get; set; }
 
@@ -49,7 +49,7 @@ namespace ERPCore2.Data.Entities
         public Employee? CreatedByEmployee { get; set; }
 
         /// <summary>
-        /// 合成表類型
+        /// 物料清單類型
         /// </summary>
         public CompositionCategory? CompositionCategory { get; set; }
 

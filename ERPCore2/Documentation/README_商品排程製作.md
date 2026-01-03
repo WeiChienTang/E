@@ -143,7 +143,7 @@
 │ ProductionSchedule              │  (生產排程主檔)
 │ ─────────────────────────────── │
 │ Id                              │
-│ Code (排程代碼)                  │
+│ Code (排程編號)                  │
 │ ScheduleDate (排程日期)          │
 │ CustomerId (客戶，可為空)         │
 │ CreatedByEmployeeId (製單人員)   │
@@ -450,7 +450,7 @@ public decimal UnscheduledQuantity => Quantity - ScheduledQuantity;
 ├─────────────────────────────────────────────────────────────────────────┤
 │ 基本資訊                                                                │
 │ ┌─────────────────────────────────────────────────────────────────────┐│
-│ │ 排程代碼：PS2024-001          排程日期：2024/12/10                   ││
+│ │ 排程編號：PS2024-001          排程日期：2024/12/10                   ││
 │ │ 客戶：(依項目)                製單人員：王小明                        ││
 │ │ 備註：_______________________________________________                 ││
 │ └─────────────────────────────────────────────────────────────────────┘│
@@ -1369,12 +1369,12 @@ public async Task<List<ProductionSchedule>> CreateSchedulesWithMerge(
   - 呼叫 `InventoryStockService.ReduceStockAsync()`
   - 交易單號格式：`MI{yyyyMMddHHmmss}`
   - 交易類型：`InventoryTransactionTypeEnum.MaterialIssue`
-  - 備註包含排程代碼與產品資訊
+  - 備註包含排程編號與產品資訊
 - [x] `ProductionCompletionModal.razor` - 整合庫存服務自動增加庫存
   - 呼叫 `InventoryStockService.AddStockAsync()`
   - 交易單號格式：`PC{yyyyMMddHHmmss}`
   - 交易類型：`InventoryTransactionTypeEnum.ProductionCompletion`
-  - 備註包含排程代碼與入庫資訊
+  - 備註包含排程編號與入庫資訊
 ### 📝 架構優化記錄 - 2024/12/08
 
 **移除的組件與實體**：

@@ -30,8 +30,8 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PaymentMethod>
                         {
                             PropertyName = nameof(PaymentMethod.Code),
-                            DisplayName = "付款方式代碼",
-                            FilterPlaceholder = "輸入付款方式代碼搜尋",
+                            DisplayName = "付款方式編號",
+                            FilterPlaceholder = "輸入付款方式編號搜尋",
                             TableOrder = 0,
                             ColumnType = ColumnDataType.Text,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

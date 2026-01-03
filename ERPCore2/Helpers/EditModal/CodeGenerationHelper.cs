@@ -5,19 +5,19 @@ using ERPCore2.Services;
 namespace ERPCore2.Helpers
 {
     /// <summary>
-    /// 代碼生成輔助類別 - 提供通用的實體代碼生成功能
+    /// 編號生成輔助類別 - 提供通用的實體編號生成功能
     /// </summary>
     public static class CodeGenerationHelper
     {
         /// <summary>
-        /// 生成實體代碼（含重複檢查）
+        /// 生成實體編號（含重複檢查）
         /// </summary>
         /// <typeparam name="TService">服務類型</typeparam>
         /// <param name="service">服務實例</param>
-        /// <param name="prefix">代碼前綴</param>
-        /// <param name="codeExistsChecker">代碼存在檢查函數</param>
+        /// <param name="prefix">編號前綴</param>
+        /// <param name="codeExistsChecker">編號存在檢查函數</param>
         /// <param name="excludeId">排除的 ID（用於編輯模式）</param>
-        /// <returns>生成的唯一代碼</returns>
+        /// <returns>生成的唯一編號</returns>
         public static async Task<string> GenerateEntityCodeAsync<TService>(
             TService service,
             string prefix,
@@ -26,7 +26,7 @@ namespace ERPCore2.Helpers
         {
             try
             {
-                // 生成基礎代碼：前綴 + 時間戳
+                // 生成基礎編號：前綴 + 時間戳
                 var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
                 var baseCode = $"{prefix}{timestamp}";
                 
@@ -38,7 +38,7 @@ namespace ERPCore2.Helpers
                     var random = new Random().Next(100, 999);
                     baseCode = $"{prefix}{timestamp}{random}";
                     
-                    // 再次檢查加了隨機數的代碼是否重複
+                    // 再次檢查加了隨機數的編號是否重複
                     var isStillExists = await codeExistsChecker(service, baseCode, excludeId);
                     if (isStillExists)
                     {
@@ -58,14 +58,14 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 生成實體代碼（含重複檢查，支援 ServiceResult 返回類型）
+        /// 生成實體編號（含重複檢查，支援 ServiceResult 返回類型）
         /// </summary>
         /// <typeparam name="TService">服務類型</typeparam>
         /// <param name="service">服務實例</param>
-        /// <param name="prefix">代碼前綴</param>
-        /// <param name="codeExistsChecker">代碼存在檢查函數（返回 ServiceResult&lt;bool&gt;）</param>
+        /// <param name="prefix">編號前綴</param>
+        /// <param name="codeExistsChecker">編號存在檢查函數（返回 ServiceResult&lt;bool&gt;）</param>
         /// <param name="excludeId">排除的 ID（用於編輯模式）</param>
-        /// <returns>生成的唯一代碼</returns>
+        /// <returns>生成的唯一編號</returns>
         public static async Task<string> GenerateEntityCodeWithServiceResultAsync<TService>(
             TService service,
             string prefix,
@@ -74,7 +74,7 @@ namespace ERPCore2.Helpers
         {
             try
             {
-                // 生成基礎代碼：前綴 + 時間戳
+                // 生成基礎編號：前綴 + 時間戳
                 var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
                 var baseCode = $"{prefix}{timestamp}";
                 
@@ -88,7 +88,7 @@ namespace ERPCore2.Helpers
                     var random = new Random().Next(100, 999);
                     baseCode = $"{prefix}{timestamp}{random}";
                     
-                    // 再次檢查加了隨機數的代碼是否重複
+                    // 再次檢查加了隨機數的編號是否重複
                     var stillExistsResult = await codeExistsChecker(service, baseCode, excludeId);
                     var isStillExists = stillExistsResult.IsSuccess && stillExistsResult.Data;
                     
@@ -110,11 +110,11 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 生成實體代碼（不含重複檢查的簡化版本）
+        /// 生成實體編號（不含重複檢查的簡化版本）
         /// </summary>
-        /// <param name="prefix">代碼前綴</param>
+        /// <param name="prefix">編號前綴</param>
         /// <param name="usePreciseTimestamp">是否使用精確時間戳（包含毫秒）</param>
-        /// <returns>生成的代碼</returns>
+        /// <returns>生成的編號</returns>
         public static string GenerateSimpleEntityCode(string prefix, bool usePreciseTimestamp = false)
         {
             try
@@ -131,9 +131,9 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 驗證代碼格式是否正確
+        /// 驗證編號格式是否正確
         /// </summary>
-        /// <param name="code">要驗證的代碼</param>
+        /// <param name="code">要驗證的編號</param>
         /// <param name="expectedPrefix">期望的前綴</param>
         /// <returns>是否符合格式</returns>
         public static bool IsValidEntityCode(string code, string expectedPrefix)
@@ -153,9 +153,9 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 從代碼中提取時間戳部分
+        /// 從編號中提取時間戳部分
         /// </summary>
-        /// <param name="code">實體代碼</param>
+        /// <param name="code">實體編號</param>
         /// <param name="prefix">前綴</param>
         /// <returns>時間戳字串，如果無法解析則返回 null</returns>
         public static string? ExtractTimestampFromCode(string code, string prefix)
@@ -178,9 +178,9 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 嘗試從代碼中解析生成時間
+        /// 嘗試從編號中解析生成時間
         /// </summary>
-        /// <param name="code">實體代碼</param>
+        /// <param name="code">實體編號</param>
         /// <param name="prefix">前綴</param>
         /// <returns>生成時間，如果無法解析則返回 null</returns>
         public static DateTime? ParseGenerationTimeFromCode(string code, string prefix)

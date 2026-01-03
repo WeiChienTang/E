@@ -42,7 +42,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
-    // 權限明細代碼相關欄位
+    // 權限明細編號相關欄位
     private string permissionMainName = string.Empty;
     private PermissionAction selectedAction = PermissionAction.Read;
 
@@ -85,7 +85,7 @@
             var result = await PermissionService.GetByIdAsync(PermissionId.Value);
             if (result != null)
             {
-                // 解析權限明細代碼，分離權限明細主要名稱和動作
+                // 解析權限明細編號，分離權限明細主要名稱和動作
                 if (!string.IsNullOrEmpty(result.Code))
                 {
                     var parts = result.Code.Split('.');
@@ -159,12 +159,12 @@
                 new()
                 {
                     PropertyName = nameof(Permission.Code),
-                    Label = "權限明細代碼",
+                    Label = "權限明細編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入權限明細代碼",
+                    Placeholder = "請輸入權限明細編號",
                     IsRequired = true,
                     MaxLength = 50,
-                    HelpText = "權限明細代碼（例如：Customer.Read、Product.Create）"
+                    HelpText = "權限明細編號（例如：Customer.Read、Product.Create）"
                 },
 
                 new()
@@ -277,21 +277,21 @@
                 return false;
             }
 
-            // 組合最終的權限明細代碼：使用表單中輸入的權限明細主要名稱 + 選擇的動作
+            // 組合最終的權限明細編號：使用表單中輸入的權限明細主要名稱 + 選擇的動作
             var permissionMainNameValue = entity.Code?.Trim() ?? "";
             entity.Code = $"{permissionMainNameValue}.{selectedAction}";
 
-            // 驗證權限明細代碼格式
+            // 驗證權限明細編號格式
             var codeValidationResult = PermissionService.ValidatePermissionCode(entity.Code);
             if (!codeValidationResult.IsSuccess)
             {
                 // 如果格式錯誤，恢復原本的權限明細主要名稱，移除自動添加的動作後綴
                 entity.Code = permissionMainNameValue;
-                await NotificationService.ShowErrorAsync($"權限明細代碼格式不正確：{codeValidationResult.ErrorMessage}", "驗證失敗");
+                await NotificationService.ShowErrorAsync($"權限明細編號格式不正確：{codeValidationResult.ErrorMessage}", "驗證失敗");
                 return false;
             }
 
-            // 檢查權限明細代碼是否重複
+            // 檢查權限明細編號是否重複
             var codeCheckResult = await PermissionService.IsPermissionCodeExistsAsync(entity.Code, entity.Id);
             if (!codeCheckResult.IsSuccess)
             {
@@ -303,9 +303,9 @@
 
             if (codeCheckResult.Data)
             {
-                // 如果權限明細代碼重複，恢復原本的權限明細主要名稱
+                // 如果權限明細編號重複，恢復原本的權限明細主要名稱
                 entity.Code = permissionMainNameValue;
-                await NotificationService.ShowErrorAsync("權限明細代碼已存在，請使用不同的權限明細主要名稱或動作組合", "驗證失敗");
+                await NotificationService.ShowErrorAsync("權限明細編號已存在，請使用不同的權限明細主要名稱或動作組合", "驗證失敗");
                 return false;
             }
 

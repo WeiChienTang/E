@@ -92,14 +92,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
                 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("部門代碼不能為空");
+                    errors.Add("部門編號不能為空");
                 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("部門名稱不能為空");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 
                     await IsDepartmentCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("部門代碼已存在");
+                    errors.Add("部門編號已存在");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 
                     await IsDepartmentNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))

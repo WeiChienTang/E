@@ -164,7 +164,7 @@ namespace ERPCore2.Services
         #region 自定義方法
 
         /// <summary>
-        /// 檢查銷貨訂單代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// 檢查銷貨訂單編號是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
         public async Task<bool> IsSalesOrderCodeExistsAsync(string code, int? excludeId = null)
         {

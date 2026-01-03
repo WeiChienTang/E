@@ -133,7 +133,7 @@ dotnet ef database update
 Task<List<SalesOrderCompositionDetail>> GetBySalesOrderDetailIdAsync(int salesOrderDetailId);
 
 /// <summary>
-/// 從商品合成表複製 BOM 資料到銷貨訂單
+/// 從商品物料清單複製 BOM 資料到銷貨訂單
 /// </summary>
 Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
     int salesOrderDetailId, int productId);
@@ -707,7 +707,7 @@ catch (Exception ex)
 ```
 
 **注意事項**:
-1. BOM 組成的轉換不會影響原始的商品合成表 (`ProductCompositionDetail`)
+1. BOM 組成的轉換不會影響原始的商品物料清單 (`ProductCompositionDetail`)
 2. 轉換時會複製所有 BOM 組成明細的屬性
 3. `SalesOrderDetailId` 會在儲存時自動設定(因為此時訂單明細還未存入資料庫)
 4. 即使 BOM 載入失敗,也不會影響基本明細的轉換
@@ -796,7 +796,7 @@ var totalStock = stocks.Sum(s => s.TotalCurrentStock);
 - [ ] CopyFromProductCompositionAsync 正確複製 BOM
 - [ ] SaveBatchAsync 正確處理新增/更新/刪除
 - [ ] DeleteBySalesOrderDetailIdAsync 正確刪除所有組成
-- [ ] SearchAsync 可根據組件名稱/代碼搜尋
+- [ ] SearchAsync 可根據組件名稱/編號搜尋
 - [ ] ValidateAsync 正確驗證資料
 
 ### UI 測試

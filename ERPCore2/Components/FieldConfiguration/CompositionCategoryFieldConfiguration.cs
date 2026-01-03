@@ -7,7 +7,7 @@ using ERPCore2.Components.Shared.PageTemplate;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 合成表類型欄位配置
+    /// 物料清單類型欄位配置
     /// </summary>
     public class CompositionCategoryFieldConfiguration : BaseFieldConfiguration<CompositionCategory>
     {
@@ -29,11 +29,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<CompositionCategory>
                         {
                             PropertyName = nameof(CompositionCategory.Code),
-                            DisplayName = "類型代碼",
-                            FilterPlaceholder = "輸入類型代碼搜尋",
+                            DisplayName = "類型編號",
+                            FilterPlaceholder = "輸入類型編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(CompositionCategory.Code), cc => cc.Code)
                         }
@@ -59,7 +58,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "使用次數",
                             ShowInFilter = false,
                             TableOrder = 3,
-                            HeaderStyle = "width: 120px; text-align: center;",
                             CustomTemplate = item => builder =>
                             {
                                 var category = (CompositionCategory)item;
@@ -81,7 +79,7 @@ namespace ERPCore2.FieldConfiguration
                 // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
-                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化合成表類型欄位配置失敗");
+                    await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: "初始化物料清單類型欄位配置失敗");
                 });
 
                 // 通知使用者
@@ -89,7 +87,7 @@ namespace ERPCore2.FieldConfiguration
                 {
                     _ = Task.Run(async () =>
                     {
-                        await _notificationService.ShowErrorAsync("初始化合成表類型欄位配置時發生錯誤，已使用預設配置");
+                        await _notificationService.ShowErrorAsync("初始化物料清單類型欄位配置時發生錯誤，已使用預設配置");
                     });
                 }
 

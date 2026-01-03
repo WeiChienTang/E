@@ -8,21 +8,21 @@
                         TService="ICompositionCategoryService"
                         Service="@CompositionCategoryService"
                         EntityBasePath="/composition-categories"                          
-                        PageTitle="合成表類型"
-                        PageSubtitle="設定商品合成表的類型分類"
+                        PageTitle="物料清單類型"
+                        PageSubtitle="設定商品物料清單的類型分類"
                         DataLoader="@LoadDataAsync"
                         FilterApplier="@ApplyCompositionCategoryFilters"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="合成表類型"
+                        EntityName="物料清單類型"
                         GetEntityDisplayName="@(category => category.Name)"
                         RequiredPermission="CompositionCategory.Read"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         @ref="indexComponent"/>
 
-@* 合成表類型編輯 Modal *@
+@* 物料清單類型編輯 Modal *@
 <CompositionCategoryEditModalComponent IsVisible="@showEditModal"
                                       IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                       CompositionCategoryId="@editingCategoryId"
@@ -71,17 +71,17 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化合成表類型頁面失敗");
-            await NotificationService.ShowErrorAsync("初始化合成表類型頁面失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化物料清單類型頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化物料清單類型頁面失敗");
         }
     }
 
     // ===== 原有的初始化方法 =====
 
-    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "合成表類型", "#", NotificationService, GetType());
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "物料清單類型", "#", NotificationService, GetType());
 
-    // 載入合成表類型資料
-    private Task<List<CompositionCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => CompositionCategoryService.GetAllAsync(), "合成表類型", NotificationService, GetType());
+    // 載入物料清單類型資料
+    private Task<List<CompositionCategory>> LoadDataAsync() => DataLoaderHelper.LoadAsync(() => CompositionCategoryService.GetAllAsync(), "物料清單類型", NotificationService, GetType());
 
     private IQueryable<CompositionCategory> ApplyCompositionCategoryFilters(SearchFilterModel searchModel, IQueryable<CompositionCategory> query)
     {

@@ -5,7 +5,7 @@
 ### 位置
 `Data/Navigation/NavigationConfig.cs`
 
-### 代碼
+### 編號
 ```csharp
 // 加入 using
 using ERPCore2.Helpers;
@@ -29,7 +29,7 @@ NavigationActionHelper.CreateActionItem(
 ### 位置
 `Components/Pages/Reports/AccountsReceivableReportPage.razor`
 
-### 代碼
+### 編號
 ```csharp
 @* 移除 @page 指令，改為 Parameter 控制顯示 *@
 @using ERPCore2.Services.Interfaces
@@ -77,7 +77,7 @@ NavigationActionHelper.CreateActionItem(
 ### 位置
 `Components/Layout/MainLayout.razor`
 
-### 代碼
+### 編號
 
 #### 3.1 加入 using
 ```csharp
@@ -145,7 +145,7 @@ private void HandleNavigationAction(string actionId)
 ### 位置
 `Models/NavigationItem.cs`
 
-### 代碼
+### 編號
 ```csharp
 /// <summary>
 /// 導航項目類型
@@ -179,7 +179,7 @@ public class NavigationItem
 ### 位置
 `Components/Layout/NavMenu.razor`
 
-### 代碼
+### 編號
 
 #### 5.1 加入 EventCallback
 ```csharp
@@ -211,7 +211,7 @@ public async Task TriggerActionAsync(string actionId)
 ### 位置
 `Components/Shared/GenericComponent/NavMenu/NavDropdownItem.razor`
 
-### 代碼
+### 編號
 
 #### 6.1 加入 CascadingParameter
 ```csharp

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 合成表類型主檔
+    /// 物料清單類型主檔
     /// </summary>
     public class CompositionCategory : BaseEntity
     {

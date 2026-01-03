@@ -98,7 +98,7 @@ namespace ERPCore2.Services
 
                 // 檢查必要欄位
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("廠商代碼為必填");
+                    errors.Add("廠商編號為必填");
                 
                 // 檢查公司名稱、負責人或聯絡人至少要有一個
                 if (string.IsNullOrWhiteSpace(entity.CompanyName) && string.IsNullOrWhiteSpace(entity.ContactPerson) && string.IsNullOrWhiteSpace(entity.ResponsiblePerson))
@@ -106,7 +106,7 @@ namespace ERPCore2.Services
 
                 // 檢查長度限制
                 if (entity.Code?.Length > 20)
-                    errors.Add("廠商代碼不可超過20個字元");
+                    errors.Add("廠商編號不可超過20個字元");
                 
                 if (entity.CompanyName?.Length > 100)
                     errors.Add("公司名稱不可超過100個字元");
@@ -117,7 +117,7 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrEmpty(entity.TaxNumber) && entity.TaxNumber.Length > 8)
                     errors.Add("統一編號不可超過8個字元");
 
-                // 檢查廠商代碼是否重複
+                // 檢查廠商編號是否重複
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isDuplicate = await context.Suppliers
@@ -126,7 +126,7 @@ namespace ERPCore2.Services
                         .AnyAsync();
 
                     if (isDuplicate)
-                        errors.Add("廠商代碼已存在");
+                        errors.Add("廠商編號已存在");
                 }
 
                 // 檢查公司名稱是否重複

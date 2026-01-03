@@ -55,7 +55,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查類型代碼是否存在
+        /// 檢查類型編號是否存在
         /// </summary>
         public async Task<bool> IsTypeCodeExistsAsync(string typeCode, int? excludeId = null)
         {
@@ -179,14 +179,14 @@ namespace ERPCore2.Services
             {
                 // 基本驗證
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    return ServiceResult.Failure("類型代碼為必填");
+                    return ServiceResult.Failure("類型編號為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.TypeName))
                     return ServiceResult.Failure("類型名稱為必填");
 
-                // 檢查類型代碼是否重複
+                // 檢查類型編號是否重複
                 if (await IsTypeCodeExistsAsync(entity.Code, entity.Id))
-                    return ServiceResult.Failure("類型代碼已存在");
+                    return ServiceResult.Failure("類型編號已存在");
 
                 return ServiceResult.Success();
             }

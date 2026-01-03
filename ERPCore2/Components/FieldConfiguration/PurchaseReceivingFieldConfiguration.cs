@@ -41,7 +41,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "進貨單號",
                             FilterPlaceholder = "輸入進貨單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReceiving.Code), pr => pr.Code)
                         }
@@ -54,7 +53,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "批號",
                             FilterPlaceholder = "輸入批號搜尋",
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReceiving.BatchNumber), pr => pr.BatchNumber)
                         }
@@ -68,7 +66,6 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 3,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入廠商名稱搜尋",
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "SupplierName", pr => pr.Supplier != null ? pr.Supplier.CompanyName : "")
                         }
@@ -82,7 +79,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseReceiving.ReceiptDate), pr => pr.ReceiptDate)
                         }
@@ -96,7 +92,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 120px; text-align: right;",
                             CustomTemplate = item => builder =>
                             {
                                 var purchaseReceiving = (PurchaseReceiving)item;

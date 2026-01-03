@@ -10,7 +10,7 @@ namespace ERPCore2.Services
         #region 業務特定查詢方法
         
         /// <summary>
-        /// 根據商品代碼取得商品
+        /// 根據商品編號取得商品
         /// </summary>
         Task<Product?> GetByProductCodeAsync(string productCode);
         
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         Task<Product?> GetByBarcodeAsync(string barcode);
         
         /// <summary>
-        /// 檢查商品代碼是否存在
+        /// 檢查商品編號是否存在
         /// </summary>
         Task<bool> IsProductCodeExistsAsync(string productCode, int? excludeId = null);
         

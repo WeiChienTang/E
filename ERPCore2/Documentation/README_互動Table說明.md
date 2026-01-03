@@ -162,7 +162,7 @@ NullDisplayText       // string? - 空值時顯示的文字（預設為 "-"）
 ```csharp
 new InteractiveColumnDefinition
 {
-    Title = "商品代碼",
+    Title = "商品編號",
     PropertyName = "ProductCode",
     ColumnType = InteractiveColumnType.Display,
     Width = "150px",
@@ -401,7 +401,7 @@ new InteractiveColumnDefinition
         {
             new()
             {
-                Title = "商品代碼",
+                Title = "商品編號",
                 PropertyName = "Code",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"

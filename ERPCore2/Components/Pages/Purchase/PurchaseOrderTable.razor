@@ -283,7 +283,18 @@ else
                 await OnQuantityInput((ProductItem)item, valueString);
             })
         });
-
+        
+        // 單位欄位 (唯讀 - 顯示商品的單位名稱)
+        columns.Add(new() 
+        { 
+            Title = "單位", 
+            PropertyName = "UnitName",
+            ColumnType = InteractiveColumnType.Display,
+            Width = "60px",
+            Tooltip = "商品的計量單位（唯讀，請在商品資料中修改）",
+            IsReadOnly = true
+        });
+    
         // 入庫量欄位 (只讀)
         columns.Add(new() 
         { 
@@ -375,7 +386,7 @@ else
             Title = "結清", 
             PropertyName = "IsReceivingCompleted",
             ColumnType = InteractiveColumnType.Checkbox,
-            Width = "40px",
+            Width = "60px",
             Tooltip = "手動標記此商品已完成所有進貨作業（即使數量未完全入庫）\n核准後仍可修改此狀態",
             IsDisabledFunc = item =>
             {
@@ -1174,5 +1185,8 @@ else
         public List<Product> FilteredProducts { get; set; } = new();
         public bool ShowProductDropdown { get; set; } = false;
         public int ProductSelectedIndex { get; set; } = -1;
+        
+        // 計算屬性：單位名稱（唯讀顯示用）
+        public string UnitName => SelectedProduct?.Unit?.Name ?? string.Empty;
     }
 }

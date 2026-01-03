@@ -167,13 +167,13 @@ namespace ERPCore2.Services
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    return ServiceResult.Failure("公司代碼為必填欄位");
+                    return ServiceResult.Failure("公司編號為必填欄位");
                 }
 
-                // 檢查代碼是否重複（排除自己）
+                // 檢查編號是否重複（排除自己）
                 if (await IsCompanyCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                 {
-                    return ServiceResult.Failure("公司代碼已存在");
+                    return ServiceResult.Failure("公司編號已存在");
                 }
 
                 // 驗證統一編號

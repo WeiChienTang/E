@@ -15,7 +15,7 @@ namespace ERPCore2.Services
         Task<List<QuotationCompositionDetail>> GetByQuotationDetailIdAsync(int quotationDetailId);
 
         /// <summary>
-        /// 從商品合成表複製 BOM 到報價單明細（使用最新的配方）
+        /// 從商品物料清單複製 BOM 到報價單明細（使用最新的配方）
         /// </summary>
         /// <param name="quotationDetailId">報價單明細 ID</param>
         /// <param name="productId">商品 ID</param>

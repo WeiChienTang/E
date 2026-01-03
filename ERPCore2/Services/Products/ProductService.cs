@@ -110,15 +110,15 @@ namespace ERPCore2.Services
                 // 驗證必填欄位
                 if (string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    errors.Add("商品代碼為必填欄位");
+                    errors.Add("商品編號為必填欄位");
                 }
                 else
                 {
-                    // 檢查商品代碼唯一性
+                    // 檢查商品編號唯一性
                     var isDuplicate = await IsProductCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
-                        errors.Add("商品代碼已存在");
+                        errors.Add("商品編號已存在");
                     }
                 }
 

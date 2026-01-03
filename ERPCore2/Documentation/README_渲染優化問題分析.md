@@ -196,7 +196,7 @@ protected override async Task OnParametersSetAsync()
 
 **影響範圍**：
 - ✅ 所有使用 `GenericEditModalComponent` 的 Modal（約 20+ 個）
-- ✅ 不需要每個子組件重複寫優化代碼
+- ✅ 不需要每個子組件重複寫優化編號
 - ✅ 統一維護，避免邏輯不一致
 
 **預期效果**：
@@ -284,7 +284,7 @@ protected override async Task OnParametersSetAsync()
    - ProductEditModalComponent：預期從 **4-5 次降到 1 次**
    - PurchaseReceivingEditModalComponent：預期從 **19-21 次降到 1-2 次**
 
-3. ⏳ 移除子組件中的重複優化代碼（已在 SupplierEditModalComponent 完成）
+3. ⏳ 移除子組件中的重複優化編號（已在 SupplierEditModalComponent 完成）
 
 ### 🔍 深度調查（中優先級）
 5. ⏳ 審查 `GenericEditModalComponent.razor` 的所有 `StateHasChanged()` 呼叫
@@ -416,7 +416,7 @@ protected override async Task OnParametersSetAsync()
 
 ### ✅ 已完成優化的檔案
 1. **GenericEditModalComponent.razor** - 核心全域優化（所有 EditModal 自動受益）
-2. **SupplierEditModalComponent.razor** - 已移除調試代碼，驗證優化效果
+2. **SupplierEditModalComponent.razor** - 已移除調試編號，驗證優化效果
 3. **CustomerEditModalComponent.razor** - 已加入 base 呼叫
 4. **SetoffDocumentEditModalComponent.razor** - 已加入 base 呼叫
 5. **EmployeeEditModalComponent.razor** - 已加入 base 呼叫

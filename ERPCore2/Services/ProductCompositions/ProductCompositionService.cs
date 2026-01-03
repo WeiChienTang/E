@@ -133,14 +133,14 @@ namespace ERPCore2.Services
                 if (entity.ParentProductId <= 0)
                     errors.Add("請選擇成品");
 
-                // 檢查合成表編號是否重複（參考 PurchaseOrderService 的做法）
+                // 檢查物料清單編號是否重複（參考 PurchaseOrderService 的做法）
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var exists = await context.ProductCompositions
                         .AnyAsync(pc => pc.Code == entity.Code && pc.Id != entity.Id);
                     if (exists)
-                        errors.Add("合成表編號已存在");
+                        errors.Add("物料清單編號已存在");
                 }
 
                 if (errors.Any())
@@ -158,7 +158,7 @@ namespace ERPCore2.Services
                     ParentProductId = entity.ParentProductId,
                     Code = entity.Code
                 });
-                return ServiceResult.Failure($"驗證商品合成表時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"驗證商品物料清單時發生錯誤: {ex.Message}");
             }
         }
 
@@ -195,7 +195,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得指定商品的所有合成表（用於相關單據查詢）
+        /// 取得指定商品的所有物料清單（用於相關單據查詢）
         /// </summary>
         public async Task<List<ProductComposition>> GetByProductIdAsync(int productId)
         {

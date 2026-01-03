@@ -2,12 +2,12 @@
 
 ## 📋 需求概述
 
-在報價單明細中，當商品具有 BOM 組成時，允許使用者查看並編輯該商品的組成明細。編輯後的 BOM 資料僅影響當前報價單，不會修改商品合成表（ProductCompositionDetail）的原始資料。
+在報價單明細中，當商品具有 BOM 組成時，允許使用者查看並編輯該商品的組成明細。編輯後的 BOM 資料僅影響當前報價單，不會修改商品物料清單（ProductCompositionDetail）的原始資料。
 
 ### 核心需求
 - ✅ 滑鼠移過或點擊商品時，可查看該商品的 BOM 組成
 - ✅ 可編輯 BOM 組成的數量、單位、成本等資訊
-- ✅ 編輯結果僅儲存在報價單中，不影響商品合成表
+- ✅ 編輯結果僅儲存在報價單中，不影響商品物料清單
 - ✅ 使用 `BaseModalComponent` 和 `InteractiveTableComponent` 保持 UI 一致性
 
 ---
@@ -126,7 +126,7 @@ public interface IQuotationCompositionDetailService : IGenericService<QuotationC
     Task<List<QuotationCompositionDetail>> GetByQuotationDetailIdAsync(int quotationDetailId);
     
     /// <summary>
-    /// 從商品合成表複製 BOM 資料到報價單
+    /// 從商品物料清單複製 BOM 資料到報價單
     /// </summary>
     Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(
         int quotationDetailId, 
@@ -153,7 +153,7 @@ public interface IQuotationCompositionDetailService : IGenericService<QuotationC
 **核心邏輯：**
 
 #### CopyFromProductCompositionAsync
-從商品合成表複製 BOM 資料，但不直接儲存到資料庫：
+從商品物料清單複製 BOM 資料，但不直接儲存到資料庫：
 ```csharp
 public async Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(
     int quotationDetailId, int productId)
@@ -332,7 +332,7 @@ private async Task LoadCompositionDetailsAsync()
         }
         else
         {
-            // 如果沒有，從商品合成表複製
+            // 如果沒有，從商品物料清單複製
             compositionDetails = await QuotationCompositionDetailService
                 .CopyFromProductCompositionAsync(
                     QuotationDetailId.Value, 
@@ -755,12 +755,12 @@ SaveQuotationCompositionDetails()
 ### 功能測試
 - [ ] 新增報價單，選擇有 BOM 的商品
 - [ ] 點擊「編輯 BOM」按鈕，Modal 正常開啟
-- [ ] 第一次開啟時，顯示從商品合成表複製的資料
+- [ ] 第一次開啟時，顯示從商品物料清單複製的資料
 - [ ] 修改數量、單位、成本、備註
 - [ ] 儲存後，資料暫存到 QuotationItem
 - [ ] 儲存報價單後，資料寫入 QuotationCompositionDetails 資料表
 - [ ] 再次開啟該報價單，編輯 BOM，應載入已儲存的資料
-- [ ] 確認商品合成表資料未被修改
+- [ ] 確認商品物料清單資料未被修改
 
 ### 邊界測試
 - [ ] 商品沒有 BOM 組成時，不顯示「編輯 BOM」按鈕
@@ -779,7 +779,7 @@ SaveQuotationCompositionDetails()
 
 ### 1. 效能優化
 - 在 `HasProductComposition` 方法中加入快取機制，避免重複查詢
-- 使用 `IMemoryCache` 快取商品合成表資料
+- 使用 `IMemoryCache` 快取商品物料清單資料
 
 ### 2. 功能增強
 - 支援從 BOM 編輯器中新增組成項目（目前僅能編輯現有項目）

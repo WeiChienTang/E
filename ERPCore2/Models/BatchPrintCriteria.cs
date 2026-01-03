@@ -52,7 +52,7 @@ namespace ERPCore2.Models
         public Dictionary<string, object> CustomFilters { get; set; } = new();
 
         /// <summary>
-        /// 報表類型代碼（用於選擇對應的列印配置）
+        /// 報表類型編號（用於選擇對應的列印配置）
         /// 例如：PurchaseOrder、PurchaseReceiving、SalesOrder等
         /// </summary>
         public string? ReportType { get; set; }

@@ -45,7 +45,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "交易單號",
                             FilterPlaceholder = "輸入交易單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(InventoryTransaction.TransactionNumber), t => t.TransactionNumber)
                         }
@@ -58,7 +57,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "交易類型",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             Options = GetTransactionTypeOptions(),
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -86,7 +84,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 3,
-                            HeaderStyle = "width: 130px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(InventoryTransaction.TransactionDate), t => t.TransactionDate)
                         }
@@ -97,10 +94,9 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Product.Code", // 表格顯示用
                             FilterPropertyName = nameof(InventoryTransaction.ProductId), // 篩選器用
-                            DisplayName = "商品代碼",
+                            DisplayName = "商品編號",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            HeaderStyle = "width: 140px;",
                             Options = _products.Select(p => new SelectOption 
                             { 
                                 Text = $"{p.Code} - {p.Name}", 
@@ -118,7 +114,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "商品名稱",
                             TableOrder = 5,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 200px;"
                         }
                     },
                     {
@@ -130,7 +125,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "倉庫",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
-                            HeaderStyle = "width: 120px;",
                             Options = _warehouses.Select(w => new SelectOption 
                             { 
                                 Text = $"{w.Code} - {w.Name}", 
@@ -149,7 +143,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "庫位",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
-                            HeaderStyle = "width: 100px;",
                             NullDisplayText = "無",
                             Options = _warehouseLocations.Select(wl => new SelectOption 
                             { 
@@ -169,7 +162,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 8,
-                            HeaderStyle = "width: 100px; text-align: right;",
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is InventoryTransaction transaction)
@@ -196,7 +188,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Currency,
                             TableOrder = 9,
-                            HeaderStyle = "width: 120px; text-align: right;",
                             NullDisplayText = "-",
                             ShowInFilter = false // 成本範圍篩選暫不提供
                         }
@@ -210,7 +201,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 10,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 110px; text-align: right;"
                         }
                     },
                     {
@@ -222,7 +212,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 11,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 110px; text-align: right;"
                         }
                     },
                     {
@@ -233,7 +222,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "批號",
                             FilterPlaceholder = "輸入批號搜尋",
                             TableOrder = 14,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(InventoryTransaction.TransactionBatchNumber), t => t.TransactionBatchNumber, allowNull: true)
@@ -250,7 +238,6 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 15,
                             FilterOrder = 0, // 不在篩選器中顯示
                             ShowInFilter = false,
-                            HeaderStyle = "width: 130px;",
                             NullDisplayText = "-"
                         }
                     },

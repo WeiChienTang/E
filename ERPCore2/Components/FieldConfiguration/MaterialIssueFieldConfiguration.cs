@@ -41,7 +41,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "領貨單號",
                             FilterPlaceholder = "輸入領貨單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(MaterialIssue.Code), mi => mi.Code)
                         }
@@ -54,7 +53,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "領貨日期",
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(MaterialIssue.IssueDate), mi => mi.IssueDate)
                         }
@@ -68,7 +66,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "領料人員",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             Options = _employees.Select(e => new SelectOption
                             {
                                 Text = e.Name ?? "",
@@ -87,7 +84,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "領料部門",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px;",
                             Options = _departments.Select(d => new SelectOption
                             {
                                 Text = d.Name ?? "",
@@ -105,7 +101,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "總數量",
                             TableOrder = 5,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 100px; text-align: right;"
                         }
                     },
                     {
@@ -116,7 +111,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "明細筆數",
                             TableOrder = 6,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 100px; text-align: right;"
                         }
                     },
                     {

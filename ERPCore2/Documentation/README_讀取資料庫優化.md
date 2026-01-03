@@ -375,7 +375,7 @@ protected override void Up(MigrationBuilder migrationBuilder)
         columns: new[] { "RoleId", "Status" },
         filter: "[Status] = 1");
     
-    // 權限代碼唯一索引
+    // 權限編號唯一索引
     migrationBuilder.CreateIndex(
         name: "IX_Permissions_Code",
         table: "Permissions",
@@ -404,7 +404,7 @@ CREATE INDEX IX_RolePermissions_RoleId_Status
 ON RolePermissions(RoleId, Status) 
 WHERE Status = 1;
 
--- 權限代碼
+-- 權限編號
 CREATE UNIQUE INDEX IX_Permissions_Code 
 ON Permissions(Code) 
 WHERE Code IS NOT NULL;

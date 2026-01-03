@@ -34,7 +34,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "印表機名稱",
                             FilterPlaceholder = "輸入印表機名稱搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.Name), p => p.Name)
                         }
@@ -47,7 +46,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "連接方式",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             Options = Enum.GetValues(typeof(PrinterConnectionType))
                                 .Cast<PrinterConnectionType>()
                                 .Select(e => new SelectOption
@@ -73,7 +71,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "USB連接埠",
                             FilterPlaceholder = "輸入USB連接埠搜尋",
                             TableOrder = 3,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.UsbPort), p => p.UsbPort ?? string.Empty),
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
@@ -94,7 +91,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "IP位址",
                             FilterPlaceholder = "輸入IP位址搜尋",
                             TableOrder = 4,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PrinterConfiguration.IpAddress), p => p.IpAddress ?? string.Empty),
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
@@ -116,7 +112,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "預設印表機",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            HeaderStyle = "width: 120px;",
                             Options = new List<SelectOption>
                             {
                                 new() { Text = "是", Value = "true" },

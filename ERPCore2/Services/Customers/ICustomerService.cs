@@ -10,7 +10,7 @@ namespace ERPCore2.Services
         #region 業務特定查詢方法
         
         /// <summary>
-        /// 根據客戶代碼取得客戶
+        /// 根據客戶編號取得客戶
         /// </summary>
         Task<Customer?> GetByCustomerCodeAsync(string customerCode);
         
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         Task<List<Customer>> GetByCompanyNameAsync(string companyName);
         
         /// <summary>
-        /// 檢查客戶代碼是否已存在
+        /// 檢查客戶編號是否已存在
         /// </summary>
         Task<bool> IsCustomerCodeExistsAsync(string customerCode, int? excludeId = null);
         

@@ -53,7 +53,7 @@ public Func<object, string?>? TooltipFunc { get; set; }
 - 報價數量: CustomTemplate → Number 類型
 - 單價: CustomTemplate → Number 類型
 - 折扣(%): CustomTemplate → Number 類型（0-100 範圍限制）
-- 代碼減少: 124 行 → 84 行 (-32%)
+- 程式碼減少: 124 行 → 84 行 (-32%)
 
 ---
 
@@ -212,9 +212,9 @@ columns.Add(new InteractiveColumnDefinition
 
 ## 優勢總結
 
-### 1. 代碼簡化
+### 1. 編號簡化
 - 減少重複的格式化邏輯
-- CustomTemplate 平均減少 30-40% 代碼
+- CustomTemplate 平均減少 30-40% 編號
 
 ### 2. 一致性
 - 所有數字欄位使用相同的格式化規則

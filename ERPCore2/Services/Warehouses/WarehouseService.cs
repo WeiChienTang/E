@@ -74,7 +74,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查倉庫代碼是否存在
+        /// 檢查倉庫編號是否存在
         /// </summary>
         public async Task<bool> IsWarehouseCodeExistsAsync(string warehouseCode, int? excludeId = null)
         {
@@ -145,14 +145,14 @@ namespace ERPCore2.Services
             {
                 // 基本驗證
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    return ServiceResult.Failure("倉庫代碼為必填");
+                    return ServiceResult.Failure("倉庫編號為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("倉庫名稱為必填");
 
-                // 檢查倉庫代碼是否重複
+                // 檢查倉庫編號是否重複
                 if (await IsWarehouseCodeExistsAsync(entity.Code, entity.Id))
-                    return ServiceResult.Failure("倉庫代碼已存在");
+                    return ServiceResult.Failure("倉庫編號已存在");
 
                 // 檢查倉庫名稱是否重複
                 if (await IsWarehouseNameExistsAsync(entity.Name, entity.Id))

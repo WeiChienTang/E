@@ -15,7 +15,7 @@ namespace ERPCore2.Services
         Task<bool> IsCategoryNameExistsAsync(string categoryName, int? excludeId = null);
         
         /// <summary>
-        /// 檢查商品分類代碼是否存在
+        /// 檢查商品分類編號是否存在
         /// </summary>
         Task<bool> IsProductCategoryCodeExistsAsync(string categoryCode, int? excludeId = null);
         
@@ -25,7 +25,7 @@ namespace ERPCore2.Services
         Task<ProductCategory?> GetByCategoryNameAsync(string categoryName);
         
         /// <summary>
-        /// 根據分類代碼取得商品分類
+        /// 根據分類編號取得商品分類
         /// </summary>
         Task<ProductCategory?> GetByCategoryCodeAsync(string categoryCode);
         

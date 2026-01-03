@@ -45,7 +45,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "報價單號",
                             FilterPlaceholder = "輸入報價單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Quotation.Code), q => q.Code)
                         }
@@ -59,7 +58,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(Quotation.QuotationDate), q => q.QuotationDate)
                         }
@@ -91,7 +89,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "業務人員",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "未指派",
                             Options = _employees.Select(e => new SelectOption 
                             { 
@@ -110,7 +107,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "總額",
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
-                            HeaderStyle = "width: 130px; text-align: right;",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -134,7 +130,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "核准狀態",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
-                            HeaderStyle = "width: 100px;",
                             Options = new List<SelectOption>
                             {
                                 new SelectOption { Text = "已核准", Value = "true" },

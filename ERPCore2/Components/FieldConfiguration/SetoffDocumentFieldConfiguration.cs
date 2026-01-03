@@ -35,7 +35,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "沖款單號",
                             FilterPlaceholder = "輸入沖款單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SetoffDocument.Code), s => s.Code)
                         }
@@ -69,7 +68,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入客戶或供應商名稱搜尋",
                             TableOrder = 4,
                             ShowInFilter = false, // NotMapped 屬性無法在資料庫查詢中篩選
-                            HeaderStyle = "width: 200px;",
                             CustomTemplate = (context) => builder =>
                             {
                                 var setoffDoc = context as SetoffDocument;

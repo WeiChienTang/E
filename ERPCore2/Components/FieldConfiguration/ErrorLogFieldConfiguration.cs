@@ -34,7 +34,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "錯誤ID",
                             FilterPlaceholder = "輸入錯誤ID搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.ErrorId), e => e.ErrorId)
                         }
@@ -47,7 +46,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "錯誤等級",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             Options = GetErrorLevelOptions(),
                             FilterFunction = (model, query) => ApplyErrorLevelFilter(model, query)
                         }
@@ -60,7 +58,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "錯誤來源",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             Options = GetErrorSourceOptions(),
                             FilterFunction = (model, query) => ApplyErrorSourceFilter(model, query)
                         }
@@ -73,7 +70,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "錯誤分類",
                             FilterPlaceholder = "輸入錯誤分類搜尋",
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.Category), e => e.Category)
                         }
@@ -98,7 +94,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "模組",
                             FilterPlaceholder = "輸入模組名稱搜尋",
                             TableOrder = 6,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.Module), e => e.Module, allowNull: true)
                         }
@@ -111,7 +106,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "發生時間",
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 7,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(ErrorLog.OccurredAt), e => e.OccurredAt)
                         }
@@ -124,7 +118,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "已解決",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
-                            HeaderStyle = "width: 100px;",
                             Options = new List<SelectOption>
                             {
                                 new() { Text = "全部", Value = "" },
@@ -142,7 +135,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "使用者",
                             FilterPlaceholder = "輸入使用者ID搜尋",
                             TableOrder = 9,
-                            HeaderStyle = "width: 120px;",
                             ShowInTable = false, // 預設不在表格中顯示
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ErrorLog.UserId), e => e.UserId, allowNull: true)

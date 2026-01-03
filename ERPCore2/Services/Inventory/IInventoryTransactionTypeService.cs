@@ -9,7 +9,7 @@ namespace ERPCore2.Services
     public interface IInventoryTransactionTypeService : IGenericManagementService<InventoryTransactionType>
     {
         /// <summary>
-        /// 檢查類型代碼是否存在
+        /// 檢查類型編號是否存在
         /// </summary>
         Task<bool> IsTypeCodeExistsAsync(string typeCode, int? excludeId = null);
         

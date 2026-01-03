@@ -40,7 +40,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PurchaseOrder>
                         {
                             PropertyName = nameof(PurchaseOrder.Code),
-                            DisplayName = "單號",
+                            DisplayName = "採購單號",
                             FilterPlaceholder = "輸入採購單號搜尋",
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -133,7 +133,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "核准狀態",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
-                            HeaderStyle = "width: 100px;",
                             Options = new List<SelectOption>
                             {
                                 new SelectOption { Text = "已核准", Value = "true" },

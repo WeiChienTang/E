@@ -47,7 +47,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "退貨單號",
                             FilterPlaceholder = "輸入退貨單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 160px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesReturn.Code), sr => sr.Code)
                         }
@@ -61,7 +60,6 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 2,
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入客戶名稱搜尋",
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "CustomerName", sr => sr.Customer != null ? sr.Customer.CompanyName : "")
                         }
@@ -75,7 +73,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(SalesReturn.ReturnDate), sr => sr.ReturnDate)
                         }
@@ -88,7 +85,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "退貨原因",
                             TableOrder = 4,
                             FilterType = SearchFilterType.Select,
-                            HeaderStyle = "width: 150px;",
                             Options = _returnReasons.Select(r => new SelectOption
                             {
                                 Text = r.Name,
@@ -107,7 +103,6 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
                             ShowInFilter = false,
-                            HeaderStyle = "width: 120px; text-align: right;",
                             CustomTemplate = item => builder =>
                             {
                                 var salesReturn = (SalesReturn)item;

@@ -47,7 +47,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = "輸入商品編號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => {
                                 var filterValue = model.GetFilterValue("ProductCode")?.ToString();
                                 if (!string.IsNullOrWhiteSpace(filterValue))
@@ -70,7 +69,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "商品名稱",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 200px;",
                             Options = _products.Select(p => new SelectOption
                             {
                                 Text = $"{p.Code} - {p.Name}",
@@ -89,7 +87,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "商品類型",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
-                            HeaderStyle = "width: 150px;",
                             Options = _productCategories.Select(pc => new SelectOption
                             {
                                 Text = pc.Name,
@@ -114,7 +111,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "現有庫存",
                             FilterType = SearchFilterType.Text,
                             TableOrder = 4,
-                            HeaderStyle = "width: 100px; text-align: right;",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -135,7 +131,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "商品單位",
                             FilterType = SearchFilterType.Text,
                             TableOrder = 5,
-                            HeaderStyle = "width: 80px;",
                             ShowInFilter = false
                         }
                     },
@@ -147,7 +142,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "平均成本",
                             FilterType = SearchFilterType.Text,
                             TableOrder = 6,
-                            HeaderStyle = "width: 120px; text-align: right;",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {

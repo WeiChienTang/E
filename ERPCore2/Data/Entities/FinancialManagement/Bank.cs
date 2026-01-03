@@ -29,8 +29,8 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "傳真")]
         public string? Fax { get; set; }
 
-        [MaxLength(20, ErrorMessage = "SWIFT代碼不可超過20個字元")]
-        [Display(Name = "SWIFT代碼")]
+        [MaxLength(20, ErrorMessage = "SWIFT編號不可超過20個字元")]
+        [Display(Name = "SWIFT編號")]
         public string? SwiftCode { get; set; }
     }
 }

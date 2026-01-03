@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace ERPCore2.Helpers.EditModal;
 
 /// <summary>
-/// 代碼生成策略
+/// 編號生成策略
 /// </summary>
 public enum CodeGenerationStrategy
 {
@@ -96,20 +96,20 @@ public class CodeGenerationStrategyAttribute : Attribute
 }
 
 /// <summary>
-/// 實體代碼生成輔助類別
-/// 統一處理所有實體的代碼生成邏輯，減少重複代碼
+/// 實體編號生成輔助類別
+/// 統一處理所有實體的編號生成邏輯，減少重複代碼
 /// </summary>
 public static class EntityCodeGenerationHelper
 {
     /// <summary>
-    /// 為指定實體生成代碼（自動讀取特性配置，優先使用）
+    /// 為指定實體生成編號（自動讀取特性配置，優先使用）
     /// </summary>
     /// <typeparam name="TEntity">實體類型</typeparam>
     /// <typeparam name="TService">服務類型</typeparam>
     /// <param name="service">服務實例</param>
     /// <param name="dbContext">資料庫上下文（用於序號查詢）</param>
     /// <param name="excludeId">排除的實體ID（用於更新時檢查重複）</param>
-    /// <returns>生成的代碼</returns>
+    /// <returns>生成的編號</returns>
     public static async Task<string> GenerateForEntity<TEntity, TService>(
         TService service,
         DbContext dbContext,
@@ -127,7 +127,7 @@ public static class EntityCodeGenerationHelper
                 $"請在實體類別上加上 [CodeGenerationStrategy(策略, Prefix = \"前綴\")] 特性。");
         }
         
-        // 根據策略生成代碼
+        // 根據策略生成編號
         return await GenerateWithStrategy<TEntity>(
             service,
             dbContext,
@@ -140,7 +140,7 @@ public static class EntityCodeGenerationHelper
     }
     
     /// <summary>
-    /// 根據策略生成代碼（內部方法）
+    /// 根據策略生成編號（內部方法）
     /// </summary>
     private static async Task<string> GenerateWithStrategy<TEntity>(
         object service,
@@ -238,7 +238,7 @@ public static class EntityCodeGenerationHelper
                     break;
                     
                 default:
-                    throw new ArgumentException($"不支援的代碼生成策略: {strategy}");
+                    throw new ArgumentException($"不支援的編號生成策略: {strategy}");
             }
             
             // 最終檢查（保險起見）
@@ -258,7 +258,7 @@ public static class EntityCodeGenerationHelper
     }
     
     /// <summary>
-    /// 檢查代碼是否已存在
+    /// 檢查編號是否已存在
     /// </summary>
     private static async Task<bool> IsCodeExists<TEntity>(
         DbContext dbContext,
@@ -318,7 +318,7 @@ public static class EntityCodeGenerationHelper
                 query = query.Where(lambda);
             }
             
-            // 查詢以該時間戳開頭的所有代碼
+            // 查詢以該時間戳開頭的所有編號
             var codes = await query
                 .Select(e => EF.Property<string>(e, "Code"))
                 .Where(code => code.StartsWith(searchPattern))
@@ -327,7 +327,7 @@ public static class EntityCodeGenerationHelper
             if (!codes.Any())
                 return 0;
             
-            // 從代碼中提取序號（時間戳後面的數字）
+            // 從編號中提取序號（時間戳後面的數字）
             var maxSeq = codes
                 .Select(code =>
                 {
@@ -392,7 +392,7 @@ public static class EntityCodeGenerationHelper
             
             var lambda = Expression.Lambda<Func<TEntity, bool>>(dateRangeCondition, parameter);
             
-            // 查詢符合條件的代碼
+            // 查詢符合條件的編號
             var codes = await dbSet
                 .Where(lambda)
                 .Select(e => EF.Property<string>(e, "Code"))
@@ -401,7 +401,7 @@ public static class EntityCodeGenerationHelper
             if (!codes.Any())
                 return 0;
             
-            // 從代碼中提取序號
+            // 從編號中提取序號
             var maxSeq = codes
                 .Where(code => !string.IsNullOrEmpty(code) && code.StartsWith(prefix))
                 .Select(code => ExtractSequenceNumber(code, prefix))
@@ -418,7 +418,7 @@ public static class EntityCodeGenerationHelper
     }
     
     /// <summary>
-    /// 從代碼中提取序號
+    /// 從編號中提取序號
     /// </summary>
     private static int? ExtractSequenceNumber(string code, string prefix)
     {
@@ -439,14 +439,14 @@ public static class EntityCodeGenerationHelper
     }
 
     /// <summary>
-    /// 為指定實體生成代碼（使用約定優於配置，向下相容舊版本）
+    /// 為指定實體生成編號（使用約定優於配置，向下相容舊版本）
     /// </summary>
     /// <typeparam name="TEntity">實體類型</typeparam>
     /// <typeparam name="TService">服務類型</typeparam>
     /// <param name="service">服務實例</param>
-    /// <param name="prefix">代碼前綴</param>
+    /// <param name="prefix">編號前綴</param>
     /// <param name="excludeId">排除的實體ID（用於更新時檢查重複）</param>
-    /// <returns>生成的代碼</returns>
+    /// <returns>生成的編號</returns>
     /// <remarks>
     /// 此方法使用約定優於配置的原則，自動尋找服務中的 IsXxxCodeExistsAsync 方法
     /// 例如：Customer 實體會尋找 IsCustomerCodeExistsAsync 方法
@@ -488,15 +488,15 @@ public static class EntityCodeGenerationHelper
     }
 
     /// <summary>
-    /// 為指定實體生成代碼（使用自訂檢查函式）
+    /// 為指定實體生成編號（使用自訂檢查函式）
     /// </summary>
     /// <typeparam name="TEntity">實體類型</typeparam>
     /// <typeparam name="TService">服務類型</typeparam>
     /// <param name="service">服務實例</param>
-    /// <param name="prefix">代碼前綴</param>
-    /// <param name="codeExistsChecker">自訂的代碼檢查函式</param>
+    /// <param name="prefix">編號前綴</param>
+    /// <param name="codeExistsChecker">自訂的編號檢查函式</param>
     /// <param name="excludeId">排除的實體ID（用於更新時檢查重複）</param>
-    /// <returns>生成的代碼</returns>
+    /// <returns>生成的編號</returns>
     public static async Task<string> GenerateForEntityWithCustomChecker<TEntity, TService>(
         TService service,
         string prefix,
@@ -513,11 +513,11 @@ public static class EntityCodeGenerationHelper
     }
 
     /// <summary>
-    /// 為指定實體生成簡單代碼（使用時間戳記，不檢查重複）
+    /// 為指定實體生成簡單編號（使用時間戳記，不檢查重複）
     /// </summary>
-    /// <param name="prefix">代碼前綴</param>
+    /// <param name="prefix">編號前綴</param>
     /// <param name="usePreciseTimestamp">是否使用精確時間戳記（含毫秒）</param>
-    /// <returns>生成的代碼</returns>
+    /// <returns>生成的編號</returns>
     /// <remarks>
     /// 適用於不需要檢查重複的場景，例如：訂單號、單據號等
     /// </remarks>
@@ -527,14 +527,14 @@ public static class EntityCodeGenerationHelper
     }
 
     /// <summary>
-    /// 批次為多個實體生成代碼
+    /// 批次為多個實體生成編號
     /// </summary>
     /// <typeparam name="TEntity">實體類型</typeparam>
     /// <typeparam name="TService">服務類型</typeparam>
     /// <param name="service">服務實例</param>
-    /// <param name="prefix">代碼前綴</param>
+    /// <param name="prefix">編號前綴</param>
     /// <param name="count">需要生成的數量</param>
-    /// <returns>生成的代碼列表</returns>
+    /// <returns>生成的編號列表</returns>
     public static async Task<List<string>> GenerateBatchCodes<TEntity, TService>(
         TService service,
         string prefix,
@@ -559,9 +559,9 @@ public static class EntityCodeGenerationHelper
     }
 
     /// <summary>
-    /// 驗證代碼格式是否符合規範
+    /// 驗證編號格式是否符合規範
     /// </summary>
-    /// <param name="code">要驗證的代碼</param>
+    /// <param name="code">要驗證的編號</param>
     /// <param name="prefix">預期的前綴</param>
     /// <param name="minLength">最小長度（可選）</param>
     /// <param name="maxLength">最大長度（可選）</param>
@@ -574,22 +574,22 @@ public static class EntityCodeGenerationHelper
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            return (false, "代碼不可為空");
+            return (false, "編號不可為空");
         }
 
         if (!code.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
-            return (false, $"代碼必須以 {prefix} 開頭");
+            return (false, $"編號必須以 {prefix} 開頭");
         }
 
         if (minLength.HasValue && code.Length < minLength.Value)
         {
-            return (false, $"代碼長度不可小於 {minLength.Value} 個字元");
+            return (false, $"編號長度不可小於 {minLength.Value} 個字元");
         }
 
         if (maxLength.HasValue && code.Length > maxLength.Value)
         {
-            return (false, $"代碼長度不可超過 {maxLength.Value} 個字元");
+            return (false, $"編號長度不可超過 {maxLength.Value} 個字元");
         }
 
         return (true, null);

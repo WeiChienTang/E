@@ -210,23 +210,23 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "商品合成表",
+                        Name = "商品物料清單",
                         Description = "管理商品的配方和組件結構",
                         Route = "/product-compositions",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "商品管理",
                         RequiredPermission = "ProductComposition.Read",
-                        SearchKeywords = new List<string> { "商品合成", "BOM", "合成表", "Bill of Materials" }
+                        SearchKeywords = new List<string> { "商品合成", "BOM", "物料清單", "Bill of Materials" }
                     },
                     new NavigationItem
                     {
-                        Name = "合成表類型",
-                        Description = "管理商品合成表的類型分類",
+                        Name = "物料清單類型",
+                        Description = "管理商品物料清單的類型分類",
                         Route = "/composition-categories",
                         IconClass = "",
                         Category = "商品管理",
                         RequiredPermission = "CompositionCategory.Read",
-                        SearchKeywords = new List<string> { "合成表類型", "BOM類型", "category" }
+                        SearchKeywords = new List<string> { "物料清單類型", "BOM類型", "category" }
                     },
                     new NavigationItem
                     {

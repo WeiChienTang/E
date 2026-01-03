@@ -123,14 +123,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("銀行代碼為必填欄位");
+                    errors.Add("銀行編號為必填欄位");
 
                 if (string.IsNullOrWhiteSpace(entity.BankName))
                     errors.Add("銀行名稱為必填欄位");
 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 
                     await IsBankCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("銀行代碼已存在");
+                    errors.Add("銀行編號已存在");
 
                 if (!string.IsNullOrWhiteSpace(entity.BankName) && 
                     await IsBankNameExistsAsync(entity.BankName, entity.Id == 0 ? null : entity.Id))

@@ -151,7 +151,7 @@
         {
             if (!ReportPrintConfigurationId.HasValue) 
             {
-                // 新增模式：建立新的報表列印配置實體並生成代碼
+                // 新增模式：建立新的報表列印配置實體並生成編號
                 var newReportPrintConfiguration = new ReportPrintConfiguration
                 {
                     ReportType = string.Empty,
@@ -203,11 +203,11 @@
                 new()
                 {
                     PropertyName = nameof(ReportPrintConfiguration.Code),
-                    Label = "代碼",
+                    Label = "編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入代碼",
+                    Placeholder = "請輸入編號",
                     IsRequired = false,
-                    HelpText = "報表列印配置的唯一識別代碼,新增時系統會自動產生,也可手動修改"
+                    HelpText = "報表列印配置的唯一識別編號,新增時系統會自動產生,也可手動修改"
                 },
                 new()
                 {
@@ -216,7 +216,7 @@
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     Placeholder = "請輸入報表類型（如：PurchaseOrder、Invoice）",
-                    HelpText = "用於識別報表類型的唯一代碼"
+                    HelpText = "用於識別報表類型的唯一編號"
                 },
                 new()
                 {
@@ -288,7 +288,7 @@
     // ===== 輔助方法 =====
     private string GenerateReportPrintConfigurationCode()
     {
-        // 使用簡化的代碼生成方法，因為 Code 欄位不是主要的唯一識別
+        // 使用簡化的編號生成方法，因為 Code 欄位不是主要的唯一識別
         // 報表列印配置主要以 ReportType 作為唯一識別
         return CodeGenerationHelper.GenerateSimpleEntityCode("RPC", usePreciseTimestamp: true);
     }

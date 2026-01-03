@@ -29,11 +29,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Warehouse>
                         {
                             PropertyName = nameof(Warehouse.Code),
-                            DisplayName = "倉庫代碼",
-                            FilterPlaceholder = "輸入倉庫代碼搜尋",
+                            DisplayName = "倉庫編號",
+                            FilterPlaceholder = "輸入倉庫編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", w => w.Code, allowNull: true)
                         }

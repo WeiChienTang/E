@@ -14,16 +14,16 @@ namespace ERPCore2.Services
         Task<Company?> GetPrimaryCompanyAsync();
 
         /// <summary>
-        /// 根據代碼取得公司
+        /// 根據編號取得公司
         /// </summary>
-        /// <param name="code">公司代碼</param>
+        /// <param name="code">公司編號</param>
         /// <returns>公司資料</returns>
         Task<Company?> GetByCodeAsync(string code);
 
         /// <summary>
-        /// 檢查代碼是否已存在
+        /// 檢查編號是否已存在
         /// </summary>
-        /// <param name="code">公司代碼</param>
+        /// <param name="code">公司編號</param>
         /// <param name="excludeId">排除的ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
         Task<bool> IsCompanyCodeExistsAsync(string code, int? excludeId = null);

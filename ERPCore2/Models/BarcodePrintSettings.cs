@@ -21,7 +21,7 @@ public class BarcodePrintSettings
     public bool ShowProductName { get; set; } = true;
     
     /// <summary>
-    /// 是否顯示商品代碼
+    /// 是否顯示商品編號
     /// </summary>
     public bool ShowProductCode { get; set; } = true;
     

@@ -8,7 +8,7 @@ namespace ERPCore2.Services
     public interface IUnitService : IGenericManagementService<Unit>
     {
         /// <summary>
-        /// 檢查單位代碼是否存在
+        /// 檢查單位編號是否存在
         /// </summary>
         Task<bool> IsUnitCodeExistsAsync(string unitCode, int? excludeId = null);
         

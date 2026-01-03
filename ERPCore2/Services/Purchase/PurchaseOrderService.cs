@@ -807,9 +807,9 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查採購單代碼是否已存在（符合 EntityCodeGenerationHelper 約定）
+        /// 檢查採購單編號是否已存在（符合 EntityCodeGenerationHelper 約定）
         /// </summary>
-        /// <param name="code">採購單代碼</param>
+        /// <param name="code">採購單編號</param>
         /// <param name="excludeId">排除的ID（用於編輯模式）</param>
         /// <returns>是否存在</returns>
         public async Task<bool> IsPurchaseOrderCodeExistsAsync(string code, int? excludeId = null)

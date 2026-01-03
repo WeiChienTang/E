@@ -66,7 +66,7 @@
         {
             if (!UnitId.HasValue)
             {
-                // 新增模式：建立新的單位實體並生成代碼
+                // 新增模式：建立新的單位實體並生成編號
                 var newUnit = new Unit
                 {
                     Name = string.Empty,
@@ -117,12 +117,12 @@
             new()
             {
                 PropertyName = nameof(Unit.Code),
-                Label = "單位代碼",
+                Label = "單位編號",
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入單位代碼",
+                Placeholder = "請輸入單位編號",
                 IsRequired = true,
                 MaxLength = 50,
-                HelpText = "單位的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                HelpText = "單位的唯一識別編號，新增時系統會自動產生，也可手動修改"
             },
             new()
             {

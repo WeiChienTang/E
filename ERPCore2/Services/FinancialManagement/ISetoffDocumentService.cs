@@ -17,9 +17,9 @@ namespace ERPCore2.Services
         Task<bool> IsSetoffNumberExistsAsync(string setoffNumber, int? excludeId = null);
 
         /// <summary>
-        /// 檢查沖款單代碼是否已存在（別名方法，供 EntityCodeGenerationHelper 使用）
+        /// 檢查沖款單編號是否已存在（別名方法，供 EntityCodeGenerationHelper 使用）
         /// </summary>
-        /// <param name="code">沖款單代碼</param>
+        /// <param name="code">沖款單編號</param>
         /// <param name="excludeId">要排除的ID（更新時使用）</param>
         /// <returns>是否存在</returns>
         Task<bool> IsSetoffDocumentCodeExistsAsync(string code, int? excludeId = null);

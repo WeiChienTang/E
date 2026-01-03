@@ -49,14 +49,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據權限代碼取得權限
+        /// 根據權限編號取得權限
         /// </summary>
         public async Task<ServiceResult<Permission>> GetByCodeAsync(string permissionCode)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(permissionCode))
-                    return ServiceResult<Permission>.Failure("權限代碼不能為空");
+                    return ServiceResult<Permission>.Failure("權限編號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var permission = await context.Permissions
@@ -102,14 +102,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查權限代碼是否已存在
+        /// 檢查權限編號是否已存在
         /// </summary>
         public async Task<ServiceResult<bool>> IsPermissionCodeExistsAsync(string permissionCode, int? excludePermissionId = null)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(permissionCode))
-                    return ServiceResult<bool>.Failure("權限代碼不能為空");
+                    return ServiceResult<bool>.Failure("權限編號不能為空");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.Permissions.Where(p => p.Code == permissionCode);
@@ -124,7 +124,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsPermissionCodeExistsAsync), GetType(), _logger, 
                     new { PermissionCode = permissionCode, ExcludePermissionId = excludePermissionId });
-                return ServiceResult<bool>.Failure($"檢查權限代碼時發生錯誤：{ex.Message}");
+                return ServiceResult<bool>.Failure($"檢查權限編號時發生錯誤：{ex.Message}");
             }
         }
 
@@ -164,13 +164,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 先取得所有權限代碼，然後在客戶端處理
+                // 先取得所有權限編號，然後在客戶端處理
                 var permissionCodes = await context.Permissions
                     .Where(p => !string.IsNullOrEmpty(p.Code))
                     .Select(p => p.Code)
                     .ToListAsync();
 
-                // 在客戶端提取模組名稱（權限代碼中第一個點之前的部分）
+                // 在客戶端提取模組名稱（權限編號中第一個點之前的部分）
                 var modules = permissionCodes
                     .Where(code => code != null && code.Contains('.'))
                     .Select(code => code!.Substring(0, code.IndexOf('.')))
@@ -201,18 +201,18 @@ namespace ERPCore2.Services
                 foreach (var permission in permissions)
                 {
                     if (permission.Code == null)
-                        return ServiceResult.Failure("權限代碼不能為空");
+                        return ServiceResult.Failure("權限編號不能為空");
                         
                     var validation = ValidatePermissionCode(permission.Code);
                     if (!validation.IsSuccess)
-                        return ServiceResult.Failure($"權限代碼 '{permission.Code}' 格式錯誤：{validation.ErrorMessage}");
+                        return ServiceResult.Failure($"權限編號 '{permission.Code}' 格式錯誤：{validation.ErrorMessage}");
 
                     var existsResult = await IsPermissionCodeExistsAsync(permission.Code);
                     if (!existsResult.IsSuccess)
                         return ServiceResult.Failure(existsResult.ErrorMessage);
 
                     if (existsResult.Data)
-                        return ServiceResult.Failure($"權限代碼 '{permission.Code}' 已存在");
+                        return ServiceResult.Failure($"權限編號 '{permission.Code}' 已存在");
                 }
 
                 // 設定建立時間和狀態，並自動解析 Module 和 Action
@@ -266,26 +266,26 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 驗證權限代碼格式
+        /// 驗證權限編號格式
         /// </summary>
         public ServiceResult<bool> ValidatePermissionCode(string permissionCode)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(permissionCode))
-                    return ServiceResult<bool>.Failure("權限代碼不能為空");
+                    return ServiceResult<bool>.Failure("權限編號不能為空");
 
                 if (permissionCode.Length > 100)
-                    return ServiceResult<bool>.Failure("權限代碼長度不能超過100個字元");
+                    return ServiceResult<bool>.Failure("權限編號長度不能超過100個字元");
 
-                // 權限代碼格式：Module.Action (例如：Customer.View, Role.Create)
+                // 權限編號格式：Module.Action (例如：Customer.View, Role.Create)
                 var regex = new Regex(@"^[A-Za-z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*$");
                 if (!regex.IsMatch(permissionCode))
-                    return ServiceResult<bool>.Failure("權限代碼格式錯誤，應為 'Module.Action' 格式，例如：Customer.View");
+                    return ServiceResult<bool>.Failure("權限編號格式錯誤，應為 'Module.Action' 格式，例如：Customer.View");
 
                 var parts = permissionCode.Split('.');
                 if (parts.Length != 2)
-                    return ServiceResult<bool>.Failure("權限代碼必須包含一個點號分隔模組和動作");
+                    return ServiceResult<bool>.Failure("權限編號必須包含一個點號分隔模組和動作");
 
                 var module = parts[0];
                 var action = parts[1];
@@ -302,7 +302,7 @@ namespace ERPCore2.Services
             {
                 ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(ValidatePermissionCode), GetType(), _logger, 
                     new { PermissionCode = permissionCode });
-                return ServiceResult<bool>.Failure($"驗證權限代碼時發生錯誤：{ex.Message}");
+                return ServiceResult<bool>.Failure($"驗證權限編號時發生錯誤：{ex.Message}");
             }
         }
 
@@ -311,22 +311,22 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 驗證權限代碼
+                // 驗證權限編號
                 if (entity.Code == null)
-                    return ServiceResult.Failure("權限代碼不能為空");
+                    return ServiceResult.Failure("權限編號不能為空");
                     
-                // 驗證權限代碼格式
+                // 驗證權限編號格式
                 var codeValidation = ValidatePermissionCode(entity.Code);
                 if (!codeValidation.IsSuccess)
                     return ServiceResult.Failure(codeValidation.ErrorMessage);
 
-                // 檢查權限代碼是否已存在
+                // 檢查權限編號是否已存在
                 var existsResult = await IsPermissionCodeExistsAsync(entity.Code, entity.Id);
                 if (!existsResult.IsSuccess)
                     return ServiceResult.Failure(existsResult.ErrorMessage);
 
                 if (existsResult.Data)
-                    return ServiceResult.Failure("權限代碼已存在");
+                    return ServiceResult.Failure("權限編號已存在");
 
                 // 檢查權限名稱
                 if (string.IsNullOrWhiteSpace(entity.Name))

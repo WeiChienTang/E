@@ -8,9 +8,9 @@ namespace ERPCore2.Services
     public interface IPaymentMethodService : IGenericManagementService<PaymentMethod>
     {
         /// <summary>
-        /// 檢查付款方式代碼是否已存在
+        /// 檢查付款方式編號是否已存在
         /// </summary>
-        /// <param name="code">付款方式代碼</param>
+        /// <param name="code">付款方式編號</param>
         /// <param name="excludeId">排除的ID（用於更新時檢查）</param>
         /// <returns>是否存在</returns>
         Task<bool> IsPaymentMethodCodeExistsAsync(string code, int? excludeId = null);

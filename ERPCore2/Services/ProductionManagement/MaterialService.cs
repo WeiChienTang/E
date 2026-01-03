@@ -106,11 +106,11 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("材質名稱為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    return ServiceResult.Failure("材質代碼為必填");
+                    return ServiceResult.Failure("材質編號為必填");
 
-                // 檢查代碼是否重複
+                // 檢查編號是否重複
                 if (await IsCodeExistsAsync(entity.Code, entity.Id))
-                    return ServiceResult.Failure("材質代碼已存在");
+                    return ServiceResult.Failure("材質編號已存在");
 
                 // 檢查名稱是否重複
                 if (await IsNameExistsAsync(entity.Name, entity.Id))
@@ -159,7 +159,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查材質代碼是否已存在
+        /// 檢查材質編號是否已存在
         /// </summary>
         public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
         {
@@ -186,7 +186,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據代碼取得材質資料
+        /// 根據編號取得材質資料
         /// </summary>
         public async Task<Material?> GetByCodeAsync(string code)
         {

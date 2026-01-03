@@ -39,10 +39,10 @@
 #### 2. **硬編碼的配置**
 - 顏色：`text-purple`, `text-primary`, `text-info`, `text-warning`, `text-success`
 - 圖示：`bi-diagram-3`, `bi-cart-check`, `bi-box-seam`, 等
-- 標題：`商品合成表`, `銷貨訂單`, `入庫記錄`, 等
+- 標題：`商品物料清單`, `銷貨訂單`, `入庫記錄`, 等
 
 #### 3. **不一致的欄位顯示邏輯**
-- 商品合成表：只顯示日期和備註
+- 商品物料清單：只顯示日期和備註
 - 銷貨訂單：顯示日期、數量、單價、備註
 - 入庫單：顯示日期、數量、單價、備註
 - 退貨單：顯示日期、數量、備註
@@ -53,12 +53,12 @@
 @if (RelatedDocuments?.Any() == true && 
      RelatedDocuments.First().DocumentType == RelatedDocumentType.ProductComposition)
 {
-    @* 只有商品合成表才顯示新增按鈕 *@
+    @* 只有商品物料清單才顯示新增按鈕 *@
 }
 ```
 
 #### 5. **擴展困難**
-- 新增單據類型需要複製整個區塊（約 50 行代碼）
+- 新增單據類型需要複製整個區塊（約 50 行程式碼）
 - 修改樣式需要改 5 個地方
 - 容易遺漏或不一致
 
@@ -70,13 +70,13 @@
 
 1. ✅ **消除重複代碼**：減少 80% 以上的重複 HTML
 2. ✅ **提高可維護性**：集中管理配置，單一修改點
-3. ✅ **增強擴展性**：新增單據類型只需加配置，不需複製代碼
+3. ✅ **增強擴展性**：新增單據類型只需加配置，不需複製編號
 4. ✅ **保持靈活性**：每種單據類型可自訂顯示內容
 5. ✅ **向下相容**：不影響現有功能和調用方式
 
 ### 次要目標
 
-- 提升代碼可讀性
+- 提升程式碼可讀性
 - 增強類型安全
 - 便於單元測試
 - 改善開發體驗
@@ -118,7 +118,7 @@ Components/Shared/BaseModal/Modals/RelatedDocument/
 │   └── RelatedDocumentSectionComponent.razor     (可重用的區塊組件)
 │
 └── Templates/
-    ├── CompositionDetailsTemplate.razor          (商品合成表詳細欄位範本)
+    ├── CompositionDetailsTemplate.razor          (商品物料清單詳細欄位範本)
     ├── SalesOrderDetailsTemplate.razor           (銷貨訂單詳細欄位範本)
     ├── ReceivingDetailsTemplate.razor            (入庫單詳細欄位範本)
     ├── ReturnDetailsTemplate.razor               (退貨單詳細欄位範本)
@@ -151,7 +151,7 @@ namespace ERPCore2.Components.Shared.BaseModal.Modals.RelatedDocument.Config;
 public class DocumentSectionConfig
 {
     /// <summary>
-    /// 區塊標題（例如：「商品合成表」）
+    /// 區塊標題（例如：「商品物料清單」）
     /// </summary>
     public string Title { get; init; } = "";
     
@@ -194,12 +194,12 @@ public class DocumentSectionConfig
         {
             RelatedDocumentType.ProductComposition => new()
             {
-                Title = "商品合成表",
+                Title = "商品物料清單",
                 Icon = "diagram-3",
                 TextColor = "purple",
                 BadgeColor = "purple",
                 ShowAddButton = true,
-                AddButtonText = "+ 新增合成表"
+                AddButtonText = "+ 新增物料清單"
             },
             
             RelatedDocumentType.SalesOrder => new()
@@ -356,12 +356,12 @@ public class DocumentSectionConfig
 
 ### 步驟 3：建立詳細欄位範本
 
-#### 範本 1：商品合成表
+#### 範本 1：商品物料清單
 
 **檔案**：`Templates/CompositionDetailsTemplate.razor`
 
 ```razor
-@* 商品合成表詳細欄位範本 *@
+@* 商品物料清單詳細欄位範本 *@
 <p class="mb-1 text-muted small">
     <span class="text-nowrap">
         <i class="bi bi-calendar3 me-1"></i>
@@ -701,7 +701,7 @@ public class DocumentSectionConfig
 ```
 
 **優點**：
-- 代碼從 ~387 行減少到 ~130 行（減少 66%）
+- 編號從 ~387 行減少到 ~130 行（減少 66%）
 - 邏輯清晰易懂
 - 易於擴展和維護
 
@@ -712,7 +712,7 @@ public class DocumentSectionConfig
 ### 範例 1：在商品編輯頁面中使用（與現有用法相同）
 
 ```razor
-<!-- 相關單據查看 Modal（合成表清單）-->
+<!-- 相關單據查看 Modal（物料清單清單）-->
 <RelatedDocumentsModalComponent 
     IsVisible="@showRelatedDocumentsModal"
     IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
@@ -723,7 +723,7 @@ public class DocumentSectionConfig
     OnAddNew="@HandleAddNewComposition" />
 ```
 
-**完全向下相容！** 無需修改現有調用代碼。
+**完全向下相容！** 無需修改現有調用編號。
 
 ### 範例 2：新增單據類型（例如：採購訂單）
 
@@ -802,7 +802,7 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 }
 ```
 
-**完成！** 只需 4 個步驟，無需複製大量代碼。
+**完成！** 只需 4 個步驟，無需複製大量編號。
 
 ---
 
@@ -836,13 +836,13 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 
 ### 測試清單
 
-- [ ] 商品合成表顯示正確
+- [ ] 商品物料清單顯示正確
 - [ ] 銷貨訂單顯示正確
 - [ ] 入庫單顯示正確
 - [ ] 退貨單顯示正確
 - [ ] 沖款單顯示正確
 - [ ] 點擊單據開啟編輯 Modal
-- [ ] 「新增合成表」按鈕正常運作
+- [ ] 「新增物料清單」按鈕正常運作
 - [ ] 空白狀態顯示正確
 - [ ] Loading 狀態顯示正確
 
@@ -850,23 +850,23 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 
 ## 📊 重構效益對比
 
-### 代碼量對比
+### 程式碼量對比
 
 | 項目 | 重構前 | 重構後 | 改善 |
 |------|--------|--------|------|
 | 主組件行數 | 387 行 | 130 行 | ↓ 66% |
 | 重複代碼 | ~250 行 | 0 行 | ↓ 100% |
 | 總檔案數 | 1 個 | 8 個 | - |
-| 總代碼行數 | 387 行 | ~450 行 | +16% |
+| 總編號行數 | 387 行 | ~450 行 | +16% |
 
-**說明**：雖然總代碼行數略增，但**可維護性大幅提升**。
+**說明**：雖然總編號行數略增，但**可維護性大幅提升**。
 
 ### 維護成本對比
 
 | 任務 | 重構前 | 重構後 |
 |------|--------|--------|
 | 修改某類單據的顯示邏輯 | 需找到並修改對應區塊（~50 行） | 只需修改對應範本（~30 行） |
-| 新增單據類型 | 複製 ~50 行代碼並修改 | 新增配置 + 範本（~40 行） |
+| 新增單據類型 | 複製 ~50 行程式碼並修改 | 新增配置 + 範本（~40 行） |
 | 修改通用樣式 | 需修改 5 個區塊 | 只需修改區塊組件 1 處 |
 | 單元測試 | 難以測試（邏輯混在 HTML 中） | 易於測試（邏輯分離） |
 
@@ -887,7 +887,7 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 
 ### 3. **開放封閉原則（OCP）**
 - 對擴展開放：易於新增單據類型
-- 對修改封閉：不需修改核心代碼
+- 對修改封閉：不需修改核心編號
 
 ### 4. **關注點分離（SoC）**
 - 結構（Structure）：區塊組件
@@ -912,10 +912,10 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 
 ### 非功能性
 
-- ✅ 代碼重複率 < 5%
-- ✅ 主組件代碼量減少 > 50%
+- ✅ 編號重複率 < 5%
+- ✅ 主組件程式碼量減少 > 50%
 - ✅ 新增單據類型耗時 < 30 分鐘
-- ✅ 代碼可讀性提升
+- ✅ 程式碼可讀性提升
 - ✅ 易於單元測試
 
 ---
@@ -981,7 +981,7 @@ private RenderFragment<RelatedDocument>? GetDetailsTemplate(RelatedDocumentType 
 
 本次重構將大幅提升 `RelatedDocumentsModalComponent` 的：
 
-✅ **可維護性** - 代碼集中、邏輯清晰  
+✅ **可維護性** - 編號集中、邏輯清晰  
 ✅ **可擴展性** - 易於新增單據類型  
 ✅ **可讀性** - 結構分明、職責單一  
 ✅ **可測試性** - 邏輯分離、易於測試  

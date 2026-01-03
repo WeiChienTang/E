@@ -66,7 +66,7 @@
         {
             if (!ProductCategoryId.HasValue)
             {
-                // 新增模式：建立新的商品類型實體並生成代碼
+                // 新增模式：建立新的商品類型實體並生成編號
                 var newProductCategory = new ProductCategory
                 {
                     Name = string.Empty,
@@ -135,12 +135,12 @@
             new()
             {
                 PropertyName = nameof(ProductCategory.Code),
-                Label = "分類代碼",
+                Label = "分類編號",
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入分類代碼",
+                Placeholder = "請輸入分類編號",
                 IsRequired = false,
                 MaxLength = 50,
-                HelpText = "商品分類的唯一代碼，新增時系統會自動產生，也可手動修改"
+                HelpText = "商品分類的唯一編號，新增時系統會自動產生，也可手動修改"
             },
             new()
             {

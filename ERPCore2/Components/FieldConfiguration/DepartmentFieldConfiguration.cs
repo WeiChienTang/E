@@ -29,10 +29,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Department>
                         {
                             PropertyName = nameof(Department.Code),
-                            DisplayName = "部門代碼",
-                            FilterPlaceholder = "輸入部門代碼搜尋",
+                            DisplayName = "部門編號",
+                            FilterPlaceholder = "輸入部門編號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 180px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Code), d => d.Code)
                         }

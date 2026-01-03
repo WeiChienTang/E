@@ -125,7 +125,7 @@ namespace ERPCore2.Services
             }
         }
 
-        // 檢查付款方式代碼是否已存在
+        // 檢查付款方式編號是否已存在
         public async Task<bool> IsPaymentMethodCodeExistsAsync(string code, int? excludeId = null)
         {
             try

@@ -545,7 +545,7 @@ WHERE IsPrimary = 1;
 ```
 SupplierEditModalComponent
 ├── 基本資訊表單（現有）
-│   ├── 廠商代碼
+│   ├── 廠商編號
 │   ├── 公司名稱
 │   ├── 聯絡人
 │   └── ...

@@ -58,11 +58,11 @@ namespace ERPCore2.Services
                     errors.Add("紙張類型不能為空");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("紙張代碼不能為空");
+                    errors.Add("紙張編號不能為空");
 
                 if (!string.IsNullOrWhiteSpace(entity.Code) &&
                     await IsCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("紙張代碼已存在");
+                    errors.Add("紙張編號已存在");
 
                 if (!ValidatePaperSize(entity.Width, entity.Height))
                     errors.Add("紙張尺寸設定不合理");

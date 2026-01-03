@@ -93,10 +93,10 @@ namespace ERPCore2.Services
                 if (!string.IsNullOrWhiteSpace(entity.SourceDocumentType) && entity.SourceDocumentType.Length > 50)
                     errors.Add("來源單據類型不可超過50個字元");
 
-                // 檢查排程代碼是否重複
+                // 檢查排程編號是否重複
                 if (!string.IsNullOrWhiteSpace(entity.Code) &&
                     await IsProductionScheduleCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("排程代碼已存在");
+                    errors.Add("排程編號已存在");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

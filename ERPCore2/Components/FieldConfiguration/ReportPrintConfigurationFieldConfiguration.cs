@@ -32,10 +32,9 @@ namespace ERPCore2.FieldConfiguration
                     new FieldDefinition<ReportPrintConfiguration>
                     {
                         PropertyName = nameof(ReportPrintConfiguration.Code),
-                        DisplayName = "代碼",
-                        FilterPlaceholder = "輸入代碼搜尋",
+                        DisplayName = "編號",
+                        FilterPlaceholder = "輸入編號搜尋",
                         TableOrder = 1,
-                        HeaderStyle = "width: 120px;",
                         FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                             model, query, nameof(ReportPrintConfiguration.Code), r => r.Code)
                     }
@@ -48,7 +47,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "報表類型",
                             FilterPlaceholder = "輸入報表類型搜尋",
                             TableOrder = 2,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.ReportType), r => r.ReportType)
                         }
@@ -61,7 +59,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "報表名稱",
                             FilterPlaceholder = "輸入報表名稱搜尋",
                             TableOrder = 3,
-                            HeaderStyle = "width: 200px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.ReportName), r => r.ReportName)
                         }
@@ -74,7 +71,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "印表機設定",
                             FilterPlaceholder = "輸入印表機名稱搜尋",
                             TableOrder = 4,
-                            HeaderStyle = "width: 150px;",
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)
@@ -97,7 +93,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "紙張設定",
                             FilterPlaceholder = "輸入紙張名稱搜尋",
                             TableOrder = 5,
-                            HeaderStyle = "width: 150px;",
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)

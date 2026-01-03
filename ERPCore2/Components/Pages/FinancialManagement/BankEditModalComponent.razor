@@ -118,7 +118,7 @@
         {
             if (!BankId.HasValue) 
             {
-                // 新增模式：建立新的銀行實體並生成代碼
+                // 新增模式：建立新的銀行實體並生成編號
                 var newBank = new Bank
                 {
                     BankName = string.Empty,
@@ -167,11 +167,11 @@
                 new ()
                 {
                     PropertyName = nameof(Bank.Code),
-                    Label = "銀行代碼",
+                    Label = "銀行編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入銀行代碼",
+                    Placeholder = "請輸入銀行編號",
                     IsRequired = true,
-                    HelpText = "銀行的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "銀行的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 // 基本資訊區段
                 new()
@@ -195,11 +195,11 @@
                 new()
                 {
                     PropertyName = nameof(Bank.SwiftCode),
-                    Label = "SWIFT代碼",
+                    Label = "SWIFT編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入SWIFT代碼",
+                    Placeholder = "請輸入SWIFT編號",
                     IsRequired = false,
-                    HelpText = "國際銀行匯款使用的SWIFT代碼"
+                    HelpText = "國際銀行匯款使用的SWIFT編號"
                 },
                 
                 // 聯絡資訊區段

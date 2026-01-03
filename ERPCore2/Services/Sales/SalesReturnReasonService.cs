@@ -84,7 +84,7 @@ namespace ERPCore2.Services
                     errors.Add("原因名稱為必填欄位");
                 
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("原因代碼為必填欄位");
+                    errors.Add("原因編號為必填欄位");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 
                     await IsNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
@@ -92,7 +92,7 @@ namespace ERPCore2.Services
                     
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 
                     await IsSalesReturnReasonCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("原因代碼已存在");
+                    errors.Add("原因編號已存在");
                 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

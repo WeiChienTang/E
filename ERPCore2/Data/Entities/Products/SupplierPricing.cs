@@ -29,12 +29,12 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal PurchasePrice { get; set; }
 
-        [MaxLength(3, ErrorMessage = "貨幣代碼不可超過3個字元")]
+        [MaxLength(3, ErrorMessage = "貨幣編號不可超過3個字元")]
         [Display(Name = "貨幣")]
         public string Currency { get; set; } = "TWD";
 
-        [MaxLength(50, ErrorMessage = "供應商商品代碼不可超過50個字元")]
-        [Display(Name = "供應商商品代碼")]
+        [MaxLength(50, ErrorMessage = "供應商商品編號不可超過50個字元")]
+        [Display(Name = "供應商商品編號")]
         public string? SupplierProductCode { get; set; }
 
         // 採購條件

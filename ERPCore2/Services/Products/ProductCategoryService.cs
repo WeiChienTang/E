@@ -106,13 +106,13 @@ namespace ERPCore2.Services
                     }
                 }
 
-                // 驗證分類代碼唯一性（如果有提供）
+                // 驗證分類編號唯一性（如果有提供）
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     var isDuplicate = await IsProductCategoryCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
-                        errors.Add("分類代碼已存在");
+                        errors.Add("分類編號已存在");
                     }
                 }
 

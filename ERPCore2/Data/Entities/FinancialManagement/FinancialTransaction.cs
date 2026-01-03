@@ -195,10 +195,10 @@ namespace ERPCore2.Data.Entities
         public decimal? OriginalAmount { get; set; }
         
         /// <summary>
-        /// 貨幣代碼 - ISO 4217 貨幣代碼 (如 USD, EUR)
+        /// 貨幣編號 - ISO 4217 貨幣編號 (如 USD, EUR)
         /// </summary>
-        [MaxLength(3, ErrorMessage = "貨幣代碼不可超過3個字元")]
-        [Display(Name = "貨幣代碼")]
+        [MaxLength(3, ErrorMessage = "貨幣編號不可超過3個字元")]
+        [Display(Name = "貨幣編號")]
         public string? CurrencyCode { get; set; }
         
         /// <summary>

@@ -197,14 +197,14 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
                 
                 if (string.IsNullOrWhiteSpace(entity.CustomerCode))
-                    errors.Add("客戶代碼不能為空");
+                    errors.Add("客戶編號不能為空");
                 
                 if (string.IsNullOrWhiteSpace(entity.CompanyName))
                     errors.Add("公司名稱不能為空");
                 
                 if (!string.IsNullOrWhiteSpace(entity.CustomerCode) && 
                     await IsCustomerCodeExistsAsync(entity.CustomerCode, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("客戶代碼已存在");
+                    errors.Add("客戶編號已存在");
                 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

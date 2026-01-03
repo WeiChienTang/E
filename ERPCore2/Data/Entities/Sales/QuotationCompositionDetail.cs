@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 報價單組合明細檔 - 儲存報價單專屬的 BOM 組成資料
     /// 當報價單明細的商品有 BOM 組成時，可以複製並客製化其組成內容
-    /// 這些資料不會影響原始的商品合成表（ProductCompositionDetail）
+    /// 這些資料不會影響原始的商品物料清單（ProductCompositionDetail）
     /// </summary>
     [Index(nameof(QuotationDetailId), nameof(ComponentProductId), IsUnique = true)]
     [Index(nameof(ComponentProductId))]

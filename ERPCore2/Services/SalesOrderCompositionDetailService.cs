@@ -49,14 +49,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 從商品合成表複製 BOM 資料到銷貨訂單（使用最新的配方）
+        /// 從商品物料清單複製 BOM 資料到銷貨訂單（使用最新的配方）
         /// </summary>
         public async Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
             int salesOrderDetailId, int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             
-            // 取得商品的合成表資料
+            // 取得商品的物料清單資料
             var productCompositions = await context.ProductCompositionDetails
                 .Include(p => p.ComponentProduct)
                 .Include(p => p.Unit)

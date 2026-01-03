@@ -229,12 +229,12 @@
                 new()
                 {
                     PropertyName = nameof(Employee.Code),
-                    Label = "員工代碼",
+                    Label = "員工編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入員工代碼",
+                    Placeholder = "請輸入員工編號",
                     IsRequired = true,
                     MaxLength = 20,
-                    HelpText = "員工的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "員工的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {
@@ -474,7 +474,7 @@
         {
             if (!EmployeeId.HasValue) 
             {
-                // 新增模式：建立新的員工實體並生成代碼
+                // 新增模式：建立新的員工實體並生成編號
                 
                 // 找出預設的權限組 (Employee-非系統使用者)
                 var defaultRole = availableRoles.FirstOrDefault(r => 
@@ -543,7 +543,7 @@
             // 基本驗證 - 使用通知服務
             if (string.IsNullOrWhiteSpace(entity.Code))
             {
-                await NotificationService.ShowErrorAsync("員工代碼為必填");
+                await NotificationService.ShowErrorAsync("員工編號為必填");
                 return false;
             }
 
@@ -553,11 +553,11 @@
                 return false;
             }
 
-            // 檢查員工代碼是否重複
+            // 檢查員工編號是否重複
             var employeeCodeExists = await EmployeeService.IsEmployeeCodeExistsAsync(entity.Code, EmployeeId);
             if (employeeCodeExists)
             {
-                await NotificationService.ShowErrorAsync($"員工代碼 '{entity.Code}' 已存在，請使用其他代碼");
+                await NotificationService.ShowErrorAsync($"員工編號 '{entity.Code}' 已存在，請使用其他編號");
                 return false;
             }
 

@@ -94,13 +94,13 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    errors.Add("貨幣代碼為必填欄位");
+                    errors.Add("貨幣編號為必填欄位");
 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("貨幣名稱為必填欄位");
 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCurrencyCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
-                    errors.Add("貨幣代碼已存在");
+                    errors.Add("貨幣編號已存在");
 
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));

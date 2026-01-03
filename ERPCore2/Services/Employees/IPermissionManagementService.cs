@@ -9,9 +9,9 @@ namespace ERPCore2.Services
     public interface IPermissionManagementService : IGenericManagementService<Permission>
     {
         /// <summary>
-        /// 根據權限代碼取得權限
+        /// 根據權限編號取得權限
         /// </summary>
-        /// <param name="permissionCode">權限代碼</param>
+        /// <param name="permissionCode">權限編號</param>
         /// <returns>權限資料</returns>
         Task<ServiceResult<Permission>> GetByCodeAsync(string permissionCode);
 
@@ -23,9 +23,9 @@ namespace ERPCore2.Services
         Task<ServiceResult<List<Permission>>> GetPermissionsByModuleAsync(string modulePrefix);
 
         /// <summary>
-        /// 檢查權限代碼是否已存在
+        /// 檢查權限編號是否已存在
         /// </summary>
-        /// <param name="permissionCode">權限代碼</param>
+        /// <param name="permissionCode">權限編號</param>
         /// <param name="excludePermissionId">排除的權限ID</param>
         /// <returns>檢查結果</returns>
         Task<ServiceResult<bool>> IsPermissionCodeExistsAsync(string permissionCode, int? excludePermissionId = null);
@@ -59,9 +59,9 @@ namespace ERPCore2.Services
         Task<ServiceResult<List<Permission>>> SearchPermissionsAsync(string searchTerm);
 
         /// <summary>
-        /// 驗證權限代碼格式
+        /// 驗證權限編號格式
         /// </summary>
-        /// <param name="permissionCode">權限代碼</param>
+        /// <param name="permissionCode">權限編號</param>
         /// <returns>驗證結果</returns>
         ServiceResult<bool> ValidatePermissionCode(string permissionCode);
     }

@@ -32,10 +32,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<Company>
                         {
                             PropertyName = nameof(Company.Code),
-                            DisplayName = "公司代碼",
-                            FilterPlaceholder = "輸入公司代碼搜尋",
+                            DisplayName = "公司編號",
+                            FilterPlaceholder = "輸入公司編號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.Code), c => c.Code)
                         }
@@ -60,7 +59,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "統一編號",
                             FilterPlaceholder = "輸入統一編號搜尋",
                             TableOrder = 3,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.TaxId), c => c.TaxId)
                         }
@@ -73,7 +71,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "負責人",
                             FilterPlaceholder = "輸入負責人姓名搜尋",
                             TableOrder = 4,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.Representative), c => c.Representative)
                         }
@@ -86,7 +83,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "電話",
                             FilterPlaceholder = "輸入電話號碼搜尋",
                             TableOrder = 5,
-                            HeaderStyle = "width: 120px;",
                             ShowInFilter = false, // 電話不常用於篩選
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Company.Phone), c => c.Phone)
@@ -100,7 +96,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "狀態",
                             FilterPlaceholder = "選擇狀態",
                             TableOrder = 6,
-                            HeaderStyle = "width: 60px;",
                             // 使用自訂模板來顯示 StatusBadge
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {

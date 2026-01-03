@@ -70,7 +70,7 @@
                        OnSizeSaved="@OnSizeSavedWrapper"
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
-@* 商品合成表編輯 Modal *@
+@* 商品物料清單編輯 Modal *@
 <ProductCompositionEditModalComponent @ref="productCompositionEditModal"
                                      IsVisible="@productCompositionModalManager.IsModalVisible"
                                      IsVisibleChanged="@productCompositionModalManager.HandleModalVisibilityChangedAsync"
@@ -79,7 +79,7 @@
                                      OnCompositionSaved="@OnProductCompositionSavedWrapper"
                                      OnCancel="@productCompositionModalManager.HandleModalCancelAsync" />
 
-<!-- 相關單據查看 Modal（合成表清單）-->
+<!-- 相關單據查看 Modal（物料清單清單）-->
 <RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
                                IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
                                ProductName="@selectedProductName"
@@ -140,7 +140,7 @@
     // 資料載入狀態標記
     private bool isDataLoaded = false;
     
-    // ===== 相關單據查看（合成表清單）=====
+    // ===== 相關單據查看（物料清單清單）=====
     private bool showRelatedDocumentsModal = false;
     private string selectedProductName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
@@ -166,11 +166,11 @@
             unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
             sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
             
-            // 初始化商品合成表 Modal 管理器（獨立初始化）
+            // 初始化商品物料清單 Modal 管理器（獨立初始化）
             productCompositionModalManager = new RelatedEntityModalManager<ProductComposition>
             {
                 NotificationService = NotificationService,
-                EntityDisplayName = "商品合成表",
+                EntityDisplayName = "商品物料清單",
                 StateHasChangedCallback = StateHasChanged
             };
             
@@ -379,9 +379,9 @@
             new()
             {
                 PropertyName = nameof(Product.Code),
-                Label = "商品代碼",
+                Label = "商品編號",
                 FieldType = FormFieldType.Text,
-                Placeholder = "請輸入商品代碼",
+                Placeholder = "請輸入商品編號",
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "商品的唯一識別碼"
@@ -448,7 +448,7 @@
                 Placeholder = "請輸入或選擇製程單位",
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "生產製造時使用的單位（可與基本單位不同）",
+                HelpText = "生產製造時使用的單位（若與商品單位相同則無需填寫）",
                 ActionButtons = await GetProductionUnitActionButtonsAsync()
             },
             new FormFieldDefinition()
@@ -460,8 +460,6 @@
                 IsRequired = false,
                 IsVisible = ShouldShowProductionUnitConversion(),
                 HelpText = "1 商品單位 = N 製程單位（例如：1 包 = 30 公斤，則輸入 30）",
-                Min = 0.000001m,
-                Step = 0.000001m
             },
             new FormFieldDefinition()
             {
@@ -683,18 +681,18 @@
     }
     
     /// <summary>
-    /// 包裝商品合成表儲存事件
+    /// 包裝商品物料清單儲存事件
     /// </summary>
     private async Task OnProductCompositionSavedWrapper(ProductComposition savedComposition)
     {
-        // 合成表儲存後，不需要自動選擇，只需重新載入清單
-        await NotificationService.ShowSuccessAsync("商品合成表已儲存");
+        // 物料清單儲存後，不需要自動選擇，只需重新載入清單
+        await NotificationService.ShowSuccessAsync("商品物料清單已儲存");
         
         // 📝 改進：無論清單是否開啟，都更新快取資料
         // 這樣下次開啟清單時會看到最新資料
         if (editModalComponent?.Entity != null)
         {
-            // 重新載入合成表清單資料（更新快取）
+            // 重新載入物料清單清單資料（更新快取）
             await LoadProductCompositions();
             
             // 如果清單 Modal 正在顯示，觸發 UI 更新
@@ -756,29 +754,29 @@
         }
     }
     
-    // ===== 合成表相關方法 =====
+    // ===== 物料清單相關方法 =====
     
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）- 作為屬性以確保正確的渲染時機
     /// </summary>
     private RenderFragment? CustomActionButtons => __builder =>
     {
-        @* 合成表操作按鈕組 *@
+        @* 物料清單操作按鈕組 *@
         <div class="d-flex gap-2">
-            @* 查看合成表清單 *@
+            @* 查看物料清單清單 *@
             <GenericButtonComponent
-                Text="查看合成"
+                Text="查看清單"
                 OnClick="@ShowProductCompositions"
-                Title="查看商品合成表清單"
+                Title="查看商品物料清單清單"
                 Variant="ButtonVariant.Blue"
                 Size="ButtonSize.Small">
             </GenericButtonComponent>
 
-            @* 新增合成表 *@
+            @* 新增物料清單 *@
             <GenericButtonComponent
-                Text="新增合成"
+                Text="新增清單"
                 OnClick="@HandleAddNewCompositionDirect"
-                Title="直接新增商品合成表"
+                Title="直接新增商品物料清單"
                 Variant="ButtonVariant.DarkBlue"
                 Size="ButtonSize.Small">
             </GenericButtonComponent>
@@ -786,7 +784,7 @@
     };
     
     /// <summary>
-    /// 顯示商品合成表清單
+    /// 顯示商品物料清單清單
     /// </summary>
     private async Task ShowProductCompositions()
     {
@@ -794,7 +792,7 @@
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
-                "請先儲存商品後再建立合成表", 
+                "請先儲存商品後再建立物料清單", 
                 "提示");
             return;
         }
@@ -812,7 +810,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入合成表清單失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入物料清單清單失敗：{ex.Message}");
         }
         finally
         {
@@ -822,7 +820,7 @@
     }
     
     /// <summary>
-    /// 載入商品合成表清單
+    /// 載入商品物料清單清單
     /// </summary>
     private async Task LoadProductCompositions()
     {
@@ -837,7 +835,7 @@
     }
     
     /// <summary>
-    /// 處理點擊合成表項目（開啟編輯 Modal）
+    /// 處理點擊物料清單項目（開啟編輯 Modal）
     /// </summary>
     private async Task HandleRelatedDocumentClick(RelatedDocument document)
     {
@@ -849,14 +847,14 @@
     }
     
     /// <summary>
-    /// 處理新增合成表按鈕（從清單 Modal 的 Footer 觸發）
+    /// 處理新增物料清單按鈕（從清單 Modal 的 Footer 觸發）
     /// </summary>
     private async Task HandleAddNewComposition()
     {
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
             await NotificationService.ShowWarningAsync(
-                "請先儲存商品後再建立合成表", 
+                "請先儲存商品後再建立物料清單", 
                 "提示");
             return;
         }
@@ -872,7 +870,7 @@
     }
     
     /// <summary>
-    /// 直接開啟新增合成表 Modal（不經過清單，直接帶入商品）
+    /// 直接開啟新增物料清單 Modal（不經過清單，直接帶入商品）
     /// </summary>
     private async Task HandleAddNewCompositionDirect()
     {
@@ -882,12 +880,12 @@
             if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
             {
                 await NotificationService.ShowWarningAsync(
-                    "請先儲存商品後再建立合成表", 
+                    "請先儲存商品後再建立物料清單", 
                     "提示");
                 return;
             }
             
-            //  使用統一的 EntityCodeGenerationHelper 產生合成表代碼
+            //  使用統一的 EntityCodeGenerationHelper 產生物料清單編號
             var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
                 ProductCompositionService, "BOM");
             
@@ -906,7 +904,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"開啟新增合成表視窗失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"開啟新增物料清單視窗失敗：{ex.Message}");
         }
     }
     

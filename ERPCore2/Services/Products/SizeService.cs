@@ -93,15 +93,15 @@ namespace ERPCore2.Services
                 // 驗證必填欄位
                 if (string.IsNullOrWhiteSpace(entity.Code))
                 {
-                    errors.Add("尺寸代碼為必填欄位");
+                    errors.Add("尺寸編號為必填欄位");
                 }
                 else
                 {
-                    // 檢查尺寸代碼唯一性
+                    // 檢查尺寸編號唯一性
                     var isDuplicate = await IsSizeCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
-                        errors.Add("尺寸代碼已存在");
+                        errors.Add("尺寸編號已存在");
                     }
                 }
 

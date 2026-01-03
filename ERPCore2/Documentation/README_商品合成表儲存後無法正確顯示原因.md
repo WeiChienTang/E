@@ -1,4 +1,4 @@
-# 商品合成表儲存後無法正確顯示問題分析與修復
+# 商品物料清單儲存後無法正確顯示問題分析與修復
 
 ## 問題現象
 
@@ -20,7 +20,7 @@
 
 **核心問題：** 新增明細時使用負數作為臨時索引，但索引生成與解析邏輯不一致，導致組合明細被儲存到錯誤的 DetailId。
 
-#### 問題代碼（修復前）
+#### 問題編號（修復前）
 
 **SalesOrderTable.razor - GetCompositionDetails()**
 ```csharp
@@ -76,7 +76,7 @@ SaveSalesOrderCompositionDetails():
 
 **關鍵原則：** 臨時索引必須與 SalesItems 陣列索引一一對應
 
-#### 修復後的代碼
+#### 修復後的編號
 
 **SalesOrderTable.razor - GetCompositionDetails()**
 ```csharp
@@ -261,4 +261,4 @@ var matchedDetail = newDetails[newItemSequence + existingCount];
 - **修復日期：** 2025-12-16
 - **影響版本：** 所有包含組合商品功能的版本
 - **修復分支：** main
-- **相關 Commit：** 修復商品合成表臨時索引映射錯誤
+- **相關 Commit：** 修復商品物料清單臨時索引映射錯誤

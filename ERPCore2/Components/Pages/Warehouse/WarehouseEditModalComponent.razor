@@ -113,7 +113,7 @@
         {
             if (!WarehouseId.HasValue)
             {
-                // 新增模式 - 自動產生倉庫代碼
+                // 新增模式 - 自動產生倉庫編號
                 var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<Warehouse, IWarehouseService>(WarehouseService, "WH");
                 return new Warehouse
                 {
@@ -161,12 +161,12 @@
                 new()
                 {
                     PropertyName = nameof(Warehouse.Code),
-                    Label = "倉庫代碼",
+                    Label = "倉庫編號",
                     FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入倉庫代碼",
+                    Placeholder = "請輸入倉庫編號",
                     IsRequired = true,
                     MaxLength = 20,
-                    HelpText = "倉庫的唯一識別代碼，新增時系統會自動產生，也可手動修改"
+                    HelpText = "倉庫的唯一識別編號，新增時系統會自動產生，也可手動修改"
                 },
                 new()
                 {

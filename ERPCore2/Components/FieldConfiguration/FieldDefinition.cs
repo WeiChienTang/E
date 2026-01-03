@@ -87,11 +87,6 @@ namespace ERPCore2.FieldConfiguration
         public RenderFragment<object>? CustomTemplate { get; set; }
         
         /// <summary>
-        /// 欄位寬度樣式
-        /// </summary>
-        public string? HeaderStyle { get; set; } = "width: 120px;";
-        
-        /// <summary>
         /// 空值顯示文字
         /// </summary>
         public string? NullDisplayText { get; set; }
@@ -114,7 +109,6 @@ namespace ERPCore2.FieldConfiguration
                     PropertyName = PropertyName,
                     DataType = ColumnType,
                     CustomTemplate = CustomTemplate,
-                    HeaderStyle = HeaderStyle,
                     NullDisplayText = NullDisplayText,
                     IsSortable = IsSortable
                 };
@@ -131,8 +125,6 @@ namespace ERPCore2.FieldConfiguration
                 _ => TableColumnDefinition.Text(DisplayName, PropertyName)
             };
             
-            if (!string.IsNullOrEmpty(HeaderStyle))
-                column.HeaderStyle = HeaderStyle;
             if (!string.IsNullOrEmpty(NullDisplayText))
                 column.NullDisplayText = NullDisplayText;
             column.IsSortable = IsSortable;

@@ -11,12 +11,12 @@ namespace ERPCore2.Services
         #region 業務特定查詢方法
         
         /// <summary>
-        /// 根據廠商代碼取得廠商
+        /// 根據廠商編號取得廠商
         /// </summary>
         Task<Supplier?> GetBySupplierCodeAsync(string supplierCode);
         
         /// <summary>
-        /// 檢查廠商代碼是否存在
+        /// 檢查廠商編號是否存在
         /// </summary>
         Task<bool> IsSupplierCodeExistsAsync(string supplierCode, int? excludeId = null);
         

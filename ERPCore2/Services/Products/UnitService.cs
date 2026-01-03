@@ -77,7 +77,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查單位代碼是否存在
+        /// 檢查單位編號是否存在
         /// </summary>
         public async Task<bool> IsUnitCodeExistsAsync(string unitCode, int? excludeId = null)
         {
@@ -220,14 +220,14 @@ namespace ERPCore2.Services
             {
                 // 基本驗證
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    return ServiceResult.Failure("單位代碼為必填");
+                    return ServiceResult.Failure("單位編號為必填");
                 
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("單位名稱為必填");
 
-                // 檢查單位代碼是否重複
+                // 檢查單位編號是否重複
                 if (await IsUnitCodeExistsAsync(entity.Code, entity.Id))
-                    return ServiceResult.Failure("單位代碼已存在");
+                    return ServiceResult.Failure("單位編號已存在");
 
                 // 檢查單位名稱是否重複
                 if (await IsNameExistsAsync(entity.Name, entity.Id))

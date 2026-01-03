@@ -45,7 +45,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "出貨單號",
                             FilterPlaceholder = "輸入出貨單號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesDelivery.Code), sd => sd.Code)
                         }
@@ -59,7 +58,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 2,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(SalesDelivery.DeliveryDate), sd => sd.DeliveryDate)
                         }
@@ -74,7 +72,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 200px;",
                             Options = _customers.Select(c => new SelectOption
                             {
                                 Text = c.CompanyName ?? "",
@@ -93,7 +90,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "業務人員",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
-                            HeaderStyle = "width: 120px;",
                             NullDisplayText = "-",
                             Options = _employees.Select(e => new SelectOption
                             {
@@ -113,7 +109,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.NumberRange,
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 7,
-                            HeaderStyle = "width: 120px; text-align: right;",
                             ShowInFilter = false, // 金額欄位暫時不提供篩選功能
                             CustomTemplate = item => builder =>
                             {

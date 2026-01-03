@@ -79,13 +79,13 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("天氣名稱為必填");
 
-                // 檢查代碼
+                // 檢查編號
                 if (string.IsNullOrWhiteSpace(entity.Code))
-                    return ServiceResult.Failure("天氣代碼為必填");
+                    return ServiceResult.Failure("天氣編號為必填");
 
-                // 檢查代碼是否重複
+                // 檢查編號是否重複
                 if (await IsCodeExistsAsync(entity.Code, entity.Id))
-                    return ServiceResult.Failure("天氣代碼已存在");
+                    return ServiceResult.Failure("天氣編號已存在");
 
                 // 檢查名稱是否重複
                 if (await IsNameExistsAsync(entity.Name, entity.Id))
@@ -133,7 +133,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 檢查天氣代碼是否已存在
+        /// 檢查天氣編號是否已存在
         /// </summary>
         public async Task<bool> IsCodeExistsAsync(string code, int? excludeId = null)
         {
@@ -160,7 +160,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 根據代碼取得天氣資料
+        /// 根據編號取得天氣資料
         /// </summary>
         public async Task<Weather?> GetByCodeAsync(string code)
         {

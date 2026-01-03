@@ -31,11 +31,10 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<WarehouseLocation>
                         {
                             PropertyName = nameof(WarehouseLocation.Code),
-                            DisplayName = "庫位代碼",
-                            FilterPlaceholder = "輸入庫位代碼搜尋",
+                            DisplayName = "庫位編號",
+                            FilterPlaceholder = "輸入庫位編號搜尋",
                             TableOrder = 1,
                             FilterOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", wl => wl.Code, allowNull: true)
                         }
@@ -63,7 +62,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             FilterOrder = 3,
-                            HeaderStyle = "width: 180px;",
                             Options = _warehouses.Select(w => new SelectOption 
                             { 
                                 Text = w.Name, 
@@ -82,7 +80,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入區域搜尋",
                             TableOrder = 4,
                             FilterOrder = 4,
-                            HeaderStyle = "width: 100px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Zone", wl => wl.Zone, allowNull: true)
                         }
@@ -96,7 +93,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入排號搜尋",
                             TableOrder = 5,
                             FilterOrder = 5,
-                            HeaderStyle = "width: 100px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Aisle", wl => wl.Aisle, allowNull: true)
                         }
@@ -110,7 +106,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入層號搜尋",
                             TableOrder = 6,
                             FilterOrder = 6,
-                            HeaderStyle = "width: 100px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Level", wl => wl.Level, allowNull: true)
                         }
@@ -124,7 +119,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入位號搜尋",
                             TableOrder = 7,
                             FilterOrder = 7,
-                            HeaderStyle = "width: 100px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Position", wl => wl.Position, allowNull: true)
                         }
@@ -139,7 +133,6 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = "輸入最大容量搜尋",
                             TableOrder = 8,
                             FilterOrder = 8,
-                            HeaderStyle = "width: 120px;",
                             FilterFunction = (model, query) => 
                             {
                                 var filterValue = model.GetFilterValue("MaxCapacity")?.ToString();

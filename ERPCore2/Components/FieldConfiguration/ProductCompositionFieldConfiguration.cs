@@ -36,10 +36,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<ProductComposition>
                         {
                             PropertyName = nameof(ProductComposition.Code),
-                            DisplayName = "配方代碼",
-                            FilterPlaceholder = "輸入配方代碼搜尋",
+                            DisplayName = "配方編號",
+                            FilterPlaceholder = "輸入配方編號搜尋",
                             TableOrder = 1,
-                            HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ProductComposition.Code), pc => pc.Code)
                         }
@@ -53,7 +52,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "商品",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
-                            HeaderStyle = "width: 200px;",
                             Options = _products.Select(p => new SelectOption 
                             { 
                                 Text = $"{p.Name}", 
@@ -101,7 +99,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "配方類型",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
-                            HeaderStyle = "width: 150px;",
                             Options = _compositionCategories.Select(cc => new SelectOption
                             {
                                 Text = cc.Name,
@@ -141,7 +138,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "組件數",
                             ShowInFilter = false,
                             TableOrder = 5,
-                            HeaderStyle = "width: 80px; text-align: center;",
                             CustomTemplate = item => builder =>
                             {
                                 var composition = (ProductComposition)item;
