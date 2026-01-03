@@ -2,7 +2,34 @@
 
 ## 概述
 
-`Components/Shared` 資料夾存放所有 **跨業務共用** 的元件。大多數開發所需的基礎元件、UI 元件、頁面模板都可以在此找到。若需要新增元件，請務必依照以下分類規則放置。
+`Components/Shared` 資料夾存放所有 **跨業務共用** 的 **UI 元件**（Blazor .razor 檔案）。大多數開發所需的基礎元件、UI 元件、頁面模板都可以在此找到。若需要新增元件，請務必依照以下分類規則放置。
+
+> ⚠️ **重要區分**：如果你要建立的是有畫面的元件（.razor），請放到此資料夾；如果是純邏輯處理的類別（.cs），請放到 `Helpers/` 資料夾。
+
+---
+
+## Shared vs Helpers 的差異
+
+| 比較項目 | Components/Shared | Helpers |
+|---------|-------------------|----------|
+| **檔案類型** | Blazor 元件 (.razor) | C# 類別 (.cs) |
+| **是否有 UI** | ✅ 有，會渲染 HTML | ❌ 無，純邏輯 |
+| **主要用途** | 可重用的視覺介面元件 | 邏輯處理、計算、資料轉換 |
+| **使用方式** | 在 .razor 中以標籤形式引用 | 直接呼叫靜態方法或建立實例 |
+| **範例** | `<GenericButtonComponent />` | `TaxCalculationHelper.CalculateTax()` |
+
+### 簡單判斷原則
+
+```
+需要建立新的共用功能時，問自己：
+├─ 這個功能需要顯示畫面嗎？
+│   ├─ 是 → 放 Components/Shared/
+│   └─ 否 → 放 Helpers/
+│
+└─ 這是要被「放在頁面上顯示」還是「被呼叫來處理資料」？
+    ├─ 放在頁面上顯示 → 放 Components/Shared/
+    └─ 被呼叫來處理資料 → 放 Helpers/
+```
 
 ---
 
@@ -269,15 +296,33 @@ Components/Pages/
 
 ---
 
+## Shared 與 Helpers 的配對關係
+
+許多 Shared 元件都有對應的 Helper 類別來處理其邏輯：
+
+```
+Components/Shared/                        ←→    Helpers/
+├── PageTemplate/GenericEditModalComponent.razor  ←→ EditModal/（多個 Helper）
+├── PageTemplate/GenericIndexPageComponent.razor  ←→ IndexHelpers/
+├── Base/InteractiveTableComponent.razor          ←→ InteractiveTableComponentHelper/
+├── Base/BaseModalComponent.razor                 ←→ ModalHelper.cs
+└── RelatedDocument/RelatedDocumentsModalComponent.razor ←→ RelatedDocumentsHelper.cs
+```
+
+---
+
 ## 注意事項
 
 1. **避免重複造輪子**：新增元件前，請先檢查 Shared 資料夾是否已有類似功能的元件。
 
 2. **保持單一職責**：每個元件應只負責一項功能，避免建立過於複雜的巨型元件。
 
-3. **文件同步更新**：若新增新的資料夾或重要元件，請更新此文件。
+3. **UI 與邏輯分離**：元件（.razor）負責顯示，邏輯處理應抽取到對應的 Helper（.cs）中。
 
-4. **相關文件**：
-   - [README_套用基礎Modal.md](../Shared/Base/README_套用基礎Modal.md)
+4. **文件同步更新**：若新增新的資料夾或重要元件，請更新此文件。
+
+5. **相關文件**：
+   - [Helpers 結構說明](../../Helpers/README_Helpers結構圖.md)
+   - [README_套用基礎Modal.md](./Base/README_套用基礎Modal.md)
    - [README_GenericFormComponent結構.md](README_GenericFormComponent結構.md)
    - [README_互動Table說明.md](README_互動Table說明.md)

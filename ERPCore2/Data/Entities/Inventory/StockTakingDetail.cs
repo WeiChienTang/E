@@ -27,13 +27,15 @@ namespace ERPCore2.Data.Entities
         public int? WarehouseLocationId { get; set; }
 
         [Display(Name = "系統庫存")]
-        public int SystemStock { get; set; } = 0;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal SystemStock { get; set; } = 0;
 
         [Display(Name = "實盤數量")]
-        public int? ActualStock { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal? ActualStock { get; set; }
 
         [Display(Name = "差異數量")]
-        public int? DifferenceQuantity => ActualStock.HasValue ? ActualStock.Value - SystemStock : null;
+        public decimal? DifferenceQuantity => ActualStock.HasValue ? ActualStock.Value - SystemStock : null;
 
         [Display(Name = "單位成本")]
         [Column(TypeName = "decimal(18,4)")]

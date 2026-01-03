@@ -1,4 +1,4 @@
-namespace ERPCore2.Helpers.NumericHelpers
+namespace ERPCore2.Helpers
 {
     /// <summary>
     /// 數字格式化輔助類別

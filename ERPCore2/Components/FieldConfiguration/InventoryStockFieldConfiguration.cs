@@ -39,33 +39,14 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<InventoryStock>>
                 {
                     {
-                        nameof(InventoryStock.ProductId),
-                        new FieldDefinition<InventoryStock>
-                        {
-                            PropertyName = "Product.Name", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryStock.ProductId), // 篩選器用
-                            DisplayName = "商品",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 1,
-                            HeaderStyle = "width: 200px;",
-                            Options = _products.Select(p => new SelectOption
-                            {
-                                Text = $"{p.Code} - {p.Name}",
-                                Value = p.Id.ToString()
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(InventoryStock.ProductId), s => s.ProductId)
-                        }
-                    },
-                    {
                         "ProductCode",
                         new FieldDefinition<InventoryStock>
                         {
                             PropertyName = "Product.Code",
-                            DisplayName = "商品代碼",
+                            DisplayName = "商品編號",
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = "輸入商品代碼搜尋",
-                            TableOrder = 2,
+                            FilterPlaceholder = "輸入商品編號搜尋",
+                            TableOrder = 1,
                             HeaderStyle = "width: 150px;",
                             FilterFunction = (model, query) => {
                                 var filterValue = model.GetFilterValue("ProductCode")?.ToString();
@@ -78,6 +59,25 @@ namespace ERPCore2.FieldConfiguration
                                 }
                                 return query;
                             }
+                        }
+                    },
+                    {
+                        nameof(InventoryStock.ProductId),
+                        new FieldDefinition<InventoryStock>
+                        {
+                            PropertyName = "Product.Name", // 表格顯示用
+                            FilterPropertyName = nameof(InventoryStock.ProductId), // 篩選器用
+                            DisplayName = "商品名稱",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 2,
+                            HeaderStyle = "width: 200px;",
+                            Options = _products.Select(p => new SelectOption
+                            {
+                                Text = $"{p.Code} - {p.Name}",
+                                Value = p.Id.ToString()
+                            }).ToList(),
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(InventoryStock.ProductId), s => s.ProductId)
                         }
                     },
                     {
@@ -106,7 +106,7 @@ namespace ERPCore2.FieldConfiguration
                             }
                         }
                     },
-                    {
+                        {
                         nameof(InventoryStock.TotalCurrentStock),
                         new FieldDefinition<InventoryStock>
                         {
@@ -115,6 +115,27 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             TableOrder = 4,
                             HeaderStyle = "width: 100px; text-align: right;",
+                            ShowInFilter = false,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is InventoryStock stock)
+                                {
+                                    // 使用 FormatSmart：整數不顯示小數點，有小數才顯示
+                                    var value = NumberFormatHelper.FormatSmart(stock.TotalCurrentStock);
+                                    builder.AddContent(0, value);
+                                }
+                            })
+                        }
+                    },
+                    {
+                        "ProductUnit",
+                        new FieldDefinition<InventoryStock>
+                        {
+                            PropertyName = "Product.Unit.Name",
+                            DisplayName = "商品單位",
+                            FilterType = SearchFilterType.Text,
+                            TableOrder = 5,
+                            HeaderStyle = "width: 80px;",
                             ShowInFilter = false
                         }
                     },
@@ -125,16 +146,19 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(InventoryStock.WeightedAverageCost),
                             DisplayName = "平均成本",
                             FilterType = SearchFilterType.Text,
-                            TableOrder = 8,
+                            TableOrder = 6,
                             HeaderStyle = "width: 120px; text-align: right;",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is InventoryStock stock)
                                 {
-                                    var value = stock.WeightedAverageCost.HasValue
-                                        ? stock.WeightedAverageCost.Value.ToString("N2")
-                                        : "-";
+                                    // 使用 FormatSmart：整數不顯示小數點，有小數才顯示，null 顯示 "-"
+                                    var value = NumberFormatHelper.FormatSmart(
+                                        stock.WeightedAverageCost, 
+                                        decimalPlaces: 2, 
+                                        useThousandsSeparator: true, 
+                                        nullDisplayText: "-");
                                     builder.AddContent(0, value);
                                 }
                             })

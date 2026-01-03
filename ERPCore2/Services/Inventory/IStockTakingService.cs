@@ -27,7 +27,7 @@ namespace ERPCore2.Services
 
         // 盤點明細管理
         Task<List<StockTakingDetail>> GetStockTakingDetailsAsync(int stockTakingId);
-        Task<ServiceResult> UpdateStockTakingDetailAsync(int detailId, int actualStock, string? personnel = null, string? remarks = null);
+        Task<ServiceResult> UpdateStockTakingDetailAsync(int detailId, decimal actualStock, string? personnel = null, string? remarks = null);
         Task<ServiceResult> BatchUpdateStockTakingDetailsAsync(List<StockTakingDetailUpdateModel> updates);
 
         // 差異處理
@@ -50,7 +50,7 @@ namespace ERPCore2.Services
     public class StockTakingDetailUpdateModel
     {
         public int DetailId { get; set; }
-        public int ActualStock { get; set; }
+        public decimal ActualStock { get; set; }
         public string? Personnel { get; set; }
         public string? Remarks { get; set; }
     }

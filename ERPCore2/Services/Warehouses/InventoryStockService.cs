@@ -15,7 +15,7 @@ namespace ERPCore2.Services
     {
         public int BatchId { get; set; }
         public string? BatchNumber { get; set; }
-        public int ReduceQuantity { get; set; }
+        public decimal ReduceQuantity { get; set; }
     }
 
     /// <summary>
@@ -43,6 +43,8 @@ namespace ERPCore2.Services
                 return await context.InventoryStocks
                     .Include(i => i.Product)
                         .ThenInclude(p => p.ProductCategory)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.Unit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -68,6 +70,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStocks
                     .Include(i => i.Product)
+                        .ThenInclude(p => p.Unit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -100,6 +103,8 @@ namespace ERPCore2.Services
                 return await context.InventoryStocks
                     .Include(i => i.Product)
                         .ThenInclude(p => p.ProductCategory)
+                    .Include(i => i.Product)
+                        .ThenInclude(p => p.Unit)
                     .Include(i => i.InventoryStockDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(i => i.InventoryStockDetails)
@@ -557,7 +562,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<int> GetAvailableStockAsync(int productId, int warehouseId, int? locationId = null)
+        public async Task<decimal> GetAvailableStockAsync(int productId, int warehouseId, int? locationId = null)
         {
             try
             {
@@ -630,7 +635,7 @@ namespace ERPCore2.Services
         /// <param name="productId">商品ID</param>
         /// <param name="warehouseId">倉庫ID</param>
         /// <returns>總可用庫存數量</returns>
-        public async Task<int> GetTotalAvailableStockByWarehouseAsync(int productId, int warehouseId)
+        public async Task<decimal> GetTotalAvailableStockByWarehouseAsync(int productId, int warehouseId)
         {
             try
             {
@@ -695,7 +700,7 @@ namespace ERPCore2.Services
                     .ToList();
                 
                 // 計算每個InventoryStockId的淨扣減量
-                var netReductions = new Dictionary<int, int>();
+                var netReductions = new Dictionary<int, decimal>();
                 
                 // 加入所有銷貨扣減
                 foreach (var sale in saleTransactions)
@@ -704,7 +709,7 @@ namespace ERPCore2.Services
                     {
                         var stockId = sale.InventoryStockId.Value;
                         if (!netReductions.ContainsKey(stockId))
-                            netReductions[stockId] = 0;
+                            netReductions[stockId] = 0m;
                         netReductions[stockId] += Math.Abs(sale.Quantity); // 累計扣減量（轉為正數）
                     }
                 }
@@ -772,7 +777,7 @@ namespace ERPCore2.Services
         [Obsolete("請使用 RevertStockToOriginalDetailAsync，傳入 InventoryStockDetailId")]
         public async Task<ServiceResult> RevertStockToOriginalAsync(
             int inventoryStockId, 
-            int quantity, 
+            decimal quantity, 
             InventoryTransactionTypeEnum transactionType, 
             string transactionNumber, 
             string? remarks = null)
@@ -847,7 +852,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> AddStockAsync(int productId, int warehouseId, int quantity, 
+        public async Task<ServiceResult> AddStockAsync(int productId, int warehouseId, decimal quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             decimal? unitCost = null, int? locationId = null, string? remarks = null,
             string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null)
@@ -987,7 +992,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, int quantity,
+        public async Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null)
         {
@@ -1078,7 +1083,7 @@ namespace ERPCore2.Services
         }
 
         public async Task<ServiceResult> TransferStockAsync(int productId, int fromWarehouseId, int toWarehouseId,
-            int quantity, string transactionNumber, int? fromLocationId = null, int? toLocationId = null,
+            decimal quantity, string transactionNumber, int? fromLocationId = null, int? toLocationId = null,
             string? remarks = null)
         {
             try
@@ -1145,7 +1150,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> AdjustStockAsync(int productId, int warehouseId, int newQuantity,
+        public async Task<ServiceResult> AdjustStockAsync(int productId, int warehouseId, decimal newQuantity,
             string transactionNumber, string? remarks = null, int? locationId = null)
         {
             try
@@ -1205,7 +1210,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// FIFO 方式減少庫存
         /// </summary>
-        public async Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, int quantity,
+        public async Task<ServiceResult> ReduceStockWithFIFOAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null, int? salesOrderDetailId = null)
         {
@@ -1315,7 +1320,7 @@ namespace ERPCore2.Services
         /// 從特定批號扣減庫存（新版：使用 InventoryStockDetailId）
         /// </summary>
         private async Task<ServiceResult> ReduceStockFromSpecificBatchAsync(
-            int batchDetailId, int quantity, 
+            int batchDetailId, decimal quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             string? remarks = null, int? salesOrderDetailId = null)
         {
@@ -1574,7 +1579,7 @@ namespace ERPCore2.Services
 
         #region 庫存預留方法
 
-        public async Task<ServiceResult> ReserveStockAsync(int productId, int warehouseId, int quantity,
+        public async Task<ServiceResult> ReserveStockAsync(int productId, int warehouseId, decimal quantity,
             InventoryReservationType reservationType, string referenceNumber,
             DateTime? expiryDate = null, int? locationId = null, string? remarks = null)
         {
@@ -1658,7 +1663,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> ReleaseReservationAsync(int reservationId, int? releaseQuantity = null)
+        public async Task<ServiceResult> ReleaseReservationAsync(int reservationId, decimal? releaseQuantity = null)
         {
             try
             {
@@ -1769,7 +1774,7 @@ namespace ERPCore2.Services
 
         #region 庫存驗證方法
 
-        public async Task<bool> IsStockAvailableAsync(int productId, int warehouseId, int requiredQuantity, int? locationId = null)
+        public async Task<bool> IsStockAvailableAsync(int productId, int warehouseId, decimal requiredQuantity, int? locationId = null)
         {
             try
             {
@@ -1790,7 +1795,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> ValidateStockOperationAsync(int productId, int warehouseId, int quantity, bool isReduce)
+        public async Task<ServiceResult> ValidateStockOperationAsync(int productId, int warehouseId, decimal quantity, bool isReduce)
         {
             try
             {
@@ -1926,7 +1931,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 批次更新庫存明細的警戒線設定
         /// </summary>
-        public async Task<ServiceResult> BatchUpdateStockLevelAlertsAsync(List<(int detailId, int? minLevel, int? maxLevel)> updates)
+        public async Task<ServiceResult> BatchUpdateStockLevelAlertsAsync(List<(int detailId, decimal? minLevel, decimal? maxLevel)> updates)
         {
             try
             {

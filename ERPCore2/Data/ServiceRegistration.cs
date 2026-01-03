@@ -78,7 +78,6 @@ namespace ERPCore2.Data
             services.AddScoped<IWarehouseService, WarehouseService>();
             services.AddScoped<IWarehouseLocationService, WarehouseLocationService>();
             services.AddScoped<IUnitService, UnitService>();
-            services.AddScoped<IUnitConversionService, UnitConversionService>();
             services.AddScoped<IInventoryTransactionTypeService, InventoryTransactionTypeService>();
             
             // 庫存管理服務

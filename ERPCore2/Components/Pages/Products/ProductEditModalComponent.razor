@@ -432,10 +432,10 @@
             new()
             {
                 PropertyName = nameof(Product.UnitId),
-                Label = "單位",
+                Label = "商品單位",
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = "請輸入或選擇基本計量單位",
-                IsRequired = false,
+                IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "商品的基本計量單位（庫存單位）",
                 ActionButtons = await GetUnitActionButtonsAsync()
@@ -450,6 +450,18 @@
                 MinSearchLength = 0,
                 HelpText = "生產製造時使用的單位（可與基本單位不同）",
                 ActionButtons = await GetProductionUnitActionButtonsAsync()
+            },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Product.ProductionUnitConversionRate),
+                Label = GetProductionUnitConversionLabel(),
+                FieldType = FormFieldType.Number,
+                Placeholder = "請輸入換算係數",
+                IsRequired = false,
+                IsVisible = ShouldShowProductionUnitConversion(),
+                HelpText = "1 商品單位 = N 製程單位（例如：1 包 = 30 公斤，則輸入 30）",
+                Min = 0.000001m,
+                Step = 0.000001m
             },
             new FormFieldDefinition()
             {
@@ -507,6 +519,7 @@
             .AddToSection(FormSectionNames.UnitSettings,
                 p => p.UnitId,
                 p => p.ProductionUnitId,
+                p => p.ProductionUnitConversionRate,
                 p => p.ProcurementType)
 
             .AddToSection(FormSectionNames.FinanceAndRemarks,
@@ -712,17 +725,23 @@
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     productCategoryModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
-            // 使用統一 Helper 處理單位欄位變更
+            // 使用統一 Helper 處理基本單位欄位變更
             else if (fieldChange.PropertyName == nameof(Product.UnitId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                
+                // 基本單位變更時也需要更新製程單位換算欄位
+                await UpdateProductionUnitConversionFieldAsync();
             }
             // 使用統一 Helper 處理製程單位欄位變更
             else if (fieldChange.PropertyName == nameof(Product.ProductionUnitId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
+                
+                // 動態更新製程單位換算欄位的顯示狀態和標籤
+                await UpdateProductionUnitConversionFieldAsync();
             }
             // 使用統一 Helper 處理尺寸欄位變更
             else if (fieldChange.PropertyName == nameof(Product.SizeId))
@@ -903,6 +922,83 @@
             ProcurementType.Outsourced => "委外",
             _ => procurementType.ToString()
         };
+    }
+    
+    // ===== 單位換算相關方法 =====
+    
+    /// <summary>
+    /// 判斷是否應顯示製程單位換算欄位
+    /// 條件：製程單位已選擇，且與基本單位不同
+    /// </summary>
+    private bool ShouldShowProductionUnitConversion()
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null) return false;
+        
+        // 必須有選擇製程單位
+        if (!entity.ProductionUnitId.HasValue) return false;
+        
+        // 如果沒有基本單位（尚未選擇），也顯示（讓使用者輸入換算率）
+        if (entity.UnitId <= 0) return true;
+        
+        // 製程單位與基本單位不同時才顯示
+        return entity.ProductionUnitId.Value != entity.UnitId;
+    }
+    
+    /// <summary>
+    /// 產生製程單位換算欄位的動態標籤
+    /// 格式：「1 [商品單位名稱] = ? [製程單位名稱]」
+    /// </summary>
+    private string GetProductionUnitConversionLabel()
+    {
+        var entity = editModalComponent?.Entity;
+        if (entity == null) return "製程單位換算率";
+        
+        var baseUnitName = GetUnitName(entity.UnitId);
+        var productionUnitName = GetUnitName(entity.ProductionUnitId);
+        
+        if (string.IsNullOrEmpty(baseUnitName))
+            return "製程單位換算率";
+            
+        if (string.IsNullOrEmpty(productionUnitName))
+            return $"1 {baseUnitName} = ?";
+            
+        return $"1 {baseUnitName} = ? {productionUnitName}";
+    }
+    
+    /// <summary>
+    /// 根據單位 ID 取得單位名稱
+    /// </summary>
+    private string GetUnitName(int? unitId)
+    {
+        if (!unitId.HasValue) return string.Empty;
+        return availableUnits.FirstOrDefault(u => u.Id == unitId.Value)?.Name ?? string.Empty;
+    }
+    
+    /// <summary>
+    /// 動態更新製程單位換算欄位的顯示狀態和標籤
+    /// </summary>
+    private async Task UpdateProductionUnitConversionFieldAsync()
+    {
+        var conversionField = formFields.FirstOrDefault(f => 
+            f.PropertyName == nameof(Product.ProductionUnitConversionRate));
+            
+        if (conversionField != null)
+        {
+            conversionField.IsVisible = ShouldShowProductionUnitConversion();
+            conversionField.Label = GetProductionUnitConversionLabel();
+            
+            // 如果製程單位與基本單位相同，自動將換算率設為 1
+            var entity = editModalComponent?.Entity;
+            if (entity != null && entity.ProductionUnitId.HasValue && entity.UnitId > 0 
+                && entity.ProductionUnitId.Value == entity.UnitId)
+            {
+                entity.ProductionUnitConversionRate = 1;
+            }
+        }
+        
+        StateHasChanged();
+        await Task.CompletedTask;
     }
 }
 

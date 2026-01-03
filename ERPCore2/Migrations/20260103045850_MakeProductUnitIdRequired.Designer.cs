@@ -4,6 +4,7 @@ using ERPCore2.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260103045850_MakeProductUnitIdRequired")]
+    partial class MakeProductUnitIdRequired
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1029,8 +1032,8 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal>("ReleasedQuantity")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("ReleasedQuantity")
+                        .HasColumnType("int");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -1054,8 +1057,8 @@ namespace ERPCore2.Migrations
                     b.Property<int>("ReservationType")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("ReservedQuantity")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("ReservedQuantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -1166,17 +1169,17 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal>("CurrentStock")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("CurrentStock")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("InProductionStock")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("InProductionStock")
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("InTransitStock")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("InTransitStock")
+                        .HasColumnType("int");
 
                     b.Property<int>("InventoryStockId")
                         .HasColumnType("int");
@@ -1184,18 +1187,18 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime?>("LastTransactionDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal?>("MaxStockLevel")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int?>("MaxStockLevel")
+                        .HasColumnType("int");
 
-                    b.Property<decimal?>("MinStockLevel")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int?>("MinStockLevel")
+                        .HasColumnType("int");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal>("ReservedStock")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("ReservedStock")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -1254,8 +1257,8 @@ namespace ERPCore2.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
@@ -1264,11 +1267,11 @@ namespace ERPCore2.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("StockAfter")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("StockAfter")
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("StockBefore")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("StockBefore")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("TransactionBatchDate")
                         .HasColumnType("datetime2");
@@ -4681,8 +4684,8 @@ namespace ERPCore2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal?>("ActualStock")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int?>("ActualStock")
+                        .HasColumnType("int");
 
                     b.Property<string>("AdjustmentNumber")
                         .HasMaxLength(30)
@@ -4722,8 +4725,8 @@ namespace ERPCore2.Migrations
                     b.Property<int>("StockTakingId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("SystemStock")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<int>("SystemStock")
+                        .HasColumnType("int");
 
                     b.Property<string>("TakingPersonnel")
                         .HasMaxLength(100)

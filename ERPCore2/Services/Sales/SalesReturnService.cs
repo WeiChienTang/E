@@ -998,14 +998,14 @@ namespace ERPCore2.Services
                         : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL")).ToList();
 
                     // 3. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
-                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity)>();
+                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity)>();
                     
                     foreach (var trans in existingTransactions)
                     {
                         var key = $"{trans.ProductId}_{trans.WarehouseId}_{trans.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0);
+                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0m);
                         }
                         // 累加所有交易的淨值（退貨的 Quantity 是正數）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
@@ -1015,7 +1015,7 @@ namespace ERPCore2.Services
                     }
                     
                     // 4. 建立當前明細字典
-                    var currentInventory = new Dictionary<string, (int ProductId, int? WarehouseId, int? LocationId, int CurrentQuantity)>();
+                    var currentInventory = new Dictionary<string, (int ProductId, int? WarehouseId, int? LocationId, decimal CurrentQuantity)>();
                     
                     foreach (var detail in currentReturn.SalesReturnDetails)
                     {
@@ -1057,13 +1057,13 @@ namespace ERPCore2.Services
                         var hasCurrent = currentInventory.ContainsKey(key);
                         
                         // 🔑 關鍵：退貨是增加庫存，所以目標數量是正數
-                        int targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0;
+                        decimal targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0m;
                         
                         // 計算已處理的庫存數量（之前所有交易的淨值，已經是正數）
-                        int processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0;
+                        decimal processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0m;
                         
                         // 計算需要調整的數量
-                        int adjustmentNeeded = targetQuantity - processedQuantity;
+                        decimal adjustmentNeeded = targetQuantity - processedQuantity;
                         
                         if (adjustmentNeeded != 0)
                         {

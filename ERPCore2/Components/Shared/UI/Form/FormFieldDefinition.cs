@@ -48,6 +48,11 @@ public class FormFieldDefinition
     public bool IsDisabled { get; set; } = false;
     
     /// <summary>
+    /// 是否顯示（預設 true，可動態控制欄位顯示/隱藏）
+    /// </summary>
+    public bool IsVisible { get; set; } = true;
+    
+    /// <summary>
     /// 自定義 CSS 類別
     /// </summary>
     public string? CssClass { get; set; }

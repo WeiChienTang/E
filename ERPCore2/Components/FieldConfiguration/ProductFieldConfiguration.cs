@@ -118,7 +118,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "Unit.Name", // 表格顯示用
                             FilterPropertyName = nameof(Product.UnitId), // 篩選器用
-                            DisplayName = "單位",
+                            DisplayName = "商品單位",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
                             Options = _units.Select(u => new SelectOption 
@@ -131,13 +131,31 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
+                        nameof(Product.ProductionUnitId),
+                        new FieldDefinition<Product>
+                        {
+                            PropertyName = "ProductionUnit.Name", // 表格顯示用
+                            FilterPropertyName = nameof(Product.ProductionUnitId), // 篩選器用
+                            DisplayName = "製程單位",
+                            FilterType = SearchFilterType.Select,
+                            TableOrder = 7,
+                            Options = _units.Select(u => new SelectOption 
+                            { 
+                                Text = u.Name, 
+                                Value = u.Id.ToString() 
+                            }).ToList(),
+                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
+                                model, query, nameof(Product.ProductionUnitId), p => p.ProductionUnitId)
+                        }
+                    },
+                    {
                         nameof(Product.ProcurementType),
                         new FieldDefinition<Product>
                         {
                             PropertyName = nameof(Product.ProcurementType),
                             DisplayName = "採購類型",
                             FilterType = SearchFilterType.Select,
-                            TableOrder = 7,
+                            TableOrder = 8,
                             Options = Enum.GetValues(typeof(ProcurementType))
                                 .Cast<ProcurementType>()
                                 .Select(e => new SelectOption

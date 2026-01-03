@@ -246,10 +246,10 @@
                     detail.ComponentProduct = selectedProduct;
                     
                     // 自動設定該商品的預設單位
-                    if (selectedProduct.UnitId.HasValue)
+                    if (selectedProduct.UnitId > 0)
                     {
                         detail.UnitId = selectedProduct.UnitId;
-                        detail.Unit = await UnitService.GetByIdAsync(selectedProduct.UnitId.Value);
+                        detail.Unit = await UnitService.GetByIdAsync(selectedProduct.UnitId);
                     }
                 }
                 

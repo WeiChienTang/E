@@ -28,17 +28,20 @@ namespace ERPCore2.Data.Entities
         
         [Required(ErrorMessage = "交易數量為必填")]
         [Display(Name = "交易數量")]
-        public int Quantity { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal Quantity { get; set; }
         
         [Display(Name = "單位成本")]
         [Column(TypeName = "decimal(18,4)")]
         public decimal? UnitCost { get; set; }
         
         [Display(Name = "交易前庫存")]
-        public int StockBefore { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal StockBefore { get; set; }
         
         [Display(Name = "交易後庫存")]
-        public int StockAfter { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal StockAfter { get; set; }
         
         // === 批號追蹤欄位 ===
         [Display(Name = "交易批號")]

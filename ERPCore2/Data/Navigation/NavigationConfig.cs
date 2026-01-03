@@ -177,15 +177,6 @@ public static class NavigationConfig
                         RequiredPermission = "Product.Read",
                         SearchKeywords = new List<string> { "商品管理", "商品資料", "商品目錄", "品項","條碼" }
                     },
-                    NavigationActionHelper.CreateActionItem(
-                        name: "單位換算",
-                        description: "管理單位之間的換算規則（如：包→公斤）",
-                        iconClass: "bi bi-arrow-left-right",
-                        actionId: "OpenUnitConversionManagement",
-                        category: "商品管理",
-                        requiredPermission: "Unit.Read",
-                        searchKeywords: new List<string> { "單位換算", "單位轉換", "unit conversion", "換算", "包裝單位" }
-                    ),
                     new NavigationItem
                     {
                         Name = "類型",

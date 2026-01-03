@@ -495,11 +495,11 @@ namespace ERPCore2.Services
         /// <summary>
         /// 驗證領貨明細的庫存是否充足
         /// </summary>
-        public async Task<(bool IsValid, int AvailableQuantity, string ErrorMessage)> ValidateStockAvailabilityAsync(
+        public async Task<(bool IsValid, decimal AvailableQuantity, string ErrorMessage)> ValidateStockAvailabilityAsync(
             int productId, 
             int warehouseId, 
             int? warehouseLocationId, 
-            int issueQuantity)
+            decimal issueQuantity)
         {
             try
             {

@@ -6,7 +6,6 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Components.Shared.UI.Form
-@using ERPCore2.Helpers.NumericHelpers
 @typeparam TModel
 
 <div class="generic-form-container">
@@ -66,6 +65,12 @@
     /// </summary>
     private RenderFragment RenderFieldMarkup(FormFieldDefinition field) => __builder =>
     {
+        // 如果欄位設定為不可見，則不渲染
+        if (!field.IsVisible)
+        {
+            return;
+        }
+        
         var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
         var hasActionButtons = field.ActionButtons != null && field.ActionButtons.Any();
         

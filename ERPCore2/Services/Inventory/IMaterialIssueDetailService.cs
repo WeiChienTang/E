@@ -76,11 +76,11 @@ namespace ERPCore2.Services
         /// <param name="warehouseLocationId">庫位ID（可選）</param>
         /// <param name="issueQuantity">領貨數量</param>
         /// <returns>驗證結果（是否充足，可用數量）</returns>
-        Task<(bool IsValid, int AvailableQuantity, string ErrorMessage)> ValidateStockAvailabilityAsync(
+        Task<(bool IsValid, decimal AvailableQuantity, string ErrorMessage)> ValidateStockAvailabilityAsync(
             int productId, 
             int warehouseId, 
             int? warehouseLocationId, 
-            int issueQuantity);
+            decimal issueQuantity);
 
         /// <summary>
         /// 取得領貨明細的統計資料

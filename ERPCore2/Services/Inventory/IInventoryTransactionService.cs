@@ -36,7 +36,7 @@ namespace ERPCore2.Services
             int? locationId = null, string? remarks = null, int? employeeId = null);
         
         Task<ServiceResult> CreateAdjustmentTransactionAsync(int productId, int warehouseId, 
-            int originalQuantity, int adjustedQuantity, string transactionNumber,
+            decimal originalQuantity, decimal adjustedQuantity, string transactionNumber,
             int? locationId = null, string? remarks = null, int? employeeId = null);
         
         Task<ServiceResult> CreateTransferTransactionAsync(int productId, int fromWarehouseId, int toWarehouseId,

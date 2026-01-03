@@ -39,6 +39,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .AsQueryable()
                     .OrderBy(p => p.Name)
@@ -60,6 +61,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .Include(p => p.Supplier)
                     .FirstOrDefaultAsync(p => p.Id == id);
@@ -83,6 +85,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .Where(p => ((p.Name != null && p.Name.Contains(searchTerm)) ||
                                 (p.Code != null && p.Code.Contains(searchTerm)) ||
@@ -133,6 +136,11 @@ namespace ERPCore2.Services
                 {
                     errors.Add("商品類別為必填欄位");
                 }
+                
+                if (entity.UnitId <= 0)
+                {
+                    errors.Add("商品單位為必填欄位");
+                }
 
                 // 驗證稅率範圍（0-100）
                 if (entity.TaxRate.HasValue && (entity.TaxRate.Value < 0 || entity.TaxRate.Value > 100))
@@ -164,6 +172,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .FirstOrDefaultAsync(p => p.Code == productCode);
             }
@@ -183,6 +192,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .FirstOrDefaultAsync(p => p.Barcode == barcode);
             }
@@ -222,6 +232,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .Where(p => p.ProductCategoryId == productCategoryId)
                     .OrderBy(p => p.Name)
@@ -243,6 +254,7 @@ namespace ERPCore2.Services
                 var products = await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .Include(p => p.Supplier)
                     .Where(p => p.SupplierId == supplierId && p.Status == EntityStatus.Active)
@@ -267,6 +279,7 @@ namespace ERPCore2.Services
                 return await context.Products
                     .Include(p => p.ProductCategory)
                     .Include(p => p.Unit)
+                    .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
                     .Where(p => p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Name)
@@ -347,7 +360,7 @@ namespace ERPCore2.Services
             {
                 product.Code = string.Empty;
                 product.Name = string.Empty;
-                product.UnitId = null;
+                product.UnitId = 0;
                 product.SizeId = null;
                 product.ProductCategoryId = null;
                 product.Status = EntityStatus.Active;

@@ -342,14 +342,14 @@ namespace ERPCore2.Services
         }
 
         public async Task<ServiceResult> CreateAdjustmentTransactionAsync(int productId, int warehouseId, 
-            int originalQuantity, int adjustedQuantity, string transactionNumber,
+            decimal originalQuantity, decimal adjustedQuantity, string transactionNumber,
             int? locationId = null, string? remarks = null, int? employeeId = null)
         {
             try
             {
                 var adjustmentQuantity = adjustedQuantity - originalQuantity;
                 
-                if (adjustmentQuantity == 0)
+                if (adjustmentQuantity == 0m)
                     return ServiceResult.Failure("調整數量不能為0");
 
                 var transaction = new InventoryTransaction

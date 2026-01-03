@@ -244,7 +244,7 @@ namespace ERPCore2.Services
 
         #region 統計查詢
 
-        public async Task<int> GetTotalReservedQuantityAsync(int productId, int warehouseId, int? locationId = null)
+        public async Task<decimal> GetTotalReservedQuantityAsync(int productId, int warehouseId, int? locationId = null)
         {
             try
             {
@@ -262,11 +262,11 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalReservedQuantityAsync), typeof(InventoryReservationService), _logger);
-                return 0;
+                return 0m;
             }
         }
 
-        public async Task<int> GetAvailableQuantityForReservationAsync(int productId, int warehouseId, int? locationId = null)
+        public async Task<decimal> GetAvailableQuantityForReservationAsync(int productId, int warehouseId, int? locationId = null)
         {
             try
             {
@@ -285,12 +285,12 @@ namespace ERPCore2.Services
                 // 獲取已預留數量
                 var reservedQuantity = await this.GetTotalReservedQuantityAsync(productId, warehouseId, locationId);
 
-                return Math.Max(0, totalStock - reservedQuantity);
+                return Math.Max(0m, totalStock - reservedQuantity);
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableQuantityForReservationAsync), typeof(InventoryReservationService), _logger);
-                return 0;
+                return 0m;
             }
         }
 

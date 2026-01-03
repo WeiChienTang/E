@@ -21,9 +21,10 @@ namespace ERPCore2.Data.Entities
         public string? Barcode { get; set; }
 
         // Foreign Keys
+        [Required(ErrorMessage = "商品單位為必填")]
         [Display(Name = "基本單位")]
         [ForeignKey(nameof(Unit))]
-        public int? UnitId { get; set; }
+        public int UnitId { get; set; }
         
         [Display(Name = "採購單位")]
         [ForeignKey(nameof(PurchaseUnit))]
@@ -32,6 +33,25 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "製程單位")]
         [ForeignKey(nameof(ProductionUnit))]
         public int? ProductionUnitId { get; set; }
+        
+        /// <summary>
+        /// 製程單位換算率：1 基本單位（商品單位）= N 製程單位
+        /// 例如：基本單位為「包」、製程單位為「公斤」，1 包 = 30 公斤，則此值為 30
+        /// </summary>
+        [Display(Name = "製程單位換算率")]
+        [Column(TypeName = "decimal(18,6)")]
+        [Range(0.000001, double.MaxValue, ErrorMessage = "換算率必須大於 0")]
+        public decimal? ProductionUnitConversionRate { get; set; }
+        
+        /// <summary>
+        /// 採購單位換算率：1 基本單位（商品單位）= N 採購單位
+        /// 例如：基本單位為「個」、採購單位為「箱」，1 箱 = 12 個，則此值為 0.0833（或反向思考：12 個 = 1 箱）
+        /// 注意：此欄位目前預留，視需求啟用
+        /// </summary>
+        [Display(Name = "採購單位換算率")]
+        [Column(TypeName = "decimal(18,6)")]
+        [Range(0.000001, double.MaxValue, ErrorMessage = "換算率必須大於 0")]
+        public decimal? PurchaseUnitConversionRate { get; set; }
         
         [Display(Name = "尺寸")]
         [ForeignKey(nameof(Size))]

@@ -13,26 +13,26 @@ namespace ERPCore2.Data.Entities
         // === 計算屬性：從明細加總 ===
         [Display(Name = "總現有庫存")]
         [NotMapped]
-        public int TotalCurrentStock => InventoryStockDetails?.Sum(d => d.CurrentStock) ?? 0;
+        public decimal TotalCurrentStock => InventoryStockDetails?.Sum(d => d.CurrentStock) ?? 0;
         
         [Display(Name = "總預留庫存")]
         [NotMapped]
-        public int TotalReservedStock => InventoryStockDetails?.Sum(d => d.ReservedStock) ?? 0;
+        public decimal TotalReservedStock => InventoryStockDetails?.Sum(d => d.ReservedStock) ?? 0;
         
         [Display(Name = "總可用庫存")]
         [NotMapped]
-        public int TotalAvailableStock => TotalCurrentStock - TotalReservedStock - TotalInProductionStock;
+        public decimal TotalAvailableStock => TotalCurrentStock - TotalReservedStock - TotalInProductionStock;
         
         [Display(Name = "總在途庫存")]
         [NotMapped]
-        public int TotalInTransitStock => InventoryStockDetails?.Sum(d => d.InTransitStock) ?? 0;
+        public decimal TotalInTransitStock => InventoryStockDetails?.Sum(d => d.InTransitStock) ?? 0;
         
         /// <summary>
         /// 總生產中庫存 - 已領料投入生產的組件總數量
         /// </summary>
         [Display(Name = "總生產中庫存")]
         [NotMapped]
-        public int TotalInProductionStock => InventoryStockDetails?.Sum(d => d.InProductionStock) ?? 0;
+        public decimal TotalInProductionStock => InventoryStockDetails?.Sum(d => d.InProductionStock) ?? 0;
         
         [Display(Name = "加權平均成本")]
         [Column(TypeName = "decimal(18,4)")]

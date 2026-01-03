@@ -35,13 +35,15 @@ namespace ERPCore2.Data.Entities
         
         [Required(ErrorMessage = "預留數量為必填")]
         [Display(Name = "預留數量")]
-        public int ReservedQuantity { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal ReservedQuantity { get; set; }
         
         [Display(Name = "已釋放數量")]
-        public int ReleasedQuantity { get; set; } = 0;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal ReleasedQuantity { get; set; } = 0;
         
         [Display(Name = "剩餘預留數量")]
-        public int RemainingQuantity => ReservedQuantity - ReleasedQuantity;
+        public decimal RemainingQuantity => ReservedQuantity - ReleasedQuantity;
         
         [MaxLength(50, ErrorMessage = "參考單號不可超過50個字元")]
         [Display(Name = "參考單號")]

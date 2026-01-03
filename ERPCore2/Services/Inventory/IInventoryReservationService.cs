@@ -24,8 +24,8 @@ namespace ERPCore2.Services
         Task<List<InventoryReservation>> GetExpiringReservationsAsync(DateTime beforeDate);
         
         // 統計查詢
-        Task<int> GetTotalReservedQuantityAsync(int productId, int warehouseId, int? locationId = null);
-        Task<int> GetAvailableQuantityForReservationAsync(int productId, int warehouseId, int? locationId = null);
+        Task<decimal> GetTotalReservedQuantityAsync(int productId, int warehouseId, int? locationId = null);
+        Task<decimal> GetAvailableQuantityForReservationAsync(int productId, int warehouseId, int? locationId = null);
         Task<Dictionary<InventoryReservationType, int>> GetReservationSummaryAsync(DateTime? startDate = null, DateTime? endDate = null);
         
         // 預留操作

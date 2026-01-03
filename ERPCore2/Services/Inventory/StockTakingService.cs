@@ -403,7 +403,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<ServiceResult> UpdateStockTakingDetailAsync(int detailId, int actualStock, string? personnel = null, string? remarks = null)
+        public async Task<ServiceResult> UpdateStockTakingDetailAsync(int detailId, decimal actualStock, string? personnel = null, string? remarks = null)
         {
             try
             {

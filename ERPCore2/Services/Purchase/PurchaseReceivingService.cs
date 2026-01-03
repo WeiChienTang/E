@@ -982,14 +982,14 @@ namespace ERPCore2.Services
                         : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL")).ToList();
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
-                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int NetProcessedQuantity, decimal? UnitPrice)>();
+                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal? UnitPrice)>();
                     
                     foreach (var trans in existingTransactions)
                     {
                         var key = $"{trans.ProductId}_{trans.WarehouseId}_{trans.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0, trans.UnitCost);
+                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0m, trans.UnitCost);
                         }
                         // 累加所有交易的淨值（Quantity已經包含正負號）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
@@ -1000,7 +1000,7 @@ namespace ERPCore2.Services
                     }
                     
                     // 建立當前明細字典
-                    var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, int CurrentQuantity, decimal UnitPrice)>();
+                    var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal CurrentQuantity, decimal UnitPrice)>();
                     
                     foreach (var detail in currentReceiving.PurchaseReceivingDetails)
                     {
@@ -1025,13 +1025,13 @@ namespace ERPCore2.Services
                         var hasCurrent = currentInventory.ContainsKey(key);
                         
                         // 計算目標庫存數量（當前明細中應該有的數量）
-                        int targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0;
+                        decimal targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0m;
                         
                         // 計算已處理的庫存數量（之前所有交易的淨值）
-                        int processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0;
+                        decimal processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0m;
                         
                         // 計算需要調整的數量
-                        int adjustmentNeeded = targetQuantity - processedQuantity;
+                        decimal adjustmentNeeded = targetQuantity - processedQuantity;
                         
                         // 檢查價格是否變化（用於更新平均成本）
                         decimal? currentPrice = hasCurrent ? currentInventory[key].UnitPrice : (decimal?)null;

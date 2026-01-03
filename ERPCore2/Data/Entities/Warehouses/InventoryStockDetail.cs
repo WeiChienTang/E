@@ -11,22 +11,26 @@ namespace ERPCore2.Data.Entities
     public class InventoryStockDetail : BaseEntity
     {
         [Display(Name = "現有庫存")]
-        public int CurrentStock { get; set; } = 0;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal CurrentStock { get; set; } = 0;
         
         [Display(Name = "預留庫存")]
-        public int ReservedStock { get; set; } = 0;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal ReservedStock { get; set; } = 0;
         
         [Display(Name = "可用庫存")]
-        public int AvailableStock => CurrentStock - ReservedStock;
+        public decimal AvailableStock => CurrentStock - ReservedStock;
         
         [Display(Name = "在途庫存")]
-        public int InTransitStock { get; set; } = 0;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal InTransitStock { get; set; } = 0;
         
         /// <summary>
         /// 生產中庫存 - 已領料投入生產的組件數量
         /// </summary>
         [Display(Name = "生產中庫存")]
-        public int InProductionStock { get; set; } = 0;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal InProductionStock { get; set; } = 0;
         
         [Display(Name = "平均成本")]
         [Column(TypeName = "decimal(18,4)")]
@@ -37,10 +41,12 @@ namespace ERPCore2.Data.Entities
         
         // === 庫存警戒線設定 ===
         [Display(Name = "最低庫存警戒線")]
-        public int? MinStockLevel { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal? MinStockLevel { get; set; }
         
         [Display(Name = "最高庫存警戒線")]
-        public int? MaxStockLevel { get; set; }
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal? MaxStockLevel { get; set; }
         
         // === 批號追蹤欄位 ===
         [Display(Name = "批號")]

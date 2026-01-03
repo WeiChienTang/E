@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using ERPCore2.Components.Shared.UI.Form;
-using ERPCore2.Helpers.NumericHelpers;
+using ERPCore2.Helpers;
 
 namespace ERPCore2.Components.Shared.PageTemplate;
 

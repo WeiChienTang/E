@@ -1,4 +1,4 @@
-namespace ERPCore2.Helpers.NumericHelpers;
+namespace ERPCore2.Helpers;
 
 /// <summary>
 /// 動態餘額計算輔助類 - 處理編輯模式下的餘額調整邏輯
