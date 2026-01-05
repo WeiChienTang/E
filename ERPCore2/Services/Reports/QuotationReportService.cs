@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Data.Enums;
 using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Services.Reports.Common;
@@ -261,6 +262,7 @@ namespace ERPCore2.Services.Reports
                     var product = productDict.GetValueOrDefault(detail.ProductId);
                     var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
                     
+                    // 主商品行
                     html.AppendLine("                        <tr>");
                     html.AppendLine($"                            <td class='text-center'>{rowNum}</td>");
                     html.AppendLine($"                            <td class='text-left'>{product?.Name ?? ""}</td>");
@@ -270,6 +272,12 @@ namespace ERPCore2.Services.Reports
                     html.AppendLine($"                            <td class='text-right'>{detail.SubtotalAmount:N2}</td>");
                     html.AppendLine($"                            <td class='text-left'>{detail.Remarks ?? ""}</td>");
                     html.AppendLine("                        </tr>");
+                    
+                    // BOM 組成明細行（根據判斷邏輯決定是否顯示）
+                    if (product != null && ShouldShowBom(detail, product))
+                    {
+                        GenerateBomCompositionRows(html, detail, unitDict);
+                    }
                     
                     rowNum++;
                 }
@@ -285,6 +293,60 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("                    </tbody>");
             html.AppendLine("                </table>");            
             html.AppendLine("            </div>");
+        }
+
+        /// <summary>
+        /// 判斷是否應該在報價單列印時顯示 BOM 組成
+        /// 新邏輯：檢查是否有任何組件商品的 ShowBomOnPrint = true
+        /// </summary>
+        /// <param name="detail">報價單明細</param>
+        /// <param name="product">商品（保留參數以維持介面一致性）</param>
+        /// <returns>是否顯示 BOM</returns>
+        private bool ShouldShowBom(QuotationDetail detail, Product product)
+        {
+            // 1. 檢查是否有 BOM 組成資料
+            if (detail.CompositionDetails == null || !detail.CompositionDetails.Any())
+                return false;
+            
+            // 2. 檢查是否有任何組件商品設定為「在 BOM 中顯示」
+            // 只要有一個組件的 ShowBomOnPrint = true，就顯示 BOM 區塊
+            return detail.CompositionDetails.Any(cd => 
+                cd.ComponentProduct?.ShowBomOnPrint == true);
+        }
+
+        /// <summary>
+        /// 生成 BOM 組成明細行
+        /// 只輸出 ComponentProduct.ShowBomOnPrint = true 的組件
+        /// </summary>
+        private void GenerateBomCompositionRows(
+            StringBuilder html, 
+            QuotationDetail detail, 
+            Dictionary<int, Unit> unitDict)
+        {
+            // 只取出 ShowBomOnPrint = true 的組件
+            var compositions = detail.CompositionDetails?
+                .Where(cd => cd.ComponentProduct?.ShowBomOnPrint == true)
+                .ToList() ?? new List<QuotationCompositionDetail>();
+            if (!compositions.Any()) return;
+            
+            for (int i = 0; i < compositions.Count; i++)
+            {
+                var comp = compositions[i];
+                var isLast = (i == compositions.Count - 1);
+                var prefix = isLast ? "└" : "├";
+                var componentName = comp.ComponentProduct?.Name ?? "";
+                var componentUnit = comp.UnitId.HasValue ? unitDict.GetValueOrDefault(comp.UnitId.Value)?.Name ?? "" : "";
+                
+                html.AppendLine("                        <tr class='bom-composition-row'>");
+                html.AppendLine($"                            <td></td>"); // 項次欄空白
+                html.AppendLine($"                            <td class='text-left bom-item-name'><span class='bom-prefix'>{prefix}</span> {componentName}</td>");
+                html.AppendLine($"                            <td class='text-center'>{componentUnit}</td>");
+                html.AppendLine($"                            <td class='text-right'>{comp.Quantity:N2}</td>");
+                html.AppendLine($"                            <td></td>"); // 單價欄空白（BOM 組件不顯示價格）
+                html.AppendLine($"                            <td></td>"); // 總價欄空白
+                html.AppendLine($"                            <td></td>"); // 備註欄空白
+                html.AppendLine("                        </tr>");
+            }
         }
 
         /// <summary>
@@ -491,6 +553,25 @@ namespace ERPCore2.Services.Reports
 
         .yellow-row td {
             background-color: #ffeb9c;
+        }
+
+        /* BOM 組成明細行樣式 */
+        .bom-composition-row td {
+            background-color: #f8f9fa;
+            font-size: 10pt;
+            color: #555;
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+        }
+
+        .bom-item-name {
+            padding-left: 20px !important;
+        }
+
+        .bom-prefix {
+            color: #888;
+            font-family: Consolas, monospace;
+            margin-right: 4px;
         }
 
         .quotation-note {

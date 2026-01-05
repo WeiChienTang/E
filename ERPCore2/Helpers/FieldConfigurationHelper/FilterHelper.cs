@@ -154,6 +154,58 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
+        /// 應用布林值篩選
+        /// </summary>
+        /// <typeparam name="T">實體類型</typeparam>
+        /// <param name="searchModel">搜尋篩選模型</param>
+        /// <param name="query">查詢</param>
+        /// <param name="filterName">篩選器名稱</param>
+        /// <param name="propertySelector">屬性選擇器</param>
+        /// <returns>套用篩選後的查詢</returns>
+        public static IQueryable<T> ApplyBoolFilter<T>(
+            SearchFilterModel searchModel, 
+            IQueryable<T> query, 
+            string filterName, 
+            Expression<Func<T, bool>> propertySelector)
+        {
+            var filterValue = searchModel.GetFilterValue(filterName)?.ToString();
+            if (!string.IsNullOrWhiteSpace(filterValue) && bool.TryParse(filterValue, out var boolValue))
+            {
+                query = query.Where(BuildEqualsExpression(propertySelector, boolValue));
+            }
+            return query;
+        }
+
+        /// <summary>
+        /// 應用可為空布林值篩選
+        /// </summary>
+        /// <typeparam name="T">實體類型</typeparam>
+        /// <param name="searchModel">搜尋篩選模型</param>
+        /// <param name="query">查詢</param>
+        /// <param name="filterName">篩選器名稱</param>
+        /// <param name="propertySelector">屬性選擇器</param>
+        /// <returns>套用篩選後的查詢</returns>
+        public static IQueryable<T> ApplyNullableBoolFilter<T>(
+            SearchFilterModel searchModel, 
+            IQueryable<T> query, 
+            string filterName, 
+            Expression<Func<T, bool?>> propertySelector)
+        {
+            var filterValue = searchModel.GetFilterValue(filterName)?.ToString();
+            if (!string.IsNullOrWhiteSpace(filterValue))
+            {
+                if (bool.TryParse(filterValue, out var boolValue))
+                {
+                    // "true" 或 "false" -> 篩選對應值
+                    bool? nullableBool = boolValue;
+                    query = query.Where(BuildEqualsExpression(propertySelector, nullableBool));
+                }
+                // 空字串或無法解析時不篩選（表示「全部」或「自動判斷」）
+            }
+            return query;
+        }
+
+        /// <summary>
         /// 應用日期範圍篩選
         /// </summary>
         /// <typeparam name="T">實體類型</typeparam>

@@ -37,7 +37,6 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsDefault = true, // 現金設為預設付款方式
                     Status = EntityStatus.Active,
                     CreatedAt = createdAt1,
-                    CreatedBy = createdBy
                 },
                 new PaymentMethod
                 {
@@ -45,8 +44,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "轉帳",
                     IsDefault = false,
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt3,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt3,                    
                 },
                 new PaymentMethod
                 {
@@ -54,8 +52,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "支票",
                     IsDefault = false,
                     Status = EntityStatus.Active,
-                    CreatedAt = createdAt5,
-                    CreatedBy = createdBy
+                    CreatedAt = createdAt5,                    
                 }
             };
 

@@ -171,25 +171,6 @@
                     await OnQuantityChanged(args);
                 })
             },
-            
-            // 單位選擇欄位 -  改用內建 Select 類型
-            new() 
-            { 
-                Title = "單位", 
-                Tooltip = "選擇材料的計量單位",
-                PropertyName = nameof(ProductCompositionDetail.UnitId),
-                ColumnType = InteractiveColumnType.Select,
-                Width = "120px",
-                Options = AvailableUnits.Select(u => new InteractiveSelectOption 
-                { 
-                    Value = u.Id.ToString(), 
-                    Text = u.Name 
-                }).ToList(),
-                OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
-                {
-                    await OnUnitChanged(args);
-                })
-            }
         };
     }
 

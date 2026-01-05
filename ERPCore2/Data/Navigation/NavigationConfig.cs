@@ -210,7 +210,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "商品物料清單",
+                        Name = "物料清單",
                         Description = "管理商品的配方和組件結構",
                         Route = "/product-compositions",
                         IconClass = "bi bi-caret-right-fill",
@@ -221,7 +221,7 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "物料清單類型",
-                        Description = "管理商品物料清單的類型分類",
+                        Description = "管理物料清單的類型分類",
                         Route = "/composition-categories",
                         IconClass = "",
                         Category = "商品管理",

@@ -508,18 +508,21 @@
             ExcludeFromEmptyCheck = true  //  數量欄位不參與空行判斷
         });
 
-        // 單位
+        // 單位（唯讀顯示，跟隨組件商品的預設單位）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "單位",
-            PropertyName = "UnitId",
-            ColumnType = InteractiveColumnType.Select,
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
             Width = "15%",
-            Options = availableUnits.Select(u => new InteractiveSelectOption
+            CustomTemplate = item =>
             {
-                Value = u.Id,
-                Text = u.Name
-            }).ToList()
+                var detail = (TCompositionDetail)item;
+                var unitProp = detail.GetType().GetProperty("Unit");
+                var unit = unitProp?.GetValue(detail) as Unit;
+                var unitName = unit?.Name ?? "";
+                return @<span class="text-muted">@unitName</span>;
+            }
         });
 
         // 備註

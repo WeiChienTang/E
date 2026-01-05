@@ -83,6 +83,16 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "採購類型")]
         public ProcurementType ProcurementType { get; set; } = ProcurementType.Purchased;
         
+        /// <summary>
+        /// 當此商品作為 BOM 組件時，是否在報價單/單據列印中顯示
+        /// true = 當此商品是別人的 BOM 組件時，會在列印時顯示
+        /// false = 不顯示（預設）
+        /// 範例：廁所的 BOM 包含「磚頭」和「馬桶」，
+        ///       若只想讓客戶看到馬桶，則馬桶設為 true、磚頭設為 false
+        /// </summary>
+        [Display(Name = "BOM列印顯示")]
+        public bool ShowBomOnPrint { get; set; } = false;
+        
         // Navigation Properties
         public Unit? Unit { get; set; }
         public Unit? PurchaseUnit { get; set; }

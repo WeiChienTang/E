@@ -407,6 +407,15 @@
                 HelpText = "商品的條碼編號",
                 ActionButtons = await GetBarcodeActionButtonsAsync()
             },
+            new FormFieldDefinition()
+            {
+                PropertyName = nameof(Product.ShowBomOnPrint),
+                Label = "報價列印顯示",
+                FieldType = FormFieldType.Checkbox,
+                Placeholder = "請輸入是否在報價單列印時顯示該商品在BOM表裡的組成",
+                IsRequired = true,
+                HelpText = "商品的條碼編號",
+            },
             new()
             {
                 PropertyName = nameof(Product.ProductCategoryId),
@@ -507,8 +516,8 @@
             .AddToSection(FormSectionNames.BasicInfo,
                 p => p.Code,
                 p => p.Name,
-                p => p.Barcode)
-            
+                p => p.Barcode,
+                p => p.ShowBomOnPrint)            
             .AddToSection(FormSectionNames.CategoryAndSpecification,
                 p => p.ProductCategoryId,
                 p => p.SizeId,
