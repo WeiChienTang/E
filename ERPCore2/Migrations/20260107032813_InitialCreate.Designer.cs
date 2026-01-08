@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260105023914_ChangeShowBomOnPrintToNonNullable")]
-    partial class ChangeShowBomOnPrintToNonNullable
+    [Migration("20260107032813_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -3331,6 +3331,10 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("Specification")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -5591,7 +5595,7 @@ namespace ERPCore2.Migrations
                     b.HasOne("ERPCore2.Data.Entities.Unit", "Unit")
                         .WithMany("Products")
                         .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ProductCategory");

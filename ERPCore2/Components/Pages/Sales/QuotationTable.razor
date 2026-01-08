@@ -112,6 +112,7 @@ else
         public decimal DiscountPercentage { get; set; } = 0;
         public decimal? TaxRate { get; set; } = null;
         public decimal ConvertedQuantity { get; set; } = 0;
+        public string Specification { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
         public TDetailEntity? ExistingDetailEntity { get; set; }
         
@@ -408,6 +409,34 @@ else
             GetShowDropdown = (item) => ((QuotationItem)item).ShowProductDropdown,
             SetShowDropdown = (item, show) => ((QuotationItem)item).ShowProductDropdown = show,
             MaxDisplayItems = 20
+        });
+
+        // 規格說明欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "規格說明", 
+            PropertyName = "Specification",
+            ColumnType = InteractiveColumnType.Input,
+            Width = "200px",
+            Placeholder = "規格說明",
+            Tooltip = "商品的規格說明，可自行修改",
+            IsDisabledFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                return IsReadOnly || !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true))
+                    return "此商品已轉銷貨，無法修改規格說明";
+                return "商品的規格說明，可自行修改";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var quotationItem = (QuotationItem)args.Item1;
+                await OnSpecificationInput(quotationItem, args.Item2);
+            })
         });
 
         // 單位欄位
@@ -996,6 +1025,7 @@ else
                     DiscountPercentage = quotationDetail.DiscountPercentage,
                     ConvertedQuantity = quotationDetail.ConvertedQuantity,
                     TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? defaultTaxRate,
+                    Specification = quotationDetail.Specification ?? quotationDetail.Product?.Specification ?? string.Empty,
                     Remarks = string.Empty,
                     ExistingDetailEntity = detail
                 };
@@ -1082,6 +1112,7 @@ else
                     quotationDetail.UnitPrice = item.UnitPrice;
                     quotationDetail.DiscountPercentage = item.DiscountPercentage;
                     quotationDetail.TaxRate = item.TaxRate;
+                    quotationDetail.Specification = item.Specification;
                     // ConvertedQuantity 不應在此更新，它由轉單流程控制
                     
                     if (item.SelectedUnit != null)
@@ -1129,11 +1160,12 @@ else
                     SetPropertyValue(detail, UnitIdPropertyName, item.SelectedUnit.Id);
                 }
                 
-                // 新增的明細，ConvertedQuantity 預設為 0，並設定稅率
+                // 新增的明細，ConvertedQuantity 預設為 0，並設定稅率和規格說明
                 if (detail is QuotationDetail newQuotationDetail)
                 {
                     newQuotationDetail.ConvertedQuantity = 0;
                     newQuotationDetail.TaxRate = item.TaxRate;
+                    newQuotationDetail.Specification = item.Specification;
                 }
             }
             
@@ -1274,6 +1306,9 @@ else
                 item.SelectedUnit = selectedProduct.Unit;
             }
             
+            // 自動帶入規格說明
+            item.Specification = selectedProduct.Specification ?? string.Empty;
+            
             // 自動帶入稅率（商品稅率 > 系統預設值）
             if (selectedProduct.TaxRate.HasValue)
             {
@@ -1290,6 +1325,7 @@ else
             item.SelectedProduct = null;
             item.ProductSearchValue = string.Empty;
             item.SelectedUnit = null;
+            item.Specification = string.Empty;
             item.TaxRate = null;
         }
         
@@ -1384,6 +1420,22 @@ else
     private async Task OnRemarksInput(QuotationItem item, string? value)
     {
         item.Remarks = value ?? string.Empty;
+        
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理規格說明輸入
+    /// </summary>
+    private async Task OnSpecificationInput(QuotationItem item, string? value)
+    {
+        // 檢查全域唯讀或個別明細已轉銷貨
+        var hasConverted = item.ConvertedQuantity > 0;
+        var isEmptyRow = item.SelectedProduct == null;
+        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
+        
+        item.Specification = value ?? string.Empty;
         
         await NotifyDetailsChanged();
         StateHasChanged();

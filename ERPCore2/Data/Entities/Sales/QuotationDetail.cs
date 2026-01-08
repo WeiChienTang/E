@@ -33,6 +33,14 @@ namespace ERPCore2.Data.Entities
         [Range(0, 100, ErrorMessage = "稅率必須介於0到100之間")]
         public decimal? TaxRate { get; set; }
 
+        /// <summary>
+        /// 規格說明 - 從商品帶入後可自行修改
+        /// 新增明細時自動複製 Product.Specification，之後獨立運作
+        /// </summary>
+        [Display(Name = "規格說明")]
+        [MaxLength(500, ErrorMessage = "規格說明不可超過500個字元")]
+        public string? Specification { get; set; }
+
         [Display(Name = "已轉銷貨數量")]
         [Column(TypeName = "decimal(18,3)")]
         public decimal ConvertedQuantity { get; set; } = 0;

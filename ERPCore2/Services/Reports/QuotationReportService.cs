@@ -262,10 +262,18 @@ namespace ERPCore2.Services.Reports
                     var product = productDict.GetValueOrDefault(detail.ProductId);
                     var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
                     
+                    // 組合商品名稱與規格說明
+                    // 優先使用明細的規格說明，若無則使用商品主檔的規格說明
+                    var productName = product?.Name ?? "";
+                    var specification = detail.Specification ?? product?.Specification ?? "";
+                    var displayName = string.IsNullOrEmpty(specification) 
+                        ? productName 
+                        : $"{productName}<br/><span class='specification-text'>{specification}</span>";
+                    
                     // 主商品行
                     html.AppendLine("                        <tr>");
                     html.AppendLine($"                            <td class='text-center'>{rowNum}</td>");
-                    html.AppendLine($"                            <td class='text-left'>{product?.Name ?? ""}</td>");
+                    html.AppendLine($"                            <td class='text-left'>{displayName}</td>");
                     html.AppendLine($"                            <td class='text-center'>{unit?.Name ?? ""}</td>");
                     html.AppendLine($"                            <td class='text-right'>{detail.Quantity:N2}</td>");
                     html.AppendLine($"                            <td class='text-right'>{detail.UnitPrice:N2}</td>");
@@ -317,6 +325,7 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 生成 BOM 組成明細行
         /// 只輸出 ComponentProduct.ShowBomOnPrint = true 的組件
+        /// 改為橫向顯示：組件A、組件B、組件C
         /// </summary>
         private void GenerateBomCompositionRows(
             StringBuilder html, 
@@ -329,24 +338,18 @@ namespace ERPCore2.Services.Reports
                 .ToList() ?? new List<QuotationCompositionDetail>();
             if (!compositions.Any()) return;
             
-            for (int i = 0; i < compositions.Count; i++)
-            {
-                var comp = compositions[i];
-                var isLast = (i == compositions.Count - 1);
-                var prefix = isLast ? "└" : "├";
-                var componentName = comp.ComponentProduct?.Name ?? "";
-                var componentUnit = comp.UnitId.HasValue ? unitDict.GetValueOrDefault(comp.UnitId.Value)?.Name ?? "" : "";
-                
-                html.AppendLine("                        <tr class='bom-composition-row'>");
-                html.AppendLine($"                            <td></td>"); // 項次欄空白
-                html.AppendLine($"                            <td class='text-left bom-item-name'><span class='bom-prefix'>{prefix}</span> {componentName}</td>");
-                html.AppendLine($"                            <td class='text-center'>{componentUnit}</td>");
-                html.AppendLine($"                            <td class='text-right'>{comp.Quantity:N2}</td>");
-                html.AppendLine($"                            <td></td>"); // 單價欄空白（BOM 組件不顯示價格）
-                html.AppendLine($"                            <td></td>"); // 總價欄空白
-                html.AppendLine($"                            <td></td>"); // 備註欄空白
-                html.AppendLine("                        </tr>");
-            }
+            // 收集所有組件名稱，用頓號串接
+            var componentNames = compositions
+                .Select(comp => comp.ComponentProduct?.Name ?? "")
+                .Where(name => !string.IsNullOrEmpty(name));
+            
+            var bomText = string.Join("、", componentNames);
+            
+            // 只產生一行，橫向顯示所有組件
+            html.AppendLine("                        <tr class='bom-composition-row'>");
+            html.AppendLine($"                            <td></td>"); // 項次欄空白
+            html.AppendLine($"                            <td colspan='6' class='text-left bom-inline-list'>{bomText}</td>");
+            html.AppendLine("                        </tr>");
         }
 
         /// <summary>
@@ -555,7 +558,7 @@ namespace ERPCore2.Services.Reports
             background-color: #ffeb9c;
         }
 
-        /* BOM 組成明細行樣式 */
+        /* BOM 組成明細行樣式 - 橫向顯示 */
         .bom-composition-row td {
             background-color: #f8f9fa;
             font-size: 10pt;
@@ -564,14 +567,16 @@ namespace ERPCore2.Services.Reports
             padding-bottom: 2px !important;
         }
 
-        .bom-item-name {
+        .bom-inline-list {
             padding-left: 20px !important;
+            font-style: italic;
         }
 
-        .bom-prefix {
-            color: #888;
-            font-family: Consolas, monospace;
-            margin-right: 4px;
+        /* 規格說明樣式 */
+        .specification-text {
+            font-size: 9pt;
+            color: #666;
+            font-style: normal;
         }
 
         .quotation-note {

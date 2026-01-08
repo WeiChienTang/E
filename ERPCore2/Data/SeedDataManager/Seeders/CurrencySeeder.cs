@@ -20,7 +20,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             var currencies = new[]
             {
-                new Currency { Code = "TWD", Name = "新台幣", Symbol = "NT$", IsBaseCurrency = true, ExchangeRate = 1m, Status = EntityStatus.Active, CreatedAt = createdAt, CreatedBy = createdBy },
+                new Currency { Code = "TWD", Name = "新台幣", Symbol = "NT$", IsBaseCurrency = true, ExchangeRate = 1m, Status = EntityStatus.Active, CreatedAt = createdAt},
             };
 
             await context.Set<Currency>().AddRangeAsync(currencies);
