@@ -170,6 +170,9 @@ namespace ERPCore2.Data
             // 報表列印配置服務
             services.AddScoped<IReportPrintConfigurationService, ReportPrintConfigurationService>();
             
+            // 文字訊息範本服務
+            services.AddScoped<ITextMessageTemplateService, TextMessageTemplateService>();
+            
             // 報表服務
             services.AddScoped<IReportService, ReportService>();
             // 使用採購單報表服務

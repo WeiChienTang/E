@@ -130,6 +130,36 @@ namespace ERPCore2.Services
         {
             await _jsRuntime.InvokeVoidAsync("setMaxToasts", maxCount);
         }
+
+        /// <summary>
+        /// 複製文字到剪貼簿
+        /// </summary>
+        /// <param name="text">要複製的文字</param>
+        /// <param name="showSuccessMessage">是否顯示成功訊息</param>
+        /// <returns>是否成功</returns>
+        public async Task<bool> CopyToClipboardAsync(string text, bool showSuccessMessage = true)
+        {
+            try
+            {
+                var success = await _jsRuntime.InvokeAsync<bool>("copyToClipboard", text);
+                
+                if (success && showSuccessMessage)
+                {
+                    await ShowSuccessAsync("已複製到剪貼簿");
+                }
+                else if (!success)
+                {
+                    await ShowErrorAsync("複製失敗，請手動複製");
+                }
+                
+                return success;
+            }
+            catch (Exception)
+            {
+                await ShowErrorAsync("複製失敗，瀏覽器可能不支援此功能");
+                return false;
+            }
+        }
     }
 }
 

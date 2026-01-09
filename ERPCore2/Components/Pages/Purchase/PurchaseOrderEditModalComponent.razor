@@ -8,6 +8,7 @@
 @inject INotificationService NotificationService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject ISystemParameterService SystemParameterService
+@inject ITextMessageTemplateService TextMessageTemplateService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
@@ -74,6 +75,13 @@
                                      OnPurchaseReceivingSaved="@HandlePurchaseReceivingSaved"
                                      OnCancel="@(() => showPurchaseReceivingModal = false)" />
 
+@* 訊息範本設定 Modal *@
+<TextMessageTemplateEditModalComponent IsVisible="@showTemplateSettingModal"
+                                       IsVisibleChanged="@((bool visible) => showTemplateSettingModal = visible)"
+                                       TextMessageTemplateId="@currentTemplateId"
+                                       OnTemplateSaved="@HandleTemplateSaved"
+                                       OnCancel="@(() => showTemplateSettingModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -137,6 +145,11 @@
     
     // ===== 列印狀態 =====
     private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
+
+    // ===== 複製訊息狀態 =====
+    private bool canCopyMessage = false; // 是否可以複製訊息（新增模式需先儲存，編輯模式直接為 true）
+    private bool showTemplateSettingModal = false; // 是否顯示訊息範本設定 Modal
+    private int? currentTemplateId = null; // 當前範本 ID（用於設定 Modal）
 
     // ===== 建構函數 =====
     public PurchaseOrderEditModalComponent()
@@ -414,6 +427,7 @@
                 // 新增模式：必須先儲存才能轉單和列印
                 canCreateReceiving = false;
                 canPrint = false;
+                canCopyMessage = false;
                 
                 return newOrder;
             }
@@ -421,6 +435,7 @@
             // 編輯模式 - 載入採購單和明細
             canCreateReceiving = true; // 編輯模式：可以直接轉單
             canPrint = true; // 編輯模式：可以直接列印
+            canCopyMessage = true; // 編輯模式：可以直接複製訊息
             
             var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
             
@@ -950,6 +965,7 @@
             // 所以需要在這裡手動設置狀態
             canCreateReceiving = true;
             canPrint = true;
+            canCopyMessage = true;
             
             // 重新載入明細資料
             await LoadPurchaseOrderDetails(loadedEntityId);
@@ -1142,6 +1158,7 @@
         {
             canCreateReceiving = true;
             canPrint = true;
+            canCopyMessage = true;
         }
         
         return result;
@@ -1528,9 +1545,23 @@
     private RenderFragment? CustomActionButtons => __builder =>
     {
         @* 轉進貨單按鈕 - 新增模式需先儲存，編輯模式直接可用 *@
-            <GenericButtonComponent Text="轉進貨" 
-                                  Variant="ButtonVariant.Green" 
-                                  OnClick="HandleCreateReceivingFromOrder" />        
+        <GenericButtonComponent Text="轉進貨" 
+                              Variant="ButtonVariant.Green" 
+                              OnClick="HandleCreateReceivingFromOrder" />
+        
+        @* 複製訊息按鈕 - 使用按鈕群組包含設定圖示 *@
+        <div class="btn-group me-2" role="group">
+            <GenericButtonComponent Text="複製訊息" 
+                                  Variant="ButtonVariant.Blue" 
+                                  IsDisabled="@(!canCopyMessage)"
+                                  OnClick="HandleCopyMessage" />
+            <button type="button" 
+                    class="btn btn-outline-secondary btn-sm" 
+                    title="訊息範本設定"
+                    @onclick="HandleOpenTemplateSettings">
+                <i class="bi bi-gear"></i>
+            </button>
+        </div>
     };
     
     /// <summary>
@@ -1743,6 +1774,139 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledData), GetType(),
                 additionalData: $"開啟預填採購單Modal失敗 - SupplierId: {supplierId}, ProductId: {productId}");
             await NotificationService.ShowErrorAsync("開啟採購單時發生錯誤");
+        }
+    }
+    
+    // ===== 複製訊息相關方法 =====
+    
+    /// <summary>
+    /// 處理複製訊息按鈕點擊
+    /// </summary>
+    private async Task HandleCopyMessage()
+    {
+        try
+        {
+            if (!canCopyMessage)
+            {
+                await NotificationService.ShowWarningAsync("請先儲存採購單後，才能複製訊息");
+                return;
+            }
+            
+            var entity = editModalComponent?.Entity;
+            if (entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法取得採購單資料");
+                return;
+            }
+            
+            // 取得範本設定
+            var template = await TextMessageTemplateService.GetByTemplateCodeAsync("PurchaseOrder");
+            if (template == null)
+            {
+                await NotificationService.ShowWarningAsync("尚未設定採購單訊息範本，請點擊齒輪圖示進行設定");
+                return;
+            }
+            
+            // 解析明細格式設定
+            DetailFormatConfig formatConfig;
+            try
+            {
+                formatConfig = System.Text.Json.JsonSerializer.Deserialize<DetailFormatConfig>(template.DetailFormatJson) 
+                    ?? new DetailFormatConfig();
+            }
+            catch
+            {
+                formatConfig = new DetailFormatConfig();
+            }
+            
+            // 取得供應商名稱
+            var supplierName = availableSuppliers.FirstOrDefault(s => s.Id == entity.SupplierId)?.CompanyName ?? "";
+            
+            // 取得公司名稱
+            var companyName = availableCompanies.FirstOrDefault(c => c.Id == entity.CompanyId)?.CompanyName ?? "";
+            
+            // 建立變數字典
+            var variables = TextTemplateHelper.CreateVariables(
+                supplierName: supplierName,
+                customerName: null,
+                orderCode: entity.Code,
+                orderDate: entity.OrderDate,
+                companyName: companyName
+            );
+            
+            // 替換問候語中的變數
+            var header = TextTemplateHelper.ReplaceVariables(template.HeaderText, variables);
+            
+            // 格式化明細
+            var details = TextTemplateHelper.FormatDetailLines(
+                purchaseOrderDetails,
+                formatConfig,
+                (detail, index, config) => TextTemplateHelper.FormatDetailLine(
+                    detail.Product?.Code,
+                    detail.Product?.Name,
+                    detail.OrderQuantity,
+                    detail.Product?.Unit?.Name,
+                    detail.UnitPrice,
+                    detail.SubtotalAmount,
+                    null, // PurchaseOrderDetail 沒有 Remark 欄位
+                    index,
+                    config
+                )
+            );
+            
+            // 替換結語中的變數
+            var footer = TextTemplateHelper.ReplaceVariables(template.FooterText, variables);
+            
+            // 組合完整訊息
+            var fullMessage = TextTemplateHelper.BuildFullMessage(header, details, footer);
+            
+            // 複製到剪貼簿
+            await NotificationService.CopyToClipboardAsync(fullMessage, showSuccessMessage: true);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCopyMessage), GetType(),
+                additionalData: $"複製訊息失敗 - OrderId: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync($"複製訊息時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理開啟範本設定
+    /// </summary>
+    private async Task HandleOpenTemplateSettings()
+    {
+        try
+        {
+            // 查詢現有的 PurchaseOrder 範本
+            var template = await TextMessageTemplateService.GetByTemplateCodeAsync("PurchaseOrder");
+            currentTemplateId = template?.Id;
+            showTemplateSettingModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleOpenTemplateSettings), GetType(),
+                additionalData: "開啟範本設定失敗");
+            await NotificationService.ShowErrorAsync($"開啟設定時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理範本儲存完成
+    /// </summary>
+    private async Task HandleTemplateSaved(TextMessageTemplate savedTemplate)
+    {
+        try
+        {
+            showTemplateSettingModal = false;
+            await NotificationService.ShowSuccessAsync("訊息範本設定已儲存");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleTemplateSaved), GetType(),
+                additionalData: "處理範本儲存事件失敗");
         }
     }
 }

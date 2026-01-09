@@ -91,6 +91,7 @@ namespace ERPCore2.Data.Context
       public DbSet<PaperSetting> PaperSettings { get; set; }
       public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
       public DbSet<ReportPrintConfiguration> ReportPrintConfigurations { get; set; }
+      public DbSet<TextMessageTemplate> TextMessageTemplates { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

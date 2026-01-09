@@ -1,0 +1,513 @@
+@* 可重用的文字訊息範本編輯組件 - 可在任何頁面中嵌入 *@
+@using System.Text.Json
+@inject ITextMessageTemplateService TextMessageTemplateService
+@inject INotificationService NotificationService
+
+<GenericEditModalComponent TEntity="TextMessageTemplate" 
+                          TService="ITextMessageTemplateService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@TextMessageTemplateId"
+                          Service="@TextMessageTemplateService"
+                          EntityName="訊息範本"
+                          EntityNamePlural="訊息範本"
+                          ModalTitle="採購單訊息設定"
+                          Size="GenericEditModalComponent<TextMessageTemplate, ITextMessageTemplateService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@GetFormFields()"
+                          FormSections="@formSections"
+                          DataLoader="@LoadTemplateData"
+                          SaveHandler="@SaveTemplateWrapper"
+                          SaveSuccessMessage=""
+                          SaveFailureMessage=""
+                          ShowDeleteButton="false"
+                          ShowAddButton="false"
+                          ShowRefreshButton="false"
+                          EnableNavigation="false"
+                          RequiredPermission="SystemParameter.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomModules="@GetCustomModules()"
+                          CustomActionButtons="@CustomActionButtonsFragment" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? TextMessageTemplateId { get; set; }
+    [Parameter] public EventCallback<TextMessageTemplate> OnTemplateSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<TextMessageTemplate, ITextMessageTemplateService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 明細格式設定（用於 UI 互動）
+    private DetailFormatConfig detailFormatConfig = new();
+    
+    // 自訂操作按鈕
+    private RenderFragment CustomActionButtonsFragment => __builder =>
+    {
+        <GenericButtonComponent Text="載入範本" 
+                              Variant="ButtonVariant.Blue" 
+                              OnClick="HandleLoadDefaultTemplate"
+                              Title="載入預設的問候語和結語" />
+    };
+    
+    // 問候語欄位（因為用 CustomModule 需要獨立綁定）
+    private string headerTextValue
+    {
+        get => editModalComponent?.Entity?.HeaderText ?? "";
+        set
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.HeaderText = value;
+            }
+        }
+    }
+    
+    // 結語欄位（因為用 CustomModule 需要獨立綁定）
+    private string footerTextValue
+    {
+        get => editModalComponent?.Entity?.FooterText ?? "";
+        set
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                editModalComponent.Entity.FooterText = value;
+            }
+        }
+    }
+
+    // ===== 生命週期 =====
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnTemplateSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnTemplateSaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理儲存成功事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+
+            await CloseModal();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 資料載入 =====
+    private async Task<TextMessageTemplate?> LoadTemplateData()
+    {
+        try
+        {
+            if (!TextMessageTemplateId.HasValue) 
+            {
+                // 新增模式
+                detailFormatConfig = new DetailFormatConfig();
+                
+                return new TextMessageTemplate
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<TextMessageTemplate, ITextMessageTemplateService>(
+                        TextMessageTemplateService, "TMPL"),
+                    TemplateCode = "PurchaseOrder",
+                    TemplateName = "採購單訊息範本", // 自動設定預設名稱
+                    HeaderText = "{supplierName}您好，\n\n我們希望與貴公司採購以下商品：",
+                    FooterText = "如有任何問題，請與我們聯繫，感謝您。\n\n{companyName}",
+                    DetailFormatJson = JsonSerializer.Serialize(detailFormatConfig),
+                    IsActive = true,
+                    SortOrder = 0,
+                    Status = EntityStatus.Active
+                };
+            }
+
+            var template = await TextMessageTemplateService.GetByIdAsync(TextMessageTemplateId.Value);            
+            
+            if (template == null)
+            {
+                detailFormatConfig = new DetailFormatConfig();
+                return new TextMessageTemplate
+                {
+                    Status = EntityStatus.Active
+                };
+            }
+            
+            // 解析 DetailFormatJson
+            try
+            {
+                detailFormatConfig = JsonSerializer.Deserialize<DetailFormatConfig>(template.DetailFormatJson) 
+                    ?? new DetailFormatConfig();
+            }
+            catch
+            {
+                detailFormatConfig = new DetailFormatConfig();
+            }
+            
+            return template;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入範本資料時發生錯誤：{ex.Message}");
+            detailFormatConfig = new DetailFormatConfig();
+            return new TextMessageTemplate
+            {
+                Code = "ERROR",
+                TemplateName = "ERROR",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 儲存處理 =====
+    private async Task<bool> SaveTemplateWrapper(TextMessageTemplate template)
+    {
+        try
+        {
+            // 將 detailFormatConfig 序列化到 template
+            template.DetailFormatJson = JsonSerializer.Serialize(detailFormatConfig);
+            
+            // 確保必填欄位有值（UI 簡化後這些欄位不顯示，需自動設定）
+            if (string.IsNullOrWhiteSpace(template.TemplateName))
+            {
+                template.TemplateName = template.TemplateCode switch
+                {
+                    "PurchaseOrder" => "採購單訊息範本",
+                    "SalesOrder" => "銷貨訂單訊息範本",
+                    "Quotation" => "報價單訊息範本",
+                    _ => $"{template.TemplateCode}訊息範本"
+                };
+            }
+            
+            ServiceResult<TextMessageTemplate> result;
+            
+            if (template.Id == 0)
+            {
+                result = await TextMessageTemplateService.CreateAsync(template);
+            }
+            else
+            {
+                result = await TextMessageTemplateService.UpdateAsync(template);
+            }
+            
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存範本時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    // ===== 欄位變更處理 =====
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 可以在這裡處理欄位變更的邏輯
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理欄位變更時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 載入預設範本 =====
+    private async Task HandleLoadDefaultTemplate()
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("請先開啟編輯視窗");
+                return;
+            }
+            
+            // 設定預設問候語和結語
+            editModalComponent.Entity.HeaderText = "{supplierName}您好，\n\n我們希望與貴公司採購以下商品：";
+            editModalComponent.Entity.FooterText = "如有任何問題，請與我們聯繫，感謝您。\n\n{companyName}";
+            
+            // 設定預設明細格式
+            detailFormatConfig = new DetailFormatConfig
+            {
+                ShowProductCode = true,
+                ShowProductName = true,
+                ShowQuantity = true,
+                ShowUnit = true,
+                ShowUnitPrice = false,
+                ShowSubtotal = false,
+                ShowRemark = false
+            };
+            
+            await NotificationService.ShowSuccessAsync("已載入預設範本內容");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入預設範本時發生錯誤：{ex.Message}");
+        }
+    }
+
+    // ===== 表單初始化 =====
+    private void InitializeFormFields()
+    {
+        // 所有欄位都改用 CustomModule 處理，以便控制順序和寬度
+        formSections = new Dictionary<string, string>();
+        formFields = new List<FormFieldDefinition>();
+    }
+
+    private List<FormFieldDefinition> GetFormFields()
+    {
+        return formFields;
+    }
+
+    // ===== 自訂模組 =====
+    private List<GenericEditModalComponent<TextMessageTemplate, ITextMessageTemplateService>.CustomModule> GetCustomModules()
+    {
+        return new List<GenericEditModalComponent<TextMessageTemplate, ITextMessageTemplateService>.CustomModule>
+        {
+            new()
+            {
+                Title = "問候語（第一段）",
+                TitleCssClass = "text-primary fw-bold",
+                Order = 1,
+                Content = CreateHeaderTextContent()
+            },
+            new()
+            {
+                Title = "商品明細（第二段）",
+                TitleCssClass = "text-primary fw-bold",
+                Order = 2,
+                Content = CreateDetailFormatContent()
+            },
+            new()
+            {
+                Title = "結語（第三段）",
+                TitleCssClass = "text-primary fw-bold",
+                Order = 3,
+                Content = CreateFooterTextContent()
+            },
+            new()
+            {
+                Title = "",
+                Order = 4,
+                Content = CreatePreviewContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 建立問候語區塊（第一段）
+    /// </summary>
+    private RenderFragment CreateHeaderTextContent() => __builder =>
+    {
+        <div class="mb-3">
+            <textarea class="form-control" rows="4" 
+                      placeholder="請輸入問候語..."
+                      @bind="headerTextValue" 
+                      @bind:event="oninput" />
+            <div class="form-text">
+                <i class="bi bi-code-square me-1"></i>
+                <strong>支援變數：</strong>
+                <code>{supplierName}</code> 供應商、
+                <code>{orderCode}</code> 單號、
+                <code>{orderDate}</code> 日期、
+                <code>{companyName}</code> 本公司
+            </div>
+        </div>
+    };
+
+    /// <summary>
+    /// 建立明細格式設定區塊
+    /// </summary>
+    private RenderFragment CreateDetailFormatContent() => __builder =>
+    {
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <span class="text-muted small">
+                <i class="bi bi-info-circle me-1"></i>勾選要顯示的欄位：
+            </span>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showProductCode"
+                       @bind="detailFormatConfig.ShowProductCode" />
+                <label class="form-check-label" for="showProductCode">編號</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showProductName"
+                       @bind="detailFormatConfig.ShowProductName" />
+                <label class="form-check-label" for="showProductName">品名</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showQuantity"
+                       @bind="detailFormatConfig.ShowQuantity" />
+                <label class="form-check-label" for="showQuantity">數量</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showUnit"
+                       @bind="detailFormatConfig.ShowUnit" />
+                <label class="form-check-label" for="showUnit">單位</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showUnitPrice"
+                       @bind="detailFormatConfig.ShowUnitPrice" />
+                <label class="form-check-label" for="showUnitPrice">單價</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showSubtotal"
+                       @bind="detailFormatConfig.ShowSubtotal" />
+                <label class="form-check-label" for="showSubtotal">小計</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="showRemark"
+                       @bind="detailFormatConfig.ShowRemark" />
+                <label class="form-check-label" for="showRemark">備註</label>
+            </div>
+        </div>
+    };
+
+    /// <summary>
+    /// 建立結語區塊（第三段）
+    /// </summary>
+    private RenderFragment CreateFooterTextContent() => __builder =>
+    {
+        <div class="mb-3">
+            <textarea class="form-control" rows="4" 
+                      placeholder="請輸入結語..."
+                      @bind="footerTextValue" 
+                      @bind:event="oninput" />
+            <div class="form-text">
+                <i class="bi bi-code-square me-1"></i>
+                <strong>支援變數：</strong>
+                <code>{supplierName}</code> 供應商、
+                <code>{orderCode}</code> 單號、
+                <code>{orderDate}</code> 日期、
+                <code>{companyName}</code> 本公司
+            </div>
+        </div>
+    };
+
+    /// <summary>
+    /// 建立預覽區塊
+    /// </summary>
+    private RenderFragment CreatePreviewContent() => __builder =>
+    {
+        var headerText = editModalComponent?.Entity?.HeaderText ?? "{supplierName}您好，\n\n我們希望與貴公司採購以下商品：";
+        var footerText = editModalComponent?.Entity?.FooterText ?? "如有任何問題，請與我們聯繫，感謝您。\n\n{companyName}";
+        
+        // 模擬變數替換
+        var previewHeader = headerText
+            .Replace("{supplierName}", "○○公司")
+            .Replace("{customerName}", "○○客戶")
+            .Replace("{orderCode}", "PO-20260109-001")
+            .Replace("{orderDate}", DateTime.Now.ToString("yyyy/MM/dd"))
+            .Replace("{companyName}", "本公司");
+            
+        var previewFooter = footerText
+            .Replace("{supplierName}", "○○公司")
+            .Replace("{customerName}", "○○客戶")
+            .Replace("{orderCode}", "PO-20260109-001")
+            .Replace("{orderDate}", DateTime.Now.ToString("yyyy/MM/dd"))
+            .Replace("{companyName}", "本公司");
+        
+        // 模擬明細
+        var previewDetails = GeneratePreviewDetails();
+        
+        <div class="card">
+            <div class="card-header bg-light">
+                <i class="bi bi-eye me-1"></i> 訊息預覽
+            </div>
+            <div class="card-body">
+                <pre class="mb-0 p-3 bg-light rounded" style="white-space: pre-wrap; font-family: inherit;">@previewHeader
+
+@previewDetails
+
+@previewFooter</pre>
+            </div>
+        </div>
+    };
+
+    /// <summary>
+    /// 產生預覽用的明細內容
+    /// </summary>
+    private string GeneratePreviewDetails()
+    {
+        var lines = new List<string>();
+        
+        // 模擬 3 筆明細
+        var sampleDetails = new[]
+        {
+            (Code: "P001", Name: "商品A", Qty: 10m, Unit: "個", Price: 100m, Subtotal: 1000m, Remark: "急件"),
+            (Code: "P002", Name: "商品B", Qty: 5m, Unit: "箱", Price: 500m, Subtotal: 2500m, Remark: ""),
+            (Code: "P003", Name: "商品C", Qty: 20m, Unit: "kg", Price: 50m, Subtotal: 1000m, Remark: "")
+        };
+        
+        for (int i = 0; i < sampleDetails.Length; i++)
+        {
+            var detail = sampleDetails[i];
+            var line = TextTemplateHelper.FormatDetailLine(
+                detail.Code,
+                detail.Name,
+                detail.Qty,
+                detail.Unit,
+                detail.Price,
+                detail.Subtotal,
+                detail.Remark,
+                i + 1,
+                detailFormatConfig);
+            lines.Add(line);
+        }
+        
+        return string.Join("\n", lines);
+    }
+}

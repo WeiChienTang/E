@@ -136,7 +136,7 @@
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
 
-                @if (Entity != null && Entity.Id > 0)
+                @if (ShowRefreshButton && Entity != null && Entity.Id > 0)
                 {
                     <GenericButtonComponent Text="重整" 
                                           Variant="ButtonVariant.Green" 
@@ -202,7 +202,7 @@
                     <div class="@GetModuleCssClass(module) custom-module px-3">
                         @if (!string.IsNullOrWhiteSpace(module.Title))
                         {
-                            <h6 class="mb-3">@module.Title</h6>
+                            <h6 class="mb-3 @module.TitleCssClass">@module.Title</h6>
                         }
                         <CascadingValue Value="@editContext">
                             @module.Content
@@ -247,6 +247,11 @@
         /// 模組標題（可選）
         /// </summary>
         public string? Title { get; set; }
+        
+        /// <summary>
+        /// 標題的 CSS 類別（可選，例如 "text-primary fw-bold"）
+        /// </summary>
+        public string? TitleCssClass { get; set; }
         
         /// <summary>
         /// 模組內容
@@ -301,6 +306,7 @@
     [Parameter] public string PrintButtonText { get; set; } = "列印";
     [Parameter] public bool ShowSaveButton { get; set; } = true;
     [Parameter] public bool ShowAddButton { get; set; } = true;
+    [Parameter] public bool ShowRefreshButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowReturnToLastButton { get; set; } = true;
@@ -1228,6 +1234,10 @@
     
     private async Task ShowSuccessMessage(string message)
     {
+        // 如果訊息為空則不顯示
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+            
         await NotificationService.ShowSuccessAsync(message);
     }
     

@@ -62,6 +62,8 @@ public OptionalEntity? OptionalEntity { get; set; }
 
 ### 1. Seeder 資料種子設定
 
+> ⚠️ **重要提醒**：**不需要新增 Seeder，除非設計者明確聲明需要。** Seeder 主要用於初始化系統必要資料（如權限、角色等），一般業務實體不需要建立 Seeder。
+
 #### Seeder 標準結構
 ```csharp
 using ERPCore2.Data.Context;

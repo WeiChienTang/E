@@ -55,6 +55,14 @@ namespace ERPCore2.Services
         /// 設定最大同時顯示的通知數量
         /// </summary>
         Task SetMaxNotificationsAsync(int maxCount);
+        
+        /// <summary>
+        /// 複製文字到剪貼簿
+        /// </summary>
+        /// <param name="text">要複製的文字</param>
+        /// <param name="showSuccessMessage">是否顯示成功訊息</param>
+        /// <returns>是否成功</returns>
+        Task<bool> CopyToClipboardAsync(string text, bool showSuccessMessage = true);
     }
 }
 
