@@ -44,7 +44,7 @@ namespace ERPCore2.Services.Reports
             try
             {
                 // 載入資料
-                var purchaseReturn = await _purchaseReturnService.GetByIdAsync(purchaseReturnId);
+                var purchaseReturn = await _purchaseReturnService.GetWithDetailsAsync(purchaseReturnId);
                 if (purchaseReturn == null)
                 {
                     throw new ArgumentException($"找不到進貨退出單 ID: {purchaseReturnId}");
@@ -247,10 +247,10 @@ namespace ERPCore2.Services.Reports
             tableBuilder
                 .AddIndexColumn("序號", "5%", startRowNum)
                 .AddTextColumn("品名", "25%", detail => productDict.GetValueOrDefault(detail.ProductId)?.Name ?? "", "text-left")
-                .AddQuantityColumn("數量", "8%", detail => -detail.ReturnQuantity) // 負數顯示
+                .AddQuantityColumn("數量", "8%", detail => detail.ReturnQuantity)
                 .AddTextColumn("單位", "5%", detail => "個", "text-center")
                 .AddAmountColumn("單價", "12%", detail => detail.OriginalUnitPrice)
-                .AddAmountColumn("小計", "15%", detail => -detail.ReturnSubtotalAmount) // 負數顯示
+                .AddAmountColumn("小計", "15%", detail => detail.ReturnSubtotalAmount)
                 .AddTextColumn("備註", "30%", detail => detail.Remarks ?? "", "text-left");
 
             html.Append(tableBuilder.Build(returnDetails, startRowNum));
@@ -261,9 +261,9 @@ namespace ERPCore2.Services.Reports
             var summaryBuilder = new ReportSummaryBuilder();
             summaryBuilder
                 .SetRemarks(purchaseReturn.Remarks)
-                .AddAmountItem("退回金額小計", -purchaseReturn.TotalReturnAmount) // 負數顯示
-                .AddSummaryItem($"退回稅額({taxRate:F2}%)", (-purchaseReturn.ReturnTaxAmount).ToString("N2")) // 負數顯示
-                .AddAmountItem("退回含稅總計", -purchaseReturn.TotalReturnAmountWithTax); // 負數顯示
+                .AddAmountItem("退回金額小計", purchaseReturn.TotalReturnAmount)
+                .AddSummaryItem($"退回稅額({taxRate:F2}%)", purchaseReturn.ReturnTaxAmount.ToString("N2"))
+                .AddAmountItem("退回含稅總計", purchaseReturn.TotalReturnAmountWithTax);
 
             html.Append(summaryBuilder.Build());
         }

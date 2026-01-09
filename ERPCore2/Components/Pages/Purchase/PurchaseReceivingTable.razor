@@ -1183,9 +1183,9 @@ else
                 detail.PurchaseOrder = purchaseOrder;
             }
             
-            // 只載入有待進貨數量的明細（待進貨數量 > 0）
+            // 只載入有待進貨數量且未結案的明細
             var unreceivedDetails = purchaseOrderDetails
-                .Where(d => d.OrderQuantity - d.ReceivedQuantity > 0)
+                .Where(d => !d.IsReceivingCompleted && d.OrderQuantity - d.ReceivedQuantity > 0)
                 .ToList();
             
             if (!unreceivedDetails.Any())

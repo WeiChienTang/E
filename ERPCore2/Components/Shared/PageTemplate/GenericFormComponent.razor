@@ -232,9 +232,19 @@
 
     /// <summary>
     /// 處理 AutoComplete 欄位變更
+    /// 關鍵修復：當值被清除時，同步清除父組件的 DisplayValue 狀態
+    /// 這確保了 InitialDisplayValue 參數會傳遞正確的空值給子組件
     /// </summary>
     private void HandleAutoCompleteFieldChanged(string propertyName, string? value)
     {
         SetPropertyValue(Model, propertyName, value);
+        
+        // 關鍵修復：當值被清除時，同步清除 AutoComplete 狀態的 DisplayValue
+        // 這確保了下次渲染時 InitialDisplayValue 會是空字串
+        if (string.IsNullOrEmpty(value) || value == "0")
+        {
+            var state = _autoCompleteStates.GetOrCreate(propertyName);
+            state.DisplayValue = string.Empty;
+        }
     }
 }

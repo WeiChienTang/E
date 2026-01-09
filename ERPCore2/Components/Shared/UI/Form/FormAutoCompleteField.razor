@@ -82,19 +82,50 @@
         : CssClass;
 
     private readonly AutoCompleteFieldState _state = new();
+    
+    // 追蹤上一次的 Value，用於偵測值變化方向
+    private string? _previousValue;
+    
+    // 標記是否曾經有過有效值（用於區分「從有值變無值」和「一開始就是空」）
+    private bool _hasEverHadValue;
 
     protected override void OnParametersSet()
     {
-        // 初始化顯示值
-        if (!string.IsNullOrEmpty(InitialDisplayValue) && string.IsNullOrEmpty(_state.DisplayValue))
+        // 判斷 Value 是否有效（不是空、null 或 "0"）
+        var hasValidValue = !string.IsNullOrEmpty(Value) && Value != "0";
+        
+        // 記錄是否曾經有過有效值
+        if (hasValidValue)
         {
-            _state.DisplayValue = InitialDisplayValue;
+            _hasEverHadValue = true;
         }
-        else if (!string.IsNullOrEmpty(Value) && string.IsNullOrEmpty(_state.DisplayValue))
+        
+        // 判斷是否從有值變成無值（真正的「清除」動作）
+        var previousWasValid = !string.IsNullOrEmpty(_previousValue) && _previousValue != "0";
+        var valueWasCleared = previousWasValid && !hasValidValue;
+        
+        if (valueWasCleared)
         {
-            // 嘗試載入顯示文字
-            _ = LoadDisplayValueAsync();
+            // 情況1：值從有效變成無效 → 清空 DisplayValue
+            _state.DisplayValue = string.Empty;
         }
+        else if (hasValidValue && string.IsNullOrEmpty(_state.DisplayValue))
+        {
+            // 情況2：Value 有效但 DisplayValue 是空的 → 需要初始化
+            if (!string.IsNullOrEmpty(InitialDisplayValue))
+            {
+                _state.DisplayValue = InitialDisplayValue;
+            }
+            else
+            {
+                _ = LoadDisplayValueAsync();
+            }
+        }
+        // 情況3：Value 一開始就是空的（虛擬欄位）→ 不干擾，保持 DisplayValue
+        // 這允許用戶在虛擬欄位中輸入和選擇
+        
+        // 更新追蹤的值
+        _previousValue = Value;
     }
 
     private async Task LoadDisplayValueAsync()
@@ -165,6 +196,8 @@
         {
             if (!string.IsNullOrEmpty(Value))
             {
+                // 通知父組件值已清除
+                // 父組件會同步清除 InitialDisplayValue 狀態
                 await ValueChanged.InvokeAsync(null);
             }
 
@@ -325,6 +358,7 @@
         {
             if (!string.IsNullOrEmpty(Value))
             {
+                // 通知父組件值已清除
                 await ValueChanged.InvokeAsync(null);
             }
             return;
@@ -358,6 +392,7 @@
                 // 無匹配則清空
                 if (!string.IsNullOrEmpty(Value))
                 {
+                    _state.DisplayValue = string.Empty;
                     await ValueChanged.InvokeAsync(null);
                 }
             }
