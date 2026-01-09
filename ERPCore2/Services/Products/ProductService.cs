@@ -30,6 +30,17 @@ namespace ERPCore2.Services
 
         #region 覆寫基底方法
 
+        /// <summary>
+        /// 覆寫建立方法 - 在儲存前設定製程單位預設值
+        /// </summary>
+        public override async Task<ServiceResult<Product>> CreateAsync(Product entity)
+        {
+            // 設定製程單位預設值
+            SetDefaultProductionUnit(entity);
+            
+            return await base.CreateAsync(entity);
+        }
+
         public override async Task<List<Product>> GetAllAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -422,6 +433,9 @@ namespace ERPCore2.Services
                     return ServiceResult<Product>.Failure("找不到要更新的資料");
                 }
 
+                // 設定製程單位預設值
+                SetDefaultProductionUnit(entity);
+
                 // 驗證實體
                 var validationResult = await ValidateAsync(entity);
                 if (!validationResult.IsSuccess)
@@ -473,6 +487,19 @@ namespace ERPCore2.Services
                     ProductId = entity.Id 
                 });
                 return ServiceResult.Failure("檢查商品刪除條件時發生錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 設定製程單位預設值
+        /// 若 ProductionUnitId 為 null，則預設為 UnitId，並將 ProductionUnitConversionRate 設為 1
+        /// </summary>
+        private void SetDefaultProductionUnit(Product entity)
+        {
+            if (!entity.ProductionUnitId.HasValue && entity.UnitId > 0)
+            {
+                entity.ProductionUnitId = entity.UnitId;
+                entity.ProductionUnitConversionRate = 1;
             }
         }
 

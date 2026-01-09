@@ -137,7 +137,7 @@
             new() 
             { 
                 Title = "材料名稱", 
-                Tooltip = "選擇配方所需的材料或半成品",
+                Tooltip = "選擇清單組合所需的材料",
                 PropertyName = nameof(ProductCompositionDetail.ComponentProductId),
                 EmptyCheckPropertyName = nameof(ProductCompositionDetail.ComponentProduct), //  檢查 Navigation Property
                 TriggerEmptyRowOnFilled = true,  //  設定為觸發欄位
@@ -154,6 +154,18 @@
                 {
                     await OnProductChanged(args);
                 })
+            },
+            
+            // 製程單位 - 唯讀顯示
+            new() 
+            { 
+                Title = "製程單位", 
+                Tooltip = "材料的製程單位（由商品設定決定）",
+                PropertyName = "ProductionUnitName",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                DisplayFormatter = (item) => GetProductionUnitName((ProductCompositionDetail)item!),
+                ExcludeFromEmptyCheck = true  // 唯讀欄位不參與空行檢查
             },
             
             // 所需數量 - 數字輸入
@@ -189,6 +201,30 @@
             return $"{product.Code} - {product.Name}";
         }
         return product.Name;
+    }
+
+    /// <summary>
+    /// 取得材料的製程單位名稱
+    /// </summary>
+    private string GetProductionUnitName(ProductCompositionDetail detail)
+    {
+        // 如果沒有選擇材料，回傳空字串
+        if (detail.ComponentProduct == null)
+        {
+            return string.Empty;
+        }
+        
+        // 優先使用製程單位，若無則使用商品單位
+        var productionUnitId = detail.ComponentProduct.ProductionUnitId ?? detail.ComponentProduct.UnitId;
+        
+        if (productionUnitId <= 0)
+        {
+            return string.Empty;
+        }
+        
+        // 從可用單位清單中查找單位名稱
+        var unit = AvailableUnits.FirstOrDefault(u => u.Id == productionUnitId);
+        return unit?.Name ?? string.Empty;
     }
 
     // ===== InteractiveTableComponent 事件處理 =====

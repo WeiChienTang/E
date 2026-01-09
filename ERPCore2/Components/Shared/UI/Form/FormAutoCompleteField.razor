@@ -85,20 +85,11 @@
     
     // 追蹤上一次的 Value，用於偵測值變化方向
     private string? _previousValue;
-    
-    // 標記是否曾經有過有效值（用於區分「從有值變無值」和「一開始就是空」）
-    private bool _hasEverHadValue;
 
     protected override void OnParametersSet()
     {
         // 判斷 Value 是否有效（不是空、null 或 "0"）
         var hasValidValue = !string.IsNullOrEmpty(Value) && Value != "0";
-        
-        // 記錄是否曾經有過有效值
-        if (hasValidValue)
-        {
-            _hasEverHadValue = true;
-        }
         
         // 判斷是否從有值變成無值（真正的「清除」動作）
         var previousWasValid = !string.IsNullOrEmpty(_previousValue) && _previousValue != "0";

@@ -410,11 +410,11 @@
             new FormFieldDefinition()
             {
                 PropertyName = nameof(Product.ShowBomOnPrint),
-                Label = "報價列印顯示",
+                Label = "報價明細",
                 FieldType = FormFieldType.Checkbox,
                 Placeholder = "請輸入是否在報價單列印時顯示該商品在BOM表裡的組成",
                 IsRequired = true,
-                HelpText = "商品的條碼編號",
+                HelpText = "指示是否在報價單列印時顯示該商品在物料清單中的組成給客戶參考",
             },
             new()
             {
@@ -457,7 +457,7 @@
                 Placeholder = "請輸入或選擇製程單位",
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "生產製造時使用的單位（若與商品單位相同則無需填寫）",
+                HelpText = "生產製造時使用的單位（若與商品單位相同則無需填寫，系統預設為商品單位）",
                 ActionButtons = await GetProductionUnitActionButtonsAsync()
             },
             new FormFieldDefinition()
@@ -954,7 +954,8 @@
     
     /// <summary>
     /// 產生製程單位換算欄位的動態標籤
-    /// 格式：「1 [商品單位名稱] = ? [製程單位名稱]」
+    /// 格式：「1 [商品單位名稱] = [換算率] [製程單位名稱]」
+    /// 如果有設定換算率則顯示實際數值，否則顯示問號
     /// </summary>
     private string GetProductionUnitConversionLabel()
     {
@@ -964,13 +965,19 @@
         var baseUnitName = GetUnitName(entity.UnitId);
         var productionUnitName = GetUnitName(entity.ProductionUnitId);
         
+        // 取得換算率，如果有值則顯示數值，否則顯示問號
+        // 使用 NumberFormatHelper.FormatSmart 智能格式化，整數不顯示小數點
+        var conversionRateDisplay = entity.ProductionUnitConversionRate.HasValue && entity.ProductionUnitConversionRate.Value > 0
+            ? NumberFormatHelper.FormatSmart(entity.ProductionUnitConversionRate.Value, useThousandsSeparator: false)
+            : "?";
+        
         if (string.IsNullOrEmpty(baseUnitName))
             return "製程單位換算率";
             
         if (string.IsNullOrEmpty(productionUnitName))
-            return $"1 {baseUnitName} = ?";
+            return $"1 {baseUnitName} = {conversionRateDisplay}";
             
-        return $"1 {baseUnitName} = ? {productionUnitName}";
+        return $"1 {baseUnitName} = {conversionRateDisplay} {productionUnitName}";
     }
     
     /// <summary>
