@@ -142,17 +142,6 @@ else
         public bool ShowProductDropdown { get; set; } = false;
         public int ProductSelectedIndex { get; set; } = -1;
         
-        // Select 欄位綁定的 ID 屬性
-        public string? UnitId
-        {
-            get => SelectedUnit?.Id.ToString();
-            set
-            {
-                // 這個 setter 主要用於 InteractiveTableComponent 的 Select 綁定
-                // 實際的 SelectedUnit 物件會在 OnUnitSelectionChanged 中設定
-            }
-        }
-        
         /// <summary>
         /// 計算屬性：小計金額（數量 × 單價 × 折扣）
         /// </summary>
@@ -411,67 +400,17 @@ else
             MaxDisplayItems = 20
         });
 
-        // 規格說明欄位
-        columns.Add(new InteractiveColumnDefinition
-        { 
-            Title = "規格說明", 
-            PropertyName = "Specification",
-            ColumnType = InteractiveColumnType.Input,
-            Width = "200px",
-            Placeholder = "規格說明",
-            Tooltip = "商品的規格說明，可自行修改",
-            IsDisabledFunc = item =>
-            {
-                var quotationItem = (QuotationItem)item;
-                return IsReadOnly || !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
-            },
-            TooltipFunc = item =>
-            {
-                var quotationItem = (QuotationItem)item;
-                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true))
-                    return "此商品已轉銷貨，無法修改規格說明";
-                return "商品的規格說明，可自行修改";
-            },
-            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
-            {
-                var quotationItem = (QuotationItem)args.Item1;
-                await OnSpecificationInput(quotationItem, args.Item2);
-            })
-        });
-
-        // 單位欄位
+        
+        // 製程單位欄位 - 唯讀顯示
         columns.Add(new InteractiveColumnDefinition
         { 
             Title = "單位", 
-            PropertyName = "UnitId",
-            ColumnType = InteractiveColumnType.Select,
-            Width = "100px",
-            Placeholder = "",
-            Tooltip = "選擇報價單位",
-            Options = Units.Select(u => new InteractiveSelectOption 
-            { 
-                Value = u.Id.ToString(), 
-                Text = u.Name ?? "" 
-            }).ToList(),
-            IsDisabledFunc = item =>
-            {
-                var quotationItem = (QuotationItem)item;
-                var isEmptyRow = quotationItem.SelectedProduct == null;
-                return !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow;
-            },
-            TooltipFunc = item =>
-            {
-                var quotationItem = (QuotationItem)item;
-                var isEmptyRow = quotationItem.SelectedProduct == null;
-                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true) && !isEmptyRow)
-                    return "此商品已轉銷貨，無法修改單位";
-                return "選擇報價單位";
-            },
-            OnSelectionChanged = EventCallback.Factory.Create<(object, object?)>(this, async args =>
-            {
-                var (item, value) = args;
-                await OnUnitSelectionChanged((QuotationItem)item, value?.ToString());
-            })
+            Tooltip = "商品的製程單位（由商品設定決定）",
+            PropertyName = "ProductionUnitName",
+            ColumnType = InteractiveColumnType.Display,
+            Width = "80px",
+            DisplayFormatter = (item) => GetProductionUnitName((QuotationItem)item!),
+            ExcludeFromEmptyCheck = true  // 唯讀欄位不參與空行檢查
         });
 
         // 數量欄位
@@ -480,7 +419,7 @@ else
             Title = "數量", 
             PropertyName = "Quantity",
             ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "輸入數量",
             CellCssClass = "text-end",
             MinValue = 0,
@@ -574,7 +513,7 @@ else
             Title = "稅率(%)",
             PropertyName = "TaxRate",
             ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "輸入稅率百分比（例如：5 代表 5%）",
             CellCssClass = "text-end",
             MinValue = 0,
@@ -616,6 +555,35 @@ else
                 return @<div class="text-end fw-bold text-success">@displayValue</div>;
             }
         });
+
+        // 規格說明欄位
+        columns.Add(new InteractiveColumnDefinition
+        { 
+            Title = "規格說明", 
+            PropertyName = "Specification",
+            ColumnType = InteractiveColumnType.Input,
+            Width = "200px",
+            Placeholder = "規格說明",
+            Tooltip = "商品的規格說明，可自行修改",
+            IsDisabledFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                return IsReadOnly || !DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
+            },
+            TooltipFunc = item =>
+            {
+                var quotationItem = (QuotationItem)item;
+                if (!DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true))
+                    return "此商品已轉銷貨，無法修改規格說明";
+                return "商品的規格說明，可自行修改";
+            },
+            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            {
+                var quotationItem = (QuotationItem)args.Item1;
+                await OnSpecificationInput(quotationItem, args.Item2);
+            })
+        });
+
 
         // 備註欄位 - 即使已轉銷貨也可編輯（用於記錄執行狀況）
         columns.Add(new InteractiveColumnDefinition
@@ -1335,26 +1303,6 @@ else
         await NotifyDetailsChanged();
     }
 
-    private async Task OnUnitSelectionChanged(QuotationItem item, string? unitIdStr)
-    {
-        // 檢查全域唯讀或個別明細已轉銷貨
-        var hasConverted = item.ConvertedQuantity > 0;
-        var isEmptyRow = item.SelectedProduct == null;
-        if (IsReadOnly || (hasConverted && !isEmptyRow)) return;
-        
-        if (string.IsNullOrEmpty(unitIdStr) || !int.TryParse(unitIdStr, out var unitId))
-        {
-            item.SelectedUnit = null;
-        }
-        else
-        {
-            item.SelectedUnit = Units.FirstOrDefault(u => u.Id == unitId);
-        }
-        
-        await NotifyDetailsChanged();
-        StateHasChanged();
-    }
-
     private async Task OnQuantityInput(QuotationItem item, string? value)
     {
         // 檢查全域唯讀或個別明細已轉銷貨
@@ -1494,6 +1442,30 @@ else
             TaxCalculationMethod.NoTax => "小計 = 數量 × 單價 × (1 - 折扣%)，四捨五入到整數（免稅）",
             _ => "小計金額（四捨五入到整數）"
         };
+    }
+    
+    /// <summary>
+    /// 取得商品的製程單位名稱
+    /// </summary>
+    private string GetProductionUnitName(QuotationItem item)
+    {
+        // 如果沒有選擇商品，回傳空字串
+        if (item.SelectedProduct == null)
+        {
+            return string.Empty;
+        }
+        
+        // 優先使用製程單位，若無則使用商品單位
+        var productionUnitId = item.SelectedProduct.ProductionUnitId ?? item.SelectedProduct.UnitId;
+        
+        if (productionUnitId <= 0)
+        {
+            return string.Empty;
+        }
+        
+        // 從可用單位清單中查找單位名稱
+        var unit = Units.FirstOrDefault(u => u.Id == productionUnitId);
+        return unit?.Name ?? string.Empty;
     }
 
     public async Task RemoveItemAsync(int index)

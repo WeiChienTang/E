@@ -476,7 +476,7 @@
                 Label = "稅率%",
                 FieldType = FormFieldType.Number,
                 Placeholder = "請輸入稅率",
-                IsRequired = false,
+                IsRequired = true,
                 HelpText = "商品的稅率，介於0到100之間，預設值來自系統參數",
                 Min = 0,
                 Max = 100
@@ -505,11 +505,11 @@
                 Placeholder = "請輸入規格說明",
                 IsRequired = false,
                 MaxLength = 100,
-                ContainerCssClass = "col-6",
+                ContainerCssClass = "col-4",
                 HelpText = "商品的規格說明資訊"
             },
 
-            FormFieldConfigurationHelper.CreateRemarksField<Product>(containerCssClass: "col-6")
+            FormFieldConfigurationHelper.CreateRemarksField<Product>()
         };
 
         formSections = FormSectionHelper<Product>.Create()
@@ -517,6 +517,8 @@
                 p => p.Code,
                 p => p.Name,
                 p => p.Barcode,
+                p => p.TaxRate,
+                p => p.ProcurementType,
                 p => p.ShowBomOnPrint)            
             .AddToSection(FormSectionNames.CategoryAndSpecification,
                 p => p.ProductCategoryId,
@@ -526,11 +528,10 @@
             .AddToSection(FormSectionNames.UnitSettings,
                 p => p.UnitId,
                 p => p.ProductionUnitId,
-                p => p.ProductionUnitConversionRate,
-                p => p.ProcurementType)
+                p => p.ProductionUnitConversionRate
+                )
 
-            .AddToSection(FormSectionNames.FinanceAndRemarks,
-                p => p.TaxRate,
+            .AddToSection(FormSectionNames.FinanceAndRemarks,                
                 p => p.Remarks)
             .Build();
     }
