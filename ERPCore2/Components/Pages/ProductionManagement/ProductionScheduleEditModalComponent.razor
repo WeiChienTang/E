@@ -149,8 +149,9 @@
             // 載入客戶列表
             availableCustomers = await CustomerService.GetAllAsync();
             
-            // 載入員工列表
-            availableEmployees = await EmployeeService.GetAllAsync();
+            // 載入員工列表（排除超級管理員）
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             
             // 載入商品列表（用於顯示排程項目）
             availableProducts = await ProductService.GetAllAsync();

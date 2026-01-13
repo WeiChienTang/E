@@ -136,7 +136,9 @@
         {
             // 載入參考資料
             availableWarehouses = await WarehouseService.GetAllAsync();
-            availableEmployees = await EmployeeService.GetAllAsync();
+            // 載入員工列表（排除超級管理員）
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             
             // 自動設定當前使用者為製單人員
             var currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);

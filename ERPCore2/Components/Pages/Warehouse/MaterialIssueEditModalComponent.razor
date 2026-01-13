@@ -237,7 +237,9 @@
 
             await Task.WhenAll(employeesTask, departmentsTask);
 
-            employees = await employeesTask;
+            // 過濾掉超級管理員
+            var allEmployees = await employeesTask;
+            employees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             departments = await departmentsTask;
             
             availableEmployees = employees;

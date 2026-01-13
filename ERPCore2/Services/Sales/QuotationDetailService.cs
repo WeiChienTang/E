@@ -130,8 +130,9 @@ namespace ERPCore2.Services
                 if (entity.ProductId <= 0)
                     errors.Add("商品為必選項目");
 
-                if (entity.Quantity <= 0)
-                    errors.Add("報價數量必須大於 0");
+                // 數量和單價可以為 0，只檢查負數
+                if (entity.Quantity < 0)
+                    errors.Add("報價數量不能為負數");
 
                 if (entity.UnitPrice < 0)
                     errors.Add("單價不能為負數");

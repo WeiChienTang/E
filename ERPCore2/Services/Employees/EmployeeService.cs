@@ -3,8 +3,10 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 
 namespace ERPCore2.Services
@@ -14,13 +16,17 @@ namespace ERPCore2.Services
     /// </summary>
     public class EmployeeService : GenericManagementService<Employee>, IEmployeeService
     {
+        private readonly AuthenticationStateProvider? _authenticationStateProvider;
+
         /// <summary>
-        /// 完整建構子 - 包含 Logger
+        /// 完整建構子 - 包含 Logger 和 AuthenticationStateProvider
         /// </summary>
         public EmployeeService(
             IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Employee>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Employee>> logger,
+            AuthenticationStateProvider? authenticationStateProvider = null) : base(contextFactory, logger)
         {
+            _authenticationStateProvider = authenticationStateProvider;
         }
 
         /// <summary>
@@ -28,7 +34,160 @@ namespace ERPCore2.Services
         /// </summary>
         public EmployeeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
+            _authenticationStateProvider = null;
         }
+
+        #region 超級管理員保護機制
+
+        /// <summary>
+        /// 取得當前登入的員工ID
+        /// </summary>
+        private async Task<int?> GetCurrentEmployeeIdAsync()
+        {
+            if (_authenticationStateProvider == null)
+                return null;
+
+            try
+            {
+                var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState?.User;
+
+                if (user?.Identity?.IsAuthenticated != true)
+                    return null;
+
+                var employeeIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(employeeIdClaim, out int employeeId))
+                    return employeeId;
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 檢查當前使用者是否為超級管理員
+        /// </summary>
+        private async Task<bool> IsCurrentUserSuperAdminAsync()
+        {
+            var currentEmployeeId = await GetCurrentEmployeeIdAsync();
+            if (!currentEmployeeId.HasValue)
+                return false;
+
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var currentEmployee = await context.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == currentEmployeeId.Value);
+
+            return currentEmployee?.IsSuperAdmin == true;
+        }
+
+        /// <summary>
+        /// 驗證是否可以修改目標員工（超級管理員保護）
+        /// </summary>
+        /// <param name="targetEmployeeId">目標員工ID</param>
+        /// <returns>如果可以修改返回 Success，否則返回錯誤訊息</returns>
+        private async Task<ServiceResult> ValidateSuperAdminProtectionAsync(int targetEmployeeId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var targetEmployee = await context.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == targetEmployeeId);
+
+            if (targetEmployee == null)
+                return ServiceResult.Failure("員工不存在");
+
+            // 如果目標不是超級管理員，允許操作
+            if (!targetEmployee.IsSuperAdmin)
+                return ServiceResult.Success();
+
+            // 目標是超級管理員，檢查當前使用者
+            var currentEmployeeId = await GetCurrentEmployeeIdAsync();
+            
+            // 如果無法取得當前使用者（可能是系統操作），拒絕
+            if (!currentEmployeeId.HasValue)
+                return ServiceResult.Failure("無法驗證操作權限，請重新登入");
+
+            // 只有超級管理員自己可以修改自己
+            if (currentEmployeeId.Value == targetEmployeeId)
+                return ServiceResult.Success();
+
+            return ServiceResult.Failure("無法修改超級管理員帳號，此帳號受系統保護");
+        }
+
+        /// <summary>
+        /// 覆寫更新方法，加入超級管理員保護
+        /// </summary>
+        public override async Task<ServiceResult<Employee>> UpdateAsync(Employee entity)
+        {
+            try
+            {
+                // 檢查超級管理員保護
+                var protectionResult = await ValidateSuperAdminProtectionAsync(entity.Id);
+                if (!protectionResult.IsSuccess)
+                    return ServiceResult<Employee>.Failure(protectionResult.ErrorMessage);
+
+                // 保護 IsSuperAdmin 欄位不被修改
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existingEmployee = await context.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == entity.Id);
+
+                if (existingEmployee != null)
+                {
+                    // 強制保持原本的 IsSuperAdmin 值
+                    entity.IsSuperAdmin = existingEmployee.IsSuperAdmin;
+                }
+
+                return await base.UpdateAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, new
+                {
+                    Method = nameof(UpdateAsync),
+                    ServiceType = GetType().Name,
+                    EmployeeId = entity.Id
+                });
+                return ServiceResult<Employee>.Failure($"更新員工資料時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 覆寫刪除檢查，禁止刪除超級管理員
+        /// </summary>
+        protected override async Task<ServiceResult> CanDeleteAsync(Employee entity)
+        {
+            // 超級管理員完全禁止刪除（包括自己）
+            if (entity.IsSuperAdmin)
+                return ServiceResult.Failure("無法刪除超級管理員帳號，此帳號受系統保護");
+
+            return await base.CanDeleteAsync(entity);
+        }
+
+        /// <summary>
+        /// 覆寫設定狀態方法，保護超級管理員不被停用
+        /// </summary>
+        public override async Task<ServiceResult> SetStatusAsync(int id, EntityStatus status)
+        {
+            // 如果要停用，檢查是否為超級管理員
+            if (status == EntityStatus.Inactive)
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var employee = await context.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == id);
+
+                if (employee?.IsSuperAdmin == true)
+                    return ServiceResult.Failure("無法停用超級管理員帳號，此帳號受系統保護");
+            }
+
+            return await base.SetStatusAsync(id, status);
+        }
+
+        #endregion
 
         // 覆寫 GetAllAsync 以載入相關資料
         public override async Task<List<Employee>> GetAllAsync()
@@ -310,6 +469,11 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 檢查超級管理員保護
+                var protectionResult = await ValidateSuperAdminProtectionAsync(employeeId);
+                if (!protectionResult.IsSuccess)
+                    return protectionResult;
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
                 if (employee == null)
@@ -758,6 +922,11 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 檢查超級管理員保護
+                var protectionResult = await ValidateSuperAdminProtectionAsync(employeeId);
+                if (!protectionResult.IsSuccess)
+                    return ServiceResult<Employee>.Failure(protectionResult.ErrorMessage);
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 var employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);

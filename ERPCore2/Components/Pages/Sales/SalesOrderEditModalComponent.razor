@@ -428,7 +428,7 @@
             {
                 Task.Run(async () => customers = await CustomerService.GetAllAsync()),
                 Task.Run(async () => companies = await CompanyService.GetAllAsync()),
-                Task.Run(async () => employees = await EmployeeService.GetAllAsync()),
+                Task.Run(async () => employees = (await EmployeeService.GetAllAsync()).Where(e => !e.IsSuperAdmin).ToList()),
                 Task.Run(async () => products = await ProductService.GetAllAsync()),
                 Task.Run(async () => units = await UnitService.GetAllAsync()),
                 Task.Run(async () => warehouses = await WarehouseService.GetAllAsync()),

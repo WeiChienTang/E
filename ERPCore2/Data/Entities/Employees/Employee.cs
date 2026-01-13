@@ -26,6 +26,12 @@ namespace ERPCore2.Data.Entities
         public bool IsSystemUser { get; set; } = false;
 
         /// <summary>
+        /// 是否為受保護的超級管理員（由系統設定，不可被修改）
+        /// 此屬性只能透過 Seeder 設定，Service 層會保護此欄位不被變更
+        /// </summary>
+        public bool IsSuperAdmin { get; set; } = false;
+
+        /// <summary>
         /// 帳號
         /// </summary>
         [Display(Name = "帳號")]

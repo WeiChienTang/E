@@ -1063,9 +1063,8 @@ else
     {
         var details = new List<TDetailEntity>();
         
-        // 只處理非空行、有選擇商品且數量大於 0 的項目
-        foreach (var item in QuotationItems.Where(x => x.SelectedProduct != null &&
-                                                        x.Quantity > 0))
+        // 只處理非空行、有選擇商品的項目（數量和單價可以為 0）
+        foreach (var item in QuotationItems.Where(x => x.SelectedProduct != null))
         {
             TDetailEntity detail;
             
@@ -1599,25 +1598,7 @@ else
                 errors.Add("所有明細都必須選擇商品");
             }
             
-            // 檢查數量
-            var itemsWithZeroQuantity = nonEmptyItems.Where(item => item.Quantity <= 0).ToList();
-            if (itemsWithZeroQuantity.Any())
-            {
-                var productNames = itemsWithZeroQuantity
-                    .Select(item => item.SelectedProduct?.Name ?? "未知商品")
-                    .ToList();
-                errors.Add($"以下商品的數量必須大於0：{string.Join("、", productNames)}");
-            }
-            
-            // 檢查單價
-            var itemsWithZeroPrice = nonEmptyItems.Where(item => item.UnitPrice <= 0).ToList();
-            if (itemsWithZeroPrice.Any())
-            {
-                var productNames = itemsWithZeroPrice
-                    .Select(item => item.SelectedProduct?.Name ?? "未知商品")
-                    .ToList();
-                errors.Add($"以下商品的單價必須大於0：{string.Join("、", productNames)}");
-            }
+            // 數量和單價可以為 0，不需要驗證
         }
           
         if (errors.Any())

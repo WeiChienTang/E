@@ -449,8 +449,9 @@
                     Value = c.Id.ToString()
                 }).ToList();
 
-            // 載入員工選項
-            employees = await EmployeeService.GetAllAsync();
+            // 載入員工選項（排除超級管理員）
+            var allEmployees = await EmployeeService.GetAllAsync();
+            employees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             availableEmployees = employees;
             employeeOptions = employees.Where(e => e.Status == EntityStatus.Active)
                 .Select(e => new SelectOption

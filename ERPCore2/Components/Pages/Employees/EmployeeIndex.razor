@@ -3,6 +3,7 @@
 @inject IDepartmentService DepartmentService
 @inject IRoleService RoleService
 @inject IEmployeePositionService EmployeePositionService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 
@@ -54,18 +55,24 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<BreadcrumbItem> breadcrumbItems = new();
+    
+    // 當前使用者是否為 SuperAdmin
+    private bool isCurrentUserSuperAdmin = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // 初始化 Modal 處理器
+            // 先初始化 Modal 處理器（必須在任何異步操作之前，避免渲染時為 null）
             modalHandler = ModalHelper.CreateModalHandler<Employee, GenericIndexPageComponent<Employee, IEmployeeService>>(
                 id => editingEmployeeId = id,
                 visible => showEditModal = visible,
                 () => indexComponent,
                 StateHasChanged,
                 GetType());
+            
+            // 檢查當前使用者是否為 SuperAdmin
+            await CheckCurrentUserSuperAdminAsync();
             
             await InitializeBreadcrumbsAsync();
             
@@ -90,8 +97,41 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("員工", NotificationService, GetType());
 
-    // 載入員工資料
-    private Task<List<Employee>> LoadEmployeesAsync() => DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
+    /// <summary>
+    /// 檢查當前使用者是否為 SuperAdmin
+    /// </summary>
+    private async Task CheckCurrentUserSuperAdminAsync()
+    {
+        try
+        {
+            var currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            if (currentEmployeeId.HasValue)
+            {
+                var currentEmployee = await EmployeeService.GetByIdAsync(currentEmployeeId.Value);
+                isCurrentUserSuperAdmin = currentEmployee?.IsSuperAdmin == true;
+            }
+        }
+        catch
+        {
+            isCurrentUserSuperAdmin = false;
+        }
+    }
+
+    /// <summary>
+    /// 載入員工資料（根據權限過濾 SuperAdmin）
+    /// </summary>
+    private async Task<List<Employee>> LoadEmployeesAsync()
+    {
+        var employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
+        
+        // 如果當前使用者不是 SuperAdmin，過濾掉 SuperAdmin 帳號
+        if (!isCurrentUserSuperAdmin)
+        {
+            employees = employees.Where(e => !e.IsSuperAdmin).ToList();
+        }
+        
+        return employees;
+    }
 
     // 載入部門資料
     private async Task LoadDepartmentsAsync() => departments = await DataLoaderHelper.LoadAsync(() => DepartmentService.GetAllAsync(), "部門", NotificationService, GetType());

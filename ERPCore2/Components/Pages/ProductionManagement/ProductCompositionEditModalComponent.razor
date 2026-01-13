@@ -238,8 +238,9 @@
             // 載入客戶列表
             availableCustomers = await CustomerService.GetAllAsync();
             
-            // 載入員工列表
-            availableEmployees = await EmployeeService.GetAllAsync();
+            // 載入員工列表（排除超級管理員）
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             
             // 載入物料清單類型列表
             availableCompositionCategories = await CompositionCategoryService.GetAllAsync();
@@ -404,12 +405,12 @@
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CompositionCategoryId),
-                    Label = "物料清單類型",
+                    Label = "清單類型",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇物料清單類型",
+                    Placeholder = "請選擇清單類型",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "選擇合成的類型"
+                    HelpText = "選擇組合該商品的清單類型"
                 },
                 new()
                 {
@@ -425,9 +426,9 @@
                 new()
                 {
                     PropertyName = nameof(ProductComposition.CreatedByEmployeeId),
-                    Label = "製單人員",
+                    Label = "製表員",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請選擇製單人員",
+                    Placeholder = "請選擇製表員",
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇建立此合成的員工(選填)",

@@ -40,6 +40,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 Account = "admin",
                 Password = SeedDataHelper.HashPassword("hdcomp1106"),
                 IsSystemUser = true, // 設置為系統使用者
+                IsSuperAdmin = true, // 設置為受保護的超級管理員（不可被他人修改或刪除）
                 DepartmentId = null, // 先設為 null，部門建立後再更新
                 RoleId = adminRole?.Id ?? 1,
                 Status = EntityStatus.Active,

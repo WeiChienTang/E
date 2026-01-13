@@ -146,6 +146,9 @@
     // ===== 鎖定狀態 =====
     private bool hasUndeletableDetails = false; // 是否有不可刪除的明細（已有轉單記錄）
     
+    // ===== 已刪除的明細 ID 暫存（儲存時才真正刪除） =====
+    private List<int> _deletedDetailIds = new();
+    
     // ===== 明細載入狀態 =====
     private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入
     private bool isDataLoaded = false;  // 標記資料是否已載入（用於 Lazy Loading）
@@ -204,6 +207,7 @@
             // Modal 關閉時重置狀態
             isDetailDataReady = false;
             isDataLoaded = false;
+            _deletedDetailIds.Clear();  // 清除暫存的已刪除明細 ID
         }
     }
 
@@ -318,8 +322,9 @@
             // 載入公司列表
             availableCompanies = await CompanyService.GetAllAsync();
             
-            // 載入業務員列表
-            availableEmployees = await EmployeeService.GetAllAsync();
+            // 載入業務員列表（排除超級管理員）
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             employees = availableEmployees;
             employeeOptions = employees.Select(e => new SelectOption 
             { 
@@ -435,12 +440,12 @@
                 new()
                 {
                     PropertyName = nameof(Quotation.EmployeeId),
-                    Label = "業務員",
+                    Label = "製表者",
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇業務員",
+                    Placeholder = "請輸入或選擇製表者",
                     IsRequired = false,
                     MinSearchLength = 0,
-                    HelpText = "輸入業務員姓名進行搜尋，或直接選擇",
+                    HelpText = "輸入製表者姓名進行搜尋，或直接選擇",
                     ActionButtons = await GetEmployeeActionButtonsAsync(),
                     IsReadOnly = shouldLock // 根據審核狀態和轉單狀態決定是否鎖定
                 },
@@ -741,10 +746,6 @@
                 }
             }
 
-            // 先獲取現有的明細
-            var existingQuotation = await QuotationService.GetWithDetailsAsync(quotationId);
-            var existingDetails = existingQuotation?.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
-            
             // 處理新增和更新的明細
             foreach (var detail in quotationDetails.Where(d => d.ProductId > 0))
             {
@@ -760,13 +761,15 @@
                 }
             }
 
-            // 處理刪除的明細（現有的但不在當前列表中的）
-            var currentDetailIds = quotationDetails.Where(d => d.Id > 0).Select(d => d.Id).ToList();
-            var detailsToDelete = existingDetails.Where(e => !currentDetailIds.Contains(e.Id)).ToList();
-            
-            foreach (var detailToDelete in detailsToDelete)
+            // 處理刪除的明細（使用暫存的已刪除 ID 列表）
+            // 這與 PurchaseOrderTable 的行為保持一致：在 Table 上刪除只是暫存，儲存時才真正刪除
+            if (_deletedDetailIds.Any())
             {
-                await QuotationDetailService.DeleteAsync(detailToDelete.Id);
+                foreach (var detailId in _deletedDetailIds)
+                {
+                    await QuotationDetailService.DeleteAsync(detailId);
+                }
+                _deletedDetailIds.Clear();  // 刪除完成後清空列表
             }
             
             // 儲存報價單組合明細（BOM）
@@ -1028,23 +1031,32 @@
 
     /// <summary>
     /// 處理已刪除的報價單明細ID
+    /// 注意：這裡只暫存刪除的 ID，在 SaveQuotationDetails 儲存時才真正刪除資料庫記錄
+    /// 這與 PurchaseOrderTable 的行為保持一致
     /// </summary>
-    private async Task HandleDeletedDetailsChanged(List<int> deletedDetailIds)
+    private Task HandleDeletedDetailsChanged(List<int> deletedDetailIds)
     {
         try
         {
             if (deletedDetailIds?.Any() == true)
             {
+                // 將刪除的 ID 加入暫存列表（避免重複）
                 foreach (var detailId in deletedDetailIds)
                 {
-                    await QuotationDetailService.DeleteAsync(detailId);
+                    if (!_deletedDetailIds.Contains(detailId))
+                    {
+                        _deletedDetailIds.Add(detailId);
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDeletedDetailsChanged), GetType());
+            // 記錄錯誤但不拋出，因為這只是暫存操作
+            Console.WriteLine($"HandleDeletedDetailsChanged 發生錯誤: {ex.Message}");
         }
+        
+        return Task.CompletedTask;
     }
 
     /// <summary>

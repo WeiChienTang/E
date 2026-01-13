@@ -470,8 +470,9 @@
     {
         try
         {
-            // 載入可選擇的員工列表
-            availableEmployees = await EmployeeService.GetAllAsync();
+            // 載入可選擇的員工列表（排除超級管理員）
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
             // 載入可選擇的付款方式列表
             availablePaymentMethods = await PaymentMethodService.GetAllAsync();
             
