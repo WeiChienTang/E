@@ -111,3 +111,108 @@ window.scrollToElement = function (elementId) {
         return false;
     }
 };
+
+// Popover 輔助函式
+window.popoverHelpers = {
+    // 追蹤是否已綁定全域點擊事件
+    _documentClickBound: false,
+
+    // 綁定全域點擊事件，點擊外部時關閉所有 popover
+    _bindDocumentClick: function () {
+        if (this._documentClickBound) return;
+        
+        document.addEventListener('click', function (e) {
+            // 檢查點擊的元素是否在 popover 內部或是 popover 觸發按鈕
+            const isPopoverTrigger = e.target.closest('[data-bs-toggle="popover"]');
+            const isInsidePopover = e.target.closest('.popover');
+            
+            if (!isPopoverTrigger && !isInsidePopover) {
+                // 點擊在 popover 外部，關閉所有 popover
+                document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
+                    const instance = bootstrap.Popover.getInstance(el);
+                    if (instance) {
+                        instance.hide();
+                    }
+                });
+            }
+        });
+        
+        this._documentClickBound = true;
+    },
+
+    // 初始化頁面上所有的 popover
+    initializeAll: function () {
+        try {
+            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+            popoverTriggerList.forEach(function (popoverTriggerEl) {
+                // 檢查是否已經初始化
+                if (!bootstrap.Popover.getInstance(popoverTriggerEl)) {
+                    new bootstrap.Popover(popoverTriggerEl, {
+                        html: true,
+                        trigger: 'click',
+                        placement: 'right',
+                        sanitize: false
+                    });
+                }
+            });
+            
+            // 綁定全域點擊事件
+            this._bindDocumentClick();
+            
+            console.log('Popovers initialized:', popoverTriggerList.length);
+            return true;
+        } catch (error) {
+            console.error('Error initializing popovers:', error);
+            return false;
+        }
+    },
+
+    // 初始化特定容器內的 popover
+    initializeInContainer: function (containerId) {
+        try {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.warn('Container not found:', containerId);
+                return false;
+            }
+
+            const popoverTriggerList = container.querySelectorAll('[data-bs-toggle="popover"]');
+            popoverTriggerList.forEach(function (popoverTriggerEl) {
+                if (!bootstrap.Popover.getInstance(popoverTriggerEl)) {
+                    new bootstrap.Popover(popoverTriggerEl, {
+                        html: true,
+                        trigger: 'click',
+                        placement: 'right',
+                        sanitize: false
+                    });
+                }
+            });
+            
+            // 綁定全域點擊事件
+            this._bindDocumentClick();
+            
+            console.log('Popovers initialized in container:', popoverTriggerList.length);
+            return true;
+        } catch (error) {
+            console.error('Error initializing popovers in container:', error);
+            return false;
+        }
+    },
+
+    // 銷毀所有 popover
+    disposeAll: function () {
+        try {
+            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+            popoverTriggerList.forEach(function (popoverTriggerEl) {
+                const instance = bootstrap.Popover.getInstance(popoverTriggerEl);
+                if (instance) {
+                    instance.dispose();
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error('Error disposing popovers:', error);
+            return false;
+        }
+    }
+};

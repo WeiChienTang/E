@@ -286,6 +286,16 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
+                        Name = "庫存盤點",
+                        Description = "管理庫存盤點作業",
+                        Route = "/stockTakings",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "庫存管理",
+                        RequiredPermission = "StockTaking.Read",
+                        SearchKeywords = new List<string> { "庫存盤點", "盤點作業", "stock taking", "inventory audit" }
+                    },
+                    new NavigationItem
+                    {
                         Name = "庫存異動記錄",
                         Description = "查看庫存異動歷史記錄",
                         Route = "/inventoryTransactions",

@@ -326,9 +326,9 @@ namespace ERPCore2.Services
 
                 if (!string.IsNullOrEmpty(remarks))
                 {
-                    stockTaking.TakingRemarks = string.IsNullOrEmpty(stockTaking.TakingRemarks) 
+                    stockTaking.Remarks = string.IsNullOrEmpty(stockTaking.Remarks) 
                         ? $"審核備註：{remarks}" 
-                        : $"{stockTaking.TakingRemarks}\n審核備註：{remarks}";
+                        : $"{stockTaking.Remarks}\n審核備註：{remarks}";
                 }
 
                 await context.SaveChangesAsync();
@@ -361,9 +361,9 @@ namespace ERPCore2.Services
 
                 if (!string.IsNullOrEmpty(reason))
                 {
-                    stockTaking.TakingRemarks = string.IsNullOrEmpty(stockTaking.TakingRemarks) 
+                    stockTaking.Remarks = string.IsNullOrEmpty(stockTaking.Remarks) 
                         ? $"取消原因：{reason}" 
-                        : $"{stockTaking.TakingRemarks}\n取消原因：{reason}";
+                        : $"{stockTaking.Remarks}\n取消原因：{reason}";
                 }
 
                 await context.SaveChangesAsync();
@@ -400,6 +400,185 @@ namespace ERPCore2.Services
                     StockTakingId = stockTakingId 
                 });
                 return new List<StockTakingDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 儲存盤點單連同明細（新增或更新模式都適用）
+        /// </summary>
+        public async Task<ServiceResult<StockTaking>> SaveWithDetailsAsync(StockTaking stockTaking, List<StockTakingDetail> details)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // 驗證主檔
+                    var validationResult = await ValidateStockTakingAsync(stockTaking);
+                    if (!validationResult.IsSuccess)
+                    {
+                        return ServiceResult<StockTaking>.Failure(validationResult.ErrorMessage);
+                    }
+
+                    StockTaking savedEntity;
+
+                    if (stockTaking.Id > 0)
+                    {
+                        // ===== 更新模式 =====
+                        var existingEntity = await context.StockTakings
+                            .FirstOrDefaultAsync(x => x.Id == stockTaking.Id);
+
+                        if (existingEntity == null)
+                        {
+                            await transaction.RollbackAsync();
+                            return ServiceResult<StockTaking>.Failure("找不到要更新的盤點單資料");
+                        }
+
+                        // 保持原建立資訊
+                        stockTaking.CreatedAt = existingEntity.CreatedAt;
+                        stockTaking.CreatedBy = existingEntity.CreatedBy;
+                        stockTaking.UpdatedAt = DateTime.UtcNow;
+
+                        // 更新主檔
+                        context.Entry(existingEntity).CurrentValues.SetValues(stockTaking);
+                        savedEntity = existingEntity;
+                    }
+                    else
+                    {
+                        // ===== 新增模式 =====
+                        // 產生盤點單號（如果沒有提供）
+                        if (string.IsNullOrEmpty(stockTaking.TakingNumber))
+                        {
+                            stockTaking.TakingNumber = await GenerateTakingNumberAsync(context);
+                        }
+
+                        stockTaking.CreatedAt = DateTime.UtcNow;
+                        stockTaking.UpdatedAt = DateTime.UtcNow;
+                        stockTaking.Status = EntityStatus.Active;
+
+                        await context.StockTakings.AddAsync(stockTaking);
+                        savedEntity = stockTaking;
+                    }
+
+                    // 先儲存主檔以取得 ID
+                    await context.SaveChangesAsync();
+
+                    // ===== 處理明細 =====
+                    var detailResult = await UpdateDetailsInContext(context, savedEntity.Id, details);
+                    if (!detailResult.IsSuccess)
+                    {
+                        await transaction.RollbackAsync();
+                        return ServiceResult<StockTaking>.Failure($"儲存明細失敗：{detailResult.ErrorMessage}");
+                    }
+
+                    // 更新統計資訊
+                    savedEntity.TotalItems = details.Count(d => d.ProductId > 0);
+                    savedEntity.CompletedItems = details.Count(d => d.ActualStock.HasValue);
+                    savedEntity.DifferenceItems = details.Count(d => 
+                        d.ActualStock.HasValue && d.ActualStock.Value != d.SystemStock);
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return ServiceResult<StockTaking>.Success(savedEntity);
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(SaveWithDetailsAsync), GetType(), _logger, new {
+                    Method = nameof(SaveWithDetailsAsync),
+                    ServiceType = GetType().Name,
+                    StockTakingId = stockTaking.Id,
+                    TakingNumber = stockTaking.TakingNumber
+                });
+                return ServiceResult<StockTaking>.Failure($"儲存盤點單時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 在指定的 DbContext 中更新盤點明細
+        /// </summary>
+        private async Task<ServiceResult> UpdateDetailsInContext(AppDbContext context, int stockTakingId, List<StockTakingDetail> details)
+        {
+            try
+            {
+                // 取得現有明細
+                var existingDetails = await context.StockTakingDetails
+                    .Where(d => d.StockTakingId == stockTakingId)
+                    .ToListAsync();
+
+                var newDetailsToAdd = new List<StockTakingDetail>();
+                var existingDetailsToKeep = new HashSet<int>();
+
+                foreach (var detail in details.Where(d => d.ProductId > 0))
+                {
+                    detail.StockTakingId = stockTakingId;
+                    detail.UpdatedAt = DateTime.UtcNow;
+
+                    if (detail.Id > 0)
+                    {
+                        // 更新現有明細
+                        var existing = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
+                        if (existing != null)
+                        {
+                            // 更新明細資料
+                            existing.ProductId = detail.ProductId;
+                            existing.WarehouseLocationId = detail.WarehouseLocationId;
+                            existing.SystemStock = detail.SystemStock;
+                            existing.ActualStock = detail.ActualStock;
+                            existing.UnitCost = detail.UnitCost;
+                            existing.DetailStatus = detail.DetailStatus;
+                            existing.TakingTime = detail.TakingTime;
+                            existing.TakingPersonnel = detail.TakingPersonnel;
+                            existing.DetailRemarks = detail.DetailRemarks;
+                            existing.UpdatedAt = DateTime.UtcNow;
+
+                            existingDetailsToKeep.Add(existing.Id);
+                        }
+                    }
+                    else
+                    {
+                        // 新增明細
+                        detail.CreatedAt = DateTime.UtcNow;
+                        detail.Status = EntityStatus.Active;
+                        newDetailsToAdd.Add(detail);
+                    }
+                }
+
+                // 刪除不在更新清單中的現有明細
+                var detailsToRemove = existingDetails
+                    .Where(ed => !existingDetailsToKeep.Contains(ed.Id))
+                    .ToList();
+
+                if (detailsToRemove.Any())
+                {
+                    context.StockTakingDetails.RemoveRange(detailsToRemove);
+                }
+
+                // 新增新的明細
+                if (newDetailsToAdd.Any())
+                {
+                    await context.StockTakingDetails.AddRangeAsync(newDetailsToAdd);
+                }
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateDetailsInContext), GetType(), _logger, new {
+                    Method = nameof(UpdateDetailsInContext),
+                    StockTakingId = stockTakingId,
+                    DetailsCount = details.Count
+                });
+                return ServiceResult.Failure($"更新明細時發生錯誤：{ex.Message}");
             }
         }
 
@@ -671,6 +850,9 @@ namespace ERPCore2.Services
             try
             {
                 var errors = new List<string>();
+
+                if(stockTaking.TakingPersonnel == null || stockTaking.TakingPersonnel.Trim() == "")
+                    errors.Add("盤點員為必填");
 
                 if (string.IsNullOrWhiteSpace(stockTaking.TakingNumber))
                     errors.Add("盤點單號不能為空");

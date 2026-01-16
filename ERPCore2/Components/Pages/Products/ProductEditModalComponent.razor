@@ -441,23 +441,23 @@
             new()
             {
                 PropertyName = nameof(Product.UnitId),
-                Label = "商品單位",
+                Label = "購買單位",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇基本計量單位",
+                Placeholder = "請輸入或選擇購買計量單位",
                 IsRequired = true,
                 MinSearchLength = 0,
-                HelpText = "商品的基本計量單位（庫存單位）",
+                HelpText = "商品的購買計量單位（庫存單位）",
                 ActionButtons = await GetUnitActionButtonsAsync()
             },
             new()
             {
                 PropertyName = nameof(Product.ProductionUnitId),
-                Label = "製程單位",
+                Label = "製程/庫存單位",
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = "請輸入或選擇製程單位",
+                Placeholder = "請輸入或選擇製程/庫存單位",
                 IsRequired = false,
                 MinSearchLength = 0,
-                HelpText = "生產製造時使用的單位（若與商品單位相同則無需填寫，系統預設為商品單位）",
+                HelpText = "生產製造或庫存使用的單位（若與商品單位相同則無需填寫，系統預設為商品單位）",
                 ActionButtons = await GetProductionUnitActionButtonsAsync()
             },
             new FormFieldDefinition()

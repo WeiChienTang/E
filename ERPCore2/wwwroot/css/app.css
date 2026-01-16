@@ -13,3 +13,43 @@ a, .btn-link {
 h1:focus {
     outline: none;
 }
+
+/* 標籤問號說明按鈕樣式 */
+.label-help-btn {
+    color: var(--primary-blue, #0d6efd);
+    text-decoration: none;
+    vertical-align: baseline;
+    border: none;
+    background: transparent;
+}
+
+.label-help-btn:hover {
+    color: var(--primary-blue-hover, #0a58ca);
+}
+
+.label-help-btn:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+/* Popover 內容樣式 */
+.label-help-popover {
+    max-width: 300px;
+    text-align: left;
+}
+
+.label-help-popover .help-item {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.label-help-popover .help-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0 !important;
+}
+
+/* 確保 Popover 在 Modal 之上 */
+.popover {
+    z-index: 1070;
+}

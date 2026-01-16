@@ -1,0 +1,650 @@
+@* 盤點單編輯組件 *@
+@using ERPCore2.Components.Shared.UI.Form
+@using ERPCore2.Helpers
+@using ERPCore2.Components.Shared.Base
+@using ERPCore2.Models
+@using ERPCore2.Data.Enums
+@inject IStockTakingService StockTakingService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IEmployeeService EmployeeService
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<GenericEditModalComponent TEntity="StockTaking"
+                          TService="IStockTakingService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@StockTakingId"
+                          Service="@StockTakingService"
+                          EntityName="盤點單"
+                          EntityNamePlural="盤點單"
+                          ModalTitle="@GetModalTitle()"
+                          Size="GenericEditModalComponent<StockTaking, IStockTakingService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
+                          AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
+                          AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
+                          DataLoader="@LoadStockTakingData"
+                          SaveHandler="@SaveStockTakingWrapper"
+                          SaveSuccessMessage="@(StockTakingId.HasValue ? "盤點單更新成功" : "盤點單新增成功")"
+                          SaveFailureMessage="盤點單儲存失敗"
+                          RequiredPermission="StockTaking.Read"
+                          OnSaveSuccess="@HandleSaveSuccess"
+                          OnCancel="@HandleCancel"
+                          OnFieldChanged="@OnFieldValueChanged"
+                          CustomValidator="@ValidateStockTakingDetailsAsync"
+                          CustomModules="@GetCustomModules()"
+                          OnEntityLoaded="@HandleEntityLoaded">
+</GenericEditModalComponent>
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? StockTakingId { get; set; }
+    [Parameter] public EventCallback<StockTaking> OnStockTakingSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<StockTaking, IStockTakingService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // 相關資料
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
+    private List<Employee> employees = new();
+    private List<Product> products = new();
+
+    // 下拉選單選項
+    private List<SelectOption> warehouseOptions = new();
+    private List<SelectOption> warehouseLocationOptions = new();
+    private List<SelectOption> takingTypeOptions = new();
+    private List<SelectOption> takingStatusOptions = new();
+
+    // 盤點明細
+    private List<StockTakingDetail> stockTakingDetails = new();
+    private StockTakingTable? detailTableComponent;
+
+    // 當前選擇的倉庫和庫位
+    private int? selectedWarehouseId = null;
+    private int? selectedWarehouseLocationId = null;
+
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    // 資料載入狀態
+    private bool isDataLoaded = false;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            stockTakingDetails = new List<StockTakingDetail>();
+            selectedWarehouseId = null;
+            selectedWarehouseLocationId = null;
+
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+
+        await base.OnParametersSetAsync();
+    }
+
+    // ===== Modal 標題 =====
+
+    private string GetModalTitle()
+    {
+        if (!StockTakingId.HasValue) return "新增盤點單";
+
+        var status = editModalComponent?.Entity?.TakingStatus;
+        return status switch
+        {
+            StockTakingStatusEnum.Draft => "編輯盤點單（草稿）",
+            StockTakingStatusEnum.InProgress => "執行盤點",
+            StockTakingStatusEnum.Completed => "檢視盤點單（已完成）",
+            StockTakingStatusEnum.PendingApproval => "審核盤點單",
+            StockTakingStatusEnum.Approved => "檢視盤點單（已審核）",
+            StockTakingStatusEnum.Cancelled => "檢視盤點單（已取消）",
+            _ => "編輯盤點單"
+        };
+    }
+
+    // ===== 實體載入事件 =====
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            var stockTaking = await StockTakingService.GetWithDetailsAsync(loadedEntityId);
+
+            if (stockTaking?.StockTakingDetails != null)
+            {
+                stockTakingDetails = stockTaking.StockTakingDetails.ToList();
+                selectedWarehouseId = stockTaking.WarehouseId;
+                selectedWarehouseLocationId = stockTaking.WarehouseLocationId;
+            }
+            else
+            {
+                stockTakingDetails = new List<StockTakingDetail>();
+            }
+
+            StateHasChanged();
+
+            if (detailTableComponent != null)
+            {
+                await detailTableComponent.RefreshDetailsAsync();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(),
+                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
+            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
+        }
+    }
+
+    private async Task HandleSaveSuccess()
+    {
+        try
+        {
+            if (OnStockTakingSaved.HasDelegate && editModalComponent?.Entity != null)
+            {
+                await OnStockTakingSaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(),
+                additionalData: "盤點單編輯Modal儲存成功處理失敗");
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        try
+        {
+            if (OnCancel.HasDelegate)
+            {
+                await OnCancel.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCancel), GetType(),
+                additionalData: "盤點單編輯Modal取消處理失敗");
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    private async Task<StockTaking?> LoadStockTakingData()
+    {
+        try
+        {
+            stockTakingDetails = new List<StockTakingDetail>();
+
+            if (!StockTakingId.HasValue)
+            {
+                // 新增模式
+                var newStockTaking = new StockTaking
+                {
+                    TakingNumber = await GenerateTakingNumberAsync(),
+                    TakingDate = DateTime.Today,
+                    TakingType = StockTakingTypeEnum.Full,
+                    TakingStatus = StockTakingStatusEnum.Draft,
+                    Status = EntityStatus.Active,
+                    StockTakingDetails = new List<StockTakingDetail>()
+                };
+
+                return newStockTaking;
+            }
+
+            var stockTaking = await StockTakingService.GetWithDetailsAsync(StockTakingId.Value);
+
+            if (stockTaking != null)
+            {
+                stockTakingDetails = stockTaking.StockTakingDetails?.ToList() ?? new List<StockTakingDetail>();
+                selectedWarehouseId = stockTaking.WarehouseId;
+                selectedWarehouseLocationId = stockTaking.WarehouseLocationId;
+            }
+
+            return stockTaking;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadStockTakingData), GetType(),
+                additionalData: $"載入盤點單資料失敗 - ID: {StockTakingId}");
+            await NotificationService.ShowErrorAsync("載入盤點單資料失敗");
+            return null;
+        }
+    }
+
+    private async Task<string> GenerateTakingNumberAsync()
+    {
+        try
+        {
+            var today = DateTime.Today;
+            var prefix = $"ST-{today:yyyyMMdd}-";
+
+            // 取得今天的盤點單數量
+            var todayStockTakings = await StockTakingService.GetByDateRangeAsync(today, today);
+            var sequence = todayStockTakings.Count + 1;
+
+            return $"{prefix}{sequence:D3}";
+        }
+        catch
+        {
+            return $"ST-{DateTime.Now:yyyyMMddHHmmss}";
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var warehousesTask = WarehouseService.GetAllAsync();
+            var warehouseLocationsTask = WarehouseLocationService.GetAllAsync();
+            var employeesTask = EmployeeService.GetAllAsync();
+            var productsTask = ProductService.GetAllAsync();
+
+            await Task.WhenAll(warehousesTask, warehouseLocationsTask, employeesTask, productsTask);
+
+            warehouses = await warehousesTask;
+            warehouseLocations = await warehouseLocationsTask;
+            var allEmployees = await employeesTask;
+            employees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+            products = await productsTask;
+
+            // 建立下拉選單選項
+            warehouseOptions = warehouses.Select(w => new SelectOption
+            {
+                Text = w.Name ?? "",
+                Value = w.Id.ToString()
+            }).ToList();
+
+            takingTypeOptions = new List<SelectOption>
+            {
+                new() { Text = "全盤", Value = ((int)StockTakingTypeEnum.Full).ToString() },
+                new() { Text = "循環盤點", Value = ((int)StockTakingTypeEnum.Cycle).ToString() },
+                new() { Text = "抽樣盤點", Value = ((int)StockTakingTypeEnum.Sample).ToString() },
+                new() { Text = "特定商品盤點", Value = ((int)StockTakingTypeEnum.Specific).ToString() },
+                new() { Text = "特定位置盤點", Value = ((int)StockTakingTypeEnum.Location).ToString() }
+            };
+
+            takingStatusOptions = new List<SelectOption>
+            {
+                new() { Text = "草稿", Value = ((int)StockTakingStatusEnum.Draft).ToString() },
+                new() { Text = "進行中", Value = ((int)StockTakingStatusEnum.InProgress).ToString() },
+                new() { Text = "已完成", Value = ((int)StockTakingStatusEnum.Completed).ToString() },
+                new() { Text = "待審核", Value = ((int)StockTakingStatusEnum.PendingApproval).ToString() },
+                new() { Text = "已審核", Value = ((int)StockTakingStatusEnum.Approved).ToString() },
+                new() { Text = "已取消", Value = ((int)StockTakingStatusEnum.Cancelled).ToString() }
+            };
+
+            // AutoComplete 配置 - 倉庫、盤點員和監盤員
+            autoCompleteConfig = new AutoCompleteConfigBuilder<StockTaking>()
+                .AddField(nameof(StockTaking.WarehouseId), "Name", warehouses)
+                .AddField(nameof(StockTaking.TakingPersonnel), "Name", employees)
+                .AddField(nameof(StockTaking.SupervisingPersonnel), "Name", employees)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(),
+                additionalData: "載入盤點單相關資料失敗");
+            await NotificationService.ShowErrorAsync("載入相關資料失敗");
+
+            warehouses = new List<Warehouse>();
+            warehouseLocations = new List<WarehouseLocation>();
+            employees = new List<Employee>();
+            products = new List<Product>();
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.TakingNumber),
+                    Label = "盤點單號",
+                    FieldType = FormFieldType.Text,
+                    IsReadOnly = true,
+                    Placeholder = "系統自動產生",
+                    HelpText = "系統自動產生的唯一盤點單號"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.TakingDate),
+                    Label = "盤點日期",
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    DefaultValue = DateTime.Today,
+                    HelpText = "請選擇盤點的日期"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.WarehouseId),
+                    Label = "倉庫",
+                    FieldType = FormFieldType.AutoComplete,
+                    IsRequired = true,
+                    Placeholder = "請選擇盤點倉庫",
+                    MinSearchLength = 0,
+                    HelpText = "選擇要進行盤點的倉庫"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.WarehouseLocationId),
+                    Label = "庫位",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = warehouseLocationOptions,
+                    Placeholder = "請選擇庫位（選填）",
+                    HelpText = "可選擇特定庫位進行盤點，留空則盤點整個倉庫"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.TakingType),
+                    Label = "盤點類型",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = takingTypeOptions,
+                    DefaultValue = (int)StockTakingTypeEnum.Full,
+                    HelpText = "選擇盤點的方式",
+                    LabelHelpItems = new List<LabelHelpItem>
+                    {
+                        new LabelHelpItem
+                        {
+                            Title = "全盤",
+                            Description = "盤點倉庫或庫位內所有商品，適合年度盤點或定期全面清查"
+                        },
+                        new LabelHelpItem
+                        {
+                            Title = "循環盤點",
+                            Description = "按照計畫輪流盤點不同商品類別，維持日常庫存準確性"
+                        },
+                        new LabelHelpItem
+                        {
+                            Title = "抽樣盤點",
+                            Description = "隨機抽取部分商品進行盤點，快速評估整體庫存準確度"
+                        },
+                        new LabelHelpItem
+                        {
+                            Title = "特定商品盤點",
+                            Description = "針對高價值或異常商品進行重點盤點"
+                        },
+                        new LabelHelpItem
+                        {
+                            Title = "特定位置盤點",
+                            Description = "針對特定儲位或區域進行盤點，適合區域輪動盤點"
+                        }
+                    }
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.TakingPersonnel),
+                    Label = "盤點員",
+                    FieldType = FormFieldType.AutoComplete,
+                    IsRequired = true,
+                    Placeholder = "請輸入或選擇盤點員",
+                    MinSearchLength = 0,
+                    HelpText = "負責執行盤點的人員"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.SupervisingPersonnel),
+                    Label = "監盤員",
+                    FieldType = FormFieldType.AutoComplete,
+                    IsRequired = false,
+                    Placeholder = "請輸入或選擇監盤員",
+                    MinSearchLength = 0,
+                    HelpText = "負責監督盤點的人員"
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<StockTaking>()
+            };
+
+            formSections = FormSectionHelper<StockTaking>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    st => st.TakingNumber,
+                    st => st.TakingDate,
+                    st => st.TakingType)
+                .AddToSection("盤點資訊",
+                    st => st.TakingPersonnel,
+                    st => st.SupervisingPersonnel,
+                    st => st.WarehouseId,
+                    st => st.WarehouseLocationId)
+                .AddToSection(FormSectionNames.AdditionalData,
+                    st => st.Remarks)
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeFormFieldsAsync), GetType(),
+                additionalData: "初始化表單欄位失敗");
+            formFields = new List<FormFieldDefinition>();
+            formSections = new Dictionary<string, string>();
+        }
+    }
+
+    // ===== 自訂模組 =====
+
+    private List<GenericEditModalComponent<StockTaking, IStockTakingService>.CustomModule> GetCustomModules()
+    {
+        if (editModalComponent == null)
+        {
+            return new List<GenericEditModalComponent<StockTaking, IStockTakingService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<StockTaking, IStockTakingService>.CustomModule>
+        {
+            new GenericEditModalComponent<StockTaking, IStockTakingService>.CustomModule
+            {
+                Order = 1,
+                IsVisible = true,
+                Content = CreateDetailTableContent()
+            }
+        };
+    }
+
+    private RenderFragment CreateDetailTableContent() => __builder =>
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            var isReadOnly = editModalComponent.Entity.TakingStatus == StockTakingStatusEnum.Approved ||
+                            editModalComponent.Entity.TakingStatus == StockTakingStatusEnum.Cancelled;
+
+            <div class="mt-3">
+                <StockTakingTable @ref="detailTableComponent"
+                                 Details="@stockTakingDetails"
+                                 DetailsChanged="@HandleDetailsChanged"
+                                 IsReadOnly="@isReadOnly"
+                                 SelectedWarehouseId="@selectedWarehouseId"
+                                 SelectedWarehouseLocationId="@selectedWarehouseLocationId"
+                                 Products="@products"
+                                 WarehouseLocations="@warehouseLocations" />
+            </div>
+        }
+    };
+
+    private void HandleDetailsChanged(List<StockTakingDetail> details)
+    {
+        stockTakingDetails = details;
+        StateHasChanged();
+    }
+
+    // ===== 儲存處理 =====
+
+    private async Task<bool> SaveStockTakingWrapper(StockTaking stockTaking)
+    {
+        try
+        {
+            if (stockTaking == null)
+            {
+                await NotificationService.ShowErrorAsync("沒有要儲存的盤點單資料");
+                return false;
+            }
+
+            // 使用 SaveWithDetailsAsync 同時儲存主檔和明細
+            // 這樣可以確保編輯模式下新增的明細也能正確存入資料庫
+            var result = await StockTakingService.SaveWithDetailsAsync(stockTaking, stockTakingDetails);
+
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存盤點單失敗");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveStockTakingWrapper), GetType(),
+                additionalData: $"儲存盤點單失敗 - ID: {stockTaking?.Id}");
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+            return false;
+        }
+    }
+
+    // ===== 驗證方法 =====
+
+    private async Task<bool> ValidateStockTakingDetailsAsync(StockTaking stockTaking)
+    {
+        try
+        {
+            // 驗證倉庫已選擇
+            if (stockTaking.WarehouseId <= 0)
+            {
+                await NotificationService.ShowErrorAsync("請選擇盤點倉庫");
+                return false;
+            }
+
+            // 驗證至少有一筆明細
+            if (!stockTakingDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("請至少新增一筆盤點商品");
+                return false;
+            }
+
+            // 驗證明細資料完整性
+            var invalidDetails = stockTakingDetails.Where(d => d.ProductId <= 0).ToList();
+
+            if (invalidDetails.Any())
+            {
+                await NotificationService.ShowErrorAsync("存在無效的明細資料，請檢查商品是否已選擇");
+                return false;
+            }
+
+            // 如果有 Table 組件，使用其驗證方法
+            if (detailTableComponent != null)
+            {
+                return await detailTableComponent.ValidateAsync();
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ValidateStockTakingDetailsAsync), GetType(),
+                additionalData: "驗證盤點明細失敗");
+            await NotificationService.ShowErrorAsync("驗證明細資料時發生錯誤");
+            return false;
+        }
+    }
+
+    // ===== 欄位變更處理 =====
+
+    private async Task OnFieldValueChanged((string PropertyName, object? Value) fieldChange)
+    {
+        try
+        {
+            // 倉庫變更時更新庫位選項
+            if (fieldChange.PropertyName == nameof(StockTaking.WarehouseId))
+            {
+                var warehouseIdStr = fieldChange.Value?.ToString();
+                if (int.TryParse(warehouseIdStr, out var warehouseId))
+                {
+                    selectedWarehouseId = warehouseId;
+                    selectedWarehouseLocationId = null; // 倉庫變更時清空庫位
+                    UpdateWarehouseLocationOptions(warehouseId);
+                }
+                else
+                {
+                    selectedWarehouseId = null;
+                    selectedWarehouseLocationId = null;
+                    warehouseLocationOptions.Clear();
+                }
+            }
+            // 庫位變更時更新明細表
+            else if (fieldChange.PropertyName == nameof(StockTaking.WarehouseLocationId))
+            {
+                var locationIdStr = fieldChange.Value?.ToString();
+                var newLocationId = string.IsNullOrEmpty(locationIdStr) ? (int?)null : int.Parse(locationIdStr);
+                
+                // 如果已有明細且庫位變更，提示使用者
+                if (stockTakingDetails.Any() && selectedWarehouseLocationId != newLocationId)
+                {
+                    // 清空明細，因為庫位已變更
+                    stockTakingDetails.Clear();
+                    if (detailTableComponent != null)
+                    {
+                        await detailTableComponent.RefreshDetailsAsync();
+                    }
+                }
+                
+                selectedWarehouseLocationId = newLocationId;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnFieldValueChanged), GetType(),
+                additionalData: $"處理欄位變更失敗 - Property: {fieldChange.PropertyName}");
+        }
+    }
+
+    private void UpdateWarehouseLocationOptions(int warehouseId)
+    {
+        var locations = warehouseLocations.Where(l => l.WarehouseId == warehouseId).ToList();
+        
+        // 建立選項列表，加入空值選項作為預設
+        warehouseLocationOptions = new List<SelectOption>
+        {
+            new SelectOption { Text = "不指定庫位（盤點整個倉庫）", Value = "" }
+        };
+        
+        warehouseLocationOptions.AddRange(locations.Select(l => new SelectOption
+        {
+            Text = l.Name ?? "",
+            Value = l.Id.ToString()
+        }));
+
+        // 更新表單欄位的選項
+        var locationField = formFields.FirstOrDefault(f => f.PropertyName == nameof(StockTaking.WarehouseLocationId));
+        if (locationField != null)
+        {
+            locationField.Options = warehouseLocationOptions;
+        }
+    }
+}

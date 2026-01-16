@@ -583,6 +583,14 @@
                     HelpText = "選擇進行此次採購的公司",
                     IsReadOnly = shouldLock
                 },
+                new FormFieldDefinition()
+                {
+                    PropertyName = nameof(PurchaseOrder.PurchasePersonnel),
+                    Label = "採購員",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    HelpText = "負責此次採購的員工姓名",                    
+                },
                 new()
                 {
                     PropertyName = nameof(PurchaseOrder.OrderDate),

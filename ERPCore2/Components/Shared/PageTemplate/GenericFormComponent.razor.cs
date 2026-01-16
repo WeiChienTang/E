@@ -160,6 +160,28 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
         return false;
     }
 
+    /// <summary>
+    /// 初始化 Bootstrap Popover 以支援標籤問號說明
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        
+        // 初始化 Popover (每次渲染都需要，因為可能有新的 Popover 元素)
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("popoverHelpers.initializeAll");
+        }
+        catch (JSDisconnectedException)
+        {
+            // 靜默處理斷線錯誤
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug("Popover initialization skipped: {Message}", ex.Message);
+        }
+    }
+
     public void Dispose()
     {
         _autoCompleteStates.Dispose();

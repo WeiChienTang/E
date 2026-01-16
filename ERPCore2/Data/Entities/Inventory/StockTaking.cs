@@ -58,10 +58,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "審核時間")]
         public DateTime? ApprovedAt { get; set; }
 
-        [MaxLength(500, ErrorMessage = "備註不可超過500個字元")]
-        [Display(Name = "備註")]
-        public string? TakingRemarks { get; set; }
-
         [Display(Name = "是否已產生調整單")]
         public bool IsAdjustmentGenerated { get; set; } = false;
 

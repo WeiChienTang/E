@@ -83,6 +83,20 @@
                     {
                         <span class="text-danger"> *</span>
                     }
+                    @if (field.LabelHelpItems?.Any() == true)
+                    {
+                        <button type="button" 
+                                class="btn btn-link p-0 ms-1 align-baseline label-help-btn"
+                                style="font-size: 0.85em; line-height: 1;"
+                                data-bs-toggle="popover"
+                                data-bs-trigger="focus"
+                                data-bs-placement="right"
+                                data-bs-html="true"
+                                data-bs-content="@GetLabelHelpContent(field.LabelHelpItems)"
+                                title="點擊查看說明">
+                            <i class="bi bi-question-circle text-secondary"></i>
+                        </button>
+                    }
                 </label>
             }
             
@@ -246,5 +260,28 @@
             var state = _autoCompleteStates.GetOrCreate(propertyName);
             state.DisplayValue = string.Empty;
         }
+    }
+
+    /// <summary>
+    /// 產生標籤問號說明的 HTML 內容
+    /// </summary>
+    private string GetLabelHelpContent(List<LabelHelpItem> helpItems)
+    {
+        if (helpItems == null || !helpItems.Any())
+            return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<div class='label-help-popover'>");
+        
+        foreach (var item in helpItems)
+        {
+            sb.Append("<div class='help-item mb-2'>");
+            sb.Append($"<strong class='text-primary'>{System.Net.WebUtility.HtmlEncode(item.Title)}</strong>");
+            sb.Append($"<div class='text-muted small'>{System.Net.WebUtility.HtmlEncode(item.Description)}</div>");
+            sb.Append("</div>");
+        }
+        
+        sb.Append("</div>");
+        return sb.ToString();
     }
 }

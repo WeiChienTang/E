@@ -160,6 +160,12 @@ public class FormFieldDefinition
     public List<FieldActionButton>? ActionButtons { get; set; }
     
     /// <summary>
+    /// 標籤問號說明項目列表 - 用於顯示選項的詳細說明
+    /// 點擊問號圖示時會彈出 Popover 顯示這些說明
+    /// </summary>
+    public List<LabelHelpItem>? LabelHelpItems { get; set; }
+    
+    /// <summary>
     /// HTML autocomplete 屬性 (用於控制瀏覽器自動填入行為)
     /// 常用值: "off"(關閉), "on"(開啟), "new-password"(新密碼), "current-password"(目前密碼) 等
     /// </summary>
@@ -390,4 +396,20 @@ public class FieldActionButton
     /// 是否停用
     /// </summary>
     public bool IsDisabled { get; set; } = false;
+}
+
+/// <summary>
+/// 標籤問號說明項目 - 用於在欄位標籤旁顯示問號圖示，點擊後彈出說明
+/// </summary>
+public class LabelHelpItem
+{
+    /// <summary>
+    /// 項目標題（如：全盤、循環盤點）
+    /// </summary>
+    public string Title { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 項目說明（如：對倉庫內所有商品進行完整盤點）
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
 }

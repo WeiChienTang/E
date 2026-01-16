@@ -1,0 +1,169 @@
+@page "/stocktakings"
+@inject IStockTakingService StockTakingService
+@inject IWarehouseService WarehouseService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+@using ERPCore2.Models
+@using ERPCore2.FieldConfiguration
+@using ERPCore2.Components.Shared
+@using ERPCore2.Helpers
+@using ERPCore2.Data.Enums
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="StockTaking"
+                          TService="IStockTakingService"
+                          Service="@StockTakingService"
+                          EntityBasePath="/stocktakings"
+                          PageTitle="盤點管理"
+                          PageSubtitle="管理庫存盤點單與盤點記錄"
+                          DataLoader="@LoadDataAsync"
+                          FilterApplier="@ApplyStockTakingFilters"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          EntityName="盤點單"
+                          GetEntityDisplayName="@(st => st.TakingNumber ?? "未命名")"
+                          RequiredPermission="StockTaking.Read"
+                          OnAddClick="@HandleAddClick"
+                          OnRowClick="@HandleEditClick"
+                          @ref="indexComponent" />
+
+@* 盤點單編輯 Modal *@
+<StockTakingEditModalComponent IsVisible="@showEditModal"
+                               IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                               StockTakingId="@editingStockTakingId"
+                               OnStockTakingSaved="@modalHandler.OnEntitySavedAsync"
+                               OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<StockTaking, IStockTakingService> indexComponent = default!;
+
+    // 欄位配置
+    private StockTakingFieldConfiguration fieldConfiguration = default!;
+
+    // 配置相關
+    private List<BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    // 相關資料
+    private List<Warehouse> warehouses = new();
+    private List<Employee> employees = new();
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingStockTakingId = null;
+
+    // Modal 處理器
+    private ModalHandler<StockTaking, GenericIndexPageComponent<StockTaking, IStockTakingService>> modalHandler = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<StockTaking, GenericIndexPageComponent<StockTaking, IStockTakingService>>(
+                id => editingStockTakingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+            await LoadRelatedDataAsync();
+
+            // 建立欄位配置
+            fieldConfiguration = new StockTakingFieldConfiguration(warehouses, employees, NotificationService);
+
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化盤點頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化盤點頁面失敗");
+        }
+    }
+
+    // ===== 初始化方法 =====
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "盤點管理", "#", NotificationService, GetType());
+
+    // ===== 資料載入方法 =====
+
+    private async Task LoadRelatedDataAsync()
+    {
+        try
+        {
+            // 並行載入相關資料
+            var warehousesTask = WarehouseService.GetAllAsync();
+            var employeesTask = EmployeeService.GetAllAsync();
+
+            await Task.WhenAll(warehousesTask, employeesTask);
+
+            warehouses = await warehousesTask;
+            var allEmployees = await employeesTask;
+            employees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRelatedDataAsync), GetType(), additionalData: "載入相關資料失敗");
+            await NotificationService.ShowErrorAsync("載入相關資料失敗");
+
+            warehouses = new List<Warehouse>();
+            employees = new List<Employee>();
+        }
+    }
+
+    private Task<List<StockTaking>> LoadDataAsync() =>
+        DataLoaderHelper.LoadAsync(() => StockTakingService.GetAllAsync(), "盤點單", NotificationService, GetType());
+
+    // ===== 篩選方法 =====
+
+    private IQueryable<StockTaking> ApplyStockTakingFilters(SearchFilterModel searchModel, IQueryable<StockTaking> query)
+    {
+        // 確保 fieldConfiguration 已初始化
+        if (fieldConfiguration == null)
+        {
+            return query.OrderByDescending(st => st.TakingDate)
+                       .ThenByDescending(st => st.TakingNumber);
+        }
+
+        return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyStockTakingFilters), GetType());
+    }
+
+    // ===== 事件處理方法 =====
+
+    private async Task HandleAddClick()
+    {
+        try
+        {
+            await modalHandler.ShowAddModalAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddClick), GetType(), additionalData: "處理新增盤點單事件失敗");
+            await NotificationService.ShowErrorAsync("處理新增盤點單事件失敗");
+        }
+    }
+
+    private async Task HandleEditClick(StockTaking stockTaking)
+    {
+        try
+        {
+            await modalHandler.ShowEditModalAsync(stockTaking);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEditClick), GetType(),
+                additionalData: $"處理編輯盤點單事件失敗 - ID: {stockTaking?.Id}");
+            await NotificationService.ShowErrorAsync("處理編輯盤點單事件失敗");
+        }
+    }
+}

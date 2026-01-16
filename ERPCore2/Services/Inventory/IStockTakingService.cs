@@ -29,6 +29,14 @@ namespace ERPCore2.Services
         Task<List<StockTakingDetail>> GetStockTakingDetailsAsync(int stockTakingId);
         Task<ServiceResult> UpdateStockTakingDetailAsync(int detailId, decimal actualStock, string? personnel = null, string? remarks = null);
         Task<ServiceResult> BatchUpdateStockTakingDetailsAsync(List<StockTakingDetailUpdateModel> updates);
+        
+        /// <summary>
+        /// 儲存盤點單連同明細（新增或更新模式都適用）
+        /// </summary>
+        /// <param name="stockTaking">盤點主檔</param>
+        /// <param name="details">盤點明細清單</param>
+        /// <returns>儲存結果</returns>
+        Task<ServiceResult<StockTaking>> SaveWithDetailsAsync(StockTaking stockTaking, List<StockTakingDetail> details);
 
         // 差異處理
         Task<List<StockTakingDetail>> GetDifferenceItemsAsync(int stockTakingId);
