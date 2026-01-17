@@ -70,6 +70,16 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "差異項目數")]
         public int DifferenceItems { get; set; } = 0;
 
+        [Display(Name = "差異金額")]
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal DifferenceAmount { get; set; } = 0;
+
+        /// <summary>
+        /// 從明細計算差異金額（用於更新 DifferenceAmount 欄位）
+        /// </summary>
+        [NotMapped]
+        public decimal CalculatedDifferenceAmount => StockTakingDetails?.Where(d => d.DifferenceAmount.HasValue).Sum(d => d.DifferenceAmount!.Value) ?? 0;
+
         [Display(Name = "盤點完成率")]
         [Column(TypeName = "decimal(5,2)")]
         public decimal CompletionRate => TotalItems > 0 ? (decimal)CompletedItems / TotalItems * 100 : 0;

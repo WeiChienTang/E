@@ -286,11 +286,15 @@ namespace ERPCore2.Services
                 // 計算統計資料
                 var completedItems = stockTaking.StockTakingDetails.Count(d => d.ActualStock.HasValue);
                 var differenceItems = stockTaking.StockTakingDetails.Count(d => d.HasDifference);
+                var differenceAmount = stockTaking.StockTakingDetails
+                    .Where(d => d.DifferenceAmount.HasValue)
+                    .Sum(d => d.DifferenceAmount!.Value);
 
                 stockTaking.TakingStatus = StockTakingStatusEnum.Completed;
                 stockTaking.EndTime = DateTime.Now;
                 stockTaking.CompletedItems = completedItems;
                 stockTaking.DifferenceItems = differenceItems;
+                stockTaking.DifferenceAmount = differenceAmount;
                 stockTaking.UpdatedAt = DateTime.Now;
 
                 await context.SaveChangesAsync();
@@ -478,6 +482,9 @@ namespace ERPCore2.Services
                     savedEntity.CompletedItems = details.Count(d => d.ActualStock.HasValue);
                     savedEntity.DifferenceItems = details.Count(d => 
                         d.ActualStock.HasValue && d.ActualStock.Value != d.SystemStock);
+                    savedEntity.DifferenceAmount = details
+                        .Where(d => d.DifferenceAmount.HasValue)
+                        .Sum(d => d.DifferenceAmount!.Value);
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();

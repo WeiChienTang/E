@@ -150,6 +150,9 @@
                 await detailTableComponent.RefreshDetailsAsync();
             }
 
+            // 重新初始化表單欄位以更新動態樣式（差異金額和完成率的顏色）
+            await InitializeFormFieldsAsync();
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -223,6 +226,12 @@
                 stockTakingDetails = stockTaking.StockTakingDetails?.ToList() ?? new List<StockTakingDetail>();
                 selectedWarehouseId = stockTaking.WarehouseId;
                 selectedWarehouseLocationId = stockTaking.WarehouseLocationId;
+                
+                // 明細載入後重新初始化表單欄位，以更新動態樣式（差異金額和完成率的顏色）
+                await InitializeFormFieldsAsync();
+                
+                // 強制 UI 更新，確保 FormFields 參數正確傳遞給 GenericEditModalComponent
+                StateHasChanged();
             }
 
             return stockTaking;
@@ -421,6 +430,52 @@
                     HelpText = "負責監督盤點的人員"
                 },
 
+                // 盤點結果欄位
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.TotalItems),
+                    Label = "盤點總項目數",
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true,
+                    HelpText = "盤點清單中的商品總項目數"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.CompletedItems),
+                    Label = "已盤點項目數",
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true,
+                    HelpText = "已完成盤點的商品項目數"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.DifferenceItems),
+                    Label = "差異項目數",
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true,
+                    HelpText = "存在數量差異的商品項目數"
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.DifferenceAmount),
+                    Label = "差異金額",
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true,
+                    DecimalPlaces = 2,
+                    HelpText = "所有差異項目的金額總計",
+                    CssClass = GetDifferenceAmountCssClass() // 動態設定顏色
+                },
+                new FormFieldDefinition
+                {
+                    PropertyName = nameof(StockTaking.CompletionRate),
+                    Label = "盤點完成率 (%)",
+                    FieldType = FormFieldType.Number,
+                    IsReadOnly = true,
+                    DecimalPlaces = 2,
+                    HelpText = "已盤點項目數占總項目數的百分比",
+                    CssClass = GetCompletionRateCssClass() // 動態設定顏色
+                },
+
                 FormFieldConfigurationHelper.CreateRemarksField<StockTaking>()
             };
 
@@ -434,6 +489,12 @@
                     st => st.SupervisingPersonnel,
                     st => st.WarehouseId,
                     st => st.WarehouseLocationId)
+                .AddToSection("盤點結果(系統自動計算)",
+                    st => st.TotalItems,
+                    st => st.CompletedItems,
+                    st => st.DifferenceItems,
+                    st => st.DifferenceAmount,
+                    st => st.CompletionRate)
                 .AddToSection(FormSectionNames.AdditionalData,
                     st => st.Remarks)
                 .Build();
@@ -487,10 +548,47 @@
         }
     };
 
-    private void HandleDetailsChanged(List<StockTakingDetail> details)
+    private async void HandleDetailsChanged(List<StockTakingDetail> details)
     {
         stockTakingDetails = details;
+        
+        // 重新初始化表單欄位以更新動態樣式（差異金額和完成率的顏色）
+        await InitializeFormFieldsAsync();
+        
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 取得差異金額欄位的 CSS 樣式
+    /// - 正數=綠色，負數=紅色，零=默認
+    /// </summary>
+    private string GetDifferenceAmountCssClass()
+    {
+        var amount = stockTakingDetails?
+            .Where(d => d.DifferenceAmount.HasValue)
+            .Sum(d => d.DifferenceAmount!.Value) ?? 0;
+
+        return amount switch
+        {
+            > 0 => "text-success fw-bold", // 正數：綠色粗體
+            < 0 => "text-danger fw-bold",  // 負數：紅色粗體
+            _ => "fw-bold"                 // 零：默認粗體
+        };
+    }
+
+    /// <summary>
+    /// 取得盤點完成率欄位的 CSS 樣式
+    /// - 100%=綠色，其他=黃色
+    /// </summary>
+    private string GetCompletionRateCssClass()
+    {
+        var totalItems = stockTakingDetails?.Count ?? 0;
+        var completedItems = stockTakingDetails?.Count(d => d.ActualStock.HasValue) ?? 0;
+        var rate = totalItems > 0 ? (decimal)completedItems / totalItems * 100 : 0;
+
+        return rate >= 100m 
+            ? "text-success fw-bold"  // 100%：綠色粗體
+            : "text-warning fw-bold"; // 其他：黃色粗體
     }
 
     // ===== 儲存處理 =====

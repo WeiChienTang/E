@@ -145,13 +145,50 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
+                        nameof(StockTaking.DifferenceAmount),
+                        new FieldDefinition<StockTaking>
+                        {
+                            PropertyName = nameof(StockTaking.DifferenceAmount),
+                            DisplayName = "差異金額",
+                            ColumnType = ColumnDataType.Number,
+                            TableOrder = 9,
+                            ShowInFilter = false,
+                            CustomTemplate = value => builder =>
+                            {
+                                if (value is StockTaking stockTaking)
+                                {
+                                    var amount = stockTaking.DifferenceAmount;
+                                    var colorClass = amount > 0 ? "text-success" : amount < 0 ? "text-danger" : "";
+                                    
+                                    builder.OpenElement(0, "span");
+                                    if (!string.IsNullOrEmpty(colorClass))
+                                    {
+                                        builder.AddAttribute(1, "class", colorClass);
+                                    }
+                                    builder.AddContent(2, NumberFormatHelper.FormatSmart(amount));
+                                    builder.CloseElement();
+                                }
+                            }
+                        }
+                    },
+                    {
+                        nameof(StockTaking.CompletionRate),
+                        new FieldDefinition<StockTaking>
+                        {
+                            PropertyName = nameof(StockTaking.CompletionRate),
+                            DisplayName = "完成率(%)",
+                            ColumnType = ColumnDataType.Number,
+                            TableOrder = 10,
+                        }
+                    },
+                    {
                         nameof(StockTaking.Remarks),
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.Remarks),
                             DisplayName = "備註",
                             FilterPlaceholder = "輸入備註搜尋",
-                            TableOrder = 9,
+                            TableOrder = 11,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(StockTaking.Remarks), st => st.Remarks, allowNull: true)
                         }
