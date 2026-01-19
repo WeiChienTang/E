@@ -41,7 +41,8 @@
                           OnFieldChanged="@OnFieldValueChanged"
                           CustomValidator="@ValidateStockTakingDetailsAsync"
                           CustomModules="@GetCustomModules()"
-                          OnEntityLoaded="@HandleEntityLoaded">
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomActionButtons="@CustomActionButtons">
 </GenericEditModalComponent>
 
 @code {
@@ -745,4 +746,129 @@
             locationField.Options = warehouseLocationOptions;
         }
     }
+
+    // ===== 庫存調整功能 =====
+
+    /// <summary>
+    /// 判斷是否可以執行庫存調整
+    /// 條件：已儲存（有 Id）+ 尚未產生調整單
+    /// </summary>
+    private bool CanApplyAdjustment =>
+        editModalComponent?.Entity != null &&
+        editModalComponent.Entity.Id > 0 &&
+        !editModalComponent.Entity.IsAdjustmentGenerated;
+
+    /// <summary>
+    /// 取得差異項目數量（用於確認訊息）
+    /// </summary>
+    private int GetDifferenceItemsCount()
+    {
+        return stockTakingDetails.Count(d => d.HasDifference && !d.IsAdjusted);
+    }
+
+    /// <summary>
+    /// 取得差異總金額（用於確認訊息）
+    /// </summary>
+    private decimal GetTotalDifferenceAmount()
+    {
+        return stockTakingDetails
+            .Where(d => d.HasDifference && !d.IsAdjusted)
+            .Sum(d => d.DifferenceAmount ?? 0);
+    }
+
+    /// <summary>
+    /// 處理執行庫存調整按鈕點擊
+    /// </summary>
+    private async Task HandleApplyAdjustment()
+    {
+        try
+        {
+            // 安全檢查
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowErrorAsync("請先載入盤點單資料");
+                return;
+            }
+
+            var entity = editModalComponent.Entity;
+
+            // 檢查是否已儲存
+            if (entity.Id <= 0)
+            {
+                await NotificationService.ShowErrorAsync("請先儲存盤點單後再執行庫存調整");
+                return;
+            }
+
+            if (entity.IsAdjustmentGenerated)
+            {
+                await NotificationService.ShowWarningAsync("此盤點單已執行過庫存調整");
+                return;
+            }
+
+            // 檢查是否有差異項目
+            var differenceCount = GetDifferenceItemsCount();
+            if (differenceCount == 0)
+            {
+                await NotificationService.ShowInfoAsync("沒有需要調整的差異項目");
+                return;
+            }
+
+            // 顯示確認對話框
+            var totalAmount = GetTotalDifferenceAmount();
+            var amountDisplay = totalAmount >= 0 
+                ? $"+{totalAmount:N2}" 
+                : totalAmount.ToString("N2");
+            
+            var confirmed = await JSRuntime.InvokeAsync<bool>(
+                "confirm",
+                $"確定要執行庫存調整嗎？\n\n" +
+                $"• 差異項目數：{differenceCount} 筆\n" +
+                $"• 差異金額：{amountDisplay}\n\n" +
+                $"執行後將更新對應庫位的庫存數量，此操作無法復原。");
+
+            if (!confirmed) return;
+
+            // 執行庫存調整
+            var result = await StockTakingService.GenerateAdjustmentTransactionsAsync(entity.Id);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"庫存調整完成，已處理 {differenceCount} 筆差異項目");
+                
+                // 重新載入資料以更新狀態
+                await HandleEntityLoaded(entity.Id);
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "執行庫存調整失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleApplyAdjustment), GetType(),
+                additionalData: $"執行庫存調整失敗 - StockTakingId: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync("執行庫存調整時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? CustomActionButtons => __builder =>
+    {
+        @* 執行庫存調整按鈕 - 已儲存後顯示 *@
+        @if (editModalComponent?.Entity?.Id > 0)
+        {
+            var isAdjusted = editModalComponent.Entity.IsAdjustmentGenerated;
+            var buttonText = isAdjusted ? "調整完成" : "調整庫存";
+            var buttonVariant = isAdjusted ? ButtonVariant.Gray : ButtonVariant.DarkBlue;
+            
+            <GenericButtonComponent Text="@buttonText"
+                                  Variant="@buttonVariant"
+                                  OnClick="@HandleApplyAdjustment"
+                                  IsDisabled="@isAdjusted"
+                                  Title="@(isAdjusted ? "此盤點單已執行過庫存調整" : "將盤點結果更新到對應庫位的庫存")" />
+        }
+    };
 }

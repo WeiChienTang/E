@@ -693,8 +693,7 @@ namespace ERPCore2.Services
                     if (stockTaking == null)
                         return ServiceResult.Failure("找不到指定的盤點記錄");
 
-                    if (stockTaking.TakingStatus != StockTakingStatusEnum.Approved)
-                        return ServiceResult.Failure("只有已審核的盤點才能產生調整單");
+                    // 已移除審核狀態檢查，簡化流程
 
                     if (stockTaking.IsAdjustmentGenerated)
                         return ServiceResult.Failure("此盤點已產生過調整單");
@@ -709,26 +708,31 @@ namespace ERPCore2.Services
                     int adjustedCount = 0;
                     foreach (var item in differenceItems)
                     {
-                        if (item.DifferenceQuantity.HasValue && _inventoryTransactionService != null)
+                        if (item.DifferenceQuantity.HasValue && item.ActualStock.HasValue)
                         {
-                            var adjustmentNumber = $"ADJ-{stockTaking.TakingNumber}-{DateTime.Now:yyyyMMddHHmmss}";
+                            // 縮短調整單號格式，確保不超過30字元
+                            // 格式：ADJ-{盤點單Id}-{明細項次} (例：ADJ-1-001)
+                            var adjustmentNumber = $"ADJ-{stockTaking.Id}-{adjustedCount + 1:D3}";
                             
-                            var result = await _inventoryTransactionService.CreateAdjustmentTransactionAsync(
-                                item.ProductId,
-                                stockTaking.WarehouseId,
-                                item.SystemStock,
-                                item.ActualStock!.Value,
-                                adjustmentNumber,
-                                item.WarehouseLocationId,
-                                $"盤點調整 - {stockTaking.TakingNumber}",
-                                stockTaking.ApprovedBy
-                            );
-
-                            if (result.IsSuccess)
+                            // 使用 IInventoryStockService.AdjustStockAsync 來實際更新庫存
+                            // 這會同時更新 InventoryStock/InventoryStockDetail 並建立異動記錄
+                            if (_inventoryStockService != null)
                             {
-                                item.IsAdjusted = true;
-                                item.AdjustmentNumber = adjustmentNumber;
-                                adjustedCount++;
+                                var result = await _inventoryStockService.AdjustStockAsync(
+                                    item.ProductId,
+                                    stockTaking.WarehouseId,
+                                    item.ActualStock.Value,  // 調整後的新數量
+                                    adjustmentNumber,
+                                    $"盤點調整 - {stockTaking.TakingNumber}",
+                                    item.WarehouseLocationId
+                                );
+
+                                if (result.IsSuccess)
+                                {
+                                    item.IsAdjusted = true;
+                                    item.AdjustmentNumber = adjustmentNumber;
+                                    adjustedCount++;
+                                }
                             }
                         }
                     }
@@ -983,6 +987,163 @@ namespace ERPCore2.Services
         public override async Task<ServiceResult> ValidateAsync(StockTaking entity)
         {
             return await ValidateStockTakingAsync(entity);
+        }
+
+        /// <summary>
+        /// 軟刪除盤點單
+        /// 如果已執行庫存調整，會自動回滾庫存
+        /// </summary>
+        public override async Task<ServiceResult> DeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var entity = await context.StockTakings
+                    .Include(st => st.StockTakingDetails)
+                    .FirstOrDefaultAsync(st => st.Id == id);
+                    
+                if (entity == null)
+                    return ServiceResult.Failure("找不到要刪除的盤點單");
+
+                // 如果已執行庫存調整，需要先回滾庫存
+                if (entity.IsAdjustmentGenerated)
+                {
+                    var rollbackResult = await RollbackStockAdjustmentAsync(entity);
+                    if (!rollbackResult.IsSuccess)
+                        return rollbackResult;
+                }
+
+                // 執行軟刪除
+                entity.Status = EntityStatus.Deleted;
+                entity.UpdatedAt = DateTime.Now;
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeleteAsync), GetType(), _logger, new { 
+                    StockTakingId = id 
+                });
+                return ServiceResult.Failure($"刪除盤點單時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 永久刪除盤點單
+        /// 如果已執行庫存調整，會自動回滾庫存
+        /// </summary>
+        public override async Task<ServiceResult> PermanentDeleteAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    var entity = await context.StockTakings
+                        .Include(st => st.StockTakingDetails)
+                        .FirstOrDefaultAsync(st => st.Id == id);
+                        
+                    if (entity == null)
+                        return ServiceResult.Failure("找不到要刪除的盤點單");
+
+                    // 如果已執行庫存調整，需要先回滾庫存
+                    if (entity.IsAdjustmentGenerated)
+                    {
+                        var rollbackResult = await RollbackStockAdjustmentAsync(entity);
+                        if (!rollbackResult.IsSuccess)
+                        {
+                            await transaction.RollbackAsync();
+                            return rollbackResult;
+                        }
+                    }
+
+                    // 刪除相關的庫存異動記錄（ADJ-{盤點單Id}-xxx）
+                    var adjTransactions = await context.InventoryTransactions
+                        .Where(t => t.TransactionNumber.StartsWith($"ADJ-{id}-"))
+                        .ToListAsync();
+                    
+                    if (adjTransactions.Any())
+                    {
+                        context.InventoryTransactions.RemoveRange(adjTransactions);
+                    }
+
+                    // 永久刪除盤點單（EF Core 會自動刪除相關明細）
+                    context.StockTakings.Remove(entity);
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return ServiceResult.Success();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(PermanentDeleteAsync), GetType(), _logger, new { 
+                    StockTakingId = id 
+                });
+                return ServiceResult.Failure($"永久刪除盤點單時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 回滾庫存調整
+        /// 將每個明細的庫存從 ActualStock 還原回 SystemStock
+        /// </summary>
+        private async Task<ServiceResult> RollbackStockAdjustmentAsync(StockTaking stockTaking)
+        {
+            try
+            {
+                if (_inventoryStockService == null)
+                    return ServiceResult.Failure("庫存服務不可用");
+
+                // 只處理已調整的明細
+                var adjustedDetails = stockTaking.StockTakingDetails
+                    .Where(d => d.IsAdjusted && d.ActualStock.HasValue)
+                    .ToList();
+
+                if (!adjustedDetails.Any())
+                    return ServiceResult.Success();
+
+                int rollbackCount = 0;
+                foreach (var detail in adjustedDetails)
+                {
+                    // 將庫存調整回原本的 SystemStock
+                    var rollbackNumber = $"RB-{stockTaking.Id}-{rollbackCount + 1:D3}";
+                    
+                    var result = await _inventoryStockService.AdjustStockAsync(
+                        detail.ProductId,
+                        stockTaking.WarehouseId,
+                        detail.SystemStock,  // 還原到盤點前的數量
+                        rollbackNumber,
+                        $"盤點單刪除回滾 - {stockTaking.TakingNumber}",
+                        detail.WarehouseLocationId
+                    );
+
+                    if (!result.IsSuccess)
+                    {
+                        return ServiceResult.Failure($"回滾庫存失敗（商品ID: {detail.ProductId}）：{result.ErrorMessage}");
+                    }
+
+                    rollbackCount++;
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RollbackStockAdjustmentAsync), GetType(), _logger, new { 
+                    StockTakingId = stockTaking.Id 
+                });
+                return ServiceResult.Failure($"回滾庫存調整時發生錯誤: {ex.Message}");
+            }
         }
 
         #endregion
