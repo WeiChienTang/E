@@ -78,7 +78,7 @@ namespace ERPCore2.Data.Entities
         public InventoryStock InventoryStock { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
-        public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
+        public ICollection<InventoryTransactionDetail> InventoryTransactions { get; set; } = new List<InventoryTransactionDetail>();
         public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();
     }
 }

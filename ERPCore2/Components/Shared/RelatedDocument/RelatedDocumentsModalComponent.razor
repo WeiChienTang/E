@@ -124,6 +124,9 @@
             RelatedDocumentType.SupplierRecommendation => doc => 
                 @<SupplierRecommendationDetailsTemplate Document="@doc" />,
             
+            RelatedDocumentType.InventoryTransaction => doc => 
+                @<InventoryTransactionDetailsTemplate Document="@doc" />,
+            
             _ => null // 使用預設範本
         };
     }

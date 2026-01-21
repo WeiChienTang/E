@@ -10,24 +10,22 @@ using System.ComponentModel;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>
-    /// 庫存異動記錄欄位配置
+    /// 庫存異動記錄欄位配置（主檔）
+    /// 注意：明細資料透過 InventoryTransactionTable 元件顯示
     /// </summary>
     public class InventoryTransactionFieldConfiguration : BaseFieldConfiguration<InventoryTransaction>
     {
-        private readonly List<Product> _products;
         private readonly List<Warehouse> _warehouses;
-        private readonly List<WarehouseLocation> _warehouseLocations;
+        private readonly List<Employee> _employees;
         private readonly INotificationService? _notificationService;
 
         public InventoryTransactionFieldConfiguration(
-            List<Product> products,
             List<Warehouse> warehouses,
-            List<WarehouseLocation>? warehouseLocations = null,
+            List<Employee>? employees = null,
             INotificationService? notificationService = null)
         {
-            _products = products ?? new List<Product>();
             _warehouses = warehouses ?? new List<Warehouse>();
-            _warehouseLocations = warehouseLocations ?? new List<WarehouseLocation>();
+            _employees = employees ?? new List<Employee>();
             _notificationService = notificationService;
         }
 
@@ -89,39 +87,41 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(InventoryTransaction.ProductId),
+                        nameof(InventoryTransaction.SourceDocumentType),
                         new FieldDefinition<InventoryTransaction>
                         {
-                            PropertyName = "Product.Code", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryTransaction.ProductId), // 篩選器用
-                            DisplayName = "商品編號",
-                            FilterType = SearchFilterType.Select,
+                            PropertyName = nameof(InventoryTransaction.SourceDocumentType),
+                            DisplayName = "來源類型",
                             TableOrder = 4,
-                            Options = _products.Select(p => new SelectOption 
-                            { 
-                                Text = $"{p.Code} - {p.Name}", 
-                                Value = p.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(InventoryTransaction.ProductId), t => t.ProductId)
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is InventoryTransaction transaction)
+                                {
+                                    var displayName = InventorySourceDocumentTypes.GetDisplayName(transaction.SourceDocumentType);
+                                    builder.AddContent(0, displayName);
+                                }
+                            }),
+                            NullDisplayText = "-",
+                            ShowInFilter = false
                         }
                     },
                     {
-                        "ProductName",
+                        nameof(InventoryTransaction.SourceDocumentId),
                         new FieldDefinition<InventoryTransaction>
                         {
-                            PropertyName = "Product.Name",
-                            DisplayName = "商品名稱",
+                            PropertyName = nameof(InventoryTransaction.SourceDocumentId),
+                            DisplayName = "來源單據ID",
                             TableOrder = 5,
-                            ShowInFilter = false,
+                            NullDisplayText = "-",
+                            ShowInFilter = false
                         }
                     },
                     {
                         nameof(InventoryTransaction.WarehouseId),
                         new FieldDefinition<InventoryTransaction>
                         {
-                            PropertyName = "Warehouse.Name", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryTransaction.WarehouseId), // 篩選器用
+                            PropertyName = "Warehouse.Name",
+                            FilterPropertyName = nameof(InventoryTransaction.WarehouseId),
                             DisplayName = "倉庫",
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
@@ -134,129 +134,19 @@ namespace ERPCore2.FieldConfiguration
                                 model, query, nameof(InventoryTransaction.WarehouseId), t => t.WarehouseId)
                         }
                     },
-                    {
-                        nameof(InventoryTransaction.WarehouseLocationId),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = "WarehouseLocation.Name", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryTransaction.WarehouseLocationId), // 篩選器用
-                            DisplayName = "庫位",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 7,
-                            NullDisplayText = "無",
-                            Options = _warehouseLocations.Select(wl => new SelectOption 
-                            { 
-                                Text = $"{wl.Code} - {wl.Name}", 
-                                Value = wl.Id.ToString() 
-                            }).ToList(),
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(InventoryTransaction.WarehouseLocationId), t => t.WarehouseLocationId)
-                        }
-                    },
-                    {
-                        nameof(InventoryTransaction.Quantity),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = nameof(InventoryTransaction.Quantity),
-                            DisplayName = "數量",
-                            FilterType = SearchFilterType.NumberRange,
-                            ColumnType = ColumnDataType.Number,
-                            TableOrder = 8,
-                            CustomTemplate = (data) => (RenderFragment)((builder) =>
-                            {
-                                if (data is InventoryTransaction transaction)
-                                {
-                                    var quantity = transaction.Quantity;
-                                    var textClass = quantity >= 0 ? "text-success" : "text-danger";
-                                    var symbol = quantity >= 0 ? "+" : "";
-                                    
-                                    builder.OpenElement(0, "span");
-                                    builder.AddAttribute(1, "class", textClass);
-                                    builder.AddContent(2, $"{symbol}{quantity:N0}");
-                                    builder.CloseElement();
-                                }
-                            }),
-                            ShowInFilter = false // 數量範圍篩選暫不提供
-                        }
-                    },
-                    {
-                        nameof(InventoryTransaction.UnitCost),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = nameof(InventoryTransaction.UnitCost),
-                            DisplayName = "單位成本",
-                            FilterType = SearchFilterType.NumberRange,
-                            ColumnType = ColumnDataType.Currency,
-                            TableOrder = 9,
-                            NullDisplayText = "-",
-                            ShowInFilter = false // 成本範圍篩選暫不提供
-                        }
-                    },
-                    {
-                        nameof(InventoryTransaction.StockBefore),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = nameof(InventoryTransaction.StockBefore),
-                            DisplayName = "交易前庫存",
-                            ColumnType = ColumnDataType.Number,
-                            TableOrder = 10,
-                            ShowInFilter = false,
-                        }
-                    },
-                    {
-                        nameof(InventoryTransaction.StockAfter),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = nameof(InventoryTransaction.StockAfter),
-                            DisplayName = "交易後庫存",
-                            ColumnType = ColumnDataType.Number,
-                            TableOrder = 11,
-                            ShowInFilter = false,
-                        }
-                    },
-                    {
-                        nameof(InventoryTransaction.TransactionBatchNumber),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = nameof(InventoryTransaction.TransactionBatchNumber),
-                            DisplayName = "批號",
-                            FilterPlaceholder = "輸入批號搜尋",
-                            TableOrder = 14,
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(InventoryTransaction.TransactionBatchNumber), t => t.TransactionBatchNumber, allowNull: true)
-                        }
-                    },
-                    {
-                        nameof(InventoryTransaction.TransactionBatchDate),
-                        new FieldDefinition<InventoryTransaction>
-                        {
-                            PropertyName = nameof(InventoryTransaction.TransactionBatchDate),
-                            DisplayName = "批次進貨日期",
-                            FilterType = SearchFilterType.DateRange,
-                            ColumnType = ColumnDataType.Date,
-                            TableOrder = 15,
-                            FilterOrder = 0, // 不在篩選器中顯示
-                            ShowInFilter = false,
-                            NullDisplayText = "-"
-                        }
-                    },
                 };
             }
             catch (Exception ex)
             {
-                // 記錄錯誤
                 _ = Task.Run(async () =>
                 {
                     await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetFieldDefinitions), GetType(), additionalData: new 
                     { 
-                        ProductsCount = _products?.Count ?? 0,
                         WarehousesCount = _warehouses?.Count ?? 0,
-                        WarehouseLocationsCount = _warehouseLocations?.Count ?? 0
+                        EmployeesCount = _employees?.Count ?? 0
                     });
                 });
 
-                // 通知使用者
                 if (_notificationService != null)
                 {
                     _ = Task.Run(async () =>
@@ -265,7 +155,6 @@ namespace ERPCore2.FieldConfiguration
                     });
                 }
 
-                // 回傳空的配置，讓頁面使用預設行為
                 return new Dictionary<string, FieldDefinition<InventoryTransaction>>();
             }
         }
@@ -318,17 +207,18 @@ namespace ERPCore2.FieldConfiguration
                 InventoryTransactionTypeEnum.Purchase => "bg-success",
                 InventoryTransactionTypeEnum.Sale => "bg-primary",
                 InventoryTransactionTypeEnum.Return => "bg-warning",
+                InventoryTransactionTypeEnum.SalesReturn => "bg-info",
                 InventoryTransactionTypeEnum.Adjustment => "bg-info",
                 InventoryTransactionTypeEnum.Transfer => "bg-secondary",
                 InventoryTransactionTypeEnum.StockTaking => "bg-dark",
                 InventoryTransactionTypeEnum.ProductionConsumption => "bg-danger",
                 InventoryTransactionTypeEnum.ProductionCompletion => "bg-success",
                 InventoryTransactionTypeEnum.Scrap => "bg-danger",
+                InventoryTransactionTypeEnum.MaterialIssue => "bg-warning",
+                InventoryTransactionTypeEnum.MaterialReturn => "bg-info",
                 InventoryTransactionTypeEnum.OpeningBalance => "bg-light text-dark",
                 _ => "bg-light text-dark"
             };
         }
-
-        /// <summary>
     }
 }

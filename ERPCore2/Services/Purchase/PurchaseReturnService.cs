@@ -747,7 +747,9 @@ namespace ERPCore2.Services
                                     InventoryTransactionTypeEnum.Return,
                                     $"{savedEntity.Code}_ADJ",
                                     detail.WarehouseLocationId,
-                                    operationDescription
+                                    operationDescription,
+                                    sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
+                                    sourceDocumentId: savedEntity.Id
                                 );
                             }
                             else
@@ -762,7 +764,10 @@ namespace ERPCore2.Services
                                     $"{savedEntity.Code}_ADJ",
                                     detail.OriginalUnitPrice,
                                     detail.WarehouseLocationId,
-                                    operationDescription
+                                    operationDescription,
+                                    null, null, null, // batchNumber, batchDate, expiryDate
+                                    sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
+                                    sourceDocumentId: savedEntity.Id
                                 );
                             }
 
@@ -1107,7 +1112,10 @@ namespace ERPCore2.Services
                                 $"{entity.Code}_DEL", // 標記為刪除操作
                                 detail.OriginalUnitPrice, // 使用原始單價
                                 detail.WarehouseLocationId,
-                                $"刪除採購退貨單回復庫存 - {entity.Code}"
+                                $"刪除採購退貨單回復庫存 - {entity.Code}",
+                                null, null, null, // batchNumber, batchDate, expiryDate
+                                sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
+                                sourceDocumentId: entity.Id
                             );
 
                             if (!addResult.IsSuccess)
@@ -1231,7 +1239,9 @@ namespace ERPCore2.Services
                                     InventoryTransactionTypeEnum.Return,
                                     purchaseReturn.Code ?? string.Empty,  // 使用原始單號，不帶 _ADJ
                                     detail.WarehouseLocationId,
-                                    $"採購退回確認 - {purchaseReturn.Code ?? string.Empty}"
+                                    $"採購退回確認 - {purchaseReturn.Code ?? string.Empty}",
+                                    sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
+                                    sourceDocumentId: purchaseReturn.Id
                                     );
                                 
                                 if (!reduceStockResult.IsSuccess)

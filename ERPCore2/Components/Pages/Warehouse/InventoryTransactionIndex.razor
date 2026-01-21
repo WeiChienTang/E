@@ -1,8 +1,7 @@
 @page "/inventoryTransactions"
 @inject IInventoryTransactionService InventoryTransactionService
-@inject IProductService ProductService
 @inject IWarehouseService WarehouseService
-@inject IWarehouseLocationService WarehouseLocationService
+@inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @rendermode InteractiveServer
 
@@ -24,7 +23,6 @@
                           RequiredPermission="InventoryTransaction.Read"
                           ShowAddButton="false"
                           AutoAddRemarksColumn="false"
-                          ShowActions = "false"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
 
@@ -47,9 +45,8 @@
     private ModalHandler<InventoryTransaction, GenericIndexPageComponent<InventoryTransaction, IInventoryTransactionService>> modalHandler = default!;
 
     // 基礎資料
-    private List<Product> products = new();
     private List<Warehouse> warehouses = new();
-    private List<WarehouseLocation> warehouseLocations = new();
+    private List<Employee> employees = new();
 
     // 配置相關
     private InventoryTransactionFieldConfiguration fieldConfiguration = default!;
@@ -75,12 +72,11 @@
             await InitializeBreadcrumbsAsync();
             
             // 載入所有必要的基礎資料
-            await LoadProductsAsync();
             await LoadWarehousesAsync();
-            await LoadWarehouseLocationsAsync();
+            await LoadEmployeesAsync();
 
             // 建立欄位配置
-            fieldConfiguration = new InventoryTransactionFieldConfiguration(products, warehouses, warehouseLocations, NotificationService);
+            fieldConfiguration = new InventoryTransactionFieldConfiguration(warehouses, employees, NotificationService);
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
         }
@@ -101,19 +97,14 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("庫存管理", "庫存異動記錄", "#", NotificationService, GetType());
 
     /// <summary>
-    /// 載入商品資料
-    /// </summary>
-    private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "商品", NotificationService, GetType());
-
-    /// <summary>
     /// 載入倉庫資料
     /// </summary>
     private async Task LoadWarehousesAsync() => warehouses = await DataLoaderHelper.LoadAsync(() => WarehouseService.GetAllAsync(), "倉庫", NotificationService, GetType());
 
     /// <summary>
-    /// 載入倉庫位置資料
+    /// 載入員工資料
     /// </summary>
-    private async Task LoadWarehouseLocationsAsync() => warehouseLocations = await DataLoaderHelper.LoadAsync(() => WarehouseLocationService.GetAllAsync(), "倉庫位置", NotificationService, GetType());
+    private async Task LoadEmployeesAsync() => employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
     /// <summary>
     /// 載入庫存異動記錄資料

@@ -39,6 +39,7 @@ namespace ERPCore2.Data.Context
       public DbSet<InventoryStock> InventoryStocks { get; set; }
       public DbSet<InventoryStockDetail> InventoryStockDetails { get; set; }
       public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+      public DbSet<InventoryTransactionDetail> InventoryTransactionDetails { get; set; }
       public DbSet<InventoryReservation> InventoryReservations { get; set; }
       public DbSet<StockTaking> StockTakings { get; set; }
       public DbSet<StockTakingDetail> StockTakingDetails { get; set; }
@@ -289,14 +290,54 @@ namespace ERPCore2.Data.Context
                         .HasPrecision(18, 4);
                   });
 
-                  // 庫存交易記錄關聯
+                  // 庫存異動主檔關聯
                   modelBuilder.Entity<InventoryTransaction>(entity =>
                   {
-                        // 庫存明細關聯
-                        entity.HasOne(it => it.InventoryStockDetail)
-                        .WithMany(isd => isd.InventoryTransactions)
-                        .HasForeignKey(it => it.InventoryStockDetailId)
+                        // 主/明細關聯 - 刪除主檔時連帶刪除明細
+                        entity.HasMany(it => it.Details)
+                        .WithOne(d => d.InventoryTransaction)
+                        .HasForeignKey(d => d.InventoryTransactionId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                        
+                        // 倉庫關聯
+                        entity.HasOne(it => it.Warehouse)
+                        .WithMany()
+                        .HasForeignKey(it => it.WarehouseId)
+                        .OnDelete(DeleteBehavior.Restrict);
+                        
+                        // 經辦人員關聯
+                        entity.HasOne(it => it.Employee)
+                        .WithMany()
+                        .HasForeignKey(it => it.EmployeeId)
                         .OnDelete(DeleteBehavior.SetNull);
+                  });
+                  
+                  // 庫存異動明細關聯
+                  modelBuilder.Entity<InventoryTransactionDetail>(entity =>
+                  {
+                        // 商品關聯
+                        entity.HasOne(d => d.Product)
+                        .WithMany()
+                        .HasForeignKey(d => d.ProductId)
+                        .OnDelete(DeleteBehavior.Restrict);
+                        
+                        // 倉庫位置關聯
+                        entity.HasOne(d => d.WarehouseLocation)
+                        .WithMany()
+                        .HasForeignKey(d => d.WarehouseLocationId)
+                        .OnDelete(DeleteBehavior.NoAction);
+                        
+                        // 庫存主檔關聯 - 使用 NoAction 避免循環級聯路徑
+                        entity.HasOne(d => d.InventoryStock)
+                        .WithMany()
+                        .HasForeignKey(d => d.InventoryStockId)
+                        .OnDelete(DeleteBehavior.NoAction);
+                        
+                        // 庫存明細關聯 - 使用 NoAction 避免循環級聯路徑
+                        entity.HasOne(d => d.InventoryStockDetail)
+                        .WithMany(isd => isd.InventoryTransactions)
+                        .HasForeignKey(d => d.InventoryStockDetailId)
+                        .OnDelete(DeleteBehavior.NoAction);
                   });
 
                   // 庫存預留關聯

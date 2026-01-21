@@ -721,13 +721,16 @@ namespace ERPCore2.Services
                 if (detail == null)
                     return new List<InventoryTransaction>();
 
-                // 根據入庫單號查詢相關的庫存異動記錄
+                // 根據入庫單號查詢相關的庫存異動記錄（透過明細的商品ID過濾）
                 return await context.InventoryTransactions
-                    .Include(t => t.Product)
                     .Include(t => t.Warehouse)
-                    .Include(t => t.WarehouseLocation)
+                    .Include(t => t.Employee)
+                    .Include(t => t.Details)
+                        .ThenInclude(d => d.Product)
+                    .Include(t => t.Details)
+                        .ThenInclude(d => d.WarehouseLocation)
                     .Where(t => (t.Remarks != null && detail.PurchaseReceiving.Code != null && t.Remarks.Contains(detail.PurchaseReceiving.Code)) &&
-                               t.ProductId == detail.ProductId)
+                               t.Details.Any(d => d.ProductId == detail.ProductId))
                     .OrderByDescending(t => t.CreatedAt)
                     .ToListAsync();
             }
@@ -792,7 +795,9 @@ namespace ERPCore2.Services
                         transactionType: Data.Enums.InventoryTransactionTypeEnum.Adjustment,
                         transactionNumber: $"取消進貨-{entity.Id}",
                         locationId: entity.WarehouseLocationId,
-                        remarks: $"取消進貨明細ID: {entity.Id}"
+                        remarks: $"取消進貨明細ID: {entity.Id}",
+                        sourceDocumentType: Data.Enums.InventorySourceDocumentTypes.PurchaseReceiving,
+                        sourceDocumentId: entity.PurchaseReceivingId
                     );
 
                     if (!stockResult.IsSuccess)

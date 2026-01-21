@@ -513,7 +513,10 @@ namespace ERPCore2.Services
                             entity.PurchaseReturn?.Code ?? $"DELETED-{entity.Id}",
                             entity.OriginalUnitPrice,
                             entity.WarehouseLocationId,
-                            operationDescription
+                            operationDescription,
+                            null, null, null, // batchNumber, batchDate, expiryDate
+                            sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
+                            sourceDocumentId: entity.PurchaseReturnId
                         );
 
                         if (!stockResult.IsSuccess)

@@ -1,12 +1,13 @@
 @* 可重用的庫存異動記錄編輯組件 - 可在任何頁面中嵌入 *@
+@* 重構後支援主/明細結構顯示 *@
 @inject IInventoryTransactionService InventoryTransactionService
-@inject IProductService ProductService
 @inject IWarehouseService WarehouseService
-@inject IWarehouseLocationService WarehouseLocationService
+@inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @using ERPCore2.Components.Shared.UI.Form
 @using ERPCore2.Components.Shared.PageTemplate
 @using ERPCore2.Data.Enums
+@using ERPCore2.Data.Entities
 @using ERPCore2.Helpers
 
 <GenericEditModalComponent TEntity="InventoryTransaction" 
@@ -18,7 +19,7 @@
                           Service="@InventoryTransactionService"
                           EntityName="庫存異動記錄"
                           EntityNamePlural="庫存異動記錄"
-                          ModalTitle="檢視庫存異動記錄 (無法修改)"
+                          ModalTitle="檢視庫存異動記錄 (唯讀)"
                           Size="GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
@@ -29,9 +30,9 @@
                           OnCancel="@HandleCancel"
                           ShowSaveButton="false"
                           ShowPrintButton="false"
-                          CancelButtonText="取消"
+                          CancelButtonText="關閉"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          >
+                          CustomModules="@GetCustomModules()">
 </GenericEditModalComponent>
 
 @code {
@@ -48,9 +49,66 @@
     private Dictionary<string, string> formSections = new();
     
     // 選項清單
-    private List<Product> products = new();
     private List<Warehouse> warehouses = new();
-    private List<WarehouseLocation> warehouseLocations = new();
+    private List<Employee> employees = new();
+    
+    // 當前異動記錄
+    private InventoryTransaction? currentTransaction;
+    
+    // 明細資料（傳遞給 InventoryTransactionTable）
+    private List<InventoryTransactionDetail> transactionDetails = new();
+    
+    /// <summary>
+    /// 配置自訂模組（顯示明細表格）
+    /// </summary>
+    private List<GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.CustomModule> GetCustomModules()
+    {
+        if (editModalComponent == null)
+        {
+            return new List<GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.CustomModule>
+        {
+            new GenericEditModalComponent<InventoryTransaction, IInventoryTransactionService>.CustomModule
+            {
+                Order = 1,
+                IsVisible = true,
+                Content = CreateDetailTableContent()
+            }
+        };
+    }
+    
+    /// <summary>
+    /// 創建明細表格內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateDetailTableContent() => __builder =>
+    {
+        try
+        {
+            @if (currentTransaction != null)
+            {
+                <div class="mt-4">
+                    <InventoryTransactionTable Details="@transactionDetails" 
+                                              TransactionNumber="@currentTransaction.TransactionNumber" />
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            }
+        }
+        catch
+        {
+            <div class="alert alert-warning" role="alert">
+                載入明細表格時發生錯誤，請重新整理頁面。
+            </div>
+        }
+    };
     
     /// <summary>
     /// 處理實體載入完成事件(由 GenericEditModalComponent 的導航觸發)
@@ -60,9 +118,13 @@
     {
         try
         {
-            // 對於沒有明細的純主檔組件,只需要觸發 UI 更新即可
+            // 重新載入完整的異動記錄（包含明細）
+            currentTransaction = await InventoryTransactionService.GetByIdWithDetailsAsync(loadedEntityId);
+            
+            // 更新明細清單（供 InventoryTransactionTable 使用）
+            transactionDetails = currentTransaction?.Details?.ToList() ?? new List<InventoryTransactionDetail>();
+            
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -101,33 +163,16 @@
     {
         try
         {
-            // 載入商品選項
-            await LoadProductsAsync();
-            
             // 載入倉庫選項
             await LoadWarehousesAsync();
             
-            // 載入倉庫位置選項
-            await LoadWarehouseLocationsAsync();
+            // 載入員工選項
+            await LoadEmployeesAsync();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAdditionalDataAsync), GetType(), additionalData: "載入額外資料失敗");
             await NotificationService.ShowErrorAsync("載入額外資料失敗");
-        }
-    }
-
-    private async Task LoadProductsAsync()
-    {
-        try
-        {
-            products = await ProductService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductsAsync), GetType(), additionalData: "載入商品資料失敗");
-            await NotificationService.ShowErrorAsync("載入商品資料失敗");
-            products = new List<Product>();
         }
     }
 
@@ -145,17 +190,17 @@
         }
     }
 
-    private async Task LoadWarehouseLocationsAsync()
+    private async Task LoadEmployeesAsync()
     {
         try
         {
-            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+            employees = await EmployeeService.GetAllAsync();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseLocationsAsync), GetType(), additionalData: "載入倉庫位置資料失敗");
-            await NotificationService.ShowErrorAsync("載入倉庫位置資料失敗");
-            warehouseLocations = new List<WarehouseLocation>();
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadEmployeesAsync), GetType(), additionalData: "載入員工資料失敗");
+            await NotificationService.ShowErrorAsync("載入員工資料失敗");
+            employees = new List<Employee>();
         }
     }
 
@@ -165,21 +210,27 @@
         {
             if (!InventoryTransactionId.HasValue)
             {
-                // 新增模式 - 返回空白實體
-                return new InventoryTransaction
+                // 新增模式 - 返回空白實體（庫存異動通常不支援手動新增）
+                currentTransaction = new InventoryTransaction
                 {
                     TransactionDate = DateTime.Now,
                     TransactionType = InventoryTransactionTypeEnum.Purchase,
-                    Quantity = 0,
-                    StockBefore = 0,
-                    StockAfter = 0,
-                    Status = EntityStatus.Active
+                    TotalQuantity = 0,
+                    TotalAmount = 0,
+                    Status = EntityStatus.Active,
+                    Details = new List<InventoryTransactionDetail>()
                 };
+                transactionDetails = new List<InventoryTransactionDetail>();
+                return currentTransaction;
             }
 
-            // 編輯模式 - 從服務載入現有資料
-            var inventoryTransaction = await InventoryTransactionService.GetByIdAsync(InventoryTransactionId.Value);
-            return inventoryTransaction;
+            // 編輯模式 - 從服務載入現有資料（包含明細）
+            currentTransaction = await InventoryTransactionService.GetByIdWithDetailsAsync(InventoryTransactionId.Value);
+            
+            // 更新明細清單（供 InventoryTransactionTable 使用）
+            transactionDetails = currentTransaction?.Details?.ToList() ?? new List<InventoryTransactionDetail>();
+            
+            return currentTransaction;
         }
         catch (Exception ex)
         {
@@ -189,7 +240,7 @@
         }
     }
 
-        protected override void OnParametersSet()
+    protected override void OnParametersSet()
     {
         if (IsVisible)
         {
@@ -202,51 +253,34 @@
     {
         try
         {
-
-
             formFields = new List<FormFieldDefinition>
             {
                 // ===== 基本資訊區段 =====
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TransactionNumber),
-                    Label = "交易單號",
+                    Label = "異動單號",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
-                    IsReadOnly = InventoryTransactionId.HasValue // 編輯時只讀
+                    IsReadOnly = true
                 },
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TransactionType),
-                    Label = "交易類型",
+                    Label = "異動類型",
                     FieldType = FormFieldType.Select,
                     IsRequired = true,
                     Options = GetTransactionTypeOptions(),
-                    IsReadOnly = InventoryTransactionId.HasValue
+                    IsReadOnly = true
                 },
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.TransactionDate),
-                    Label = "交易日期",
+                    Label = "異動日期",
                     FieldType = FormFieldType.DateTime,
                     IsRequired = true,
-                    IsReadOnly = InventoryTransactionId.HasValue
+                    IsReadOnly = true
                 },
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.ProductId),
-                    Label = "商品",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Options = products.Select(p => new SelectOption 
-                    { 
-                        Text = $"{p.Code} - {p.Name}", 
-                        Value = p.Id.ToString() 
-                    }).ToList(),
-                    IsReadOnly = InventoryTransactionId.HasValue
-                },
-
-                // ===== 庫存資訊區段 =====
                 new()
                 {
                     PropertyName = nameof(InventoryTransaction.WarehouseId),
@@ -258,78 +292,58 @@
                         Text = w.Name, 
                         Value = w.Id.ToString() 
                     }).ToList(),
-                    IsReadOnly = InventoryTransactionId.HasValue
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.WarehouseLocationId),
-                    Label = "倉庫位置",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = false,
-                    Options = warehouseLocations.Select(wl => new SelectOption 
-                    { 
-                        Text = wl.Name, 
-                        Value = wl.Id.ToString() 
-                    }).ToList(),
-                    IsReadOnly = InventoryTransactionId.HasValue
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.Quantity),
-                    Label = "交易數量",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = true,
-                    IsReadOnly = InventoryTransactionId.HasValue
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.UnitCost),
-                    Label = "單位成本",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    IsReadOnly = InventoryTransactionId.HasValue
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.StockBefore),
-                    Label = "交易前庫存",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    IsReadOnly = true // 系統計算，始終只讀
-                },
-                new()
-                {
-                    PropertyName = nameof(InventoryTransaction.StockAfter),
-                    Label = "交易後庫存",
-                    FieldType = FormFieldType.Number,
-                    IsRequired = false,
-                    IsReadOnly = true // 系統計算，始終只讀
+                    IsReadOnly = true
                 },
 
-                // ===== 批號管理區段 =====
+                // ===== 來源單據資訊 =====
                 new()
                 {
-                    PropertyName = nameof(InventoryTransaction.TransactionBatchNumber),
-                    Label = "批號",
+                    PropertyName = nameof(InventoryTransaction.SourceDocumentType),
+                    Label = "來源單據類型",
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
-                    IsReadOnly = InventoryTransactionId.HasValue
+                    IsReadOnly = true
                 },
                 new()
                 {
-                    PropertyName = nameof(InventoryTransaction.TransactionBatchDate),
-                    Label = "批次進貨日期",
-                    FieldType = FormFieldType.Date,
+                    PropertyName = nameof(InventoryTransaction.SourceDocumentId),
+                    Label = "來源單據ID",
+                    FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    IsReadOnly = InventoryTransactionId.HasValue
+                    IsReadOnly = true
+                },
+
+                // ===== 彙總資訊 =====
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.TotalQuantity),
+                    Label = "總數量",
+                    FieldType = FormFieldType.Number,
+                    IsRequired = false,
+                    IsReadOnly = true
                 },
                 new()
                 {
-                    PropertyName = nameof(InventoryTransaction.TransactionExpiryDate),
-                    Label = "批次到期日期",
-                    FieldType = FormFieldType.Date,
+                    PropertyName = nameof(InventoryTransaction.TotalAmount),
+                    Label = "總金額",
+                    FieldType = FormFieldType.Number,
                     IsRequired = false,
-                    IsReadOnly = InventoryTransactionId.HasValue
+                    IsReadOnly = true
+                },
+                
+                // ===== 操作人員 =====
+                new()
+                {
+                    PropertyName = nameof(InventoryTransaction.EmployeeId),
+                    Label = "操作人員",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    Options = employees.Select(e => new SelectOption 
+                    { 
+                        Text = e.Name, 
+                        Value = e.Id.ToString() 
+                    }).ToList(),
+                    IsReadOnly = true
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<InventoryTransaction>(readOnly:true)
@@ -340,18 +354,14 @@
                     it => it.TransactionNumber,
                     it => it.TransactionType,
                     it => it.TransactionDate,
-                    it => it.ProductId)
-                .AddCustomFields("庫存資訊",
-                    nameof(InventoryTransaction.WarehouseId),
-                    nameof(InventoryTransaction.WarehouseLocationId),
-                    nameof(InventoryTransaction.Quantity),
-                    nameof(InventoryTransaction.UnitCost),
-                    nameof(InventoryTransaction.StockBefore),
-                    nameof(InventoryTransaction.StockAfter))
-                .AddCustomFields("批號管理",
-                    nameof(InventoryTransaction.TransactionBatchNumber),
-                    nameof(InventoryTransaction.TransactionBatchDate),
-                    nameof(InventoryTransaction.TransactionExpiryDate))
+                    it => it.WarehouseId)
+                .AddCustomFields("來源單據",
+                    nameof(InventoryTransaction.SourceDocumentType),
+                    nameof(InventoryTransaction.SourceDocumentId))
+                .AddCustomFields("彙總資訊",
+                    nameof(InventoryTransaction.TotalQuantity),
+                    nameof(InventoryTransaction.TotalAmount),
+                    nameof(InventoryTransaction.EmployeeId))
                 .AddCustomFields("其他資料",
                     nameof(InventoryTransaction.Remarks))
                 .Build();
@@ -388,7 +398,7 @@
         {
             _ = Task.Run(async () =>
             {
-                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTransactionTypeOptions), GetType(), additionalData: "取得交易類型選項失敗");
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetTransactionTypeOptions), GetType(), additionalData: "取得異動類型選項失敗");
             });
             return new List<SelectOption>();
         }
@@ -410,11 +420,12 @@
     }
 
     /// <summary>
-    /// 開啟新增庫存異動記錄 Modal
+    /// 開啟新增庫存異動記錄 Modal（通常不支援手動新增）
     /// </summary>
     public async Task ShowAddModal()
     {
         InventoryTransactionId = null;
+        currentTransaction = null;
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(true);

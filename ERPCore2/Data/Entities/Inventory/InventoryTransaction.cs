@@ -6,11 +6,13 @@ using ERPCore2.Data.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 庫存交易記錄實體 - 記錄所有庫存異動歷史
+    /// 庫存異動主檔實體 - 記錄庫存異動的主要資訊
+    /// 一筆主檔對應多筆明細（InventoryTransactionDetail）
     /// </summary>
-    [Index(nameof(ProductId), nameof(TransactionDate))]
+    [Index(nameof(TransactionNumber))]
     [Index(nameof(WarehouseId), nameof(TransactionDate))]
     [Index(nameof(TransactionType), nameof(TransactionDate))]
+    [Index(nameof(SourceDocumentType), nameof(SourceDocumentId))]
     public class InventoryTransaction : BaseEntity
     {
         [Required(ErrorMessage = "交易單號為必填")]
@@ -26,62 +28,59 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "交易日期")]
         public DateTime TransactionDate { get; set; } = DateTime.Now;
         
-        [Required(ErrorMessage = "交易數量為必填")]
-        [Display(Name = "交易數量")]
+        // === 來源單據關聯（新增）===
+        
+        /// <summary>
+        /// 來源單據類型（PurchaseReceiving、SalesDelivery、StockTaking 等）
+        /// </summary>
+        [Display(Name = "來源單據類型")]
+        [MaxLength(50)]
+        public string? SourceDocumentType { get; set; }
+        
+        /// <summary>
+        /// 來源單據 ID
+        /// </summary>
+        [Display(Name = "來源單據ID")]
+        public int? SourceDocumentId { get; set; }
+        
+        // === 彙總欄位（新增）===
+        
+        /// <summary>
+        /// 總數量（所有明細的數量加總）
+        /// </summary>
+        [Display(Name = "總數量")]
         [Column(TypeName = "decimal(18,4)")]
-        public decimal Quantity { get; set; }
+        public decimal TotalQuantity { get; set; }
         
-        [Display(Name = "單位成本")]
+        /// <summary>
+        /// 總金額（所有明細的金額加總）
+        /// </summary>
+        [Display(Name = "總金額")]
         [Column(TypeName = "decimal(18,4)")]
-        public decimal? UnitCost { get; set; }
+        public decimal TotalAmount { get; set; }
         
-        [Display(Name = "交易前庫存")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal StockBefore { get; set; }
-        
-        [Display(Name = "交易後庫存")]
-        [Column(TypeName = "decimal(18,4)")]
-        public decimal StockAfter { get; set; }
-        
-        // === 批號追蹤欄位 ===
-        [Display(Name = "交易批號")]
-        [MaxLength(50, ErrorMessage = "交易批號不可超過50個字元")]
-        public string? TransactionBatchNumber { get; set; }
-        
-        [Display(Name = "交易批次進貨日期")]
-        public DateTime? TransactionBatchDate { get; set; }
-        
-        [Display(Name = "交易批次到期日期")]
-        public DateTime? TransactionExpiryDate { get; set; }
-        
-        // Foreign Keys
-        [Required(ErrorMessage = "商品為必填")]
-        [Display(Name = "商品")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        // === Foreign Keys ===
         
         [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
         [ForeignKey(nameof(Warehouse))]
         public int WarehouseId { get; set; }
         
-        [Display(Name = "倉庫位置")]
-        [ForeignKey(nameof(WarehouseLocation))]
-        public int? WarehouseLocationId { get; set; }
+        /// <summary>
+        /// 經辦人員
+        /// </summary>
+        [Display(Name = "經辦人員")]
+        [ForeignKey(nameof(Employee))]
+        public int? EmployeeId { get; set; }
         
-        [Display(Name = "庫存主檔")]
-        [ForeignKey(nameof(InventoryStock))]
-        public int? InventoryStockId { get; set; }
+        // === Navigation Properties ===
         
-        [Display(Name = "庫存明細")]
-        [ForeignKey(nameof(InventoryStockDetail))]
-        public int? InventoryStockDetailId { get; set; }
-        
-        // Navigation Properties
-        public Product Product { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
-        public WarehouseLocation? WarehouseLocation { get; set; }
-        public InventoryStock? InventoryStock { get; set; }
-        public InventoryStockDetail? InventoryStockDetail { get; set; }
+        public Employee? Employee { get; set; }
+        
+        /// <summary>
+        /// 異動明細集合
+        /// </summary>
+        public ICollection<InventoryTransactionDetail> Details { get; set; } = new List<InventoryTransactionDetail>();
     }
 }

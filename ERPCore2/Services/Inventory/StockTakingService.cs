@@ -724,7 +724,9 @@ namespace ERPCore2.Services
                                     item.ActualStock.Value,  // 調整後的新數量
                                     adjustmentNumber,
                                     $"盤點調整 - {stockTaking.TakingNumber}",
-                                    item.WarehouseLocationId
+                                    item.WarehouseLocationId,
+                                    sourceDocumentType: InventorySourceDocumentTypes.StockTaking,
+                                    sourceDocumentId: stockTaking.Id
                                 );
 
                                 if (result.IsSuccess)
@@ -1124,7 +1126,9 @@ namespace ERPCore2.Services
                         detail.SystemStock,  // 還原到盤點前的數量
                         rollbackNumber,
                         $"盤點單刪除回滾 - {stockTaking.TakingNumber}",
-                        detail.WarehouseLocationId
+                        detail.WarehouseLocationId,
+                        sourceDocumentType: InventorySourceDocumentTypes.StockTaking,
+                        sourceDocumentId: stockTaking.Id
                     );
 
                     if (!result.IsSuccess)

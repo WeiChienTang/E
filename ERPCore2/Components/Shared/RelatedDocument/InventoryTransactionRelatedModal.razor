@@ -1,0 +1,262 @@
+@* 庫存異動關聯查看組件 - 顯示原始交易和所有調整記錄 *@
+
+@using ERPCore2.Models
+@using ERPCore2.Helpers
+@inject IInventoryTransactionService InventoryTransactionService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@HandleVisibilityChanged"
+                   Title="@GetModalTitle()"
+                   Icon="bi bi-arrow-left-right"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="false"
+                   IsLoading="@isLoading"
+                   LoadingMessage="正在載入關聯記錄..."
+                   OnClose="@Close">
+    
+    <BodyContent>
+        @if (relatedDocuments == null || !relatedDocuments.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <p class="mt-3 text-muted">暫無關聯記錄</p>
+            </div>
+        }
+        else
+        {
+            @* 摘要資訊 *@
+            <div class="alert alert-info d-flex align-items-center mb-3">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <div>
+                    <strong>淨變動：</strong>
+                    <span class="@GetNetQuantityClass()">
+                        @GetNetQuantityDisplay()
+                    </span>
+                    <span class="text-muted ms-3">
+                        （共 @relatedDocuments.Count 筆記錄）
+                    </span>
+                </div>
+            </div>
+            
+            @* 原始交易區塊 *@
+            @if (OriginalDocs.Any())
+            {
+                <div class="mb-3">
+                    <h6 class="text-primary mb-2">
+                        <i class="bi bi-file-earmark-text me-1"></i>
+                        原始交易
+                    </h6>
+                    @foreach (var doc in OriginalDocs)
+                    {
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold">@doc.DocumentNumber.Replace("[原始] ", "")</span>
+                                        <span class="badge bg-primary ms-2">原始</span>
+                                    </div>
+                                    <div class="text-end">
+                                        @if (doc.Quantity.HasValue)
+                                        {
+                                            var qtyClass = doc.Quantity.Value >= 0 ? "text-success" : "text-danger";
+                                            var sign = doc.Quantity.Value >= 0 ? "+" : "";
+                                            <span class="@qtyClass fw-bold me-3">
+                                                @sign@NumberFormatHelper.FormatSmart(doc.Quantity.Value)
+                                            </span>
+                                        }
+                                        <small class="text-muted">
+                                            @doc.DocumentDate.ToString("yyyy-MM-dd HH:mm")
+                                        </small>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(doc.Remarks))
+                                {
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="bi bi-chat-left-text me-1"></i>@doc.Remarks
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            
+            @* 調整記錄區塊 *@
+            @if (AdjustmentDocs.Any())
+            {
+                <div>
+                    <h6 class="text-warning mb-2">
+                        <i class="bi bi-pencil-square me-1"></i>
+                        調整記錄
+                    </h6>
+                    @foreach (var doc in AdjustmentDocs)
+                    {
+                        var badgeClass = doc.DocumentNumber.Contains("[刪除") ? "bg-danger" :
+                                        doc.DocumentNumber.Contains("[價格") ? "bg-info" :
+                                        "bg-warning text-dark";
+                        var badgeText = doc.DocumentNumber.Contains("[刪除") ? "刪除" :
+                                       doc.DocumentNumber.Contains("[價格") ? "價格" :
+                                       "調整";
+                        
+                        <div class="card mb-2 border-warning">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold">@ExtractBaseNumber(doc.DocumentNumber)</span>
+                                        <span class="badge @badgeClass ms-2">@badgeText</span>
+                                    </div>
+                                    <div class="text-end">
+                                        @if (doc.Quantity.HasValue)
+                                        {
+                                            var qtyClass = doc.Quantity.Value >= 0 ? "text-success" : "text-danger";
+                                            var sign = doc.Quantity.Value >= 0 ? "+" : "";
+                                            <span class="@qtyClass fw-bold me-3">
+                                                @sign@NumberFormatHelper.FormatSmart(doc.Quantity.Value)
+                                            </span>
+                                        }
+                                        <small class="text-muted">
+                                            @doc.DocumentDate.ToString("yyyy-MM-dd HH:mm")
+                                        </small>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(doc.Remarks))
+                                {
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="bi bi-chat-left-text me-1"></i>@doc.Remarks
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </BodyContent>
+    
+    <FooterContent>
+        <GenericButtonComponent
+            Text="關閉"
+            Variant="ButtonVariant.Gray"
+            OnClick="@Close"
+            Size="ButtonSize.Small" />
+    </FooterContent>
+    
+</BaseModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// 交易編號（用於查詢關聯記錄）
+    /// </summary>
+    [Parameter] public string? TransactionNumber { get; set; }
+    
+    private List<RelatedDocument>? relatedDocuments;
+    private bool isLoading = false;
+    private string? _previousTransactionNumber;
+    
+    // 計算屬性
+    private List<RelatedDocument> OriginalDocs => 
+        relatedDocuments?.Where(d => d.DocumentNumber.Contains("[原始]")).ToList() ?? new List<RelatedDocument>();
+    
+    private List<RelatedDocument> AdjustmentDocs => 
+        relatedDocuments?.Where(d => !d.DocumentNumber.Contains("[原始]")).ToList() ?? new List<RelatedDocument>();
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 當 TransactionNumber 變更且 Modal 可見時，重新載入資料
+        if (IsVisible && TransactionNumber != _previousTransactionNumber)
+        {
+            _previousTransactionNumber = TransactionNumber;
+            await LoadRelatedTransactionsAsync();
+        }
+    }
+    
+    private async Task LoadRelatedTransactionsAsync()
+    {
+        if (string.IsNullOrEmpty(TransactionNumber))
+        {
+            relatedDocuments = null;
+            return;
+        }
+        
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            relatedDocuments = await InventoryTransactionService.GetRelatedTransactionsAsync(TransactionNumber);
+        }
+        catch
+        {
+            relatedDocuments = null;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private string GetModalTitle()
+    {
+        if (string.IsNullOrEmpty(TransactionNumber))
+            return "庫存異動關聯";
+        
+        // 提取基礎編號
+        var baseNumber = TransactionNumber
+            .Replace("_ADJ", "")
+            .Replace("_DEL", "")
+            .Replace("_PRICE_ADJ_IN", "")
+            .Replace("_PRICE_ADJ_OUT", "");
+        
+        return $"庫存異動關聯 - {baseNumber}";
+    }
+    
+    private decimal GetNetQuantity()
+    {
+        return relatedDocuments?.Sum(d => d.Quantity ?? 0) ?? 0;
+    }
+    
+    private string GetNetQuantityDisplay()
+    {
+        var net = GetNetQuantity();
+        var sign = net >= 0 ? "+" : "";
+        return $"{sign}{NumberFormatHelper.FormatSmart(net)}";
+    }
+    
+    private string GetNetQuantityClass()
+    {
+        var net = GetNetQuantity();
+        if (net > 0) return "text-success fw-bold";
+        if (net < 0) return "text-danger fw-bold";
+        return "fw-bold";
+    }
+    
+    private string ExtractBaseNumber(string documentNumber)
+    {
+        // 移除標籤部分
+        var parts = documentNumber.Split(' ');
+        return parts.Length > 0 ? parts[0] : documentNumber;
+    }
+    
+    private async Task Close()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+    
+    private async Task HandleVisibilityChanged(bool visible)
+    {
+        IsVisible = visible;
+        await IsVisibleChanged.InvokeAsync(visible);
+        
+        if (visible && !string.IsNullOrEmpty(TransactionNumber))
+        {
+            await LoadRelatedTransactionsAsync();
+        }
+    }
+}

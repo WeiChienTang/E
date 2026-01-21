@@ -43,7 +43,12 @@ namespace ERPCore2.Models
         /// <summary>
         /// 供應商推薦（低庫存商品的供應商建議）
         /// </summary>
-        SupplierRecommendation
+        SupplierRecommendation,
+        
+        /// <summary>
+        /// 庫存異動記錄（原始交易 + 調整記錄）
+        /// </summary>
+        InventoryTransaction
     }    /// <summary>
     /// 相關單據資訊 - 用於顯示與明細項目相關的單據列表
     /// </summary>
@@ -112,6 +117,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.DeliveryDocument => "bi-truck",
             RelatedDocumentType.ProductionSchedule => "bi-calendar-check",
             RelatedDocumentType.SupplierRecommendation => "bi-shop",
+            RelatedDocumentType.InventoryTransaction => "bi-arrow-left-right",
             _ => "bi-file-text"
         };
 
@@ -128,6 +134,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.DeliveryDocument => "info",
             RelatedDocumentType.ProductionSchedule => "dark",
             RelatedDocumentType.SupplierRecommendation => "success",
+            RelatedDocumentType.InventoryTransaction => "secondary",
             _ => "secondary"
         };
 
@@ -144,6 +151,7 @@ namespace ERPCore2.Models
             RelatedDocumentType.DeliveryDocument => "銷貨單",
             RelatedDocumentType.ProductionSchedule => "生產排程",
             RelatedDocumentType.SupplierRecommendation => "供應商推薦",
+            RelatedDocumentType.InventoryTransaction => "庫存異動",
             _ => "未知單據"
         };
     }

@@ -124,6 +124,15 @@ public class DocumentSectionConfig
                 AddButtonText = "+ 立即採購"
             },
             
+            RelatedDocumentType.InventoryTransaction => new()
+            {
+                Title = "庫存異動記錄",
+                Icon = "arrow-left-right",
+                TextColor = "secondary",
+                BadgeColor = "secondary",
+                ShowAddButton = false
+            },
+            
             _ => throw new ArgumentException($"未知的單據類型: {type}")
         };
     }

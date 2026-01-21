@@ -25,24 +25,27 @@ namespace ERPCore2.Services
         Task<Dictionary<string, object>> GetInventoryStatisticsAsync();
         
         // 庫存異動
-        Task<ServiceResult> RevertStockToOriginalAsync(int inventoryStockId, decimal quantity, 
+        Task<ServiceResult> RevertStockToOriginalAsync(int inventoryStockDetailId, decimal quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, string? remarks = null);
             
         Task<ServiceResult> AddStockAsync(int productId, int warehouseId, decimal quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             decimal? unitCost = null, int? locationId = null, string? remarks = null,
-            string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null);
+            string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null);
         
         Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
-            int? locationId = null, string? remarks = null);
+            int? locationId = null, string? remarks = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null);
         
         Task<ServiceResult> TransferStockAsync(int productId, int fromWarehouseId, int toWarehouseId,
             decimal quantity, string transactionNumber, int? fromLocationId = null, int? toLocationId = null,
             string? remarks = null);
         
         Task<ServiceResult> AdjustStockAsync(int productId, int warehouseId, decimal newQuantity,
-            string transactionNumber, string? remarks = null, int? locationId = null);
+            string transactionNumber, string? remarks = null, int? locationId = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null);
         
         // 庫存預留
         Task<ServiceResult> ReserveStockAsync(int productId, int warehouseId, decimal quantity,

@@ -485,7 +485,7 @@ namespace ERPCore2.Services
                         .ThenInclude(d => d.WarehouseLocation)
                     .Where(i => i.ProductId == productId &&
                                i.InventoryStockDetails.Any(d => d.WarehouseId == warehouseId &&
-                                                               (locationId == null || d.WarehouseLocationId == locationId)))
+                                                               d.WarehouseLocationId == locationId))
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -517,7 +517,7 @@ namespace ERPCore2.Services
                 if (warehouseId.HasValue)
                 {
                     query = query.Where(i => i.InventoryStockDetails.Any(d => d.WarehouseId == warehouseId.Value &&
-                                                                              (locationId == null || d.WarehouseLocationId == locationId)));
+                                                                              d.WarehouseLocationId == locationId));
                 }
 
                 return await query.FirstOrDefaultAsync();
@@ -570,9 +570,10 @@ namespace ERPCore2.Services
                 if (stock == null) return 0;
 
                 // 計算指定倉庫和位置的可用庫存
+                // 精確匹配庫位ID，包括 null 的情況
                 var detail = stock.InventoryStockDetails?
                     .FirstOrDefault(d => d.WarehouseId == warehouseId && 
-                                        (locationId == null || d.WarehouseLocationId == locationId));
+                                        d.WarehouseLocationId == locationId);
                 
                 return detail?.AvailableStock ?? 0;
             }
@@ -670,90 +671,60 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 根據銷貨訂單ID查找相關的庫存交易記錄（用於回滾）
+        /// 注意：此方法在主/明細結構下，改為查詢異動明細
         /// </summary>
+        public async Task<List<InventoryTransactionDetail>> GetInventoryTransactionDetailsBySalesOrderAsync(int salesOrderId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 找到所有該銷貨訂單的交易記錄明細
+                var details = await context.InventoryTransactionDetails
+                    .Include(d => d.InventoryTransaction)
+                    .Include(d => d.Product)
+                    .Include(d => d.WarehouseLocation)
+                    .Include(d => d.InventoryStock)
+                    .Include(d => d.InventoryStockDetail)
+                    .Where(d => d.InventoryTransaction.TransactionNumber.StartsWith($"SO-{salesOrderId}"))
+                    .OrderBy(d => d.InventoryTransaction.TransactionDate)
+                    .ThenBy(d => d.Id)
+                    .ToListAsync();
+                
+                return details;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetInventoryTransactionDetailsBySalesOrderAsync), GetType(), _logger, new { 
+                    Method = nameof(GetInventoryTransactionDetailsBySalesOrderAsync),
+                    ServiceType = GetType().Name,
+                    SalesOrderId = salesOrderId 
+                });
+                return new List<InventoryTransactionDetail>();
+            }
+        }
+
+        /// <summary>
+        /// 根據銷貨訂單ID查找相關的庫存交易記錄（用於回滾）- 保持向後兼容
+        /// </summary>
+        [Obsolete("請使用 GetInventoryTransactionDetailsBySalesOrderAsync")]
         public async Task<List<InventoryTransaction>> GetInventoryTransactionsBySalesOrderAsync(int salesOrderId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 先找到所有該銷貨訂單的交易記錄（包含回滾記錄）
-                var allTransactions = await context.InventoryTransactions
-                    .Include(t => t.Product)
+                // 找到所有該銷貨訂單的交易記錄（主檔）
+                var transactions = await context.InventoryTransactions
+                    .Include(t => t.Details)
+                        .ThenInclude(d => d.Product)
                     .Include(t => t.Warehouse)
-                    .Include(t => t.WarehouseLocation)
-                    .Include(t => t.InventoryStock)
                     .Where(t => t.TransactionNumber.StartsWith($"SO-{salesOrderId}"))
                     .OrderBy(t => t.TransactionDate)
                     .ThenBy(t => t.Id)
                     .ToListAsync();
                 
-                // 分離銷貨記錄和回滾記錄
-                var saleTransactions = allTransactions
-                    .Where(t => !t.TransactionNumber.Contains("_REVERT") && 
-                               t.TransactionType == InventoryTransactionTypeEnum.Sale)
-                    .ToList();
-                
-                var revertTransactions = allTransactions
-                    .Where(t => t.TransactionNumber.Contains("_REVERT") && 
-                               t.TransactionType == InventoryTransactionTypeEnum.Return)
-                    .ToList();
-                
-                // 計算每個InventoryStockId的淨扣減量
-                var netReductions = new Dictionary<int, decimal>();
-                
-                // 加入所有銷貨扣減
-                foreach (var sale in saleTransactions)
-                {
-                    if (sale.InventoryStockId.HasValue)
-                    {
-                        var stockId = sale.InventoryStockId.Value;
-                        if (!netReductions.ContainsKey(stockId))
-                            netReductions[stockId] = 0m;
-                        netReductions[stockId] += Math.Abs(sale.Quantity); // 累計扣減量（轉為正數）
-                    }
-                }
-                
-                // 減去已回滾的量
-                foreach (var revert in revertTransactions)
-                {
-                    if (revert.InventoryStockId.HasValue)
-                    {
-                        var stockId = revert.InventoryStockId.Value;
-                        if (netReductions.ContainsKey(stockId))
-                        {
-                            netReductions[stockId] -= revert.Quantity; // 回滾是正數，所以用減法
-                        }
-                    }
-                }
-                
-                // 創建需要回滾的虛擬交易記錄（只包含淨扣減量大於0的）
-                var virtualTransactions = new List<InventoryTransaction>();
-                foreach (var kvp in netReductions.Where(x => x.Value > 0))
-                {
-                    // 找到對應的原始銷貨記錄來獲取詳細信息
-                    var originalSale = saleTransactions.FirstOrDefault(s => s.InventoryStockId == kvp.Key);
-                    if (originalSale != null)
-                    {
-                        virtualTransactions.Add(new InventoryTransaction
-                        {
-                            Id = originalSale.Id, // 使用原始記錄ID
-                            ProductId = originalSale.ProductId,
-                            WarehouseId = originalSale.WarehouseId,
-                            WarehouseLocationId = originalSale.WarehouseLocationId,
-                            InventoryStockId = originalSale.InventoryStockId,
-                            Quantity = -kvp.Value, // 負數表示需要回滾的量
-                            TransactionNumber = originalSale.TransactionNumber,
-                            TransactionType = originalSale.TransactionType,
-                            Product = originalSale.Product,
-                            Warehouse = originalSale.Warehouse,
-                            WarehouseLocation = originalSale.WarehouseLocation,
-                            InventoryStock = originalSale.InventoryStock
-                        });
-                    }
-                }
-                
-                return virtualTransactions;
+                return transactions;
             }
             catch (Exception ex)
             {
@@ -772,11 +743,11 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 精確回滾庫存到原始記錄（基於 InventoryStockDetailId）
-        /// 注意：此方法已過時，現在使用 InventoryStockDetailId 而非 InventoryStockId
+        /// 注意：此方法已過時，建議使用 AddStockAsync 進行回滾
         /// </summary>
-        [Obsolete("請使用 RevertStockToOriginalDetailAsync，傳入 InventoryStockDetailId")]
+        [Obsolete("請使用 AddStockAsync 進行庫存回滾")]
         public async Task<ServiceResult> RevertStockToOriginalAsync(
-            int inventoryStockId, 
+            int inventoryStockDetailId, 
             decimal quantity, 
             InventoryTransactionTypeEnum transactionType, 
             string transactionNumber, 
@@ -792,40 +763,48 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 注意：此方法已過時，但為了向後兼容，將 inventoryStockId 視為 inventoryStockDetailId
                     var originalDetail = await context.InventoryStockDetails
                         .Include(d => d.InventoryStock)
-                        .FirstOrDefaultAsync(d => d.Id == inventoryStockId);
+                        .Include(d => d.Warehouse)
+                        .FirstOrDefaultAsync(d => d.Id == inventoryStockDetailId);
 
                     if (originalDetail == null)
                     {
-                        return ServiceResult.Failure($"ORIGINAL_NOT_FOUND:{inventoryStockId}");
+                        return ServiceResult.Failure($"ORIGINAL_NOT_FOUND:{inventoryStockDetailId}");
                     }
 
                     var stockBefore = originalDetail.CurrentStock;
                     originalDetail.CurrentStock += quantity; // 回滾是增加庫存
                     originalDetail.LastTransactionDate = DateTime.Now;
 
-                    // 建立回滾交易記錄
-                    var inventoryTransaction = new InventoryTransaction
+                    // 建立回滾異動主檔
+                    var inventoryTransaction = await GetOrCreateTransactionAsync(
+                        context, transactionNumber, transactionType,
+                        originalDetail.WarehouseId, null, null, remarks);
+                    
+                    // 建立回滾異動明細
+                    var transactionDetail = new InventoryTransactionDetail
                     {
+                        InventoryTransactionId = inventoryTransaction.Id,
                         ProductId = originalDetail.InventoryStock?.ProductId ?? 0,
-                        WarehouseId = originalDetail.WarehouseId,
                         WarehouseLocationId = originalDetail.WarehouseLocationId,
-                        TransactionType = transactionType,
-                        TransactionNumber = transactionNumber,
-                        TransactionDate = DateTime.Now,
                         Quantity = quantity, // 正數表示入庫（回滾）
                         UnitCost = originalDetail.AverageCost,
+                        Amount = (originalDetail.AverageCost ?? 0) * quantity,
                         StockBefore = stockBefore,
                         StockAfter = originalDetail.CurrentStock,
-                        Remarks = remarks,
                         InventoryStockId = originalDetail.InventoryStockId,
                         InventoryStockDetailId = originalDetail.Id,
+                        Remarks = remarks,
                         Status = EntityStatus.Active
                     };
 
-                    await context.InventoryTransactions.AddAsync(inventoryTransaction);
+                    await context.InventoryTransactionDetails.AddAsync(transactionDetail);
+                    
+                    // 更新主檔彙總
+                    inventoryTransaction.TotalQuantity += quantity;
+                    inventoryTransaction.TotalAmount += transactionDetail.Amount;
+
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -842,7 +821,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RevertStockToOriginalAsync), GetType(), _logger, new {
                     Method = nameof(RevertStockToOriginalAsync),
                     ServiceType = GetType().Name,
-                    InventoryStockId = inventoryStockId,
+                    InventoryStockDetailId = inventoryStockDetailId,
                     Quantity = quantity,
                     TransactionType = transactionType,
                     TransactionNumber = transactionNumber,
@@ -855,7 +834,8 @@ namespace ERPCore2.Services
         public async Task<ServiceResult> AddStockAsync(int productId, int warehouseId, decimal quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             decimal? unitCost = null, int? locationId = null, string? remarks = null,
-            string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null)
+            string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null)
         {
             try
             {
@@ -885,13 +865,13 @@ namespace ERPCore2.Services
                     }
 
                     // 2. 取得或建立庫存明細（依倉庫+庫位）
-                    var detail = stock.InventoryStockDetails?
+                    var stockDetail = stock.InventoryStockDetails?
                         .FirstOrDefault(d => d.WarehouseId == warehouseId && 
                                             d.WarehouseLocationId == locationId);
                     
-                    if (detail == null)
+                    if (stockDetail == null)
                     {
-                        detail = new InventoryStockDetail
+                        stockDetail = new InventoryStockDetail
                         {
                             InventoryStockId = stock.Id,
                             WarehouseId = warehouseId,
@@ -905,64 +885,70 @@ namespace ERPCore2.Services
                             LastTransactionDate = DateTime.Now,
                             Status = EntityStatus.Active
                         };
-                        await context.InventoryStockDetails.AddAsync(detail);
+                        await context.InventoryStockDetails.AddAsync(stockDetail);
                         await context.SaveChangesAsync();
                     }
 
                     // 3. 更新庫存數量
-                    var stockBefore = detail.CurrentStock;
-                    detail.CurrentStock += quantity;
-                    detail.LastTransactionDate = DateTime.Now;
+                    var stockBefore = stockDetail.CurrentStock;
+                    stockDetail.CurrentStock += quantity;
+                    stockDetail.LastTransactionDate = DateTime.Now;
 
                     // 更新批次資訊（如果提供）
                     if (!string.IsNullOrEmpty(batchNumber))
-                        detail.BatchNumber = batchNumber;
+                        stockDetail.BatchNumber = batchNumber;
                     if (batchDate.HasValue)
-                        detail.BatchDate = batchDate.Value;
+                        stockDetail.BatchDate = batchDate.Value;
                     if (expiryDate.HasValue)
-                        detail.ExpiryDate = expiryDate.Value;
+                        stockDetail.ExpiryDate = expiryDate.Value;
 
                     // 4. 更新平均成本
-                    // 🔥 修正：允許價格為 0 也能更新平均成本（移除 > 0 的檢查）
                     if (unitCost.HasValue)
                     {
-                        if (detail.AverageCost.HasValue && stockBefore > 0)
+                        if (stockDetail.AverageCost.HasValue && stockBefore > 0)
                         {
-                            // 加權平均計算：(原庫存成本 + 新進庫存成本) / 總庫存
-                            var totalCostBefore = detail.AverageCost.Value * stockBefore;
+                            var totalCostBefore = stockDetail.AverageCost.Value * stockBefore;
                             var newTotalCost = totalCostBefore + (unitCost.Value * quantity);
-                            detail.AverageCost = newTotalCost / detail.CurrentStock;
+                            stockDetail.AverageCost = newTotalCost / stockDetail.CurrentStock;
                         }
                         else
                         {
-                            // 首次入庫或庫存為 0 時，直接使用新的單位成本
-                            detail.AverageCost = unitCost.Value;
+                            stockDetail.AverageCost = unitCost.Value;
                         }
                     }
 
-                    // 5. 建立交易記錄
-                    var inventoryTransaction = new InventoryTransaction
+                    // 5. 建立/更新異動主檔
+                    var inventoryTransaction = await GetOrCreateTransactionAsync(
+                        context, transactionNumber, transactionType, warehouseId, 
+                        sourceDocumentType, sourceDocumentId, remarks);
+                    
+                    // 6. 建立異動明細
+                    var transactionDetail = new InventoryTransactionDetail
                     {
+                        InventoryTransactionId = inventoryTransaction.Id,
                         ProductId = productId,
-                        WarehouseId = warehouseId,
                         WarehouseLocationId = locationId,
-                        TransactionType = transactionType,
-                        TransactionNumber = transactionNumber,
-                        TransactionDate = DateTime.Now,
                         Quantity = quantity,
                         UnitCost = unitCost,
+                        Amount = (unitCost ?? 0) * quantity,
                         StockBefore = stockBefore,
-                        StockAfter = detail.CurrentStock,
-                        Remarks = remarks,
+                        StockAfter = stockDetail.CurrentStock,
+                        BatchNumber = batchNumber,
+                        BatchDate = batchDate,
+                        ExpiryDate = expiryDate,
+                        SourceDetailId = sourceDetailId,
                         InventoryStockId = stock.Id,
-                        InventoryStockDetailId = detail.Id,
-                        TransactionBatchNumber = batchNumber,
-                        TransactionBatchDate = batchDate,
-                        TransactionExpiryDate = expiryDate,
+                        InventoryStockDetailId = stockDetail.Id,
+                        Remarks = remarks,
                         Status = EntityStatus.Active
                     };
 
-                    await context.InventoryTransactions.AddAsync(inventoryTransaction);
+                    await context.InventoryTransactionDetails.AddAsync(transactionDetail);
+                    
+                    // 7. 更新主檔彙總
+                    inventoryTransaction.TotalQuantity += quantity;
+                    inventoryTransaction.TotalAmount += transactionDetail.Amount;
+
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -991,10 +977,56 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("庫存增加失敗");
             }
         }
+        
+        /// <summary>
+        /// 取得或建立異動主檔
+        /// 🔑 關鍵修正：同時比對 transactionNumber 和 transactionType
+        /// 這樣同一單據的增加和減少會有各自獨立的主檔，避免類型混亂
+        /// </summary>
+        private async Task<InventoryTransaction> GetOrCreateTransactionAsync(
+            AppDbContext context,
+            string transactionNumber,
+            InventoryTransactionTypeEnum transactionType,
+            int warehouseId,
+            string? sourceDocumentType,
+            int? sourceDocumentId,
+            string? remarks)
+        {
+            // 嘗試找現有的異動主檔（同一交易單號 + 同一交易類型）
+            var existingTransaction = await context.InventoryTransactions
+                .FirstOrDefaultAsync(t => t.TransactionNumber == transactionNumber && 
+                                         t.TransactionType == transactionType);
+            
+            if (existingTransaction != null)
+            {
+                return existingTransaction;
+            }
+            
+            // 建立新的異動主檔
+            var newTransaction = new InventoryTransaction
+            {
+                TransactionNumber = transactionNumber,
+                TransactionType = transactionType,
+                TransactionDate = DateTime.Now,
+                WarehouseId = warehouseId,
+                SourceDocumentType = sourceDocumentType,
+                SourceDocumentId = sourceDocumentId,
+                TotalQuantity = 0,
+                TotalAmount = 0,
+                Remarks = remarks,
+                Status = EntityStatus.Active
+            };
+            
+            await context.InventoryTransactions.AddAsync(newTransaction);
+            await context.SaveChangesAsync();
+            
+            return newTransaction;
+        }
 
         public async Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
-            int? locationId = null, string? remarks = null)
+            int? locationId = null, string? remarks = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null)
         {
             try
             {
@@ -1006,54 +1038,128 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    // 1. 取得庫存主檔
+                    // 1. 取得庫存主檔（包含商品資訊以便除錯）
                     var stock = await context.InventoryStocks
                         .Include(s => s.InventoryStockDetails)
+                        .Include(s => s.Product)
                         .FirstOrDefaultAsync(i => i.ProductId == productId);
                     
                     if (stock == null)
+                    {
+                        ConsoleHelper.WriteError($"找不到庫存記錄 - 商品ID: {productId}, 交易編號: {transactionNumber}");
                         return ServiceResult.Failure("找不到庫存記錄");
+                    }
+                    
+                    // 取得商品資訊用於除錯顯示
+                    var productInfo = stock.Product != null 
+                        ? $"{stock.Product.Code} {stock.Product.Name}" 
+                        : $"商品ID:{productId}";
 
                     // 2. 取得指定倉庫/庫位的明細
-                    var detail = stock.InventoryStockDetails?
+                    // 🔧 修正：精確匹配庫位ID，包括 null 的情況
+                    // 原本的邏輯 (locationId == null || d.WarehouseLocationId == locationId) 
+                    // 當 locationId 為 null 時會匹配任何庫位，這是錯誤的
+                    var stockDetail = stock.InventoryStockDetails?
                         .FirstOrDefault(d => d.WarehouseId == warehouseId && 
-                                            (locationId == null || d.WarehouseLocationId == locationId));
+                                            d.WarehouseLocationId == locationId);
                     
-                    if (detail == null)
+                    if (stockDetail == null)
                     {
+                        // 🔍 除錯：輸出找不到庫存記錄的詳細資訊
+                        ConsoleHelper.WriteError($"找不到倉庫庫存記錄");
+                        ConsoleHelper.WriteWarning($"  商品: {productInfo}");
+                        ConsoleHelper.WriteWarning($"  倉庫ID: {warehouseId}, 庫位ID: {locationId}");
+                        ConsoleHelper.WriteWarning($"  交易編號: {transactionNumber}");
+                        
                         return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
                     }
 
-                    if (detail.AvailableStock < quantity)
+                    if (stockDetail.AvailableStock < quantity)
                     {
-                        return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{detail.AvailableStock}");
+                        // 🔍 除錯：輸出庫存不足的詳細資訊
+                        ConsoleHelper.WriteError($"庫存扣減失敗 - 可用庫存不足");
+                        ConsoleHelper.WriteWarning($"  商品: {productInfo}");
+                        ConsoleHelper.WriteWarning($"  倉庫ID: {warehouseId}, 庫位ID: {locationId}");
+                        ConsoleHelper.WriteWarning($"  需要扣減: {quantity}, 目前可用: {stockDetail.AvailableStock}");
+                        ConsoleHelper.WriteWarning($"  目前庫存: {stockDetail.CurrentStock}, 交易類型: {transactionType}");
+                        ConsoleHelper.WriteWarning($"  交易編號: {transactionNumber}");
+                        
+                        // 🔍 進階除錯：顯示該商品所有倉庫的庫存狀態
+                        ConsoleHelper.WriteInfo($"  === 該商品所有倉庫庫存明細 ===");
+                        if (stock.InventoryStockDetails?.Any() == true)
+                        {
+                            foreach (var detail in stock.InventoryStockDetails)
+                            {
+                                ConsoleHelper.WriteDebug($"    倉庫ID:{detail.WarehouseId}, 庫位ID:{detail.WarehouseLocationId}, " +
+                                    $"現有:{detail.CurrentStock}, 可用:{detail.AvailableStock}, 保留:{detail.ReservedStock}");
+                            }
+                        }
+                        else
+                        {
+                            ConsoleHelper.WriteWarning($"  該商品沒有任何庫存明細記錄！");
+                        }
+                        
+                        // 🔍 進階除錯：查看最近的庫存異動記錄
+                        ConsoleHelper.WriteInfo($"  === 該商品最近 5 筆庫存異動 ===");
+                        var recentTransactions = await context.InventoryTransactionDetails
+                            .Include(td => td.InventoryTransaction)
+                            .Where(td => td.ProductId == productId)
+                            .OrderByDescending(td => td.Id)
+                            .Take(5)
+                            .ToListAsync();
+                        
+                        if (recentTransactions.Any())
+                        {
+                            foreach (var trans in recentTransactions)
+                            {
+                                var transCode = trans.InventoryTransaction?.TransactionNumber ?? "N/A";
+                                var transType = trans.InventoryTransaction?.TransactionType.ToString() ?? "N/A";
+                                ConsoleHelper.WriteDebug($"    [{transCode}] 類型:{transType}, 數量:{trans.Quantity}, " +
+                                    $"庫存前:{trans.StockBefore}, 庫存後:{trans.StockAfter}");
+                            }
+                        }
+                        else
+                        {
+                            ConsoleHelper.WriteWarning($"  該商品沒有任何庫存異動記錄！");
+                        }
+                        
+                        return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{stockDetail.AvailableStock}");
                     }
                     
                     // 3. 更新庫存數量
-                    var stockBefore = detail.CurrentStock;
-                    detail.CurrentStock -= quantity;
-                    detail.LastTransactionDate = DateTime.Now;
+                    var stockBefore = stockDetail.CurrentStock;
+                    stockDetail.CurrentStock -= quantity;
+                    stockDetail.LastTransactionDate = DateTime.Now;
 
-                    // 4. 建立交易記錄
-                    var inventoryTransaction = new InventoryTransaction
+                    // 4. 建立/更新異動主檔
+                    var inventoryTransaction = await GetOrCreateTransactionAsync(
+                        context, transactionNumber, transactionType, warehouseId,
+                        sourceDocumentType, sourceDocumentId, remarks);
+
+                    // 5. 建立異動明細
+                    var transactionDetail = new InventoryTransactionDetail
                     {
+                        InventoryTransactionId = inventoryTransaction.Id,
                         ProductId = productId,
-                        WarehouseId = warehouseId,
                         WarehouseLocationId = locationId,
-                        TransactionType = transactionType,
-                        TransactionNumber = transactionNumber,
-                        TransactionDate = DateTime.Now,
                         Quantity = -quantity, // 負數表示出庫
-                        UnitCost = detail.AverageCost,
+                        UnitCost = stockDetail.AverageCost,
+                        Amount = (stockDetail.AverageCost ?? 0) * quantity,
                         StockBefore = stockBefore,
-                        StockAfter = detail.CurrentStock,
-                        Remarks = remarks,
+                        StockAfter = stockDetail.CurrentStock,
+                        SourceDetailId = sourceDetailId,
                         InventoryStockId = stock.Id,
-                        InventoryStockDetailId = detail.Id,
+                        InventoryStockDetailId = stockDetail.Id,
+                        Remarks = remarks,
                         Status = EntityStatus.Active
                     };
 
-                    await context.InventoryTransactions.AddAsync(inventoryTransaction);
+                    await context.InventoryTransactionDetails.AddAsync(transactionDetail);
+
+                    // 6. 更新主檔彙總
+                    inventoryTransaction.TotalQuantity += (-quantity);
+                    inventoryTransaction.TotalAmount += transactionDetail.Amount;
+
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -1113,7 +1219,7 @@ namespace ERPCore2.Services
                     var fromStock = await GetByProductWarehouseAsync(productId, fromWarehouseId, fromLocationId);
                     var fromDetail = fromStock?.InventoryStockDetails?
                         .FirstOrDefault(d => d.WarehouseId == fromWarehouseId && 
-                                            (fromLocationId == null || d.WarehouseLocationId == fromLocationId));
+                                            d.WarehouseLocationId == fromLocationId);
                     
                     // 增加到目標倉庫
                     var addResult = await AddStockAsync(productId, toWarehouseId, quantity,
@@ -1151,7 +1257,8 @@ namespace ERPCore2.Services
         }
 
         public async Task<ServiceResult> AdjustStockAsync(int productId, int warehouseId, decimal newQuantity,
-            string transactionNumber, string? remarks = null, int? locationId = null)
+            string transactionNumber, string? remarks = null, int? locationId = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null)
         {
             try
             {
@@ -1169,9 +1276,10 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到庫存記錄");
 
                 // 取得指定倉庫/庫位的明細
+                // 精確匹配庫位ID，包括 null 的情況
                 var detail = stock.InventoryStockDetails?
                     .FirstOrDefault(d => d.WarehouseId == warehouseId && 
-                                        (locationId == null || d.WarehouseLocationId == locationId));
+                                        d.WarehouseLocationId == locationId);
                 
                 if (detail == null)
                     return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
@@ -1184,13 +1292,15 @@ namespace ERPCore2.Services
                 {
                     // 增加庫存
                     return await AddStockAsync(productId, warehouseId, difference,
-                        InventoryTransactionTypeEnum.Adjustment, transactionNumber, null, locationId, remarks);
+                        InventoryTransactionTypeEnum.Adjustment, transactionNumber, null, locationId, remarks,
+                        null, null, null, sourceDocumentType, sourceDocumentId);
                 }
                 else
                 {
                     // 減少庫存
                     return await ReduceStockAsync(productId, warehouseId, Math.Abs(difference),
-                        InventoryTransactionTypeEnum.Adjustment, transactionNumber, locationId, remarks);
+                        InventoryTransactionTypeEnum.Adjustment, transactionNumber, locationId, remarks,
+                        sourceDocumentType, sourceDocumentId);
                 }
             }
             catch (Exception ex)
@@ -1322,7 +1432,8 @@ namespace ERPCore2.Services
         private async Task<ServiceResult> ReduceStockFromSpecificBatchAsync(
             int batchDetailId, decimal quantity, 
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
-            string? remarks = null, int? salesOrderDetailId = null)
+            string? remarks = null, int? salesOrderDetailId = null,
+            string? sourceDocumentType = null, int? sourceDocumentId = null)
         {
             try
             {
@@ -1331,40 +1442,54 @@ namespace ERPCore2.Services
 
                 try
                 {
-                    var detail = await context.InventoryStockDetails
+                    var stockDetail = await context.InventoryStockDetails
                         .Include(d => d.InventoryStock)
+                        .Include(d => d.Warehouse)
                         .FirstOrDefaultAsync(d => d.Id == batchDetailId);
                     
-                    if (detail == null)
+                    if (stockDetail == null)
                         return ServiceResult.Failure("找不到批號庫存記錄");
 
-                    if (detail.AvailableStock < quantity)
-                        return ServiceResult.Failure($"批號 {detail.BatchNumber} 可用庫存不足");
+                    if (stockDetail.AvailableStock < quantity)
+                        return ServiceResult.Failure($"批號 {stockDetail.BatchNumber} 可用庫存不足");
 
-                    var stockBefore = detail.CurrentStock;
-                    detail.CurrentStock -= quantity;
-                    detail.LastTransactionDate = DateTime.Now;
+                    var stockBefore = stockDetail.CurrentStock;
+                    stockDetail.CurrentStock -= quantity;
+                    stockDetail.LastTransactionDate = DateTime.Now;
 
-                    // 建立交易記錄
-                    var inventoryTransaction = new InventoryTransaction
+                    // 建立/取得異動主檔
+                    var inventoryTransaction = await GetOrCreateTransactionAsync(
+                        context, transactionNumber, transactionType,
+                        stockDetail.WarehouseId, sourceDocumentType, sourceDocumentId,
+                        $"{remarks} (批號: {stockDetail.BatchNumber})");
+
+                    // 建立異動明細
+                    var transactionDetail = new InventoryTransactionDetail
                     {
-                        ProductId = detail.InventoryStock?.ProductId ?? 0,
-                        WarehouseId = detail.WarehouseId,
-                        WarehouseLocationId = detail.WarehouseLocationId,
-                        TransactionType = transactionType,
-                        TransactionNumber = transactionNumber,
-                        TransactionDate = DateTime.Now,
+                        InventoryTransactionId = inventoryTransaction.Id,
+                        ProductId = stockDetail.InventoryStock?.ProductId ?? 0,
+                        WarehouseLocationId = stockDetail.WarehouseLocationId,
                         Quantity = -quantity, // 負數表示出庫
-                        UnitCost = detail.AverageCost,
+                        UnitCost = stockDetail.AverageCost,
+                        Amount = (stockDetail.AverageCost ?? 0) * quantity,
                         StockBefore = stockBefore,
-                        StockAfter = detail.CurrentStock,
-                        Remarks = $"{remarks} (批號: {detail.BatchNumber})" + (salesOrderDetailId.HasValue ? $" (銷貨明細ID: {salesOrderDetailId})" : ""),
-                        InventoryStockId = detail.InventoryStockId,
-                        InventoryStockDetailId = detail.Id,
+                        StockAfter = stockDetail.CurrentStock,
+                        BatchNumber = stockDetail.BatchNumber,
+                        BatchDate = stockDetail.BatchDate,
+                        ExpiryDate = stockDetail.ExpiryDate,
+                        SourceDetailId = salesOrderDetailId,
+                        InventoryStockId = stockDetail.InventoryStockId,
+                        InventoryStockDetailId = stockDetail.Id,
+                        Remarks = $"{remarks} (批號: {stockDetail.BatchNumber})",
                         Status = EntityStatus.Active
                     };
 
-                    await context.InventoryTransactions.AddAsync(inventoryTransaction);
+                    await context.InventoryTransactionDetails.AddAsync(transactionDetail);
+                    
+                    // 更新主檔彙總
+                    inventoryTransaction.TotalQuantity += (-quantity);
+                    inventoryTransaction.TotalAmount += transactionDetail.Amount;
+
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -1848,18 +1973,17 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure($"無法刪除此庫存記錄，目前庫存：{entity.TotalCurrentStock}，預留庫存：{entity.TotalReservedStock}");
                 }
 
-                // 檢查是否有相關的交易記錄，如果有則先軟刪除相關記錄
-                var relatedTransactions = await context.InventoryTransactions
-                    .Where(t => t.InventoryStockId == entity.Id)
+                // 檢查是否有相關的異動記錄明細（透過 InventoryTransactionDetail）
+                var relatedTransactionDetails = await context.InventoryTransactionDetails
+                    .Where(d => d.InventoryStockId == entity.Id)
                     .ToListAsync();
 
-                if (relatedTransactions.Any())
+                if (relatedTransactionDetails.Any())
                 {
-                    // 移除相關的交易記錄的外鍵關聯
-                    foreach (var transaction in relatedTransactions)
+                    // 移除相關的異動記錄明細的外鍵關聯
+                    foreach (var detail in relatedTransactionDetails)
                     {
-                        transaction.UpdatedAt = DateTime.UtcNow;
-                        transaction.InventoryStockId = null; // 移除外鍵關聯
+                        detail.InventoryStockId = null; // 移除外鍵關聯
                     }
                 }
 
@@ -1879,7 +2003,7 @@ namespace ERPCore2.Services
                 }
 
                 // 儲存級聯刪除的變更
-                if (relatedTransactions.Any() || relatedReservations.Any())
+                if (relatedTransactionDetails.Any() || relatedReservations.Any())
                 {
                     await context.SaveChangesAsync();
                 }

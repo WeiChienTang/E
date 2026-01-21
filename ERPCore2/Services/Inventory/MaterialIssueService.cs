@@ -80,7 +80,9 @@ namespace ERPCore2.Services
                         InventoryTransactionTypeEnum.MaterialIssue,
                         materialIssue.Code ?? $"MI-{materialIssue.Id}",
                         detail.WarehouseLocationId,
-                        $"領料單號：{materialIssue.Code}");
+                        $"領料單號：{materialIssue.Code}",
+                        sourceDocumentType: InventorySourceDocumentTypes.MaterialIssue,
+                        sourceDocumentId: materialIssue.Id);
 
                     if (!reduceResult.IsSuccess)
                     {
@@ -225,7 +227,12 @@ namespace ERPCore2.Services
                                 transactionNumber: $"{entity.Code}_DEL",  // 使用 _DEL 後綴作為批次邊界
                                 unitCost: detail.UnitCost,
                                 locationId: detail.WarehouseLocationId,
-                                remarks: $"永久刪除領料單 - {entity.Code}");
+                                remarks: $"永久刪除領料單 - {entity.Code}",
+                                batchNumber: null,
+                                batchDate: null,
+                                expiryDate: null,
+                                sourceDocumentType: InventorySourceDocumentTypes.MaterialReturn,
+                                sourceDocumentId: entity.Id);
 
                             if (!addResult.IsSuccess)
                             {
@@ -444,42 +451,46 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure("找不到指定的領料單");
                     }
 
-                    // 2. 查詢所有相關的庫存交易記錄
-                    var allTransactions = await context.InventoryTransactions
-                        .Where(t => t.TransactionNumber == currentMaterialIssue.Code ||
-                                    t.TransactionNumber.StartsWith(currentMaterialIssue.Code + "_"))
-                        .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
+                    // 2. 查詢所有相關的庫存交易記錄明細
+                    var allTransactionDetails = await context.InventoryTransactionDetails
+                        .Include(d => d.InventoryTransaction)
+                        .Where(d => d.InventoryTransaction.TransactionNumber == currentMaterialIssue.Code ||
+                                    d.InventoryTransaction.TransactionNumber.StartsWith(currentMaterialIssue.Code + "_"))
+                        .OrderBy(d => d.InventoryTransaction.TransactionDate)
+                        .ThenBy(d => d.InventoryTransaction.Id)
+                        .ThenBy(d => d.Id)
                         .ToListAsync();
 
                     // 3. 找到最後一次刪除記錄（_DEL）作為批次邊界
-                    var lastDeleteTransaction = allTransactions
-                        .Where(t => t.TransactionNumber.EndsWith("_DEL"))
-                        .OrderByDescending(t => t.TransactionDate)
-                        .ThenByDescending(t => t.Id)
+                    var lastDeleteDetail = allTransactionDetails
+                        .Where(d => d.InventoryTransaction.TransactionNumber.EndsWith("_DEL"))
+                        .OrderByDescending(d => d.InventoryTransaction.TransactionDate)
+                        .ThenByDescending(d => d.InventoryTransaction.Id)
                         .FirstOrDefault();
 
                     // 4. 只計算最後一次刪除之後的記錄（不含 _DEL 本身）
-                    var existingTransactions = lastDeleteTransaction != null
-                        ? allTransactions.Where(t => t.Id > lastDeleteTransaction.Id && !t.TransactionNumber.EndsWith("_DEL")).ToList()
-                        : allTransactions.Where(t => !t.TransactionNumber.EndsWith("_DEL")).ToList();
+                    var existingDetails = lastDeleteDetail != null
+                        ? allTransactionDetails.Where(d => d.InventoryTransaction.Id > lastDeleteDetail.InventoryTransactionId && 
+                                                          !d.InventoryTransaction.TransactionNumber.EndsWith("_DEL")).ToList()
+                        : allTransactionDetails.Where(d => !d.InventoryTransaction.TransactionNumber.EndsWith("_DEL")).ToList();
 
                     // 5. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal UnitCost)>();
 
-                    foreach (var trans in existingTransactions)
+                    foreach (var detail in existingDetails)
                     {
-                        var key = $"{trans.ProductId}_{trans.WarehouseId}_{trans.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ProductId}_{detail.InventoryTransaction.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (trans.ProductId, trans.WarehouseId, trans.WarehouseLocationId, 0m, trans.UnitCost.GetValueOrDefault());
+                            processedInventory[key] = (detail.ProductId, detail.InventoryTransaction.WarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost.GetValueOrDefault());
                         }
                         // 累加所有交易的淨值（Quantity 已經包含正負號）
                         // MaterialIssue 是負數，MaterialReturn 是正數
                         var oldQty = processedInventory[key].NetProcessedQuantity;
-                        var newQty = oldQty + trans.Quantity;
+                        var newQty = oldQty + detail.Quantity;
                         processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId,
                                                   processedInventory[key].LocationId, newQty,
-                                                  trans.UnitCost.GetValueOrDefault());
+                                                  detail.UnitCost.GetValueOrDefault());
                     }
 
                     // 6. 建立當前明細字典
@@ -533,7 +544,9 @@ namespace ERPCore2.Services
                                     InventoryTransactionTypeEnum.MaterialIssue,
                                     $"{currentMaterialIssue.Code}_ADJ",
                                     locationId,
-                                    $"編輯領料單差異調整 - 增加領料 {adjustmentNeeded}");
+                                    $"編輯領料單差異調整 - 增加領料 {adjustmentNeeded}",
+                                    sourceDocumentType: InventorySourceDocumentTypes.MaterialIssue,
+                                    sourceDocumentId: currentMaterialIssue.Id);
 
                                 if (!reduceResult.IsSuccess)
                                 {
@@ -557,7 +570,10 @@ namespace ERPCore2.Services
                                     $"{currentMaterialIssue.Code}_ADJ",
                                     unitCost,
                                     locationId,
-                                    $"編輯領料單差異調整 - 減少領料 {Math.Abs(adjustmentNeeded)}");
+                                    $"編輯領料單差異調整 - 減少領料 {Math.Abs(adjustmentNeeded)}",
+                                    null, null, null, // batchNumber, batchDate, expiryDate
+                                    sourceDocumentType: InventorySourceDocumentTypes.MaterialReturn,
+                                    sourceDocumentId: currentMaterialIssue.Id);
 
                                 if (!addResult.IsSuccess)
                                 {
