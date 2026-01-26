@@ -745,11 +745,13 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     quantityDiff,
                                     InventoryTransactionTypeEnum.Return,
-                                    $"{savedEntity.Code}_ADJ",
+                                    savedEntity.Code ?? string.Empty,
                                     detail.WarehouseLocationId,
                                     operationDescription,
                                     sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
-                                    sourceDocumentId: savedEntity.Id
+                                    sourceDocumentId: savedEntity.Id,
+                                    operationType: InventoryOperationTypeEnum.Adjust,
+                                    operationNote: $"編輯調整 - 退貨數量增加 {quantityDiff}"
                                 );
                             }
                             else
@@ -761,13 +763,15 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     Math.Abs(quantityDiff),
                                     InventoryTransactionTypeEnum.Return,
-                                    $"{savedEntity.Code}_ADJ",
+                                    savedEntity.Code ?? string.Empty,
                                     detail.OriginalUnitPrice,
                                     detail.WarehouseLocationId,
                                     operationDescription,
                                     null, null, null, // batchNumber, batchDate, expiryDate
                                     sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
-                                    sourceDocumentId: savedEntity.Id
+                                    sourceDocumentId: savedEntity.Id,
+                                    operationType: InventoryOperationTypeEnum.Adjust,
+                                    operationNote: $"編輯調整 - 退貨數量減少 {Math.Abs(quantityDiff)}"
                                 );
                             }
 
@@ -1109,13 +1113,15 @@ namespace ERPCore2.Services
                                 warehouseId.Value,
                                 detail.ReturnQuantity, // 回復退貨的數量
                                 InventoryTransactionTypeEnum.Return,
-                                $"{entity.Code}_DEL", // 標記為刪除操作
+                                entity.Code ?? string.Empty, // 使用原始單號
                                 detail.OriginalUnitPrice, // 使用原始單價
                                 detail.WarehouseLocationId,
                                 $"刪除採購退貨單回復庫存 - {entity.Code}",
                                 null, null, null, // batchNumber, batchDate, expiryDate
                                 sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
-                                sourceDocumentId: entity.Id
+                                sourceDocumentId: entity.Id,
+                                operationType: InventoryOperationTypeEnum.Delete,
+                                operationNote: "刪除單據回復庫存"
                             );
 
                             if (!addResult.IsSuccess)
@@ -1177,7 +1183,7 @@ namespace ERPCore2.Services
         /// 處理流程：
         /// 1. 驗證退回單存在性
         /// 2. 對每個明細進行庫存扣減操作
-        /// 3. 使用原始單號作為 TransactionNumber（不帶 _ADJ 後綴）
+        /// 3. 使用原始單號作為 TransactionNumber，搭配 OperationType 區分操作類型
         /// 4. 使用資料庫交易確保資料一致性
         /// 5. 任何步驟失敗時回滾所有變更
         /// </summary>
@@ -1237,11 +1243,13 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     detail.ReturnQuantity,
                                     InventoryTransactionTypeEnum.Return,
-                                    purchaseReturn.Code ?? string.Empty,  // 使用原始單號，不帶 _ADJ
+                                    purchaseReturn.Code ?? string.Empty,
                                     detail.WarehouseLocationId,
                                     $"採購退回確認 - {purchaseReturn.Code ?? string.Empty}",
                                     sourceDocumentType: InventorySourceDocumentTypes.PurchaseReturn,
-                                    sourceDocumentId: purchaseReturn.Id
+                                    sourceDocumentId: purchaseReturn.Id,
+                                    operationType: InventoryOperationTypeEnum.Initial,
+                                    operationNote: "首次確認退回"
                                     );
                                 
                                 if (!reduceStockResult.IsSuccess)

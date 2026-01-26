@@ -310,39 +310,39 @@ namespace ERPCore2.Services
         #region 庫存異動記錄（已過時，建議使用 InventoryStockService）
 
         [Obsolete("請使用 IInventoryStockService.AddStockAsync")]
-        public async Task<ServiceResult> CreateInboundTransactionAsync(int productId, int warehouseId, int quantity,
+        public Task<ServiceResult> CreateInboundTransactionAsync(int productId, int warehouseId, int quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             decimal? unitCost = null, int? locationId = null, string? remarks = null, int? employeeId = null)
         {
             // 此方法已過時，應使用 IInventoryStockService.AddStockAsync
-            return ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.AddStockAsync");
+            return Task.FromResult(ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.AddStockAsync"));
         }
 
         [Obsolete("請使用 IInventoryStockService.ReduceStockAsync")]
-        public async Task<ServiceResult> CreateOutboundTransactionAsync(int productId, int warehouseId, int quantity,
+        public Task<ServiceResult> CreateOutboundTransactionAsync(int productId, int warehouseId, int quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null, int? employeeId = null)
         {
             // 此方法已過時，應使用 IInventoryStockService.ReduceStockAsync
-            return ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.ReduceStockAsync");
+            return Task.FromResult(ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.ReduceStockAsync"));
         }
 
         [Obsolete("請使用 IInventoryStockService.AdjustStockAsync")]
-        public async Task<ServiceResult> CreateAdjustmentTransactionAsync(int productId, int warehouseId, 
+        public Task<ServiceResult> CreateAdjustmentTransactionAsync(int productId, int warehouseId, 
             decimal originalQuantity, decimal adjustedQuantity, string transactionNumber,
             int? locationId = null, string? remarks = null, int? employeeId = null)
         {
             // 此方法已過時，應使用 IInventoryStockService.AdjustStockAsync
-            return ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.AdjustStockAsync");
+            return Task.FromResult(ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.AdjustStockAsync"));
         }
 
         [Obsolete("請使用 IInventoryStockService.TransferStockAsync")]
-        public async Task<ServiceResult> CreateTransferTransactionAsync(int productId, int fromWarehouseId, int toWarehouseId,
+        public Task<ServiceResult> CreateTransferTransactionAsync(int productId, int fromWarehouseId, int toWarehouseId,
             int quantity, string transactionNumber, int? fromLocationId = null, int? toLocationId = null,
             string? remarks = null, int? employeeId = null)
         {
             // 此方法已過時，應使用 IInventoryStockService.TransferStockAsync
-            return ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.TransferStockAsync");
+            return Task.FromResult(ServiceResult.Failure("此方法已過時，請使用 IInventoryStockService.TransferStockAsync"));
         }
 
         #endregion
@@ -407,12 +407,14 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 取得關聯的庫存異動記錄（原始交易 + 調整記錄）
+        /// 取得關聯的庫存異動記錄（包含所有操作類型的明細）
         /// 用於顯示一張單據相關的所有庫存異動
+        /// 🔑 簡化設計：同一單據只會有一筆主檔，透過 OperationType 區分操作類型
         /// </summary>
-        /// <param name="baseTransactionNumber">基礎交易編號（不含 _ADJ、_DEL 等後綴）</param>
+        /// <param name="baseTransactionNumber">基礎交易編號</param>
+        /// <param name="productId">商品ID（可選，用於過濾特定商品的異動）</param>
         /// <returns>包含原始交易和所有調整記錄的 RelatedDocument 列表</returns>
-        public async Task<List<ERPCore2.Models.RelatedDocument>> GetRelatedTransactionsAsync(string baseTransactionNumber)
+        public async Task<List<ERPCore2.Models.RelatedDocument>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null)
         {
             try
             {
@@ -421,58 +423,68 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
-                // 提取基礎編號（移除可能的後綴）
+                // 🔑 簡化設計：移除可能的舊後綴，只用基礎編號查詢
                 var cleanBaseNumber = baseTransactionNumber
                     .Replace("_ADJ", "")
                     .Replace("_DEL", "")
                     .Replace("_PRICE_ADJ_IN", "")
                     .Replace("_PRICE_ADJ_OUT", "");
                 
-                // 查詢所有相關的異動記錄（原始 + 調整 + 刪除）
-                var relatedTransactions = await context.InventoryTransactions
+                // 查詢該單據的異動記錄
+                var transaction = await context.InventoryTransactions
                     .Include(t => t.Details)
-                    .Where(t => t.TransactionNumber == cleanBaseNumber ||
-                               t.TransactionNumber.StartsWith(cleanBaseNumber + "_"))
-                    .OrderBy(t => t.TransactionDate)
-                    .ToListAsync();
+                        .ThenInclude(d => d.Product)
+                    .FirstOrDefaultAsync(t => t.TransactionNumber == cleanBaseNumber);
                 
-                // 轉換為 RelatedDocument 格式
+                if (transaction == null)
+                    return new List<ERPCore2.Models.RelatedDocument>();
+                
                 var documents = new List<ERPCore2.Models.RelatedDocument>();
                 
-                foreach (var transaction in relatedTransactions)
+                // 如果有指定商品ID，只處理包含該商品的明細
+                var relevantDetails = productId.HasValue
+                    ? transaction.Details?.Where(d => d.ProductId == productId.Value).ToList()
+                    : transaction.Details?.ToList();
+                
+                if (relevantDetails == null || !relevantDetails.Any())
+                    return documents;
+                
+                // 🔑 依據 OperationType 分組顯示異動明細
+                var groupedByOperation = relevantDetails
+                    .GroupBy(d => d.OperationType)
+                    .OrderBy(g => g.Min(d => d.OperationTime));
+                
+                foreach (var group in groupedByOperation)
                 {
-                    // 判斷是原始記錄還是調整記錄
-                    var isOriginal = transaction.TransactionNumber == cleanBaseNumber;
-                    var isAdjustment = transaction.TransactionNumber.Contains("_ADJ");
-                    var isDelete = transaction.TransactionNumber.Contains("_DEL");
-                    var isPriceAdjust = transaction.TransactionNumber.Contains("_PRICE_ADJ");
+                    var netQuantity = group.Sum(d => d.Quantity);
+                    var netAmount = group.Sum(d => d.Amount);
+                    var latestTime = group.Max(d => d.OperationTime);
                     
-                    // 計算該交易的淨數量
-                    var netQuantity = transaction.Details?.Sum(d => d.Quantity) ?? transaction.TotalQuantity;
-                    var netAmount = transaction.Details?.Sum(d => d.Amount) ?? transaction.TotalAmount;
+                    // 取得商品名稱（如果有過濾特定商品）
+                    var productName = productId.HasValue
+                        ? group.FirstOrDefault()?.Product?.Name
+                        : null;
                     
-                    // 根據類型設定標籤
-                    string label;
-                    if (isOriginal)
-                        label = $"[原始] {GetTransactionTypeDisplayName(transaction.TransactionType)}";
-                    else if (isDelete)
-                        label = "[刪除回退]";
-                    else if (isPriceAdjust)
-                        label = "[價格調整]";
-                    else if (isAdjustment)
-                        label = "[編輯調整]";
-                    else
-                        label = transaction.TransactionType.ToString();
+                    // 根據 OperationType 設定標籤
+                    string label = group.Key switch
+                    {
+                        InventoryOperationTypeEnum.Initial => $"[首次] {GetTransactionTypeDisplayName(transaction.TransactionType)}",
+                        InventoryOperationTypeEnum.Adjust => "[編輯調整]",
+                        InventoryOperationTypeEnum.Delete => "[刪除回退]",
+                        _ => GetTransactionTypeDisplayName(transaction.TransactionType)
+                    };
                     
                     documents.Add(new ERPCore2.Models.RelatedDocument
                     {
                         DocumentId = transaction.Id,
                         DocumentType = ERPCore2.Models.RelatedDocumentType.InventoryTransaction,
                         DocumentNumber = $"{transaction.TransactionNumber} {label}",
-                        DocumentDate = transaction.TransactionDate,
+                        DocumentDate = latestTime,
                         Quantity = netQuantity,
                         Amount = netAmount,
-                        Remarks = transaction.Remarks
+                        Remarks = productId.HasValue 
+                            ? $"{productName}" 
+                            : group.FirstOrDefault()?.OperationNote ?? transaction.Remarks
                     });
                 }
                 
@@ -510,10 +522,10 @@ namespace ERPCore2.Services
         }
 
         [Obsolete("沖銷功能需重新設計以支援主/明細結構")]
-        public async Task<ServiceResult> ReverseTransactionAsync(int transactionId, string reason, int? employeeId = null)
+        public Task<ServiceResult> ReverseTransactionAsync(int transactionId, string reason, int? employeeId = null)
         {
             // 沖銷功能需要重新設計
-            return ServiceResult.Failure("沖銷功能暫不支援，請聯繫系統管理員");
+            return Task.FromResult(ServiceResult.Failure("沖銷功能暫不支援，請聯繫系統管理員"));
         }
 
         #endregion

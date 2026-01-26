@@ -178,4 +178,32 @@ namespace ERPCore2.Data.Enums
         [Description("跳過")]
         Skipped = 5
     }
+
+    /// <summary>
+    /// 庫存異動操作類型
+    /// 用於標識每筆異動明細的操作類型（新增、調整、刪除回退）
+    /// </summary>
+    public enum InventoryOperationTypeEnum
+    {
+        /// <summary>
+        /// 首次入庫/出庫（來源單據確認時）
+        /// </summary>
+        [Description("初始")]
+        Initial = 1,
+
+        /// <summary>
+        /// 編輯調整（來源單據編輯時產生的差異）
+        /// </summary>
+        [Description("調整")]
+        Adjust = 2,
+
+        /// <summary>
+        /// 刪除回退（來源單據刪除時的庫存回退）
+        /// </summary>
+        [Description("刪除回退")]
+        Delete = 3
+
+        // 🔑 已移除 PriceAdjust：價格調整不應產生庫存異動記錄
+        // 價格變更時直接調整 InventoryStockDetail.AverageCost
+    }
 }

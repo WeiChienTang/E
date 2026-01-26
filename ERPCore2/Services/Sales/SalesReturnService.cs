@@ -883,11 +883,12 @@ namespace ERPCore2.Services
                                 warehouseId.Value,
                                 (int)Math.Ceiling(detail.ReturnQuantity), // 轉為整數，向上取整
                                 InventoryTransactionTypeEnum.SalesReturn,
-                                $"{entity.Code}_DEL", // 標記為刪除操作
+                                entity.Code ?? string.Empty,  // 使用原始單號
                                 null, // 倉庫位置ID (銷貨退回通常不指定特定位置)
                                 $"刪除銷貨退回單回滾庫存 - {entity.Code}",
                                 sourceDocumentType: InventorySourceDocumentTypes.SalesReturn,
-                                sourceDocumentId: entity.Id
+                                sourceDocumentId: entity.Id,
+                                operationType: InventoryOperationTypeEnum.Delete  // 標記為刪除操作
                             );
                             
                             if (!reduceResult.IsSuccess)
@@ -978,29 +979,26 @@ namespace ERPCore2.Services
                         return ServiceResult.Failure($"找不到ID為 {id} 的銷貨退回單");
                     }
 
-                    // 🔑 關鍵修正：查詢所有相關交易記錄明細，但只計算最後一次 _DEL 之後的記錄
-                    // 這樣可以避免刪除後重新新增時累加舊記錄
+                    // 🔑 簡化設計：查詢該單據的所有異動明細，透過 OperationType 過濾
                     var allTransactionDetails = await context.InventoryTransactionDetails
                         .Include(d => d.InventoryTransaction)
-                        .Where(d => d.InventoryTransaction.TransactionNumber == currentReturn.Code || 
-                                    d.InventoryTransaction.TransactionNumber.StartsWith(currentReturn.Code + "_"))
-                        .OrderBy(d => d.InventoryTransaction.TransactionDate)
-                        .ThenBy(d => d.InventoryTransaction.Id)
+                        .Where(d => d.InventoryTransaction.TransactionNumber == currentReturn.Code)
+                        .OrderBy(d => d.OperationTime)
                         .ThenBy(d => d.Id)
                         .ToListAsync();
                     
-                    // 找到最後一次刪除記錄（_DEL）
+                    // 找到最後一次刪除記錄（OperationType = Delete）
                     var lastDeleteDetail = allTransactionDetails
-                        .Where(d => d.InventoryTransaction.TransactionNumber.EndsWith("_DEL"))
-                        .OrderByDescending(d => d.InventoryTransaction.TransactionDate)
-                        .ThenByDescending(d => d.InventoryTransaction.Id)
+                        .Where(d => d.OperationType == InventoryOperationTypeEnum.Delete)
+                        .OrderByDescending(d => d.OperationTime)
+                        .ThenByDescending(d => d.Id)
                         .FirstOrDefault();
                     
-                    // 只計算最後一次刪除之後的記錄（不含 _DEL 本身）
+                    // 只計算最後一次刪除之後的記錄（不含刪除操作本身）
                     var existingDetails = lastDeleteDetail != null
-                        ? allTransactionDetails.Where(d => d.InventoryTransaction.Id > lastDeleteDetail.InventoryTransactionId && 
-                                                          !d.InventoryTransaction.TransactionNumber.EndsWith("_DEL")).ToList()
-                        : allTransactionDetails.Where(d => !d.InventoryTransaction.TransactionNumber.EndsWith("_DEL")).ToList();
+                        ? allTransactionDetails.Where(d => d.Id > lastDeleteDetail.Id && 
+                                                          d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
+                        : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
 
                     // 3. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity)>();
@@ -1088,13 +1086,14 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     adjustmentNeeded,
                                     InventoryTransactionTypeEnum.SalesReturn,
-                                    currentReturn.Code + "_ADJ",
+                                    currentReturn.Code ?? string.Empty,  // 使用原始單號
                                     null,  // 退貨不需要成本
                                     locationId,
                                     $"銷貨退回編輯調增 - {currentReturn.Code}",
                                     null, null, null, // batchNumber, batchDate, expiryDate
                                     sourceDocumentType: InventorySourceDocumentTypes.SalesReturn,
-                                    sourceDocumentId: currentReturn.Id
+                                    sourceDocumentId: currentReturn.Id,
+                                    operationType: InventoryOperationTypeEnum.Adjust  // 標記為調整操作
                                 );
                                 
                                 if (!addResult.IsSuccess)
@@ -1111,11 +1110,12 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     Math.Abs(adjustmentNeeded),
                                     InventoryTransactionTypeEnum.Sale,
-                                    currentReturn.Code + "_ADJ",
+                                    currentReturn.Code ?? string.Empty,  // 使用原始單號
                                     locationId,
                                     $"銷貨退回編輯調減 - {currentReturn.Code}",
                                     sourceDocumentType: InventorySourceDocumentTypes.SalesReturn,
-                                    sourceDocumentId: currentReturn.Id
+                                    sourceDocumentId: currentReturn.Id,
+                                    operationType: InventoryOperationTypeEnum.Adjust  // 標記為調整操作
                                 );
                                 
                                 if (!reduceResult.IsSuccess)
@@ -1155,7 +1155,7 @@ namespace ERPCore2.Services
         /// 處理流程：
         /// 1. 驗證退回單存在性
         /// 2. 對每個明細進行庫存回補操作
-        /// 3. 使用原始單號作為 TransactionNumber（不帶 _ADJ 後綴）
+        /// 3. 使用原始單號作為 TransactionNumber，搭配 OperationType 區分操作類型
         /// 4. 使用資料庫交易確保資料一致性
         /// 5. 任何步驟失敗時回滾所有變更
         /// </summary>
@@ -1211,7 +1211,7 @@ namespace ERPCore2.Services
                                     warehouseId.Value,
                                     (int)detail.ReturnQuantity,
                                     InventoryTransactionTypeEnum.SalesReturn,
-                                    salesReturn.Code ?? string.Empty,  // 使用原始單號，不帶 _ADJ
+                                    salesReturn.Code ?? string.Empty,
                                     null,  // 退回不需要成本
                                     warehouseLocationId,
                                     $"銷貨退回確認 - {salesReturn.Code ?? string.Empty}",

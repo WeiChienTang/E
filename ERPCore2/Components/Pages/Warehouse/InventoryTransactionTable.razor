@@ -1,5 +1,6 @@
 @* 庫存異動明細表格組件 - 使用 InteractiveTableComponent 統一UI（唯讀顯示） *@
 @using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
 @using ERPCore2.Helpers
 @using ERPCore2.Models
 
@@ -26,7 +27,9 @@
 @* 關聯異動查看 Modal *@
 <InventoryTransactionRelatedModal IsVisible="@showRelatedModal"
                                   IsVisibleChanged="@((bool visible) => showRelatedModal = visible)"
-                                  TransactionNumber="@TransactionNumber" />
+                                  TransactionNumber="@TransactionNumber"
+                                  ProductId="@selectedProductId"
+                                  ProductName="@selectedProductName" />
 
 @code {
     // ===== 參數 =====
@@ -37,6 +40,16 @@
     /// </summary>
     [Parameter] public string? TransactionNumber { get; set; }
     
+    /// <summary>
+    /// 是否顯示異動前/後庫存欄位（預設 false，用於庫存異動查詢頁面時可設為 true）
+    /// </summary>
+    [Parameter] public bool ShowStockBeforeAfter { get; set; } = false;
+    
+    /// <summary>
+    /// 是否顯示操作類型欄位（OperationType）
+    /// </summary>
+    [Parameter] public bool ShowOperationType { get; set; } = true;
+    
     // ===== 內部狀態 =====
     private InteractiveTableComponent<TransactionDetailItem>? tableComponent;
     private List<TransactionDetailItem> DetailItems { get; set; } = new();
@@ -44,6 +57,8 @@
     
     // ===== 關聯查看狀態 =====
     private bool showRelatedModal = false;
+    private int? selectedProductId = null;
+    private string? selectedProductName = null;
     
     protected override void OnParametersSet()
     {
@@ -70,7 +85,7 @@
             return;
         }
         
-        foreach (var detail in Details.OrderBy(d => d.Id))
+        foreach (var detail in Details.OrderBy(d => d.OperationTime).ThenBy(d => d.Id))
         {
             DetailItems.Add(new TransactionDetailItem
             {
@@ -83,7 +98,10 @@
                 Amount = detail.Amount,
                 StockBefore = detail.StockBefore,
                 StockAfter = detail.StockAfter,
-                BatchNumber = detail.BatchNumber ?? "-"
+                BatchNumber = detail.BatchNumber ?? "-",
+                OperationType = detail.OperationType,
+                OperationNote = detail.OperationNote ?? "-",
+                OperationTime = detail.OperationTime
             });
         }
         
@@ -95,7 +113,7 @@
     /// </summary>
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
     {
-        return new List<InteractiveColumnDefinition>
+        var columns = new List<InteractiveColumnDefinition>
         {
             // 商品編號
             new()
@@ -138,9 +156,32 @@
                     var detailItem = (TransactionDetailItem)item;
                     return @<span class="@GetQuantityColorClass(detailItem.Quantity)">@NumberFormatHelper.FormatSmart(detailItem.Quantity)</span>;
                 }
-            },
-            // 異動前庫存
-            new()
+            }
+        };
+        
+        // 操作類型欄位（根據參數決定是否顯示）
+        if (ShowOperationType)
+        {
+            columns.Add(new()
+            {
+                Title = "操作類型",
+                PropertyName = nameof(TransactionDetailItem.OperationType),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "90px",
+                TextAlign = "center",
+                IsReadOnly = true,
+                CustomTemplate = item =>
+                {
+                    var detailItem = (TransactionDetailItem)item;
+                    return @<span class="@GetOperationTypeBadgeClass(detailItem.OperationType)">@GetOperationTypeDisplayName(detailItem.OperationType)</span>;
+                }
+            });
+        }
+        
+        // 異動前/後庫存欄位（根據參數決定是否顯示）
+        if (ShowStockBeforeAfter)
+        {
+            columns.Add(new()
             {
                 Title = "異動前",
                 PropertyName = nameof(TransactionDetailItem.StockBefore),
@@ -153,9 +194,9 @@
                     var detailItem = (TransactionDetailItem)item;
                     return @<span class="text-muted">@NumberFormatHelper.FormatSmart(detailItem.StockBefore)</span>;
                 }
-            },
-            // 異動後庫存
-            new()
+            });
+            
+            columns.Add(new()
             {
                 Title = "異動後",
                 PropertyName = nameof(TransactionDetailItem.StockAfter),
@@ -168,7 +209,37 @@
                     var detailItem = (TransactionDetailItem)item;
                     return @<span class="fw-bold">@NumberFormatHelper.FormatSmart(detailItem.StockAfter)</span>;
                 }
-            },
+            });
+        }
+        
+        return columns;
+    }
+    
+    /// <summary>
+    /// 取得操作類型的顯示名稱
+    /// </summary>
+    private string GetOperationTypeDisplayName(InventoryOperationTypeEnum operationType)
+    {
+        return operationType switch
+        {
+            InventoryOperationTypeEnum.Initial => "首次",
+            InventoryOperationTypeEnum.Adjust => "調整",
+            InventoryOperationTypeEnum.Delete => "刪除",
+            _ => operationType.ToString()
+        };
+    }
+    
+    /// <summary>
+    /// 取得操作類型的 Badge 樣式
+    /// </summary>
+    private string GetOperationTypeBadgeClass(InventoryOperationTypeEnum operationType)
+    {
+        return operationType switch
+        {
+            InventoryOperationTypeEnum.Initial => "badge bg-primary",
+            InventoryOperationTypeEnum.Adjust => "badge bg-warning text-dark",
+            InventoryOperationTypeEnum.Delete => "badge bg-danger",
+            _ => "badge bg-secondary"
         };
     }
     
@@ -177,23 +248,28 @@
     /// </summary>
     private RenderFragment<TransactionDetailItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 顯示查看關聯按鈕（只有當有關聯交易時才顯示操作欄）
+        // 顯示查看此商品異動歷史的按鈕
         <GenericButtonComponent Variant="ButtonVariant.Blue"
-                               IconClass="bi bi-arrow-left-right text-white"
+                               IconClass="bi bi-clock-history text-white"
                                Size="ButtonSize.Large"
-                               Title="查看關聯交易"
-                               OnClick="() => ShowRelatedTransactions()"
+                               Title="查看此商品的異動歷史"
+                               OnClick="() => ShowProductTransactionHistory(item)"
                                StopPropagation="true"
                                CssClass="btn-square" />
     };
     
     /// <summary>
-    /// 顯示關聯交易 Modal
+    /// 顯示特定商品的異動歷史
     /// </summary>
-    private void ShowRelatedTransactions()
+    private void ShowProductTransactionHistory(TransactionDetailItem item)
     {
-        showRelatedModal = true;
-        StateHasChanged();
+        if (item?.DetailEntity?.ProductId != null)
+        {
+            selectedProductId = item.DetailEntity.ProductId;
+            selectedProductName = item.ProductName;
+            showRelatedModal = true;
+            StateHasChanged();
+        }
     }
     
     /// <summary>
@@ -237,5 +313,10 @@
         public decimal StockBefore { get; set; }
         public decimal StockAfter { get; set; }
         public string BatchNumber { get; set; } = string.Empty;
+        
+        // 操作類型相關欄位
+        public InventoryOperationTypeEnum OperationType { get; set; } = InventoryOperationTypeEnum.Initial;
+        public string OperationNote { get; set; } = string.Empty;
+        public DateTime OperationTime { get; set; }
     }
 }

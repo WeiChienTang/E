@@ -92,12 +92,14 @@ namespace ERPCore2.Services
         Task<List<InventoryTransactionDetail>> GetProductMovementHistoryDetailsAsync(int productId, int? warehouseId = null);
 
         /// <summary>
-        /// 取得關聯的庫存異動記錄（原始交易 + 調整記錄）
+        /// 取得關聯的庫存異動記錄（包含所有操作類型的明細）
         /// 用於顯示一張單據相關的所有庫存異動
+        /// 🔑 簡化設計：同一單據只會有一筆主檔，透過 OperationType 區分操作類型
         /// </summary>
-        /// <param name="baseTransactionNumber">基礎交易編號（不含 _ADJ、_DEL 等後綴）</param>
+        /// <param name="baseTransactionNumber">基礎交易編號</param>
+        /// <param name="productId">商品ID（可選，用於過濾特定商品的異動）</param>
         /// <returns>包含原始交易和所有調整記錄的 RelatedDocument 列表</returns>
-        Task<List<ERPCore2.Models.RelatedDocument>> GetRelatedTransactionsAsync(string baseTransactionNumber);
+        Task<List<ERPCore2.Models.RelatedDocument>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null);
 
         [Obsolete("沖銷功能需重新設計以支援主/明細結構")]
         Task<ServiceResult> ReverseTransactionAsync(int transactionId, string reason, int? employeeId = null);

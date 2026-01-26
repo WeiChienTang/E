@@ -835,7 +835,9 @@ namespace ERPCore2.Services
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             decimal? unitCost = null, int? locationId = null, string? remarks = null,
             string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null,
-            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null)
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null,
+            InventoryOperationTypeEnum operationType = InventoryOperationTypeEnum.Initial,
+            string? operationNote = null)
         {
             try
             {
@@ -939,6 +941,9 @@ namespace ERPCore2.Services
                         SourceDetailId = sourceDetailId,
                         InventoryStockId = stock.Id,
                         InventoryStockDetailId = stockDetail.Id,
+                        OperationType = operationType,
+                        OperationNote = operationNote ?? GetDefaultOperationNote(operationType, true),
+                        OperationTime = DateTime.Now,
                         Remarks = remarks,
                         Status = EntityStatus.Active
                     };
@@ -980,8 +985,9 @@ namespace ERPCore2.Services
         
         /// <summary>
         /// 取得或建立異動主檔
-        /// 🔑 關鍵修正：同時比對 transactionNumber 和 transactionType
-        /// 這樣同一單據的增加和減少會有各自獨立的主檔，避免類型混亂
+        /// 🔑 簡化設計：一張單據 = 一筆異動主檔
+        /// 依據 transactionNumber + sourceDocumentId 查詢，確保不同 ID 的單據不會共用主檔
+        /// 所有操作都記錄在同一個主檔的明細中，透過 OperationType 區分
         /// </summary>
         private async Task<InventoryTransaction> GetOrCreateTransactionAsync(
             AppDbContext context,
@@ -992,20 +998,42 @@ namespace ERPCore2.Services
             int? sourceDocumentId,
             string? remarks)
         {
-            // 嘗試找現有的異動主檔（同一交易單號 + 同一交易類型）
-            var existingTransaction = await context.InventoryTransactions
-                .FirstOrDefaultAsync(t => t.TransactionNumber == transactionNumber && 
-                                         t.TransactionType == transactionType);
+            // 清理交易編號，移除所有後綴（相容舊資料）
+            var cleanNumber = transactionNumber
+                .Replace("_ADJ", "")
+                .Replace("_DEL", "")
+                .Replace("_PRICE_ADJ_IN", "")
+                .Replace("_PRICE_ADJ_OUT", "");
+            
+            // 🔑 修正：同時比對 TransactionNumber 和 SourceDocumentId
+            // 這樣即使單號相同，不同 ID 的單據也會有各自的異動主檔
+            InventoryTransaction? existingTransaction = null;
+            
+            if (sourceDocumentId.HasValue)
+            {
+                // 優先使用 SourceDocumentId + SourceDocumentType 精確匹配
+                existingTransaction = await context.InventoryTransactions
+                    .FirstOrDefaultAsync(t => t.TransactionNumber == cleanNumber && 
+                                              t.SourceDocumentId == sourceDocumentId.Value &&
+                                              t.SourceDocumentType == sourceDocumentType);
+            }
+            
+            // 如果找不到且沒有 SourceDocumentId，才用單號查詢（相容舊資料）
+            if (existingTransaction == null && !sourceDocumentId.HasValue)
+            {
+                existingTransaction = await context.InventoryTransactions
+                    .FirstOrDefaultAsync(t => t.TransactionNumber == cleanNumber);
+            }
             
             if (existingTransaction != null)
             {
                 return existingTransaction;
             }
             
-            // 建立新的異動主檔
+            // 建立新的異動主檔（使用清理後的單號）
             var newTransaction = new InventoryTransaction
             {
-                TransactionNumber = transactionNumber,
+                TransactionNumber = cleanNumber,  // 使用清理後的單號
                 TransactionType = transactionType,
                 TransactionDate = DateTime.Now,
                 WarehouseId = warehouseId,
@@ -1023,10 +1051,26 @@ namespace ERPCore2.Services
             return newTransaction;
         }
 
+        /// <summary>
+        /// 取得預設的操作說明
+        /// </summary>
+        private static string GetDefaultOperationNote(InventoryOperationTypeEnum operationType, bool isInbound)
+        {
+            return operationType switch
+            {
+                InventoryOperationTypeEnum.Initial => isInbound ? "首次入庫" : "首次出庫",
+                InventoryOperationTypeEnum.Adjust => isInbound ? "編輯調增" : "編輯調減",
+                InventoryOperationTypeEnum.Delete => "刪除回退",
+                _ => "其他操作"
+            };
+        }
+
         public async Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null,
-            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null)
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null,
+            InventoryOperationTypeEnum operationType = InventoryOperationTypeEnum.Initial,
+            string? operationNote = null)
         {
             try
             {
@@ -1150,6 +1194,9 @@ namespace ERPCore2.Services
                         SourceDetailId = sourceDetailId,
                         InventoryStockId = stock.Id,
                         InventoryStockDetailId = stockDetail.Id,
+                        OperationType = operationType,
+                        OperationNote = operationNote ?? GetDefaultOperationNote(operationType, false),
+                        OperationTime = DateTime.Now,
                         Remarks = remarks,
                         Status = EntityStatus.Active
                     };
@@ -1314,6 +1361,90 @@ namespace ERPCore2.Services
                     TransactionNumber = transactionNumber
                 });
                 return ServiceResult.Failure("庫存調整失敗");
+            }
+        }
+
+        /// <summary>
+        /// 直接調整庫存的單位成本（不產生數量異動記錄）
+        /// 用於編輯進貨單時只修改價格而數量不變的情況
+        /// 🔑 重要：這個方法只調整成本，不會產生庫存異動記錄
+        /// </summary>
+        public async Task<ServiceResult> AdjustUnitCostAsync(int productId, int warehouseId, 
+            decimal oldQuantity, decimal oldUnitCost, decimal newUnitCost, int? locationId = null)
+        {
+            try
+            {
+                if (oldQuantity <= 0)
+                    return ServiceResult.Success(); // 沒有數量就不需要調整成本
+                
+                if (oldUnitCost == newUnitCost)
+                    return ServiceResult.Success(); // 價格沒變就不需要調整
+                
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 取得庫存主檔和明細
+                var stock = await context.InventoryStocks
+                    .Include(s => s.InventoryStockDetails)
+                    .FirstOrDefaultAsync(i => i.ProductId == productId);
+                
+                if (stock == null)
+                    return ServiceResult.Failure("找不到庫存記錄");
+
+                // 取得指定倉庫/庫位的明細
+                var stockDetail = stock.InventoryStockDetails?
+                    .FirstOrDefault(d => d.WarehouseId == warehouseId && 
+                                        d.WarehouseLocationId == locationId);
+                
+                if (stockDetail == null)
+                    return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
+                
+                // 重新計算加權平均成本
+                // 原理：
+                // 總成本 = 現有成本 - (舊數量 × 舊單價) + (舊數量 × 新單價)
+                // 新平均成本 = 總成本 / 現有庫存量
+                
+                var currentStock = stockDetail.CurrentStock;
+                if (currentStock <= 0)
+                    return ServiceResult.Success(); // 沒有庫存就不需要調整
+                
+                var currentAverageCost = stockDetail.AverageCost ?? 0m;
+                var currentTotalCost = currentAverageCost * currentStock;
+                
+                // 計算價格差異對總成本的影響
+                var costDifference = (newUnitCost - oldUnitCost) * oldQuantity;
+                var newTotalCost = currentTotalCost + costDifference;
+                
+                // 確保總成本不為負數
+                if (newTotalCost < 0)
+                    newTotalCost = 0;
+                
+                // 計算新的平均成本
+                var newAverageCost = newTotalCost / currentStock;
+                
+                // 更新庫存明細的平均成本
+                stockDetail.AverageCost = newAverageCost;
+                stockDetail.UpdatedAt = DateTime.Now;
+                
+                await context.SaveChangesAsync();
+                
+                _logger?.LogInformation(
+                    "成本調整完成 - 商品:{ProductId}, 倉庫:{WarehouseId}, 舊成本:{OldCost}→新成本:{NewCost}, 平均成本:{OldAvg}→{NewAvg}",
+                    productId, warehouseId, oldUnitCost, newUnitCost, currentAverageCost, newAverageCost);
+                
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AdjustUnitCostAsync), GetType(), _logger, new {
+                    Method = nameof(AdjustUnitCostAsync),
+                    ServiceType = GetType().Name,
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    OldQuantity = oldQuantity,
+                    OldUnitCost = oldUnitCost,
+                    NewUnitCost = newUnitCost
+                });
+                return ServiceResult.Failure("成本調整失敗");
             }
         }
 

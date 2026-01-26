@@ -8,6 +8,7 @@
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
+@inject ISalesOrderService SalesOrderService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="ProductionSchedule" 
@@ -22,10 +23,13 @@
                           ModalTitle="@(ProductionScheduleId.HasValue ? "編輯生產排程" : "新增生產排程")"
                           Size="GenericEditModalComponent<ProductionSchedule, IProductionScheduleService>.ModalSize.Desktop"
                           UseGenericForm="true"
-                          FormFields="@GetFormFields()"
+                          FormFields="@formFields"
                           FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
                           DataLoader="@LoadProductionScheduleData"
-                          AdditionalDataLoader="@LoadAdditionalDataAsync"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(ProductionScheduleId.HasValue ? "生產排程更新成功" : "生產排程新增成功")"
                           SaveFailureMessage="生產排程儲存失敗"
@@ -60,11 +64,18 @@
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
     private List<Product> availableProducts = new();
+    private List<SalesOrder> availableSalesOrders = new();
+    
+    // AutoComplete 配置
+    private AutoCompleteConfig? autoCompleteConfig;
     
     // ===== 排程項目相關 =====
     private List<ProductionScheduleItem> scheduleItems = new();
     private bool showScheduleItemModal = false;
     private int? selectedScheduleItemId = null;
+    
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
 
     // ===== 生命週期 =====
     
@@ -155,6 +166,16 @@
             
             // 載入商品列表（用於顯示排程項目）
             availableProducts = await ProductService.GetAllAsync();
+            
+            // 載入銷貨訂單列表
+            availableSalesOrders = await SalesOrderService.GetAllAsync();
+            
+            // 建立 AutoComplete 配置
+            autoCompleteConfig = new AutoCompleteConfigBuilder<ProductionSchedule>()
+                .AddField(nameof(ProductionSchedule.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(ProductionSchedule.CreatedByEmployeeId), "Name", availableEmployees)
+                .AddField(nameof(ProductionSchedule.SalesOrderId), "Code", availableSalesOrders)
+                .Build();
         }
         catch (Exception ex)
         {
@@ -162,6 +183,7 @@
             availableCustomers = new List<Customer>();
             availableEmployees = new List<Employee>();
             availableProducts = new List<Product>();
+            availableSalesOrders = new List<SalesOrder>();
         }
     }
 
@@ -214,9 +236,13 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible)
+        if (IsVisible && !isDataLoaded)
         {
+            // 先載入資料（包含 AutoComplete 配置）
+            await LoadAdditionalDataAsync();
+            // 再初始化表單欄位
             InitializeFormFields();
+            isDataLoaded = true;
             
             // 如果是編輯模式且有 ProductionScheduleId，載入排程項目
             if (ProductionScheduleId.HasValue)
@@ -229,6 +255,10 @@
                 scheduleItems = new();
             }
         }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
     }
 
     // ===== 表單初始化 =====
@@ -236,20 +266,6 @@
     {
         try
         {
-            // 準備客戶選項
-            var customerOptions = availableCustomers.Select(c => new SelectOption
-            {
-                Text = c.CompanyName ?? "",
-                Value = c.Id.ToString()
-            }).ToList();
-
-            // 準備員工選項
-            var employeeOptions = availableEmployees.Select(e => new SelectOption
-            {
-                Text = $"{e.Code} - {e.Name}".Trim(),
-                Value = e.Id.ToString()
-            }).ToList();
-
             formFields = new List<FormFieldDefinition>
             {
                 // 基本資訊區段
@@ -274,37 +290,30 @@
                 {
                     PropertyName = nameof(ProductionSchedule.CustomerId),
                     Label = "客戶",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇客戶",
-                    Options = customerOptions,
-                    HelpText = "選擇此排程關聯的客戶（可選）"
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇客戶",
+                    MinSearchLength = 0,
+                    HelpText = "輸入客戶名稱進行搜尋，或直接選擇（可選）"
                 },
                 new()
                 {
                     PropertyName = nameof(ProductionSchedule.CreatedByEmployeeId),
                     Label = "製單人員",
-                    FieldType = FormFieldType.Select,
-                    Placeholder = "請選擇製單人員",
-                    Options = employeeOptions,
-                    HelpText = "選擇負責製作此排程的員工"
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇製單人員",
+                    MinSearchLength = 0,
+                    HelpText = "輸入員工名稱進行搜尋，或直接選擇"
                 },
                 
                 // 來源資訊區段
                 new()
                 {
-                    PropertyName = nameof(ProductionSchedule.SourceDocumentType),
-                    Label = "來源單據類型",
-                    FieldType = FormFieldType.Text,
-                    Placeholder = "請輸入來源單據類型",
-                    HelpText = "此排程來源的單據類型（如：銷售訂單、手動建立等）"
-                },
-                new()
-                {
-                    PropertyName = nameof(ProductionSchedule.SourceDocumentId),
-                    Label = "來源單據ID",
-                    FieldType = FormFieldType.Number,
-                    Placeholder = "請輸入來源單據ID",
-                    HelpText = "來源單據的ID編號"
+                    PropertyName = nameof(ProductionSchedule.SalesOrderId),
+                    Label = "來源銷貨訂單",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入訂單編號進行搜尋",
+                    MinSearchLength = 0,
+                    HelpText = "輸入銷貨訂單編號進行搜尋，選擇來源訂單（可選）"
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<ProductionSchedule>()
@@ -315,10 +324,8 @@
                     ps => ps.Code,
                     ps => ps.ScheduleDate,
                     ps => ps.CustomerId,
-                    ps => ps.CreatedByEmployeeId)
-                .AddCustomFields("來源資訊",
-                    nameof(ProductionSchedule.SourceDocumentType),
-                    nameof(ProductionSchedule.SourceDocumentId))
+                    ps => ps.CreatedByEmployeeId,
+                    ps => ps.SalesOrderId)
                 .AddToSection(FormSectionNames.AdditionalData,
                     ps => ps.Remarks)
                 .Build();
@@ -327,11 +334,6 @@
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
-    }
-
-    private List<FormFieldDefinition> GetFormFields()
-    {
-        return formFields;
     }
 
     // ===== 自訂模組 =====

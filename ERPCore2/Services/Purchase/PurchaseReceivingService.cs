@@ -329,12 +329,12 @@ namespace ERPCore2.Services
                     {
                         var eligibleDetails = purchaseReceiving.PurchaseReceivingDetails?.Where(d => d.ReceivedQuantity > 0).ToList() ?? new List<PurchaseReceivingDetail>();
                         
-                        // 🔑 關鍵：檢查是否已經有 _DEL 交易記錄（避免重複扣減）
-                        var delTransactionNumber = $"{purchaseReceiving.Code}_DEL";
+                        // 🔑 關鍵：檢查是否已經有 Delete 操作的交易記錄（避免重複扣減）
                         var existingDelDetails = await context.InventoryTransactionDetails
                             .Include(td => td.InventoryTransaction)
                             .Where(td => td.InventoryTransaction != null && 
-                                        td.InventoryTransaction.TransactionNumber == delTransactionNumber)
+                                        td.InventoryTransaction.TransactionNumber == purchaseReceiving.Code &&
+                                        td.OperationType == InventoryOperationTypeEnum.Delete)
                             .Select(td => new { td.ProductId, td.SourceDetailId })
                             .ToListAsync();
                         
@@ -344,19 +344,19 @@ namespace ERPCore2.Services
                         
                         if (existingDelDetails.Any())
                         {
-                            ConsoleHelper.WriteWarning($"發現已有 {existingDelDetails.Count} 筆 _DEL 記錄，將跳過已處理的明細");
+                            ConsoleHelper.WriteWarning($"發現已有 {existingDelDetails.Count} 筆刪除記錄，將跳過已處理的明細");
                         }
                         
                         foreach (var detail in eligibleDetails)
                         {
-                            // 檢查此明細是否已經被處理過（有對應的 _DEL 記錄）
+                            // 檢查此明細是否已經被處理過（有對應的刪除記錄）
                             var alreadyProcessed = existingDelDetails.Any(d => 
                                 d.ProductId == detail.ProductId && 
                                 (d.SourceDetailId == detail.Id || d.SourceDetailId == null));
                             
                             if (alreadyProcessed)
                             {
-                                ConsoleHelper.WriteWarning($"跳過明細 ID:{detail.Id}, 商品ID:{detail.ProductId} - 已有 _DEL 記錄");
+                                ConsoleHelper.WriteWarning($"跳過明細 ID:{detail.Id}, 商品ID:{detail.ProductId} - 已有刪除記錄");
                                 continue;
                             }
                             
@@ -369,11 +369,12 @@ namespace ERPCore2.Services
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Return,
-                                $"{purchaseReceiving.Code}_DEL",
+                                purchaseReceiving.Code ?? string.Empty,  // 使用原始單號
                                 detail.WarehouseLocationId,
                                 $"刪除採購進貨單 - {purchaseReceiving.Code}",
                                 sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                sourceDocumentId: purchaseReceiving.Id
+                                sourceDocumentId: purchaseReceiving.Id,
+                                operationType: InventoryOperationTypeEnum.Delete  // 標記為刪除操作
                             );
                             
                             if (!reduceResult.IsSuccess)
@@ -460,12 +461,12 @@ namespace ERPCore2.Services
                     {
                         var eligibleDetails = entity.PurchaseReceivingDetails.Where(d => d.ReceivedQuantity > 0).ToList();
                         
-                        // 🔑 關鍵：檢查是否已經有 _DEL 交易記錄（避免重複扣減）
-                        var delTransactionNumber = $"{entity.Code}_DEL";
+                        // 🔑 關鍵：檢查是否已經有 Delete 操作的交易記錄（避免重複扣減）
                         var existingDelDetails = await context.InventoryTransactionDetails
                             .Include(td => td.InventoryTransaction)
                             .Where(td => td.InventoryTransaction != null && 
-                                        td.InventoryTransaction.TransactionNumber == delTransactionNumber)
+                                        td.InventoryTransaction.TransactionNumber == entity.Code &&
+                                        td.OperationType == InventoryOperationTypeEnum.Delete)
                             .Select(td => new { td.ProductId, td.SourceDetailId })
                             .ToListAsync();
                         
@@ -474,19 +475,19 @@ namespace ERPCore2.Services
                         
                         if (existingDelDetails.Any())
                         {
-                            ConsoleHelper.WriteWarning($"發現已有 {existingDelDetails.Count} 筆 _DEL 記錄，將跳過已處理的明細");
+                            ConsoleHelper.WriteWarning($"發現已有 {existingDelDetails.Count} 筆刪除記錄，將跳過已處理的明細");
                         }
                         
                         foreach (var detail in eligibleDetails)
                         {
-                            // 檢查此明細是否已經被處理過（有對應的 _DEL 記錄）
+                            // 檢查此明細是否已經被處理過（有對應的刪除記錄）
                             var alreadyProcessed = existingDelDetails.Any(d => 
                                 d.ProductId == detail.ProductId && 
                                 (d.SourceDetailId == detail.Id || d.SourceDetailId == null));
                             
                             if (alreadyProcessed)
                             {
-                                ConsoleHelper.WriteWarning($"跳過明細 ID:{detail.Id}, 商品ID:{detail.ProductId} - 已有 _DEL 記錄");
+                                ConsoleHelper.WriteWarning($"跳過明細 ID:{detail.Id}, 商品ID:{detail.ProductId} - 已有刪除記錄");
                                 continue;
                             }
                             
@@ -499,11 +500,12 @@ namespace ERPCore2.Services
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Return,
-                                $"{entity.Code}_DEL",
+                                entity.Code ?? string.Empty,  // 使用原始單號
                                 detail.WarehouseLocationId,
                                 $"永久刪除採購進貨單 - {entity.Code}",
                                 sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                sourceDocumentId: entity.Id
+                                sourceDocumentId: entity.Id,
+                                operationType: InventoryOperationTypeEnum.Delete  // 標記為刪除操作
                             );
                             
                             if (!reduceResult.IsSuccess)
@@ -519,16 +521,8 @@ namespace ERPCore2.Services
                         }
                     }
                     
-                    // 🔑 關鍵：刪除所有 _ADJ 交易記錄（編輯產生的調整記錄）
-                    // 這樣重新新增同號單據時，就不會找到舊的 _ADJ 記錄
-                    var adjTransactions = await context.InventoryTransactions
-                        .Where(t => t.TransactionNumber.StartsWith(entity.Code + "_ADJ"))
-                        .ToListAsync();
-                    
-                    if (adjTransactions.Any())
-                    {
-                        context.InventoryTransactions.RemoveRange(adjTransactions);
-                    }
+                    // 🔑 說明：由於現在所有異動都在同一個主檔下，不再需要刪除 _ADJ 記錄
+                    // 異動明細透過 OperationType 區分，永久刪除時會一併刪除整個主檔
                     
                     // 4. 更新對應的採購訂單明細已進貨數量
                     if (_purchaseOrderDetailService != null)
@@ -1006,7 +1000,7 @@ namespace ERPCore2.Services
         /// 更新採購進貨單的庫存（差異更新模式）
         /// 功能：比較編輯前後的明細差異，使用淨值計算方式確保庫存準確性
         /// 處理邏輯：
-        /// 1. 查詢所有相關的庫存交易記錄（包含原始、_ADJ、_REVERT 等後綴）
+        /// 1. 查詢該單號下所有庫存交易記錄，透過 OperationType 區分操作類型
         /// 2. 計算已處理過的庫存淨值（所有交易記錄 Quantity 的總和）
         /// 3. 計算當前明細應有的庫存數量
         /// 4. 比較目標數量與已處理數量，計算需要調整的數量
@@ -1041,29 +1035,44 @@ namespace ERPCore2.Services
                     if (currentReceiving == null)
                         return ServiceResult.Failure("找不到指定的進貨單");
 
-                    // 🔑 關鍵修正：查詢所有相關交易記錄明細，但只計算最後一次 _DEL 之後的記錄
-                    // 這樣可以避免刪除後重新新增時累加舊記錄
+                    ConsoleHelper.WriteTitle($"庫存差異更新 - 進貨單 {currentReceiving.Code}");
+                    ConsoleHelper.WriteInfo($"進貨單ID: {currentReceiving.Id}, 明細數: {currentReceiving.PurchaseReceivingDetails.Count}");
+
+                    // 🔑 簡化設計：查詢該單據的所有異動明細，透過 TransactionNumber + SourceDocumentId 精確匹配
                     var allTransactionDetails = await context.InventoryTransactionDetails
                         .Include(d => d.InventoryTransaction)
-                        .Where(d => d.InventoryTransaction.TransactionNumber == currentReceiving.Code || 
-                                    d.InventoryTransaction.TransactionNumber.StartsWith(currentReceiving.Code + "_"))
-                        .OrderBy(d => d.InventoryTransaction.TransactionDate)
-                        .ThenBy(d => d.InventoryTransaction.Id)
+                        .Where(d => d.InventoryTransaction.TransactionNumber == currentReceiving.Code &&
+                                    d.InventoryTransaction.SourceDocumentId == currentReceiving.Id &&
+                                    d.InventoryTransaction.SourceDocumentType == InventorySourceDocumentTypes.PurchaseReceiving)
+                        .OrderBy(d => d.OperationTime)
                         .ThenBy(d => d.Id)
                         .ToListAsync();
                     
-                    // 找到最後一次刪除記錄（_DEL）
+                    ConsoleHelper.WriteInfo($"查詢條件: TransactionNumber={currentReceiving.Code}, SourceDocumentId={currentReceiving.Id}");
+                    // 找到最後一次刪除記錄（OperationType = Delete）
                     var lastDeleteDetail = allTransactionDetails
-                        .Where(d => d.InventoryTransaction.TransactionNumber.EndsWith("_DEL"))
-                        .OrderByDescending(d => d.InventoryTransaction.TransactionDate)
-                        .ThenByDescending(d => d.InventoryTransaction.Id)
+                        .Where(d => d.OperationType == InventoryOperationTypeEnum.Delete)
+                        .OrderByDescending(d => d.OperationTime)
+                        .ThenByDescending(d => d.Id)
                         .FirstOrDefault();
                     
-                    // 只計算最後一次刪除之後的記錄（不含 _DEL 本身）
+                    // 只計算最後一次刪除之後的記錄（不含刪除操作本身）
                     var existingDetails = lastDeleteDetail != null
-                        ? allTransactionDetails.Where(d => d.InventoryTransaction.Id > lastDeleteDetail.InventoryTransactionId && 
-                                                          !d.InventoryTransaction.TransactionNumber.EndsWith("_DEL")).ToList()
-                        : allTransactionDetails.Where(d => !d.InventoryTransaction.TransactionNumber.EndsWith("_DEL")).ToList();
+                        ? allTransactionDetails.Where(d => d.Id > lastDeleteDetail.Id && 
+                                                          d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
+                        : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
+
+                    ConsoleHelper.WriteInfo($"找到 {allTransactionDetails.Count} 筆交易記錄，有效記錄 {existingDetails.Count} 筆");
+                    
+                    // 🔍 除錯：顯示所有異動記錄明細
+                    ConsoleHelper.WriteSeparator('=', 60);
+                    ConsoleHelper.WriteInfo("已存在的異動記錄明細：");
+                    foreach (var detail in existingDetails)
+                    {
+                        ConsoleHelper.WriteDebug($"  ID:{detail.Id}, 商品:{detail.ProductId}, 數量:{detail.Quantity}, " +
+                            $"操作類型:{detail.OperationType}, 時間:{detail.OperationTime:HH:mm:ss}");
+                    }
+                    ConsoleHelper.WriteSeparator('=', 60);
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal? UnitPrice)>();
@@ -1078,6 +1087,7 @@ namespace ERPCore2.Services
                         // 累加所有交易的淨值（Quantity已經包含正負號）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
                         var newQty = oldQty + detail.Quantity;
+                        ConsoleHelper.WriteDebug($"  累加: {key} => 舊淨值:{oldQty} + 數量:{detail.Quantity} = 新淨值:{newQty}");
                         processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
                                                   processedInventory[key].LocationId, newQty, 
                                                   detail.UnitCost);
@@ -1099,6 +1109,21 @@ namespace ERPCore2.Services
                                                currentInventory[key].LocationId, newQty, 
                                                detail.UnitPrice);
                     }
+
+                    // 🔍 除錯：顯示當前明細
+                    ConsoleHelper.WriteInfo("當前進貨明細：");
+                    foreach (var kv in currentInventory)
+                    {
+                        ConsoleHelper.WriteDebug($"  {kv.Key} => 目標數量:{kv.Value.CurrentQuantity}");
+                    }
+                    
+                    // 🔍 除錯：顯示已處理庫存
+                    ConsoleHelper.WriteInfo("已處理庫存淨值：");
+                    foreach (var kv in processedInventory)
+                    {
+                        ConsoleHelper.WriteDebug($"  {kv.Key} => 已處理數量:{kv.Value.NetProcessedQuantity}");
+                    }
+                    ConsoleHelper.WriteSeparator('=', 60);
                     
                     // 處理庫存差異 - 使用淨值計算方式
                     var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
@@ -1116,6 +1141,11 @@ namespace ERPCore2.Services
                         
                         // 計算需要調整的數量
                         decimal adjustmentNeeded = targetQuantity - processedQuantity;
+
+                        // 🔍 除錯：顯示調整計算
+                        ConsoleHelper.WriteStep(1, $"調整計算 - {key}");
+                        ConsoleHelper.WriteDebug($"  目標數量:{targetQuantity}, 已處理數量:{processedQuantity}");
+                        ConsoleHelper.WriteDebug($"  調整數量:{adjustmentNeeded} (目標 - 已處理 = {targetQuantity} - {processedQuantity})");
                         
                         // 檢查價格是否變化（用於更新平均成本）
                         decimal? currentPrice = hasCurrent ? currentInventory[key].UnitPrice : (decimal?)null;
@@ -1131,21 +1161,22 @@ namespace ERPCore2.Services
                             
                             if (adjustmentNeeded > 0)
                             {
-                                // 需要增加庫存 - 使用 Adjustment 類型統一記錄調整
+                                // 需要增加庫存 - 使用原始單號 + Adjust 操作類型
                                 var unitPrice = hasCurrent ? currentInventory[key].UnitPrice : processedInventory[key].UnitPrice;
                                 
                                 var addResult = await _inventoryStockService.AddStockAsync(
                                     productId,
                                     warehouseId,
                                     adjustmentNeeded,
-                                    InventoryTransactionTypeEnum.Adjustment,  // 統一使用 Adjustment 類型
-                                    currentReceiving.Code + "_ADJ",
+                                    InventoryTransactionTypeEnum.Adjustment,
+                                    currentReceiving.Code ?? string.Empty,  // 使用原始單號
                                     unitPrice,
                                     locationId,
                                     $"採購進貨編輯調增 - {currentReceiving.Code}",
                                     null, null, null, // batchNumber, batchDate, expiryDate
                                     sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                    sourceDocumentId: currentReceiving.Id
+                                    sourceDocumentId: currentReceiving.Id,
+                                    operationType: InventoryOperationTypeEnum.Adjust  // 標記為調整操作
                                 );
                                 
                                 if (!addResult.IsSuccess)
@@ -1156,17 +1187,18 @@ namespace ERPCore2.Services
                             }
                             else if (adjustmentNeeded < 0)
                             {
-                                // 需要減少庫存 - 使用 Adjustment 類型統一記錄調整
+                                // 需要減少庫存 - 使用原始單號 + Adjust 操作類型
                                 var reduceResult = await _inventoryStockService.ReduceStockAsync(
                                     productId,
                                     warehouseId,
                                     Math.Abs(adjustmentNeeded),
-                                    InventoryTransactionTypeEnum.Adjustment,  // 統一使用 Adjustment 類型
-                                    currentReceiving.Code + "_ADJ",
+                                    InventoryTransactionTypeEnum.Adjustment,
+                                    currentReceiving.Code ?? string.Empty,  // 使用原始單號
                                     locationId,
                                     $"採購進貨編輯調減 - {currentReceiving.Code}",
                                     sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                    sourceDocumentId: currentReceiving.Id
+                                    sourceDocumentId: currentReceiving.Id,
+                                    operationType: InventoryOperationTypeEnum.Adjust  // 標記為調整操作
                                 );
                                 
                                 if (!reduceResult.IsSuccess)
@@ -1177,48 +1209,23 @@ namespace ERPCore2.Services
                             }
                             else if (priceChanged && targetQuantity > 0)
                             {
-                                // 🔥 重要修正：數量沒變但價格有變，需要重新計算平均成本
-                                // 策略：先減去舊庫存，再加回新庫存（使用新價格）
+                                // � 簡化設計：數量沒變但價格有變，直接調整成本，不產生異動記錄
+                                var oldUnitPrice = processedInventory[key].UnitPrice ?? 0m;
                                 var newUnitPrice = currentInventory[key].UnitPrice;
                                 
-                                // 先減去所有庫存
-                                var reduceResult = await _inventoryStockService.ReduceStockAsync(
+                                var costAdjustResult = await _inventoryStockService.AdjustUnitCostAsync(
                                     productId,
                                     warehouseId,
-                                    targetQuantity,
-                                    InventoryTransactionTypeEnum.Return,
-                                    currentReceiving.Code + "_PRICE_ADJ_OUT",
-                                    locationId,
-                                    $"採購進貨價格調整-先減出 - {currentReceiving.Code}",
-                                    sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                    sourceDocumentId: currentReceiving.Id
-                                );
-                                
-                                if (!reduceResult.IsSuccess)
-                                {
-                                    await transaction.RollbackAsync();
-                                    return ServiceResult.Failure($"價格調整-減庫存失敗：{reduceResult.ErrorMessage}");
-                                }
-                                
-                                // 再用新價格加回庫存
-                                var addResult = await _inventoryStockService.AddStockAsync(
-                                    productId,
-                                    warehouseId,
-                                    targetQuantity,
-                                    InventoryTransactionTypeEnum.Purchase,
-                                    currentReceiving.Code + "_PRICE_ADJ_IN",
+                                    targetQuantity,  // 用於成本重算的數量
+                                    oldUnitPrice,
                                     newUnitPrice,
-                                    locationId,
-                                    $"採購進貨價格調整-再加入 - {currentReceiving.Code}",
-                                    null, null, null, // batchNumber, batchDate, expiryDate
-                                    sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
-                                    sourceDocumentId: currentReceiving.Id
+                                    locationId
                                 );
                                 
-                                if (!addResult.IsSuccess)
+                                if (!costAdjustResult.IsSuccess)
                                 {
                                     await transaction.RollbackAsync();
-                                    return ServiceResult.Failure($"價格調整-加庫存失敗：{addResult.ErrorMessage}");
+                                    return ServiceResult.Failure($"成本調整失敗：{costAdjustResult.ErrorMessage}");
                                 }
                             }
                         }

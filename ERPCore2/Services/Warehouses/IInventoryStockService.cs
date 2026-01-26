@@ -32,12 +32,16 @@ namespace ERPCore2.Services
             InventoryTransactionTypeEnum transactionType, string transactionNumber, 
             decimal? unitCost = null, int? locationId = null, string? remarks = null,
             string? batchNumber = null, DateTime? batchDate = null, DateTime? expiryDate = null,
-            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null);
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null,
+            InventoryOperationTypeEnum operationType = InventoryOperationTypeEnum.Initial,
+            string? operationNote = null);
         
         Task<ServiceResult> ReduceStockAsync(int productId, int warehouseId, decimal quantity,
             InventoryTransactionTypeEnum transactionType, string transactionNumber,
             int? locationId = null, string? remarks = null,
-            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null);
+            string? sourceDocumentType = null, int? sourceDocumentId = null, int? sourceDetailId = null,
+            InventoryOperationTypeEnum operationType = InventoryOperationTypeEnum.Initial,
+            string? operationNote = null);
         
         Task<ServiceResult> TransferStockAsync(int productId, int fromWarehouseId, int toWarehouseId,
             decimal quantity, string transactionNumber, int? fromLocationId = null, int? toLocationId = null,
@@ -46,6 +50,20 @@ namespace ERPCore2.Services
         Task<ServiceResult> AdjustStockAsync(int productId, int warehouseId, decimal newQuantity,
             string transactionNumber, string? remarks = null, int? locationId = null,
             string? sourceDocumentType = null, int? sourceDocumentId = null);
+        
+        /// <summary>
+        /// 直接調整庫存的單位成本（不產生數量異動記錄）
+        /// 用於編輯進貨單時只修改價格而數量不變的情況
+        /// </summary>
+        /// <param name="productId">商品ID</param>
+        /// <param name="warehouseId">倉庫ID</param>
+        /// <param name="oldQuantity">原數量（用於成本重算）</param>
+        /// <param name="oldUnitCost">原單價</param>
+        /// <param name="newUnitCost">新單價</param>
+        /// <param name="locationId">倉位ID（可選）</param>
+        /// <returns>調整結果</returns>
+        Task<ServiceResult> AdjustUnitCostAsync(int productId, int warehouseId, 
+            decimal oldQuantity, decimal oldUnitCost, decimal newUnitCost, int? locationId = null);
         
         // 庫存預留
         Task<ServiceResult> ReserveStockAsync(int productId, int warehouseId, decimal quantity,

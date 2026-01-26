@@ -92,14 +92,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 確認銷貨退回單並更新庫存（首次新增時使用）
         /// 功能：執行退回確認流程，將退回數量回補到庫存
-        /// 使用原始單號作為 TransactionNumber，不帶 _ADJ 後綴
+        /// 使用原始單號作為 TransactionNumber，搭配 OperationType 區分操作類型
         /// </summary>
         Task<ServiceResult> ConfirmReturnAsync(int id, int confirmedBy = 0);
 
         /// <summary>
         /// 更新銷貨退回單的庫存（編輯時使用）
         /// 根據當前退貨明細與已處理的庫存交易記錄比對，計算差異後進行庫存調整
-        /// 退貨會增加庫存，使用 Code_ADJ 作為 TransactionNumber
+        /// 退貨會增加庫存，使用原始單號搭配 OperationType=Adjust
         /// </summary>
         /// <param name="id">銷貨退回單ID</param>
         /// <param name="updatedBy">更新人員ID（選填）</param>

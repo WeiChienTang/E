@@ -340,7 +340,7 @@
                     IsRequired = false,
                     Options = employees.Select(e => new SelectOption 
                     { 
-                        Text = e.Name, 
+                        Text = e.Name ?? string.Empty, 
                         Value = e.Id.ToString() 
                     }).ToList(),
                     IsReadOnly = true

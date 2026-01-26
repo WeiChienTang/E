@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using ERPCore2.Data.Enums;
 
 namespace ERPCore2.Data.Entities
 {
@@ -63,6 +64,27 @@ namespace ERPCore2.Data.Entities
         
         [Display(Name = "到期日期")]
         public DateTime? ExpiryDate { get; set; }
+        
+        // === 操作類型追蹤（新增）===
+        
+        /// <summary>
+        /// 操作類型：Initial（首次）、Adjust（調整）、Delete（刪除回退）
+        /// </summary>
+        [Display(Name = "操作類型")]
+        public InventoryOperationTypeEnum OperationType { get; set; } = InventoryOperationTypeEnum.Initial;
+        
+        /// <summary>
+        /// 操作說明（例如：首次入庫、編輯調增、刪除回退）
+        /// </summary>
+        [Display(Name = "操作說明")]
+        [MaxLength(100, ErrorMessage = "操作說明不可超過100個字元")]
+        public string? OperationNote { get; set; }
+        
+        /// <summary>
+        /// 操作時間（用於追蹤變更順序）
+        /// </summary>
+        [Display(Name = "操作時間")]
+        public DateTime OperationTime { get; set; } = DateTime.Now;
         
         // === 來源明細關聯（選填）===
         

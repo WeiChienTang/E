@@ -35,14 +35,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 確認銷貨出貨單並更新庫存（首次新增時使用）
         /// 功能：執行出貨確認流程，將出貨數量從庫存扣除
-        /// 使用原始單號作為 TransactionNumber，不帶 _ADJ 後綴
+        /// 使用原始單號作為 TransactionNumber，搭配 OperationType 區分操作類型
         /// </summary>
         Task<ServiceResult> ConfirmDeliveryAsync(int id, int confirmedBy = 0);
 
         /// <summary>
         /// 更新銷貨出貨單的庫存（編輯時使用）
         /// 比較編輯前後的明細差異，使用淨值計算方式確保庫存準確性
-        /// 使用 Code_ADJ 作為 TransactionNumber
+        /// 使用原始單號搭配 OperationType=Adjust
         /// </summary>
         Task<ServiceResult> UpdateInventoryByDifferenceAsync(int id, int updatedBy = 0);
     }
