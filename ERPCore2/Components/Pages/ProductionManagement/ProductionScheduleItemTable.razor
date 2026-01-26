@@ -1,0 +1,261 @@
+@* 排程項目表格 - 右側顯示已選擇的排程項目 *@
+@using ERPCore2.Components.Shared.UI.Button
+@using ERPCore2.Components.Shared.Base
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
+@using ERPCore2.Models
+@using ERPCore2.Helpers
+@using ERPCore2.Data.Enums
+
+<div class="card h-100">
+    <div class="card-header bg-success text-white py-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-calendar-check me-2"></i>排程項目</span>
+        </div>
+    </div>
+    
+    <div class="card-body p-2">
+        <div style="max-height: 400px; overflow-y: auto;">
+            <InteractiveTableComponent TItem="ScheduleItemDto"
+                                       Items="@Items"
+                                       ColumnDefinitions="@GetColumnDefinitions()"
+                                       ShowHeader="true"
+                                       ShowBuiltInActions="true"
+                                       ShowBuiltInDeleteButton="@(!IsReadOnly)"
+                                       OnItemDelete="@HandleItemDelete"
+                                       IsDeleteDisabled="@(item => !item.CanDelete)"
+                                       ShowRowNumbers="false"
+                                       IsStriped="true"
+                                       IsHoverable="true"
+                                       IsBordered="true"
+                                       GetRowCssClass="@GetRowCssClass"
+                                       EmptyMessage="從左側拖曳訂單到此處，或點擊箭頭按鈕加入排程"
+                                       ActionsColumnWidth="60px"
+                                       ActionsHeader="操作"
+                                       EnableDrop="true"
+                                       DragDropGroup="production-schedule"
+                                       TableId="item-table"
+                                       OnItemDropped="HandleItemDropped"
+                                       CssClass="mb-0 table-sm">
+                <DropZoneEmptyTemplate>
+                    <div class="text-center py-4">
+                        <i class="bi bi-box-arrow-in-down fa-2x mb-2 text-primary"></i>
+                        <br />
+                        <span class="text-primary fw-bold">放開滑鼠以加入排程</span>
+                    </div>
+                </DropZoneEmptyTemplate>
+            </InteractiveTableComponent>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    
+    /// <summary>
+    /// 排程項目列表
+    /// </summary>
+    [Parameter] public List<ScheduleItemDto> Items { get; set; } = new();
+    
+    /// <summary>
+    /// 是否唯讀模式
+    /// </summary>
+    [Parameter] public bool IsReadOnly { get; set; }
+    
+    /// <summary>
+    /// 當項目被移除時觸發
+    /// </summary>
+    [Parameter] public EventCallback<ScheduleItemDto> OnItemRemoved { get; set; }
+    
+    /// <summary>
+    /// 當數量變更時觸發
+    /// </summary>
+    [Parameter] public EventCallback<(ScheduleItemDto Item, decimal NewQuantity)> OnQuantityChanged { get; set; }
+    
+    /// <summary>
+    /// 當有項目被拖放到此表格時觸發
+    /// </summary>
+    [Parameter] public EventCallback<PendingScheduleOrderDto> OnOrderDropped { get; set; }
+    
+    // ===== 表格欄位定義 =====
+    
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "商品",
+                PropertyName = nameof(ScheduleItemDto.ProductCode),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "30%",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = (ScheduleItemDto)item;
+                    return @<text>
+                        <small class="fw-bold">@scheduleItem.ProductCode</small>
+                        <br />
+                        <small class="text-muted">@TruncateName(scheduleItem.ProductName, 15)</small>
+                    </text>;
+                }
+            },
+            new()
+            {
+                Title = "來源訂單",
+                PropertyName = nameof(ScheduleItemDto.SalesOrderCode),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "25%",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = (ScheduleItemDto)item;
+                    return @<text>
+                        <small class="text-primary">@scheduleItem.SalesOrderCode</small>
+                        @if (!string.IsNullOrEmpty(scheduleItem.CustomerName))
+                        {
+                            <br />
+                            <small class="text-muted">@TruncateName(scheduleItem.CustomerName, 10)</small>
+                        }
+                    </text>;
+                }
+            },
+            new()
+            {
+                Title = "排程數量",
+                PropertyName = nameof(ScheduleItemDto.ScheduleQuantity),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "20%",
+                TextAlign = "right",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = (ScheduleItemDto)item;
+                    return GetQuantityCell(scheduleItem);
+                }
+            },
+            new()
+            {
+                Title = "狀態",
+                PropertyName = nameof(ScheduleItemDto.Status),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "15%",
+                TextAlign = "center",
+                CustomTemplate = item =>
+                {
+                    var scheduleItem = (ScheduleItemDto)item;
+                    return GetStatusBadge(scheduleItem.Status);
+                }
+            }
+        };
+    }
+    
+    // ===== 事件處理 =====
+    
+    private async Task HandleItemDelete(ScheduleItemDto item)
+    {
+        if (OnItemRemoved.HasDelegate)
+        {
+            await OnItemRemoved.InvokeAsync(item);
+        }
+    }
+    
+    // ===== 輔助方法 =====
+    
+    private string GetRowCssClass(ScheduleItemDto item, int index)
+    {
+        return item.IsNew ? "table-success" : "";
+    }
+    
+    private string TruncateName(string? name, int maxLength)
+    {
+        if (string.IsNullOrEmpty(name)) return string.Empty;
+        return name.Length > maxLength ? name[..maxLength] + "..." : name;
+    }
+    
+    /// <summary>
+    /// 取得數量欄位的渲染內容
+    /// </summary>
+    private RenderFragment GetQuantityCell(ScheduleItemDto item) => __builder =>
+    {
+        if (IsReadOnly || !item.CanDelete)
+        {
+            <span class="fw-bold">@NumberFormatHelper.FormatSmart(item.ScheduleQuantity)</span>
+        }
+        else
+        {
+            var maxQuantity = item.PendingScheduleQuantity + item.ScheduleQuantity;
+            <input type="number" 
+                   class="form-control form-control-sm text-end" 
+                   style="width: 80px; display: inline-block;"
+                   value="@item.ScheduleQuantity"
+                   min="0.001"
+                   max="@maxQuantity"
+                   step="0.001"
+                   @onchange="e => HandleQuantityInputChange(item, e)" />
+        }
+        
+        @if (item.CompletedQuantity > 0)
+        {
+            <br />
+            <small class="text-success">已完成: @NumberFormatHelper.FormatSmart(item.CompletedQuantity)</small>
+        }
+    };
+    
+    private async Task HandleQuantityInputChange(ScheduleItemDto item, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var newQuantity))
+        {
+            var maxQuantity = item.PendingScheduleQuantity + item.ScheduleQuantity;
+            if (newQuantity > 0 && newQuantity <= maxQuantity)
+            {
+                if (OnQuantityChanged.HasDelegate)
+                {
+                    await OnQuantityChanged.InvokeAsync((item, newQuantity));
+                }
+            }
+        }
+    }
+    
+    private RenderFragment GetStatusBadge(ProductionItemStatus status) => __builder =>
+    {
+        var (cssClass, icon, text) = status switch
+        {
+            ProductionItemStatus.Pending => ("bg-secondary", "bi-clock", "待處理"),
+            ProductionItemStatus.InProgress => ("bg-warning text-dark", "bi-play-circle", "生產中"),
+            ProductionItemStatus.Completed => ("bg-success", "bi-check-circle", "已完成"),
+            _ => ("bg-secondary", "bi-question-circle", "未知")
+        };
+        
+        <span class="badge @cssClass">
+            <i class="@icon me-1"></i>@text
+        </span>
+    };
+    
+    // ===== 公開方法 =====
+    
+    /// <summary>
+    /// 刷新表格顯示
+    /// </summary>
+    public void Refresh()
+    {
+        StateHasChanged();
+    }
+    
+    // ===== 拖放事件處理 =====
+    
+    /// <summary>
+    /// 處理項目被拖放到此表格
+    /// </summary>
+    private async Task HandleItemDropped(DragDropEventArgs<ScheduleItemDto> args)
+    {
+        Console.WriteLine($"[DEBUG] HandleItemDropped called, DroppedItem type: {args.DroppedItem?.GetType().Name ?? "null"}");
+        
+        // 嘗試取得拖放的訂單
+        var droppedOrder = args.DroppedItem as PendingScheduleOrderDto;
+        
+        Console.WriteLine($"[DEBUG] droppedOrder is null: {droppedOrder == null}, OnOrderDropped.HasDelegate: {OnOrderDropped.HasDelegate}");
+        
+        if (droppedOrder != null && OnOrderDropped.HasDelegate)
+        {
+            Console.WriteLine($"[DEBUG] Invoking OnOrderDropped with order: {droppedOrder.OrderCode}");
+            await OnOrderDropped.InvokeAsync(droppedOrder);
+        }
+    }
+}

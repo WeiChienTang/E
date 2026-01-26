@@ -1,0 +1,349 @@
+@* 排程明細選擇彈窗 - 選擇要加入排程的訂單明細 *@
+@using ERPCore2.Components.Shared.UI.Button
+@using ERPCore2.Components.Shared.Base
+@using ERPCore2.Models
+@using ERPCore2.Helpers
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@(async (bool visible) => { if (!visible) await Close(); })"
+                    Title="@GetModalTitle()"
+                    Icon="bi bi-list-check"
+                    Size="BaseModalComponent.ModalSize.Large"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                    ShowCloseButton="true"
+                    ShowFooter="true"
+                    CloseOnBackdropClick="false"
+                    CloseOnEscape="true"
+                    OnClose="Close">
+    <BodyContent>
+        @if (OrderInfo != null)
+        {
+            <div class="bg-light px-3 py-2 border-bottom mb-3 rounded">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">訂單號碼:</small>
+                        <span class="fw-bold text-primary ms-2">@OrderInfo.OrderCode</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">客戶:</small>
+                        <span class="ms-2">@OrderInfo.CustomerName</span>
+                    </div>
+                </div>
+            </div>
+        }
+        
+        <div style="max-height: 400px; overflow-y: auto;">
+            <InteractiveTableComponent TItem="PendingScheduleDetailDto"
+                                       Items="@Details"
+                                       ColumnDefinitions="@_columnDefinitions"
+                                       ShowRowNumbers="false"
+                                       IsStriped="false"
+                                       ShowSelectColumn="true"
+                                       AllowMultipleSelection="true"
+                                       SelectedItems="@_selectedItems"
+                                       OnSelectionChanged="HandleSelectionChanged"
+                                       IsItemSelectable="@(d => d.PendingQuantity > 0)"
+                                       UnselectableTemplate="@GetUnselectableTemplate()"
+                                       GetRowCssClass="@GetRowCssClass"
+                                       EmptyMessage="無可排程的明細">
+                <EmptyTemplate>
+                    <i class="bi bi-inbox me-2"></i>無可排程的明細
+                </EmptyTemplate>
+            </InteractiveTableComponent>
+        </div>
+    </BodyContent>
+    
+    <FooterContent>
+        <div class="d-flex w-100 justify-content-between align-items-center">
+            <div>
+                <small class="text-muted">
+                    已選擇 <span class="fw-bold text-primary">@SelectedCount</span> 項，
+                    排程數量合計: <span class="fw-bold text-success">@NumberFormatHelper.FormatSmart(TotalScheduleQuantity)</span>
+                </small>
+            </div>
+            <div>
+                <button type="button" class="btn btn-secondary btn-sm me-2" @onclick="Close">
+                    <i class="bi bi-x-lg me-1"></i>取消
+                </button>
+                <button type="button" 
+                        class="btn btn-primary btn-sm" 
+                        @onclick="Confirm"
+                        disabled="@(!HasSelection)">
+                    <i class="bi bi-check-lg me-1"></i>確認加入 (@SelectedCount 項)
+                </button>
+            </div>
+        </div>
+    </FooterContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+    
+    /// <summary>
+    /// 是否顯示彈窗
+    /// </summary>
+    [Parameter] public bool IsVisible { get; set; }
+    
+    /// <summary>
+    /// 訂單資訊
+    /// </summary>
+    [Parameter] public PendingScheduleOrderDto? OrderInfo { get; set; }
+    
+    /// <summary>
+    /// 訂單明細列表
+    /// </summary>
+    [Parameter] public List<PendingScheduleDetailDto>? Details { get; set; }
+    
+    /// <summary>
+    /// 當確認選擇時觸發
+    /// </summary>
+    [Parameter] public EventCallback<List<PendingScheduleDetailDto>> OnConfirmed { get; set; }
+    
+    /// <summary>
+    /// 當取消或關閉時觸發
+    /// </summary>
+    [Parameter] public EventCallback OnCancelled { get; set; }
+    
+    // ===== 私有欄位 =====
+    
+    private HashSet<PendingScheduleDetailDto> _selectedItems = new();
+    private List<InteractiveColumnDefinition>? _columnDefinitions;
+    
+    // ===== 計算屬性 =====
+    
+    private int SelectedCount => _selectedItems.Count(d => d.PendingQuantity > 0);
+    private decimal TotalScheduleQuantity => _selectedItems.Where(d => d.PendingQuantity > 0).Sum(d => d.ScheduleQuantity);
+    private bool HasSelection => SelectedCount > 0 && TotalScheduleQuantity > 0;
+    
+    // ===== 生命週期 =====
+    
+    protected override void OnInitialized()
+    {
+        InitializeColumnDefinitions();
+    }
+    
+    protected override void OnParametersSet()
+    {
+        // 當彈窗打開時，預設全選並設定排程數量為可排程數量
+        if (IsVisible && Details != null)
+        {
+            _selectedItems.Clear();
+            
+            foreach (var detail in Details.Where(d => d.PendingQuantity > 0))
+            {
+                detail.IsSelected = true;
+                detail.ScheduleQuantity = detail.PendingQuantity;
+                _selectedItems.Add(detail);
+            }
+        }
+    }
+    
+    private void InitializeColumnDefinitions()
+    {
+        _columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            // 商品欄位（雙行顯示）
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "ProductCode",
+                Title = "商品",
+                Width = "30%",
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => builder =>
+                {
+                    var detail = (PendingScheduleDetailDto)item;
+                    builder.OpenElement(0, "div");
+                    builder.AddAttribute(1, "class", "fw-bold");
+                    builder.AddContent(2, detail.ProductCode);
+                    builder.CloseElement();
+                    builder.OpenElement(3, "small");
+                    builder.AddAttribute(4, "class", "text-muted");
+                    builder.AddContent(5, TruncateName(detail.ProductName, 25));
+                    builder.CloseElement();
+                }
+            },
+            // 訂單數量
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "OrderQuantity",
+                Title = "訂單數量",
+                Width = "15%",
+                TextAlign = "right",
+                ColumnType = InteractiveColumnType.Display,
+                SmartDecimalDisplay = true
+            },
+            // 已排程
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "ScheduledQuantity",
+                Title = "已排程",
+                Width = "15%",
+                TextAlign = "right",
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => builder =>
+                {
+                    var detail = (PendingScheduleDetailDto)item;
+                    if (detail.ScheduledQuantity > 0)
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-info");
+                        builder.AddContent(2, NumberFormatHelper.FormatSmart(detail.ScheduledQuantity));
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "-");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            // 可排程
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "PendingQuantity",
+                Title = "可排程",
+                Width = "15%",
+                TextAlign = "right",
+                ColumnType = InteractiveColumnType.Custom,
+                CustomTemplate = item => builder =>
+                {
+                    var detail = (PendingScheduleDetailDto)item;
+                    if (detail.PendingQuantity > 0)
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-success fw-bold");
+                        builder.AddContent(2, NumberFormatHelper.FormatSmart(detail.PendingQuantity));
+                        builder.CloseElement();
+                    }
+                    else
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "class", "text-muted");
+                        builder.AddContent(2, "0");
+                        builder.CloseElement();
+                    }
+                }
+            },
+            // 排程數量（輸入框）
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "ScheduleQuantity",
+                Title = "排程數量",
+                Width = "20%",
+                TextAlign = "right",
+                ColumnType = InteractiveColumnType.Number,
+                MinValue = 0.001m,
+                IsDisabledFunc = item => 
+                {
+                    var detail = (PendingScheduleDetailDto)item;
+                    return detail.PendingQuantity <= 0 || !_selectedItems.Contains(detail);
+                },
+                OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, args =>
+                {
+                    var (item, value) = args;
+                    if (item is PendingScheduleDetailDto detail && decimal.TryParse(value, out var quantity))
+                    {
+                        quantity = Math.Max(0.001m, Math.Min(quantity, detail.PendingQuantity));
+                        detail.ScheduleQuantity = quantity;
+                        StateHasChanged();
+                    }
+                })
+            }
+        };
+    }
+    
+    // ===== 事件處理 =====
+    
+    private void HandleSelectionChanged(HashSet<PendingScheduleDetailDto> selectedItems)
+    {
+        _selectedItems = selectedItems;
+        
+        // 同步 IsSelected 屬性並設定預設排程數量
+        if (Details != null)
+        {
+            foreach (var detail in Details)
+            {
+                var wasSelected = detail.IsSelected;
+                detail.IsSelected = _selectedItems.Contains(detail);
+                
+                // 如果剛被選取且沒有排程數量，設定預設值
+                if (!wasSelected && detail.IsSelected && detail.ScheduleQuantity <= 0)
+                {
+                    detail.ScheduleQuantity = detail.PendingQuantity;
+                }
+            }
+        }
+        
+        StateHasChanged();
+    }
+    
+    private async Task Close()
+    {
+        if (OnCancelled.HasDelegate)
+        {
+            await OnCancelled.InvokeAsync();
+        }
+    }
+    
+    private async Task Confirm()
+    {
+        Console.WriteLine($"[DEBUG] Confirm called, HasSelection: {HasSelection}, SelectedCount: {SelectedCount}");
+        
+        if (!HasSelection) return;
+        
+        var selectedDetails = _selectedItems
+            .Where(d => d.ScheduleQuantity > 0)
+            .ToList();
+        
+        Console.WriteLine($"[DEBUG] selectedDetails count: {selectedDetails.Count}");
+        
+        if (OnConfirmed.HasDelegate)
+        {
+            Console.WriteLine("[DEBUG] Invoking OnConfirmed");
+            await OnConfirmed.InvokeAsync(selectedDetails);
+        }
+    }
+    
+    // ===== 輔助方法 =====
+    
+    private string GetModalTitle()
+    {
+        if (OrderInfo != null)
+        {
+            return $"選擇排程明細 - {OrderInfo.OrderCode}";
+        }
+        return "選擇排程明細";
+    }
+    
+    private string TruncateName(string name, int maxLength)
+    {
+        if (string.IsNullOrEmpty(name)) return string.Empty;
+        return name.Length > maxLength ? name[..maxLength] + "..." : name;
+    }
+    
+    private string GetRowCssClass(PendingScheduleDetailDto item, int index)
+    {
+        if (item.PendingQuantity <= 0)
+        {
+            return "table-secondary text-muted";
+        }
+        if (_selectedItems.Contains(item))
+        {
+            return "table-primary";
+        }
+        return "";
+    }
+    
+    private RenderFragment<PendingScheduleDetailDto> GetUnselectableTemplate()
+    {
+        return item => builder =>
+        {
+            builder.OpenElement(0, "i");
+            builder.AddAttribute(1, "class", "bi bi-check-circle-fill text-success");
+            builder.AddAttribute(2, "title", "已完成排程");
+            builder.CloseElement();
+        };
+    }
+}

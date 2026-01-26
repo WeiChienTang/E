@@ -15,6 +15,20 @@
                     {
                         <th scope="col" class="text-center row-number-column">#</th>
                     }
+                    @if (ShowSelectColumn)
+                    {
+                        <th scope="col" class="text-center" style="width: @SelectColumnWidth;">
+                            @if (AllowMultipleSelection)
+                            {
+                                <input type="checkbox" 
+                                       id="@_selectAllCheckboxId"
+                                       class="form-check-input"
+                                       checked="@IsAllSelected"
+                                       @onchange="HandleSelectAllChanged"
+                                       title="全選/取消全選" />
+                            }
+                        </th>
+                    }
                     @foreach (var column in ColumnDefinitions)
                     {
                         var headerStyle = GetColumnWidthStyle(column);
@@ -49,16 +63,29 @@
                 </tr>
             </thead>
         }
-        <tbody>
+        <tbody @ondragover="HandleTableDragOver" 
+               @ondragover:preventDefault="@EnableDrop"
+               @ondragleave="HandleTableDragLeave"
+               @ondrop="HandleTableDrop"
+               @ondrop:preventDefault="@EnableDrop"
+               class="@GetTableBodyClass()">
             @if (Items != null && Items.Any())
             {
                 var itemIndex = 0;
                 @foreach (var item in Items)
                 {
                     var currentIndex = itemIndex;
-                    <tr class="@GetRowClass(item, currentIndex)" 
+                    var canDrag = EnableDrag && (IsDraggable?.Invoke(item) ?? true);
+                    <tr class="@GetRowClass(item, currentIndex) @GetDragDropRowClass(item, currentIndex)" 
                         @onclick="() => HandleRowClick(item)"
-                        style="@(EnableRowClick || EnableRowSelection ? $"cursor: {RowClickCursor};" : "")">
+                        @onclick:stopPropagation="false"
+                        style="@GetRowStyle(canDrag)"
+                        draggable="@canDrag.ToString().ToLower()"
+                        @ondragstart="() => HandleDragStart(item, currentIndex)"
+                        @ondragend="() => HandleDragEnd(item)"
+                        @ondragover="() => HandleRowDragOver(currentIndex)"
+                        @ondragenter="() => HandleRowDragEnter(currentIndex)"
+                        @ondragleave="HandleRowDragLeave">
                         
                         @if (ShowRowNumbers)
                         {
@@ -66,12 +93,30 @@
                                 <small>@(currentIndex + 1)</small>
                             </td>
                         }
+                        @if (ShowSelectColumn)
+                        {
+                            <td class="text-center" style="width: @SelectColumnWidth;" @onclick:stopPropagation="true">
+                                @{ var isSelectable = IsItemSelectable?.Invoke(item) ?? true; }
+                                @if (isSelectable)
+                                {
+                                    <input type="checkbox" 
+                                           class="form-check-input"
+                                           checked="@IsItemSelected(item)"
+                                           @onchange="e => HandleItemSelectionChanged(item, (bool?)e.Value ?? false)"
+                                           title="選取此項目" />
+                                }
+                                else if (UnselectableTemplate != null)
+                                {
+                                    @UnselectableTemplate(item)
+                                }
+                            </td>
+                        }
                         
                         @foreach (var column in ColumnDefinitions ?? new List<InteractiveColumnDefinition>())
                         {
                             <td class="@column.CellCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")"
                                 style="@(GetCellStyle(column))"
-                                @onclick:stopPropagation="@(column.ColumnType != InteractiveColumnType.Display)">
+                                @onclick:stopPropagation="@ShouldStopPropagation(column)">
                                 
                                 @* 根據欄位類型渲染不同的控件 *@
                                 @if (column.ColumnType == InteractiveColumnType.Display)
@@ -318,9 +363,24 @@
             }
             else
             {
-                <tr>
-                    <td colspan="@GetColspan()" class="text-center py-4 text-light-custom">
-                        @if (EmptyTemplate != null)
+                <tr class="@(_isDragOver && EnableDrop ? "drop-zone-active" : "")">
+                    <td colspan="@GetColspan()" class="text-center py-4 text-light-custom @(EnableDrop ? "drop-zone" : "")">
+                        @if (_isDragOver && EnableDrop && DragDropState.CanDropTo(DragDropGroup))
+                        {
+                            @if (DropZoneEmptyTemplate != null)
+                            {
+                                @DropZoneEmptyTemplate
+                            }
+                            else
+                            {
+                                <div class="drop-zone-hint">
+                                    <i class="bi bi-plus-circle fa-2x mb-2 text-primary"></i>
+                                    <br />
+                                    <span class="text-primary">放開以加入項目</span>
+                                </div>
+                            }
+                        }
+                        else if (EmptyTemplate != null)
                         {
                             @EmptyTemplate
                         }
@@ -341,6 +401,10 @@
                     @if (ShowRowNumbers)
                     {
                         <th class="row-number-column"></th>
+                    }
+                    @if (ShowSelectColumn)
+                    {
+                        <th style="width: @SelectColumnWidth;"></th>
                     }
                     @foreach (var column in ColumnDefinitions ?? new List<InteractiveColumnDefinition>())
                     {
@@ -406,6 +470,12 @@
     [Parameter] public HashSet<TItem>? SelectedItems { get; set; }
     [Parameter] public EventCallback<HashSet<TItem>> OnSelectionChanged { get; set; }
     
+    // 選取欄位設定（顯示 Checkbox 的獨立欄位）
+    [Parameter] public bool ShowSelectColumn { get; set; } = false;                    // 是否顯示選取欄位
+    [Parameter] public string SelectColumnWidth { get; set; } = "50px";               // 選取欄位寬度
+    [Parameter] public Func<TItem, bool>? IsItemSelectable { get; set; }              // 判斷特定項目是否可選取（null = 全部可選）
+    [Parameter] public RenderFragment<TItem>? UnselectableTemplate { get; set; }      // 不可選取時的替代內容
+    
     // 驗證相關
     [Parameter] public EventCallback<(TItem item, string propertyName, string? errorMessage)> OnValidationFailed { get; set; }
     [Parameter] public Dictionary<string, string>? ValidationErrors { get; set; }
@@ -420,6 +490,18 @@
     [Parameter] public Func<TItem, bool>? IsDeleteDisabled { get; set; }
     [Parameter] public EventCallback<TItem> OnItemDelete { get; set; }
     [Parameter] public RenderFragment<TItem>? CustomActionsTemplate { get; set; }
+    
+    // 拖放功能參數
+    [Parameter] public bool EnableDrag { get; set; } = false;                          // 是否可作為拖曳來源
+    [Parameter] public bool EnableDrop { get; set; } = false;                          // 是否可作為放置目標
+    [Parameter] public string DragDropGroup { get; set; } = "default";                 // 拖放群組識別（相同群組才能互相拖放）
+    [Parameter] public string TableId { get; set; } = "";                              // 表格識別碼（用於同表格排序判斷）
+    [Parameter] public Func<TItem, bool>? IsDraggable { get; set; }                    // 判斷特定項目是否可拖曳
+    [Parameter] public EventCallback<TItem> OnDragStart { get; set; }                  // 拖曳開始事件
+    [Parameter] public EventCallback<TItem> OnDragEnd { get; set; }                    // 拖曳結束事件
+    [Parameter] public EventCallback<DragDropEventArgs<TItem>> OnItemDropped { get; set; }  // 項目被放置事件（跨表格）
+    [Parameter] public EventCallback<(int oldIndex, int newIndex)> OnRowReordered { get; set; } // 行重新排序事件（同表格）
+    [Parameter] public RenderFragment? DropZoneEmptyTemplate { get; set; }             // 空放置區域的自訂模板
     #endregion
 
     #region 私有欄位
@@ -439,6 +521,14 @@
     // 標記是否需要在下次渲染後檢查空行（Items 集合變化時設定）
     private bool _needsEmptyRowCheck = false;
     
+    // 拖放相關私有欄位
+    private int? _dragOverIndex = null;           // 當前拖曳經過的行索引
+    private bool _isDragOver = false;             // 表格是否處於拖曳經過狀態
+    private string _uniqueTableId = "";           // 自動生成的表格唯一識別碼
+    
+    // 全選 checkbox 相關
+    private string _selectAllCheckboxId = "";     // 全選 checkbox 的唯一 ID
+    
     #endregion
 
     #region 生命週期方法
@@ -446,6 +536,12 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
+        
+        // 生成唯一表格識別碼（如果沒有指定 TableId）
+        _uniqueTableId = !string.IsNullOrEmpty(TableId) ? TableId : $"table-{Guid.NewGuid():N}";
+        
+        // 生成全選 checkbox 的唯一 ID
+        _selectAllCheckboxId = $"select-all-{Guid.NewGuid():N}";
         
         //  不在這裡檢查空行，改到 OnAfterRenderAsync
         // 避免在父組件載入資料之前就新增空行
@@ -474,6 +570,32 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
+        
+        // 初始化拖放功能
+        if (EnableDrag || EnableDrop)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("reinitDragDrop");
+            }
+            catch
+            {
+                // 忽略 JS 初始化錯誤
+            }
+        }
+        
+        // 更新全選 checkbox 的 indeterminate 狀態
+        if (ShowSelectColumn && AllowMultipleSelection)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("setCheckboxIndeterminate", _selectAllCheckboxId, IsPartiallySelected);
+            }
+            catch
+            {
+                // 忽略 JS 錯誤
+            }
+        }
         
         if (EnableAutoEmptyRow)
         {
@@ -569,6 +691,23 @@
         return !string.IsNullOrEmpty(column.Width) ? $"width: {column.Width};" : null;
     }
 
+    /// <summary>
+    /// 判斷是否應阻止 click 事件冒泡
+    /// 只有可編輯的控件才需要阻止冒泡，以支援行點擊功能
+    /// </summary>
+    private bool ShouldStopPropagation(InteractiveColumnDefinition column)
+    {
+        // Display 和 Custom 類型不阻止冒泡，允許 click 傳遞到 <tr>
+        // 只有可編輯類型（Input, Select, Checkbox, Date, Number, TextArea）才阻止
+        return column.ColumnType switch
+        {
+            InteractiveColumnType.Display => false,
+            InteractiveColumnType.Custom => false,
+            InteractiveColumnType.Button => false, // Button 有自己的 click handler，但允許冒泡
+            _ => true // 其他可編輯類型阻止冒泡
+        };
+    }
+
     private string? GetCellStyle(InteractiveColumnDefinition column)
     {
         var styles = new List<string>();
@@ -638,13 +777,141 @@
     {
         var columnCount = ColumnDefinitions?.Count ?? 0;
         if (ShowRowNumbers) columnCount++;
+        if (ShowSelectColumn) columnCount++;
         if (ShowActions) columnCount++;
         if (ShowBuiltInActions) columnCount++;
         return columnCount;
     }
+    
+    #region 選取欄位相關方法
+    
+    /// <summary>
+    /// 取得可選取的項目列表
+    /// </summary>
+    private IEnumerable<TItem> GetSelectableItems()
+    {
+        if (Items == null) return Enumerable.Empty<TItem>();
+        return IsItemSelectable != null 
+            ? Items.Where(item => IsItemSelectable(item))
+            : Items;
+    }
+    
+    /// <summary>
+    /// 是否全部已選取
+    /// </summary>
+    private bool IsAllSelected
+    {
+        get
+        {
+            if (SelectedItems == null || !SelectedItems.Any()) return false;
+            var selectableItems = GetSelectableItems().ToList();
+            return selectableItems.Any() && selectableItems.All(item => SelectedItems.Contains(item));
+        }
+    }
+    
+    /// <summary>
+    /// 是否部分選取（用於 indeterminate 狀態）
+    /// </summary>
+    private bool IsPartiallySelected
+    {
+        get
+        {
+            if (SelectedItems == null || !SelectedItems.Any()) return false;
+            var selectableItems = GetSelectableItems().ToList();
+            var selectedCount = selectableItems.Count(item => SelectedItems.Contains(item));
+            return selectedCount > 0 && selectedCount < selectableItems.Count;
+        }
+    }
+    
+    /// <summary>
+    /// 檢查特定項目是否已選取
+    /// </summary>
+    private bool IsItemSelected(TItem item)
+    {
+        return SelectedItems?.Contains(item) ?? false;
+    }
+    
+    /// <summary>
+    /// 處理全選/取消全選
+    /// </summary>
+    private async Task HandleSelectAllChanged(ChangeEventArgs e)
+    {
+        var isChecked = (bool?)e.Value ?? false;
+        
+        if (SelectedItems == null)
+        {
+            SelectedItems = new HashSet<TItem>();
+        }
+        
+        var selectableItems = GetSelectableItems().ToList();
+        
+        if (isChecked)
+        {
+            // 全選：添加所有可選取的項目
+            foreach (var item in selectableItems)
+            {
+                SelectedItems.Add(item);
+            }
+        }
+        else
+        {
+            // 取消全選：移除所有可選取的項目
+            foreach (var item in selectableItems)
+            {
+                SelectedItems.Remove(item);
+            }
+        }
+        
+        if (OnSelectionChanged.HasDelegate)
+        {
+            await OnSelectionChanged.InvokeAsync(SelectedItems);
+        }
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理單一項目的選取變更
+    /// </summary>
+    private async Task HandleItemSelectionChanged(TItem item, bool isSelected)
+    {
+        if (SelectedItems == null)
+        {
+            SelectedItems = new HashSet<TItem>();
+        }
+        
+        if (isSelected)
+        {
+            if (AllowMultipleSelection)
+            {
+                SelectedItems.Add(item);
+            }
+            else
+            {
+                // 單選模式：先清除再添加
+                SelectedItems.Clear();
+                SelectedItems.Add(item);
+            }
+        }
+        else
+        {
+            SelectedItems.Remove(item);
+        }
+        
+        if (OnSelectionChanged.HasDelegate)
+        {
+            await OnSelectionChanged.InvokeAsync(SelectedItems);
+        }
+        
+        StateHasChanged();
+    }
+    
+    #endregion
 
     private async Task HandleRowClick(TItem item)
     {
+        Console.WriteLine($"[DEBUG] InteractiveTableComponent.HandleRowClick called, EnableRowClick: {EnableRowClick}, OnRowClick.HasDelegate: {OnRowClick.HasDelegate}");
+        
         // 處理行選取功能
         if (EnableRowSelection)
         {
@@ -1404,5 +1671,196 @@
             }
         }
     }
+    #endregion
+    
+    #region 拖放事件處理方法
+    
+    /// <summary>
+    /// 取得表格 tbody 的 CSS class
+    /// </summary>
+    private string GetTableBodyClass()
+    {
+        var classes = new List<string>();
+        if (EnableDrop && _isDragOver && DragDropState.CanDropTo(DragDropGroup))
+        {
+            classes.Add("drop-target-active");
+        }
+        return string.Join(" ", classes);
+    }
+    
+    /// <summary>
+    /// 取得行的樣式（含拖曳游標）
+    /// </summary>
+    private string GetRowStyle(bool canDrag)
+    {
+        var styles = new List<string>();
+        
+        // 拖曳游標優先（因為拖曳是主要互動）
+        if (canDrag)
+        {
+            styles.Add("cursor: grab");
+        }
+        else if (EnableRowClick || EnableRowSelection)
+        {
+            styles.Add($"cursor: {RowClickCursor}");
+        }
+        
+        return string.Join("; ", styles);
+    }
+    
+    /// <summary>
+    /// 取得行的拖放相關 CSS class
+    /// </summary>
+    private string GetDragDropRowClass(TItem item, int index)
+    {
+        var classes = new List<string>();
+        
+        // 正在被拖曳的行
+        if (EnableDrag && DragDropState.IsDragging && 
+            DragDropState.SourceTableId == _uniqueTableId && 
+            DragDropState.DraggedIndex == index)
+        {
+            classes.Add("dragging");
+        }
+        
+        // 拖曳經過的目標行（用於排序時顯示插入位置）
+        if (EnableDrop && _dragOverIndex == index && DragDropState.CanDropTo(DragDropGroup))
+        {
+            classes.Add("drag-over");
+        }
+        
+        return string.Join(" ", classes);
+    }
+    
+    /// <summary>
+    /// 處理拖曳開始
+    /// </summary>
+    private async Task HandleDragStart(TItem item, int index)
+    {
+        if (!EnableDrag) return;
+        
+        DragDropState.StartDrag(item!, DragDropGroup, index, _uniqueTableId);
+        
+        if (OnDragStart.HasDelegate)
+        {
+            await OnDragStart.InvokeAsync(item);
+        }
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理拖曳結束
+    /// </summary>
+    private async Task HandleDragEnd(TItem item)
+    {
+        if (!EnableDrag) return;
+        
+        DragDropState.EndDrag();
+        _dragOverIndex = null;
+        _isDragOver = false;
+        
+        if (OnDragEnd.HasDelegate)
+        {
+            await OnDragEnd.InvokeAsync(item);
+        }
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理表格層級的 dragover
+    /// </summary>
+    private void HandleTableDragOver()
+    {
+        if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
+        
+        _isDragOver = true;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理表格層級的 dragleave
+    /// </summary>
+    private void HandleTableDragLeave()
+    {
+        _isDragOver = false;
+        _dragOverIndex = null;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理行層級的 dragover
+    /// </summary>
+    private void HandleRowDragOver(int index)
+    {
+        if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
+        
+        _dragOverIndex = index;
+    }
+    
+    /// <summary>
+    /// 處理行層級的 dragenter
+    /// </summary>
+    private void HandleRowDragEnter(int index)
+    {
+        if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
+        
+        _dragOverIndex = index;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理行層級的 dragleave
+    /// </summary>
+    private void HandleRowDragLeave()
+    {
+        // 不清除 _dragOverIndex，因為可能立即進入另一行
+    }
+    
+    /// <summary>
+    /// 處理放置事件
+    /// </summary>
+    private async Task HandleTableDrop()
+    {
+        if (!EnableDrop || !DragDropState.CanDropTo(DragDropGroup)) return;
+        
+        var draggedItem = DragDropState.DraggedItem;
+        var sourceIndex = DragDropState.DraggedIndex;
+        var isFromSameTable = DragDropState.IsFromSameTable(_uniqueTableId);
+        var targetIndex = _dragOverIndex;
+        
+        if (draggedItem == null) return;
+        
+        // 同表格排序
+        if (isFromSameTable && sourceIndex.HasValue && targetIndex.HasValue && OnRowReordered.HasDelegate)
+        {
+            if (sourceIndex.Value != targetIndex.Value)
+            {
+                await OnRowReordered.InvokeAsync((sourceIndex.Value, targetIndex.Value));
+            }
+        }
+        // 跨表格放置
+        else if (!isFromSameTable && OnItemDropped.HasDelegate)
+        {
+            var args = new DragDropEventArgs<TItem>
+            {
+                DroppedItem = draggedItem,
+                TargetIndex = targetIndex,
+                SourceTableId = DragDropState.SourceTableId ?? "",
+                TargetTableId = _uniqueTableId
+            };
+            
+            await OnItemDropped.InvokeAsync(args);
+        }
+        
+        // 清除狀態
+        DragDropState.EndDrag();
+        _dragOverIndex = null;
+        _isDragOver = false;
+        
+        StateHasChanged();
+    }
+    
     #endregion
 }

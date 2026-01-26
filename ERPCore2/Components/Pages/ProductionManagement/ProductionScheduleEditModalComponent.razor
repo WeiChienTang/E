@@ -1,14 +1,16 @@
-@* 可重用的生產排程編輯組件 - 可在任何頁面中嵌入 *@
+@* 可重用的生產排程編輯組件 - 雙表格設計（左側訂單、右側排程項目）*@
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Components.Shared.Base
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 @using ERPCore2.Data.Enums
+@using ERPCore2.Models
 @inject IProductionScheduleService ProductionScheduleService
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
 @inject IProductService ProductService
 @inject ISalesOrderService SalesOrderService
+@inject ISalesOrderDetailService SalesOrderDetailService
 @inject INotificationService NotificationService
 
 <GenericEditModalComponent TEntity="ProductionSchedule" 
@@ -47,6 +49,13 @@
                                  OnSaved="@HandleScheduleItemSaved"
                                  OnCancel="@(() => showScheduleItemModal = false)" />
 
+@* 明細選擇彈窗 *@
+<ProductionScheduleDetailSelectorModal IsVisible="@showDetailSelectorModal"
+                                       OrderInfo="@selectedOrderForDetails"
+                                       Details="@pendingDetails"
+                                       OnConfirmed="@HandleDetailSelectionConfirmed"
+                                       OnCancelled="@HandleDetailSelectorCancelled" />
+
 @code {
     // ===== 參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -73,6 +82,13 @@
     private List<ProductionScheduleItem> scheduleItems = new();
     private bool showScheduleItemModal = false;
     private int? selectedScheduleItemId = null;
+    
+    // ===== 雙表格設計相關 =====
+    private List<PendingScheduleOrderDto> pendingOrders = new();
+    private List<ScheduleItemDto> currentScheduleItems = new();
+    private bool showDetailSelectorModal = false;
+    private PendingScheduleOrderDto? selectedOrderForDetails = null;
+    private List<PendingScheduleDetailDto> pendingDetails = new();
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -176,6 +192,12 @@
                 .AddField(nameof(ProductionSchedule.CreatedByEmployeeId), "Name", availableEmployees)
                 .AddField(nameof(ProductionSchedule.SalesOrderId), "Code", availableSalesOrders)
                 .Build();
+            
+            // 載入待排程訂單列表（雙表格設計）
+            await LoadPendingOrdersAsync();
+            
+            // 初始化當前排程項目列表
+            currentScheduleItems = new List<ScheduleItemDto>();
         }
         catch (Exception ex)
         {
@@ -184,6 +206,8 @@
             availableEmployees = new List<Employee>();
             availableProducts = new List<Product>();
             availableSalesOrders = new List<SalesOrder>();
+            pendingOrders = new List<PendingScheduleOrderDto>();
+            currentScheduleItems = new List<ScheduleItemDto>();
         }
     }
 
@@ -309,7 +333,7 @@
                 new()
                 {
                     PropertyName = nameof(ProductionSchedule.SalesOrderId),
-                    Label = "來源銷貨訂單",
+                    Label = "訂單編號",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入訂單編號進行搜尋",
                     MinSearchLength = 0,
@@ -358,27 +382,52 @@
     }
 
     /// <summary>
-    /// 創建排程項目列表內容
+    /// 創建排程項目列表內容 - 雙表格設計
     /// </summary>
     private RenderFragment CreateScheduleItemsContent() => __builder =>
     {
-        <div class="card mt-3">
-            <div class="card-body p-0">
-                <InteractiveTableComponent TItem="ProductionScheduleItem"
-                                          Items="@scheduleItems"
-                                          ColumnDefinitions="@GetScheduleItemColumns()"
-                                          ShowHeader="true"
-                                          ShowActions="true"
-                                          ActionsTemplate="@GetScheduleItemActionsTemplate()"
-                                          IsStriped="true"
-                                          IsHoverable="true"
-                                          IsBordered="true"
-                                          EnableRowClick="true"
-                                          OnRowClick="@HandleScheduleItemRowClick"
-                                          EmptyMessage="尚無排程項目"
-                                          CssClass="mb-0" />
+        <div class="row mt-3">
+            @* 左側：待排程訂單表格 *@
+            <div class="col-md-6">
+                <ProductionScheduleOrderTable Orders="@pendingOrders"
+                                              OnOrderSelected="@HandleOrderSelected"
+                                              OnRefreshRequested="@HandleRefreshPendingOrders" />
+            </div>
+            
+            @* 右側：排程項目表格 *@
+            <div class="col-md-6">
+                <ProductionScheduleItemTable Items="@currentScheduleItems"
+                                             IsReadOnly="@IsReadOnly"
+                                             OnItemRemoved="@HandleScheduleItemRemoved"
+                                             OnQuantityChanged="@HandleScheduleItemQuantityChanged"
+                                             OnOrderDropped="@HandleOrderDropped" />
             </div>
         </div>
+        
+        @* 保留原有的詳細表格供查看已儲存的項目 *@
+        @if (ProductionScheduleId.HasValue && scheduleItems.Any())
+        {
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white py-2">
+                    <i class="bi bi-list-ul me-2"></i>已儲存的排程項目
+                </div>
+                <div class="card-body p-0">
+                    <InteractiveTableComponent TItem="ProductionScheduleItem"
+                                              Items="@scheduleItems"
+                                              ColumnDefinitions="@GetScheduleItemColumns()"
+                                              ShowHeader="true"
+                                              ShowActions="true"
+                                              ActionsTemplate="@GetScheduleItemActionsTemplate()"
+                                              IsStriped="true"
+                                              IsHoverable="true"
+                                              IsBordered="true"
+                                              EnableRowClick="true"
+                                              OnRowClick="@HandleScheduleItemRowClick"
+                                              EmptyMessage="尚無排程項目"
+                                              CssClass="mb-0" />
+                </div>
+            </div>
+        }
     };
 
     /// <summary>
@@ -531,6 +580,268 @@
         StateHasChanged();
         
         await Task.CompletedTask;
+    }
+
+    // ===== 雙表格設計事件處理 =====
+
+    /// <summary>
+    /// 載入待排程訂單列表
+    /// </summary>
+    private async Task LoadPendingOrdersAsync()
+    {
+        try
+        {
+            pendingOrders = new List<PendingScheduleOrderDto>();
+            
+            // 取得所有銷貨訂單
+            var salesOrders = await SalesOrderService.GetAllAsync();
+            
+            foreach (var order in salesOrders)
+            {
+                // 取得訂單明細
+                var details = await SalesOrderDetailService.GetBySalesOrderIdWithIncludesAsync(order.Id);
+                
+                // 計算待排程數量和待排明細
+                decimal pendingQuantity = 0;
+                int pendingItemCount = 0;
+                var orderDetails = new List<PendingScheduleDetailDto>();
+                
+                foreach (var detail in details)
+                {
+                    // 從 ProductionScheduleItem 計算已排程數量
+                    var scheduledQty = await GetScheduledQuantityForOrderDetailAsync(detail.Id);
+                    
+                    // 檢查是否已經在當前排程項目列表中（尚未儲存的）
+                    var currentScheduleQty = currentScheduleItems
+                        .Where(si => si.SalesOrderDetailId == detail.Id)
+                        .Sum(si => si.ScheduleQuantity);
+                    
+                    var totalScheduled = scheduledQty + currentScheduleQty;
+                    var remaining = detail.OrderQuantity - totalScheduled;
+                    
+                    if (remaining > 0)
+                    {
+                        pendingQuantity += remaining;
+                        pendingItemCount++;
+                        
+                        orderDetails.Add(new PendingScheduleDetailDto
+                        {
+                            SalesOrderDetailId = detail.Id,
+                            ProductId = detail.ProductId,
+                            ProductCode = detail.Product?.Code ?? "",
+                            ProductName = detail.Product?.Name ?? "未知商品",
+                            OrderQuantity = detail.OrderQuantity,
+                            ScheduledQuantity = totalScheduled,
+                            PendingQuantity = remaining
+                        });
+                    }
+                }
+                
+                if (pendingItemCount > 0)
+                {
+                    pendingOrders.Add(new PendingScheduleOrderDto
+                    {
+                        SalesOrderId = order.Id,
+                        OrderCode = order.Code ?? "",
+                        CustomerId = order.CustomerId,
+                        CustomerName = order.Customer?.CompanyName ?? "未知客戶",
+                        OrderDate = order.OrderDate,
+                        PendingScheduleQuantity = pendingQuantity,
+                        PendingItemCount = pendingItemCount,
+                        Details = orderDetails
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入待排程訂單失敗: {ex.Message}");
+            pendingOrders = new();
+        }
+    }
+
+    /// <summary>
+    /// 取得訂單明細已排程數量
+    /// </summary>
+    private async Task<decimal> GetScheduledQuantityForOrderDetailAsync(int salesOrderDetailId)
+    {
+        try
+        {
+            // 查詢已排程數量（排除目前排程中尚未儲存的項目）
+            var allItems = await ProductionScheduleItemService.GetAllAsync();
+            return allItems
+                .Where(item => item.SalesOrderDetailId == salesOrderDetailId)
+                .Sum(item => item.ScheduledQuantity);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// 處理訂單選擇事件（點擊加入按鈕）
+    /// </summary>
+    private async Task HandleOrderSelected(PendingScheduleOrderDto order)
+    {
+        try
+        {
+            selectedOrderForDetails = order;
+            
+            // 載入該訂單的待排程明細
+            pendingDetails = new List<PendingScheduleDetailDto>();
+            
+            var details = await SalesOrderDetailService.GetBySalesOrderIdWithIncludesAsync(order.SalesOrderId);
+            
+            foreach (var detail in details)
+            {
+                var scheduledQty = await GetScheduledQuantityForOrderDetailAsync(detail.Id);
+                var pendingQty = detail.OrderQuantity - scheduledQty;
+                
+                // 檢查是否已經在當前排程項目列表中
+                var alreadyInSchedule = currentScheduleItems.Any(
+                    si => si.SalesOrderDetailId == detail.Id);
+                
+                if (alreadyInSchedule)
+                {
+                    // 已在排程中，扣除當前排程數量
+                    var currentItem = currentScheduleItems.First(si => si.SalesOrderDetailId == detail.Id);
+                    pendingQty -= currentItem.ScheduleQuantity;
+                }
+                
+                pendingDetails.Add(new PendingScheduleDetailDto
+                {
+                    SalesOrderDetailId = detail.Id,
+                    ProductId = detail.ProductId,
+                    ProductCode = detail.Product?.Code ?? "",
+                    ProductName = detail.Product?.Name ?? "未知商品",
+                    OrderQuantity = detail.OrderQuantity,
+                    ScheduledQuantity = scheduledQty,
+                    PendingQuantity = Math.Max(0, pendingQty),
+                    IsSelected = pendingQty > 0,
+                    ScheduleQuantity = Math.Max(0, pendingQty)
+                });
+            }
+            
+            showDetailSelectorModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入訂單明細失敗: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理拖放訂單事件（從左側表格拖放到右側）
+    /// </summary>
+    private async Task HandleOrderDropped(PendingScheduleOrderDto order)
+    {
+        // 拖放行為與點擊按鈕相同，開啟明細選擇彈窗
+        await HandleOrderSelected(order);
+    }
+
+    /// <summary>
+    /// 處理明細選擇確認
+    /// </summary>
+    private async Task HandleDetailSelectionConfirmed(List<PendingScheduleDetailDto> selectedDetails)
+    {
+        Console.WriteLine($"[DEBUG] HandleDetailSelectionConfirmed called, selectedDetails count: {selectedDetails?.Count ?? 0}");
+        
+        if (selectedDetails == null || selectedDetails.Count == 0)
+        {
+            return;
+        }
+        
+        try
+        {
+            foreach (var detail in selectedDetails)
+            {
+                // 檢查是否已存在
+                var existingItem = currentScheduleItems.FirstOrDefault(
+                    si => si.SalesOrderDetailId == detail.SalesOrderDetailId);
+                
+                if (existingItem != null)
+                {
+                    // 更新數量
+                    existingItem.ScheduleQuantity += detail.ScheduleQuantity;
+                }
+                else
+                {
+                    // 新增項目
+                    currentScheduleItems.Add(new ScheduleItemDto
+                    {
+                        SalesOrderId = selectedOrderForDetails?.SalesOrderId ?? 0,
+                        SalesOrderCode = selectedOrderForDetails?.OrderCode ?? "",
+                        SalesOrderDetailId = detail.SalesOrderDetailId,
+                        ProductId = detail.ProductId,
+                        ProductCode = detail.ProductCode,
+                        ProductName = detail.ProductName,
+                        ScheduleQuantity = detail.ScheduleQuantity,
+                        PendingScheduleQuantity = detail.PendingQuantity - detail.ScheduleQuantity,
+                        CustomerName = selectedOrderForDetails?.CustomerName ?? "",
+                        Status = ProductionItemStatus.Pending,
+                        IsNew = true,
+                        CanDelete = true
+                    });
+                }
+            }
+            
+            showDetailSelectorModal = false;
+            selectedOrderForDetails = null;
+            pendingDetails = new();
+            
+            // 重新載入待排程訂單列表
+            await LoadPendingOrdersAsync();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"加入排程項目失敗: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理明細選擇取消
+    /// </summary>
+    private void HandleDetailSelectorCancelled()
+    {
+        showDetailSelectorModal = false;
+        selectedOrderForDetails = null;
+        pendingDetails = new();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理排程項目移除
+    /// </summary>
+    private async Task HandleScheduleItemRemoved(ScheduleItemDto item)
+    {
+        currentScheduleItems.Remove(item);
+        
+        // 重新載入待排程訂單列表
+        await LoadPendingOrdersAsync();
+        
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理排程項目數量變更
+    /// </summary>
+    private void HandleScheduleItemQuantityChanged((ScheduleItemDto Item, decimal NewQuantity) args)
+    {
+        args.Item.ScheduleQuantity = args.NewQuantity;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 處理刷新待排程訂單請求
+    /// </summary>
+    private async Task HandleRefreshPendingOrders()
+    {
+        await LoadPendingOrdersAsync();
+        StateHasChanged();
     }
 
     // ===== 公開方法 (供父組件調用) =====

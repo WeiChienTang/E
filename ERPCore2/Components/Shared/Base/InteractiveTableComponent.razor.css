@@ -481,3 +481,115 @@
         width: auto !important;
     }
 }
+
+/* ===== 拖放功能樣式 ===== */
+
+/* 可拖曳的行 - 使用 !important 確保覆蓋其他游標樣式 */
+::deep tr[draggable="true"] {
+    cursor: grab !important;
+    user-select: none;
+}
+
+::deep tr[draggable="true"]:active {
+    cursor: grabbing !important;
+}
+
+/* 正在被拖曳的行 */
+::deep tr.dragging {
+    opacity: 0.5;
+    background-color: #e3f2fd !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+::deep tr.dragging td {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+}
+
+/* 拖曳經過的目標行（顯示插入位置） */
+::deep tr.drag-over {
+    position: relative;
+}
+
+::deep tr.drag-over::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 3px;
+    background: linear-gradient(90deg, #1976d2, #42a5f5, #1976d2);
+    border-radius: 2px;
+    animation: drag-indicator-pulse 1s ease-in-out infinite;
+}
+
+@keyframes drag-indicator-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* 放置目標區域（表格層級） */
+::deep tbody.drop-target-active {
+    background-color: rgba(25, 118, 210, 0.05);
+    outline: 2px dashed #1976d2;
+    outline-offset: -2px;
+    transition: all 0.2s ease;
+}
+
+/* 空表格的放置區域 */
+::deep .drop-zone {
+    min-height: 120px;
+    transition: all 0.2s ease;
+}
+
+::deep tr.drop-zone-active td {
+    background-color: rgba(25, 118, 210, 0.1) !important;
+    border: 2px dashed #1976d2 !important;
+}
+
+::deep .drop-zone-hint {
+    padding: 1rem;
+    animation: drop-zone-hint-bounce 0.5s ease-in-out;
+}
+
+@keyframes drop-zone-hint-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+::deep .drop-zone-hint i {
+    color: #1976d2 !important;
+    animation: drop-icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes drop-icon-pulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* 拖曳時的行選取樣式覆蓋 */
+::deep tr.dragging.row-selected td {
+    background-color: #bbdefb !important;
+}
+
+/* 拖放提示圖標 */
+::deep .drag-handle {
+    cursor: grab;
+    color: #9e9e9e;
+    transition: color 0.2s ease;
+}
+
+::deep .drag-handle:hover {
+    color: #616161;
+}
+
+::deep tr.dragging .drag-handle {
+    cursor: grabbing;
+    color: #1976d2;
+}
