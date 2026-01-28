@@ -101,7 +101,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<SalesOrder>
                         {
                             PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
-                            DisplayName = "交貨日",
+                            DisplayName = "預交日",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 6,

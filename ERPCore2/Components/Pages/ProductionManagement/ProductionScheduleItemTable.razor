@@ -7,7 +7,7 @@
 @using ERPCore2.Data.Enums
 
 <div class="card h-100">
-    <div class="card-header bg-success text-white py-2">
+    <div class="card-header bg-secondary text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
             <span class="fw-bold"><i class="bi bi-calendar-check me-2"></i>排程項目</span>
         </div>
@@ -23,7 +23,6 @@
                                        ShowBuiltInDeleteButton="@(!IsReadOnly)"
                                        OnItemDelete="@HandleItemDelete"
                                        IsDeleteDisabled="@(item => !item.CanDelete)"
-                                       ShowRowNumbers="false"
                                        IsStriped="true"
                                        IsHoverable="true"
                                        IsBordered="true"
@@ -31,10 +30,12 @@
                                        EmptyMessage="從左側拖曳訂單到此處，或點擊箭頭按鈕加入排程"
                                        ActionsColumnWidth="60px"
                                        ActionsHeader="操作"
+                                       EnableDrag="@(!IsReadOnly)"
                                        EnableDrop="true"
                                        DragDropGroup="production-schedule"
                                        TableId="item-table"
                                        OnItemDropped="HandleItemDropped"
+                                       OnRowReordered="HandleRowReordered"
                                        CssClass="mb-0 table-sm">
                 <DropZoneEmptyTemplate>
                     <div class="text-center py-4">
@@ -72,9 +73,14 @@
     [Parameter] public EventCallback<(ScheduleItemDto Item, decimal NewQuantity)> OnQuantityChanged { get; set; }
     
     /// <summary>
-    /// 當有項目被拖放到此表格時觸發
+    /// 當有項目被拖放到此表格時觸發（接收明細）
     /// </summary>
-    [Parameter] public EventCallback<PendingScheduleOrderDto> OnOrderDropped { get; set; }
+    [Parameter] public EventCallback<PendingScheduleDetailDto> OnDetailDropped { get; set; }
+    
+    /// <summary>
+    /// 當排程項目順序變更時觸發
+    /// </summary>
+    [Parameter] public EventCallback<(int OldIndex, int NewIndex)> OnOrderChanged { get; set; }
     
     // ===== 表格欄位定義 =====
     
@@ -84,37 +90,35 @@
         {
             new()
             {
-                Title = "商品",
+                Title = "商品編號",
                 PropertyName = nameof(ScheduleItemDto.ProductCode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "15%",
+                CellCssClass = "text-primary fw-bold small"
+            },
+            new()
+            {
+                Title = "商品名稱",
+                PropertyName = nameof(ScheduleItemDto.ProductName),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "30%",
+                Width = "22%",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
-                    return @<text>
-                        <small class="fw-bold">@scheduleItem.ProductCode</small>
-                        <br />
-                        <small class="text-muted">@TruncateName(scheduleItem.ProductName, 15)</small>
-                    </text>;
+                    return @<small class="text-truncate d-block" style="max-width: 120px;" title="@scheduleItem.ProductName">@scheduleItem.ProductName</small>;
                 }
             },
             new()
             {
-                Title = "來源訂單",
-                PropertyName = nameof(ScheduleItemDto.SalesOrderCode),
+                Title = "訂單量",
+                PropertyName = nameof(ScheduleItemDto.OrderQuantity),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "25%",
+                Width = "13%",
+                TextAlign = "right",
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
-                    return @<text>
-                        <small class="text-primary">@scheduleItem.SalesOrderCode</small>
-                        @if (!string.IsNullOrEmpty(scheduleItem.CustomerName))
-                        {
-                            <br />
-                            <small class="text-muted">@TruncateName(scheduleItem.CustomerName, 10)</small>
-                        }
-                    </text>;
+                    return @<small class="text-muted">@NumberFormatHelper.FormatSmart(scheduleItem.OrderQuantity)</small>;
                 }
             },
             new()
@@ -122,7 +126,7 @@
                 Title = "排程數量",
                 PropertyName = nameof(ScheduleItemDto.ScheduleQuantity),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "20%",
+                Width = "18%",
                 TextAlign = "right",
                 CustomTemplate = item =>
                 {
@@ -135,7 +139,7 @@
                 Title = "狀態",
                 PropertyName = nameof(ScheduleItemDto.Status),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "15%",
+                Width = "12%",
                 TextAlign = "center",
                 CustomTemplate = item =>
                 {
@@ -160,13 +164,8 @@
     
     private string GetRowCssClass(ScheduleItemDto item, int index)
     {
-        return item.IsNew ? "table-success" : "";
-    }
-    
-    private string TruncateName(string? name, int maxLength)
-    {
-        if (string.IsNullOrEmpty(name)) return string.Empty;
-        return name.Length > maxLength ? name[..maxLength] + "..." : name;
+        // 不使用特殊背景色
+        return "";
     }
     
     /// <summary>
@@ -180,11 +179,12 @@
         }
         else
         {
-            var maxQuantity = item.PendingScheduleQuantity + item.ScheduleQuantity;
+            // 排程數量不能大於訂單量
+            var maxQuantity = item.OrderQuantity;
             <input type="number" 
                    class="form-control form-control-sm text-end" 
                    style="width: 80px; display: inline-block;"
-                   value="@item.ScheduleQuantity"
+                   value="@NumberFormatHelper.FormatForInput(item.ScheduleQuantity)"
                    min="0.001"
                    max="@maxQuantity"
                    step="0.001"
@@ -202,7 +202,8 @@
     {
         if (decimal.TryParse(e.Value?.ToString(), out var newQuantity))
         {
-            var maxQuantity = item.PendingScheduleQuantity + item.ScheduleQuantity;
+            // 排程數量不能大於訂單量
+            var maxQuantity = item.OrderQuantity;
             if (newQuantity > 0 && newQuantity <= maxQuantity)
             {
                 if (OnQuantityChanged.HasDelegate)
@@ -241,21 +242,42 @@
     // ===== 拖放事件處理 =====
     
     /// <summary>
-    /// 處理項目被拖放到此表格
+    /// 處理項目被拖放到此表格（接收明細 Detail）
     /// </summary>
     private async Task HandleItemDropped(DragDropEventArgs<ScheduleItemDto> args)
     {
-        Console.WriteLine($"[DEBUG] HandleItemDropped called, DroppedItem type: {args.DroppedItem?.GetType().Name ?? "null"}");
+        // 嘗試取得拖放的明細
+        var droppedDetail = args.DroppedItem as PendingScheduleDetailDto;
         
-        // 嘗試取得拖放的訂單
-        var droppedOrder = args.DroppedItem as PendingScheduleOrderDto;
-        
-        Console.WriteLine($"[DEBUG] droppedOrder is null: {droppedOrder == null}, OnOrderDropped.HasDelegate: {OnOrderDropped.HasDelegate}");
-        
-        if (droppedOrder != null && OnOrderDropped.HasDelegate)
+        if (droppedDetail != null && OnDetailDropped.HasDelegate)
         {
-            Console.WriteLine($"[DEBUG] Invoking OnOrderDropped with order: {droppedOrder.OrderCode}");
-            await OnOrderDropped.InvokeAsync(droppedOrder);
+            await OnDetailDropped.InvokeAsync(droppedDetail);
+        }
+    }
+    
+    /// <summary>
+    /// 處理同表格內的拖曳排序
+    /// </summary>
+    private async Task HandleRowReordered((int oldIndex, int newIndex) args)
+    {
+        // 如果位置相同則不處理
+        if (args.oldIndex == args.newIndex) return;
+        
+        // 執行本地列表的重新排序
+        if (Items != null && args.oldIndex >= 0 && args.oldIndex < Items.Count 
+            && args.newIndex >= 0 && args.newIndex < Items.Count)
+        {
+            var item = Items[args.oldIndex];
+            Items.RemoveAt(args.oldIndex);
+            Items.Insert(args.newIndex, item);
+            
+            // 通知父組件順序已變更
+            if (OnOrderChanged.HasDelegate)
+            {
+                await OnOrderChanged.InvokeAsync((args.oldIndex, args.newIndex));
+            }
+            
+            StateHasChanged();
         }
     }
 }

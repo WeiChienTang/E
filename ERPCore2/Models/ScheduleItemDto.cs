@@ -78,6 +78,11 @@ namespace ERPCore2.Models
         public bool IsNew { get; set; } = true;
         
         /// <summary>
+        /// 排序順序（用於排程項目的拖曳排序）
+        /// </summary>
+        public int SortOrder { get; set; } = 0;
+        
+        /// <summary>
         /// 是否可刪除（已有完成數量的不可刪除）
         /// </summary>
         public bool CanDelete { get; set; } = true;

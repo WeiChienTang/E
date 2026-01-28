@@ -1,6 +1,7 @@
 @* 訂單庫存檢視 Modal *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models
+@using ERPCore2.Helpers
 @inject ISalesOrderService SalesOrderService
 @inject INotificationService NotificationService
 
@@ -65,7 +66,7 @@
     {
         if (!string.IsNullOrEmpty(OrderNumber))
         {
-            return $"庫存檢視 - {OrderNumber}";
+            return $"庫存檢視 - 訂單編號 {OrderNumber}";
         }
         return "訂單庫存檢視";
     }
@@ -139,126 +140,80 @@
 
     private void RenderInventoryItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem item)
     {
-        // 主項目容器
+        // 主項目容器 - 單行顯示
         builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "card mb-2");
-        
-        // 卡片內容
-        builder.OpenElement(2, "div");
-        builder.AddAttribute(3, "class", "card-body p-3");
-        
-        // 主項目資訊
-        builder.OpenElement(4, "div");
-        builder.AddAttribute(5, "class", "d-flex justify-content-between align-items-start");
-        
-        // 左側：產品資訊
-        builder.OpenElement(6, "div");
-        builder.AddAttribute(7, "class", "flex-grow-1");
-        
-        // 產品標題行
-        builder.OpenElement(8, "div");
-        builder.AddAttribute(9, "class", "d-flex align-items-center mb-2");
+        builder.AddAttribute(1, "class", "border-bottom py-2 d-flex align-items-center");
         
         // 展開/收合按鈕 (如果有子項目)
         if (item.IsComposition && item.Children.Any() && item.DetailId.HasValue)
         {
-            builder.OpenElement(10, "button");
-            builder.AddAttribute(11, "type", "button");
-            builder.AddAttribute(12, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
-            builder.AddAttribute(13, "onclick", EventCallback.Factory.Create(this, () => ToggleExpand(item.DetailId.Value)));
-            builder.AddContent(14, IsExpanded(item.DetailId.Value) ? "▼" : "▶");
+            builder.OpenElement(2, "button");
+            builder.AddAttribute(3, "type", "button");
+            builder.AddAttribute(4, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
+            builder.AddAttribute(5, "onclick", EventCallback.Factory.Create(this, () => ToggleExpand(item.DetailId.Value)));
+            builder.AddContent(6, IsExpanded(item.DetailId.Value) ? "▼" : "▶");
             builder.CloseElement(); // button
-        }
-        else if (item.IsComposition)
-        {
-            builder.OpenElement(15, "span");
-            builder.AddAttribute(16, "class", "me-2");
-            builder.AddAttribute(17, "style", "width: 20px; display: inline-block;");
-            builder.AddContent(18, "📦");
-            builder.CloseElement();
         }
         else
         {
-            builder.OpenElement(19, "span");
-            builder.AddAttribute(20, "class", "me-2");
-            builder.AddAttribute(21, "style", "width: 20px; display: inline-block;");
-            builder.AddContent(22, "📦");
+            builder.OpenElement(7, "span");
+            builder.AddAttribute(8, "class", "me-2");
+            builder.AddAttribute(9, "style", "width: 16px; display: inline-block;");
             builder.CloseElement();
         }
+        
+        // 狀態圖示
+        builder.OpenElement(10, "span");
+        builder.AddAttribute(11, "class", "me-2");
+        builder.AddContent(12, item.StatusIcon);
+        builder.CloseElement();
         
         // 產品編號和名稱
-        builder.OpenElement(23, "strong");
-        builder.AddContent(24, $"{item.ProductCode} - {item.ProductName}");
-        builder.CloseElement(); // strong
-        
-        if (!string.IsNullOrEmpty(item.ProductSpecification))
-        {
-            builder.OpenElement(25, "span");
-            builder.AddAttribute(26, "class", "text-muted ms-2");
-            builder.AddAttribute(27, "style", "font-size: 0.9em;");
-            builder.AddContent(28, $"({item.ProductSpecification})");
-            builder.CloseElement();
-        }
-        
-        builder.CloseElement(); // d-flex (標題行)
-        
-        // 數量資訊
-        builder.OpenElement(29, "div");
-        builder.AddAttribute(30, "class", "row g-2 small");
-        
-        // 需求數量
-        builder.OpenElement(31, "div");
-        builder.AddAttribute(32, "class", "col-auto");
-        builder.AddContent(33, $"需求: ");
-        builder.OpenElement(34, "strong");
-        builder.AddContent(35, $"{item.RequiredQuantity:N2} {item.UnitName}");
+        builder.OpenElement(13, "strong");
+        builder.AddAttribute(14, "class", "me-2");
+        builder.AddContent(15, $"{item.ProductCode}");
         builder.CloseElement();
-        builder.CloseElement(); // col
         
-        // 庫存數量
-        builder.OpenElement(36, "div");
-        builder.AddAttribute(37, "class", "col-auto");
-        builder.AddContent(38, $"庫存: ");
-        builder.OpenElement(39, "strong");
-        builder.AddAttribute(40, "class", item.StatusClass);
-        builder.AddContent(41, $"{item.AvailableStock:N2} {item.UnitName}");
+        builder.OpenElement(16, "span");
+        builder.AddAttribute(17, "class", "me-3");
+        builder.AddContent(18, item.ProductName);
         builder.CloseElement();
-        builder.CloseElement(); // col
         
-        // 缺口 (如果有)
+        // 數量資訊 - 單行
+        builder.OpenElement(19, "span");
+        builder.AddAttribute(20, "class", "text-muted small");
+        
+        builder.AddContent(21, "需求:");
+        builder.OpenElement(22, "strong");
+        builder.AddAttribute(23, "class", "mx-1");
+        builder.AddContent(24, NumberFormatHelper.FormatSmart(item.RequiredQuantity));
+        builder.CloseElement();
+        
+        builder.AddContent(25, " 庫存:");
+        builder.OpenElement(26, "strong");
+        builder.AddAttribute(27, "class", $"mx-1 {item.StatusClass}");
+        builder.AddContent(28, NumberFormatHelper.FormatSmart(item.AvailableStock));
+        builder.CloseElement();
+        
         if (item.ShortageQuantity > 0)
         {
-            builder.OpenElement(42, "div");
-            builder.AddAttribute(43, "class", "col-auto");
-            builder.AddContent(44, $"缺口: ");
-            builder.OpenElement(45, "strong");
-            builder.AddAttribute(46, "class", "text-danger");
-            builder.AddContent(47, $"{item.ShortageQuantity:N2} {item.UnitName}");
+            builder.AddContent(29, " 缺少:");
+            builder.OpenElement(30, "strong");
+            builder.AddAttribute(31, "class", "mx-1 text-danger");
+            builder.AddContent(32, NumberFormatHelper.FormatSmart(item.ShortageQuantity));
             builder.CloseElement();
-            builder.CloseElement(); // col
         }
         
-        builder.CloseElement(); // row
+        builder.AddContent(33, $" ({item.UnitName})");
+        builder.CloseElement(); // text-muted small
         
-        builder.CloseElement(); // flex-grow-1
-        
-        // 右側：狀態標籤
-        builder.OpenElement(48, "div");
-        builder.AddAttribute(49, "class", "ms-3");
-        builder.OpenElement(50, "span");
-        builder.AddAttribute(51, "class", "badge bg-" + GetStatusBadgeClass(item.Status));
-        builder.AddAttribute(52, "style", "font-size: 1em;");
-        builder.AddContent(53, $"{item.StatusIcon} {item.StatusText}");
-        builder.CloseElement(); // badge
-        builder.CloseElement(); // ms-3
-        
-        builder.CloseElement(); // d-flex
+        builder.CloseElement(); // 主項目容器
         
         // 子項目 (組成元件)
         if (item.IsComposition && item.Children.Any() && item.DetailId.HasValue && IsExpanded(item.DetailId.Value))
         {
-            builder.OpenElement(54, "div");
-            builder.AddAttribute(55, "class", "mt-3 ps-4 border-start border-2");
+            builder.OpenElement(34, "div");
+            builder.AddAttribute(35, "class", "ps-4 border-start border-2 ms-2");
             
             foreach (var child in item.Children)
             {
@@ -267,129 +222,88 @@
             
             builder.CloseElement(); // children container
         }
-        
-        builder.CloseElement(); // card-body
-        builder.CloseElement(); // card
     }
 
     private void RenderChildItem(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, OrderInventoryCheckItem child, int level)
     {
-        // 根據層級調整縮排和背景顏色
-        var indentClass = level > 2 ? $"ms-{(level - 2) * 3}" : "";
-        var bgClass = level switch
-        {
-            2 => "bg-light",
-            3 => "bg-white",
-            _ => "bg-light"
-        };
+        // 根據層級調整縮排
+        var indentStyle = level > 2 ? $"padding-left: {(level - 2) * 16}px;" : "";
         
+        // 子項目容器 - 單行顯示
         builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", $"mb-2 p-2 {bgClass} rounded {indentClass}");
+        builder.AddAttribute(1, "class", "py-1 d-flex align-items-center small");
+        builder.AddAttribute(2, "style", indentStyle);
         
-        // 產品資訊
-        builder.OpenElement(2, "div");
-        builder.AddAttribute(3, "class", "d-flex justify-content-between align-items-start");
-        
-        // 左側
-        builder.OpenElement(4, "div");
-        builder.AddAttribute(5, "class", "flex-grow-1");
-        
-        builder.OpenElement(6, "div");
-        builder.AddAttribute(7, "class", "mb-1");
-        
-        // 層級指示符 & 展開/收合按鈕
+        // 展開/收合按鈕 (如果有子項目)
         if (child.IsComposition && child.Children.Any())
         {
-            // 有子項目的組合產品 - 顯示展開/收合按鈕
             var childExpandKey = $"{child.ProductId}_level{level}";
             var isChildExpanded = expandedItems.GetValueOrDefault(childExpandKey, true);
+            expandedItems.TryAdd(childExpandKey, true);
             
-            builder.OpenElement(8, "button");
-            builder.AddAttribute(9, "type", "button");
-            builder.AddAttribute(10, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
-            builder.AddAttribute(11, "onclick", EventCallback.Factory.Create(this, () => ToggleExpandByKey(childExpandKey)));
-            builder.AddContent(12, isChildExpanded ? "▼" : "▶");
+            builder.OpenElement(3, "button");
+            builder.AddAttribute(4, "type", "button");
+            builder.AddAttribute(5, "class", "btn btn-sm btn-link text-decoration-none p-0 me-2");
+            builder.AddAttribute(6, "onclick", EventCallback.Factory.Create(this, () => ToggleExpandByKey(childExpandKey)));
+            builder.AddContent(7, isChildExpanded ? "▼" : "▶");
             builder.CloseElement(); // button
-            
-            expandedItems.TryAdd(childExpandKey, true); // 預設展開
         }
         else
         {
-            // 一般元件 - 顯示層級圖示
-            var icon = level switch
-            {
-                2 => "🔩",
-                3 => "•",
-                _ => "▫"
-            };
-            
-            builder.OpenElement(13, "span");
-            builder.AddAttribute(14, "class", "me-2");
-            builder.AddContent(15, icon);
+            builder.OpenElement(8, "span");
+            builder.AddAttribute(9, "class", "me-2");
+            builder.AddAttribute(10, "style", "width: 16px; display: inline-block;");
             builder.CloseElement();
         }
         
-        builder.OpenElement(11, "strong");
-        builder.AddAttribute(12, "style", "font-size: 0.95em;");
-        builder.AddContent(13, $"{child.ProductCode} - {child.ProductName}");
+        // 狀態圖示
+        builder.OpenElement(11, "span");
+        builder.AddAttribute(12, "class", "me-2");
+        builder.AddContent(13, child.StatusIcon);
         builder.CloseElement();
         
-        if (!string.IsNullOrEmpty(child.ProductSpecification))
-        {
-            builder.OpenElement(14, "span");
-            builder.AddAttribute(15, "class", "text-muted ms-2");
-            builder.AddAttribute(16, "style", "font-size: 0.85em;");
-            builder.AddContent(17, $"({child.ProductSpecification})");
-            builder.CloseElement();
-        }
-        builder.CloseElement(); // mb-1
-        
-        // 數量資訊 (較小)
-        builder.OpenElement(18, "div");
-        builder.AddAttribute(19, "class", "small text-muted");
-        
-        if (child.CompositionMultiplier.HasValue)
-        {
-            builder.AddContent(20, $"每組: {child.CompositionMultiplier.Value:N2} {child.UnitName} | ");
-        }
-        
-        builder.AddContent(21, $"需求: ");
-        builder.OpenElement(22, "span");
-        builder.AddAttribute(23, "class", "fw-bold");
-        builder.AddContent(24, $"{child.RequiredQuantity:N2}");
+        // 產品編號和名稱
+        builder.OpenElement(14, "strong");
+        builder.AddAttribute(15, "class", "me-2");
+        builder.AddContent(16, child.ProductCode);
         builder.CloseElement();
-        builder.AddContent(25, $" {child.UnitName} | 庫存: ");
         
-        builder.OpenElement(26, "span");
-        builder.AddAttribute(27, "class", "fw-bold " + child.StatusClass);
-        builder.AddContent(28, $"{child.AvailableStock:N2}");
+        builder.OpenElement(17, "span");
+        builder.AddAttribute(18, "class", "me-3");
+        builder.AddContent(19, child.ProductName);
         builder.CloseElement();
-        builder.AddContent(29, $" {child.UnitName}");
+        
+        // 數量資訊 - 單行
+        builder.OpenElement(20, "span");
+        builder.AddAttribute(21, "class", "text-muted");
+        
+        builder.AddContent(22, "需求:");
+        builder.OpenElement(23, "strong");
+        builder.AddAttribute(24, "class", "mx-1");
+        builder.AddContent(25, NumberFormatHelper.FormatSmart(child.RequiredQuantity));
+        builder.CloseElement();
+        
+        builder.AddContent(26, " 庫存:");
+        builder.OpenElement(27, "strong");
+        builder.AddAttribute(28, "class", $"mx-1 {child.StatusClass}");
+        builder.AddContent(29, NumberFormatHelper.FormatSmart(child.AvailableStock));
+        builder.CloseElement();
         
         if (child.ShortageQuantity > 0)
         {
-            builder.AddContent(30, $" | 缺口: ");
-            builder.OpenElement(31, "span");
-            builder.AddAttribute(32, "class", "fw-bold text-danger");
-            builder.AddContent(33, $"{child.ShortageQuantity:N2}");
+            builder.AddContent(30, " 缺少:");
+            builder.OpenElement(31, "strong");
+            builder.AddAttribute(32, "class", "mx-1 text-danger");
+            builder.AddContent(33, NumberFormatHelper.FormatSmart(child.ShortageQuantity));
             builder.CloseElement();
-            builder.AddContent(34, $" {child.UnitName}");
         }
         
-        builder.CloseElement(); // small
-        builder.CloseElement(); // flex-grow-1
+        builder.AddContent(34, $" ({child.UnitName})");
+        builder.CloseElement(); // text-muted
         
-        // 右側：狀態
-        builder.OpenElement(35, "div");
-        builder.OpenElement(36, "span");
-        builder.AddAttribute(37, "class", "badge bg-" + GetStatusBadgeClass(child.Status));
-        builder.AddContent(38, $"{child.StatusIcon} {child.StatusText}");
-        builder.CloseElement();
-        builder.CloseElement();
+        builder.CloseElement(); // 子項目容器
         
-        builder.CloseElement(); // d-flex
-        
-        //  遞迴渲染：如果有子項目且已展開，遞迴顯示
+        // 遞迴渲染：如果有子項目且已展開，遞迴顯示
         if (child.IsComposition && child.Children.Any())
         {
             var childExpandKey = $"{child.ProductId}_level{level}";
@@ -397,32 +311,18 @@
             
             if (isChildExpanded)
             {
-                builder.OpenElement(39, "div");
-                builder.AddAttribute(40, "class", "mt-2 ps-3 border-start border-2 border-secondary");
-                
                 foreach (var grandChild in child.Children)
                 {
-                    // 遞迴呼叫，層級 +1
                     RenderChildItem(builder, grandChild, level + 1);
                 }
-                
-                builder.CloseElement(); // nested children container
             }
         }
-        
-        builder.CloseElement(); // container
     }
 
     private void RenderSummaryCard(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
     {
         if (checkResult == null) return;
 
-        // 只計算主要訂單明細（第一層），不包含子材料
-        var mainItems = checkResult.Items.Where(x => x.Level == 1 || x.ParentDetailId == null).ToList();
-        var totalItems = mainItems.Count;
-        var insufficientCount = mainItems.Count(x => x.Status == InventoryStatus.Insufficient);
-        var warningCount = mainItems.Count(x => x.Status == InventoryStatus.Warning);
-        var sufficientCount = totalItems - insufficientCount - warningCount;
         var alertClass = GetOverallAlertClass();
 
         // 統計摘要卡片
@@ -432,96 +332,16 @@
         
         // 標題行
         builder.OpenElement(3, "div");
-        builder.AddAttribute(4, "class", "d-flex align-items-center mb-2");
-        builder.OpenElement(5, "h6");
-        builder.AddAttribute(6, "class", "mb-0 me-3");
-        builder.OpenElement(7, "i");
-        builder.AddAttribute(8, "class", "bi bi-clipboard-data me-2");
-        builder.CloseElement();
-        builder.AddContent(9, "庫存狀況摘要");
-        builder.CloseElement(); // h6
+        builder.AddAttribute(4, "class", "d-flex justify-content-between align-items-center");
+        builder.OpenElement(5, "strong");
+        builder.AddContent(6, "庫存狀況摘要");
+        builder.CloseElement(); // strong
+        builder.OpenElement(7, "small");
+        builder.AddAttribute(8, "class", "text-muted");
+        builder.AddContent(9, "※ 數據來自資料庫，實際庫存請以現場為準");
+        builder.CloseElement(); // small
         builder.CloseElement(); // d-flex
         
-        // 統計資訊
-        builder.OpenElement(10, "div");
-        builder.AddAttribute(11, "class", "row g-3");
-        
-        // 總項目數
-        builder.OpenElement(12, "div");
-        builder.AddAttribute(13, "class", "col-auto");
-        builder.OpenElement(14, "div");
-        builder.AddAttribute(15, "class", "d-flex align-items-center");
-        builder.OpenElement(16, "span");
-        builder.AddAttribute(17, "class", "badge bg-secondary me-2");
-        builder.AddAttribute(18, "style", "font-size: 1.1em; min-width: 40px;");
-        builder.AddContent(19, totalItems.ToString());
-        builder.CloseElement();
-        builder.OpenElement(20, "span");
-        builder.AddContent(21, "總項目");
-        builder.CloseElement();
-        builder.CloseElement();
-        builder.CloseElement(); // col
-        
-        // 充足項目數
-        if (sufficientCount > 0)
-        {
-            builder.OpenElement(22, "div");
-            builder.AddAttribute(23, "class", "col-auto");
-            builder.OpenElement(24, "div");
-            builder.AddAttribute(25, "class", "d-flex align-items-center");
-            builder.OpenElement(26, "span");
-            builder.AddAttribute(27, "class", "badge bg-success me-2");
-            builder.AddAttribute(28, "style", "font-size: 1.1em; min-width: 40px;");
-            builder.AddContent(29, sufficientCount.ToString());
-            builder.CloseElement();
-            builder.OpenElement(30, "span");
-            builder.AddContent(31, "🟢 充足");
-            builder.CloseElement();
-            builder.CloseElement();
-            builder.CloseElement(); // col
-        }
-        
-        // 警戒項目數
-        if (warningCount > 0)
-        {
-            builder.OpenElement(32, "div");
-            builder.AddAttribute(33, "class", "col-auto");
-            builder.OpenElement(34, "div");
-            builder.AddAttribute(35, "class", "d-flex align-items-center");
-            builder.OpenElement(36, "span");
-            builder.AddAttribute(37, "class", "badge bg-warning text-dark me-2");
-            builder.AddAttribute(38, "style", "font-size: 1.1em; min-width: 40px;");
-            builder.AddContent(39, warningCount.ToString());
-            builder.CloseElement();
-            builder.OpenElement(40, "span");
-            builder.AddContent(41, "🟡 警戒");
-            builder.CloseElement();
-            builder.CloseElement();
-            builder.CloseElement(); // col
-        }
-        
-        // 不足項目數
-        if (insufficientCount > 0)
-        {
-            builder.OpenElement(42, "div");
-            builder.AddAttribute(43, "class", "col-auto");
-            builder.OpenElement(44, "div");
-            builder.AddAttribute(45, "class", "d-flex align-items-center");
-            builder.OpenElement(46, "span");
-            builder.AddAttribute(47, "class", "badge bg-danger me-2");
-            builder.AddAttribute(48, "style", "font-size: 1.1em; min-width: 40px; cursor: pointer;");
-            builder.AddAttribute(49, "title", "點擊展開所有不足項目");
-            builder.AddAttribute(50, "onclick", EventCallback.Factory.Create(this, ExpandInsufficientItems));
-            builder.AddContent(51, insufficientCount.ToString());
-            builder.CloseElement();
-            builder.OpenElement(52, "span");
-            builder.AddContent(53, "🔴 不足");
-            builder.CloseElement();
-            builder.CloseElement();
-            builder.CloseElement(); // col
-        }
-        
-        builder.CloseElement(); // row
         builder.CloseElement(); // alert
     }
 

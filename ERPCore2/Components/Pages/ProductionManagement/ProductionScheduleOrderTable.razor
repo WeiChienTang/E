@@ -1,4 +1,4 @@
-@* 待排程訂單表格 - 左側顯示可選擇的訂單列表 *@
+@* 待排程明細表格 - 左側顯示可選擇的訂單明細列表（以商品為核心） *@
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Components.Shared.Base
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
@@ -8,15 +8,34 @@
 <div class="card h-100">
     <div class="card-header bg-primary text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold"><i class="bi bi-list-task me-2"></i>待排程訂單</span>
+            <span class="fw-bold"><i class="bi bi-box-seam me-2"></i>待排程明細</span>
+            <small class="text-white-50">@FilteredDetailsList.Count 項</small>
         </div>
     </div>
     
-    <div class="card-body p-2">        
-        @* 訂單列表 - 使用 InteractiveTableComponent *@
-        <div style="max-height: 400px; overflow-y: auto;">
-            <InteractiveTableComponent TItem="PendingScheduleOrderDto"
-                                       Items="@FilteredOrdersList"
+    <div class="card-body p-2">
+        @* 篩選區域 *@
+        <div class="mb-2">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" 
+                       class="form-control form-control-sm" 
+                       placeholder="搜尋商品/訂單/客戶..."
+                       @bind="searchKeyword"
+                       @bind:event="oninput" />
+                @if (!string.IsNullOrEmpty(searchKeyword))
+                {
+                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ClearSearch">
+                        <i class="bi bi-x"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        
+        @* 明細列表 - 使用 InteractiveTableComponent *@
+        <div style="max-height: 350px; overflow-y: auto;">
+            <InteractiveTableComponent TItem="PendingScheduleDetailDto"
+                                       Items="@FilteredDetailsList"
                                        ColumnDefinitions="@GetColumnDefinitions()"
                                        ShowHeader="true"
                                        ShowActions="false"
@@ -30,7 +49,7 @@
                                        RowClickCursor="pointer"
                                        EnableDrag="true"
                                        DragDropGroup="production-schedule"
-                                       TableId="order-table"
+                                       TableId="detail-table"
                                        OnDragStart="HandleDragStart"
                                        CssClass="mb-0 table-sm" />
         </div>
@@ -41,14 +60,9 @@
     // ===== 參數 =====
     
     /// <summary>
-    /// 待排程訂單列表
+    /// 待排程明細列表
     /// </summary>
-    [Parameter] public List<PendingScheduleOrderDto> Orders { get; set; } = new();
-    
-    /// <summary>
-    /// 可用客戶列表（篩選用）
-    /// </summary>
-    [Parameter] public List<Customer> AvailableCustomers { get; set; } = new();
+    [Parameter] public List<PendingScheduleDetailDto> Details { get; set; } = new();
     
     /// <summary>
     /// 是否正在載入
@@ -56,9 +70,9 @@
     [Parameter] public bool IsLoading { get; set; }
     
     /// <summary>
-    /// 當選擇訂單時觸發（開啟明細選擇彈窗）
+    /// 當選擇明細時觸發（直接加入排程）
     /// </summary>
-    [Parameter] public EventCallback<PendingScheduleOrderDto> OnOrderSelected { get; set; }
+    [Parameter] public EventCallback<PendingScheduleDetailDto> OnDetailSelected { get; set; }
     
     /// <summary>
     /// 當需要重新載入資料時觸發
@@ -66,34 +80,33 @@
     [Parameter] public EventCallback OnRefreshRequested { get; set; }
     
     // ===== 內部狀態 =====
-    private int? selectedCustomerId;
     private string searchKeyword = string.Empty;
     
     /// <summary>
-    /// 篩選後的訂單列表（轉為 List 供 InteractiveTableComponent 使用）
+    /// 篩選後的明細列表
     /// </summary>
-    private List<PendingScheduleOrderDto> FilteredOrdersList
+    private List<PendingScheduleDetailDto> FilteredDetailsList
     {
         get
         {
-            var result = Orders.AsEnumerable();
+            var result = Details.AsEnumerable();
             
-            // 客戶篩選
-            if (selectedCustomerId.HasValue)
-            {
-                result = result.Where(o => o.CustomerId == selectedCustomerId.Value);
-            }
-            
-            // 關鍵字搜尋
+            // 關鍵字搜尋（商品、訂單編號、客戶）
             if (!string.IsNullOrWhiteSpace(searchKeyword))
             {
                 var keyword = searchKeyword.Trim().ToLower();
-                result = result.Where(o => 
-                    o.OrderCode.ToLower().Contains(keyword) ||
-                    o.CustomerName.ToLower().Contains(keyword));
+                result = result.Where(d => 
+                    d.ProductCode.ToLower().Contains(keyword) ||
+                    d.ProductName.ToLower().Contains(keyword) ||
+                    d.SalesOrderCode.ToLower().Contains(keyword) ||
+                    d.CustomerName.ToLower().Contains(keyword));
             }
             
-            return result.OrderByDescending(o => o.OrderDate).ToList();
+            // 按商品編號排序，相同商品再按訂單日期排序
+            return result
+                .OrderBy(d => d.ProductCode)
+                .ThenByDescending(d => d.OrderDate)
+                .ToList();
         }
     }
     
@@ -105,48 +118,81 @@
         {
             new()
             {
-                Title = "訂單編號",
-                PropertyName = nameof(PendingScheduleOrderDto.OrderCode),
+                Title = "商品編號",
+                PropertyName = nameof(PendingScheduleDetailDto.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "30%",
+                Width = "12%",
                 CellCssClass = "text-primary fw-bold small"
             },
             new()
             {
-                Title = "日期",
-                PropertyName = nameof(PendingScheduleOrderDto.OrderDate),
+                Title = "商品名稱",
+                PropertyName = nameof(PendingScheduleDetailDto.ProductName),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "15%",
+                Width = "20%",
                 CustomTemplate = item =>
                 {
-                    var order = (PendingScheduleOrderDto)item;
-                    return @<small class="text-muted">@order.OrderDate.ToString("MM/dd")</small>;
+                    var detail = (PendingScheduleDetailDto)item;
+                    return @<small class="text-truncate d-block" style="max-width: 120px;" title="@detail.ProductName">@detail.ProductName</small>;
+                }
+            },
+            new()
+            {
+                Title = "訂單日",
+                PropertyName = nameof(PendingScheduleDetailDto.OrderDate),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "12%",
+                CustomTemplate = item =>
+                {
+                    var detail = (PendingScheduleDetailDto)item;
+                    return @<small class="text-muted">@detail.OrderDate.ToString("MM/dd")</small>;
+                }
+            },
+            new()
+            {
+                Title = "交貨日",
+                PropertyName = nameof(PendingScheduleDetailDto.ExpectedDeliveryDate),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "12%",
+                CustomTemplate = item =>
+                {
+                    var detail = (PendingScheduleDetailDto)item;
+                    if (detail.ExpectedDeliveryDate.HasValue)
+                    {
+                        return @<small class="text-info">@detail.ExpectedDeliveryDate.Value.ToString("MM/dd")</small>;
+                    }
+                    return @<small class="text-muted">-</small>;
                 }
             },
             new()
             {
                 Title = "客戶",
-                PropertyName = nameof(PendingScheduleOrderDto.CustomerName),
+                PropertyName = nameof(PendingScheduleDetailDto.CustomerName),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "35%",
+                Width = "18%",
                 CustomTemplate = item =>
                 {
-                    var order = (PendingScheduleOrderDto)item;
-                    return @<small>@order.CustomerName</small>;
+                    var detail = (PendingScheduleDetailDto)item;
+                    return @<small class="text-truncate d-block" style="max-width: 100px;" title="@detail.CustomerName">@detail.CustomerName</small>;
                 }
             },
             new()
             {
-                Title = "待排明細",
-                PropertyName = nameof(PendingScheduleOrderDto.PendingItemCount),
+                Title = "訂單/已排",
+                PropertyName = nameof(PendingScheduleDetailDto.OrderQuantity),
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "20%",
-                TextAlign = "center",
+                Width = "14%",
+                TextAlign = "right",
                 CustomTemplate = item =>
                 {
-                    var order = (PendingScheduleOrderDto)item;
-                    var pendingCount = order.Details?.Count(d => d.PendingQuantity > 0) ?? order.PendingItemCount;
-                    return @<span class="badge bg-warning text-dark">@pendingCount 項</span>;
+                    var detail = (PendingScheduleDetailDto)item;
+                    return @<text>
+                        <small>
+                            <span class="fw-bold">@NumberFormatHelper.FormatSmart(detail.OrderQuantity)</span>
+                            <span class="text-muted">/</span>
+                            <span class="@(detail.ScheduledQuantity > 0 ? "text-success" : "text-muted")">@NumberFormatHelper.FormatSmart(detail.ScheduledQuantity)</span>
+                        </small>
+                    </text>;
                 }
             }
         };
@@ -154,22 +200,14 @@
     
     private string GetEmptyMessage()
     {
-        return IsLoading ? "載入中..." : "沒有待排程的訂單";
+        return IsLoading ? "載入中..." : "沒有待排程的明細";
     }
     
     // ===== 事件處理 =====
     
-    private async Task OnSelectOrder(PendingScheduleOrderDto order)
+    private void ClearSearch()
     {
-        if (OnOrderSelected.HasDelegate)
-        {
-            await OnOrderSelected.InvokeAsync(order);
-        }
-    }
-    
-    private void OnFilterChanged()
-    {
-        // 篩選條件變更時自動更新 UI（透過 FilteredOrdersList 計算屬性）
+        searchKeyword = string.Empty;
         StateHasChanged();
     }
     
@@ -184,27 +222,17 @@
     // ===== 公開方法 =====
     
     /// <summary>
-    /// 設定客戶篩選（供外部呼叫）
-    /// </summary>
-    public void SetCustomerFilter(int? customerId)
-    {
-        selectedCustomerId = customerId;
-        StateHasChanged();
-    }
-    
-    /// <summary>
     /// 清除篩選條件
     /// </summary>
     public void ClearFilters()
     {
-        selectedCustomerId = null;
         searchKeyword = string.Empty;
         StateHasChanged();
     }
     
     // ===== 拖放事件處理 =====
     
-    private void HandleDragStart(PendingScheduleOrderDto order)
+    private void HandleDragStart(PendingScheduleDetailDto detail)
     {
         // 拖曳開始時的處理（如需要可在此加入額外邏輯）
         // DragDropState 已由 InteractiveTableComponent 自動設定
@@ -213,20 +241,13 @@
     // ===== 行點擊事件處理 =====
     
     /// <summary>
-    /// 處理行點擊事件 - 直接開啟明細選擇彈窗
+    /// 處理行點擊事件 - 直接觸發明細選擇
     /// </summary>
-    private async Task HandleRowClick(PendingScheduleOrderDto order)
+    private async Task HandleRowClick(PendingScheduleDetailDto detail)
     {
-        Console.WriteLine($"[DEBUG] ProductionScheduleOrderTable.HandleRowClick called, order: {order.OrderCode}");
-        
-        if (OnOrderSelected.HasDelegate)
+        if (OnDetailSelected.HasDelegate)
         {
-            Console.WriteLine("[DEBUG] Invoking OnOrderSelected");
-            await OnOrderSelected.InvokeAsync(order);
-        }
-        else
-        {
-            Console.WriteLine("[DEBUG] OnOrderSelected.HasDelegate is false!");
+            await OnDetailSelected.InvokeAsync(detail);
         }
     }
 }

@@ -1,7 +1,7 @@
 namespace ERPCore2.Models
 {
     /// <summary>
-    /// 待排程明細 DTO - 用於明細選擇彈窗
+    /// 待排程明細 DTO - 用於明細選擇表格（以商品為核心顯示）
     /// </summary>
     public class PendingScheduleDetailDto
     {
@@ -9,6 +9,36 @@ namespace ERPCore2.Models
         /// 訂單明細 ID
         /// </summary>
         public int SalesOrderDetailId { get; set; }
+        
+        /// <summary>
+        /// 來源訂單 ID
+        /// </summary>
+        public int SalesOrderId { get; set; }
+        
+        /// <summary>
+        /// 來源訂單編號
+        /// </summary>
+        public string SalesOrderCode { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// 訂單日期
+        /// </summary>
+        public DateTime OrderDate { get; set; }
+        
+        /// <summary>
+        /// 預計交貨日期
+        /// </summary>
+        public DateTime? ExpectedDeliveryDate { get; set; }
+        
+        /// <summary>
+        /// 客戶 ID
+        /// </summary>
+        public int CustomerId { get; set; }
+        
+        /// <summary>
+        /// 客戶名稱
+        /// </summary>
+        public string CustomerName { get; set; } = string.Empty;
         
         /// <summary>
         /// 商品 ID

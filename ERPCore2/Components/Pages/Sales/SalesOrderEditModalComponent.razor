@@ -109,13 +109,13 @@
                                  OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                  OnCancel="@(() => showSetoffDocumentModal = false)" />
 
-@* 批次轉排程 Modal *@
-<TransferToScheduleModalComponent IsVisible="@showBatchTransferToScheduleModal"
-                                 IsVisibleChanged="@((bool visible) => showBatchTransferToScheduleModal = visible)"
-                                 SalesOrderId="@(SalesOrderId ?? 0)"
-                                 SalesOrderCode="@(editModalComponent?.Entity?.Code)"
-                                 OnScheduleCreated="@HandleScheduleCreated"
-                                 OnCancel="@(() => showBatchTransferToScheduleModal = false)" />
+@* 生產排程編輯 Modal *@
+<ProductionScheduleEditModalComponent @ref="productionScheduleEditModal"
+                                     IsVisible="@showProductionScheduleModal"
+                                     IsVisibleChanged="@HandleProductionScheduleModalVisibleChanged"
+                                     ProductionScheduleId="@selectedProductionScheduleId"
+                                     OnProductionScheduleSaved="@HandleScheduleCreated"
+                                     OnCancel="@HandleProductionScheduleModalClosed" />
 
 @* 訂單庫存檢視 Modal *@
 <OrderInventoryCheckModal IsVisible="@showInventoryCheckModal"
@@ -182,8 +182,10 @@
     private bool showSalesDeliveryModal = false;
     private int? selectedSalesDeliveryId = null;
     
-    // 批次轉排程 Modal
-    private bool showBatchTransferToScheduleModal = false;
+    // 生產排程編輯 Modal
+    private ProductionScheduleEditModalComponent? productionScheduleEditModal;
+    private bool showProductionScheduleModal = false;
+    private int? selectedProductionScheduleId = null;
     
     // 訂單庫存檢視 Modal
     private bool showInventoryCheckModal = false;
@@ -557,7 +559,7 @@
                 new()
                 {
                     PropertyName = nameof(SalesOrder.ExpectedDeliveryDate),
-                    Label = "預定出貨日期",
+                    Label = "預交日",
                     FieldType = FormFieldType.Date,
                     IsRequired = false,
                     HelpText = "預計出貨給客戶的日期",
@@ -906,7 +908,9 @@
             else if (args.type == RelatedDocumentType.ProductionSchedule)
             {
                 // 開啟生產排程
-                await NotificationService.ShowInfoAsync("請在生產管理模組中查看生產排程", "提示");
+                selectedProductionScheduleId = args.id;
+                showProductionScheduleModal = true;
+                StateHasChanged();
             }
             else
             {
@@ -1268,8 +1272,8 @@
                                   Variant="ButtonVariant.Green" 
                                   OnClick="HandleCreateDeliveryFromOrder" />
             
-            @* 批次轉排程按鈕 *@
-            <GenericButtonComponent Text="轉排程" 
+            @* 批次排程管理按鈕 *@
+            <GenericButtonComponent Text="排程管理" 
                                   Variant="ButtonVariant.Yellow"
                                   Icon="bi bi-calendar-plus"
                                   OnClick="HandleBatchTransferToSchedule" />
@@ -1527,7 +1531,7 @@
     }
 
     /// <summary>
-    /// 批次轉排程
+    /// 排程管理 - 直接開啟生產排程編輯 Modal
     /// </summary>
     private async Task HandleBatchTransferToSchedule()
     {
@@ -1536,36 +1540,19 @@
             // 驗證訂單資料
             if (!SalesOrderId.HasValue || editModalComponent?.Entity == null)
             {
-                await NotificationService.ShowWarningAsync("無法轉排程：訂單資料不存在");
+                await NotificationService.ShowWarningAsync("無法排程管理：訂單資料不存在");
                 return;
             }
             
-            // 檢查是否有明細資料
-            if (!salesOrderDetails.Any())
-            {
-                await NotificationService.ShowWarningAsync("訂單沒有明細資料，無法轉排程");
-                return;
-            }
-            
-            // 檢查是否所有明細都已完成排程（已排程數量 >= 訂購數量）
-            var hasIncompleteDetails = salesOrderDetails.Any(detail => 
-                detail.ScheduledQuantity < detail.OrderQuantity
-            );
-            
-            if (!hasIncompleteDetails)
-            {
-                await NotificationService.ShowWarningAsync("訂單所有明細皆已完成排程，無需再轉排程");
-                return;
-            }
-            
-            // 開啟批次轉排程 Modal
-            showBatchTransferToScheduleModal = true;
+            // 直接開啟生產排程編輯 Modal（新增模式）
+            selectedProductionScheduleId = null;
+            showProductionScheduleModal = true;
             StateHasChanged();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchTransferToSchedule), GetType(), 
-                additionalData: $"開啟批次轉排程 Modal 失敗 - OrderId: {SalesOrderId}");
+                additionalData: $"開啟生產排程 Modal 失敗 - OrderId: {SalesOrderId}");
         }
     }
     
@@ -1643,25 +1630,92 @@
     }
     
     /// <summary>
-    /// 處理排程建立成功事件
+    /// 處理生產排程 Modal 可見性變更事件
+    /// 當 Modal 關閉時刷新明細資料（處理刪除排程後的回寫）
+    /// </summary>
+    private async Task HandleProductionScheduleModalVisibleChanged(bool visible)
+    {
+        var wasVisible = showProductionScheduleModal;
+        showProductionScheduleModal = visible;
+        
+        // 如果是從顯示變成隱藏（Modal 關閉），刷新明細資料
+        if (wasVisible && !visible && SalesOrderId.HasValue)
+        {
+            try
+            {
+                // 重新載入訂單明細（刷新已排程數量）
+                await LoadSalesOrderDetails(SalesOrderId.Value);
+                
+                // 刷新 Table 元件
+                if (salesOrderDetailManager != null)
+                {
+                    await salesOrderDetailManager.RefreshDetailsAsync();
+                }
+                
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleProductionScheduleModalVisibleChanged), GetType(), 
+                    additionalData: $"刷新明細資料失敗 - OrderId: {SalesOrderId}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 處理生產排程 Modal 關閉事件（取消或刪除後）
+    /// </summary>
+    private async Task HandleProductionScheduleModalClosed()
+    {
+        showProductionScheduleModal = false;
+        selectedProductionScheduleId = null;
+        
+        // 刷新明細資料（處理刪除排程後的回寫）
+        if (SalesOrderId.HasValue)
+        {
+            try
+            {
+                await LoadSalesOrderDetails(SalesOrderId.Value);
+                
+                if (salesOrderDetailManager != null)
+                {
+                    await salesOrderDetailManager.RefreshDetailsAsync();
+                }
+                
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleProductionScheduleModalClosed), GetType(), 
+                    additionalData: $"刷新明細資料失敗 - OrderId: {SalesOrderId}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 處理排程儲存成功事件
     /// </summary>
     private async Task HandleScheduleCreated(ProductionSchedule schedule)
     {
         try
         {
+            // 關閉 Modal
+            showProductionScheduleModal = false;
+            selectedProductionScheduleId = null;
+            
             // 重新載入訂單明細（刷新已排程數量）
             if (SalesOrderId.HasValue)
             {
                 await LoadSalesOrderDetails(SalesOrderId.Value);
             }
             
-            await NotificationService.ShowSuccessAsync($"排程建立成功：{schedule.Code}");
+            await NotificationService.ShowSuccessAsync($"排程儲存成功：{schedule.Code}");
             StateHasChanged();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleScheduleCreated), GetType(), 
-                additionalData: $"處理排程建立事件失敗 - ScheduleId: {schedule?.Id}");
+                additionalData: $"處理排程儲存事件失敗 - ScheduleId: {schedule?.Id}");
         }
     }
 
