@@ -280,12 +280,7 @@
                 }
             }
             
-            // 顯示結果
-            if (successCount > 0)
-            {
-                await NotificationService.ShowSuccessAsync($"已儲存 {successCount} 項排程項目");
-            }
-            
+            // 如果有失敗的項目，顯示警告
             if (failedItems.Any())
             {
                 await NotificationService.ShowWarningAsync($"部分項目儲存失敗：\n{string.Join("\n", failedItems)}");
