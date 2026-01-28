@@ -1,8 +1,9 @@
 @* 可重用的倉庫編輯組件 - 可在任何頁面中嵌入 *@
 @inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
 
-<GenericEditModalComponent TEntity="Warehouse" 
+<GenericEditModalComponent TEntity="Warehouse"
                           TService="IWarehouseService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -24,7 +25,8 @@
                           RequiredPermission="Warehouse.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomModules="@GetCustomModules()" />
 
 @code {
     // ===== 必要參數 =====
@@ -39,8 +41,11 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
+    // ===== 庫位資料 =====
+    private List<WarehouseLocation> warehouseLocations = new();
+
     // ===== 必要方法 =====
-    
+
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
     /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
@@ -49,9 +54,9 @@
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            // 重新載入庫位資料
+            await LoadWarehouseLocationsAsync(loadedEntityId);
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -113,7 +118,8 @@
         {
             if (!WarehouseId.HasValue)
             {
-                // 新增模式 - 自動產生倉庫編號
+                // 新增模式 - 自動產生倉庫編號，清空庫位資料
+                warehouseLocations.Clear();
                 var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<Warehouse, IWarehouseService>(WarehouseService, "WH");
                 return new Warehouse
                 {
@@ -122,7 +128,8 @@
                 };
             }
 
-            // 編輯模式
+            // 編輯模式 - 載入庫位資料
+            await LoadWarehouseLocationsAsync(WarehouseId.Value);
             return await WarehouseService.GetByIdAsync(WarehouseId.Value);
         }
         catch (Exception ex)
@@ -132,11 +139,35 @@
         }
     }
 
+    /// <summary>
+    /// 載入倉庫的庫位資料
+    /// </summary>
+    private async Task LoadWarehouseLocationsAsync(int warehouseId)
+    {
+        try
+        {
+            var result = await WarehouseLocationService.GetByWarehouseIdAsync(warehouseId);
+            if (result.IsSuccess && result.Data != null)
+            {
+                warehouseLocations = result.Data.ToList();
+            }
+            else
+            {
+                warehouseLocations.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入庫位資料時發生錯誤：{ex.Message}");
+            warehouseLocations.Clear();
+        }
+    }
+
     private async Task LoadAdditionalDataAsync()
     {
         try
         {
-            // 目前沒有需要載入的額外資料
+            // 庫位資料已在 LoadWarehouseData 中載入
             await Task.CompletedTask;
         }
         catch (Exception ex)
@@ -144,7 +175,8 @@
             await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
         }
     }
-        protected override void OnParametersSet()
+
+    protected override void OnParametersSet()
     {
         if (IsVisible)
         {
@@ -239,4 +271,33 @@
     {
         return formFields;
     }
+
+    /// <summary>
+    /// 配置自訂模組 - 庫位表格
+    /// </summary>
+    private List<GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule> GetCustomModules()
+    {
+        return new List<GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule>
+        {
+            new GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule
+            {
+                Order = 1,
+                IsVisible = WarehouseId.HasValue, // 只有編輯模式才顯示
+                Content = CreateWarehouseLocationTableContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建庫位表格內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateWarehouseLocationTableContent() => __builder =>
+    {
+        @if (editModalComponent?.Entity != null && WarehouseId.HasValue)
+        {
+            <WarehouseLocationTable TMainEntity="Warehouse"
+                                   TDetailEntity="WarehouseLocation"
+                                   Locations="@warehouseLocations" />
+        }
+    };
 }

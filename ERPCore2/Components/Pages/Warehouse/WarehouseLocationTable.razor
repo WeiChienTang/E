@@ -1,0 +1,45 @@
+@* 倉庫庫位表格組件 - 唯讀顯示庫位清單 *@
+
+@typeparam TMainEntity where TMainEntity : BaseEntity
+@typeparam TDetailEntity where TDetailEntity : BaseEntity, new()
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <InteractiveTableComponent TItem="WarehouseLocation"
+                                  Items="@Locations"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  ShowHeader="true"
+                                  ShowActions="false"
+                                  ShowRowNumbers="true"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  EmptyMessage="尚無庫位資料" />
+    </div>
+</div>
+
+@code {
+    // ===== 基本參數 =====
+
+    /// <summary>
+    /// 庫位清單
+    /// </summary>
+    [Parameter]
+    public List<WarehouseLocation> Locations { get; set; } = new();
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "庫位名稱",
+                PropertyName = nameof(WarehouseLocation.Name),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100%"
+            }
+        };
+    }
+}
