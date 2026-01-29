@@ -1,0 +1,139 @@
+@* 倉庫庫位管理組件 - 使用 InteractiveTableComponent 統一UI *@
+
+@inject IWarehouseLocationService WarehouseLocationService
+@inject INotificationService NotificationService
+
+@if (!WarehouseId.HasValue || WarehouseId.Value <= 0)
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="text-muted">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <p>請先儲存倉庫後即可查看庫位資料</p>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <InteractiveTableComponent @ref="tableComponent"
+                                      TItem="LocationItem"
+                                      Items="@LocationItems"
+                                      ColumnDefinitions="@GetColumnDefinitions()"
+                                      IsReadOnly="@IsReadOnly"
+                                      EmptyMessage="尚無庫位資料"
+                                      ShowBuiltInActions="false"
+                                      ShowRowNumbers="true"
+                                      EnableAutoEmptyRow="false" />
+        </div>
+    </div>
+}
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public int? WarehouseId { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = true;
+
+    // ===== 內部狀態 =====
+    private InteractiveTableComponent<LocationItem>? tableComponent;
+    private List<LocationItem> LocationItems { get; set; } = new List<LocationItem>();
+    private int? _previousWarehouseId = null;
+
+    // ===== 生命週期方法 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        // 檢查 WarehouseId 是否變更
+        if (_previousWarehouseId != WarehouseId)
+        {
+            _previousWarehouseId = WarehouseId;
+            await LoadLocationsAsync();
+        }
+
+        await base.OnParametersSetAsync();
+    }
+
+    // ===== 資料載入方法 =====
+    
+    /// <summary>
+    /// 載入庫位資料
+    /// </summary>
+    private async Task LoadLocationsAsync()
+    {
+        if (!WarehouseId.HasValue || WarehouseId.Value <= 0)
+        {
+            LocationItems.Clear();
+            return;
+        }
+
+        try
+        {
+            var result = await WarehouseLocationService.GetByWarehouseIdAsync(WarehouseId.Value);
+            
+            if (result.IsSuccess && result.Data != null)
+            {
+                LocationItems = result.Data
+                    .Select(loc => new LocationItem
+                    {
+                        Id = loc.Id,
+                        Name = loc.Name,
+                        ExistingEntity = loc
+                    })
+                    .ToList();
+            }
+            else
+            {
+                LocationItems.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入庫位資料時發生錯誤：{ex.Message}");
+            LocationItems.Clear();
+        }
+    }
+
+    /// <summary>
+    /// 公開方法：刷新庫位資料（供父組件呼叫）
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        await LoadLocationsAsync();
+        StateHasChanged();
+    }
+
+    // ===== 欄位定義 =====
+    
+    /// <summary>
+    /// 取得表格欄位定義
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            // 庫位名稱欄位（唯讀顯示）
+            new()
+            {
+                Title = "庫位名稱",
+                PropertyName = "Name",
+                ColumnType = InteractiveColumnType.Display,
+                Tooltip = "庫位的名稱"
+            }
+        };
+
+        return columns;
+    }
+
+    // ===== 內部類別 =====
+    
+    /// <summary>
+    /// 庫位項目（用於 InteractiveTableComponent）
+    /// </summary>
+    public class LocationItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public WarehouseLocation? ExistingEntity { get; set; }
+    }
+}

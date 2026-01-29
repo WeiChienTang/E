@@ -24,7 +24,8 @@
                           RequiredPermission="Warehouse.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomModules="@GetCustomModules()" />
 
 @code {
     // ===== 必要參數 =====
@@ -38,6 +39,9 @@
     private GenericEditModalComponent<Warehouse, IWarehouseService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // ===== 庫位 Table 參考 =====
+    private WarehouseLocationTable? warehouseLocationTable;
 
     // ===== 必要方法 =====
     
@@ -49,9 +53,13 @@
     {
         try
         {
-            // 對於沒有明細的純主檔組件，只需要觸發 UI 更新即可
+            // 刷新庫位 Table
+            if (warehouseLocationTable != null)
+            {
+                await warehouseLocationTable.RefreshAsync();
+            }
+            
             StateHasChanged();
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -63,6 +71,12 @@
     {
         try
         {
+            // 儲存成功後刷新庫位 Table（新增模式轉為編輯模式時需要）
+            if (warehouseLocationTable != null && editModalComponent?.Entity != null)
+            {
+                await warehouseLocationTable.RefreshAsync();
+            }
+            
             if (OnWarehouseSaved.HasDelegate && editModalComponent?.Entity != null)
             {
                 // 如果有指定儲存成功回調，則執行
@@ -144,7 +158,8 @@
             await NotificationService.ShowErrorAsync($"載入額外資料時發生錯誤：{ex.Message}");
         }
     }
-        protected override void OnParametersSet()
+
+    protected override void OnParametersSet()
     {
         if (IsVisible)
         {
@@ -239,4 +254,38 @@
     {
         return formFields;
     }
+    
+    // ===== CustomModules 相關方法 =====
+    
+    /// <summary>
+    /// 配置自訂模組（庫位 Table）
+    /// </summary>
+    private List<GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule> GetCustomModules()
+    {
+        // 新增模式時不顯示庫位 Table
+        if (!WarehouseId.HasValue)
+        {
+            return new List<GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule>();
+        }
+
+        return new List<GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule>
+        {
+            new GenericEditModalComponent<Warehouse, IWarehouseService>.CustomModule
+            {
+                Order = 1,
+                IsVisible = true,
+                Content = CreateWarehouseLocationTableContent()
+            }
+        };
+    }
+
+    /// <summary>
+    /// 創建庫位 Table 內容的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateWarehouseLocationTableContent() => __builder =>
+    {
+        <WarehouseLocationTable @ref="warehouseLocationTable"
+                               WarehouseId="@WarehouseId"
+                               IsReadOnly="true" />
+    };
 }
