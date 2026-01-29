@@ -1,0 +1,176 @@
+@*
+    報表索引 Modal 組件
+    用途：顯示特定分類的所有報表清單，讓使用者選擇要列印的報表
+    
+    使用方式：
+    <ReportIndexModalComponent IsVisible="@showModal"
+                              IsVisibleChanged="@((bool v) => showModal = v)"
+                              Title="客戶報表中心"
+                              Reports="@reports"
+                              OnReportSelected="@HandleReportSelected" />
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Components.Shared.Base
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Icon="@Icon"
+                   Size="BaseModalComponent.ModalSize.Large"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   UseWhiteCloseButton="true"
+                   BodyCssClass="p-0"
+                   OnClose="@HandleClose">
+    
+    <BodyContent>
+        <div class="p-3">
+            @if (Reports == null || !Reports.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    目前沒有可用的報表
+                </div>
+            }
+            else
+            {
+                <InteractiveTableComponent TItem="ReportDefinition"
+                                          Items="@Reports.ToList()"
+                                          ColumnDefinitions="@columnDefinitions"
+                                          ShowRowNumbers="true"
+                                          IsReadOnly="true"
+                                          ShowBuiltInActions="true"
+                                          ShowBuiltInDeleteButton="false"
+                                          IsStriped="true"
+                                          IsHoverable="true"
+                                          IsBordered="true"
+                                          EmptyMessage="目前沒有可用的報表">
+                    <CustomActionsTemplate>
+                        @{
+                            var report = context;
+                            var isEnabled = report.IsEnabled;
+                        }
+                        <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
+                                              Size="ButtonSize.Small"
+                                              IconClass="bi bi-printer"
+                                              Text="列印"
+                                              IsDisabled="@(!isEnabled)"
+                                              Title="@(isEnabled ? $"開啟 {report.Name}" : "此報表尚未開放")"
+                                              OnClick="@(() => HandlePrintClick(report))" />
+                    </CustomActionsTemplate>
+                </InteractiveTableComponent>
+                
+                @* 說明區塊 *@
+                <div class="mt-3 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    點擊「列印」按鈕可開啟報表篩選條件設定
+                </div>
+            }
+        </div>
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+    
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// Modal 標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "報表中心";
+    
+    /// <summary>
+    /// Modal 圖示
+    /// </summary>
+    [Parameter]
+    public string Icon { get; set; } = "bi-printer";
+    
+    /// <summary>
+    /// 報表清單
+    /// </summary>
+    [Parameter]
+    public IEnumerable<ReportDefinition>? Reports { get; set; }
+    
+    /// <summary>
+    /// 報表選擇事件（傳遞 ActionId）
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnReportSelected { get; set; }
+    
+    /// <summary>
+    /// 關閉事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+    
+    // ===== 私有欄位 =====
+    
+    private List<InteractiveColumnDefinition> columnDefinitions = new();
+    
+    // ===== 生命週期方法 =====
+    
+    protected override void OnInitialized()
+    {
+        InitializeColumnDefinitions();
+    }
+    
+    private void InitializeColumnDefinitions()
+    {
+        columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "Name",
+                Title = "報表名稱",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px"
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "Description",
+                Title = "說明",
+                ColumnType = InteractiveColumnType.Display
+            }
+        };
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task HandlePrintClick(ReportDefinition report)
+    {
+        if (!report.IsEnabled)
+        {
+            return;
+        }
+        
+        // 先關閉索引 Modal
+        await IsVisibleChanged.InvokeAsync(false);
+        
+        // 觸發報表選擇事件，傳遞 ActionId 給父組件處理
+        if (OnReportSelected.HasDelegate && !string.IsNullOrEmpty(report.ActionId))
+        {
+            await OnReportSelected.InvokeAsync(report.ActionId);
+        }
+    }
+    
+    private async Task HandleClose()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

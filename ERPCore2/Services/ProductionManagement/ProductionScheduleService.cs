@@ -90,6 +90,9 @@ namespace ERPCore2.Services
                 if (entity.ScheduleDate == default)
                     errors.Add("排程日期為必填");
 
+                if (!entity.CreatedByEmployeeId.HasValue || entity.CreatedByEmployeeId.Value == 0)
+                    errors.Add("製單人員為必填");
+
                 if (!string.IsNullOrWhiteSpace(entity.SourceDocumentType) && entity.SourceDocumentType.Length > 50)
                     errors.Add("來源單據類型不可超過50個字元");
 

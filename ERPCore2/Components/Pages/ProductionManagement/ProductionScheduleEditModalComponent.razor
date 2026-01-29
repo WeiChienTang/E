@@ -456,9 +456,7 @@
             
             // 建立 AutoComplete 配置
             autoCompleteConfig = new AutoCompleteConfigBuilder<ProductionSchedule>()
-                .AddField(nameof(ProductionSchedule.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(ProductionSchedule.CreatedByEmployeeId), "Name", availableEmployees)
-                .AddField(nameof(ProductionSchedule.SalesOrderId), "Code", availableSalesOrders)
                 .Build();
             
             // 載入待排程明細列表（雙表格設計 - 改為以明細為主）
@@ -582,32 +580,13 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductionSchedule.CustomerId),
-                    Label = "客戶",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入或選擇客戶",
-                    MinSearchLength = 0,
-                    HelpText = "輸入客戶名稱進行搜尋，或直接選擇（可選）"
-                },
-                new()
-                {
                     PropertyName = nameof(ProductionSchedule.CreatedByEmployeeId),
                     Label = "製單人員",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇製單人員",
                     MinSearchLength = 0,
+                    IsRequired = true,
                     HelpText = "輸入員工名稱進行搜尋，或直接選擇"
-                },
-                
-                // 來源資訊區段
-                new()
-                {
-                    PropertyName = nameof(ProductionSchedule.SalesOrderId),
-                    Label = "訂單編號",
-                    FieldType = FormFieldType.AutoComplete,
-                    Placeholder = "請輸入訂單編號進行搜尋",
-                    MinSearchLength = 0,
-                    HelpText = "輸入銷貨訂單編號進行搜尋，選擇來源訂單（可選）"
                 },
 
                 FormFieldConfigurationHelper.CreateRemarksField<ProductionSchedule>()
@@ -617,9 +596,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     ps => ps.Code,
                     ps => ps.ScheduleDate,
-                    ps => ps.CustomerId,
-                    ps => ps.CreatedByEmployeeId,
-                    ps => ps.SalesOrderId)
+                    ps => ps.CreatedByEmployeeId)
                 .AddToSection(FormSectionNames.AdditionalData,
                     ps => ps.Remarks)
                 .Build();

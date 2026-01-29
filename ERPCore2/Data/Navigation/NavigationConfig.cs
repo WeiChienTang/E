@@ -125,6 +125,22 @@ public static class NavigationConfig
                         RequiredPermission = "Supplier.Read",
                         SearchKeywords = new List<string> { "廠商管理", "供應商資料", "廠商管理" }
                     },
+                    
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    NavigationActionHelper.CreateActionItem(
+                        name: "廠商報表中心",
+                        description: "查看和列印所有廠商相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenSupplierReportIndex",
+                        category: "供應鏈管理",
+                        requiredPermission: "Supplier.Read",
+                        searchKeywords: new List<string> { "廠商報表", "廠商報表中心", "supplier report", "應付帳款" }
+                    ),
                 }
             },
 
@@ -151,6 +167,22 @@ public static class NavigationConfig
                         RequiredPermission = "Customer.Read",
                         SearchKeywords = new List<string> { "客戶管理", "客戶資料", "客戶管理", "聯絡人" }
                     },
+                    
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    NavigationActionHelper.CreateActionItem(
+                        name: "客戶報表中心",
+                        description: "查看和列印所有客戶相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenCustomerReportIndex",
+                        category: "客戶關係管理",
+                        requiredPermission: "Customer.Read",
+                        searchKeywords: new List<string> { "客戶報表", "客戶報表中心", "customer report", "應收帳款" }
+                    ),
                 }
             },
 

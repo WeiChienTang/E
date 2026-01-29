@@ -61,25 +61,6 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ProductionSchedule.CustomerId),
-                        new FieldDefinition<ProductionSchedule>
-                        {
-                            PropertyName = "Customer.CompanyName",
-                            FilterPropertyName = nameof(ProductionSchedule.CustomerId),
-                            DisplayName = "客戶",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 3,
-                            Options = _customers.Select(c => new SelectOption
-                            {
-                                Text = c.CompanyName ?? "",
-                                Value = c.Id.ToString()
-                            }).ToList(),
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(ProductionSchedule.CustomerId), ps => ps.CustomerId)
-                        }
-                    },
-                    {
                         nameof(ProductionSchedule.CreatedByEmployeeId),
                         new FieldDefinition<ProductionSchedule>
                         {
@@ -118,31 +99,6 @@ namespace ERPCore2.FieldConfiguration
                             }
                         }
                     },
-                    {
-                        nameof(ProductionSchedule.SourceDocumentType),
-                        new FieldDefinition<ProductionSchedule>
-                        {
-                            PropertyName = nameof(ProductionSchedule.SourceDocumentType),
-                            DisplayName = "來源單據類型",
-                            FilterPlaceholder = "輸入來源單據類型搜尋",
-                            TableOrder = 5,
-                            ShowInFilter = false, // 通常不需要篩選
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductionSchedule.SourceDocumentType), ps => ps.SourceDocumentType ?? "")
-                        }
-                    },
-                    {
-                        nameof(ProductionSchedule.SourceDocumentId),
-                        new FieldDefinition<ProductionSchedule>
-                        {
-                            PropertyName = nameof(ProductionSchedule.SourceDocumentId),
-                            DisplayName = "來源單據ID",
-                            ShowInFilter = false,
-                            ShowInTable = false, // 通常不在表格顯示
-                            NullDisplayText = "-"
-                        }
-                    }
                 };
             }
             catch (Exception ex)
