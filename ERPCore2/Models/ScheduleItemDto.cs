@@ -88,6 +88,11 @@ namespace ERPCore2.Models
         public bool CanDelete { get; set; } = true;
         
         /// <summary>
+        /// 是否已結案 - 手動標記不再追蹤生產進度
+        /// </summary>
+        public bool IsClosed { get; set; } = false;
+        
+        /// <summary>
         /// 客戶名稱（顯示用）
         /// </summary>
         public string? CustomerName { get; set; }

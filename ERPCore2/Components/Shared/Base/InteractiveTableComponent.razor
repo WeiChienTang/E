@@ -688,7 +688,29 @@
 
     private string? GetColumnWidthStyle(InteractiveColumnDefinition column)
     {
-        return !string.IsNullOrEmpty(column.Width) ? $"width: {column.Width};" : null;
+        if (string.IsNullOrEmpty(column.Width))
+            return null;
+            
+        var styles = new List<string> { $"width: {column.Width}" };
+        
+        // 如果是百分比寬度，添加 min-width 防止過度壓縮
+        if (column.Width.EndsWith("%"))
+        {
+            // 根據百分比大小設定合理的最小寬度
+            if (double.TryParse(column.Width.TrimEnd('%'), out var percentage))
+            {
+                // 較大百分比（>15%）給予較大最小寬度，較小百分比給予較小最小寬度
+                var minWidth = percentage >= 15 ? "100px" : percentage >= 10 ? "80px" : "60px";
+                styles.Add($"min-width: {minWidth}");
+            }
+        }
+        // 如果是固定像素寬度，同時設定 min-width 確保不被壓縮
+        else if (column.Width.EndsWith("px"))
+        {
+            styles.Add($"min-width: {column.Width}");
+        }
+        
+        return string.Join("; ", styles) + ";";
     }
 
     /// <summary>
@@ -716,6 +738,21 @@
         if (!string.IsNullOrEmpty(column.Width))
         {
             styles.Add($"width: {column.Width}");
+            
+            // 如果是百分比寬度，添加 min-width 防止過度壓縮
+            if (column.Width.EndsWith("%"))
+            {
+                if (double.TryParse(column.Width.TrimEnd('%'), out var percentage))
+                {
+                    var minWidth = percentage >= 15 ? "100px" : percentage >= 10 ? "80px" : "60px";
+                    styles.Add($"min-width: {minWidth}");
+                }
+            }
+            // 如果是固定像素寬度，同時設定 min-width 確保不被壓縮
+            else if (column.Width.EndsWith("px"))
+            {
+                styles.Add($"min-width: {column.Width}");
+            }
         }
         
         // 文字對齊設定 (支援 Display、Button 和 Custom 類型)
@@ -910,8 +947,6 @@
 
     private async Task HandleRowClick(TItem item)
     {
-        Console.WriteLine($"[DEBUG] InteractiveTableComponent.HandleRowClick called, EnableRowClick: {EnableRowClick}, OnRowClick.HasDelegate: {OnRowClick.HasDelegate}");
-        
         // 處理行選取功能
         if (EnableRowSelection)
         {

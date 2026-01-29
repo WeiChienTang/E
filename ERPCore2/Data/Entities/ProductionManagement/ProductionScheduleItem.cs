@@ -73,7 +73,14 @@ namespace ERPCore2.Data.Entities
         /// 優先順序
         /// </summary>
         [Display(Name = "優先順序")]
-        public int Priority { get; set; } = 0;        
+        public int Priority { get; set; } = 0;
+        
+        /// <summary>
+        /// 是否已結案 - 手動標記不再追蹤生產進度
+        /// 結案後不會顯示在匯入排程 Modal 中
+        /// </summary>
+        [Display(Name = "已結案")]
+        public bool IsClosed { get; set; } = false;
         
         // === Foreign Keys ===
         

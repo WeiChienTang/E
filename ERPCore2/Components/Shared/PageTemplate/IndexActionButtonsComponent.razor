@@ -29,6 +29,13 @@
                                IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="多筆列印"/>
     }
 
+    @if (ShowImportScheduleButton)
+    {
+        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="排程入庫" 
+                               OnClick="HandleImportScheduleClick" IsDisabled="@(IsLoading || IsImportScheduleDisabled)" 
+                               IsLoading="@(IsLoading && LoadingOnImportSchedule)" Title="排程入庫"/>
+    }
+
     @if (ShowRefreshButton)
     {
         <GenericButtonComponent Variant="ButtonVariant.Green" Text="重整" 
@@ -118,6 +125,15 @@
     [Parameter] public bool LoadingOnBatchApproval { get; set; } = false;
     [Parameter] public EventCallback OnBatchApprovalClick { get; set; }
 
+    // 排程入庫按鈕相關參數
+    [Parameter] public bool ShowImportScheduleButton { get; set; } = false;
+    [Parameter] public string ImportScheduleButtonText { get; set; } = "排程入庫";
+    [Parameter] public string ImportScheduleButtonTitle { get; set; } = "";
+    [Parameter] public string ImportScheduleButtonIconClass { get; set; } = "bi bi-box-arrow-in-down";
+    [Parameter] public bool IsImportScheduleDisabled { get; set; } = false;
+    [Parameter] public bool LoadingOnImportSchedule { get; set; } = false;
+    [Parameter] public EventCallback OnImportScheduleClick { get; set; }
+
     // 通用狀態參數
     [Parameter] public bool IsLoading { get; set; } = false;
     
@@ -177,6 +193,14 @@
         if (OnBatchApprovalClick.HasDelegate && !IsLoading && !IsBatchApprovalDisabled)
         {
             await OnBatchApprovalClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleImportScheduleClick()
+    {
+        if (OnImportScheduleClick.HasDelegate && !IsLoading && !IsImportScheduleDisabled)
+        {
+            await OnImportScheduleClick.InvokeAsync();
         }
     }
 }

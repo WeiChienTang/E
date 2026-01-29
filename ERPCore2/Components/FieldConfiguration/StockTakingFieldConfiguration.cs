@@ -149,7 +149,7 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<StockTaking>
                         {
                             PropertyName = nameof(StockTaking.DifferenceAmount),
-                            DisplayName = "差異金額",
+                            DisplayName = "盤盈盤虧",
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 9,
                             ShowInFilter = false,

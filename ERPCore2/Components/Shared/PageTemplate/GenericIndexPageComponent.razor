@@ -52,6 +52,8 @@
                 OnBarcodePrintClick="@HandleBarcodePrintClick"
                 ShowBatchApprovalButton="@ShowBatchApprovalButton"
                 OnBatchApprovalClick="@HandleBatchApprovalClick"
+                ShowImportScheduleButton="@ShowImportScheduleButton"
+                OnImportScheduleClick="@HandleImportScheduleClick"
                 IsLoading="@IsLoading"
                 LoadingOnRefresh="true" />
         }
@@ -179,6 +181,10 @@
     // 批次審核功能控制
     [Parameter] public bool ShowBatchApprovalButton { get; set; } = false;
     [Parameter] public EventCallback OnBatchApprovalClick { get; set; }
+    
+    // 匯入排程功能控制
+    [Parameter] public bool ShowImportScheduleButton { get; set; } = false;
+    [Parameter] public EventCallback OnImportScheduleClick { get; set; }
     
     // 麵包屑導航
     [Parameter] public List<BreadcrumbItem> BreadcrumbItems { get; set; } = new();
@@ -333,6 +339,14 @@
         if (OnBatchApprovalClick.HasDelegate)
         {
             await OnBatchApprovalClick.InvokeAsync();
+        }
+    }
+    
+    private async Task HandleImportScheduleClick()
+    {
+        if (OnImportScheduleClick.HasDelegate)
+        {
+            await OnImportScheduleClick.InvokeAsync();
         }
     }
       // 公開方法供外部調用

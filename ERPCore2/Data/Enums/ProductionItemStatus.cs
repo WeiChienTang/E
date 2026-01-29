@@ -23,6 +23,12 @@ namespace ERPCore2.Data.Enums
         /// 已完成 - 生產完成，成品已入庫
         /// </summary>
         [Description("已完成")]
-        Completed = 2
+        Completed = 2,
+        
+        /// <summary>
+        /// 已停產 - 項目已結案，但未完成全部數量
+        /// </summary>
+        [Description("已停產")]
+        Discontinued = 3
     }
 }

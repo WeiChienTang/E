@@ -503,7 +503,7 @@ else
                     _ => "text-muted"
                 };
                 var displayValue = difference.HasValue
-                    ? (difference.Value > 0 ? $"+{difference.Value:N2}" : difference.Value.ToString("N2"))
+                    ? (difference.Value > 0 ? $"+{NumberFormatHelper.FormatSmart(difference.Value)}" : NumberFormatHelper.FormatSmart(difference.Value))
                     : "-";
 
                 return @<div class="text-end @cssClass">@displayValue</div>;
@@ -518,7 +518,7 @@ else
             ColumnType = InteractiveColumnType.Number,
             Width = "100px",
             CellCssClass = "text-end",
-            Tooltip = "商品的單位成本（用於計算差異金額）",
+            Tooltip = "商品的單位成本（用於計算盤盈盤虧）",
             MinValue = 0,
             IsDisabledFunc = item => IsReadOnly,
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -528,14 +528,14 @@ else
             })
         });
 
-        // 差異金額欄位（計算欄位）
+        // 盤盈盤虧欄位（計算欄位）
         columns.Add(new()
         {
-            Title = "差異金額",
+            Title = "盤盈盤虧",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
             Width = "120px",
-            Tooltip = "差異金額 = 差異數量 × 單位成本",
+            Tooltip = "盤盈盤虧 = 差異數量 × 單位成本",
             CustomTemplate = item =>
             {
                 var detailItem = (StockTakingDetailItem)item;

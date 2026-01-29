@@ -10,8 +10,9 @@
 
 /* ===== 表格基礎佈局 ===== */
 .interactive-table {
-    table-layout: fixed; /* 固定佈局，讓寬度設定生效 */
-    width: 100%;
+    table-layout: auto; /* 使用 auto 佈局，讓欄位可以根據內容和設定的寬度自動調整 */
+    width: auto; /* 讓表格寬度由內容決定 */
+    min-width: max-content; /* 確保表格寬度至少等於所有欄位 min-width 的總和，不會被壓縮 */
 }
 
 /* ===== 表頭樣式 - 參考 GenericEditModalComponent Header 但保持適當字體大小 ===== */
@@ -211,7 +212,8 @@
         min-width: 900px; /* 進一步增加表格最小寬度以確保操作欄位有足夠空間 */
         margin-bottom: 0;
         white-space: nowrap; /* 防止文字換行 */
-        table-layout: fixed; /* 使用固定佈局讓欄位能嚴格遵守寬度設定 */
+        table-layout: auto; /* 使用 auto 佈局，配合 min-width 避免欄位被壓縮 */
+        width: max-content; /* 讓表格寬度適應內容 */
     }
     
     /* 表格儲存格在手機版的樣式調整 */
@@ -364,36 +366,52 @@
     font-size: 1rem;
 }
 
-/* 水平滾動條樣式優化 */
+/* 水平滾動條樣式優化 - 始終可見 */
 .table-responsive::-webkit-scrollbar {
-    height: 8px;
+    height: 10px; /* 稍微加大滾動條高度以便操作 */
 }
 
 .table-responsive::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #e9ecef;
     border-radius: 4px;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 .table-responsive::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: linear-gradient(180deg, #a0a0a0, #888888);
     border-radius: 4px;
+    border: 1px solid #d0d0d0;
 }
 
 .table-responsive::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: linear-gradient(180deg, #888888, #666666);
+}
+
+/* Firefox 滾動條樣式 */
+.table-responsive {
+    scrollbar-width: auto; /* 使用標準滾動條寬度 */
+    scrollbar-color: #888888 #e9ecef; /* thumb 和 track 顏色 */
 }
 
 /* 確保表格在所有螢幕尺寸下都能正常顯示 */
 .table-responsive {
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    overflow: hidden; /* 確保圓角效果正確顯示 */
+    overflow-x: auto !important; /* 始終啟用水平滾動，避免欄位被壓縮 */
+    overflow-y: visible; /* 垂直方向允許內容超出（例如下拉選單） */
+    -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+}
+
+/* 確保 .table-responsive 內的表格正確擴展 */
+.table-responsive .interactive-table {
+    width: 100%; /* 預設填滿容器 */
+    min-width: max-content; /* 但不會小於內容所需的最小寬度 */
 }
 
 /* 表格整體容器樣式 */
 .interactive-table-container {
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible; /* 改為 visible 以支援下拉選單和滾動條正常顯示 */
 }
 
 /* 表格本身的樣式 */

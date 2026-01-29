@@ -1,0 +1,767 @@
+@*
+    匯入排程 Modal 組件
+    用於將生產排程項目匯入到庫存
+*@
+@using ERPCore2.Components.Shared.Base
+@using ERPCore2.Components.Shared.PageTemplate
+@using ERPCore2.Helpers.InteractiveTableComponentHelper
+@using ERPCore2.Models
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Enums
+@inject INotificationService NotificationService
+@inject IProductionScheduleItemService ProductionScheduleItemService
+@inject IProductionScheduleCompletionService ProductionScheduleCompletionService
+@inject IWarehouseService WarehouseService
+@inject IWarehouseLocationService WarehouseLocationService
+@inject IInventoryStockService InventoryStockService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="匯入排程"
+                   Icon="bi-box-arrow-in-down"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   UseWhiteCloseButton="true"
+                   BodyCssClass="p-4"
+                   OnClose="@HandleClose">
+    
+    <HeaderButtons>
+        @* 按鈕組 *@
+        <div class="d-flex gap-2">
+            <GenericButtonComponent Variant="ButtonVariant.Green" 
+                                  Size="ButtonSize.Small"
+                                  Text="匯入" 
+                                  OnClick="HandleImportConfirm"
+                                  IsDisabled="@(selectedCount == 0)"
+                                  Title="確認並執行匯入" />
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                  Size="ButtonSize.Small"
+                                  Text="全選"
+                                  OnClick="SelectAll" />
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                  Size="ButtonSize.Small"
+                                  Text="取消全選"
+                                  OnClick="DeselectAll" />
+        </div>
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (isLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border text-primary me-2" role="status">
+                    <span class="visually-hidden">載入中...</span>
+                </div>
+                <span>載入排程資料中...</span>
+            </div>
+        }
+        else if (importItems == null || !importItems.Any())
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                目前沒有可匯入的排程項目（所有排程項目都已完成）
+            </div>
+        }
+        else
+        {
+            @* 統計資訊 *@
+            <div class="alert alert-secondary mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-list-check me-2"></i>
+                        共 <strong>@importItems.Count</strong> 筆待匯入項目
+                    </span>
+                    <span>
+                        已選取 <strong class="text-primary">@selectedCount</strong> 筆
+                    </span>
+                </div>
+            </div>
+            
+            @* 排程項目表格 *@
+            <div style="max-height: 500px; overflow: auto;">
+                <InteractiveTableComponent TItem="ImportScheduleItemDto"
+                                           Items="@importItems"
+                                           ColumnDefinitions="@GetColumnDefinitions()"
+                                           ShowHeader="true"
+                                           EnableRowClick="true"
+                                           EnableRowSelection="true"
+                                           AllowMultipleSelection="true"
+                                           SelectedItems="@selectedItems"
+                                           OnSelectionChanged="@HandleSelectionChanged"
+                                           GetRowCssClass="@GetRowCssClass"
+                                           IsHoverable="true"
+                                           IsBordered="true"
+                                           EmptyMessage="沒有可匯入的排程項目"
+                                           CssClass="mb-0" />
+            </div>
+            
+            @* 匯入提示訊息 *@
+            <div class="alert alert-info mt-3 mb-0 d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <span>提示：匯入後將增加對應倉庫/庫位的庫存數量，並將排程項目狀態標記為「已完成」</span>
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+    
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback OnImportCompleted { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private List<ImportScheduleItemDto> importItems = new();
+    private HashSet<ImportScheduleItemDto> selectedItems = new();
+    private int selectedCount = 0;
+    private bool isLoading = false;
+    
+    // 下拉選單資料
+    private List<Warehouse> warehouses = new();
+    private List<WarehouseLocation> warehouseLocations = new();
+    
+    // 各商品的庫存位置資料（Key: ProductId, Value: 該商品的庫存明細列表）
+    private Dictionary<int, List<InventoryStockDetail>> productStockDetails = new();
+    
+    // 追蹤上次的 IsVisible 狀態
+    private bool _previousIsVisible = false;
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // 檢測 Modal 是否從關閉變為開啟
+        if (IsVisible && !_previousIsVisible)
+        {
+            // Modal 開啟時，重新載入資料並清空選取
+            await LoadDataAsync();
+            ClearSelection();
+        }
+        
+        _previousIsVisible = IsVisible;
+    }
+    
+    // ===== 資料載入方法 =====
+    
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            // 載入倉庫和庫位資料
+            warehouses = await WarehouseService.GetAllAsync();
+            warehouseLocations = await WarehouseLocationService.GetAllAsync();
+            
+            // 載入待生產和生產中的排程項目
+            var pendingItems = await ProductionScheduleItemService.GetPendingItemsAsync();
+            var inProgressItems = await ProductionScheduleItemService.GetInProgressItemsAsync();
+            
+            // 合併並排除已結案的項目
+            var allItems = pendingItems.Concat(inProgressItems)
+                .Where(x => !x.IsClosed)
+                .ToList();
+            
+            // 取得所有需要的商品 ID
+            var productIds = allItems.Select(x => x.ProductId).Distinct().ToList();
+            
+            // 查詢各商品的庫存位置資料
+            productStockDetails.Clear();
+            foreach (var productId in productIds)
+            {
+                var stockDetails = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(productId);
+                productStockDetails[productId] = stockDetails;
+            }
+            
+            importItems = allItems
+                .Select((item, index) => 
+                {
+                    var dto = new ImportScheduleItemDto
+                    {
+                        Id = item.Id,
+                        RowNumber = index + 1,
+                        SalesOrderCode = item.SalesOrderDetail?.SalesOrder?.Code ?? "-",
+                        CustomerName = item.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName ?? "-",
+                        ProductId = item.ProductId,
+                        ProductCode = item.Product?.Code ?? "-",
+                        ProductName = item.Product?.Name ?? "-",
+                        WarehouseId = item.WarehouseId,
+                        WarehouseLocationId = item.WarehouseLocationId,
+                        ScheduledQuantity = item.ScheduledQuantity,
+                        CompletedQuantity = item.CompletedQuantity,
+                        IsSelected = false,
+                        IsClosed = item.IsClosed  // 讀取原本的結案狀態
+                    };
+                    
+                    // 設定預設本次完成數量為待完成數量
+                    dto.ImportQuantity = dto.PendingQuantity;
+                    
+                    // 設定預設值：選擇該商品庫存最多的位置
+                    SetDefaultLocationKey(dto);
+                    
+                    return dto;
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入排程資料失敗：{ex.Message}");
+            importItems = new();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 設定項目的預設倉庫位置 - 選擇該商品庫存最多的位置
+    /// </summary>
+    private void SetDefaultLocationKey(ImportScheduleItemDto dto)
+    {
+        if (!productStockDetails.TryGetValue(dto.ProductId, out var stockDetails) || !stockDetails.Any())
+        {
+            // 沒有庫存資料，預設使用第一個倉庫（無庫位）
+            if (warehouses.Any())
+            {
+                var firstWarehouse = warehouses.First();
+                dto.WarehouseId = firstWarehouse.Id;
+                dto.WarehouseLocationId = null;
+                dto.SelectedLocationKey = $"{firstWarehouse.Id}|";
+            }
+            return;
+        }
+        
+        // 找出該商品庫存最多的位置
+        var maxStockDetail = stockDetails.OrderByDescending(d => d.CurrentStock).First();
+        dto.WarehouseId = maxStockDetail.WarehouseId;
+        dto.WarehouseLocationId = maxStockDetail.WarehouseLocationId;
+        dto.SelectedLocationKey = $"{maxStockDetail.WarehouseId}|{maxStockDetail.WarehouseLocationId?.ToString() ?? ""}";
+    }
+    
+    // ===== 表格欄位定義 =====
+    
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "訂單編號",
+                PropertyName = nameof(ImportScheduleItemDto.SalesOrderCode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px",
+                CellCssClass = "text-primary fw-bold"
+            },
+            new()
+            {
+                Title = "客戶",
+                PropertyName = nameof(ImportScheduleItemDto.CustomerName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px"
+            },
+            new()
+            {
+                Title = "商品編號",
+                PropertyName = nameof(ImportScheduleItemDto.ProductCode),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px"
+            },
+            new()
+            {
+                Title = "商品名稱",
+                PropertyName = nameof(ImportScheduleItemDto.ProductName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new()
+            {
+                Title = "排程數量",
+                PropertyName = nameof(ImportScheduleItemDto.ScheduledQuantity),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px",
+                TextAlign = "right",
+                SmartDecimalDisplay = true
+            },
+            new()
+            {
+                Title = "已完成",
+                PropertyName = nameof(ImportScheduleItemDto.CompletedQuantity),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "70px",
+                TextAlign = "right",
+                SmartDecimalDisplay = true,
+                CellCssClass = "text-success"
+            },
+            new()
+            {
+                Title = "本次完成",
+                PropertyName = nameof(ImportScheduleItemDto.ImportQuantity),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "100px",
+                TextAlign = "right",
+                CustomTemplate = item => GetImportQuantityInputTemplate((ImportScheduleItemDto)item)
+            },
+            new()
+            {
+                Title = "倉庫/庫位",
+                PropertyName = nameof(ImportScheduleItemDto.SelectedLocationKey),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "200px",
+                CustomTemplate = item => GetWarehouseLocationGroupedSelectTemplate((ImportScheduleItemDto)item)
+            },
+            new()
+            {
+                Title = "結案",
+                PropertyName = nameof(ImportScheduleItemDto.IsClosed),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "50px",
+                TextAlign = "center",
+                Tooltip = "勾選後此項目將不再顯示於匹入排程清單",
+                CustomTemplate = item => GetIsClosedTemplate((ImportScheduleItemDto)item)
+            },
+        };
+    }
+    
+    /// <summary>
+    /// 取得本次完成數量輸入框 CustomTemplate
+    /// </summary>
+    private RenderFragment GetImportQuantityInputTemplate(ImportScheduleItemDto item) => __builder =>
+    {
+        if (item.IsClosed)
+        {
+            // 結案時顯示為唯讀，數量固定為 0
+            <span class="text-muted">0</span>
+        }
+        else
+        {
+            var maxQuantity = item.PendingQuantity;
+            <input type="number" 
+                   class="form-control form-control-sm text-end" 
+                   style="width: 100%;"
+                   value="@NumberFormatHelper.FormatForInput(item.ImportQuantity)"
+                   min="0"
+                   max="@maxQuantity"
+                   step="0.001"
+                   @onchange="@(e => HandleImportQuantityChanged(item, e))" />
+        }
+    };
+    
+    /// <summary>
+    /// 處理本次完成數量變更
+    /// </summary>
+    private void HandleImportQuantityChanged(ImportScheduleItemDto item, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var newQuantity))
+        {
+            // 限制在 0 ~ PendingQuantity 之間
+            item.ImportQuantity = Math.Max(0, Math.Min(newQuantity, item.PendingQuantity));
+        }
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得結案欄位的 CustomTemplate
+    /// </summary>
+    private RenderFragment GetIsClosedTemplate(ImportScheduleItemDto item) => __builder =>
+    {
+        // 結案時顯示警告色背景提示
+        var wrapperClass = item.IsClosed ? "bg-warning-subtle rounded px-1" : "";
+        <div class="@wrapperClass d-flex align-items-center justify-content-center">
+            <input type="checkbox" 
+                   class="form-check-input m-0"
+                   checked="@item.IsClosed"
+                   @onchange="e => HandleIsClosedChanged(item, e)"
+                   title="@(item.IsClosed ? "已結案：不入庫，此項目將不再顯示" : "點擊結案")" />
+        </div>
+    };
+    
+    /// <summary>
+    /// 處理結案狀態變更
+    /// </summary>
+    private void HandleIsClosedChanged(ImportScheduleItemDto item, ChangeEventArgs e)
+    {
+        var newValue = (bool)(e.Value ?? false);
+        item.IsClosed = newValue;
+        
+        // 勾選結案時，將本次完成設為 0
+        if (newValue)
+        {
+            item.ImportQuantity = 0;
+        }
+        else
+        {
+            // 取消結案時，恢復為預設的待完成數量
+            item.ImportQuantity = item.PendingQuantity;
+        }
+        
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得合併的倉庫/庫位分組下拉選單 CustomTemplate
+    /// </summary>
+    private RenderFragment GetWarehouseLocationGroupedSelectTemplate(ImportScheduleItemDto item) => __builder =>
+    {
+        <select class="form-select form-select-sm" 
+                value="@item.SelectedLocationKey"
+                @onchange="@(e => HandleLocationKeyChanged(item, e))">
+            @{
+                var (stockOptions, otherOptions) = GetGroupedLocationOptions(item);
+                
+                // 此商品現有庫存位置（有數量的）
+                if (stockOptions.Any())
+                {
+                    <optgroup label="📦 商品現有庫存位置">
+                        @foreach (var option in stockOptions)
+                        {
+                            <option value="@option.Key">@option.Text</option>
+                        }
+                    </optgroup>
+                }
+                
+                // 其他可用位置（無庫存或不同位置）
+                if (otherOptions.Any())
+                {
+                    <optgroup label=" - 無存放庫存位置 -">
+                        @foreach (var option in otherOptions)
+                        {
+                            <option value="@option.Key">@option.Text</option>
+                        }
+                    </optgroup>
+                }
+            }
+        </select>
+    };
+    
+    /// <summary>
+    /// 位置選項資料結構
+    /// </summary>
+    private record LocationOption(string Key, string Text, decimal? Stock);
+    
+    /// <summary>
+    /// 取得分組的倉庫/庫位選項
+    /// 回傳: (現有庫存位置選項, 其他可用位置選項)
+    /// </summary>
+    private (List<LocationOption> stockOptions, List<LocationOption> otherOptions) GetGroupedLocationOptions(ImportScheduleItemDto item)
+    {
+        var stockOptions = new List<LocationOption>();
+        var otherOptions = new List<LocationOption>();
+        
+        // 取得該商品的庫存明細
+        var hasStockDetails = productStockDetails.TryGetValue(item.ProductId, out var stockDetails);
+        var stockLookup = stockDetails?.ToDictionary(
+            d => $"{d.WarehouseId}|{d.WarehouseLocationId?.ToString() ?? ""}",
+            d => d.CurrentStock
+        ) ?? new Dictionary<string, decimal>();
+        
+        foreach (var warehouse in warehouses)
+        {
+            // 取得該倉庫下的所有庫位
+            var locations = warehouseLocations.Where(l => l.WarehouseId == warehouse.Id).ToList();
+            
+            // 無論有無庫位定義，都先加入「倉庫（無庫位）」選項
+            var warehouseOnlyKey = $"{warehouse.Id}|";
+            var warehouseOnlyStock = stockLookup.TryGetValue(warehouseOnlyKey, out var ws) ? ws : 0;
+            
+            if (locations.Any())
+            {
+                // 有庫位的倉庫：先加入無庫位選項，再加入各庫位選項
+                
+                // 加入「倉庫（無指定庫位）」選項
+                var warehouseOnlyText = warehouseOnlyStock > 0 
+                    ? $"{warehouse.Name} - (無指定庫位) ({warehouseOnlyStock:N0})"
+                    : $"{warehouse.Name} - (無指定庫位)";
+                var warehouseOnlyOption = new LocationOption(warehouseOnlyKey, warehouseOnlyText, warehouseOnlyStock);
+                
+                if (warehouseOnlyStock > 0)
+                    stockOptions.Add(warehouseOnlyOption);
+                else
+                    otherOptions.Add(warehouseOnlyOption);
+                
+                // 為每個庫位生成選項
+                foreach (var location in locations)
+                {
+                    var key = $"{warehouse.Id}|{location.Id}";
+                    var stock = stockLookup.TryGetValue(key, out var s) ? s : 0;
+                    var displayText = stock > 0 
+                        ? $"{warehouse.Name} - {location.Name} ({stock:N0})"
+                        : $"{warehouse.Name} - {location.Name}";
+                    
+                    var option = new LocationOption(key, displayText, stock);
+                    
+                    if (stock > 0)
+                        stockOptions.Add(option);
+                    else
+                        otherOptions.Add(option);
+                }
+            }
+            else
+            {
+                // 沒有庫位的倉庫：只使用倉庫本身
+                var displayText = warehouseOnlyStock > 0 
+                    ? $"{warehouse.Name} ({warehouseOnlyStock:N0})"
+                    : $"{warehouse.Name}";
+                
+                var option = new LocationOption(warehouseOnlyKey, displayText, warehouseOnlyStock);
+                
+                if (warehouseOnlyStock > 0)
+                    stockOptions.Add(option);
+                else
+                    otherOptions.Add(option);
+            }
+        }
+        
+        // 排序：庫存多的排前面
+        stockOptions = stockOptions.OrderByDescending(o => o.Stock ?? 0).ToList();
+        otherOptions = otherOptions.OrderBy(o => o.Text).ToList();
+        
+        return (stockOptions, otherOptions);
+    }
+    
+    /// <summary>
+    /// 處理倉庫/庫位選擇變更事件
+    /// </summary>
+    private void HandleLocationKeyChanged(ImportScheduleItemDto item, ChangeEventArgs e)
+    {
+        item.SelectedLocationKey = e.Value?.ToString();
+        item.ParseLocationKey();
+        StateHasChanged();
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    /// <summary>
+    /// 處理選取狀態變更事件
+    /// </summary>
+    private void HandleSelectionChanged(HashSet<ImportScheduleItemDto> items)
+    {
+        selectedItems = items;
+        UpdateStatistics();
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 取得行的 CSS 類別 - 為選取的行添加高亮樣式
+    /// </summary>
+    private string GetRowCssClass(ImportScheduleItemDto item, int index)
+    {
+        return selectedItems.Contains(item) ? "table-row-selected" : "";
+    }
+    
+    private void SelectAll()
+    {
+        selectedItems = importItems.ToHashSet();
+        UpdateStatistics();
+        StateHasChanged();
+    }
+    
+    private void DeselectAll()
+    {
+        selectedItems.Clear();
+        UpdateStatistics();
+        StateHasChanged();
+    }
+    
+    private void ClearSelection()
+    {
+        selectedItems.Clear();
+        selectedCount = 0;
+    }
+    
+    private void UpdateStatistics()
+    {
+        selectedCount = selectedItems.Count;
+    }
+    
+    private async Task HandleImportConfirm()
+    {
+        try
+        {
+            if (selectedCount == 0)
+            {
+                await NotificationService.ShowWarningAsync("請至少選擇一項排程項目");
+                return;
+            }
+            
+            // 驗證所有選取項目是否都有選擇倉庫（庫位可為空）
+            // 只有需要入庫的項目才需要驗證倉庫
+            var itemsNeedWarehouse = selectedItems.Where(x => x.ImportQuantity > 0 && !x.WarehouseId.HasValue).ToList();
+            if (itemsNeedWarehouse.Any())
+            {
+                var invalidCodes = string.Join(", ", itemsNeedWarehouse.Take(3).Select(x => x.ProductCode));
+                var moreCount = itemsNeedWarehouse.Count > 3 ? $"...等 {itemsNeedWarehouse.Count} 筆" : "";
+                await NotificationService.ShowWarningAsync($"以下項目尚未選擇倉庫/庫位：{invalidCodes}{moreCount}");
+                return;
+            }
+            
+            // 驗證本次完成數量：必須大於 0，或是勾選結案（只結案不入庫）
+            var invalidQuantityItems = selectedItems.Where(x => x.ImportQuantity <= 0 && !x.IsClosed).ToList();
+            if (invalidQuantityItems.Any())
+            {
+                var invalidCodes = string.Join(", ", invalidQuantityItems.Take(3).Select(x => x.ProductCode));
+                var moreCount = invalidQuantityItems.Count > 3 ? $"...等 {invalidQuantityItems.Count} 筆" : "";
+                await NotificationService.ShowWarningAsync($"以下項目本次完成數量必須大於0，或勾選結案：{invalidCodes}{moreCount}");
+                return;
+            }
+            
+            // 檢查是否有結案項目，需要確認
+            var closedItems = selectedItems.Where(x => x.IsClosed).ToList();
+            if (closedItems.Any())
+            {
+                var closedCodes = string.Join("、", closedItems.Take(5).Select(x => x.ProductCode));
+                var moreText = closedItems.Count > 5 ? $"...等 {closedItems.Count} 筆" : "";
+                var confirmMessage = $"以下 {closedItems.Count} 筆項目已勾選「結案」：\n{closedCodes}{moreText}\n\n結案後將不會入庫，且此項目將不再顯示於匯入排程清單。\n確定要繼續嗎？";
+                
+                var confirmed = await NotificationService.ShowConfirmAsync(confirmMessage, "確認結案");
+                if (!confirmed)
+                {
+                    return;
+                }
+            }
+            
+            isLoading = true;
+            StateHasChanged();
+            
+            var successCount = 0;
+            var closedOnlyCount = 0;  // 只結案不入庫的數量
+            var failedItems = new List<string>();
+            
+            foreach (var item in selectedItems)
+            {
+                try
+                {
+                    // 判斷是否為「只結案不入庫」
+                    var isCloseOnly = item.IsClosed && item.ImportQuantity <= 0;
+                    
+                    if (!isCloseOnly)
+                    {
+                        // 有入庫數量時：建立完工記錄和增加庫存
+                        
+                        // 1. 建立完工登錄記錄
+                        var completion = new ProductionScheduleCompletion
+                        {
+                            ProductionScheduleItemId = item.Id,
+                            CompletedQuantity = item.ImportQuantity,
+                            CompletionDate = DateTime.Now,
+                            WarehouseId = item.WarehouseId,
+                            WarehouseLocationId = item.WarehouseLocationId,
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now
+                        };
+                        
+                        var completionResult = await ProductionScheduleCompletionService.CreateAsync(completion);
+                        if (!completionResult.IsSuccess)
+                        {
+                            failedItems.Add($"{item.ProductCode}: 建立完工記錄失敗");
+                            continue;
+                        }
+                        
+                        // 2. 增加庫存
+                        var transactionNumber = $"PC{DateTime.Now:yyyyMMddHHmmss}{item.Id}";
+                        var stockResult = await InventoryStockService.AddStockAsync(
+                            item.ProductId,
+                            item.WarehouseId!.Value,
+                            item.ImportQuantity,
+                            InventoryTransactionTypeEnum.ProductionCompletion,
+                            transactionNumber,
+                            unitCost: null,
+                            locationId: item.WarehouseLocationId,
+                            remarks: $"生產完工入庫 - 排程項目 #{item.Id}"
+                        );
+                        
+                        if (!stockResult.IsSuccess)
+                        {
+                            failedItems.Add($"{item.ProductCode}: 庫存入庫失敗 - {stockResult.ErrorMessage}");
+                            continue;
+                        }
+                    }
+                    
+                    // 3. 更新排程項目的已完成數量和結案狀態
+                    var scheduleItem = await ProductionScheduleItemService.GetByIdAsync(item.Id);
+                    if (scheduleItem != null)
+                    {
+                        // 只有有入庫數量時才累加已完成數量
+                        if (!isCloseOnly)
+                        {
+                            scheduleItem.CompletedQuantity += item.ImportQuantity;
+                        }
+                        
+                        // 更新結案狀態（使用者在入庫時可決定是否結案）
+                        scheduleItem.IsClosed = item.IsClosed;
+                        
+                        // 檢查是否全部完成
+                        if (scheduleItem.CompletedQuantity >= scheduleItem.ScheduledQuantity)
+                        {
+                            scheduleItem.ProductionItemStatus = ProductionItemStatus.Completed;
+                            scheduleItem.ActualEndDate = DateTime.Now;
+                        }
+                        
+                        await ProductionScheduleItemService.UpdateAsync(scheduleItem);
+                    }
+                    
+                    if (isCloseOnly)
+                    {
+                        closedOnlyCount++;
+                    }
+                    else
+                    {
+                        successCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failedItems.Add($"{item.ProductCode}: {ex.Message}");
+                }
+            }
+            
+            // 顯示結果
+            if (failedItems.Any())
+            {
+                var failedMessage = string.Join("\n", failedItems.Take(5));
+                if (failedItems.Count > 5)
+                {
+                    failedMessage += $"\n...還有 {failedItems.Count - 5} 筆失敗";
+                }
+                await NotificationService.ShowWarningAsync($"成功匯入 {successCount} 筆，失敗 {failedItems.Count} 筆\n{failedMessage}");
+            }
+            else
+            {
+                var message = successCount > 0 
+                    ? $"已成功匯入 {successCount} 筆排程項目到庫存"
+                    : "";
+                if (closedOnlyCount > 0)
+                {
+                    message += (message.Length > 0 ? "，" : "") + $"另有 {closedOnlyCount} 筆僅結案（不入庫）";
+                }
+                await NotificationService.ShowSuccessAsync(message);
+            }
+            
+            // 關閉 Modal 並通知父元件
+            await IsVisibleChanged.InvokeAsync(false);
+            if (OnImportCompleted.HasDelegate)
+            {
+                await OnImportCompleted.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"匯入失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task HandleClose()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}

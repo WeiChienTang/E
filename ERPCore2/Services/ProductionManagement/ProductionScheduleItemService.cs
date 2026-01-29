@@ -257,6 +257,7 @@ namespace ERPCore2.Services
                     .Include(psi => psi.Product)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
+                            .ThenInclude(so => so.Customer)
                     .Where(psi => psi.ProductionItemStatus == status)
                     .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
                     .ThenBy(psi => psi.Priority)

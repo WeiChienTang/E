@@ -151,7 +151,7 @@
                 await detailTableComponent.RefreshDetailsAsync();
             }
 
-            // 重新初始化表單欄位以更新動態樣式（差異金額和完成率的顏色）
+            // 重新初始化表單欄位以更新動態樣式（盤盈盤虧和完成率的顏色）
             await InitializeFormFieldsAsync();
 
             StateHasChanged();
@@ -228,7 +228,7 @@
                 selectedWarehouseId = stockTaking.WarehouseId;
                 selectedWarehouseLocationId = stockTaking.WarehouseLocationId;
                 
-                // 明細載入後重新初始化表單欄位，以更新動態樣式（差異金額和完成率的顏色）
+                // 明細載入後重新初始化表單欄位，以更新動態樣式（盤盈盤虧和完成率的顏色）
                 await InitializeFormFieldsAsync();
                 
                 // 強制 UI 更新，確保 FormFields 參數正確傳遞給 GenericEditModalComponent
@@ -459,7 +459,7 @@
                 new FormFieldDefinition
                 {
                     PropertyName = nameof(StockTaking.DifferenceAmount),
-                    Label = "差異金額",
+                    Label = "盤盈盤虧",
                     FieldType = FormFieldType.Number,
                     IsReadOnly = true,
                     DecimalPlaces = 2,
@@ -553,14 +553,14 @@
     {
         stockTakingDetails = details;
         
-        // 重新初始化表單欄位以更新動態樣式（差異金額和完成率的顏色）
+        // 重新初始化表單欄位以更新動態樣式（盤盈盤虧和完成率的顏色）
         await InitializeFormFieldsAsync();
         
         StateHasChanged();
     }
 
     /// <summary>
-    /// 取得差異金額欄位的 CSS 樣式
+    /// 取得盤盈盤虧欄位的 CSS 樣式
     /// - 正數=綠色，負數=紅色，零=默認
     /// </summary>
     private string GetDifferenceAmountCssClass()
@@ -823,7 +823,7 @@
                 "confirm",
                 $"確定要執行庫存調整嗎？\n\n" +
                 $"• 差異項目數：{differenceCount} 筆\n" +
-                $"• 差異金額：{amountDisplay}\n\n" +
+                $"• 盤盈盤虧：{amountDisplay}\n\n" +
                 $"執行後將更新對應庫位的庫存數量，此操作無法復原。");
 
             if (!confirmed) return;

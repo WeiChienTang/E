@@ -135,7 +135,8 @@
                 CustomerName = item.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
                 IsNew = false, // 已儲存的項目
                 SortOrder = item.Priority, // 讀取排序順序
-                CanDelete = item.CompletedQuantity == 0 // 只有尚未開始生產的才可刪除
+                CanDelete = item.CompletedQuantity == 0, // 只有尚未開始生產的才可刪除
+                IsClosed = item.IsClosed // 載入結案狀態
             }).ToList();
         }
         catch (Exception ex)
@@ -197,7 +198,7 @@
                 currentScheduleItems[i].SortOrder = i;
             }
             
-            // ===== 3. 更新已存在項目的 Priority（排序順序）=====
+            // ===== 3. 更新已存在項目的 Priority（排序順序）與 IsClosed（結案狀態）=====
             var existingItems = currentScheduleItems.Where(x => !x.IsNew && x.Id.HasValue).ToList();
             
             foreach (var dto in existingItems)
@@ -205,15 +206,33 @@
                 try
                 {
                     var existingItem = await ProductionScheduleItemService.GetByIdAsync(dto.Id!.Value);
-                    if (existingItem != null && existingItem.Priority != dto.SortOrder)
+                    if (existingItem != null)
                     {
-                        existingItem.Priority = dto.SortOrder;
-                        await ProductionScheduleItemService.UpdateAsync(existingItem);
+                        var needUpdate = false;
+                        
+                        // 檢查是否需要更新排序順序
+                        if (existingItem.Priority != dto.SortOrder)
+                        {
+                            existingItem.Priority = dto.SortOrder;
+                            needUpdate = true;
+                        }
+                        
+                        // 檢查是否需要更新結案狀態
+                        if (existingItem.IsClosed != dto.IsClosed)
+                        {
+                            existingItem.IsClosed = dto.IsClosed;
+                            needUpdate = true;
+                        }
+                        
+                        if (needUpdate)
+                        {
+                            await ProductionScheduleItemService.UpdateAsync(existingItem);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    // 排序更新失敗不中斷流程
+                    // 排序/結案更新失敗不中斷流程
                 }
             }
             
@@ -652,7 +671,8 @@
                                              OnItemRemoved="@HandleScheduleItemRemoved"
                                              OnQuantityChanged="@HandleScheduleItemQuantityChanged"
                                              OnDetailDropped="@HandleDetailDropped"
-                                             OnOrderChanged="@HandleScheduleItemOrderChanged" />
+                                             OnOrderChanged="@HandleScheduleItemOrderChanged"
+                                             OnIsClosedChanged="@HandleScheduleItemIsClosedChanged" />
             </div>
         </div>
     };
@@ -905,6 +925,15 @@
         {
             currentScheduleItems[i].SortOrder = i;
         }
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理排程項目結案狀態變更
+    /// </summary>
+    private void HandleScheduleItemIsClosedChanged((ScheduleItemDto Item, bool IsClosed) args)
+    {
+        // DTO 中的 IsClosed 已經在 Table 元件中更新，這裡只需要刷新 UI
         StateHasChanged();
     }
 

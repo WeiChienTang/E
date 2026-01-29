@@ -33,7 +33,7 @@
         </div>
         
         @* 明細列表 - 使用 InteractiveTableComponent *@
-        <div style="max-height: 350px; overflow-y: auto;">
+        <div style="max-height: 350px; overflow: auto;">
             <InteractiveTableComponent TItem="PendingScheduleDetailDto"
                                        Items="@FilteredDetailsList"
                                        ColumnDefinitions="@GetColumnDefinitions()"
@@ -121,7 +121,8 @@
                 Title = "商品編號",
                 PropertyName = nameof(PendingScheduleDetailDto.ProductCode),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "12%",
+                Width = "14%",
+                Tooltip = "商品的編號",
                 CellCssClass = "text-primary fw-bold small"
             },
             new()
@@ -130,6 +131,7 @@
                 PropertyName = nameof(PendingScheduleDetailDto.ProductName),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "20%",
+                Tooltip = "商品的名稱",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -142,6 +144,7 @@
                 PropertyName = nameof(PendingScheduleDetailDto.OrderDate),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "12%",
+                Tooltip = "訂單日期",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -154,6 +157,7 @@
                 PropertyName = nameof(PendingScheduleDetailDto.ExpectedDeliveryDate),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "12%",
+                Tooltip = "交貨日期",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -170,6 +174,7 @@
                 PropertyName = nameof(PendingScheduleDetailDto.CustomerName),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "18%",
+                Tooltip = "指定該單的名稱",
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
@@ -178,22 +183,14 @@
             },
             new()
             {
-                Title = "訂單/已排",
+                Title = "訂單量",
                 PropertyName = nameof(PendingScheduleDetailDto.OrderQuantity),
-                ColumnType = InteractiveColumnType.Custom,
+                ColumnType = InteractiveColumnType.Display,
                 Width = "14%",
+                Tooltip = "根據訂單所得到的數量",
                 TextAlign = "right",
-                CustomTemplate = item =>
-                {
-                    var detail = (PendingScheduleDetailDto)item;
-                    return @<text>
-                        <small>
-                            <span class="fw-bold">@NumberFormatHelper.FormatSmart(detail.OrderQuantity)</span>
-                            <span class="text-muted">/</span>
-                            <span class="@(detail.ScheduledQuantity > 0 ? "text-success" : "text-muted")">@NumberFormatHelper.FormatSmart(detail.ScheduledQuantity)</span>
-                        </small>
-                    </text>;
-                }
+                SmartDecimalDisplay = true,
+                CellCssClass = "fw-bold small"
             }
         };
     }

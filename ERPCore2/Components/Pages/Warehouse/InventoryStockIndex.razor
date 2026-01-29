@@ -4,6 +4,7 @@
 @inject IProductCategoryService ProductCategoryService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
+@inject IProductionScheduleItemService ProductionScheduleItemService
 @inject INotificationService NotificationService
 
 @using ERPCore2.Components.Pages.Warehouse
@@ -29,6 +30,8 @@
                         ShowStatisticsCards="true"
                         StatisticsCardConfigs="@statisticsCardConfigs"
                         StatisticsDataLoader="@LoadStatisticsDataAsync"
+                        ShowImportScheduleButton="true"
+                        OnImportScheduleClick="@HandleImportScheduleClick"
                         @ref="indexComponent"/>
 
 @* 庫存編輯 Modal *@
@@ -48,6 +51,11 @@
                              IsVisibleChanged="@((bool visible) => showStockAlertViewModal = visible)"
                              AlertType="@currentAlertType" />
 
+@* 匯入排程 Modal *@
+<ImportScheduleModalComponent IsVisible="@showImportScheduleModal"
+                             IsVisibleChanged="@((bool visible) => showImportScheduleModal = visible)"
+                             OnImportCompleted="@OnImportScheduleCompleted" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<InventoryStock, IInventoryStockService> indexComponent = default!;
@@ -57,6 +65,7 @@
     private int? editingInventoryStockId = null;
     private bool showStockLevelAlertModal = false;
     private bool showStockAlertViewModal = false;
+    private bool showImportScheduleModal = false;
     private StockAlertViewModalComponent.StockAlertType currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
     
     // Modal 處理器
@@ -267,6 +276,32 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleLowStockClick), GetType());
+        }
+    }
+    
+    // ===== 匯入排程相關方法 =====
+    
+    private void HandleImportScheduleClick()
+    {
+        showImportScheduleModal = true;
+        StateHasChanged();
+    }
+    
+    private async Task OnImportScheduleCompleted()
+    {
+        try
+        {
+            showImportScheduleModal = false;
+            // 刷新庫存資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnImportScheduleCompleted), GetType());
         }
     }
     
