@@ -607,6 +607,7 @@
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesReturn>()
                 .AddField(nameof(SalesReturn.CustomerId), "CompanyName", availableCustomers)
                 .AddField(nameof(SalesReturn.SalesDeliveryId), "Code", availableSalesDeliveries)
+                .AddField("FilterProductId", "Name", availableProducts)
                 .Build();
         }
         catch (Exception ex)
@@ -728,10 +729,11 @@
                 {
                     PropertyName = "FilterProductId", // 篩選用的虛擬欄位
                     Label = "商品",
-                    FieldType = FormFieldType.Select,
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇商品",
                     IsRequired = false,
-                    Options = await GetFilterProductOptions(),
-                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品",
+                    MinSearchLength = 0,
+                    HelpText = "輸入商品代碼或名稱進行篩選，或留空顯示所有商品",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
