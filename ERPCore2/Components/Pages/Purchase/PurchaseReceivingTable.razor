@@ -45,9 +45,9 @@ else
         </div>
         
         <div class="card-footer">
-            <div class="d-flex justify-content-between">
+            <div class="table-action-bar">
                 @* 左側按鈕組 *@
-                <div class="d-flex gap-2">
+                <div class="btn-group-left">
                     <GenericButtonComponent
                                           Text="智能下單"
                                           OnClick="@SmartLoadReceivingDetails"
@@ -65,7 +65,7 @@ else
                 </div>
                 
                 @* 右側按鈕組 *@
-                <div class="d-flex gap-2">
+                <div class="btn-group-right">
                     @* 倉庫統一按鈕（下拉選單） *@
                     <div class="dropdown">
                         <GenericButtonComponent

@@ -47,8 +47,8 @@ else
         </div>
 
         <div class="card-footer">
-            <div class="d-flex justify-content-between">
-                <div class="d-flex gap-2">
+            <div class="table-action-bar">
+                <div class="btn-group-left">
                     <GenericButtonComponent Text="智能下單"
                                           Variant="ButtonVariant.DarkBlue"
                                           OnClick="LoadSmartDeliveryItems"
@@ -60,7 +60,7 @@ else
                                           Title="@GetLoadAllUndeliveredTooltip()"
                                           OnClick="LoadAllUndeliveredItems" />
                 </div>
-                <div class="d-flex gap-2">
+                <div class="btn-group-right">
                     <GenericButtonComponent Text="明細清除"
                                           Variant="ButtonVariant.Red"
                                           IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0) || _hasUndeletableDetails)"

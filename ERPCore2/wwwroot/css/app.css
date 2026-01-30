@@ -75,3 +75,54 @@ h1:focus {
         -webkit-overflow-scrolling: touch;
     }
 }
+
+/* ===== 表格按鈕列響應式樣式 ===== */
+/* 用於 card-footer 中的按鈕區域，解決手機版按鈕重疊問題 */
+
+/* 通用按鈕列容器 - 桌面版水平排列 */
+.table-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 按鈕群組 */
+.table-action-bar .btn-group-left,
+.table-action-bar .btn-group-right {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* 手機版響應式 - 垂直堆疊 */
+@media (max-width: 576px) {
+    /* 按鈕列改為垂直堆疊 */
+    .table-action-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    /* 左右按鈕群組都置中並允許換行 */
+    .table-action-bar .btn-group-left,
+    .table-action-bar .btn-group-right {
+        justify-content: center;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    /* 右側按鈕群組加分隔線 */
+    .table-action-bar .btn-group-right {
+        padding-top: 0.5rem;
+        border-top: 1px solid #dee2e6;
+    }
+}
+
+/* 平板版響應式 - 允許換行但保持水平 */
+@media (min-width: 577px) and (max-width: 768px) {
+    .table-action-bar .btn-group-left,
+    .table-action-bar .btn-group-right {
+        flex-wrap: wrap;
+    }
+}

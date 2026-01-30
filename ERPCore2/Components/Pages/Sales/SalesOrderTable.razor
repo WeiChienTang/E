@@ -67,8 +67,8 @@ else
         </div>
 
         <div class="card-footer">
-            <div class="d-flex justify-content-between">
-                <div class="d-flex gap-2">
+            <div class="table-action-bar">
+                <div class="btn-group-left">
                     <GenericButtonComponent Text="智能下單"
                                           Variant="ButtonVariant.DarkBlue"
                                           Icon="fas fa-magic"
@@ -82,7 +82,7 @@ else
                                           IsDisabled="@(!CanLoadQuotation || _hasUndeletableDetails)"
                                           Title="@GetLoadQuotationTooltip()" />
                 </div>
-                <div class="d-flex gap-2">
+                <div class="btn-group-right">
                     <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Red"
                                           OnClick="ClearAllDetails"
