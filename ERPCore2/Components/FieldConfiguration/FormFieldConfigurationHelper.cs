@@ -25,7 +25,7 @@ namespace ERPCore2.FieldConfiguration
         public static FormFieldDefinition CreateRemarksField<TEntity>(
             string label = "備註",
             string placeholder = "請輸入備註",
-            string helpText = "其他需要補充的資訊",
+            string helpText = "",
             int rows = 1,
             string containerCssClass = "col-12",
             bool readOnly = false) where TEntity : BaseEntity

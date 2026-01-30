@@ -14,11 +14,11 @@
                    IsVisibleChanged="@IsVisibleChanged"
                    Title="@Title"
                    Icon="bi bi-exclamation-triangle"
-                   Size="BaseModalComponent.ModalSize.ExtraLarge"
+                   Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                    IsLoading="@isLoading"
                    LoadingMessage="正在載入未設警戒線的庫存明細..."
-                   BodyCssClass="p-0"
+                   BodyCssClass="p-4"
                    OnClose="@HandleCancel">
     
     <HeaderButtons>
@@ -71,16 +71,15 @@
     <BodyContent>
         @if (!stockDetails.Any() && !isLoading)
         {
-            <div class="alert alert-success mb-0 m-4">
+            <div class="alert alert-success mb-0">
                 <i class="bi bi-check-circle me-2"></i>
                 太棒了！所有庫存明細都已設定警戒線。
             </div>
         }
         else
         {
-            <div class="p-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-0">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
                         <InteractiveTableComponent TItem="StockLevelAlertItem"
                                                  Items="@stockDetails"
                                                  ColumnDefinitions="@GetColumnDefinitions()"
@@ -91,7 +90,6 @@
                                                  IsHoverable="true"
                                                  IsBordered="true"
                                                  CssClass="mb-0" />
-                    </div>
                 </div>
             </div>
         }
@@ -161,6 +159,7 @@
             stockDetails = details.Select(d => new StockLevelAlertItem
             {
                 DetailId = d.Id,
+                Code = d.InventoryStock?.Product?.Code ?? "未知編號",
                 ProductName = d.InventoryStock?.Product?.Name ?? "未知商品",
                 WarehouseName = d.Warehouse?.Name ?? "未知倉庫",
                 WarehouseLocationName = d.WarehouseLocation?.Name ?? "未指定",
@@ -188,31 +187,38 @@
         {
             new()
             {
+                Title = "產品編號",
+                PropertyName = nameof(StockLevelAlertItem.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "140px"
+            },
+            new()
+            {                
                 Title = "商品名稱",
                 PropertyName = nameof(StockLevelAlertItem.ProductName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "25%"
+                Width = "140px"
             },
             new()
             {
                 Title = "倉庫",
                 PropertyName = nameof(StockLevelAlertItem.WarehouseName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "15%"
+                Width = "120px"
             },
             new()
             {
                 Title = "倉庫位置",
                 PropertyName = nameof(StockLevelAlertItem.WarehouseLocationName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "15%"
+                Width = "120px"
             },
             new()
             {
-                Title = "當前數量",
+                Title = "當前量",
                 PropertyName = nameof(StockLevelAlertItem.CurrentStock),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "10%",
+                Width = "80px",
                 CellCssClass = "text-end",
                 SmartDecimalDisplay = true
             },
@@ -221,7 +227,7 @@
                 Title = "最低量",
                 PropertyName = nameof(StockLevelAlertItem.MinStockLevel),
                 ColumnType = InteractiveColumnType.Number,
-                Width = "15%",
+                Width = "80px",
                 MinValue = 0,
                 CellCssClass = "text-end"
             },
@@ -230,7 +236,7 @@
                 Title = "最高量",
                 PropertyName = nameof(StockLevelAlertItem.MaxStockLevel),
                 ColumnType = InteractiveColumnType.Number,
-                Width = "15%",
+                Width = "80px",
                 MinValue = 0,
                 CellCssClass = "text-end"
             }
@@ -440,6 +446,7 @@
     public class StockLevelAlertItem
     {
         public int DetailId { get; set; }
+        public string Code { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public string WarehouseName { get; set; } = string.Empty;
         public string WarehouseLocationName { get; set; } = string.Empty;

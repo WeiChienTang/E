@@ -38,11 +38,11 @@
                    OnClose="@HandleCancel">    
     <HeaderButtons>
         @* ===== Modal Actions 按鈕區塊 ===== *@
-        <div class="w-100 d-flex align-items-center px-2">
+        <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
             @* 最左側：自訂操作按鈕（例如：轉入庫、轉沖款等業務流程按鈕） *@
             @if (CustomActionButtons != null)
             {
-                <div class="d-flex gap-2 me-auto">
+                <div class="d-flex flex-wrap gap-2 me-auto custom-buttons-section">
                     @CustomActionButtons
                 </div>
             }
@@ -162,11 +162,9 @@
         @* 表單頂部內容（在所有欄位之前） *@
         @if (FormHeaderContent != null)
         {
-            <div class="form-header-content px-3 pt-3">
-                <CascadingValue Value="@editContext">
-                    @FormHeaderContent
-                </CascadingValue>
-            </div>
+            <CascadingValue Value="@editContext">
+                @FormHeaderContent
+            </CascadingValue>
         }
 
         @* 基本表單 *@

@@ -23,36 +23,47 @@
         
         @if (FieldSections != null && FieldSections.Any() && FieldDefinitions != null)
         {
-            @* 區段佈局 - 所有區段在同一頁面顯示 *@
+            @* 新版佈局 - 區段水平並排，欄位垂直排列，Label 與 Input 同行 *@
             var orderedSections = GetOrderedSections().ToList();
+            var sectionCount = orderedSections.Count;
+            var sectionColClass = GetSectionColumnClass(sectionCount);
             
-            @foreach (var sectionGroup in orderedSections)
-            {
-                <div class="mb-2 form-section-wrapper">
-                    <h6 class="text-primary fw-bold section-title-compact">@(sectionGroup.Key)</h6>
-                    <div class="row g-1">
-                        @foreach (var fieldKvp in sectionGroup)
+            <div class="form-sections-container">
+                @foreach (var sectionGroup in orderedSections)
+                {
+                    <div class="form-section-column @sectionColClass">
+                        <div class="form-section-header">
+                            <span class="form-section-title">@(sectionGroup.Key)</span>
+                        </div>
+                        <div class="form-section-fields">
+                            @foreach (var fieldKvp in sectionGroup)
+                            {
+                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                if (field != null)
+                                {
+                                    @RenderFieldMarkup(field)
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            @* 無區段時的單欄佈局 *@
+            <div class="form-sections-container">
+                <div class="form-section-column section-col-full">
+                    <div class="form-section-fields">
+                        @if (FieldDefinitions != null)
                         {
-                            var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                            if (field != null)
+                            @foreach (var field in FieldDefinitions)
                             {
                                 @RenderFieldMarkup(field)
                             }
                         }
                     </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="row g-1">
-                @if (FieldDefinitions != null)
-                {
-                    @foreach (var field in FieldDefinitions)
-                    {
-                        @RenderFieldMarkup(field)
-                    }
-                }
             </div>
         }
     </EditForm>
@@ -61,7 +72,23 @@
 @code
 {
     /// <summary>
-    /// 渲染欄位標記的輔助方法
+    /// 根據區段數量取得對應的 CSS 類別
+    /// </summary>
+    private string GetSectionColumnClass(int sectionCount)
+    {
+        return sectionCount switch
+        {
+            1 => "section-col-full",
+            2 => "section-col-half",
+            3 => "section-col-third",
+            4 => "section-col-quarter",
+            5 => "section-col-fifth",
+            _ => "section-col-sixth"
+        };
+    }
+
+    /// <summary>
+    /// 渲染欄位標記的輔助方法 - 新版：Label 與 Input 同行
     /// </summary>
     private RenderFragment RenderFieldMarkup(FormFieldDefinition field) => __builder =>
     {
@@ -71,17 +98,18 @@
             return;
         }
         
-        var containerCssClass = string.IsNullOrEmpty(field.ContainerCssClass) ? FieldContainerCssClass : field.ContainerCssClass;
         var hasActionButtons = field.ActionButtons != null && field.ActionButtons.Any();
+        var isCheckbox = field.FieldType == FormFieldType.Checkbox;
         
-        <div class="@containerCssClass">
-            @if (!string.IsNullOrEmpty(field.Label) && field.FieldType != FormFieldType.Checkbox)
+        <div class="form-field-row @(isCheckbox ? "form-field-row-checkbox" : "")">
+            @* 所有欄位類型統一由此處渲染 Label *@
+            @if (!string.IsNullOrEmpty(field.Label))
             {
-                <label class="@FormConstants.CssClasses.FormLabel" for="@field.PropertyName" title="@field.HelpText">
+                <label class="form-field-label" for="@field.PropertyName" title="@field.HelpText">
                     @field.Label
                     @if (field.IsRequired)
                     {
-                        <span class="text-danger"> *</span>
+                        <span class="text-danger">*</span>
                     }
                     @if (field.LabelHelpItems?.Any() == true)
                     {
@@ -100,32 +128,33 @@
                 </label>
             }
             
-            @* 判斷是否需要包裝 input 與按鈕的容器 *@
-            @if (hasActionButtons && ShouldWrapWithActionButtons(field.FieldType))
-            {
-                var multipleButtonsClass = field.ActionButtons?.Count > 1 ? FormConstants.CssClasses.MultipleButtons : "";
-                <div class="@FormConstants.CssClasses.PositionRelative @FormConstants.CssClasses.InputWithActionButtons @multipleButtonsClass">
-                    @RenderInputField(field, hasActionButtons)
-                    
-                    @* 在 Input 右側渲染圖示按鈕 *@
-                    <div class="input-action-buttons-container">
-                        @foreach (var actionButton in field.ActionButtons!)
-                        {
-                            <button type="button"
-                                    class="btn input-action-button"
-                                    title="@(actionButton.Title ?? actionButton.Text)"
-                                    disabled="@actionButton.IsDisabled"
-                                    @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">
-                                <i class="@FormConstants.GetIconForButtonText(actionButton.Text)"></i>
-                            </button>
-                        }
+            <div class="form-field-input">
+                @if (hasActionButtons && ShouldWrapWithActionButtons(field.FieldType))
+                {
+                    var multipleButtonsClass = field.ActionButtons?.Count > 1 ? FormConstants.CssClasses.MultipleButtons : "";
+                    <div class="@FormConstants.CssClasses.PositionRelative @FormConstants.CssClasses.InputWithActionButtons @multipleButtonsClass">
+                        @RenderInputField(field, hasActionButtons)
+                        
+                        @* 在 Input 右側渲染圖示按鈕 *@
+                        <div class="input-action-buttons-container">
+                            @foreach (var actionButton in field.ActionButtons!)
+                            {
+                                <button type="button"
+                                        class="btn input-action-button"
+                                        title="@(actionButton.Title ?? actionButton.Text)"
+                                        disabled="@actionButton.IsDisabled"
+                                        @onclick="@(actionButton.OnClick ?? (() => Task.CompletedTask))">
+                                    <i class="@FormConstants.GetIconForButtonText(actionButton.Text)"></i>
+                                </button>
+                            }
+                        </div>
                     </div>
-                </div>
-            }
-            else
-            {
-                @RenderInputField(field, hasActionButtons)
-            }
+                }
+                else
+                {
+                    @RenderInputField(field, hasActionButtons)
+                }
+            </div>
         </div>
     };
 

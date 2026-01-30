@@ -1,94 +1,131 @@
 /* ===== 表單容器 ===== */
 .generic-form-container {
     width: 100%;
+    margin-bottom: 1rem; /* 與後續內容（如 InteractiveTableComponent）保持間距 */
 }
 
-/* ===== Tab 佈局樣式 ===== */
+/* ===== 新版佈局：區段水平並排 ===== */
 
-/* Tab 容器 */
-.form-tabs-container {
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid #dee2e6;
+/* 區段容器 - 使用 Flexbox 水平排列 */
+.form-sections-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
 }
 
-/* Tab 標籤列 */
-.form-section-tabs {
-    border-bottom: none;
-    gap: 0.25rem;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: thin;
+/* 區段欄位 - 基礎樣式 */
+.form-section-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* 防止內容撐開 */
 }
 
-/* Tab 標籤項目 */
-.form-section-tabs .nav-item {
-    flex-shrink: 0;
+/* 區段寬度類別 */
+.section-col-full {
+    flex: 1 1 100%;
 }
 
-/* Tab 按鈕 */
-.form-section-tabs .nav-link {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #6c757d;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 0.375rem 0.375rem 0 0;
-    background-color: transparent;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+.section-col-half {
+    flex: 1 1 calc(50% - 0.5rem);
+    max-width: calc(50% - 0.5rem);
 }
 
-.form-section-tabs .nav-link:hover {
-    color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
-    border-color: #dee2e6 #dee2e6 transparent;
+.section-col-third {
+    flex: 1 1 calc(33.333% - 0.67rem);
+    max-width: calc(33.333% - 0.67rem);
 }
 
-.form-section-tabs .nav-link.active {
-    color: #0d6efd;
-    background-color: #fff;
-    border-color: #dee2e6 #dee2e6 #fff;
+.section-col-quarter {
+    flex: 1 1 calc(25% - 0.75rem);
+    max-width: calc(25% - 0.75rem);
+}
+
+.section-col-fifth {
+    flex: 1 1 calc(20% - 0.8rem);
+    max-width: calc(20% - 0.8rem);
+}
+
+.section-col-sixth {
+    flex: 1 1 calc(16.666% - 0.83rem);
+    max-width: calc(16.666% - 0.83rem);
+}
+
+/* 區段標題 */
+.form-section-header {
+    padding: 0.25rem 0;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section-title {
+    font-size: 1rem;
     font-weight: 600;
-}
-
-/* Tab 內容區域 */
-.form-tab-content {
-    padding: 0.75rem 0;
-}
-
-.form-tab-content .tab-pane {
-    display: none;
-}
-
-.form-tab-content .tab-pane.show.active {
-    display: block;
-}
-
-/* 手機版 Tab 下拉選單 */
-.form-tabs-mobile .form-select {
-    font-weight: 500;
     color: #0d6efd;
-    border-color: #0d6efd;
 }
 
-/* ===== 表單區段樣式 - 縮減間距 ===== */
-
-/* 區段標題樣式 - 縮短與水平線的距離 */
-.section-title-compact {
-    margin-bottom: 0.15rem !important; /* 進一步縮短間距 */
-    padding-bottom: 0.2rem !important; /* 減少底部內邊距 */
+/* 區段欄位容器 */
+.form-section-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
-/* 水平線樣式 - 縮短與下方欄位的距離 */
-.section-divider-compact {
-    margin-top: 0 !important;
-    margin-bottom: 0.3rem !important; /* 進一步縮短 */
+/* ===== 欄位行：Label 與 Input 同行 ===== */
+
+.form-field-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-/* 表單區段包裝器 */
-.form-section-wrapper {
-    margin-bottom: 0.5rem !important; /* 從 1rem 減少到 0.5rem */
+/* Label 樣式 */
+.form-field-label {
+    flex: 0 0 auto;
+    min-width: 80px;
+    max-width: 120px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Input 容器 */
+.form-field-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Checkbox 特殊處理 - Label 在左邊，Checkbox 在右邊 */
+.form-field-row-checkbox {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.form-field-row-checkbox .form-field-label {
+    flex: 0 0 auto;
+    min-width: 80px;
+    max-width: 120px;
+    margin-right: 0.5rem;
+}
+
+.form-field-row-checkbox .form-field-input {
+    flex: 0 0 auto;
+}
+
+/* Checkbox 內的 form-check 樣式 */
+.form-field-row-checkbox .form-check {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.form-field-row-checkbox .form-check-input {
+    margin: 0;
 }
 
 /* ===== Input 欄位樣式 - 縮減 Padding 和字體大小 ===== */
@@ -138,18 +175,6 @@
 ::deep input[type="number"] {
     -moz-appearance: textfield !important;
     appearance: textfield !important;
-}
-
-/* Label 標籤字體 */
-::deep .form-label {
-    font-size: 1rem !important; /* 縮小 label 字體 */
-    margin-bottom: 0.15rem !important; /* 縮小 label 與 input 之間的距離 */
-    font-weight: 500 !important; /* 保持粗體以便閱讀 */
-}
-
-/* 區段標題字體 */
-::deep .section-title-compact {
-    font-size: 1rem !important; /* 16px - 區段標題稍大 */
 }
 
 /* Placeholder 字體顏色 - 更淡色 */
@@ -273,6 +298,14 @@
 
 /* 平板尺寸 */
 @media (max-width: 992px) {
+    /* 平板版區段最多 3 欄 */
+    .section-col-quarter,
+    .section-col-fifth,
+    .section-col-sixth {
+        flex: 1 1 calc(33.333% - 0.67rem);
+        max-width: calc(33.333% - 0.67rem);
+    }
+    
     .input-action-button {
         width: 30px;
         height: 30px;
@@ -286,38 +319,68 @@
     .input-with-action-buttons.multiple-buttons .has-action-buttons {
         padding-right: 70px !important;
     }
-    
-    /* 平板版 Tab 樣式 */
-    .form-section-tabs .nav-link {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.85rem;
-    }
 }
 
 /* 手機尺寸 */
 @media (max-width: 576px) {
-    /* 手機版強制所有欄位單欄全寬 */
-    ::deep .col-md-2,
-    ::deep .col-md-3,
-    ::deep .col-md-4,
-    ::deep .col-md-6,
-    ::deep [class*="col-md-"] {
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
+    /* 手機版區段垂直堆疊 */
+    .form-sections-container {
+        flex-direction: column;
     }
     
-    /* 手機版 Input 更大的觸控區域 */
-    ::deep .form-control,
-    ::deep .form-select {
+    .section-col-half,
+    .section-col-third,
+    .section-col-quarter,
+    .section-col-fifth,
+    .section-col-sixth {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* 手機版欄位 Label 與 Input 保持同行 */
+    .form-field-row {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    /* 手機版 Label 樣式 - 固定寬度 */
+    .form-field-label {
+        flex: 0 0 auto;
+        min-width: 70px;
+        max-width: 100px;
+    }
+    
+    /* 手機版 Input 容器佔滿剩餘寬度 */
+    .form-field-input {
+        flex: 1 1 auto !important;
+        min-width: 0;
+    }
+    
+    /* 手機版 Input 佔滿寬度並增加觸控區域 */
+    .form-field-input .form-control,
+    .form-field-input .form-select,
+    .form-field-input input,
+    .form-field-input select,
+    .form-field-input textarea {
+        width: 100% !important;
         height: 44px !important; /* Apple 建議的最小觸控區域 */
         font-size: 16px !important; /* 防止 iOS 自動縮放 */
         padding: 0.5rem 0.75rem !important;
     }
     
-    /* 手機版 Label 樣式 */
-    ::deep .form-label {
-        font-size: 0.9rem !important;
-        margin-bottom: 0.25rem !important;
+    /* Checkbox 在手機版保持同行 - Label 在左、Checkbox 在右 */
+    .form-field-row-checkbox {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    
+    .form-field-row-checkbox .form-field-label {
+        flex: 0 0 auto;
+        min-width: 70px;
+        max-width: 100px;
     }
     
     /* 手機版 ActionButton */
@@ -339,13 +402,14 @@
     }
     
     /* 手機版區段間距 */
-    .form-section-wrapper {
-        margin-bottom: 0.75rem !important;
+    .form-section-column {
+        margin-bottom: 0.5rem;
+        width: 100% !important;
     }
     
-    /* 手機版 Tab 內容 padding */
-    .form-tab-content {
-        padding: 0.5rem 0;
+    /* 確保區段欄位容器也全寬 */
+    .form-section-fields {
+        width: 100%;
     }
 }
 

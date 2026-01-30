@@ -241,6 +241,47 @@
     gap: 0.5rem;
 }
 
+/* ===== Modal Action Bar (按鈕列) 樣式 ===== */
+
+/* 桌面版：水平排列 */
+::deep .modal-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* 手機版：允許換行 + 水平捲動 */
+@media (max-width: 576px) {
+    ::deep .modal-action-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem;
+        padding: 0.5rem !important;
+    }
+    
+    /* 讓內部的 flex 容器也允許換行 */
+    ::deep .modal-action-bar > .d-flex {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem !important;
+    }
+    
+    /* 左側自訂按鈕區 */
+    ::deep .modal-action-bar > .d-flex.me-auto {
+        margin-right: 0 !important;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* 右側標準按鈕區 */
+    ::deep .modal-action-bar > .d-flex:last-child {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* ===== 多層 Modal 的 Backdrop 透明度調整 ===== */
 
 /* 第一層 Modal 的 Backdrop */

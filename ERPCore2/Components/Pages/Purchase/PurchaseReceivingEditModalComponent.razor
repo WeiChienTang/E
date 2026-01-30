@@ -943,9 +943,9 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.PurchaseOrderId)
                 .AddToSection(FormSectionNames.BasicInfo,
-                    pr => pr.ReceiptDate,
-                    pr => pr.TaxCalculationMethod)
-                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                    pr => pr.ReceiptDate)
+                .AddToSection(FormSectionNames.AmountInfo,
+                    pr => pr.TaxCalculationMethod,
                     pr => pr.TotalAmount,
                     pr => pr.PurchaseReceivingTaxAmount,
                     pr => pr.PurchaseReceivingTotalAmountIncludingTax)

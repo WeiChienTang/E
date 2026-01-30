@@ -1,0 +1,72 @@
+/*
+    GenericEditModalComponent 專屬樣式
+    處理按鈕列在不同螢幕尺寸的響應式設計
+*/
+
+/* ===== 按鈕容器基本樣式 ===== */
+
+.modal-buttons-container {
+    gap: 0.5rem;
+}
+
+/* ===== 桌面版：水平排列 ===== */
+
+.custom-buttons-section {
+    flex-shrink: 0;
+}
+
+/* ===== 手機版響應式設計 ===== */
+
+@media (max-width: 576px) {
+    /* 按鈕容器：允許換行並置中 */
+    .modal-buttons-container {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.5rem;
+        padding: 0 !important;
+    }
+    
+    /* 自訂按鈕區：佔滿一行並置中 */
+    .custom-buttons-section {
+        margin-right: 0 !important;
+        justify-content: center !important;
+        width: 100%;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    /* 狀態訊息區域 */
+    .modal-buttons-container > div:not(.custom-buttons-section):not(.d-flex:last-child) {
+        text-align: center;
+        width: 100%;
+    }
+    
+    /* 右側標準按鈕區：允許換行 */
+    .modal-buttons-container > .d-flex:last-child {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 0.25rem !important;
+    }
+    
+    /* 審核按鈕區也要置中 */
+    .modal-buttons-container > .d-flex.me-3 {
+        margin-right: 0 !important;
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* ===== 平板版響應式設計 ===== */
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .modal-buttons-container {
+        gap: 0.375rem;
+    }
+    
+    /* 如果按鈕太多可能需要換行 */
+    .modal-buttons-container > .d-flex:last-child {
+        flex-wrap: wrap;
+        gap: 0.25rem !important;
+    }
+}

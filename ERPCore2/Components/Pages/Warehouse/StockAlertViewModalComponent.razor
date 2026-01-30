@@ -17,7 +17,7 @@
                    IsVisibleChanged="@IsVisibleChanged"
                    Title="@GetTitle()"
                    Icon="@GetHeaderIcon()"
-                   Size="BaseModalComponent.ModalSize.ExtraLarge"
+                   Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="@GetHeaderColor()"
                    UseWhiteCloseButton="@(AlertType == StockAlertType.OverStock)"
                    IsLoading="@isLoading"
@@ -149,6 +149,7 @@
             stockAlertItems = details.Select(d => new StockAlertViewItem
             {
                 DetailId = d.Id,
+                Code = d.InventoryStock?.Product?.Code ?? "未知編號",
                 ProductId = d.InventoryStock?.ProductId ?? 0,
                 ProductName = d.InventoryStock?.Product?.Name ?? "未知商品",
                 WarehouseName = d.Warehouse?.Name ?? "未知倉庫",
@@ -178,10 +179,17 @@
         {
             new()
             {
+                Title = "產品編號",
+                PropertyName = nameof(StockAlertViewItem.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "140px"
+            },
+            new()
+            {
                 Title = "商品名稱",
                 PropertyName = nameof(StockAlertViewItem.ProductName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "200px"
+                Width = "140px"
             },
             new()
             {
@@ -192,14 +200,14 @@
             },
             new()
             {
-                Title = "倉庫位置",
+                Title = "庫位",
                 PropertyName = nameof(StockAlertViewItem.WarehouseLocationName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
             new()
             {
-                Title = "當前數量",
+                Title = "當前量",
                 PropertyName = nameof(StockAlertViewItem.CurrentStock),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "100px",
@@ -473,6 +481,7 @@
     public class StockAlertViewItem
     {
         public int DetailId { get; set; }
+        public string Code { get; set; } = string.Empty;
         public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string WarehouseName { get; set; } = string.Empty;

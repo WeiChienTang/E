@@ -1,7 +1,5 @@
 @* 可重用的廠商編輯組件 - 可在任何頁面中嵌入 *@
 @inject ISupplierService SupplierService
-@inject IProductSupplierService ProductSupplierService
-@inject IProductService ProductService
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
@@ -57,12 +55,6 @@
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
     
-    // ===== 供應商品管理相關 =====
-    private List<ProductSupplier> productSuppliers = new();
-    private List<ProductSupplier> deletedProductSuppliers = new();
-    private List<Product> availableProducts = new();
-    private bool isProductSupplierDataReady = false;
-    
     // 付款方式選項
     private List<PaymentMethod> availablePaymentMethods = new();
     
@@ -77,19 +69,10 @@
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
     /// 當上下筆切換時觸發 UI 更新，確保表單欄位正確渲染
     /// </summary>
-    private async Task HandleEntityLoaded(int loadedEntityId)
+    private Task HandleEntityLoaded(int loadedEntityId)
     {
-        try
-        {
-            // 重新載入供應商品資料
-            isProductSupplierDataReady = false;
-            await LoadProductSupplierDataAsync();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-        }
+        StateHasChanged();
+        return Task.CompletedTask;
     }
     
     // 資料載入狀態標記
@@ -124,15 +107,11 @@
         {
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
-            await LoadProductSupplierDataAsync();
             isDataLoaded = true;
         }
         else if (!IsVisible)
         {
             isDataLoaded = false;
-            isProductSupplierDataReady = false;
-            productSuppliers.Clear();
-            deletedProductSuppliers.Clear();
         }
     }
 
@@ -441,9 +420,6 @@
                 return false;
             }
 
-            // 儲存成功後，處理供應商品綁定
-            await SaveProductSuppliersAsync(entity.Id);
-
             return true;
         }
         catch (Exception)
@@ -452,62 +428,6 @@
             return false;
         }
     }
-
-    /// <summary>
-    /// 儲存供應商品綁定資料
-    /// </summary>
-    private async Task SaveProductSuppliersAsync(int supplierId)
-    {
-        try
-        {
-            // 過濾出有效的綁定（已選擇商品）
-            var validProductSuppliers = productSuppliers
-                .Where(ps => ps.ProductId > 0)
-                .ToList();
-
-            // 設定供應商ID
-            foreach (var ps in validProductSuppliers)
-            {
-                ps.SupplierId = supplierId;
-            }
-
-            // 刪除已標記刪除的項目
-            foreach (var deletedItem in deletedProductSuppliers)
-            {
-                if (deletedItem.Id > 0)
-                {
-                    await ProductSupplierService.DeleteAsync(deletedItem.Id);
-                }
-            }
-
-            // 新增或更新綁定
-            foreach (var ps in validProductSuppliers)
-            {
-                //  清除導航屬性，避免 EF Core 試圖插入關聯實體
-                ps.Product = null;
-                ps.Supplier = null;
-                
-                if (ps.Id > 0)
-                {
-                    // 更新現有綁定
-                    await ProductSupplierService.UpdateAsync(ps);
-                }
-                else
-                {
-                    // 新增綁定
-                    await ProductSupplierService.CreateAsync(ps);
-                }
-            }
-
-            deletedProductSuppliers.Clear();
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"儲存供應商品綁定時發生錯誤：{ex.Message}");
-        }
-    }
-
-
 
     private async Task OnSaveSuccess()
     {
@@ -524,164 +444,12 @@
         }
     }
 
-    // ===== 供應商品管理方法 =====
-
     /// <summary>
-    /// 載入供應商品資料
-    /// </summary>
-    private async Task LoadProductSupplierDataAsync()
-    {
-        try
-        {
-            isProductSupplierDataReady = false;
-            
-            // 載入所有可用商品
-            availableProducts = (await ProductService.GetAllAsync()).ToList();
-            
-            // 如果是編輯模式，載入現有的供應商品綁定
-            if (SupplierId.HasValue && SupplierId.Value > 0)
-            {
-                productSuppliers = (await ProductSupplierService.GetBySupplierIdAsync(SupplierId.Value)).ToList();
-                
-                // 🔑 設定 SearchText 用於顯示已選擇的商品
-                foreach (var ps in productSuppliers)
-                {
-                    if (ps.Product != null)
-                    {
-                        ps.SearchText = !string.IsNullOrEmpty(ps.Product.Code) && !string.IsNullOrEmpty(ps.Product.Name)
-                            ? $"[{ps.Product.Code}] {ps.Product.Name}"
-                            : ps.Product.Code ?? ps.Product.Name ?? "";
-                    }
-                }
-            }
-            else
-            {
-                productSuppliers = new List<ProductSupplier>();
-            }
-            
-            deletedProductSuppliers.Clear();
-            isProductSupplierDataReady = true;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"載入供應商品資料失敗：{ex.Message}");
-            isProductSupplierDataReady = true; // 設為 true 以免一直顯示載入中
-        }
-    }
-
-    /// <summary>
-    /// 配置自訂模組 - 供應商品管理
+    /// 配置自訂模組
     /// </summary>
     private List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule> GetCustomModules()
     {
-        if (editModalComponent == null)
-        {
-            return new List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule>();
-        }
-
-        return new List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule>
-        {
-            new GenericEditModalComponent<Supplier, ISupplierService>.CustomModule
-            {
-                Title = "",
-                Order = 1,
-                Content = CreateProductSupplierContent()
-            }
-        };
-    }
-
-    /// <summary>
-    /// 創建供應商品管理內容的 RenderFragment
-    /// </summary>
-    private RenderFragment CreateProductSupplierContent() => __builder =>
-    {
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-header bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    @if (SupplierId.HasValue && SupplierId.Value > 0)
-                    {
-                        <GenericButtonComponent Text="匯入歷史採購商品"
-                                              Variant="ButtonVariant.Blue"
-                                              Size="ButtonSize.Small"                                              
-                                              OnClick="@HandleBatchImportFromHistory" />
-                    }
-                </div>
-            </div>
-            
-            <div class="card-body p-0">
-                @if (editModalComponent?.Entity != null)
-                {
-                    @if (!isProductSupplierDataReady)
-                    {
-                        <div class="d-flex justify-content-center align-items-center py-4">
-                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                            <span class="text-muted">載入供應商品資料中...</span>
-                        </div>
-                    }
-                    else if (availableProducts != null && availableProducts.Any())
-                    {
-                        <SupplierProductTable Items="@productSuppliers"
-                                            ItemsChanged="@(async (items) => { productSuppliers = items; await InvokeAsync(StateHasChanged); })"
-                                            AvailableProducts="@availableProducts"
-                                            SupplierId="@(SupplierId ?? 0)"
-                                            DataLoadCompleted="@isProductSupplierDataReady"
-                                            EmptyMessage="尚未設定供應商品"
-                                            OnItemDeleted="@HandleDeleteProductSupplier" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning text-center m-3" role="alert">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            無可用的商品資料，請先建立商品
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-    };
-
-    /// <summary>
-    /// 刪除供應商品綁定
-    /// </summary>
-    private async Task HandleDeleteProductSupplier(ProductSupplier item)
-    {
-        if (item.Id > 0)
-        {
-            deletedProductSuppliers.Add(item);
-        }
-        productSuppliers.Remove(item);
-        await InvokeAsync(StateHasChanged);
-    }
-
-    /// <summary>
-    /// 從採購歷史批次匯入
-    /// </summary>
-    private async Task HandleBatchImportFromHistory()
-    {
-        try
-        {
-            if (!SupplierId.HasValue || SupplierId.Value <= 0)
-            {
-                await NotificationService.ShowWarningAsync("請先儲存供應商資料");
-                return;
-            }
-
-            var importedCount = await ProductSupplierService.ImportFromPurchaseHistoryAsync(SupplierId.Value);
-            
-            if (importedCount > 0)
-            {
-                await NotificationService.ShowSuccessAsync($"成功匯入 {importedCount} 筆商品綁定");
-                await LoadProductSupplierDataAsync();
-            }
-            else
-            {
-                await NotificationService.ShowInfoAsync("沒有可匯入的採購歷史記錄");
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"匯入發生錯誤：{ex.Message}");
-        }
+        return new List<GenericEditModalComponent<Supplier, ISupplierService>.CustomModule>();
     }
 
     /// <summary>
