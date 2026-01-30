@@ -282,6 +282,9 @@ namespace ERPCore2.Services
                         .ThenInclude(sod => sod.Product)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Unit)
+                    .Include(so => so.SalesOrderDetails)
+                        .ThenInclude(sod => sod.QuotationDetail)
+                            .ThenInclude(qd => qd!.Quotation)
                     .FirstOrDefaultAsync(so => so.Id == orderId);
             }
             catch (Exception ex)

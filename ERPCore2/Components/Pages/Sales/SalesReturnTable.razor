@@ -46,7 +46,7 @@ else
         <div class="card-footer">
             <div class="table-action-bar">
                 <div class="btn-group-left">
-                    <GenericButtonComponent Text="智能載入"
+                    <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
                                           IsDisabled="@(!CanLoadAllReturnable || _hasUndeletableDetails)"
                                           Title="@GetLoadAllReturnableTooltip()"
@@ -166,15 +166,13 @@ else
     /// 判斷是否可以使用「載入全部可退」功能
     /// 規則：
     /// 1. 必須選擇客戶
-    /// 2. 必須有可載入的出貨明細
-    /// 3. 編輯模式下或已有明細時禁用此按鈕（避免覆蓋現有資料）
+    /// 2. 無已有沖款記錄的明細
+    /// 注意：其他條件檢查移至 LoadAllReturnableItems 方法中，載入時提示使用者
     /// </summary>
     private bool CanLoadAllReturnable => 
         EffectiveCustomerId.HasValue && 
         EffectiveCustomerId.Value > 0 && 
-        GetAvailableDeliveryDetails().Any() &&
-        !(ExistingReturnDetails?.Any() == true) && // 編輯模式（有現有明細）時禁用
-        !ReturnItems.Any(x => x.SelectedProduct != null); // 已載入明細時禁用
+        !_hasUndeletableDetails;
     
     /// <summary>
     /// 取得「載入可退貨」按鈕的提示訊息
@@ -184,19 +182,10 @@ else
         if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
             return "請先選擇客戶";
         
-        if (!GetAvailableDeliveryDetails().Any())
-            return "該客戶沒有可退貨的出貨明細";
-        
-        if (ExistingReturnDetails?.Any() == true)
-            return "編輯模式下無法載入可退貨項目，以避免覆蓋現有資料";
-        
-        if (ReturnItems.Any(x => x.SelectedProduct != null))
-            return "已有明細項目，無法再次載入以避免覆蓋現有資料";
-        
         if (_hasUndeletableDetails)
             return "部分明細已有沖款記錄，無法使用智能載入";
         
-        return "載入該客戶所有可退貨的出貨明細";
+        return "根據目前篩選條件載入可退貨的出貨明細";
     }
     
     /// <summary>
@@ -437,7 +426,7 @@ else
             ItemDisplayFormatter = (item) =>
             {
                 if (item is SalesDeliveryDetail detail)
-                    return FormatDeliveryDetailDisplayText(detail);
+                    return FormatDeliveryDetailDropdownText(detail);
                 return string.Empty;
             },
             IsDisabledFunc = item =>
@@ -867,12 +856,75 @@ else
         return filteredDetails.Where(od => GetAvailableReturnQuantity(od) > 0).ToList();
     }
 
+    /// <summary>
+    /// 建構篩選條件訊息，用於提示使用者目前的篩選狀態
+    /// </summary>
+    private string BuildFilterConditionsMessage()
+    {
+        var conditions = new List<string>();
+        
+        // 客戶條件（必填）
+        if (EffectiveCustomerId.HasValue && EffectiveCustomerId.Value > 0)
+        {
+            // 從 AvailableDeliveryDetails 取得客戶名稱
+            var customerName = AvailableDeliveryDetails.FirstOrDefault()?.SalesDelivery?.Customer?.CompanyName;
+            conditions.Add($"• 客戶：{customerName ?? $"ID {EffectiveCustomerId.Value}"}");
+        }
+        
+        // 銷貨單條件（選填）
+        if (EffectiveSalesDeliveryId.HasValue && EffectiveSalesDeliveryId.Value > 0)
+        {
+            var deliveryCode = AvailableDeliveryDetails
+                .FirstOrDefault(d => d.SalesDeliveryId == EffectiveSalesDeliveryId.Value)?
+                .SalesDelivery?.Code;
+            conditions.Add($"• 銷貨單：{deliveryCode ?? $"ID {EffectiveSalesDeliveryId.Value}"}");
+        }
+        
+        // 商品條件（選填）
+        if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
+        {
+            var product = Products.FirstOrDefault(p => p.Id == EffectiveFilterProductId.Value);
+            var productDisplay = product != null 
+                ? $"{product.Code} {product.Name}".Trim() 
+                : $"ID {EffectiveFilterProductId.Value}";
+            conditions.Add($"• 商品：{productDisplay}");
+        }
+        
+        // 預設條件說明
+        conditions.Add("• 商品需有可退貨數量");
+        
+        return string.Join("\n", conditions);
+    }
+
     // ===== 事件處理方法 =====
     
     // ===== 出貨明細選擇事件處理 =====
     
     /// <summary>
-    /// 格式化出貨明細顯示文字（用於下拉選單）
+    /// 格式化出貨明細顯示文字（用於下拉選單 - 兩行顯示）
+    /// 第一行：出貨單號 + 可退數量（小字藍色）
+    /// 第二行：商品編號 商品名稱
+    /// </summary>
+    private string FormatDeliveryDetailDropdownText(SalesDeliveryDetail detail)
+    {
+        if (detail?.Product == null) return "";
+        
+        var product = detail.Product;
+        var deliveryCode = detail.SalesDelivery?.Code ?? "N/A";
+        var availableQty = GetAvailableReturnQuantity(detail);
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 兩行顯示：出貨單號在上（小字藍色），商品資訊在下
+        return $"<div style='line-height: 1.3;'>" +
+               $"<small class='text-primary'>出貨: {deliveryCode} (可退: {availableQty:G29})</small><br/>" +
+               $"<span>{productDisplay}</span></div>";
+    }
+    
+    /// <summary>
+    /// 格式化出貨明細顯示文字（用於輸入框顯示 - 單行簡潔格式）
     /// </summary>
     private string FormatDeliveryDetailDisplayText(SalesDeliveryDetail detail)
     {
@@ -880,10 +932,13 @@ else
         
         var product = detail.Product;
         var deliveryCode = detail.SalesDelivery?.Code ?? "N/A";
-        var productCode = product.Code ?? "";
-        var productName = product.Name ?? "未知商品";
         
-        return $"[{deliveryCode}] [{productCode}] {productName}";
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 輸入框顯示：簡潔的單行格式
+        return $"{deliveryCode} | {productDisplay}";
     }
 
     // ===== 出貨明細選擇事件處理（SearchableSelect）=====
@@ -1088,10 +1143,13 @@ else
         {
             var availableDetails = GetAvailableDeliveryDetails();
             
-            //  檢查是否有可載入的明細
+            //  檢查是否有可載入的明細，若無則顯示詳細的篩選條件
             if (!availableDetails.Any())
             {
-                await NotificationService.ShowWarningAsync("沒有可退貨的出貨明細", "提示");
+                var conditions = BuildFilterConditionsMessage();
+                await NotificationService.ShowWarningAsync(
+                    $"沒有符合以下條件的可退貨商品：\n{conditions}", 
+                    "查無資料");
                 return;
             }
             

@@ -352,6 +352,10 @@
     {
         try
         {
+            // 🔑 關鍵修正：每次載入資料時重置狀態變數，避免上次編輯的狀態殘留到新增模式
+            isDetailDataReady = false;
+            hasUndeletableDetails = false;
+            
             if (!SalesDeliveryId.HasValue)
             {
                 // 新增模式 - 自動產生出貨單號
@@ -637,9 +641,9 @@
                     sd => sd.CustomerId,
                     sd => sd.SalesOrderId,
                     sd => sd.EmployeeId,
-                    sd => sd.DeliveryDate,
-                    sd => sd.TaxCalculationMethod)
+                    sd => sd.DeliveryDate)
                 .AddToSection(FormSectionNames.AmountInfo,
+                    sd => sd.TaxCalculationMethod,
                     sd => sd.TotalAmount,
                     sd => sd.DiscountAmount,
                     sd => sd.TaxAmount,

@@ -196,7 +196,7 @@
             }
             else if (!IsVisible)
             {
-                // 🔑 Modal 關閉時重置自動載入相關標記和資料載入標記
+                //  Modal 關閉時重置自動載入相關標記和資料載入標記
                 shouldAutoLoadReturnable = false;
                 isDataLoaded = false;
             }
@@ -383,7 +383,7 @@
                     // 載入對應的退貨明細
                     await LoadSalesReturnDetails(salesReturn.Id);
                     
-                    // 🔑 關鍵：載入明細相關資料（沖款記錄）
+                    //  關鍵：載入明細相關資料（沖款記錄）
                     await LoadDetailRelatedDataAsync();
                     isDetailDataReady = true;
                     StateHasChanged();
@@ -405,7 +405,7 @@
                     ReturnReasonId = null // 預設為 null，選擇性填寫
                 };
                 
-                // 🔑 使用預填參數（從出貨單轉單時）
+                //  使用預填參數（從出貨單轉單時）
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
                 {
                     newSalesReturn.CustomerId = PrefilledCustomerId.Value;
@@ -488,7 +488,7 @@
             await LoadProductsAsync();
             await LoadReturnReasonsAsync();
             
-            // 🔑 一次性載入系統稅率（避免每次計算都查詢資料庫）
+            //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             await LoadTaxRateAsync();
         }
         catch (Exception ex)
@@ -722,7 +722,7 @@
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行篩選，或直接選擇",
-                    ActionButtons = await GetCustomerActionButtonsAsync(), // 🔑 根據 hasUndeletableDetails 決定是否顯示
+                    ActionButtons = await GetCustomerActionButtonsAsync(), //  根據 hasUndeletableDetails 決定是否顯示
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
@@ -826,9 +826,10 @@
                     sr => sr.CustomerId)                    
                 .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
                 .AddToSection(FormSectionNames.BasicInfo,
+                    sr => sr.SalesDeliveryId,
                     sr => sr.ReturnReasonId,
                     sr => sr.ReturnDate)
-                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                .AddToSection(FormSectionNames.AmountInfo,
                     sr => sr.TotalReturnAmount,
                     sr => sr.DiscountAmount,
                     sr => sr.ReturnTaxAmount,
@@ -937,14 +938,14 @@
     {
         try
         {
-            // 🔑 關鍵：重置狀態標記
+            //  關鍵：重置狀態標記
             isDetailDataReady = false;
             hasUndeletableDetails = false;
             
             // 1. 重新載入明細資料
             await LoadSalesReturnDetails(loadedEntityId);
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
             StateHasChanged();
             
@@ -1206,15 +1207,47 @@
                     break;
 
                 case "FilterProductId":
-                    if (int.TryParse(fieldChange.Value?.ToString(), out var productId))
+                    //  修正：處理清除值的情況
+                    // AutoComplete 清除時可能傳回 null、空字串、"0" 或數字 0
                     {
-                        filterProductId = productId == 0 ? null : productId;
-                        // ✅ 欄位依賴變化：篩選條件改變需要立即更新明細表格
-                        StateHasChanged();
+                        var valueStr = fieldChange.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
+                        {
+                            filterProductId = null;
+                        }
+                        else if (int.TryParse(valueStr, out var parsedProductId) && parsedProductId > 0)
+                        {
+                            filterProductId = parsedProductId;
+                        }
+                        else
+                        {
+                            // 無法解析的值也視為清除
+                            filterProductId = null;
+                        }
                     }
+                    // ✅ 欄位依賴變化：篩選條件改變需要立即更新明細表格
+                    StateHasChanged();
                     break;
 
                 case nameof(SalesReturn.SalesDeliveryId):
+                    //  修正：同步更新 FilterSalesDeliveryId 以正確過濾明細表格
+                    // AutoComplete 清除時可能傳回 null、空字串、"0" 或數字 0
+                    {
+                        var valueStr = fieldChange.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
+                        {
+                            FilterSalesDeliveryId = null;
+                        }
+                        else if (int.TryParse(valueStr, out var parsedDeliveryId) && parsedDeliveryId > 0)
+                        {
+                            FilterSalesDeliveryId = parsedDeliveryId;
+                        }
+                        else
+                        {
+                            // 無法解析的值也視為清除
+                            FilterSalesDeliveryId = null;
+                        }
+                    }
                     // ✅ 欄位依賴變化：銷售單篩選改變需要立即更新明細表格
                     StateHasChanged();
                     break;
@@ -1222,7 +1255,7 @@
                 case nameof(SalesReturn.TaxCalculationMethod):
                     // 當稅別變更時，重新計算金額和稅額
                     await HandleReturnDetailsChanged(salesReturnDetails);
-                    // 🔑 稅別變更時，觸發 Table 組件重新渲染（影響小計顯示）
+                    //  稅別變更時，觸發 Table 組件重新渲染（影響小計顯示）
                     StateHasChanged();
                     break;
             }
@@ -1302,7 +1335,7 @@
                 salesReturnDetails = new List<SalesReturnDetail>();
             }
             
-            // 🔑 儲存前再次計算總金額和稅額（確保資料一致性）
+            //  儲存前再次計算總金額和稅額（確保資料一致性）
             switch (salesReturn.TaxCalculationMethod)
             {
                 case TaxCalculationMethod.TaxExclusive:
@@ -1472,11 +1505,11 @@
     
     /// <summary>
     /// 產生客戶操作按鈕 - 使用統一 Helper
-    /// 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons
+    ///  關鍵：當有不可刪除的明細時，不顯示 ActionButtons
     /// </summary>
     private async Task<List<FieldActionButton>> GetCustomerActionButtonsAsync()
     {
-        // 🔑 關鍵：當有不可刪除的明細時，不顯示 ActionButtons
+        //  關鍵：當有不可刪除的明細時，不顯示 ActionButtons
         if (hasUndeletableDetails)
         {
             return new List<FieldActionButton>();

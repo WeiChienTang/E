@@ -56,9 +56,9 @@ else
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small" />
                     <GenericButtonComponent
-                                          Text="載入採購"
-                                          OnClick="@LoadAllUnreceivedItems"
-                                          IsDisabled="@(!CanLoadPurchaseOrder || IsReadOnly || _hasUndeletableDetails)"
+                                          Text="載入"
+                                          OnClick="@ShowLoadConfirmModal"
+                                          IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetLoadPurchaseOrderTooltip()"
                                           Variant="ButtonVariant.DarkBlue"
                                           Size="ButtonSize.Small" />
@@ -122,6 +122,20 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- 載入確認 Modal -->
+<GenericConfirmModalComponent IsVisible="@_showLoadConfirmModal"
+                             IsVisibleChanged="@((bool visible) => _showLoadConfirmModal = visible)"
+                             Title="載入確認"
+                             Icon="bi-box-arrow-in-down"
+                             Message="即將載入以下條件的待進貨明細："
+                             Conditions="@_loadConditions"
+                             SummaryMessage="@_loadSummaryMessage"
+                             ConfirmButtonText="確認載入"
+                             CancelButtonText="取消"
+                             ConfirmButtonVariant="ButtonVariant.Blue"
+                             OnConfirm="@ExecuteLoadAllUnreceivedItems"
+                             OnCancel="@(() => _showLoadConfirmModal = false)" />
+
 @code {
     // ===== 參數 =====
     [Parameter] public int? SelectedSupplierId { get; set; }
@@ -163,6 +177,16 @@ else
     private string selectedProductName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
+    
+    // ===== 載入確認 Modal =====
+    private bool _showLoadConfirmModal = false;
+    private List<string> _loadConditions = new();
+    private string _loadSummaryMessage = string.Empty;
+    
+    // ===== 額外參數（用於顯示確認訊息） =====
+    [Parameter] public string? SelectedSupplierName { get; set; }
+    [Parameter] public string? SelectedPurchaseOrderCode { get; set; }
+    [Parameter] public string? FilterProductName { get; set; }
     
     // ===== 內部類別 =====
     public class ReceivingItem
@@ -296,9 +320,9 @@ else
             ItemDisplayFormatter = (item) =>
             {
                 if (item is PurchaseOrderDetail detail)
-                    return FormatPurchaseDetailDisplay(detail);
+                    return FormatPurchaseDetailDropdownText(detail);
                 else if (item is Product product)
-                    return FormatProductDisplay(product);
+                    return FormatProductDropdownText(product);
                 return string.Empty;
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
@@ -867,28 +891,73 @@ else
         };
     }
     
-    // 格式化採購明細顯示
+    /// <summary>
+    /// 格式化採購明細顯示文字（用於下拉選單 - 兩行顯示）
+    /// 第一行：採購單號 + 待進數量（小字藍色）
+    /// 第二行：商品編號 商品名稱
+    /// </summary>
+    private string FormatPurchaseDetailDropdownText(PurchaseOrderDetail detail)
+    {
+        if (detail?.Product == null) return "";
+        
+        var product = detail.Product;
+        var purchaseOrderNumber = detail.PurchaseOrder?.Code ?? "N/A";
+        var pendingQty = detail.PendingQuantity;
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 兩行顯示：採購單號在上（小字藍色），商品資訊在下
+        return $"<div style='line-height: 1.3;'>" +
+               $"<small class='text-primary'>採購: {purchaseOrderNumber} (待進: {pendingQty:G29})</small><br/>" +
+               $"<span>{productDisplay}</span></div>";
+    }
+    
+    /// <summary>
+    /// 格式化一般商品顯示文字（用於下拉選單 - 兩行顯示）
+    /// </summary>
+    private string FormatProductDropdownText(Product product)
+    {
+        if (product == null) return "";
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 兩行顯示：提示文字在上（小字灰色），商品資訊在下
+        return $"<div style='line-height: 1.3;'>" +
+               $"<small class='text-muted'>一般商品</small><br/>" +
+               $"<span>{productDisplay}</span></div>";
+    }
+    
+    /// <summary>
+    /// 格式化採購明細顯示文字（用於輸入框顯示 - 單行簡潔格式）
+    /// </summary>
     private string FormatPurchaseDetailDisplay(PurchaseOrderDetail detail)
     {
         if (detail?.Product == null) return "";
         
+        var product = detail.Product;
         var purchaseOrderNumber = detail.PurchaseOrder?.Code ?? "N/A";
-        var productCode = detail.Product.Code ?? "";
-        var productName = detail.Product.Name ?? "";
         
-        if (!string.IsNullOrEmpty(productCode) && !string.IsNullOrEmpty(productName))
-            return $"[{purchaseOrderNumber}] [{productCode}] {productName}";
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
         
-        return $"[{purchaseOrderNumber}] {productCode}{productName}";
+        // 輸入框顯示：簡潔的單行格式
+        return $"{purchaseOrderNumber} | {productDisplay}";
     }
     
-    // 格式化商品顯示
+    /// <summary>
+    /// 格式化商品顯示（用於輸入框顯示 - 單行簡潔格式）
+    /// </summary>
     private string FormatProductDisplay(Product product)
     {
         if (product == null) return "";
         
         if (!string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name))
-            return $"[{product.Code}] {product.Name}";
+            return $"{product.Code} {product.Name}";
         
         return product.Code ?? product.Name ?? "";
     }
@@ -1134,18 +1203,130 @@ else
     }
     
     /// <summary>
-    /// 載入所有未入庫項目 - 從選定的採購單載入未完成進貨的明細
+    /// 顯示載入確認 Modal - 收集載入條件並顯示給使用者確認
     /// </summary>
-    public async Task LoadAllUnreceivedItems()
+    private async Task ShowLoadConfirmModal()
     {
         try
         {
-            // 檢查是否已選擇採購單
-            if (!SelectedPurchaseOrderId.HasValue || SelectedPurchaseOrderId.Value <= 0)
+            // 檢查是否已選擇廠商
+            if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
             {
+                await NotificationService.ShowWarningAsync("請先選擇廠商");
                 return;
             }
             
+            // 建立載入條件清單
+            _loadConditions = new List<string>();
+            
+            // 條件1：廠商
+            var supplierName = !string.IsNullOrWhiteSpace(SelectedSupplierName) 
+                ? SelectedSupplierName 
+                : $"廠商 ID: {SelectedSupplierId.Value}";
+            _loadConditions.Add($"廠商：{supplierName}");
+            
+            // 條件2：採購單（如有選擇）
+            if (SelectedPurchaseOrderId.HasValue && SelectedPurchaseOrderId.Value > 0)
+            {
+                var orderCode = !string.IsNullOrWhiteSpace(SelectedPurchaseOrderCode)
+                    ? SelectedPurchaseOrderCode
+                    : $"採購單 ID: {SelectedPurchaseOrderId.Value}";
+                _loadConditions.Add($"採購單：{orderCode}");
+            }
+            else
+            {
+                _loadConditions.Add("採購單：全部未完成採購單");
+            }
+            
+            // 條件3：商品篩選（如有選擇）
+            if (FilterProductId.HasValue && FilterProductId.Value > 0)
+            {
+                var productName = !string.IsNullOrWhiteSpace(FilterProductName)
+                    ? FilterProductName
+                    : $"商品 ID: {FilterProductId.Value}";
+                _loadConditions.Add($"商品篩選：{productName}");
+            }
+            
+            // 計算符合條件的明細數量
+            int matchingCount = await GetMatchingUnreceivedCountAsync();
+            
+            if (matchingCount == 0)
+            {
+                await NotificationService.ShowInfoAsync("目前沒有符合條件的待進貨明細");
+                return;
+            }
+            
+            _loadSummaryMessage = $"共 {matchingCount} 筆，是否確定載入？";
+            
+            // 顯示確認 Modal
+            _showLoadConfirmModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"準備載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 取得符合條件的待進貨明細數量
+    /// </summary>
+    private async Task<int> GetMatchingUnreceivedCountAsync()
+    {
+        try
+        {
+            // 如果有指定採購單，從該採購單載入
+            if (SelectedPurchaseOrderId.HasValue && SelectedPurchaseOrderId.Value > 0)
+            {
+                var purchaseOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(SelectedPurchaseOrderId.Value);
+                
+                if (purchaseOrderDetails?.Any() != true)
+                    return 0;
+                
+                var unreceivedDetails = purchaseOrderDetails
+                    .Where(d => !d.IsReceivingCompleted && d.OrderQuantity - d.ReceivedQuantity > 0);
+                
+                // 如果有商品篩選，進一步過濾
+                if (FilterProductId.HasValue && FilterProductId.Value > 0)
+                {
+                    unreceivedDetails = unreceivedDetails.Where(d => d.ProductId == FilterProductId.Value);
+                }
+                
+                return unreceivedDetails.Count();
+            }
+            else
+            {
+                // 沒有指定採購單，載入該廠商所有待進貨明細
+                var allPurchaseDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
+                    SelectedSupplierId!.Value,
+                    includeCompleted: false,
+                    checkApproval: false);
+                
+                var unreceivedDetails = allPurchaseDetails
+                    .Where(d => !d.IsReceivingCompleted && d.OrderQuantity - d.ReceivedQuantity > 0);
+                
+                // 如果有商品篩選，進一步過濾
+                if (FilterProductId.HasValue && FilterProductId.Value > 0)
+                {
+                    unreceivedDetails = unreceivedDetails.Where(d => d.ProductId == FilterProductId.Value);
+                }
+                
+                return unreceivedDetails.Count();
+            }
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// 執行載入所有未入庫項目 - 使用者確認後執行
+    /// </summary>
+    private async Task ExecuteLoadAllUnreceivedItems()
+    {
+        try
+        {
             // 檢查是否已選擇廠商
             if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
             {
@@ -1156,40 +1337,64 @@ else
             ReceivingItems.Clear();
             _deletedDetailIds.Clear();
             
-            // 載入採購單資料（包含Code）
-            var purchaseOrder = await PurchaseOrderService.GetByIdAsync(SelectedPurchaseOrderId.Value);
-            if (purchaseOrder == null)
+            List<PurchaseOrderDetail> unreceivedDetails;
+            
+            // 根據是否有指定採購單來決定載入邏輯
+            if (SelectedPurchaseOrderId.HasValue && SelectedPurchaseOrderId.Value > 0)
             {
-                await NotificationService.ShowErrorAsync("找不到指定的採購單");
-                _dataLoadCompleted = true;
-                StateHasChanged();
-                return;
+                // 從指定採購單載入
+                var purchaseOrder = await PurchaseOrderService.GetByIdAsync(SelectedPurchaseOrderId.Value);
+                if (purchaseOrder == null)
+                {
+                    await NotificationService.ShowErrorAsync("找不到指定的採購單");
+                    _dataLoadCompleted = true;
+                    StateHasChanged();
+                    return;
+                }
+                
+                var purchaseOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(SelectedPurchaseOrderId.Value);
+                
+                if (purchaseOrderDetails?.Any() != true)
+                {
+                    _dataLoadCompleted = true;
+                    StateHasChanged();
+                    return;
+                }
+                
+                // 手動設定每個明細的 PurchaseOrder 參照
+                foreach (var detail in purchaseOrderDetails)
+                {
+                    detail.PurchaseOrder = purchaseOrder;
+                }
+                
+                unreceivedDetails = purchaseOrderDetails
+                    .Where(d => !d.IsReceivingCompleted && d.OrderQuantity - d.ReceivedQuantity > 0)
+                    .ToList();
+            }
+            else
+            {
+                // 從該廠商所有未完成採購單載入
+                var allPurchaseDetails = await PurchaseOrderService.GetReceivingDetailsBySupplierAsync(
+                    SelectedSupplierId.Value,
+                    includeCompleted: false,
+                    checkApproval: false);
+                
+                unreceivedDetails = allPurchaseDetails
+                    .Where(d => !d.IsReceivingCompleted && d.OrderQuantity - d.ReceivedQuantity > 0)
+                    .ToList();
             }
             
-            // 從採購單服務取得所有明細
-            var purchaseOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(SelectedPurchaseOrderId.Value);
-            
-            if (purchaseOrderDetails?.Any() != true)
+            // 如果有商品篩選，進一步過濾
+            if (FilterProductId.HasValue && FilterProductId.Value > 0)
             {
-                _dataLoadCompleted = true;
-                StateHasChanged();
-                return;
+                unreceivedDetails = unreceivedDetails
+                    .Where(d => d.ProductId == FilterProductId.Value)
+                    .ToList();
             }
-            
-            // 手動設定每個明細的 PurchaseOrder 參照，確保採購單號能正確顯示
-            foreach (var detail in purchaseOrderDetails)
-            {
-                detail.PurchaseOrder = purchaseOrder;
-            }
-            
-            // 只載入有待進貨數量且未結案的明細
-            var unreceivedDetails = purchaseOrderDetails
-                .Where(d => !d.IsReceivingCompleted && d.OrderQuantity - d.ReceivedQuantity > 0)
-                .ToList();
             
             if (!unreceivedDetails.Any())
             {
-                await NotificationService.ShowInfoAsync("此採購單的所有明細都已完成進貨");
+                await NotificationService.ShowInfoAsync("沒有符合條件的待進貨明細");
                 _dataLoadCompleted = true;
                 StateHasChanged();
                 return;
@@ -1230,6 +1435,14 @@ else
             await NotificationService.ShowErrorAsync($"載入未進貨明細時發生錯誤：{ex.Message}");
             _dataLoadCompleted = true;
         }
+    }
+
+    /// <summary>
+    /// 載入所有未入庫項目 - 從選定的採購單載入未完成進貨的明細（保留原方法供外部呼叫）
+    /// </summary>
+    public async Task LoadAllUnreceivedItems()
+    {
+        await ExecuteLoadAllUnreceivedItems();
     }
     
     // ===== 按鈕功能方法 =====
@@ -1274,19 +1487,13 @@ else
     /// </summary>
     private string GetLoadPurchaseOrderTooltip()
     {
-        if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
-            return "請先選擇廠商";
-        
-        if (!SelectedPurchaseOrderId.HasValue || SelectedPurchaseOrderId.Value <= 0)
-            return "請先選擇採購單";
-        
         if (IsReadOnly)
             return "唯讀模式無法使用";
         
         if (_hasUndeletableDetails)
             return "部分明細已有退貨或沖款記錄，無法載入採購";
         
-        return "載入該採購單的待進貨明細";
+        return "載入符合條件的待進貨明細";
     }
     
     /// <summary>

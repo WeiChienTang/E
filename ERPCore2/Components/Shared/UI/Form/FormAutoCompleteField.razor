@@ -185,12 +185,10 @@
         // 處理空輸入
         if (string.IsNullOrEmpty(inputValue))
         {
-            if (!string.IsNullOrEmpty(Value))
-            {
-                // 通知父組件值已清除
-                // 父組件會同步清除 InitialDisplayValue 狀態
-                await ValueChanged.InvokeAsync(null);
-            }
+            // 🔑 修正：無論 Value 是否有值都觸發清除事件
+            // 這解決了虛擬欄位（Value 始終為 null）清除時無法觸發事件的問題
+            // 父組件會同步清除 InitialDisplayValue 狀態
+            await ValueChanged.InvokeAsync(null);
 
             if (Field.MinSearchLength > 0)
             {
@@ -347,11 +345,10 @@
 
         if (string.IsNullOrEmpty(inputValue))
         {
-            if (!string.IsNullOrEmpty(Value))
-            {
-                // 通知父組件值已清除
-                await ValueChanged.InvokeAsync(null);
-            }
+            // 🔑 修正：無論 Value 是否有值都觸發清除事件
+            // 這解決了虛擬欄位（Value 始終為 null）清除時無法觸發事件的問題
+            // 父組件會根據自己追蹤的狀態來判斷是否需要處理
+            await ValueChanged.InvokeAsync(null);
             return;
         }
 

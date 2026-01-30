@@ -288,6 +288,60 @@ namespace ERPCore2.Services
             }
         }
 
+        /// <summary>
+        /// 取得客戶可轉單的報價單明細（待轉數量 > 0）
+        /// 用於銷貨訂單的商品選擇下拉選單
+        /// </summary>
+        /// <param name="customerId">客戶ID</param>
+        /// <param name="quotationId">指定報價單ID（可選）</param>
+        /// <returns>可轉單的報價單明細列表</returns>
+        public async Task<List<QuotationDetail>> GetConvertableDetailsByCustomerAsync(int customerId, int? quotationId = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                // 檢查是否啟用報價單審核
+                var isApprovalEnabled = await _systemParameterService.IsQuotationApprovalEnabledAsync();
+                
+                // 建立查詢：取得該客戶的報價單明細
+                var query = context.QuotationDetails
+                    .Include(qd => qd.Quotation)
+                    .Include(qd => qd.Product)
+                    .Include(qd => qd.Unit)
+                    .Where(qd => qd.Quotation.CustomerId == customerId);
+                
+                // 如果指定了報價單ID，則只查詢該報價單的明細
+                if (quotationId.HasValue && quotationId.Value > 0)
+                {
+                    query = query.Where(qd => qd.QuotationId == quotationId.Value);
+                }
+                
+                // 如果啟用審核，則只查詢已核准的報價單
+                if (isApprovalEnabled)
+                {
+                    query = query.Where(qd => qd.Quotation.IsApproved);
+                }
+                
+                // 只取得待轉數量 > 0 的明細
+                var details = await query
+                    .Where(qd => qd.Quantity - qd.ConvertedQuantity > 0)
+                    .OrderByDescending(qd => qd.Quotation.QuotationDate)
+                    .ThenBy(qd => qd.Id)
+                    .ToListAsync();
+                
+                return details;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetConvertableDetailsByCustomerAsync), GetType(), _logger, new { 
+                    CustomerId = customerId,
+                    QuotationId = quotationId
+                });
+                return new List<QuotationDetail>();
+            }
+        }
+
         #endregion
     }
 }

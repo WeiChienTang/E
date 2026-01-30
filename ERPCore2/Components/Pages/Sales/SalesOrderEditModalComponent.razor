@@ -610,24 +610,22 @@
                 {
                     PropertyName = nameof(SalesOrder.PaymentTerms),
                     Label = "付款條件",
-                    FieldType = FormFieldType.Text,
+                    FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入付款條件",
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "與客戶約定的付款方式和期限",
-                    ContainerCssClass = "col-3",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
                 new()
                 {
                     PropertyName = nameof(SalesOrder.DeliveryTerms),
                     Label = "交貨條件",
-                    FieldType = FormFieldType.Text,
+                    FieldType = FormFieldType.TextArea,
                     Placeholder = "請輸入交貨條件",
                     IsRequired = false,
                     MaxLength = 100,
                     HelpText = "與客戶約定的交貨方式和條件",
-                    ContainerCssClass = "col-3",
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
                 },
 
@@ -645,9 +643,9 @@
                     so => so.CompanyId,
                     so => so.EmployeeId,
                     so => so.OrderDate,
-                    so => so.TaxCalculationMethod,
                     so => so.ExpectedDeliveryDate)
                 .AddToSection(FormSectionNames.AmountInfo,
+                    so => so.TaxCalculationMethod,
                     so => so.TotalAmount,      // 金額（折扣前）
                     so => so.DiscountAmount,   // 折扣
                     so => so.SalesTaxAmount,   // 稅額

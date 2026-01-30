@@ -54,7 +54,7 @@ else
                                           OnClick="LoadSmartDeliveryItems"
                                           IsDisabled="@(!CanLoadSmartDelivery || _hasUndeletableDetails)"
                                           Title="@GetSmartDeliveryTooltip()" />
-                    <GenericButtonComponent Text="載入訂單"
+                    <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
                                           IsDisabled="@(!CanLoadAllUndelivered || _hasUndeletableDetails)"
                                           Title="@GetLoadAllUndeliveredTooltip()"
@@ -381,7 +381,7 @@ else
             PropertyName = nameof(DeliveryItem.DeliveryQuantity),
             Title = "銷貨量",
             ColumnType = InteractiveColumnType.Number,
-            Width = "120px",
+            Width = "100px",
             MinValue = 0,
             Tooltip = "出貨的商品數量。已有下一步動作的商品將無法修改數量",
             IsDisabledFunc = item =>
@@ -407,7 +407,7 @@ else
             Title = "已退數",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
+            Width = "80px",
             CustomTemplate = item =>
             {
                 var deliveryItem = (DeliveryItem)item;
@@ -440,7 +440,7 @@ else
             PropertyName = nameof(DeliveryItem.UnitPrice),
             Title = "單價",
             ColumnType = InteractiveColumnType.Number,
-            Width = "120px",
+            Width = "80px",
             MinValue = 0,
             Tooltip = "商品的銷售單價。已有下一步動作的商品將無法修改價格",
             IsDisabledFunc = item =>
@@ -466,7 +466,7 @@ else
             Title = "折扣%",
             PropertyName = nameof(DeliveryItem.DiscountPercentage),
             ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
+            Width = "80px",
             MinValue = 0,
             MaxValue = 100,
             Tooltip = "折扣百分比（0-100%）。已有下一步動作的商品將無法修改折扣",
@@ -493,7 +493,7 @@ else
             PropertyName = nameof(DeliveryItem.TaxRate),
             Title = "稅率%",
             ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
+            Width = "80px",
             MinValue = 0,
             MaxValue = 100,
             Tooltip = "稅率百分比（0-100%）",
@@ -542,10 +542,10 @@ else
         // 倉庫 - 庫位選擇欄位（合併顯示，僅顯示有庫存的位置）
         columns.Add(new InteractiveColumnDefinition
         { 
-            Title = "倉庫 - 庫位", 
+            Title = "倉庫/庫位", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "200px",
+            Width = "300px",
             Tooltip = "選擇出貨的倉庫和庫位（僅顯示有庫存的位置）",
             CustomTemplate = item => 
             {
@@ -582,7 +582,7 @@ else
                         {
                             var warehouseName = stockDetail.Warehouse?.Name ?? "未知倉庫";
                             var locationName = stockDetail.WarehouseLocation?.Name ?? "預設位置";
-                            var displayText = $"{warehouseName} - {locationName} (可用: {stockDetail.AvailableStock})";
+                            var displayText = $"{warehouseName} - {locationName} (可用: {NumberFormatHelper.FormatSmart(stockDetail.AvailableStock)})";
                             <option value="@stockDetail.Id">@displayText</option>
                         }
                     </select>;
@@ -596,7 +596,7 @@ else
             Title = "庫存量", 
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "選擇倉庫後顯示該商品的即時可用庫存量（唯讀）",
             CustomTemplate = item => 
             {
@@ -605,7 +605,7 @@ else
                 // 只有當選擇了商品和倉庫時才顯示庫存量
                 if (deliveryItem.ProductId <= 0 || !deliveryItem.WarehouseId.HasValue)
                 {
-                    return @<span class="text-muted">-</span>;
+                    return @<div class="text-end text-muted">-</div>;
                 }
                 
                 // 顯示庫存量（有可能尚未載入）
@@ -615,16 +615,16 @@ else
                     var textColor = stockQty <= 0 ? "text-danger" : 
                                    stockQty < 10 ? "text-warning" : "text-success";
                     
-                    return @<span class="@textColor fw-bold" title="即時可用庫存">
-                        @stockQty.ToString("N0")
-                    </span>;
+                    return @<div class="text-end @textColor fw-bold" title="即時可用庫存">
+                        @NumberFormatHelper.FormatSmart(stockQty)
+                    </div>;
                 }
                 else
                 {
                     // 載入中
-                    return @<span class="text-muted">
+                    return @<div class="text-end text-muted">
                         <i class="bi bi-hourglass-split"></i>
-                    </span>;
+                    </div>;
                 }
             }
         });
@@ -1114,13 +1114,34 @@ else
             }
             else if (item.WarehouseId.HasValue && item.WarehouseId.Value > 0)
             {
-                // 情況2: 只選擇了倉庫（編輯模式下可能只有倉庫ID沒有庫位）
-                // 計算該倉庫的總可用庫存
-                var warehouseStock = stockDetails
-                    .Where(d => d.WarehouseId == item.WarehouseId.Value)
-                    .Sum(d => d.AvailableStock);
+                // 情況2: 有倉庫ID，嘗試根據倉庫ID和庫位ID找到對應的庫存明細
+                InventoryStockDetail? matchingDetail = null;
                 
-                item.CurrentStockQuantity = warehouseStock;
+                if (item.WarehouseLocationId.HasValue && item.WarehouseLocationId.Value > 0)
+                {
+                    // 有庫位ID，精確匹配倉庫+庫位
+                    matchingDetail = stockDetails.FirstOrDefault(d => 
+                        d.WarehouseId == item.WarehouseId.Value && 
+                        d.WarehouseLocationId == item.WarehouseLocationId.Value);
+                }
+                else
+                {
+                    // 沒有庫位ID，只匹配倉庫（取第一個符合的）
+                    matchingDetail = stockDetails.FirstOrDefault(d => 
+                        d.WarehouseId == item.WarehouseId.Value);
+                }
+                
+                if (matchingDetail != null)
+                {
+                    // 找到匹配的庫存明細，設定 InventoryStockDetailId 讓下拉選單能正確顯示
+                    item.InventoryStockDetailId = matchingDetail.Id;
+                    item.CurrentStockQuantity = matchingDetail.AvailableStock;
+                }
+                else
+                {
+                    // 找不到匹配的庫存明細（可能庫存已用完），顯示為 0
+                    item.CurrentStockQuantity = 0;
+                }
             }
             else
             {

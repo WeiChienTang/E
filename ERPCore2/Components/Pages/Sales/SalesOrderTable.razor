@@ -11,6 +11,7 @@
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
 @inject IQuotationService QuotationService
+@inject IQuotationDetailService QuotationDetailService
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject IQuotationCompositionDetailService QuotationCompositionDetailService
 @inject IProductCompositionService ProductCompositionService
@@ -75,7 +76,7 @@ else
                                           OnClick="LoadSmartOrderItems"
                                           IsDisabled="@(!CanLoadSmartOrder || _hasUndeletableDetails)"
                                           Title="@GetSmartOrderTooltip()" />
-                    <GenericButtonComponent Text="載入報價"
+                    <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
                                           Icon="fas fa-file-invoice"
                                           OnClick="LoadQuotationItems"
@@ -201,7 +202,9 @@ else
 
     public List<SalesItem> SalesItems { get; set; } = new List<SalesItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
+    private List<QuotationDetail> AvailableQuotationDetails { get; set; } = new List<QuotationDetail>();  // 可轉單的報價單明細
     private int? _previousSelectedCustomerId = null;
+    private int? _previousSelectedQuotationId = null;  // 追蹤報價單變更
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
     private int _previousExistingDetailsCount = 0;  // 追蹤 ExistingDetails 數量變化
@@ -348,6 +351,7 @@ else
     {
         // 初始化追蹤變數 (在載入資料前設定，避免 OnParametersSetAsync 誤判)
         _previousSelectedCustomerId = SelectedCustomerId;
+        _previousSelectedQuotationId = SelectedQuotationId;
         _previousFilterProductId = FilterProductId;
         _previousExistingDetailsCount = ExistingDetails?.Count ?? 0;
         
@@ -364,6 +368,7 @@ else
         
         // 檢查篩選參數是否變更
         bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
+        bool quotationChanged = _previousSelectedQuotationId != SelectedQuotationId;
         bool productFilterChanged = _previousFilterProductId != FilterProductId;
         int currentExistingDetailsCount = ExistingDetails?.Count ?? 0;
         bool existingDetailsChanged = _previousExistingDetailsCount != currentExistingDetailsCount;
@@ -373,6 +378,7 @@ else
         if (customerChanged && !existingDetailsChanged)
         {
             _previousSelectedCustomerId = SelectedCustomerId;
+            _previousSelectedQuotationId = SelectedQuotationId;
             _previousFilterProductId = FilterProductId;
             _previousExistingDetailsCount = currentExistingDetailsCount;
             
@@ -381,6 +387,15 @@ else
             // 客戶變更時清空現有選項並重新載入
             SalesItems.Clear();
             await LoadExistingDetailsAsync();
+            return;
+        }
+        
+        // 報價單變更時，需要重新載入可轉單的報價單明細
+        if (quotationChanged)
+        {
+            _previousSelectedQuotationId = SelectedQuotationId;
+            await LoadAvailableProductsAsync();
+            StateHasChanged();
             return;
         }
         
@@ -806,13 +821,18 @@ else
 
     // ===== 建立空項目方法 =====
     
-    private Task LoadAvailableProductsAsync()
+    private async Task LoadAvailableProductsAsync()
     {
         try
         {
             if (SelectedCustomerId.HasValue && SelectedCustomerId.Value > 0)
             {
-                // 只顯示商品類別標記為可販售的商品
+                // 1. 載入可轉單的報價單明細（待轉數量 > 0）
+                AvailableQuotationDetails = await QuotationDetailService.GetConvertableDetailsByCustomerAsync(
+                    SelectedCustomerId.Value, 
+                    SelectedQuotationId);
+                
+                // 2. 只顯示商品類別標記為可販售的商品
                 AvailableProducts = Products
                     .Where(p => p.ProductCategory != null && 
                                p.ProductCategory.IsSaleable)
@@ -820,15 +840,15 @@ else
             }
             else
             {
+                AvailableQuotationDetails = new List<QuotationDetail>();
                 AvailableProducts = new List<Product>();
             }
         }
         catch (Exception)
         {
+            AvailableQuotationDetails = new List<QuotationDetail>();
             AvailableProducts = new List<Product>();
         }
-        
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -915,7 +935,11 @@ else
                     TaxRate = finalTaxRate,
                     Subtotal = salesDetail.SubtotalAmount,
                     DetailRemarks = salesDetail.Remarks ?? "",
-                    ExistingDetailEntity = detail
+                    ExistingDetailEntity = detail,
+                    // 設定來源報價單資訊
+                    SourceQuotationId = salesDetail.QuotationDetail?.QuotationId,
+                    SourceQuotationDetailId = salesDetail.QuotationDetailId,
+                    SelectedQuotationDetail = salesDetail.QuotationDetail
                 };
                 
                 // 🔑 載入該明細的 BOM 組成資料（如果有的話）
@@ -935,8 +959,12 @@ else
                     // BOM 載入失敗不影響主流程
                 }
                 
-                // 初始化 ProductSearchValue
-                if (salesItem.SelectedProduct != null)
+                // 初始化 ProductSearchValue（如果有報價單明細則顯示報價單資訊，否則顯示商品資訊）
+                if (salesItem.SelectedQuotationDetail != null)
+                {
+                    salesItem.ProductSearchValue = FormatQuotationDetailDisplayText(salesItem.SelectedQuotationDetail);
+                }
+                else if (salesItem.SelectedProduct != null)
                 {
                     salesItem.ProductSearchValue = FormatProductDisplayText(salesItem.SelectedProduct);
                 }
@@ -1129,7 +1157,7 @@ else
     {
         var columns = new List<InteractiveColumnDefinition>();
 
-        // 商品選擇欄位 - 使用 SearchableSelect 類型
+        // 商品選擇欄位 - 使用 SearchableSelect 類型（支援報價單明細和一般商品）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "商品編號/名稱",
@@ -1137,17 +1165,20 @@ else
             EmptyCheckPropertyName = "SelectedProduct",
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
-            Width = "250px",
-            Tooltip = "搜尋並選擇要銷售的商品。已有退貨或沖款記錄的商品將無法變更",
-            Placeholder = "請輸入商品編號或名稱",
+            Width = "300px",
+            Tooltip = "搜尋並選擇要銷售的報價單商品或一般商品",
+            Placeholder = "請輸入報價單號或商品編號/名稱",
             SearchValuePropertyName = nameof(SalesItem.ProductSearchValue),
-            FilteredItemsPropertyName = nameof(SalesItem.FilteredProducts),
+            FilteredItemsPropertyName = nameof(SalesItem.FilteredItems),
             ShowDropdownPropertyName = nameof(SalesItem.ShowProductDropdown),
             SelectedIndexPropertyName = nameof(SalesItem.ProductSelectedIndex),
             ItemDisplayFormatter = (item) =>
             {
-                var product = (Product)item;
-                return FormatProductDisplayText(product);
+                if (item is QuotationDetail detail)
+                    return FormatQuotationDetailDropdownText(detail);
+                else if (item is Product product)
+                    return FormatProductDropdownText(product);
+                return string.Empty;
             },
             IsDisabledFunc = item =>
             {
@@ -1170,7 +1201,7 @@ else
             OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
             {
                 var (item, selectedItem) = tuple;
-                await OnProductSelectItem((SalesItem)item, (Product?)selectedItem);
+                await OnItemSelectItem((SalesItem)item, selectedItem);
             }),
             OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
             {
@@ -1181,7 +1212,7 @@ else
                 OnProductBlur((SalesItem)item);
             }),
             EnableKeyboardNavigation = true,
-            GetDropdownItems = (item) => ((SalesItem)item).FilteredProducts,
+            GetDropdownItems = (item) => ((SalesItem)item).FilteredItems,
             GetSelectedIndex = (item) => ((SalesItem)item).ProductSelectedIndex,
             SetSelectedIndex = (item, index) => ((SalesItem)item).ProductSelectedIndex = index,
             GetShowDropdown = (item) => ((SalesItem)item).ShowProductDropdown,
@@ -1539,9 +1570,15 @@ else
         /// </summary>
         public bool HasCompositionData => CustomCompositionDetails?.Any() == true;
         
+        // === 報價單明細關聯屬性 ===
+        /// <summary>
+        /// 選擇的報價單明細（用於從報價單轉單時）
+        /// </summary>
+        public QuotationDetail? SelectedQuotationDetail { get; set; }
+        
         // === SearchableSelect 支援屬性 ===
         public string ProductSearchValue { get; set; } = string.Empty;
-        public List<Product> FilteredProducts { get; set; } = new();
+        public List<object> FilteredItems { get; set; } = new();  // 支援 QuotationDetail 和 Product 兩種類型
         public bool ShowProductDropdown { get; set; } = false;
         public int ProductSelectedIndex { get; set; } = -1;
         
@@ -1572,35 +1609,47 @@ else
     // ===== 商品 SearchableSelect 事件處理 =====
     
     /// <summary>
-    /// 商品搜尋輸入處理
+    /// 商品搜尋輸入處理（同時搜尋報價單明細和一般商品）
     /// </summary>
     private void OnProductSearchInput(SalesItem item, string? searchValue)
     {
         item.ProductSearchValue = searchValue ?? string.Empty;
         
-        var availableProducts = GetAvailableProducts();
+        var combinedItems = new List<object>();
         
-        // 確保當前選中的商品也在列表中
-        if (item.SelectedProduct != null && 
-            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
+        if (!string.IsNullOrWhiteSpace(searchValue))
         {
-            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
-        }
-        
-        if (string.IsNullOrWhiteSpace(searchValue))
-        {
-            item.FilteredProducts = availableProducts.Take(20).ToList();
+            // 1. 搜尋報價單明細（優先顯示）
+            var filteredDetails = AvailableQuotationDetails
+                .Where(d =>
+                    (d.Quotation?.Code != null && d.Quotation.Code.Contains(searchValue, StringComparison.OrdinalIgnoreCase)) ||
+                    (d.Product?.Code != null && d.Product.Code.Contains(searchValue, StringComparison.OrdinalIgnoreCase)) ||
+                    (d.Product?.Name != null && d.Product.Name.Contains(searchValue, StringComparison.OrdinalIgnoreCase)))
+                .Take(10)
+                .ToList();
+            
+            // 2. 搜尋一般商品
+            var filteredProducts = AvailableProducts
+                .Where(p =>
+                    (p.Code != null && p.Code.Contains(searchValue, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Name != null && p.Name.Contains(searchValue, StringComparison.OrdinalIgnoreCase)))
+                .Take(10)
+                .ToList();
+            
+            combinedItems.AddRange(filteredDetails.Cast<object>());
+            combinedItems.AddRange(filteredProducts.Cast<object>());
         }
         else
         {
-            item.FilteredProducts = availableProducts
-                .Where(p => 
-                    (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
-                .Take(20)
-                .ToList();
+            // 沒有搜尋條件時，優先顯示報價單明細，然後是一般商品
+            var topDetails = AvailableQuotationDetails.Take(10).ToList();
+            var topProducts = AvailableProducts.Take(10).ToList();
+            
+            combinedItems.AddRange(topDetails.Cast<object>());
+            combinedItems.AddRange(topProducts.Cast<object>());
         }
         
+        item.FilteredItems = combinedItems;
         item.ShowProductDropdown = true;
         item.ProductSelectedIndex = -1;
         StateHasChanged();
@@ -1611,16 +1660,16 @@ else
     /// </summary>
     private void OnProductFocus(SalesItem item)
     {
-        var availableProducts = GetAvailableProducts();
+        var combinedItems = new List<object>();
         
-        // 確保當前選中的商品也在列表中
-        if (item.SelectedProduct != null && 
-            !availableProducts.Any(p => p.Id == item.SelectedProduct.Id))
-        {
-            availableProducts = new List<Product>(availableProducts) { item.SelectedProduct };
-        }
+        // 優先顯示報價單明細，然後是一般商品
+        var topDetails = AvailableQuotationDetails.Take(10).ToList();
+        var topProducts = AvailableProducts.Take(10).ToList();
         
-        item.FilteredProducts = availableProducts.Take(20).ToList();
+        combinedItems.AddRange(topDetails.Cast<object>());
+        combinedItems.AddRange(topProducts.Cast<object>());
+        
+        item.FilteredItems = combinedItems;
         item.ShowProductDropdown = true;
         item.ProductSelectedIndex = -1;
         StateHasChanged();
@@ -1639,42 +1688,133 @@ else
     }
     
     /// <summary>
-    /// 選擇商品項目
+    /// 選擇項目（報價單明細或一般商品）
     /// </summary>
-    private async Task OnProductSelectItem(SalesItem item, Product? selectedProduct)
+    private async Task OnItemSelectItem(SalesItem item, object? selectedItem)
     {
-        if (selectedProduct == null)
+        if (selectedItem is QuotationDetail detail)
         {
+            // 選擇報價單明細
+            item.SelectedQuotationDetail = detail;
+            item.SelectedProduct = detail.Product;
+            item.ProductSearchValue = FormatQuotationDetailDisplayText(detail);
+            item.OrderQuantity = detail.PendingQuantity; // 預設填入待轉數量
+            item.UnitPrice = detail.UnitPrice;
+            item.DiscountPercentage = detail.DiscountPercentage;
+            item.TaxRate = detail.TaxRate ?? detail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
+            item.SourceQuotationId = detail.QuotationId;
+            item.SourceQuotationDetailId = detail.Id;
+            item.IsQuotationApproved = detail.Quotation?.IsApproved ?? false;
+            item.CalculateSubtotal();
+        }
+        else if (selectedItem is Product product)
+        {
+            // 選擇一般商品
+            item.SelectedQuotationDetail = null;
+            item.SelectedProduct = product;
+            item.ProductSearchValue = FormatProductDisplayText(product);
+            item.OrderQuantity = 0;
+            item.UnitPrice = 0; // 需手動輸入單價
+            item.DiscountPercentage = 0;
+            item.TaxRate = product.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
+            item.SourceQuotationId = null;
+            item.SourceQuotationDetailId = null;
+            item.IsQuotationApproved = null;
+        }
+        else
+        {
+            item.SelectedQuotationDetail = null;
             item.SelectedProduct = null;
             item.ProductSearchValue = string.Empty;
-            item.ShowProductDropdown = false;
-            item.ProductSelectedIndex = -1;
-            await NotifyDetailsChanged();
-            return;
         }
         
-        item.SelectedProduct = selectedProduct;
-        item.ProductSearchValue = FormatProductDisplayText(selectedProduct);
         item.ShowProductDropdown = false;
         item.ProductSelectedIndex = -1;
-        
-        // 自動帶入商品稅率（優先使用商品稅率，沒有則使用系統預設值）
-        item.TaxRate = selectedProduct.TaxRate ?? await SystemParameterService.GetTaxRateAsync();
-        
         await NotifyDetailsChanged();
         StateHasChanged();
     }
     
     /// <summary>
-    /// 格式化商品顯示文字（用於下拉選單）
+    /// 選擇商品項目（保留給舊的呼叫）
+    /// </summary>
+    private async Task OnProductSelectItem(SalesItem item, Product? selectedProduct)
+    {
+        await OnItemSelectItem(item, selectedProduct);
+    }
+    
+    /// <summary>
+    /// 格式化報價單明細顯示文字（用於下拉選單 - 兩行顯示）
+    /// 第一行：報價單號 + 待轉數量（小字藍色）
+    /// 第二行：商品編號 商品名稱
+    /// </summary>
+    private string FormatQuotationDetailDropdownText(QuotationDetail detail)
+    {
+        if (detail?.Product == null) return "";
+        
+        var product = detail.Product;
+        var quotationCode = detail.Quotation?.Code ?? "N/A";
+        var pendingQty = detail.PendingQuantity;
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 兩行顯示：報價單號在上（小字藍色），商品資訊在下
+        return $"<div style='line-height: 1.3;'>" +
+               $"<small class='text-primary'>報價: {quotationCode} (待轉: {pendingQty:G29})</small><br/>" +
+               $"<span>{productDisplay}</span></div>";
+    }
+    
+    /// <summary>
+    /// 格式化報價單明細顯示文字（用於輸入框顯示 - 單行簡潔格式）
+    /// </summary>
+    private string FormatQuotationDetailDisplayText(QuotationDetail detail)
+    {
+        if (detail?.Product == null) return "";
+        
+        var product = detail.Product;
+        var quotationCode = detail.Quotation?.Code ?? "N/A";
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 輸入框顯示：簡潔的單行格式
+        return $"{quotationCode} | {productDisplay}";
+    }
+    
+    /// <summary>
+    /// 格式化商品顯示文字（用於下拉選單 - 兩行顯示）
+    /// 第一行：商品類別（小字灰色）
+    /// 第二行：商品編號 商品名稱
+    /// </summary>
+    private string FormatProductDropdownText(Product product)
+    {
+        if (product == null) return "";
+        
+        var categoryName = product.ProductCategory?.Name ?? "一般商品";
+        
+        var productDisplay = !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
+            ? $"{product.Code} {product.Name}"
+            : (!string.IsNullOrEmpty(product.Code) ? product.Code : product.Name ?? "");
+        
+        // 兩行顯示：商品類別在上（小字灰色），商品資訊在下
+        return $"<div style='line-height: 1.3;'>" +
+               $"<small class='text-muted'>{categoryName}</small><br/>" +
+               $"<span>{productDisplay}</span></div>";
+    }
+    
+    /// <summary>
+    /// 格式化商品顯示文字（用於輸入框顯示 - 單行簡潔格式）
     /// </summary>
     private string FormatProductDisplayText(Product product)
     {
         if (product == null) return "";
         
-        return !string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name)
-            ? $"[{product.Code}] {product.Name}"
-            : (!string.IsNullOrEmpty(product.Code) ? $"[{product.Code}]" : product.Name ?? "");
+        if (!string.IsNullOrEmpty(product.Code) && !string.IsNullOrEmpty(product.Name))
+            return $"{product.Code} {product.Name}";
+        
+        return product.Code ?? product.Name ?? "";
     }
     
     // ===== 商品選擇事件處理（舊方法，保留以防其他地方使用） =====

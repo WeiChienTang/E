@@ -1673,6 +1673,9 @@
                                                                SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                                SelectedPurchaseOrderId="@editModalComponent.Entity.PurchaseOrderId"
                                                                FilterProductId="@filterProductId"
+                                                               SelectedSupplierName="@GetSelectedSupplierName()"
+                                                               SelectedPurchaseOrderCode="@GetSelectedPurchaseOrderCode()"
+                                                               FilterProductName="@GetFilterProductName()"
                                                                TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                                MainEntity="@editModalComponent.Entity"
                                                                ExistingDetails="@purchaseReceivingDetails"
@@ -1722,6 +1725,45 @@
             </div>
         }
     };
+    
+    // ===== 輔助方法：取得選項名稱 =====
+    
+    /// <summary>
+    /// 取得選定廠商的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedSupplierName()
+    {
+        if (editModalComponent?.Entity?.SupplierId > 0)
+        {
+            return suppliers.FirstOrDefault(s => s.Id == editModalComponent.Entity.SupplierId)?.CompanyName;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得選定採購單的單號（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedPurchaseOrderCode()
+    {
+        if (editModalComponent?.Entity?.PurchaseOrderId > 0)
+        {
+            return purchaseOrders.FirstOrDefault(po => po.Id == editModalComponent.Entity.PurchaseOrderId)?.Code;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得篩選商品的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetFilterProductName()
+    {
+        if (filterProductId.HasValue && filterProductId.Value > 0)
+        {
+            var product = products.FirstOrDefault(p => p.Id == filterProductId.Value);
+            return product != null ? $"{product.Code} {product.Name}" : null;
+        }
+        return null;
+    }
     
     // ===== ActionButton 產生方法 =====    /// <summary>
     /// 產生廠商操作按鈕 - 使用統一 Helper

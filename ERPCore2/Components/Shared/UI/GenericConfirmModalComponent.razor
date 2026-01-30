@@ -1,0 +1,203 @@
+@* 
+    通用確認對話框組件
+    提供一個簡潔美觀的確認對話框，支援顯示條件清單
+    適用於需要使用者確認「是」或「否」的場景
+*@
+@using ERPCore2.Components.Shared.PageTemplate
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Icon="@Icon"
+                   Size="BaseModalComponent.ModalSize.Default"
+                   HeaderColor="@HeaderColor"
+                   UseWhiteCloseButton="@(HeaderColor != BaseModalComponent.HeaderVariant.Default)"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="true"
+                   OnClose="@HandleCancel">
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.Gray" 
+                            Text="@CancelButtonText" 
+                            OnClick="HandleCancel"
+                            Title="取消" />
+        <GenericButtonComponent Variant="@ConfirmButtonVariant" 
+                            Text="@ConfirmButtonText" 
+                            OnClick="HandleConfirm"
+                            Title="確認" />
+    </HeaderButtons>
+    <BodyContent>
+        @* 主訊息 *@
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <div class="mb-3 text-center">
+                <p class="fs-6 mb-0">@Message</p>
+            </div>
+        }
+        
+        @* 條件清單 *@
+        @if (Conditions?.Any() == true)
+        {
+            <div class="condition-list mb-3">
+                <ul class="list-group list-group-flush">
+                    @foreach (var condition in Conditions)
+                    {
+                        <li class="list-group-item d-flex align-items-start py-2">
+                            <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                            <span>@condition</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+        
+        @* 總計訊息 *@
+        @if (!string.IsNullOrWhiteSpace(SummaryMessage))
+        {
+            <div class="text-center mt-3">
+                <p class="fw-bold mb-0 text-primary">@SummaryMessage</p>
+            </div>
+        }
+        
+        @* 自訂內容 *@
+        @if (ChildContent != null)
+        {
+            @ChildContent
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+<style>
+    .condition-list .list-group-item {
+        background-color: #f8f9fa;
+        border-left: 3px solid var(--bs-primary);
+        font-size: 0.95rem;
+    }
+</style>
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+    
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// Modal 標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "確認";
+    
+    /// <summary>
+    /// 標題圖示 (Bootstrap Icon class)
+    /// </summary>
+    [Parameter]
+    public string Icon { get; set; } = "bi-question-circle";
+    
+    /// <summary>
+    /// 主訊息
+    /// </summary>
+    [Parameter]
+    public string? Message { get; set; }
+    
+    /// <summary>
+    /// 條件清單
+    /// </summary>
+    [Parameter]
+    public List<string>? Conditions { get; set; }
+    
+    /// <summary>
+    /// 總計/摘要訊息（顯示在條件清單下方）
+    /// </summary>
+    [Parameter]
+    public string? SummaryMessage { get; set; }
+    
+    /// <summary>
+    /// 確認按鈕文字
+    /// </summary>
+    [Parameter]
+    public string ConfirmButtonText { get; set; } = "確認";
+    
+    /// <summary>
+    /// 取消按鈕文字
+    /// </summary>
+    [Parameter]
+    public string CancelButtonText { get; set; } = "取消";
+    
+    /// <summary>
+    /// 確認按鈕樣式
+    /// </summary>
+    [Parameter]
+    public ButtonVariant ConfirmButtonVariant { get; set; } = ButtonVariant.Blue;
+    
+    /// <summary>
+    /// 標題列顏色
+    /// </summary>
+    [Parameter]
+    public BaseModalComponent.HeaderVariant HeaderColor { get; set; } = BaseModalComponent.HeaderVariant.Primary;
+    
+    /// <summary>
+    /// 確認事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+    
+    /// <summary>
+    /// 取消事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    /// <summary>
+    /// 自訂內容
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    // ===== 事件處理方法 =====
+
+    /// <summary>
+    /// 處理確認按鈕點擊
+    /// </summary>
+    private async Task HandleConfirm()
+    {
+        if (OnConfirm.HasDelegate)
+        {
+            await OnConfirm.InvokeAsync();
+        }
+        
+        // 關閉 Modal
+        await CloseModal();
+    }
+
+    /// <summary>
+    /// 處理取消按鈕點擊
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        await CloseModal();
+        
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+    
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+}
