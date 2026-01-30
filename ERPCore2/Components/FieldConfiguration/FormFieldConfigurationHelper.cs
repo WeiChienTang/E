@@ -26,7 +26,7 @@ namespace ERPCore2.FieldConfiguration
             string label = "備註",
             string placeholder = "請輸入備註",
             string helpText = "",
-            int rows = 1,
+            int rows = 2,
             string containerCssClass = "col-12",
             bool readOnly = false) where TEntity : BaseEntity
         {

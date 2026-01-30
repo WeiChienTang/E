@@ -24,7 +24,8 @@ public static class ReportRegistry
                 Category = ReportCategory.Customer,
                 RequiredPermission = "SetoffDocument.Read",
                 ActionId = "OpenAccountsReceivableReport",
-                SortOrder = 1
+                SortOrder = 1,
+                IsEnabled = false  // 尚未實作
             },
             new ReportDefinition
             {
