@@ -53,3 +53,25 @@ h1:focus {
 .popover {
     z-index: 1070;
 }
+
+/* ===== 搜尋下拉選單全域修復 - 解決手機版被遮擋問題 ===== */
+/* 使用 fixed 定位讓下拉選單脫離文檔流，不受父容器 overflow 影響 */
+.searchable-dropdown.show {
+    position: fixed !important;
+    z-index: 99999 !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+    background-color: #fff !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 手機版下拉選單優化 */
+@media (max-width: 767px) {
+    .searchable-dropdown.show {
+        max-height: 40vh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}

@@ -12,6 +12,13 @@
     window.searchableDropdownInitialized = true;
 
     /**
+     * 檢測是否為手機裝置
+     */
+    function isMobile() {
+        return window.innerWidth <= 767;
+    }
+
+    /**
      * 定位搜尋下拉選單
      * 自動調整下拉選單位置，避免超出視窗範圍
      */
@@ -23,57 +30,104 @@
             if (!input) return;
 
             const inputRect = input.getBoundingClientRect();
-            const dropdownRect = dropdown.getBoundingClientRect();
             const viewportHeight = window.innerHeight;
             const viewportWidth = window.innerWidth;
 
-            // 計算最佳位置
-            let top = inputRect.bottom + window.scrollY;
-            let left = inputRect.left + window.scrollX;
-
-            // 檢查是否需要向上顯示（空間不足時）
-            if (inputRect.bottom + dropdownRect.height > viewportHeight) {
-                if (inputRect.top > dropdownRect.height) {
-                    top = inputRect.top + window.scrollY - dropdownRect.height;
-                }
+            // 強制設定 fixed 定位
+            dropdown.style.setProperty('position', 'fixed', 'important');
+            dropdown.style.setProperty('z-index', '99999', 'important');
+            
+            // 計算下拉選單寬度
+            let dropdownWidth;
+            if (isMobile()) {
+                // 手機版：寬度適應螢幕，但不超過視窗寬度
+                dropdownWidth = Math.min(viewportWidth - 20, 300);
+            } else {
+                // 桌面版：至少與輸入框同寬
+                dropdownWidth = Math.max(inputRect.width, 250);
             }
 
-            // 檢查是否需要調整水平位置（避免超出螢幕）
-            if (left + dropdownRect.width > viewportWidth) {
-                left = viewportWidth - dropdownRect.width - 10;
-                if (left < 10) left = 10;
+            // 計算位置
+            let top = inputRect.bottom + 2;
+            let left = inputRect.left;
+
+            // 計算可用空間
+            const spaceBelow = viewportHeight - inputRect.bottom - 10;
+            const spaceAbove = inputRect.top - 10;
+            
+            // 設定最大高度
+            let maxHeight = isMobile() ? Math.min(200, spaceBelow) : Math.min(300, spaceBelow);
+            
+            // 如果下方空間不足，嘗試向上顯示
+            if (spaceBelow < 100 && spaceAbove > spaceBelow) {
+                maxHeight = Math.min(isMobile() ? 200 : 300, spaceAbove);
+                top = inputRect.top - maxHeight - 2;
             }
 
-            // 應用計算出的位置
-            dropdown.style.position = 'fixed';
-            dropdown.style.top = (top - window.scrollY) + 'px';
-            dropdown.style.left = (left - window.scrollX) + 'px';
-            dropdown.style.width = Math.max(inputRect.width, 200) + 'px';
+            // 確保不超出螢幕頂部
+            if (top < 10) {
+                top = 10;
+                maxHeight = inputRect.top - 20;
+            }
+
+            // 調整水平位置，避免超出螢幕
+            if (left + dropdownWidth > viewportWidth - 10) {
+                left = viewportWidth - dropdownWidth - 10;
+            }
+            if (left < 10) left = 10;
+
+            // 應用樣式
+            dropdown.style.setProperty('top', top + 'px', 'important');
+            dropdown.style.setProperty('left', left + 'px', 'important');
+            dropdown.style.setProperty('width', dropdownWidth + 'px', 'important');
+            dropdown.style.setProperty('max-height', maxHeight + 'px', 'important');
+            dropdown.style.setProperty('overflow-y', 'auto', 'important');
+            
+            // 確保可見性
+            dropdown.style.setProperty('display', 'block', 'important');
+            dropdown.style.setProperty('opacity', '1', 'important');
+            dropdown.style.setProperty('visibility', 'visible', 'important');
+            
+            // 視覺樣式
+            dropdown.style.setProperty('background-color', '#fff', 'important');
+            dropdown.style.setProperty('border', '1px solid #dee2e6', 'important');
+            dropdown.style.setProperty('border-radius', '0.375rem', 'important');
+            dropdown.style.setProperty('box-shadow', '0 0.5rem 1rem rgba(0, 0, 0, 0.15)', 'important');
+            
+            // iOS 平滑滾動
+            dropdown.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
         });
     }
 
-    // 當頁面載入完成或下拉選單顯示時執行定位
-    document.addEventListener('DOMContentLoaded', positionSearchableDropdown);
-
     // 使用 MutationObserver 監聽下拉選單的顯示/隱藏
     const observer = new MutationObserver(function (mutations) {
+        let shouldPosition = false;
+        
         mutations.forEach(function (mutation) {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                 const target = mutation.target;
-                if (target.classList.contains('searchable-dropdown') && target.classList.contains('show')) {
-                    setTimeout(positionSearchableDropdown, 10);
+                if (target.classList && target.classList.contains('searchable-dropdown')) {
+                    shouldPosition = true;
                 }
             } else if (mutation.type === 'childList') {
-                const addedNodes = Array.from(mutation.addedNodes);
-                addedNodes.forEach(node => {
-                    if (node.nodeType === 1 && node.classList &&
-                        node.classList.contains('searchable-dropdown') &&
-                        node.classList.contains('show')) {
-                        setTimeout(positionSearchableDropdown, 10);
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) {
+                        if (node.classList?.contains('searchable-dropdown') ||
+                            node.querySelector?.('.searchable-dropdown')) {
+                            shouldPosition = true;
+                        }
                     }
                 });
             }
         });
+        
+        if (shouldPosition) {
+            // 多次執行以確保 DOM 完全更新
+            requestAnimationFrame(function() {
+                positionSearchableDropdown();
+                setTimeout(positionSearchableDropdown, 50);
+            });
+        }
     });
 
     // 開始觀察整個文檔
@@ -84,8 +138,7 @@
         attributeFilter: ['class']
     });
 
-    // 滾動和視窗大小變化時重新定位
-    window.addEventListener('scroll', positionSearchableDropdown);
+    // 視窗大小變化時重新定位
     window.addEventListener('resize', positionSearchableDropdown);
 })();
 

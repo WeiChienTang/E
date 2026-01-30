@@ -426,30 +426,18 @@
     border-top: 2px solid #e5e7eb !important;
 }
 
-/* 搜尋下拉選單優化 - 解決容器限制問題 */
-.interactive-table-container .position-relative {
-    position: static !important; /* 移除 relative 定位，避免限制下拉選單 */
-}
-
-/* 搜尋下拉選單樣式優化 */
-.interactive-table-container .dropdown-menu.show {
-    position: fixed !important; /* 使用 fixed 定位，相對於視窗定位 */
-    z-index: 10000 !important; /* 提高層級，確保顯示在最上層 */
+/* 搜尋下拉選單樣式優化 - 使用 fixed 定位解決手機版被裁切問題 */
+/* position: fixed 的元素不受父容器 overflow 影響，所以不需要修改父容器的 overflow */
+::deep .searchable-dropdown.show {
+    position: fixed !important; /* 使用 fixed 定位，脫離文檔流，相對於視窗定位 */
+    z-index: 99999 !important; /* 極高層級，確保顯示在 Modal 和其他元素之上 */
     transform: none !important; /* 移除可能的變換效果 */
     will-change: auto !important; /* 優化渲染性能 */
-}
-
-/* 確保表格容器不會裁切下拉選單 - 但保持水平滾動 */
-.interactive-table-container.table-responsive {
-    overflow-x: auto; /* 保持水平滾動 */
-    overflow-y: visible !important; /* 允許垂直內容（下拉選單）超出容器邊界 */
-}
-
-/* 為搜尋下拉選單的父容器特殊處理 */
-.interactive-table-container td:has(.searchable-dropdown.show),
-.interactive-table-container td .position-relative:has(.searchable-dropdown.show) {
-    overflow: visible !important;
-    position: static !important;
+    -webkit-transform: none !important; /* Safari 兼容 */
+    background-color: #fff !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 
 /* 隱藏數字輸入框的上下拉桿 (spinner) - 適用於所有瀏覽器 */
@@ -469,34 +457,25 @@
 
 /* 下拉選單在手機版的優化 */
 @media (max-width: 767px) {
-    /* 下拉選單在手機版的寬度調整 */
-    .dropdown-menu {
-        min-width: 250px !important;
-        max-width: calc(100vw - 40px) !important; /* 確保不超出螢幕寬度 */
-        font-size: 1rem; /* 手機版稍小的字體 */
-    }
-    
     /* 下拉選項在手機版的觸控優化 */
-    .dropdown-item {
-        padding: 8px 16px !important; /* 縮小上下內邊距 */
+    ::deep .dropdown-item {
+        padding: 12px 16px !important; /* 增加觸控區域 */
         line-height: 1.4;
+        font-size: 1rem;
     }
     
     /* 下拉選單項目選中狀態在手機版的顯示優化 */
-    .dropdown-item.active {
+    ::deep .dropdown-item.active {
         background-color: #007bff !important;
     }
     
-    /* 手機版搜尋下拉選單特殊處理 */
-    .interactive-table-container .dropdown-menu.show {
+    /* 手機版搜尋下拉選單 - 使用 fixed 定位 */
+    ::deep .searchable-dropdown.show {
         position: fixed !important;
-        top: auto !important;
-        left: 10px !important;
-        right: 10px !important;
-        max-height: 60vh !important; /* 限制最大高度為視窗高度的60% */
+        z-index: 99999 !important;
+        max-height: 40vh !important; /* 限制最大高度 */
         overflow-y: auto !important;
-        margin: 0 !important;
-        width: auto !important;
+        -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
     }
 }
 
