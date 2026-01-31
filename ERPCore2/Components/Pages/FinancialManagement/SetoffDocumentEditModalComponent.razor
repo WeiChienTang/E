@@ -73,11 +73,19 @@
     [Parameter] public SetoffType? DefaultSetoffType { get; set; } // 新增：預設的沖款類型
     [Parameter] public EventCallback<SetoffDocument> OnSetoffDocumentSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    
+    // ===== 預填參數（用於轉單功能）=====
+    [Parameter] public int? PrefilledSupplierId { get; set; }
+    [Parameter] public int? PrefilledPurchaseReceivingId { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // 轉單自動載入控制
+    private bool shouldAutoLoadFromReceiving = false;
+    private int? filterPurchaseReceivingId = null;
     
     // 公司編輯 Modal 相關變數 - 使用泛型管理器
     private CompanyEditModalComponent? companyEditModal;
@@ -866,6 +874,20 @@
                     CompanyId = primaryCompany?.Id ?? 0 // 設定預設公司
                 };
                 
+                // 處理預填參數（進貨轉沖款等場景）
+                if (PrefilledSupplierId.HasValue && PrefilledSupplierId.Value > 0)
+                {
+                    setoffDocument.RelatedPartyId = PrefilledSupplierId.Value;
+                    setoffDocument.RelatedPartyType = "Supplier";
+                    setoffDocument.SetoffType = SetoffType.AccountsPayable;
+                    
+                    // 設定進貨單篩選ID
+                    if (PrefilledPurchaseReceivingId.HasValue)
+                    {
+                        filterPurchaseReceivingId = PrefilledPurchaseReceivingId.Value;
+                    }
+                }
+                
                 // 新增模式：清空商品明細、收款記錄和預收付款項
                 setoffProductDetails = new List<SetoffProductDetail>();
                 setoffPayments = new List<SetoffPayment>();
@@ -1192,7 +1214,7 @@
             
             // 加入金額相關區段
             formSections = helper
-                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                .AddToSection(FormSectionNames.AmountInfo,
                     sd => sd.TotalSetoffAmount,
                     sd => sd.TotalCollectionAmount,
                     sd => sd.CurrentSetoffAmount,
@@ -1370,6 +1392,28 @@
     }
 
     /// <summary>
+    /// 取得關聯方名稱（客戶或廠商名稱）
+    /// </summary>
+    private string? GetRelatedPartyName()
+    {
+        if (editModalComponent?.Entity == null || editModalComponent.Entity.RelatedPartyId <= 0)
+            return null;
+            
+        if (editModalComponent.Entity.SetoffType == SetoffType.AccountsReceivable)
+        {
+            // 應收帳款 - 取得客戶名稱
+            var customer = customers.FirstOrDefault(c => c.Id == editModalComponent.Entity.RelatedPartyId);
+            return customer?.CompanyName;
+        }
+        else
+        {
+            // 應付帳款 - 取得廠商名稱
+            var supplier = suppliers.FirstOrDefault(s => s.Id == editModalComponent.Entity.RelatedPartyId);
+            return supplier?.CompanyName;
+        }
+    }
+
+    /// <summary>
     /// 配置自訂模組
     /// </summary>
     private List<GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule> GetCustomModules()
@@ -1424,6 +1468,7 @@
                     SetoffType="@editModalComponent.Entity.SetoffType"
                     RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
                     RelatedPartyType="@editModalComponent.Entity.RelatedPartyType"
+                    RelatedPartyName="@GetRelatedPartyName()"
                     StartDate="@filterStartDate"
                     EndDate="@filterEndDate"
                     ExistingDetails="@setoffProductDetails"
@@ -1525,6 +1570,63 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"開啟單據失敗：{ex.Message}");
+        }
+    }
+
+    // ===== 公開方法（供外部組件調用） =====
+    
+    /// <summary>
+    /// 開啟新增沖款單 Modal 並預填進貨單資訊（公開方法供外部調用）
+    /// </summary>
+    /// <param name="supplierId">廠商ID</param>
+    /// <param name="purchaseReceivingId">進貨單ID</param>
+    /// <remarks>
+    /// 此方法用於「進貨轉沖款」功能，會：
+    /// 1. 設定沖款類型為「應付帳款」
+    /// 2. 預填廠商資訊
+    /// 3. 自動載入指定進貨單的未結清明細
+    /// </remarks>
+    public async Task ShowAddModalWithPrefilledReceiving(int supplierId, int purchaseReceivingId)
+    {
+        try
+        {
+            // 使用 DocumentConversionHelper 統一處理轉單邏輯
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
+                {
+                    SetoffDocumentId = null;
+                    PrefilledSupplierId = supplierId;
+                    PrefilledPurchaseReceivingId = purchaseReceivingId;
+                    DefaultSetoffType = SetoffType.AccountsPayable;
+                    // 設定篩選ID（確保明細管理器渲染時就能使用正確的篩選參數）
+                    filterPurchaseReceivingId = purchaseReceivingId;
+                    shouldAutoLoadFromReceiving = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadFromReceiving = false;
+                    if (setoffProductDetailManager != null)
+                    {
+                        await setoffProductDetailManager.LoadDetailsFromPurchaseReceiving(purchaseReceivingId);
+                    }
+                },
+                detailManagerReady: () => setoffProductDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadFromReceiving,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledReceiving), GetType(), 
+                additionalData: $"開啟預填沖款單Modal失敗 - SupplierId: {supplierId}, ReceivingId: {purchaseReceivingId}");
+            await NotificationService.ShowErrorAsync("開啟沖款單時發生錯誤");
         }
     }
 }

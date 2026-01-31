@@ -122,6 +122,13 @@ namespace ERPCore2.Components.Shared.Base
         /// 是否唯讀
         /// </summary>
         public bool IsReadOnly { get; set; } = false;
+        
+        /// <summary>
+        /// 是否使用千分位分隔符號（預設 true）
+        /// 設為 true 時，數字輸入框會顯示千分位格式（如 4,000）
+        /// 設為 false 時，顯示原始數字（如 4000）
+        /// </summary>
+        public bool UseThousandsSeparator { get; set; } = true;
         #endregion
 
         #region Select 專用屬性

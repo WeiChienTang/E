@@ -556,16 +556,16 @@
                     q => q.CompanyId,
                     q => q.EmployeeId,
                     q => q.ProjectName,
-                    q => q.QuotationDate,
-                    q => q.TaxCalculationMethod)
-                .AddToSection(FormSectionNames.TradingTerms,
-                    q => q.PaymentTerms,
-                    q => q.DeliveryTerms)
+                    q => q.QuotationDate)
                 .AddToSection(FormSectionNames.AmountInfo,
+                    q => q.TaxCalculationMethod,
                     q => q.SubtotalBeforeDiscount,
                     q => q.DiscountAmount,
                     q => q.QuotationTaxAmount,
                     q => q.TotalAmount)
+                .AddToSection(FormSectionNames.TradingTerms,
+                    q => q.PaymentTerms,
+                    q => q.DeliveryTerms)
                 .AddCustomFields(FormSectionNames.OtherInfo, "Remarks")
                 .Build();
         }

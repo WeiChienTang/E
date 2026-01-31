@@ -1005,7 +1005,7 @@ else
                     ConvertedQuantity = quotationDetail.ConvertedQuantity,
                     TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? defaultTaxRate,
                     Specification = quotationDetail.Specification ?? quotationDetail.Product?.Specification ?? string.Empty,
-                    Remarks = string.Empty,
+                    Remarks = quotationDetail.Remarks ?? string.Empty,
                     ExistingDetailEntity = detail
                 };
                 
@@ -1091,6 +1091,7 @@ else
                     quotationDetail.DiscountPercentage = item.DiscountPercentage;
                     quotationDetail.TaxRate = item.TaxRate;
                     quotationDetail.Specification = item.Specification;
+                    quotationDetail.Remarks = item.Remarks;
                     // ConvertedQuantity 不應在此更新，它由轉單流程控制
                     
                     if (item.SelectedUnit != null)

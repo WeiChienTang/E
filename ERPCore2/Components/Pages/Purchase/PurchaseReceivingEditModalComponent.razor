@@ -372,6 +372,9 @@
             <GenericButtonComponent Text="轉退出" 
                                   Variant="ButtonVariant.Yellow" 
                                   OnClick="HandleCreateReturnFromReceiving" />
+            <GenericButtonComponent Text="轉沖款" 
+                                  Variant="ButtonVariant.Green" 
+                                  OnClick="HandleCreateSetoffFromReceiving" />
         }
     };
 
@@ -432,6 +435,58 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromReceiving), GetType(), 
                 additionalData: $"轉庫退出失敗 - ReceivingId: {PurchaseReceivingId}");
             await NotificationService.ShowErrorAsync("轉庫退出時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 從進貨單轉沖款單
+    /// </summary>
+    private async Task HandleCreateSetoffFromReceiving()
+    {
+        try
+        {
+            // 1. 驗證進貨單資料
+            if (!PurchaseReceivingId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉沖款：進貨單資料不存在");
+                return;
+            }
+            
+            // 2. 驗證廠商資料
+            if (editModalComponent.Entity.SupplierId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("進貨單缺少廠商資訊，無法轉沖款");
+                return;
+            }
+            
+            // 3. 檢查是否有明細
+            if (!purchaseReceivingDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("進貨單沒有明細資料，無法轉沖款");
+                return;
+            }
+            
+            // 4. 檢查是否有可沖款的明細（SubtotalAmount > TotalPaidAmount，即有未結清餘額）
+            bool hasUnsettledDetails = purchaseReceivingDetails
+                .Any(detail => detail.SubtotalAmount > detail.TotalPaidAmount && !detail.IsSettled);
+            
+            if (!hasUnsettledDetails)
+            {
+                await NotificationService.ShowWarningAsync("進貨單所有明細皆已完成沖款，無需再轉沖款");
+                return;
+            }
+            
+            // 5. 呼叫沖款單組件的公開方法
+            await setoffDocumentEditModal!.ShowAddModalWithPrefilledReceiving(
+                editModalComponent.Entity.SupplierId,
+                PurchaseReceivingId.Value
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateSetoffFromReceiving), GetType(), 
+                additionalData: $"轉沖款失敗 - ReceivingId: {PurchaseReceivingId}");
+            await NotificationService.ShowErrorAsync("轉沖款時發生錯誤");
         }
     }
 
@@ -1126,6 +1181,16 @@
     {
         try
         {
+            ConsoleHelper.WriteTitle("進貨明細變更事件");
+            ConsoleHelper.WriteInfo($"[父組件] 收到明細數量: {details?.Count ?? 0}");
+            if (details != null)
+            {
+                foreach (var d in details)
+                {
+                    ConsoleHelper.WriteDebug($"[父組件] 明細 Id={d.Id}, ProductId={d.ProductId}, Remarks='{d.Remarks}'");
+                }
+            }
+            
             purchaseReceivingDetails = details ?? new List<PurchaseReceivingDetail>();
             
             // 更新主檔的總金額和稅額
@@ -1446,9 +1511,18 @@
     {
         try
         {
+            ConsoleHelper.WriteTitle("儲存進貨明細");
+            ConsoleHelper.WriteInfo($"[儲存] 進貨單 ID: {purchaseReceiving.Id}");
+            ConsoleHelper.WriteInfo($"[儲存] 當前 purchaseReceivingDetails 數量: {purchaseReceivingDetails.Count}");
+            foreach (var d in purchaseReceivingDetails)
+            {
+                ConsoleHelper.WriteDebug($"[儲存] 明細前 Id={d.Id}, ProductId={d.ProductId}, Remarks='{d.Remarks}'");
+            }
+            
             // 只有在進貨單ID存在時才處理明細
             if (purchaseReceiving.Id <= 0)
             {
+                ConsoleHelper.WriteWarning("[儲存] 進貨單ID不存在，跳過明細處理");
                 return;
             }
 
@@ -1456,6 +1530,8 @@
             var validDetails = purchaseReceivingDetails
                 .Where(detail => detail.ProductId > 0 && detail.WarehouseId > 0)
                 .ToList();
+
+            ConsoleHelper.WriteInfo($"[儲存] 有效明細數量: {validDetails.Count}");
 
             if (validDetails.Any())
             {
@@ -1470,10 +1546,13 @@
                         detail.BatchNumber = purchaseReceiving.BatchNumber;
                     }
                     
+                    ConsoleHelper.WriteDebug($"[儲存] 準備儲存明細 Id={detail.Id}, ProductId={detail.ProductId}, Remarks='{detail.Remarks}'");
+                    
                     if (detail.Id == 0)
                     {
                         // 新記錄 - 使用基本的 Create 方法
                         var createResult = await PurchaseReceivingDetailService.CreateAsync(detail);
+                        ConsoleHelper.WriteDebug($"[儲存] 新增結果: {(createResult.IsSuccess ? "成功" : "失敗: " + createResult.ErrorMessage)}");
                         if (!createResult.IsSuccess)
                         {
                             await NotificationService.ShowWarningAsync($"明細儲存警告：{createResult.ErrorMessage}");
@@ -1483,6 +1562,7 @@
                     {
                         // 更新現有記錄 - 使用基本的 Update 方法
                         var updateResult = await PurchaseReceivingDetailService.UpdateAsync(detail);
+                        ConsoleHelper.WriteDebug($"[儲存] 更新結果: {(updateResult.IsSuccess ? "成功" : "失敗: " + updateResult.ErrorMessage)}");
                         if (!updateResult.IsSuccess)
                         {
                             await NotificationService.ShowWarningAsync($"明細更新警告：{updateResult.ErrorMessage}");
@@ -1492,6 +1572,11 @@
 
                 // 重新載入明細資料以更新UI顯示
                 purchaseReceivingDetails = await PurchaseReceivingDetailService.GetByPurchaseReceivingIdAsync(purchaseReceiving.Id);
+                ConsoleHelper.WriteSuccess($"[儲存] 重新載入後明細數量: {purchaseReceivingDetails.Count}");
+                foreach (var d in purchaseReceivingDetails)
+                {
+                    ConsoleHelper.WriteDebug($"[儲存後] 明細 Id={d.Id}, ProductId={d.ProductId}, Remarks='{d.Remarks}'");
+                }
             }
 
             // 更新主檔的總金額和稅額（使用明細稅額加總算法）
@@ -1686,7 +1771,7 @@
                                                                MainEntityIdPropertyName="PurchaseReceivingId"
                                                                QuantityPropertyName="ReceivedQuantity"
                                                                UnitPricePropertyName="UnitPrice"
-                                                               RemarksPropertyName="InspectionRemarks"
+                                                               RemarksPropertyName="Remarks"
                                                                PurchaseOrderDetailIdPropertyName="PurchaseOrderDetailId"
                                                                ShowWarehouse="true"
                                                                ShowWarehouseLocation="true"

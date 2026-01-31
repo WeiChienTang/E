@@ -16,7 +16,7 @@ namespace ERPCore2.Components.Shared.Base
         Input,
         
         /// <summary>
-        /// 數字輸入框
+        /// 數字輸入框（預設顯示千分位，可透過 UseThousandsSeparator 控制）
         /// </summary>
         Number,
         

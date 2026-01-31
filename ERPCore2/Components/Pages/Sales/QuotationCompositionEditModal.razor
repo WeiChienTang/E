@@ -525,13 +525,33 @@
             }
         });
 
-        // 備註
+        // 備註 - 使用 Custom 類型，確保有下一步時仍可編輯
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "備註",
             PropertyName = "Remarks",
-            ColumnType = InteractiveColumnType.Input,
-            Width = "15%"
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "15%",
+            Tooltip = "選填。可記錄組件相關的備註資訊（有下一步時仍可編輯）",
+            CustomTemplate = item =>
+            {
+                var detail = (TCompositionDetail)item;
+                var remarksProp = detail.GetType().GetProperty("Remarks");
+                var remarks = remarksProp?.GetValue(detail) as string ?? "";
+                
+                // 備註欄位只受 IsReadOnly 影響
+                if (IsReadOnly)
+                {
+                    var displayText = string.IsNullOrEmpty(remarks) ? "無備註" : remarks;
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted">@displayText</span>
+                    </div>;
+                }
+                
+                return @<input type="text" class="form-control" 
+                               value="@remarks"
+                               @oninput="(e) => OnRemarksInput(detail, e.Value?.ToString())"/>;
+            }
         });
 
         return columns;
@@ -554,6 +574,16 @@
     private void HandleItemDelete(TCompositionDetail item)
     {
         compositionDetails.Remove(item);
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 備註輸入處理 - 用於 Custom 類型的 @oninput 事件
+    /// </summary>
+    private void OnRemarksInput(TCompositionDetail item, string? value)
+    {
+        var remarksProp = item.GetType().GetProperty("Remarks");
+        remarksProp?.SetValue(item, value ?? string.Empty);
         StateHasChanged();
     }
     

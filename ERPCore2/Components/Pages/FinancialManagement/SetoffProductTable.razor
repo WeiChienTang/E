@@ -2,8 +2,10 @@
 
 @inject ISetoffProductDetailService SetoffProductDetailService
 @inject IProductService ProductService
+@inject IPurchaseReceivingService PurchaseReceivingService
 @inject INotificationService NotificationService
 @using ERPCore2.Components.Shared.Base
+@using ERPCore2.Components.Shared.UI
 
 @if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
 {
@@ -35,19 +37,46 @@ else
         </div>
 
         <div class="card-footer">
-            <div class="d-flex justify-content-end gap-2">
-                <GenericButtonComponent Text="全部沖款"
-                                      Variant="ButtonVariant.Green"
-                                      OnClick="FillAllSetoffAmounts"
-                                      IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
-                <GenericButtonComponent Text="沖款清空"
-                                      Variant="ButtonVariant.Red"
-                                      OnClick="ClearAllSetoffAmounts"
-                                      IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+            <div class="table-action-bar">
+                @* 左側按鈕組 *@
+                <div class="btn-group-left">
+                    <GenericButtonComponent Text="載入"
+                                          Variant="ButtonVariant.DarkBlue"
+                                          Size="ButtonSize.Small"
+                                          OnClick="ShowLoadConfirmModal"
+                                          IsDisabled="@(IsReadOnly || IsEditMode())"
+                                          Title="根據條件載入未結清明細" />
+                </div>
+                
+                @* 右側按鈕組 *@
+                <div class="btn-group-right">
+                    <GenericButtonComponent Text="全部沖款"
+                                          Variant="ButtonVariant.Green"
+                                          Size="ButtonSize.Small"
+                                          OnClick="FillAllSetoffAmounts"
+                                          IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+                    <GenericButtonComponent Text="沖款清空"
+                                          Variant="ButtonVariant.Red"
+                                          Size="ButtonSize.Small"
+                                          OnClick="ClearAllSetoffAmounts"
+                                          IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
+                </div>
             </div>
         </div>
     </div>
 }
+
+<!-- 載入確認 Modal -->
+<GenericConfirmModalComponent IsVisible="@_showLoadConfirmModal"
+                             IsVisibleChanged="@((bool visible) => _showLoadConfirmModal = visible)"
+                             Title="載入確認"
+                             Icon="bi-box-arrow-in-down"
+                             Message="@_loadMessage"
+                             Conditions="@_loadConditions"
+                             SummaryMessage="@_loadSummaryMessage"
+                             ConfirmButtonVariant="ButtonVariant.Blue"
+                             OnConfirm="@ExecuteLoadUnsettledDetails"
+                             OnCancel="@(() => _showLoadConfirmModal = false)" />
 
 @code {
     // ===== 參數定義 =====
@@ -66,17 +95,37 @@ else
     [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public bool ShowAllowance { get; set; } = true;
     
+    // 額外參數（用於顯示確認訊息）
+    [Parameter] public string? RelatedPartyName { get; set; }
+    
+    // 轉單篩選參數（用於進貨轉沖款等場景）
+    [Parameter] public int? FilterPurchaseReceivingId { get; set; }
+    
     // ===== 內部狀態 =====
     private List<UnsettledDetailDto> UnsettledDetails { get; set; } = new();
     private List<SetoffProductDetailItem> SetoffItems { get; set; } = new();
     private List<Product> Products { get; set; } = new();
+    
+    // ===== 載入確認 Modal =====
+    private bool _showLoadConfirmModal = false;
+    private string _loadMessage = string.Empty;
+    private List<string> _loadConditions = new();
+    private string _loadSummaryMessage = string.Empty;
+    private bool _dataLoaded = false;
 
     // ===== 生命週期方法 =====
     protected override async Task OnInitializedAsync()
     {
         await LoadProductsAsync();
-        await LoadUnsettledDetailsAsync();
-        LoadExistingDetails();
+        
+        // 編輯模式下需要載入未結清明細（用於顯示來源資訊）
+        if (IsEditMode())
+        {
+            await LoadUnsettledDetailsAsync();
+            LoadExistingDetails();
+            _dataLoaded = true;
+        }
+        // 新增模式下不自動載入，等待使用者點擊「載入」按鈕
     }
 
     private int? _lastRelatedPartyId;
@@ -85,22 +134,42 @@ else
     
     protected override async Task OnParametersSetAsync()
     {
-        // 只有當關聯方或日期篩選真正變更時，才重新載入未結清明細
+        // 檢查關聯方是否變更
         bool relatedPartyChanged = _lastRelatedPartyId != RelatedPartyId;
-        bool dateFilterChanged = _lastStartDate != StartDate || _lastEndDate != EndDate;
         
         if (relatedPartyChanged)
         {
-            await LoadUnsettledDetailsAsync();
-            LoadExistingDetails();
             _lastRelatedPartyId = RelatedPartyId;
+            
+            // 關聯方變更時清空資料，等待使用者重新載入
+            if (!IsEditMode())
+            {
+                SetoffItems = new List<SetoffProductDetailItem>();
+                UnsettledDetails = new List<UnsettledDetailDto>();
+                _dataLoaded = false;
+            }
+            else
+            {
+                // 編輯模式需要重新載入
+                await LoadUnsettledDetailsAsync();
+                LoadExistingDetails();
+                _dataLoaded = true;
+            }
         }
-        else if (dateFilterChanged)
+        
+        // 日期篩選變更時，只標記需要重新載入（如果已經載入過的話）
+        bool dateFilterChanged = _lastStartDate != StartDate || _lastEndDate != EndDate;
+        if (dateFilterChanged)
         {
-            // 日期篩選變更時，只需重新套用篩選，不需重新載入未結清明細
-            LoadExistingDetails();
             _lastStartDate = StartDate;
             _lastEndDate = EndDate;
+            
+            // 如果已載入且日期變更，需要重新載入
+            if (_dataLoaded && !IsEditMode())
+            {
+                // 重新套用日期篩選
+                LoadExistingDetails();
+            }
         }
         
         await base.OnParametersSetAsync();
@@ -232,6 +301,150 @@ else
         StateHasChanged();
     }
 
+    // ===== 載入確認 Modal 相關方法 =====
+    
+    /// <summary>
+    /// 顯示載入確認 Modal - 收集載入條件並顯示給使用者確認
+    /// </summary>
+    private async Task ShowLoadConfirmModal()
+    {
+        try
+        {
+            // 檢查是否已選擇關聯方
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+            {
+                var partyTypeName = SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商";
+                await NotificationService.ShowWarningAsync($"請先選擇{partyTypeName}");
+                return;
+            }
+            
+            // 建立載入條件清單
+            _loadConditions = new List<string>();
+            
+            // 條件1：關聯方（客戶/廠商）
+            var partyName = SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商";
+            var partyDisplayName = !string.IsNullOrWhiteSpace(RelatedPartyName)
+                ? RelatedPartyName
+                : $"{partyName} ID: {RelatedPartyId.Value}";
+            _loadConditions.Add($"{partyName}：{partyDisplayName}");
+            
+            // 條件2：日期篩選（如有選擇）
+            if (StartDate.HasValue && EndDate.HasValue)
+            {
+                _loadConditions.Add($"日期範圍：{StartDate.Value:yyyy/MM/dd} ~ {EndDate.Value:yyyy/MM/dd}");
+            }
+            else if (StartDate.HasValue)
+            {
+                _loadConditions.Add($"起始日期：{StartDate.Value:yyyy/MM/dd} 之後");
+            }
+            else if (EndDate.HasValue)
+            {
+                _loadConditions.Add($"結束日期：{EndDate.Value:yyyy/MM/dd} 之前");
+            }
+            else
+            {
+                _loadConditions.Add("日期範圍：全部");
+            }
+            
+            // 計算符合條件的明細數量
+            int matchingCount = await GetMatchingUnsettledCountAsync();
+            
+            if (matchingCount == 0)
+            {
+                await NotificationService.ShowInfoAsync("目前沒有符合條件的未結清明細");
+                return;
+            }
+            
+            // 設定 Modal 訊息
+            var docType = SetoffType == SetoffType.AccountsReceivable ? "應收帳款" : "應付帳款";
+            _loadMessage = $"即將載入以下條件的未結清{docType}明細：";
+            _loadSummaryMessage = $"共 {matchingCount} 筆，是否確定載入？";
+            
+            // 顯示確認 Modal
+            _showLoadConfirmModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"準備載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 取得符合條件的未結清明細數量
+    /// </summary>
+    private async Task<int> GetMatchingUnsettledCountAsync()
+    {
+        try
+        {
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+                return 0;
+            
+            // 載入未結清明細
+            var unsettledDetails = SetoffType == SetoffType.AccountsReceivable
+                ? await SetoffProductDetailService.GetUnsettledReceivableDetailsAsync(RelatedPartyId.Value)
+                : await SetoffProductDetailService.GetUnsettledPayableDetailsAsync(RelatedPartyId.Value);
+            
+            // 套用日期篩選
+            var filteredDetails = unsettledDetails
+                .Where(d => !StartDate.HasValue || d.DocumentDate >= StartDate.Value)
+                .Where(d => !EndDate.HasValue || d.DocumentDate <= EndDate.Value);
+            
+            return filteredDetails.Count();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+    
+    /// <summary>
+    /// 執行載入未結清明細 - 使用者確認後執行
+    /// </summary>
+    private async Task ExecuteLoadUnsettledDetails()
+    {
+        try
+        {
+            // 關閉確認 Modal
+            _showLoadConfirmModal = false;
+            
+            // 檢查是否已選擇關聯方
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+            {
+                return;
+            }
+            
+            // 載入未結清明細
+            await LoadUnsettledDetailsAsync();
+            
+            // 轉換為 SetoffItems
+            LoadExistingDetails();
+            
+            // 標記已載入
+            _dataLoaded = true;
+            
+            // 顯示成功訊息
+            var loadedCount = SetoffItems.Count;
+            if (loadedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 筆未結清明細", "載入完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("沒有符合條件的未結清明細", "提示");
+            }
+            
+            // 通知父組件資料已變更
+            await NotifyDetailsChanged();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入未結清明細時發生錯誤：{ex.Message}");
+        }
+    }
+
     // ===== UI 輔助方法 =====
     private string GetRelatedPartyWarningMessage()
     {
@@ -242,6 +455,14 @@ else
 
     private string GetUnsettledEmptyMessage()
     {
+        // 區分「尚未載入」和「載入後無資料」兩種狀態
+        if (!_dataLoaded && !IsEditMode())
+        {
+            // 尚未載入：提示用戶點擊載入按鈕
+            return "請點擊「載入」按鈕以載入未結清明細";
+        }
+        
+        // 載入後無資料：顯示實際的空資料訊息
         return SetoffType == SetoffType.AccountsReceivable
             ? "該客戶沒有未結清的應收帳款"
             : "該廠商沒有未結清的應付帳款";
@@ -757,6 +978,91 @@ else
         await LoadUnsettledDetailsAsync();
         LoadExistingDetails();
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 從進貨單載入未結清明細（用於「進貨轉沖款」轉單功能）
+    /// </summary>
+    /// <param name="purchaseReceivingId">進貨單ID</param>
+    /// <remarks>
+    /// 此方法會載入指定進貨單的所有未結清商品明細，並預設填入本次沖款金額。
+    /// 主要用於從 PurchaseReceivingEditModalComponent 呼叫。
+    /// </remarks>
+    public async Task LoadDetailsFromPurchaseReceiving(int purchaseReceivingId)
+    {
+        try
+        {
+            // 檢查關聯方是否已設定
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇廠商");
+                return;
+            }
+            
+            // 取得進貨單的編號（用於篩選）
+            var purchaseReceiving = await PurchaseReceivingService.GetByIdAsync(purchaseReceivingId);
+            if (purchaseReceiving == null)
+            {
+                await NotificationService.ShowWarningAsync("找不到指定的進貨單");
+                return;
+            }
+            var purchaseReceivingCode = purchaseReceiving.Code;
+            
+            // 確保已載入商品資料
+            if (!Products.Any())
+            {
+                await LoadProductsAsync();
+            }
+            
+            // 載入該廠商的所有未結清明細
+            await LoadUnsettledDetailsAsync();
+            
+            // 篩選出指定進貨單的明細（透過單號比對）
+            var matchingDetails = UnsettledDetails
+                .Where(d => d.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail)
+                .Where(d => !string.IsNullOrEmpty(d.SourceDocumentNumber) && 
+                           d.SourceDocumentNumber == purchaseReceivingCode)
+                .ToList();
+            
+            // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
+            SetoffItems = matchingDetails
+                .Select(detail => new SetoffProductDetailItem
+                {
+                    SourceDetailType = detail.SourceDetailType,
+                    SourceDetailId = detail.SourceDetailId,
+                    ProductId = detail.ProductId,
+                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    CurrentSetoffAmount = detail.RemainingAmount, // 預設全額沖款
+                    CurrentAllowanceAmount = 0,
+                    Remarks = null,
+                    ExistingDetail = null,
+                    UnsettledDetail = detail,
+                    NeedsSourceDetailLoad = false
+                }).ToList();
+            
+            // 標記已載入
+            _dataLoaded = true;
+            
+            // 顯示載入結果
+            var loadedCount = SetoffItems.Count;
+            if (loadedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 筆進貨明細", "載入完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("該進貨單沒有未結清的應付明細", "提示");
+            }
+            
+            // 通知父組件資料已變更
+            await NotifyDetailsChanged();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入進貨明細時發生錯誤：{ex.Message}");
+        }
     }
     
     /// <summary>

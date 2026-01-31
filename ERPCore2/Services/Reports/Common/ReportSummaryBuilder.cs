@@ -1,4 +1,5 @@
 using System.Text;
+using ERPCore2.Helpers;
 
 namespace ERPCore2.Services.Reports.Common
 {
@@ -53,20 +54,20 @@ namespace ERPCore2.Services.Reports.Common
         }
 
         /// <summary>
-        /// 新增金額統計項目（自動格式化為千分位小數）
+        /// 新增金額統計項目（智能格式化：整數不顯示小數點，有小數才顯示）
         /// </summary>
         public ReportSummaryBuilder AddAmountItem(string label, decimal? amount)
         {
-            var value = amount?.ToString("N2") ?? "0.00";
+            var value = NumberFormatHelper.FormatSmart(amount, decimalPlaces: 2, useThousandsSeparator: true, nullDisplayText: "0");
             return AddSummaryItem(label, value);
         }
 
         /// <summary>
-        /// 新增數量統計項目（自動格式化為千分位整數）
+        /// 新增數量統計項目（智能格式化：整數不顯示小數點，有小數才顯示）
         /// </summary>
         public ReportSummaryBuilder AddQuantityItem(string label, decimal? quantity)
         {
-            var value = quantity?.ToString("N0") ?? "0";
+            var value = NumberFormatHelper.FormatSmart(quantity, decimalPlaces: 2, useThousandsSeparator: true, nullDisplayText: "0");
             return AddSummaryItem(label, value);
         }
 

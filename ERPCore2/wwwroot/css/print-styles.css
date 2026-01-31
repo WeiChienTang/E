@@ -1,3 +1,18 @@
+/* ========================================
+   CSS 變數預設值（會被 C# 動態注入的值覆蓋）
+   統一由 ReportPageLayout.cs 控制，確保計算與渲染一致
+   ======================================== */
+:root {
+    --page-height: 135.7mm;
+    --page-width: 209.3mm;
+    --row-height: 6.5mm;
+    --header-height: 20mm;
+    --info-section-height: 18mm;
+    --table-header-height: 6mm;
+    --summary-height: 15mm;
+    --signature-height: 10mm;
+}
+
 /* 列印專用設定 - 完全消除瀏覽器邊距 */
 @media print {
     @page {
@@ -47,7 +62,7 @@ body {
 
 /* 主容器 */
 .print-container {
-    width: 209.3mm; /* 增加寬度：213.3mm - 左右各2mm邊距 = 209.3mm */
+    width: var(--page-width); /* 使用 CSS 變數，由 C# 動態注入 */
     margin: 0 auto;
     padding: 2mm;
     box-sizing: border-box;
@@ -66,7 +81,7 @@ body {
 /* 列印時的容器高度控制 */
 @media print {
     .print-container {
-        height: 135.7mm; /* 調整高度：139.7mm - 上下各2mm邊距 = 135.7mm */
+        height: var(--page-height); /* 使用 CSS 變數，由 C# 動態注入 */
     }
 }
 
@@ -217,10 +232,10 @@ body {
     line-height: 1.2; /* 縮小行高 */
 }
 
-/* 固定行高設定 - 方案A：所有明細行統一高度 */
+/* 固定行高設定 - 使用 CSS 變數，統一由 C# 控制 */
 .print-table tbody tr {
-    height: 9mm !important;
-    max-height: 9mm !important;
+    height: var(--row-height) !important;
+    max-height: var(--row-height) !important;
 }
 
 .print-table td {
@@ -228,8 +243,8 @@ body {
     padding: 1mm 1mm;
     vertical-align: top; /* 改為靠上對齊，避免內容被截斷 */
     line-height: 1.3;
-    height: 9mm;
-    max-height: 9mm;
+    height: var(--row-height);
+    max-height: var(--row-height);
     overflow: hidden; /* 超出部分隱藏 */
     word-wrap: break-word;
     white-space: normal; /* 允許文字換行 */
@@ -252,6 +267,13 @@ body {
     display: flex;
     /* 完全移除邊框 */
     margin-top: 0mm; /* 往上移動，與資訊區更緊密 */
+}
+
+/* 結尾區塊包裝器 - 確保統計和簽名不被分割 */
+.print-footer-wrapper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-top: auto; /* 當沒有明細表格時，自動推到頁面底部 */
 }
 
 .print-summary-left {
@@ -291,7 +313,7 @@ body {
 }
 
 .print-remarks-content {
-    min-height: 9mm;
+    min-height: var(--row-height);
     /* 完全移除邊框 */
     padding: 1mm;
 }

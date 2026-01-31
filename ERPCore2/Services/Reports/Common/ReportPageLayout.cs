@@ -20,8 +20,14 @@ namespace ERPCore2.Services.Reports.Common
         /// <summary>表格標題列高度（mm）</summary>
         public decimal TableHeaderHeight { get; set; }
 
-        /// <summary>明細基本行高（mm）- 固定行高模式</summary>
+        /// <summary>明細基本行高（mm）- 用於 CSS 顯示</summary>
         public decimal RowBaseHeight { get; set; }
+
+        /// <summary>
+        /// 明細計算行高（mm）- 用於分頁計算
+        /// 通常比 RowBaseHeight 稍大，以保守估算處理備註過長的情況
+        /// </summary>
+        public decimal RowCalculationHeight { get; set; }
 
         /// <summary>備註額外行高（mm）- 固定行高模式下不再使用，保留以維持相容性</summary>
         [Obsolete("固定行高模式下不再使用此屬性")]
@@ -80,7 +86,7 @@ namespace ERPCore2.Services.Reports.Common
 
         /// <summary>
         /// 預設中一刀格式配置（連續報表紙 213.3mm × 139.7mm）
-        /// 固定行高模式：每行明細固定 8mm
+        /// 顯示行高 6.5mm，計算行高 8mm（保守估算）
         /// </summary>
         public static ReportPageLayout ContinuousForm()
         {
@@ -91,16 +97,17 @@ namespace ERPCore2.Services.Reports.Common
                 HeaderHeight = 20m,            // 表頭（公司資訊 + 報表標題）
                 InfoSectionHeight = 18m,       // 資訊區塊（採購單號、日期、廠商等）
                 TableHeaderHeight = 6m,        // 表格標題列（序號、品名等欄位名）
-                RowBaseHeight = 9m,           // 明細固定行高 9mm（與 CSS 一致）
+                RowBaseHeight = 6.5m,          // 明細顯示行高 6.5mm（透過 CSS 變數同步）
+                RowCalculationHeight = 8m,     // 明細計算行高 8mm（保守估算，預留備註換行空間）
                 SummaryHeight = 15m,           // 金額統計區（金額小計、稅額、總計）
                 SignatureHeight = 10m,         // 簽名區域（採購人員、核准人員、收貨確認）
-                SafetyMargin = 15m             // 安全邊距（增加至15mm，避免內容被切掉）
+                SafetyMargin = 8m              // 安全邊距 8mm
             };
         }
 
         /// <summary>
         /// A4 直式格式配置（210mm × 297mm）
-        /// 固定行高模式：每行明細固定 8mm
+        /// 顯示行高 7mm，計算行高 8.5mm（保守估算）
         /// </summary>
         public static ReportPageLayout A4Portrait()
         {
@@ -111,7 +118,8 @@ namespace ERPCore2.Services.Reports.Common
                 HeaderHeight = 25m,            // 表頭
                 InfoSectionHeight = 20m,       // 資訊區塊
                 TableHeaderHeight = 8m,        // 表格標題列
-                RowBaseHeight = 9m,            // 明細固定行高 9mm
+                RowBaseHeight = 7m,            // 明細顯示行高 7mm（透過 CSS 變數同步）
+                RowCalculationHeight = 8.5m,   // 明細計算行高 8.5mm（保守估算）
                 SummaryHeight = 25m,           // 金額統計區
                 SignatureHeight = 20m,         // 簽名區域
                 SafetyMargin = 5m              // 安全邊距
@@ -120,7 +128,7 @@ namespace ERPCore2.Services.Reports.Common
 
         /// <summary>
         /// A4 橫式格式配置（297mm × 210mm）
-        /// 固定行高模式：每行明細固定 8mm
+        /// 顯示行高 6.5mm，計算行高 8mm（保守估算）
         /// </summary>
         public static ReportPageLayout A4Landscape()
         {
@@ -131,11 +139,34 @@ namespace ERPCore2.Services.Reports.Common
                 HeaderHeight = 20m,            // 表頭（橫式可稍低）
                 InfoSectionHeight = 18m,       // 資訊區塊
                 TableHeaderHeight = 7m,        // 表格標題列
-                RowBaseHeight = 8m,            // 明細固定行高 8mm
+                RowBaseHeight = 6.5m,          // 明細顯示行高 6.5mm（透過 CSS 變數同步）
+                RowCalculationHeight = 8m,     // 明細計算行高 8mm（保守估算）
                 SummaryHeight = 20m,           // 金額統計區
                 SignatureHeight = 18m,         // 簽名區域
                 SafetyMargin = 4m              // 安全邊距
             };
+        }
+
+        /// <summary>
+        /// 生成 CSS 變數樣式區塊，用於動態注入 HTML head
+        /// 這樣可以確保 C# 計算的數值與 CSS 渲染完全一致
+        /// </summary>
+        /// <returns>包含 CSS 變數的 style 標籤字串</returns>
+        public string GenerateCssVariables()
+        {
+            return $@"
+    <style>
+        :root {{
+            --page-height: {PageHeight}mm;
+            --page-width: {PageWidth}mm;
+            --row-height: {RowBaseHeight}mm;
+            --header-height: {HeaderHeight}mm;
+            --info-section-height: {InfoSectionHeight}mm;
+            --table-header-height: {TableHeaderHeight}mm;
+            --summary-height: {SummaryHeight}mm;
+            --signature-height: {SignatureHeight}mm;
+        }}
+    </style>";
         }
     }
 }

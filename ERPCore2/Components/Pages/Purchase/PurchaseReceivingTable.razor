@@ -538,19 +538,35 @@ else
             }
         });
         
-        // 10. 備註
+        // 10. 備註 - 使用 Custom 類型，確保有下一步時仍可編輯（參考 PurchaseOrderTable.razor）
         columns.Add(new InteractiveColumnDefinition
         {
             Title = "備註",
             PropertyName = "Remarks",
-            ColumnType = InteractiveColumnType.Input,
+            ColumnType = InteractiveColumnType.Custom,
             Width = "150px",
             HideOnMobile = true,
             ExcludeFromEmptyCheck = true,  // 備註不參與空行檢查
-            OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
+            Tooltip = "選填。可記錄入庫相關的備註資訊（有退貨或沖款記錄時仍可編輯）",
+            CustomTemplate = item =>
             {
-                await OnRemarksChange((ReceivingItem)args.Item1, args.Item2);
-            })
+                var receivingItem = (ReceivingItem)item;
+                // 備註欄位只受 IsReadOnly 影響，有下一步（退貨/沖款）時仍可編輯
+                var isFieldReadOnly = IsReadOnly;
+                
+                // 如果是唯讀狀態，直接顯示 span
+                if (isFieldReadOnly)
+                {
+                    var displayText = string.IsNullOrEmpty(receivingItem.Remarks) ? "無備註" : receivingItem.Remarks;
+                    return @<div class="d-flex align-items-center" style="min-height: 31px;">
+                        <span class="text-muted">@displayText</span>
+                    </div>;
+                }
+                
+                return @<input type="text" class="form-control" 
+                               value="@receivingItem.Remarks"
+                               @oninput="(e) => OnRemarksInput(receivingItem, e.Value?.ToString())"/>;
+            }
         });
         
         return columns;
@@ -712,6 +728,16 @@ else
     private async Task OnRemarksChange(ReceivingItem item, string? value)
     {
         item.Remarks = InputEventHelper.HandleTextInput(value);
+        await NotifyChange();
+    }
+    
+    // 備註輸入 - 用於 Custom 類型的 @oninput 事件
+    private async Task OnRemarksInput(ReceivingItem item, string? value)
+    {
+        ConsoleHelper.WriteDebug($"[OnRemarksInput] 收到備註輸入: '{value}'");
+        item.Remarks = InputEventHelper.HandleTextInput(value);
+        ConsoleHelper.WriteDebug($"[OnRemarksInput] 處理後備註值: '{item.Remarks}'");
+        ConsoleHelper.WriteDebug($"[OnRemarksInput] 商品: {item.SelectedProduct?.Name ?? "無"}, ExistingDetailEntity: {(item.ExistingDetailEntity != null ? "有" : "無")}");
         await NotifyChange();
     }
     
@@ -1010,7 +1036,9 @@ else
             SetPropertyValue(entity, "OrderQuantity", item.OrderQuantity > 0 ? item.OrderQuantity : item.ReceivedQuantity);
             SetPropertyValue(entity, UnitPricePropertyName, item.UnitPrice);
             SetPropertyValue(entity, "TaxRate", item.TaxRate);
+            ConsoleHelper.WriteDebug($"[ConvertToEntities] 準備設定備註, RemarksPropertyName='{RemarksPropertyName}', item.Remarks='{item.Remarks}'");
             SetPropertyValue(entity, RemarksPropertyName, item.Remarks);
+            ConsoleHelper.WriteDebug($"[ConvertToEntities] 設定後 entity.{RemarksPropertyName}='{GetPropertyValue<string>(entity, RemarksPropertyName)}'");
             
             // 保存採購明細關聯（支援無採購單：只有在有採購單時才設定）
             if (!string.IsNullOrEmpty(PurchaseOrderDetailIdPropertyName))
@@ -1039,7 +1067,15 @@ else
     // 通知變更
     private async Task NotifyChange()
     {
+        ConsoleHelper.WriteInfo($"[NotifyChange] 開始通知變更...");
         var entities = ConvertToEntities();
+        ConsoleHelper.WriteInfo($"[NotifyChange] 轉換後實體數量: {entities.Count}");
+        foreach (var e in entities)
+        {
+            var remarks = GetPropertyValue<string>(e, RemarksPropertyName);
+            var productId = GetPropertyValue<int?>(e, "ProductId");
+            ConsoleHelper.WriteDebug($"[NotifyChange] 實體 ProductId={productId}, Remarks='{remarks}'");
+        }
         await DetailSyncHelper.SyncToParentAsync(entities, OnDetailsChanged);
         
         // 檢查是否有不可刪除的明細（已有退貨或沖款記錄）

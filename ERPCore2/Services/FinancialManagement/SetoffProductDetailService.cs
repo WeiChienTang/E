@@ -194,6 +194,24 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 計算含稅金額（根據稅率計算方法）
+        /// </summary>
+        private static decimal CalculateTaxInclusiveAmount(decimal subtotal, decimal? taxRate, TaxCalculationMethod taxMethod)
+        {
+            var rate = taxRate ?? 0;
+            return taxMethod switch
+            {
+                // 稅外加：金額 = 小計 × (1 + 稅率/100)
+                TaxCalculationMethod.TaxExclusive => Math.Round(subtotal * (1 + rate / 100), 0),
+                // 稅內含：金額 = 小計（稅已包含在單價中）
+                TaxCalculationMethod.TaxInclusive => Math.Round(subtotal, 0),
+                // 免稅：金額 = 小計
+                TaxCalculationMethod.NoTax => Math.Round(subtotal, 0),
+                _ => Math.Round(subtotal, 0)
+            };
+        }
+
+        /// <summary>
         /// 取得特定客戶的未結清明細（應收帳款）
         /// </summary>
         public async Task<List<UnsettledDetailDto>> GetUnsettledReceivableDetailsAsync(int customerId)
@@ -203,47 +221,75 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var results = new List<UnsettledDetailDto>();
 
-                // 1. 查詢未結清的銷貨訂單明細
-                var salesOrderDetails = await context.SalesOrderDetails
+                // 1. 查詢未結清的銷貨訂單明細（包含稅率計算所需欄位）
+                var salesOrderRawData = await context.SalesOrderDetails
                     .Include(d => d.SalesOrder)
                     .Include(d => d.Product)
                     .Where(d => d.SalesOrder.CustomerId == customerId && !d.IsSettled)
-                    .Select(d => new UnsettledDetailDto
+                    .Select(d => new
                     {
-                        SourceDetailType = SetoffDetailType.SalesOrderDetail,
-                        SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.SalesOrder.Code ?? string.Empty,
-                        ProductId = d.ProductId,
+                        d.Id,
+                        d.SalesOrder.Code,
+                        d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
-                        TotalAmount = d.SubtotalAmount,
-                        PaidAmount = d.TotalReceivedAmount,
-                        DocumentDate = d.SalesOrder.OrderDate,
-                        IsReturn = false
+                        d.SubtotalAmount,
+                        d.TaxRate,
+                        d.SalesOrder.TaxCalculationMethod,
+                        d.TotalReceivedAmount,
+                        d.SalesOrder.OrderDate
                     })
                     .ToListAsync();
+
+                var salesOrderDetails = salesOrderRawData.Select(d => new UnsettledDetailDto
+                {
+                    SourceDetailType = SetoffDetailType.SalesOrderDetail,
+                    SourceDetailId = d.Id,
+                    SourceDocumentNumber = d.Code ?? string.Empty,
+                    ProductId = d.ProductId,
+                    ProductName = d.ProductName,
+                    ProductCode = d.ProductCode,
+                    TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
+                    PaidAmount = d.TotalReceivedAmount,
+                    DocumentDate = d.OrderDate,
+                    IsReturn = false
+                }).ToList();
 
                 results.AddRange(salesOrderDetails);
 
-                // 2. 查詢未結清的銷貨退回明細
-                var salesReturnDetails = await context.SalesReturnDetails
+                // 2. 查詢未結清的銷貨退回明細（包含稅率計算所需欄位）
+                var salesReturnRawData = await context.SalesReturnDetails
                     .Include(d => d.SalesReturn)
                     .Include(d => d.Product)
                     .Where(d => d.SalesReturn.CustomerId == customerId && !d.IsSettled)
-                    .Select(d => new UnsettledDetailDto
+                    .Select(d => new
                     {
-                        SourceDetailType = SetoffDetailType.SalesReturnDetail,
-                        SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.SalesReturn.Code ?? string.Empty,
-                        ProductId = d.ProductId,
+                        d.Id,
+                        d.SalesReturn.Code,
+                        d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
-                        TotalAmount = d.ReturnSubtotalAmount,
-                        PaidAmount = d.TotalPaidAmount,
-                        DocumentDate = d.SalesReturn.ReturnDate,
-                        IsReturn = true
+                        d.ReturnSubtotalAmount,
+                        d.TaxRate,
+                        d.SalesReturn.TaxCalculationMethod,
+                        d.TotalPaidAmount,
+                        d.SalesReturn.ReturnDate
                     })
                     .ToListAsync();
+
+                var salesReturnDetails = salesReturnRawData.Select(d => new UnsettledDetailDto
+                {
+                    SourceDetailType = SetoffDetailType.SalesReturnDetail,
+                    SourceDetailId = d.Id,
+                    SourceDocumentNumber = d.Code ?? string.Empty,
+                    ProductId = d.ProductId,
+                    ProductName = d.ProductName,
+                    ProductCode = d.ProductCode,
+                    TotalAmount = CalculateTaxInclusiveAmount(d.ReturnSubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
+                    PaidAmount = d.TotalPaidAmount,
+                    DocumentDate = d.ReturnDate,
+                    IsReturn = true
+                }).ToList();
 
                 results.AddRange(salesReturnDetails);
 
@@ -293,47 +339,75 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var results = new List<UnsettledDetailDto>();
 
-                // 1. 查詢未結清的採購進貨明細
-                var purchaseReceivingDetails = await context.PurchaseReceivingDetails
+                // 1. 查詢未結清的採購進貨明細（包含稅率計算所需欄位）
+                var purchaseReceivingRawData = await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
                     .Include(d => d.Product)
                     .Where(d => d.PurchaseReceiving.SupplierId == supplierId && !d.IsSettled)
-                    .Select(d => new UnsettledDetailDto
+                    .Select(d => new
                     {
-                        SourceDetailType = SetoffDetailType.PurchaseReceivingDetail,
-                        SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.PurchaseReceiving.Code ?? string.Empty,
-                        ProductId = d.ProductId,
+                        d.Id,
+                        d.PurchaseReceiving.Code,
+                        d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
-                        TotalAmount = d.SubtotalAmount,
-                        PaidAmount = d.TotalPaidAmount,
-                        DocumentDate = d.PurchaseReceiving.ReceiptDate,
-                        IsReturn = false
+                        d.SubtotalAmount,
+                        d.TaxRate,
+                        d.PurchaseReceiving.TaxCalculationMethod,
+                        d.TotalPaidAmount,
+                        d.PurchaseReceiving.ReceiptDate
                     })
                     .ToListAsync();
+
+                var purchaseReceivingDetails = purchaseReceivingRawData.Select(d => new UnsettledDetailDto
+                {
+                    SourceDetailType = SetoffDetailType.PurchaseReceivingDetail,
+                    SourceDetailId = d.Id,
+                    SourceDocumentNumber = d.Code ?? string.Empty,
+                    ProductId = d.ProductId,
+                    ProductName = d.ProductName,
+                    ProductCode = d.ProductCode,
+                    TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
+                    PaidAmount = d.TotalPaidAmount,
+                    DocumentDate = d.ReceiptDate,
+                    IsReturn = false
+                }).ToList();
 
                 results.AddRange(purchaseReceivingDetails);
 
-                // 2. 查詢未結清的採購退回明細
-                var purchaseReturnDetails = await context.PurchaseReturnDetails
+                // 2. 查詢未結清的採購退回明細（包含稅率計算所需欄位）
+                var purchaseReturnRawData = await context.PurchaseReturnDetails
                     .Include(d => d.PurchaseReturn)
                     .Include(d => d.Product)
                     .Where(d => d.PurchaseReturn.SupplierId == supplierId && !d.IsSettled)
-                    .Select(d => new UnsettledDetailDto
+                    .Select(d => new
                     {
-                        SourceDetailType = SetoffDetailType.PurchaseReturnDetail,
-                        SourceDetailId = d.Id,
-                        SourceDocumentNumber = d.PurchaseReturn.Code ?? string.Empty,
-                        ProductId = d.ProductId,
+                        d.Id,
+                        d.PurchaseReturn.Code,
+                        d.ProductId,
                         ProductName = d.Product.Name,
                         ProductCode = d.Product.Code ?? string.Empty,
-                        TotalAmount = d.ReturnSubtotalAmount,
-                        PaidAmount = d.TotalReceivedAmount,
-                        DocumentDate = d.PurchaseReturn.ReturnDate,
-                        IsReturn = true
+                        d.ReturnSubtotalAmount,
+                        d.TaxRate,
+                        d.PurchaseReturn.TaxCalculationMethod,
+                        d.TotalReceivedAmount,
+                        d.PurchaseReturn.ReturnDate
                     })
                     .ToListAsync();
+
+                var purchaseReturnDetails = purchaseReturnRawData.Select(d => new UnsettledDetailDto
+                {
+                    SourceDetailType = SetoffDetailType.PurchaseReturnDetail,
+                    SourceDetailId = d.Id,
+                    SourceDocumentNumber = d.Code ?? string.Empty,
+                    ProductId = d.ProductId,
+                    ProductName = d.ProductName,
+                    ProductCode = d.ProductCode,
+                    TotalAmount = CalculateTaxInclusiveAmount(d.ReturnSubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
+                    PaidAmount = d.TotalReceivedAmount,
+                    DocumentDate = d.ReturnDate,
+                    IsReturn = true
+                }).ToList();
 
                 results.AddRange(purchaseReturnDetails);
 

@@ -172,18 +172,29 @@
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Number)
                                 {
-                                    @* 數字輸入框 - 智能格式化：整數不顯示小數點 *@
+                                    @* 數字輸入框 - 支援千分位顯示（預設啟用） *@
                                     var value = GetPropertyValue(item, column.PropertyName);
                                     var stringValue = "";
                                     
-                                    // 智能格式化數字：如果是整數則不顯示小數點，有小數才顯示
+                                    // 智能格式化數字：整數不顯示小數點，有小數才顯示
                                     if (value != null && decimal.TryParse(value.ToString(), out var decimalValue))
                                     {
                                         if (decimalValue != 0)
                                         {
-                                            stringValue = decimalValue % 1 == 0 
-                                                ? decimalValue.ToString("F0") 
-                                                : decimalValue.ToString();
+                                            if (column.UseThousandsSeparator)
+                                            {
+                                                // 啟用千分位：整數用 N0，有小數用 N2
+                                                stringValue = decimalValue % 1 == 0 
+                                                    ? decimalValue.ToString("N0")
+                                                    : decimalValue.ToString("N2");
+                                            }
+                                            else
+                                            {
+                                                // 不啟用千分位：整數用 F0，有小數直接顯示
+                                                stringValue = decimalValue % 1 == 0 
+                                                    ? decimalValue.ToString("F0") 
+                                                    : decimalValue.ToString();
+                                            }
                                         }
                                     }
                                     
@@ -191,18 +202,39 @@
                                     var validationClass = GetValidationCssClass(item, column.PropertyName);
                                     var tooltip = column.TooltipFunc?.Invoke(item!) ?? column.Tooltip;
                                     
-                                    <input type="number" 
-                                           class="form-control @validationClass" 
-                                           value="@stringValue"
-                                           placeholder="@column.Placeholder"
-                                           title="@tooltip"
-                                           min="@column.MinValue"
-                                           max="@column.MaxValue"
-                                           step="any"
-                                           disabled="@isDisabled"
-                                           readonly="@column.IsReadOnly"
-                                           onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
-                                           @oninput="async (e) => await HandleInputChange(column, item, e.Value?.ToString())" />
+                                    @if (column.UseThousandsSeparator)
+                                    {
+                                        // 使用千分位：用 text 輸入框 + 格式化
+                                        var inputId = $"number_{column.PropertyName}_{GetHashCode()}_{currentIndex}";
+                                        <input type="text" 
+                                               id="@inputId"
+                                               class="form-control text-end @validationClass" 
+                                               value="@stringValue"
+                                               placeholder="@column.Placeholder"
+                                               title="@tooltip"
+                                               disabled="@isDisabled"
+                                               readonly="@column.IsReadOnly"
+                                               inputmode="decimal"
+                                               @onfocus="(e) => OnNumberFocus(column, item, inputId)"
+                                               @onblur="(e) => OnNumberBlur()"
+                                               @oninput="async (e) => await HandleNumberInput(column, item, e.Value?.ToString())" />
+                                    }
+                                    else
+                                    {
+                                        // 不使用千分位：用原生 number 輸入框
+                                        <input type="number" 
+                                               class="form-control @validationClass" 
+                                               value="@stringValue"
+                                               placeholder="@column.Placeholder"
+                                               title="@tooltip"
+                                               min="@column.MinValue"
+                                               max="@column.MaxValue"
+                                               step="any"
+                                               disabled="@isDisabled"
+                                               readonly="@column.IsReadOnly"
+                                               onkeydown="if(['e','E','+','-'].includes(event.key)) event.preventDefault();"
+                                               @oninput="async (e) => await HandleInputChange(column, item, e.Value?.ToString())" />
+                                    }
                                 }
                                 else if (column.ColumnType == InteractiveColumnType.Select)
                                 {
@@ -1400,6 +1432,49 @@
             AutoAddEmptyRowIfNeeded();
         }
     }
+
+    #region Number 千分位輸入處理
+    
+    /// <summary>
+    /// Number 聚焦時：移除千分位，顯示純數字以方便編輯
+    /// </summary>
+    private void OnNumberFocus(InteractiveColumnDefinition column, TItem item, string inputId)
+    {
+        var value = GetPropertyValue(item, column.PropertyName);
+        if (value != null && decimal.TryParse(value.ToString(), out var decimalValue))
+        {
+            // 聚焦時顯示無千分位的數字
+            var plainValue = decimalValue != 0 
+                ? (decimalValue % 1 == 0 ? decimalValue.ToString("F0") : decimalValue.ToString())
+                : "";
+            
+            // 使用 JavaScript 更新輸入框值
+            _ = JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('{inputId}').value = '{plainValue}'");
+        }
+    }
+    
+    /// <summary>
+    /// Number 失焦時：重新格式化為千分位顯示
+    /// </summary>
+    private void OnNumberBlur()
+    {
+        // 失焦時觸發 StateHasChanged 以重新格式化顯示
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// Number 輸入處理：移除千分位符號後處理
+    /// </summary>
+    private async Task HandleNumberInput(InteractiveColumnDefinition column, TItem item, string? value)
+    {
+        // 移除千分位符號和其他非數字字元（保留小數點和負號）
+        var cleanValue = value?.Replace(",", "").Trim();
+        
+        // 呼叫原有的輸入處理邏輯
+        await HandleInputChange(column, item, cleanValue);
+    }
+    
+    #endregion
 
     private async Task HandleSelectionChange(InteractiveColumnDefinition column, TItem item, object? value)
     {

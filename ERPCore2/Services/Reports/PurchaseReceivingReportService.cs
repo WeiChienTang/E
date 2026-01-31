@@ -138,6 +138,9 @@ namespace ERPCore2.Services.Reports
         {
             var html = new StringBuilder();
 
+            // 使用通用分頁計算器（需提前宣告以便注入 CSS 變數）
+            var layout = ReportPageLayout.ContinuousForm(); // 中一刀格式
+
             // HTML 文件開始
             html.AppendLine("<!DOCTYPE html>");
             html.AppendLine("<html lang='zh-TW'>");
@@ -146,14 +149,13 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
             html.AppendLine($"    <title>進貨單 - {purchaseReceiving.Code}</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
+            // 動態注入 CSS 變數，確保 C# 計算與 CSS 渲染一致
+            html.AppendLine(layout.GenerateCssVariables());
             html.AppendLine("</head>");
             html.AppendLine("<body>");
             
             // 準備明細清單
             var detailsList = receivingDetails ?? new List<PurchaseReceivingDetail>();
-            
-            // 使用通用分頁計算器
-            var layout = ReportPageLayout.ContinuousForm(); // 中一刀格式
             var paginator = new ReportPaginator<PurchaseReceivingDetailWrapper>(layout);
             
             // 包裝明細項目
@@ -187,6 +189,13 @@ namespace ERPCore2.Services.Reports
             return html.ToString();
         }
 
+        /// <summary>
+        /// 生成單一頁面的 HTML
+        /// 支援三種頁面類型：
+        /// 1. 一般頁面：有明細，無結尾
+        /// 2. 最後一頁（含明細）：有明細，有結尾
+        /// 3. 結尾專用頁：無明細，只有結尾
+        /// </summary>
         private void GeneratePage(
             StringBuilder html,
             PurchaseReceiving purchaseReceiving,
@@ -202,6 +211,8 @@ namespace ERPCore2.Services.Reports
             bool isLastPage,
             int startRowNum)
         {
+            bool hasDetails = pageDetails != null && pageDetails.Count > 0;
+
             html.AppendLine("    <div class='print-container'>");
             html.AppendLine("        <div class='print-single-layout'>");
 
@@ -211,17 +222,23 @@ namespace ERPCore2.Services.Reports
             // 進貨資訊區塊（每頁都顯示）
             GenerateInfoSection(html, purchaseReceiving, supplier, company);
 
-            // 明細表格
-            html.AppendLine("            <div class='print-table-container'>");
-            GenerateDetailTable(html, pageDetails, productDict, warehouseDict, locationDict, startRowNum);
-            html.AppendLine("            </div>");
+            // 明細表格（只有在有明細時才顯示）
+            if (hasDetails)
+            {
+                html.AppendLine("            <div class='print-table-container'>");
+                GenerateDetailTable(html, pageDetails!, productDict, warehouseDict, locationDict, startRowNum);
+                html.AppendLine("            </div>");
+            }
 
             // 統計區域（只在最後一頁顯示）
             if (isLastPage)
             {
+                // 使用 wrapper 確保結尾區塊不被分割（CSS break-inside: avoid）
+                html.AppendLine("            <div class='print-footer-wrapper'>");
                 GenerateSummarySection(html, purchaseReceiving, taxRate);
                 // 簽名區域（只在最後一頁顯示）
                 GenerateSignatureSection(html);
+                html.AppendLine("            </div>");
             }
 
             html.AppendLine("        </div>");
@@ -352,6 +369,9 @@ namespace ERPCore2.Services.Reports
         {
             var html = new StringBuilder();
 
+            // 使用通用分頁計算器（需提前宣告以便注入 CSS 變數）
+            var layout = ReportPageLayout.ContinuousForm(); // 中一刀格式
+
             // HTML 文件開始（只需一次）
             html.AppendLine("<!DOCTYPE html>");
             html.AppendLine("<html lang='zh-TW'>");
@@ -360,6 +380,8 @@ namespace ERPCore2.Services.Reports
             html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
             html.AppendLine($"    <title>進貨單批次列印 ({purchaseReceivings.Count} 筆)</title>");
             html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
+            // 動態注入 CSS 變數，確保 C# 計算與 CSS 渲染一致
+            html.AppendLine(layout.GenerateCssVariables());
             html.AppendLine("</head>");
             html.AppendLine("<body>");
 

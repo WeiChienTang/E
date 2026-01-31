@@ -1,4 +1,5 @@
 using System.Text;
+using ERPCore2.Helpers;
 
 namespace ERPCore2.Services.Reports.Common
 {
@@ -74,19 +75,19 @@ namespace ERPCore2.Services.Reports.Common
         }
 
         /// <summary>
-        /// 新增數量欄位（自動格式化為千分位整數）
+        /// 新增數量欄位（智能格式化：整數不顯示小數點，有小數才顯示）
         /// </summary>
         public ReportTableBuilder<T> AddQuantityColumn(string header, string width, Func<T, decimal?> valueGetter)
         {
-            return AddColumn(header, width, (item, index) => valueGetter(item)?.ToString("N0") ?? "0", "text-right");
+            return AddColumn(header, width, (item, index) => NumberFormatHelper.FormatSmart(valueGetter(item), decimalPlaces: 2, useThousandsSeparator: true, nullDisplayText: "0"), "text-right");
         }
 
         /// <summary>
-        /// 新增金額欄位（自動格式化為千分位小數）
+        /// 新增金額欄位（智能格式化：整數不顯示小數點，有小數才顯示）
         /// </summary>
         public ReportTableBuilder<T> AddAmountColumn(string header, string width, Func<T, decimal?> valueGetter)
         {
-            return AddColumn(header, width, (item, index) => valueGetter(item)?.ToString("N2") ?? "0.00", "text-right");
+            return AddColumn(header, width, (item, index) => NumberFormatHelper.FormatSmart(valueGetter(item), decimalPlaces: 2, useThousandsSeparator: true, nullDisplayText: "0"), "text-right");
         }
 
         /// <summary>
