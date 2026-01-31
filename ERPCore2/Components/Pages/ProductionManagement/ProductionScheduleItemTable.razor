@@ -7,16 +7,34 @@
 @using ERPCore2.Data.Enums
 
 <div class="card h-100">
-    <div class="card-header bg-secondary text-white py-2">
+    <div class="card-header bg-warning text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
             <span class="fw-bold"><i class="bi bi-calendar-check me-2"></i>排程項目</span>
         </div>
     </div>
     
     <div class="card-body p-2">
-        <div style="max-height: 400px; overflow: auto;">
+        @* 篩選區域 *@
+        <div class="mb-2">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" 
+                       class="form-control" 
+                       placeholder="搜尋編號/產品名/狀態..."
+                       @bind="searchKeyword"
+                       @bind:event="oninput" />
+                @if (!string.IsNullOrEmpty(searchKeyword))
+                {
+                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ClearSearch">
+                        <i class="bi bi-x"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        
+        <div style="max-height: 350px; overflow: auto;">
             <InteractiveTableComponent TItem="ScheduleItemDto"
-                                       Items="@Items"
+                                       Items="@FilteredItemsList"
                                        ColumnDefinitions="@GetColumnDefinitions()"
                                        ShowHeader="true"
                                        ShowBuiltInActions="true"
@@ -87,6 +105,52 @@
     /// </summary>
     [Parameter] public EventCallback<(ScheduleItemDto Item, bool IsClosed)> OnIsClosedChanged { get; set; }
     
+    // ===== 內部狀態 =====
+    private string searchKeyword = string.Empty;
+    
+    /// <summary>
+    /// 篩選後的項目列表
+    /// </summary>
+    private List<ScheduleItemDto> FilteredItemsList
+    {
+        get
+        {
+            var result = Items.AsEnumerable();
+            
+            // 關鍵字搜尋（編號、產品名、狀態）
+            if (!string.IsNullOrWhiteSpace(searchKeyword))
+            {
+                var keyword = searchKeyword.Trim().ToLower();
+                result = result.Where(d => 
+                    d.ProductCode.ToLower().Contains(keyword) ||
+                    d.ProductName.ToLower().Contains(keyword) ||
+                    GetStatusText(d).ToLower().Contains(keyword));
+            }
+            
+            return result.ToList();
+        }
+    }
+    
+    /// <summary>
+    /// 取得狀態的文字表示（用於搜尋）
+    /// </summary>
+    private string GetStatusText(ScheduleItemDto item)
+    {
+        // 判斷是否為「已停產」：已結案 且 已完成 < 排程量
+        var isDiscontinued = item.IsClosed && item.CompletedQuantity < item.ScheduleQuantity;
+        
+        if (isDiscontinued)
+            return "已停產";
+            
+        return item.Status switch
+        {
+            ProductionItemStatus.InProgress => "生產中",
+            ProductionItemStatus.Completed => "已完成",
+            ProductionItemStatus.Discontinued => "已停產",
+            _ => "生產中"
+        };
+    }
+    
     // ===== 表格欄位定義 =====
     
     private List<InteractiveColumnDefinition> GetColumnDefinitions()
@@ -100,7 +164,7 @@
                 ColumnType = InteractiveColumnType.Display,
                 Width = "14%",
                 Tooltip = "商品的編號",
-                CellCssClass = "text-primary fw-bold small"
+                CellCssClass = "text-primary fw-bold span"
             },
             new()
             {
@@ -112,7 +176,7 @@
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
-                    return @<small class="text-truncate d-block" style="max-width: 120px;" title="@scheduleItem.ProductName">@scheduleItem.ProductName</small>;
+                    return @<span class="text-truncate d-block" style="max-width: 120px;" title="@scheduleItem.ProductName">@scheduleItem.ProductName</span>;
                 }
             },
             new()
@@ -126,7 +190,7 @@
                 CustomTemplate = item =>
                 {
                     var scheduleItem = (ScheduleItemDto)item;
-                    return @<small class="text-muted">@NumberFormatHelper.FormatSmart(scheduleItem.OrderQuantity)</small>;
+                    return @<span class="text-muted">@NumberFormatHelper.FormatSmart(scheduleItem.OrderQuantity)</span>;
                 }
             },
             new()
@@ -156,9 +220,9 @@
                     var scheduleItem = (ScheduleItemDto)item;
                     if (scheduleItem.CompletedQuantity > 0)
                     {
-                        return @<small class="text-success fw-bold">@NumberFormatHelper.FormatSmart(scheduleItem.CompletedQuantity)</small>;
+                        return @<span class="text-success fw-bold">@NumberFormatHelper.FormatSmart(scheduleItem.CompletedQuantity)</span>;
                     }
-                    return @<small class="text-muted">0</small>;
+                    return @<span class="text-muted">0</span>;
                 }
             },
             new()
@@ -320,6 +384,24 @@
     /// </summary>
     public void Refresh()
     {
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 清除搜尋
+    /// </summary>
+    private void ClearSearch()
+    {
+        searchKeyword = string.Empty;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 清除篩選條件
+    /// </summary>
+    public void ClearFilters()
+    {
+        searchKeyword = string.Empty;
         StateHasChanged();
     }
     

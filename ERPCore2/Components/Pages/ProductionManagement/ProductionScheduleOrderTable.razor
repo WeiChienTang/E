@@ -9,17 +9,17 @@
     <div class="card-header bg-primary text-white py-2">
         <div class="d-flex justify-content-between align-items-center">
             <span class="fw-bold"><i class="bi bi-box-seam me-2"></i>待排程明細</span>
-            <small class="text-white-50">@FilteredDetailsList.Count 項</small>
+            <span class="text-white-50">@FilteredDetailsList.Count 項</span>
         </div>
     </div>
     
     <div class="card-body p-2">
         @* 篩選區域 *@
         <div class="mb-2">
-            <div class="input-group input-group-sm">
+            <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" 
-                       class="form-control form-control-sm" 
+                       class="form-control" 
                        placeholder="搜尋商品/訂單/客戶..."
                        @bind="searchKeyword"
                        @bind:event="oninput" />
@@ -123,7 +123,7 @@
                 ColumnType = InteractiveColumnType.Display,
                 Width = "14%",
                 Tooltip = "商品的編號",
-                CellCssClass = "text-primary fw-bold small"
+                CellCssClass = "text-primary fw-bold span"
             },
             new()
             {
@@ -135,7 +135,7 @@
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
-                    return @<small class="text-truncate d-block" style="max-width: 120px;" title="@detail.ProductName">@detail.ProductName</small>;
+                    return @<span class="text-truncate d-block" style="max-width: 120px;" title="@detail.ProductName">@detail.ProductName</span>;
                 }
             },
             new()
@@ -148,7 +148,7 @@
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
-                    return @<small class="text-muted">@detail.OrderDate.ToString("MM/dd")</small>;
+                    return @<span class="text-muted">@detail.OrderDate.ToString("MM/dd")</span>;
                 }
             },
             new()
@@ -163,9 +163,9 @@
                     var detail = (PendingScheduleDetailDto)item;
                     if (detail.ExpectedDeliveryDate.HasValue)
                     {
-                        return @<small class="text-info">@detail.ExpectedDeliveryDate.Value.ToString("MM/dd")</small>;
+                        return @<span class="text-info">@detail.ExpectedDeliveryDate.Value.ToString("MM/dd")</span>;
                     }
-                    return @<small class="text-muted">-</small>;
+                    return @<span class="text-muted">-</span>;
                 }
             },
             new()
@@ -178,7 +178,7 @@
                 CustomTemplate = item =>
                 {
                     var detail = (PendingScheduleDetailDto)item;
-                    return @<small class="text-truncate d-block" style="max-width: 100px;" title="@detail.CustomerName">@detail.CustomerName</small>;
+                    return @<span class="text-truncate d-block" style="max-width: 100px;" title="@detail.CustomerName">@detail.CustomerName</span>;
                 }
             },
             new()
@@ -190,7 +190,7 @@
                 Tooltip = "根據訂單所得到的數量",
                 TextAlign = "right",
                 SmartDecimalDisplay = true,
-                CellCssClass = "fw-bold small"
+                CellCssClass = "fw-bold span"
             }
         };
     }

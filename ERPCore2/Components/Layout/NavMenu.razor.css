@@ -1,4 +1,4 @@
-ㄅ/* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
+/* Navigation Menu Layout Styles - 只保留佈局和基本結構 */
 
 /* 主導航容器 */
 .nav-menu-container {
@@ -102,15 +102,43 @@
 
 /* 所有螢幕斷點統一使用 640px */
 @media (max-width: 640px) {
+    /* 手機版：導航容器使用固定定位結構 */
+    .nav-menu-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        height: auto;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* 頂部列固定在最上方 */
+    .top-row {
+        position: relative;
+        flex-shrink: 0;
+        z-index: 1051;
+    }
+    
+    /* 導航選單：可滾動區域 */
+    .nav-scrollable {
+        max-height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+    
     /* 確保切換按鈕位於最上層 */
     .navbar-toggler-label {
         position: relative;
-        z-index: 1001; /* 比使用者下拉選單更高 */
+        z-index: 1052;
     }
     
     /* 限制使用者資訊下拉選單的 z-index */
     .user-info-nav ::deep .nav-menu-dropdown-content {
-        z-index: 1000;
+        z-index: 1050;
     }
     
     /* 登入/登出按鈕區域調整 */
@@ -143,6 +171,25 @@
         min-height: 36px;
         display: flex;
         align-items: center;
+    }
+    
+    /* 自訂滾動條樣式 - 手機版 */
+    .nav-scrollable::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .nav-scrollable::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+    }
+    
+    .nav-scrollable::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+    }
+    
+    .nav-scrollable::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
     }
 }
 

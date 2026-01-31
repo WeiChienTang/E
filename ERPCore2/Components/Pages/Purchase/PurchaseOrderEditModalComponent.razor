@@ -674,14 +674,13 @@
                     po => po.SupplierId,
                     po => po.CompanyId,
                     po => po.OrderDate,
-                    po => po.ExpectedDeliveryDate,
-                    po => po.TaxCalculationMethod)
-                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                    po => po.ExpectedDeliveryDate)                    
+                .AddToSection(FormSectionNames.AmountInfo,
+                    po => po.TaxCalculationMethod,
                     po => po.TotalAmount,
                     po => po.PurchaseTaxAmount,
                     po => po.PurchaseTotalAmountIncludingTax)
                 .AddToSection(FormSectionNames.AdditionalInfo,
-                    po => po.RejectReason,
                     po => po.Remarks)
                 .Build();
         }

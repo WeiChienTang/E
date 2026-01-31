@@ -46,8 +46,20 @@ main {
         margin-left: 0;
     }
     
-    /* 手機模式下主內容區域的改善 */
+    /* 手機模式下 sidebar 不佔用空間，NavMenu 使用 fixed 定位 */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        height: auto;
+        width: 100%;
+    }
+    
+    /* 主內容區域需要為固定的 top-row 留出空間 */
     .main-content {
+        margin-top: 3.5rem;
         transition: opacity 0.2s ease;
     }
     
