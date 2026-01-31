@@ -254,12 +254,16 @@
 
     private RenderFragment<StockDetailItem> GetCustomActionsTemplate => item => __builder =>
     {
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        var isDisabled = IsReadOnly || !CanDeleteItem(item, out _) || isLastEmptyRow;
+        var title = isLastEmptyRow ? "至少需要保留一個空行" : "刪除";
+        
         <GenericButtonComponent Variant="ButtonVariant.Red"
                                IconClass="bi bi-trash text-white"
                                Size="ButtonSize.Large"
                                OnClick="@(() => HandleItemDelete(item))"
-                               Title="刪除"
-                               IsDisabled="@(IsReadOnly || !CanDeleteItem(item, out _))"
+                               Title="@title"
+                               IsDisabled="@isDisabled"
                                StopPropagation="true"
                                CssClass="btn-square" />
     };

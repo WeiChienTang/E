@@ -56,9 +56,9 @@ else
                                           Title="@GetSmartDeliveryTooltip()" />
                     <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
-                                          IsDisabled="@(!CanLoadAllUndelivered || _hasUndeletableDetails)"
+                                          IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetLoadAllUndeliveredTooltip()"
-                                          OnClick="LoadAllUndeliveredItems" />
+                                          OnClick="ShowLoadConfirmModal" />
                 </div>
                 <div class="btn-group-right">
                     <GenericButtonComponent Text="明細清除"
@@ -80,6 +80,18 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- 載入確認 Modal -->
+<GenericConfirmModalComponent IsVisible="@_showLoadConfirmModal"
+                             IsVisibleChanged="@((bool visible) => _showLoadConfirmModal = visible)"
+                             Title="載入確認"
+                             Icon="bi-box-arrow-in-down"
+                             Message="即將載入以下條件的未出貨明細："
+                             Conditions="@_loadConditions"
+                             SummaryMessage="@_loadSummaryMessage"
+                             ConfirmButtonVariant="ButtonVariant.Blue"
+                             OnConfirm="@ExecuteLoadAllUndeliveredItems"
+                             OnCancel="@(() => _showLoadConfirmModal = false)" />
+
 @code {
     // ===== InteractiveTableComponent 參考 =====
     private InteractiveTableComponent<DeliveryItem>? tableComponent;
@@ -87,6 +99,11 @@ else
     // ===== 資料載入完成標記 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
     private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有退貨記錄）
+    
+    // ===== 載入確認 Modal =====
+    private bool _showLoadConfirmModal = false;
+    private List<string> _loadConditions = new();
+    private string _loadSummaryMessage = string.Empty;
     
     // ===== 建立空項目方法 =====
     private DeliveryItem CreateNewEmptyItem()
@@ -103,6 +120,14 @@ else
     
     // ===== 退貨數量參數 =====
     [Parameter] public Dictionary<int, decimal>? ReturnedQuantities { get; set; }
+    
+    // ===== 額外參數（用於顯示確認訊息）=====
+    [Parameter] public string? SelectedCustomerName { get; set; }
+    [Parameter] public string? SelectedSalesOrderCode { get; set; }
+    [Parameter] public string? FilterProductName { get; set; }
+    
+    // ===== 商品篩選參數 =====
+    [Parameter] public int? FilterProductId { get; set; }
     
     // ===== 泛型參數 =====
     [Parameter] public TMainEntity? MainEntity { get; set; }
@@ -216,19 +241,13 @@ else
     /// </summary>
     private string GetLoadAllUndeliveredTooltip()
     {
-        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
-            return "請先選擇客戶";
-        
-        if (!GetAvailableSalesDetails().Any())
-            return "該客戶沒有未完成出貨的訂單明細";
-        
-        if (ExistingDetails?.Any() == true)
-            return "編輯模式下無法載入訂單項目，以避免覆蓋現有資料";
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
         
         if (_hasUndeletableDetails)
-            return "部分明細已有退貨記錄，無法載入訂單";
+            return "部分明細已有退貨記錄，無法使用載入功能";
         
-        return "載入該客戶所有未完成出貨的訂單明細";
+        return "載入符合條件的未出貨訂單明細";
     }
     
     /// <summary>
@@ -645,8 +664,21 @@ else
 
     private RenderFragment<DeliveryItem> GetCustomActionsTemplate => item => __builder =>
     {
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        
         // 使用 DetailLockHelper 檢查是否可以刪除（檢查退貨和收款記錄）
-        if (DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+        if (isLastEmptyRow)
+        {
+            // 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="true"
+                                   Title="至少需要保留一個空行"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
             checkReturn: true, checkPayment: true, returnedQuantities: ReturnedQuantities))
         {
             // 可以刪除：顯示刪除按鈕
@@ -782,7 +814,7 @@ else
 
     /// <summary>
     /// 取得可用的訂單明細清單
-    /// 會根據 SelectedSalesOrderId 過濾指定訂單的明細
+    /// 會根據 SelectedSalesOrderId 和 FilterProductId 過濾指定條件的明細
     /// </summary>
     private List<SalesOrderDetail> GetAvailableSalesDetails()
     {
@@ -797,6 +829,12 @@ else
         if (SelectedSalesOrderId.HasValue && SelectedSalesOrderId.Value > 0)
         {
             filteredDetails = filteredDetails.Where(sd => sd.SalesOrderId == SelectedSalesOrderId.Value);
+        }
+        
+        // 如果指定了商品ID，只載入該商品的明細
+        if (FilterProductId.HasValue && FilterProductId.Value > 0)
+        {
+            filteredDetails = filteredDetails.Where(sd => sd.ProductId == FilterProductId.Value);
         }
         
         return filteredDetails.ToList();
@@ -1507,7 +1545,7 @@ else
 
     // ===== 明細清除方法 =====
     /// <summary>
-    /// 清除所有明細
+    /// 清除明細（只移除未鎖定的明細，保留已鎖定的）
     /// </summary>
     private async Task ClearAllDetails()
     {
@@ -1519,8 +1557,20 @@ else
             return;
         }
         
+        // 區分可刪除和被鎖定的明細
+        var unlocked = nonEmptyItems.Where(item => CanDeleteItem(item, out _)).ToList();
+        var locked = nonEmptyItems.Where(item => !CanDeleteItem(item, out _)).ToList();
+        
+        if (!unlocked.Any())
+        {
+            await NotificationService.ShowWarningAsync(
+                "所有明細都已有退貨記錄，無法移除", 
+                "操作限制");
+            return;
+        }
+        
         // 記錄所有要刪除的現有明細 ID
-        foreach (var item in nonEmptyItems.Where(item => item.ExistingDetailEntity != null))
+        foreach (var item in unlocked.Where(item => item.ExistingDetailEntity != null))
         {
             var entityId = GetExistingDetailId(item.ExistingDetailEntity!);
             if (entityId > 0 && !_deletedDetailIds.Contains(entityId))
@@ -1529,13 +1579,21 @@ else
             }
         }
         
-        // 清空所有項目
-        DeliveryItems.Clear();
+        // 從列表中移除未鎖定的項目，保留已鎖定的項目
+        foreach (var item in unlocked)
+        {
+            DeliveryItems.Remove(item);
+        }
         
         await NotifyDetailsChanged();
         await NotifyDeletedDetailsChanged();
         
-        await NotificationService.ShowSuccessAsync($"已清除 {nonEmptyItems.Count} 項明細");
+        var message = $"已清除 {unlocked.Count} 項明細";
+        if (locked.Any())
+        {
+            message += $"\n（已保留 {locked.Count} 項已鎖定的明細）";
+        }
+        await NotificationService.ShowSuccessAsync(message);
     }
     
     // ===== 智能下單功能 =====
@@ -1629,36 +1687,101 @@ else
     // ===== 載入訂單方法 =====
     
     /// <summary>
+    /// 顯示載入確認 Modal - 收集載入條件並顯示給使用者確認
+    /// </summary>
+    private async Task ShowLoadConfirmModal()
+    {
+        try
+        {
+            // 檢查是否已選擇客戶
+            if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇客戶");
+                return;
+            }
+            
+            // 建立載入條件清單
+            _loadConditions = new List<string>();
+            
+            // 條件1：客戶
+            var customerName = !string.IsNullOrWhiteSpace(SelectedCustomerName) 
+                ? SelectedCustomerName 
+                : $"客戶 ID: {SelectedCustomerId.Value}";
+            _loadConditions.Add($"客戶：{customerName}");
+            
+            // 條件2：訂單（如有選擇）
+            if (SelectedSalesOrderId.HasValue && SelectedSalesOrderId.Value > 0)
+            {
+                var orderCode = !string.IsNullOrWhiteSpace(SelectedSalesOrderCode)
+                    ? SelectedSalesOrderCode
+                    : $"訂單 ID: {SelectedSalesOrderId.Value}";
+                _loadConditions.Add($"訂單：{orderCode}");
+            }
+            else
+            {
+                _loadConditions.Add("訂單：全部未出貨訂單");
+            }
+            
+            // 條件3：商品篩選（如有選擇）
+            if (FilterProductId.HasValue && FilterProductId.Value > 0)
+            {
+                var productName = !string.IsNullOrWhiteSpace(FilterProductName)
+                    ? FilterProductName
+                    : $"商品 ID: {FilterProductId.Value}";
+                _loadConditions.Add($"商品篩選：{productName}");
+            }
+            
+            // 計算符合條件的明細數量
+            var availableDetails = GetAvailableSalesDetails();
+            int matchingCount = availableDetails.Count;
+            
+            if (matchingCount == 0)
+            {
+                await NotificationService.ShowInfoAsync("目前沒有符合條件的未出貨訂單明細");
+                return;
+            }
+            
+            _loadSummaryMessage = $"共 {matchingCount} 筆，是否確定載入？";
+            
+            // 顯示確認 Modal
+            _showLoadConfirmModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"準備載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 執行載入所有未出貨訂單 - 使用者確認後執行
+    /// </summary>
+    private async Task ExecuteLoadAllUndeliveredItems()
+    {
+        try
+        {
+            var availableDetails = GetAvailableSalesDetails();
+            
+            if (!availableDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("沒有可載入的未出貨訂單明細", "提示");
+                return;
+            }
+            
+            await LoadUndeliveredItemsInternal(availableDetails);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入未出貨訂單時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// 載入所有未出貨訂單的主要方法（公開方法，供父組件調用）
     /// </summary>
     public async Task LoadAllUndeliveredItems()
     {
-        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
-        {
-            await NotificationService.ShowWarningAsync("請先選擇客戶後再載入訂單");
-            return;
-        }
-
-        var availableDetails = GetAvailableSalesDetails();
-        
-        if (!availableDetails.Any())
-        {
-            await NotificationService.ShowInfoAsync("目前沒有符合條件的未出貨訂單");
-            return;
-        }
-
-        // 檢查是否有現有資料
-        var hasExistingData = DeliveryItems.Any(item => item.ProductId > 0);
-        
-        if (hasExistingData)
-        {
-            // 簡單確認（實際可使用更好的對話框）
-            await NotificationService.ShowWarningAsync(
-                $"此操作將清空現有的出貨明細並載入 {availableDetails.Count} 項未出貨訂單。",
-                "載入確認");
-        }
-
-        await LoadUndeliveredItemsInternal(availableDetails);
+        await ExecuteLoadAllUndeliveredItems();
     }
 
     /// <summary>

@@ -593,13 +593,16 @@ else
     private RenderFragment<StockTakingDetailItem> GetCustomActionsTemplate => item => __builder =>
     {
         var canDelete = item.DetailStatus == StockTakingDetailStatusEnum.Pending && !IsReadOnly;
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        var isDisabled = !canDelete || isLastEmptyRow;
+        var title = isLastEmptyRow ? "至少需要保留一個空行" : (canDelete ? "刪除" : "已盤點項目無法刪除");
 
         <GenericButtonComponent Variant="ButtonVariant.Red"
                                IconClass="bi bi-trash text-white"
                                Size="ButtonSize.Large"
                                OnClick="@(() => HandleItemDelete(item))"
-                               Title="@(canDelete ? "刪除" : "已盤點項目無法刪除")"
-                               IsDisabled="@(!canDelete)"
+                               Title="@title"
+                               IsDisabled="@isDisabled"
                                StopPropagation="true"
                                CssClass="btn-square" />
     };

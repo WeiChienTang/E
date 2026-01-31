@@ -526,7 +526,9 @@
 
     private RenderFragment<DetailItem> GetCustomActionsTemplate => item => __builder =>
     {
-        // 如果是空行，不顯示刪除按鈕
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        
+        // 如果是空行，不顯示刪除按鈕（但最後一個空行需要保護）
         if (item.SelectedProduct != null)
         {
             <GenericButtonComponent 
@@ -536,6 +538,16 @@
                 Size="ButtonSize.Small"
                 OnClick="async () => await HandleItemDelete(item)"
                 IsDisabled="@IsReadOnly" />
+        }
+        else if (isLastEmptyRow)
+        {
+            // 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent 
+                IconClass="bi bi-trash text-white"
+                Title="至少需要保留一個空行"
+                Variant="ButtonVariant.Red"
+                Size="ButtonSize.Small"
+                IsDisabled="true" />
         }
     };
 

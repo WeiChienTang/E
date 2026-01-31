@@ -130,8 +130,6 @@ else
                              Message="即將載入以下條件的待進貨明細："
                              Conditions="@_loadConditions"
                              SummaryMessage="@_loadSummaryMessage"
-                             ConfirmButtonText="確認載入"
-                             CancelButtonText="取消"
                              ConfirmButtonVariant="ButtonVariant.Blue"
                              OnConfirm="@ExecuteLoadAllUnreceivedItems"
                              OnCancel="@(() => _showLoadConfirmModal = false)" />
@@ -738,8 +736,21 @@ else
     // ===== 自訂操作按鈕模板 =====
     private RenderFragment<ReceivingItem> GetCustomActionsTemplate => item => __builder =>
     {
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        
         // 使用 DetailLockHelper 檢查是否可以刪除（需傳入退貨數量字典）
-        if (DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
+        if (isLastEmptyRow)
+        {
+            // 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="true"
+                                   Title="至少需要保留一個空行"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
             checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities))
         {
             // 可以刪除：顯示刪除按鈕

@@ -5,6 +5,7 @@
 - [核心參數配置](#核心參數配置)
 - [空行判斷邏輯](#空行判斷邏輯)
 - [自動新增空行的觸發時機](#自動新增空行的觸發時機)
+- [最後空行保護機制](#最後空行保護機制)
 - [實際應用範例](#實際應用範例)
 - [注意事項與最佳實踐](#注意事項與最佳實踐)
 
@@ -19,7 +20,8 @@
 ✅ 用戶填寫資料後自動新增新的空行  
 ✅ 支援指定「觸發欄位」，只有關鍵欄位有值才新增空行  
 ✅ 刪除項目後自動補充空行  
-✅ 靈活的空行判斷邏輯（觸發欄位模式 vs 傳統模式）
+✅ 靈活的空行判斷邏輯（觸發欄位模式 vs 傳統模式）  
+✅ **最後一個空行保護機制**（防止刪除唯一空行）
 
 ---
 
@@ -962,9 +964,12 @@ private List<InteractiveColumnDefinition> GetColumnDefinitions()
 ```csharp
 // 手動刷新空行檢查（適用於批量載入或清空資料後）
 tableComponent.RefreshEmptyRow();
+
+// 🆕 檢查項目是否為最後一個空行（用於保護最後空行不被刪除）
+bool isLastEmpty = tableComponent.IsLastEmptyRow(item);
 ```
 
-**使用場景**:
+**RefreshEmptyRow 使用場景**:
 ```csharp
 private async Task LoadData()
 {
@@ -978,6 +983,169 @@ private async Task LoadData()
     });
 }
 ```
+
+**IsLastEmptyRow 使用場景**:
+```csharp
+// 🔑 在 CustomActionsTemplate 中保護最後空行
+private RenderFragment<ProductItem> GetCustomActionsTemplate => item => __builder =>
+{
+    var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+    
+    if (isLastEmptyRow)
+    {
+        // 最後一個空行：顯示禁用的刪除按鈕
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               IconClass="bi bi-trash text-white"
+                               IsDisabled="true"
+                               Title="至少需要保留一個空行" />
+    }
+    else
+    {
+        // 正常的刪除按鈕
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               IconClass="bi bi-trash text-white"
+                               OnClick="async () => await HandleItemDelete(item)"
+                               Title="刪除" />
+    }
+};
+```
+
+---
+
+## 最後空行保護機制
+
+### 問題背景
+
+當使用 `ShowBuiltInDeleteButton="false"` 搭配 `CustomActionsTemplate` 自訂刪除按鈕時，會繞過 InteractiveTableComponent 的內建刪除保護邏輯，導致**最後一個空行可以被刪除**，造成無法新增資料的問題。
+
+### 解決方案
+
+InteractiveTableComponent 提供 `IsLastEmptyRow(TItem item)` 公開方法，讓父組件可以在 `CustomActionsTemplate` 中檢查並保護最後一個空行。
+
+### 方法說明
+
+```csharp
+/// <summary>
+/// 檢查項目是否為最後一個空行（用於保護不被刪除）
+/// </summary>
+/// <param name="item">要檢查的項目</param>
+/// <returns>true = 是最後一個空行，應該禁用刪除</returns>
+public bool IsLastEmptyRow(TItem item)
+{
+    // 必須同時滿足：
+    // 1. EnableAutoEmptyRow = true（啟用自動空行管理）
+    // 2. AllowAddNewRow = true（允許新增行）
+    // 3. 這個 item 是空行
+    // 4. 這是唯一的空行
+    
+    if (!EnableAutoEmptyRow || !AllowAddNewRow) return false;
+    
+    var emptyRows = Items?.Where(IsRowEmpty).ToList() ?? new();
+    return emptyRows.Count == 1 && emptyRows.Contains(item);
+}
+```
+
+### 內建刪除按鈕 vs 自訂刪除按鈕
+
+| 類型 | 設定 | 最後空行保護 | 需要額外處理 |
+|------|------|-------------|-------------|
+| 內建刪除按鈕 | `ShowBuiltInDeleteButton="true"` | ✅ 自動保護 | 不需要 |
+| 自訂刪除按鈕 | `ShowBuiltInDeleteButton="false"` | ❌ 不保護 | 🔑 需要手動使用 `IsLastEmptyRow` |
+
+### 使用 CustomActionsTemplate 時的標準寫法
+
+```razor
+<InteractiveTableComponent @ref="tableComponent"
+                          TItem="ProductItem" 
+                          Items="@ProductItems"
+                          ColumnDefinitions="@GetColumnDefinitions()"
+                          EnableAutoEmptyRow="true"
+                          AllowAddNewRow="@(!IsReadOnly)"
+                          ShowBuiltInActions="true"
+                          ShowBuiltInDeleteButton="false"
+                          CustomActionsTemplate="@GetCustomActionsTemplate"
+                          CreateEmptyItem="@CreateNewEmptyItem" />
+
+@code {
+    private InteractiveTableComponent<ProductItem>? tableComponent;
+    
+    private RenderFragment<ProductItem> GetCustomActionsTemplate => item => __builder =>
+    {
+        // 🔑 檢查是否為最後一個空行
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        var canDelete = CanDeleteItem(item, out _);
+        
+        if (isLastEmptyRow)
+        {
+            // 🔒 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="true"
+                                   Title="至少需要保留一個空行"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (canDelete)
+        {
+            // ✅ 可以刪除：顯示刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="@IsReadOnly"
+                                   Title="刪除"
+                                   OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else
+        {
+            // 🔍 不能刪除：顯示查看按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                   IconClass="bi bi-eye text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="查看相關單據"
+                                   OnClick="async () => await ShowRelatedDocuments(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+    };
+}
+```
+
+### 已套用此機制的 Table 組件
+
+以下 Table 組件使用 `CustomActionsTemplate` 且已實作 `IsLastEmptyRow` 保護：
+
+| 模組 | 組件名稱 | 檔案路徑 |
+|------|---------|---------|
+| 採購 | PurchaseOrderTable | Components/Pages/Purchase/PurchaseOrderTable.razor |
+| 採購 | PurchaseReceivingTable | Components/Pages/Purchase/PurchaseReceivingTable.razor |
+| 採購 | PurchaseReturnTable | Components/Pages/Purchase/PurchaseReturnTable.razor |
+| 銷貨 | SalesOrderTable | Components/Pages/Sales/SalesOrderTable.razor |
+| 銷貨 | SalesDeliveryTable | Components/Pages/Sales/SalesDeliveryTable.razor |
+| 銷貨 | SalesReturnTable | Components/Pages/Sales/SalesReturnTable.razor |
+| 銷貨 | QuotationTable | Components/Pages/Sales/QuotationTable.razor |
+| 倉庫 | InventoryStockTable | Components/Pages/Warehouse/InventoryStockTable.razor |
+| 倉庫 | MaterialIssueTable | Components/Pages/Warehouse/MaterialIssueTable.razor |
+| 倉庫 | StockTakingTable | Components/Pages/Warehouse/StockTakingTable.razor |
+| 財務 | SetoffPrepaymentTable | Components/Pages/FinancialManagement/SetoffPrepaymentTable.razor |
+
+### 注意事項
+
+1. **必須有 @ref**：使用 `CustomActionsTemplate` 時，必須在 `InteractiveTableComponent` 上加上 `@ref="tableComponent"`
+
+2. **變數宣告**：在 `@code` 區塊中宣告 tableComponent 變數：
+   ```csharp
+   private InteractiveTableComponent<ProductItem>? tableComponent;
+   ```
+
+3. **null 安全**：呼叫 `IsLastEmptyRow` 時要使用 null 條件運算子：
+   ```csharp
+   var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+   ```
+
+4. **判斷順序**：`isLastEmptyRow` 應該放在其他刪除條件之前檢查
 
 ---
 
@@ -1025,8 +1193,16 @@ SetPropertyValue()
 ## 版本資訊
 
 - **建立日期**: 2025年11月12日
+- **最後更新**: 2026年1月30日
 - **適用版本**: InteractiveTableComponent v2.0+
 - **作者**: ERPCore2 開發團隊
+
+### 更新紀錄
+
+| 日期 | 版本 | 更新內容 |
+|------|------|----------|
+| 2026-01-30 | v2.1 | 新增 `IsLastEmptyRow` 公開方法，支援 CustomActionsTemplate 保護最後空行 |
+| 2025-11-12 | v2.0 | 初始版本，自動空行管理機制 |
 
 ---
 

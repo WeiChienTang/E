@@ -623,6 +623,7 @@ else
         var isEmptyRow = quotationItem.SelectedProduct == null;
         var canDelete = DetailLockHelper.CanDeleteItem(quotationItem, out _, checkConversion: true);
         var hasComposition = quotationItem.SelectedProduct != null && HasProductComposition(quotationItem.SelectedProduct.Id);
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         
         <div class="d-flex gap-1">
             @* BOM 編輯按鈕（如果商品有 BOM 組成） *@
@@ -646,6 +647,17 @@ else
                                        Size="ButtonSize.Large"
                                        Title="查看相關單據"
                                        OnClick="async () => await ShowRelatedDocuments(quotationItem)"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            else if (isLastEmptyRow)
+            {
+                // 最後一個空行：顯示禁用的刪除按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                       IconClass="bi bi-trash text-white"
+                                       Size="ButtonSize.Large"
+                                       IsDisabled="true"
+                                       Title="至少需要保留一個空行"
                                        StopPropagation="true"
                                        CssClass="btn-square" />
             }

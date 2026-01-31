@@ -1462,6 +1462,9 @@
                             CustomerId="@(editModalComponent?.Entity?.CustomerId)"
                             FilterSalesDeliveryId="@FilterSalesDeliveryId"
                             FilterProductId="@FilterProductId"
+                            SelectedCustomerName="@GetSelectedCustomerName()"
+                            SelectedSalesDeliveryCode="@GetSelectedSalesDeliveryCode()"
+                            FilterProductName="@GetFilterProductName()"
                             ExistingReturnDetails="@salesReturnDetails"
                             TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
@@ -1589,6 +1592,45 @@
         {
             await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
         }
+    }
+    
+    // ===== 輔助方法：取得選項名稱 =====
+    
+    /// <summary>
+    /// 取得選定客戶的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedCustomerName()
+    {
+        if (editModalComponent?.Entity?.CustomerId > 0)
+        {
+            return customers.FirstOrDefault(c => c.Id == editModalComponent.Entity.CustomerId)?.CompanyName;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得選定出貨單的單號（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedSalesDeliveryCode()
+    {
+        if (FilterSalesDeliveryId.HasValue && FilterSalesDeliveryId.Value > 0)
+        {
+            return salesDeliveries.FirstOrDefault(sd => sd.Id == FilterSalesDeliveryId.Value)?.Code;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得篩選商品的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetFilterProductName()
+    {
+        if (filterProductId.HasValue && filterProductId.Value > 0)
+        {
+            var product = products.FirstOrDefault(p => p.Id == filterProductId.Value);
+            return product != null ? $"{product.Code} {product.Name}" : null;
+        }
+        return null;
     }
 
     /// <summary>

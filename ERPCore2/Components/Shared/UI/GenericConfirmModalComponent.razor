@@ -16,14 +16,15 @@
                    CloseOnBackdropClick="true"
                    OnClose="@HandleCancel">
     <HeaderButtons>
-        <GenericButtonComponent Variant="ButtonVariant.Gray" 
-                            Text="@CancelButtonText" 
-                            OnClick="HandleCancel"
-                            Title="取消" />
         <GenericButtonComponent Variant="@ConfirmButtonVariant" 
                             Text="@ConfirmButtonText" 
                             OnClick="HandleConfirm"
                             Title="確認" />
+        <GenericButtonComponent Variant="ButtonVariant.Red" 
+                            Text="@CancelButtonText" 
+                            OnClick="HandleCancel"
+                            Title="取消" />
+
     </HeaderButtons>
     <BodyContent>
         @* 主訊息 *@

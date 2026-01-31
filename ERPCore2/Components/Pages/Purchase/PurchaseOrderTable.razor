@@ -446,8 +446,11 @@ else
 
     private RenderFragment<ProductItem> GetCustomActionsTemplate => item => __builder =>
     {
+        // 檢查是否為最後一個空行（不可刪除）
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        
         // 使用 DetailLockHelper 檢查是否可以刪除
-        if (DetailLockHelper.CanDeleteItem(item, out _, checkReceiving: true))
+        if (DetailLockHelper.CanDeleteItem(item, out _, checkReceiving: true) && !isLastEmptyRow)
         {
             // 可以刪除：顯示刪除按鈕
             <GenericButtonComponent Variant="ButtonVariant.Red"
@@ -456,6 +459,17 @@ else
                                    IsDisabled="@IsReadOnly"
                                    Title="刪除"
                                    OnClick="async () => await HandleItemDelete(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (isLastEmptyRow)
+        {
+            // 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="true"
+                                   Title="至少需要保留一個空行"
                                    StopPropagation="true"
                                    CssClass="btn-square" />
         }
@@ -1055,24 +1069,62 @@ else
     }
 
     /// <summary>
-    /// 清空所有明細
+    /// 清空所有明細（僅從畫面移除，不從資料庫刪除）
     /// </summary>
     private async Task ClearAllDetails()
     {
-        var cleared = await ItemManagementHelper.ClearAllDetailsAsync(
-            ProductItems,
-            JSRuntime,
-            async () =>
-            {
-                await NotifyDetailsChanged();
-                tableComponent?.RefreshEmptyRow();
-            },
-            "確定要清除所有明細嗎？"
-        );
-        
-        if (cleared)
+        if (!ProductItems.Any(item => item.SelectedProduct != null))
         {
-            await NotificationService.ShowSuccessAsync("已清空所有商品明細");
+            await NotificationService.ShowWarningAsync("目前沒有可清除的明細");
+            return;
+        }
+        
+        // 分離可清除和已鎖定的明細
+        var validItems = ProductItems.Where(item => item.SelectedProduct != null).ToList();
+        var clearableItems = new List<ProductItem>();
+        var lockedItems = new List<ProductItem>();
+        
+        foreach (var item in validItems)
+        {
+            // 檢查是否被鎖定（已有進貨記錄）
+            if (!DetailLockHelper.CanDeleteItem(item, out _, checkReceiving: true))
+            {
+                lockedItems.Add(item);
+            }
+            else
+            {
+                clearableItems.Add(item);
+            }
+        }
+        
+        if (!clearableItems.Any())
+        {
+            await NotificationService.ShowWarningAsync("所有明細都已被鎖定（已有進貨記錄），無法清除");
+            return;
+        }
+        
+        // 直接清除可清除的明細，不需要確認
+        foreach (var item in clearableItems)
+        {
+            ProductItems.Remove(item);
+        }
+        
+        // 通知變更
+        await NotifyDetailsChanged();
+        
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
+        
+        // 顯示結果訊息
+        if (lockedItems.Any())
+        {
+            await NotificationService.ShowSuccessAsync(
+                $"已清除 {clearableItems.Count} 筆明細\n" +
+                $"（保留 {lockedItems.Count} 筆已被鎖定的明細）");
+        }
+        else
+        {
+            await NotificationService.ShowSuccessAsync($"已清除 {clearableItems.Count} 筆採購明細");
         }
     }
 

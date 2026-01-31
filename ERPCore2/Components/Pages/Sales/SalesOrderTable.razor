@@ -52,7 +52,7 @@ else
         <div class="card-body p-0">
             <InteractiveTableComponent @ref="tableComponent"
                                       TItem="SalesItem" 
-                                      Items="SalesItems"
+                                      Items="GetFilteredSalesItems()"
                                       ColumnDefinitions="GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"                                      
                                       EmptyMessage="@EmptyMessage"
@@ -79,8 +79,8 @@ else
                     <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
                                           Icon="fas fa-file-invoice"
-                                          OnClick="LoadQuotationItems"
-                                          IsDisabled="@(!CanLoadQuotation || _hasUndeletableDetails)"
+                                          OnClick="ShowLoadConfirmModal"
+                                          IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetLoadQuotationTooltip()" />
                 </div>
                 <div class="btn-group-right">
@@ -129,6 +129,18 @@ else
                               OnRequestCachedData="@GetCachedCompositionData"
                               OnReselect="@HandleCompositionReselect" />
 
+<!-- 載入確認 Modal -->
+<GenericConfirmModalComponent IsVisible="@_showLoadConfirmModal"
+                             IsVisibleChanged="@((bool visible) => _showLoadConfirmModal = visible)"
+                             Title="載入確認"
+                             Icon="bi-box-arrow-in-down"
+                             Message="即將載入以下條件的報價單明細："
+                             Conditions="@_loadConditions"
+                             SummaryMessage="@_loadSummaryMessage"
+                             ConfirmButtonVariant="ButtonVariant.Blue"
+                             OnConfirm="@ExecuteLoadQuotationItems"
+                             OnCancel="@(() => _showLoadConfirmModal = false)" />
+
 @code {
     // ===== InteractiveTableComponent 參考 =====
     private InteractiveTableComponent<SalesItem>? tableComponent;
@@ -148,6 +160,11 @@ else
     
     // ===== 篩選參數 =====
     [Parameter] public int? FilterProductId { get; set; }
+    
+    // ===== 額外參數（用於顯示確認訊息）=====
+    [Parameter] public string? SelectedCustomerName { get; set; }
+    [Parameter] public string? SelectedQuotationCode { get; set; }
+    [Parameter] public string? FilterProductName { get; set; }
     
     // ===== 泛型參數 =====
     [Parameter] public TMainEntity? MainEntity { get; set; }
@@ -218,6 +235,11 @@ else
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
     
+    // ===== 載入確認 Modal =====
+    private bool _showLoadConfirmModal = false;
+    private List<string> _loadConditions = new();
+    private string _loadSummaryMessage = string.Empty;
+    
     // ===== BOM 組合編輯相關 =====
     private bool showCompositionModal = false;
     private bool showCompositionSelectorModal = false;
@@ -233,6 +255,25 @@ else
     private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細（已有出貨記錄）
     
     // ===== 計算屬性 =====
+    
+    /// <summary>
+    /// 取得篩選後的銷貨明細項目
+    /// 根據 FilterProductId 過濾顯示的項目
+    /// </summary>
+    private List<SalesItem> GetFilteredSalesItems()
+    {
+        // 如果沒有設定商品篩選，返回全部項目
+        if (!FilterProductId.HasValue || FilterProductId.Value <= 0)
+        {
+            return SalesItems;
+        }
+        
+        // 根據商品篩選過濾項目
+        // 保留空白列（SelectedProduct == null）和符合篩選條件的項目
+        return SalesItems
+            .Where(item => item.SelectedProduct == null || item.SelectedProduct.Id == FilterProductId.Value)
+            .ToList();
+    }
     
     /// <summary>
     /// 判斷是否處於編輯模式（有現有的已儲存明細）
@@ -276,17 +317,8 @@ else
     /// </summary>
     private string GetLoadQuotationTooltip()
     {
-        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
-            return "請先選擇客戶";
-        
-        if (!SelectedQuotationId.HasValue || SelectedQuotationId.Value <= 0)
-            return "請先選擇報價單";
-        
         if (IsReadOnly)
             return "唯讀模式下無法載入報價";
-        
-        if (IsEditMode)
-            return "編輯模式下無法使用此功能，請在新增模式時使用";
         
         if (_hasUndeletableDetails)
             return "部分明細已有出貨或沖款記錄，無法載入報價";
@@ -405,10 +437,11 @@ else
             _previousExistingDetailsCount = currentExistingDetailsCount;
         }
         
-        // 如果只是商品篩選變更，只需要更新篩選狀態並重新渲染
+        // 如果商品篩選變更，需要重新載入可用商品清單（篩選 AvailableQuotationDetails 和 AvailableProducts）
         if (productFilterChanged)
         {
             _previousFilterProductId = FilterProductId;
+            await LoadAvailableProductsAsync();
             StateHasChanged();
             return;
         }
@@ -832,11 +865,27 @@ else
                     SelectedCustomerId.Value, 
                     SelectedQuotationId);
                 
+                // 根據 FilterProductId 進一步篩選報價單明細
+                if (FilterProductId.HasValue && FilterProductId.Value > 0)
+                {
+                    AvailableQuotationDetails = AvailableQuotationDetails
+                        .Where(d => d.ProductId == FilterProductId.Value)
+                        .ToList();
+                }
+                
                 // 2. 只顯示商品類別標記為可販售的商品
                 AvailableProducts = Products
                     .Where(p => p.ProductCategory != null && 
                                p.ProductCategory.IsSaleable)
                     .ToList();
+                
+                // 根據 FilterProductId 篩選商品
+                if (FilterProductId.HasValue && FilterProductId.Value > 0)
+                {
+                    AvailableProducts = AvailableProducts
+                        .Where(p => p.Id == FilterProductId.Value)
+                        .ToList();
+                }
             }
             else
             {
@@ -1402,6 +1451,7 @@ else
         var canDelete = CanDeleteItem(item, out _);
         var hasComposition = salesItem.SelectedProduct != null && HasProductComposition(salesItem.SelectedProduct.Id);
         var isCompositionReadOnly = GetCompositionModalReadOnlyState();
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         
         <div class="d-flex gap-1">
             @* BOM 編輯/查看按鈕（如果商品有 BOM 組成） *@
@@ -1420,7 +1470,18 @@ else
             }
             
             @* 原有的刪除/查看按鈕 *@
-            @if (canDelete)
+            @if (isLastEmptyRow)
+            {
+                // 最後一個空行：顯示禁用的刪除按鈕
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                       IconClass="bi bi-trash text-white"
+                                       Size="ButtonSize.Large"
+                                       IsDisabled="true"
+                                       Title="至少需要保留一個空行"
+                                       StopPropagation="true"
+                                       CssClass="btn-square" />
+            }
+            else if (canDelete)
             {
                 // 可以刪除：顯示刪除按鈕
                 <GenericButtonComponent Variant="ButtonVariant.Red"
@@ -2102,89 +2163,168 @@ else
     /// 載入智能下單項目 - 根據客戶最近一次完整的銷貨訂單
     /// </summary>
     /// <summary>
-    /// 載入報價單明細到銷貨訂單明細表
+    /// 顯示載入確認 Modal - 收集載入條件並顯示給使用者確認
     /// </summary>
-    private async Task LoadQuotationItems()
+    private async Task ShowLoadConfirmModal()
     {
-        if (IsReadOnly || !SelectedCustomerId.HasValue || !SelectedQuotationId.HasValue) return;
+        try
+        {
+            // 檢查是否已選擇客戶
+            if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇客戶");
+                return;
+            }
+            
+            // 建立載入條件清單
+            _loadConditions = new List<string>();
+            
+            // 條件1：客戶
+            var customerName = !string.IsNullOrWhiteSpace(SelectedCustomerName) 
+                ? SelectedCustomerName 
+                : $"客戶 ID: {SelectedCustomerId.Value}";
+            _loadConditions.Add($"客戶：{customerName}");
+            
+            // 條件2：報價單（如有選擇）
+            if (SelectedQuotationId.HasValue && SelectedQuotationId.Value > 0)
+            {
+                var quotationCode = !string.IsNullOrWhiteSpace(SelectedQuotationCode)
+                    ? SelectedQuotationCode
+                    : $"報價單 ID: {SelectedQuotationId.Value}";
+                _loadConditions.Add($"報價單：{quotationCode}");
+            }
+            else
+            {
+                _loadConditions.Add("報價單：全部可轉單報價單");
+            }
+            
+            // 條件3：商品篩選（如有選擇）
+            if (FilterProductId.HasValue && FilterProductId.Value > 0)
+            {
+                var productName = !string.IsNullOrWhiteSpace(FilterProductName)
+                    ? FilterProductName
+                    : $"商品 ID: {FilterProductId.Value}";
+                _loadConditions.Add($"商品篩選：{productName}");
+            }
+            
+            // 計算符合條件的明細數量
+            int matchingCount = await GetAvailableQuotationDetailsCountAsync();
+            
+            if (matchingCount == 0)
+            {
+                await NotificationService.ShowInfoAsync("目前沒有符合條件的可轉單明細");
+                return;
+            }
+            
+            _loadSummaryMessage = $"共 {matchingCount} 筆未轉完明細，是否確定載入？";
+            
+            // 顯示確認 Modal
+            _showLoadConfirmModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"準備載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 計算符合條件的可轉單報價單明細數量
+    /// </summary>
+    private async Task<int> GetAvailableQuotationDetailsCountAsync()
+    {
+        if (!SelectedCustomerId.HasValue || SelectedCustomerId.Value <= 0)
+            return 0;
+        
+        // 如果有選擇特定報價單
+        if (SelectedQuotationId.HasValue && SelectedQuotationId.Value > 0)
+        {
+            var quotation = await QuotationService.GetWithDetailsAsync(SelectedQuotationId.Value);
+            if (quotation?.QuotationDetails == null)
+                return 0;
+            
+            return quotation.QuotationDetails
+                .Where(d => d.Quantity - d.ConvertedQuantity > 0)
+                .Where(d => !FilterProductId.HasValue || FilterProductId.Value <= 0 || d.ProductId == FilterProductId.Value)
+                .Count();
+        }
+        
+        // 如果沒有選擇報價單，計算該客戶所有可轉單的報價單明細
+        var allQuotationHeaders = await QuotationService.GetByCustomerIdAsync(SelectedCustomerId.Value);
+        int totalCount = 0;
+        
+        foreach (var quotationHeader in allQuotationHeaders)
+        {
+            // 需要逐一取得完整資料（包含明細）
+            var quotation = await QuotationService.GetWithDetailsAsync(quotationHeader.Id);
+            if (quotation?.QuotationDetails == null)
+                continue;
+            
+            totalCount += quotation.QuotationDetails
+                .Where(d => d.Quantity - d.ConvertedQuantity > 0)
+                .Where(d => !FilterProductId.HasValue || FilterProductId.Value <= 0 || d.ProductId == FilterProductId.Value)
+                .Count();
+        }
+        
+        return totalCount;
+    }
+
+    /// <summary>
+    /// 載入報價單明細到銷貨訂單明細表 - 使用者確認後執行
+    /// </summary>
+    private async Task ExecuteLoadQuotationItems()
+    {
+        if (IsReadOnly || !SelectedCustomerId.HasValue) return;
         
         try
         {
-            // 檢查是否有現有資料
-            var hasExistingData = SalesItems.Any(item => item.SelectedProduct != null);
-            
-            if (hasExistingData)
-            {
-                if (!await ShowConfirmationAsync("載入報價明細", "此操作將覆蓋現有的銷貨明細，是否繼續？"))
-                {
-                    return;
-                }
-            }
-
-            // 從服務獲取報價單資料
-            var quotation = await QuotationService.GetWithDetailsAsync(SelectedQuotationId.Value);
-            
-            if (quotation == null)
-            {
-                await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
-                return;
-            }
-            
-            // 驗證報價單的客戶是否與選擇的客戶一致
-            if (quotation.CustomerId != SelectedCustomerId.Value)
-            {
-                await NotificationService.ShowWarningAsync("報價單的客戶與當前選擇的客戶不一致", "載入失敗");
-                return;
-            }
-            
-            if (quotation.QuotationDetails == null || !quotation.QuotationDetails.Any())
-            {
-                await NotificationService.ShowInfoAsync("報價單沒有明細資料", "載入失敗");
-                return;
-            }
-
             // 清空現有項目
             SalesItems.Clear();
             _deletedDetailIds.Clear();
-
-            // 將報價單明細轉換為銷貨項目
+            
             var loadedCount = 0;
-            foreach (var quotationDetail in quotation.QuotationDetails)
+            
+            // 如果有選擇特定報價單
+            if (SelectedQuotationId.HasValue && SelectedQuotationId.Value > 0)
             {
-                // 只載入尚未轉單的數量（報價數量 - 已轉數量）
-                var pendingQuantity = quotationDetail.Quantity - quotationDetail.ConvertedQuantity;
+                // 從服務獲取報價單資料
+                var quotation = await QuotationService.GetWithDetailsAsync(SelectedQuotationId.Value);
                 
-                // 如果該明細已經全部轉完，跳過不載入
-                if (pendingQuantity <= 0)
+                if (quotation == null)
                 {
-                    continue;
+                    await NotificationService.ShowWarningAsync("找不到指定的報價單", "載入失敗");
+                    return;
                 }
                 
-                var salesItem = new SalesItem
+                // 驗證報價單的客戶是否與選擇的客戶一致
+                if (quotation.CustomerId != SelectedCustomerId.Value)
                 {
-                    SelectedProduct = quotationDetail.Product,
-                    OrderQuantity = pendingQuantity,
-                    UnitPrice = quotationDetail.UnitPrice,
-                    DiscountPercentage = quotationDetail.DiscountPercentage,
-                    TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
-                    DetailRemarks = quotationDetail.Remarks ?? "",
-                    // 設定報價單來源資訊
-                    SourceQuotationId = SelectedQuotationId.Value,
-                    SourceQuotationDetailId = quotationDetail.Id,
-                    IsQuotationApproved = quotation.IsApproved
-                };
-                
-                // 初始化 ProductSearchValue
-                if (salesItem.SelectedProduct != null)
-                {
-                    salesItem.ProductSearchValue = FormatProductDisplayText(salesItem.SelectedProduct);
+                    await NotificationService.ShowWarningAsync("報價單的客戶與當前選擇的客戶不一致", "載入失敗");
+                    return;
                 }
                 
-                // 計算小計
-                salesItem.CalculateSubtotal();
+                if (quotation.QuotationDetails == null || !quotation.QuotationDetails.Any())
+                {
+                    await NotificationService.ShowInfoAsync("報價單沒有明細資料", "載入失敗");
+                    return;
+                }
                 
-                SalesItems.Add(salesItem);
-                loadedCount++;
+                loadedCount = await LoadQuotationDetailsToSalesItems(quotation);
+            }
+            else
+            {
+                // 沒有選擇報價單，載入該客戶所有可轉單的報價單明細
+                var allQuotationHeaders = await QuotationService.GetByCustomerIdAsync(SelectedCustomerId.Value);
+                
+                foreach (var quotationHeader in allQuotationHeaders)
+                {
+                    // 需要逐一取得完整資料（包含明細）
+                    var quotation = await QuotationService.GetWithDetailsAsync(quotationHeader.Id);
+                    if (quotation?.QuotationDetails == null || !quotation.QuotationDetails.Any())
+                        continue;
+                    
+                    loadedCount += await LoadQuotationDetailsToSalesItems(quotation);
+                }
             }
             
             await NotifyDetailsChanged();
@@ -2195,16 +2335,70 @@ else
             }
             else
             {
-                await NotificationService.ShowInfoAsync("所有報價明細都已完成轉單，無需再轉單", "提示");
+                await NotificationService.ShowInfoAsync("沒有符合條件的可轉單明細", "提示");
             }
             
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadQuotationItems), GetType());
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ExecuteLoadQuotationItems), GetType());
             await NotificationService.ShowErrorAsync("載入報價單明細時發生錯誤", "錯誤");
         }
+    }
+
+    /// <summary>
+    /// 將報價單明細載入到銷貨項目中
+    /// </summary>
+    private async Task<int> LoadQuotationDetailsToSalesItems(Quotation quotation)
+    {
+        var loadedCount = 0;
+        
+        foreach (var quotationDetail in quotation.QuotationDetails!)
+        {
+            // 如果有商品篩選，只載入符合篩選的商品
+            if (FilterProductId.HasValue && FilterProductId.Value > 0 && quotationDetail.ProductId != FilterProductId.Value)
+            {
+                continue;
+            }
+            
+            // 只載入尚未轉單的數量（報價數量 - 已轉數量）
+            var pendingQuantity = quotationDetail.Quantity - quotationDetail.ConvertedQuantity;
+            
+            // 如果該明細已經全部轉完，跳過不載入
+            if (pendingQuantity <= 0)
+            {
+                continue;
+            }
+            
+            var salesItem = new SalesItem
+            {
+                SelectedProduct = quotationDetail.Product,
+                OrderQuantity = pendingQuantity,
+                UnitPrice = quotationDetail.UnitPrice,
+                DiscountPercentage = quotationDetail.DiscountPercentage,
+                TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
+                DetailRemarks = quotationDetail.Remarks ?? "",
+                // 設定報價單來源資訊
+                SourceQuotationId = quotation.Id,
+                SourceQuotationDetailId = quotationDetail.Id,
+                IsQuotationApproved = quotation.IsApproved
+            };
+            
+            // 初始化 ProductSearchValue
+            if (salesItem.SelectedProduct != null)
+            {
+                salesItem.ProductSearchValue = FormatProductDisplayText(salesItem.SelectedProduct);
+            }
+            
+            // 計算小計
+            salesItem.CalculateSubtotal();
+            
+            SalesItems.Add(salesItem);
+            loadedCount++;
+        }
+        
+        return loadedCount;
     }
     
     private async Task LoadSmartOrderItems()

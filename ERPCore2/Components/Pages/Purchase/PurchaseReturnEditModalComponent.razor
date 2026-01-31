@@ -673,7 +673,7 @@
                 .AddToSection(FormSectionNames.BasicInfo,
                     pr => pr.PurchaseReceivingId,
                     pr => pr.ReturnDate)
-                .AddToSection(FormSectionNames.AmountInfoAutoCalculated,
+                .AddToSection(FormSectionNames.AmountInfo,
                     pr => pr.TotalReturnAmount,
                     pr => pr.ReturnTaxAmount,
                     pr => pr.TotalReturnAmountWithTax)
@@ -1242,6 +1242,9 @@
                             SupplierId="@editModalComponent.Entity.SupplierId"
                             FilterPurchaseReceivingId="@filterPurchaseReceivingId"
                             FilterProductId="@filterProductId"
+                            SelectedSupplierName="@GetSelectedSupplierName()"
+                            SelectedPurchaseReceivingCode="@GetSelectedPurchaseReceivingCode()"
+                            FilterProductName="@GetFilterProductName()"
                             TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                             IsEditMode="@(PurchaseReturnId.HasValue)"
                             ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
@@ -1460,6 +1463,45 @@
             await NotificationService.ShowErrorAsync($"儲存採購退貨時發生錯誤：{ex.Message}");
             return false;
         }
+    }
+    
+    // ===== 輔助方法：取得選項名稱 =====
+    
+    /// <summary>
+    /// 取得選定廠商的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedSupplierName()
+    {
+        if (editModalComponent?.Entity?.SupplierId > 0)
+        {
+            return suppliers.FirstOrDefault(s => s.Id == editModalComponent.Entity.SupplierId)?.CompanyName;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得選定進貨單的單號（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedPurchaseReceivingCode()
+    {
+        if (filterPurchaseReceivingId.HasValue && filterPurchaseReceivingId.Value > 0)
+        {
+            return purchaseReceivings.FirstOrDefault(pr => pr.Id == filterPurchaseReceivingId.Value)?.Code;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得篩選商品的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetFilterProductName()
+    {
+        if (filterProductId.HasValue && filterProductId.Value > 0)
+        {
+            var product = products.FirstOrDefault(p => p.Id == filterProductId.Value);
+            return product != null ? $"{product.Code} {product.Name}" : null;
+        }
+        return null;
     }
     
     // ===== 公開方法（供外部組件調用） =====

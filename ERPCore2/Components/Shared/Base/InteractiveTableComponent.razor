@@ -1338,6 +1338,27 @@
         StateHasChanged();
     }
     
+    /// <summary>
+    /// 公開方法：判斷指定項目是否為最後一個空行（不可刪除）
+    /// 當 EnableAutoEmptyRow=true 且 AllowAddNewRow=true 時，
+    /// 如果這是唯一的空行，則不可刪除
+    /// </summary>
+    /// <param name="item">要檢查的項目</param>
+    /// <returns>true 表示這是最後一個空行，不可刪除</returns>
+    public bool IsLastEmptyRow(TItem item)
+    {
+        if (!EnableAutoEmptyRow || !AllowAddNewRow) return false;
+        
+        var isThisRowEmpty = IsRowEmpty(item);
+        if (!isThisRowEmpty) return false;
+        
+        // 計算空行數量
+        var emptyRowCount = Items?.Count(i => IsRowEmpty(i)) ?? 0;
+        
+        // 如果這是唯一的空行，則不可刪除
+        return emptyRowCount <= 1;
+    }
+    
     #endregion
     
     #endregion
@@ -1455,12 +1476,30 @@
                 }
                 @if (ShowBuiltInDeleteButton)
                 {
+                    // 計算是否禁用刪除按鈕
                     var isDeleteDisabled = IsReadOnly || (IsDeleteDisabled?.Invoke(item) ?? false);
+                    
+                    // 自動空行管理：禁止刪除最後一個空行
+                    if (!isDeleteDisabled && EnableAutoEmptyRow && AllowAddNewRow)
+                    {
+                        var isThisRowEmpty = IsRowEmpty(item);
+                        if (isThisRowEmpty)
+                        {
+                            // 計算空行數量
+                            var emptyRowCount = Items?.Count(i => IsRowEmpty(i)) ?? 0;
+                            // 如果這是唯一的空行，禁止刪除
+                            if (emptyRowCount <= 1)
+                            {
+                                isDeleteDisabled = true;
+                            }
+                        }
+                    }
+                    
                     <GenericButtonComponent Variant="@DeleteButtonVariant"
                                            IconClass="@DeleteButtonIcon"
                                            Size="@DeleteButtonSize"
                                            IsDisabled="@isDeleteDisabled"
-                                           Title="@DeleteButtonTitle"
+                                           Title="@(isDeleteDisabled && EnableAutoEmptyRow && IsRowEmpty(item) ? "至少需要保留一個空行" : DeleteButtonTitle)"
                                            OnClick="async () => await HandleBuiltInDelete(item)"
                                            StopPropagation="true"
                                            CssClass="btn-square" />

@@ -168,6 +168,10 @@
     private RelatedEntityModalManager<Company> companyModalManager = default!;
     private EmployeeEditModalComponent? employeeEditModal;
     private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+    private RelatedEntityModalManager<Product> productModalManager = default!;
+    
+    // 商品篩選
+    private int? filterProductId = null;
     
     // ===== 相關單據 Modal =====
     private SalesReturnEditModalComponent? salesReturnEditModal;
@@ -220,12 +224,14 @@
                 .AddManager<Customer>(nameof(SalesOrder.CustomerId), "客戶")
                 .AddManager<Company>(nameof(SalesOrder.CompanyId), "公司")
                 .AddManager<Employee>(nameof(SalesOrder.EmployeeId), "業務員")
+                .AddManager<Product>("FilterProductId", "商品")
                 .Build();
             
             // 取得個別 Manager 供組件使用
             customerModalManager = modalManagers.Get<Customer>(nameof(SalesOrder.CustomerId));
             companyModalManager = modalManagers.Get<Company>(nameof(SalesOrder.CompanyId));
             employeeModalManager = modalManagers.Get<Employee>(nameof(SalesOrder.EmployeeId));
+            productModalManager = modalManagers.Get<Product>("FilterProductId");
             
             // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
@@ -456,6 +462,7 @@
                 .AddField(nameof(SalesOrder.CompanyId), "CompanyName", companies)
                 .AddField(nameof(SalesOrder.EmployeeId), "Name", employees)
                 .AddField(nameof(SalesOrder.QuotationId), "Code", quotations)
+                .AddField("FilterProductId", "Name", products)
                 .Build();
         }
         catch (Exception ex)
@@ -501,6 +508,16 @@
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetCustomerActionButtonsAsync(),
                     IsReadOnly = hasUndeletableDetails // 根據明細狀態決定是否鎖定
+                },
+                new()
+                {
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    Label = "商品",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請輸入或選擇商品",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇特定商品進行篩選，或留空顯示所有商品"
                 },
                 new FormFieldDefinition()
                 {
@@ -638,7 +655,9 @@
             formSections = FormSectionHelper<SalesOrder>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     so => so.Code,
-                    so => so.CustomerId,
+                    so => so.CustomerId)
+                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")  // 用字串指定虛擬欄位
+                .AddToSection(FormSectionNames.BasicInfo,
                     so => so.QuotationId,
                     so => so.CompanyId,
                     so => so.EmployeeId,
@@ -743,7 +762,11 @@
                                                           Products="@products"
                                                           Warehouses="@warehouses"
                                                           SelectedCustomerId="@editModalComponent.Entity.CustomerId"
+                                                          SelectedCustomerName="@GetSelectedCustomerName()"
                                                           SelectedQuotationId="@editModalComponent.Entity.QuotationId"
+                                                          SelectedQuotationCode="@GetSelectedQuotationCode()"
+                                                          FilterProductId="@filterProductId"
+                                                          FilterProductName="@GetFilterProductName()"
                                                           TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                           IsReadOnly="false"
                                                           MainEntityIdPropertyName="SalesOrderId"
@@ -983,6 +1006,24 @@
             {
                 // 稅別變更時，重新計算金額和稅額
                 await HandleDetailsChanged(salesOrderDetails);
+                StateHasChanged();
+            }
+            // 處理商品篩選變更
+            else if (fieldChange.PropertyName == "FilterProductId")
+            {
+                // 更新商品篩選狀態 - 處理 int 或 string 類型
+                int? parsedProductId = null;
+                
+                if (fieldChange.Value is int intValue && intValue > 0)
+                {
+                    parsedProductId = intValue;
+                }
+                else if (fieldChange.Value is string strValue && int.TryParse(strValue, out int parsedInt) && parsedInt > 0)
+                {
+                    parsedProductId = parsedInt;
+                }
+                
+                filterProductId = parsedProductId;
                 StateHasChanged();
             }
         }
@@ -1255,6 +1296,45 @@
         <GenericLockedFieldMessage IsVisible="@hasUndeletableDetails"
                                   Message="因部分明細有其他動作，為保護資料完整性主檔欄位已設唯讀。" />
     };
+
+    /// <summary>
+    /// 取得選擇的客戶名稱（用於載入確認訊息）
+    /// </summary>
+    private string GetSelectedCustomerName()
+    {
+        if (editModalComponent?.Entity?.CustomerId > 0)
+        {
+            var customer = customers.FirstOrDefault(c => c.Id == editModalComponent.Entity.CustomerId);
+            return customer?.CompanyName ?? string.Empty;
+        }
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// 取得選擇的報價單編號（用於載入確認訊息）
+    /// </summary>
+    private string GetSelectedQuotationCode()
+    {
+        if (editModalComponent?.Entity?.QuotationId > 0)
+        {
+            var quotation = quotations.FirstOrDefault(q => q.Id == editModalComponent.Entity.QuotationId);
+            return quotation?.Code ?? string.Empty;
+        }
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// 取得篩選的商品名稱（用於載入確認訊息）
+    /// </summary>
+    private string GetFilterProductName()
+    {
+        if (filterProductId.HasValue && filterProductId.Value > 0)
+        {
+            var product = products.FirstOrDefault(p => p.Id == filterProductId.Value);
+            return product?.Name ?? string.Empty;
+        }
+        return string.Empty;
+    }
 
     /// <summary>
     /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）

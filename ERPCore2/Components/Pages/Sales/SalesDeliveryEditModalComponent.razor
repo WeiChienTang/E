@@ -110,6 +110,10 @@
     // 明細管理組件引用
     private SalesDeliveryTable<SalesDelivery, SalesDeliveryDetail>? salesDeliveryDetailManager;
     
+    // 商品篩選欄位（用於載入時過濾）
+    private int? filterProductId = null;
+    private int? FilterProductId => filterProductId;
+    
     // 退貨數量快取字典（Key: DetailId, Value: 已退貨數量）
     private Dictionary<int, decimal> returnedQuantities = new();
     
@@ -510,6 +514,7 @@
                 .AddField(nameof(SalesDelivery.EmployeeId), "Name", availableEmployees)
                 .AddField(nameof(SalesDelivery.WarehouseId), "Name", availableWarehouses)
                 .AddField(nameof(SalesDelivery.SalesOrderId), "Code", availableSalesOrders)
+                .AddField("FilterProductId", "Name", availableProducts)
                 .Build();
         }
         catch (Exception ex)
@@ -552,6 +557,16 @@
                     MinSearchLength = 0,
                     HelpText = "輸入客戶名稱進行搜尋，或直接選擇",
                     ActionButtons = await GetCustomerActionButtonsAsync()
+                },
+                new FormFieldDefinition()
+                {
+                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位
+                    Label = "商品",
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = "請選擇要篩選的商品（可選）",
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇商品後，點擊載入只會載入該商品的訂單明細"
                 },
                 new FormFieldDefinition()
                 {
@@ -638,10 +653,12 @@
             formSections = FormSectionHelper<SalesDelivery>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.Code,
-                    sd => sd.CustomerId,
+                    sd => sd.CustomerId)
+                .AddCustomFields(FormSectionNames.BasicInfo, "FilterProductId")
+                .AddToSection(FormSectionNames.BasicInfo,
                     sd => sd.SalesOrderId,
                     sd => sd.EmployeeId,
-                    sd => sd.DeliveryDate)
+                    sd => sd.DeliveryDate)                
                 .AddToSection(FormSectionNames.AmountInfo,
                     sd => sd.TaxCalculationMethod,
                     sd => sd.TotalAmount,
@@ -652,6 +669,16 @@
                     sd => sd.DeliveryAddress,
                     sd => sd.Remarks)
                 .Build();
+            
+            // 重置 FilterProductId 欄位狀態
+            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+            if (filterProductField != null)
+            {
+                filterProductField.IsReadOnly = false;
+            }
+            
+            // 重置篩選狀態
+            filterProductId = null;
         }
         catch (Exception ex)
         {
@@ -941,6 +968,30 @@
             {
                 // 觸發明細重新計算
                 await HandleDeliveryDetailsChanged(salesDeliveryDetails);
+                StateHasChanged();
+                return;
+            }
+            
+            // 商品篩選變更時
+            if (fieldChange.PropertyName == "FilterProductId")
+            {
+                // 修正：處理清除值的情況
+                // AutoComplete 清除時可能傳回 null、空字串、"0" 或數字 0
+                var valueStr = fieldChange.Value?.ToString();
+                if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
+                {
+                    filterProductId = null;
+                }
+                else if (int.TryParse(valueStr, out var parsedProductId) && parsedProductId > 0)
+                {
+                    filterProductId = parsedProductId;
+                }
+                else
+                {
+                    // 無法解析的值也視為清除
+                    filterProductId = null;
+                }
+                // ✅ 欄位依賴變化：篩選條件改變需要立即更新明細表格
                 StateHasChanged();
                 return;
             }
@@ -1236,6 +1287,10 @@
                                            WarehouseLocations="@warehouseLocations"
                                            SelectedCustomerId="@editModalComponent.Entity.CustomerId"
                                            SelectedSalesOrderId="@editModalComponent.Entity.SalesOrderId"
+                                           FilterProductId="@FilterProductId"
+                                           SelectedCustomerName="@GetSelectedCustomerName()"
+                                           SelectedSalesOrderCode="@GetSelectedSalesOrderCode()"
+                                           FilterProductName="@GetFilterProductName()"
                                            TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                            MainEntityIdPropertyName="@nameof(SalesDeliveryDetail.SalesDeliveryId)"
                                            QuantityPropertyName="@nameof(SalesDeliveryDetail.DeliveryQuantity)"
@@ -1420,4 +1475,43 @@
     }
     
     // ===== ActionButton 產生方法 =====
+    
+    // ===== 輔助方法：取得選項名稱 =====
+    
+    /// <summary>
+    /// 取得選定客戶的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedCustomerName()
+    {
+        if (editModalComponent?.Entity?.CustomerId > 0)
+        {
+            return customers.FirstOrDefault(c => c.Id == editModalComponent.Entity.CustomerId)?.CompanyName;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得選定訂單的單號（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetSelectedSalesOrderCode()
+    {
+        if (editModalComponent?.Entity?.SalesOrderId > 0)
+        {
+            return salesOrders.FirstOrDefault(so => so.Id == editModalComponent.Entity.SalesOrderId)?.Code;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// 取得篩選商品的名稱（用於載入確認 Modal 顯示）
+    /// </summary>
+    private string? GetFilterProductName()
+    {
+        if (filterProductId.HasValue && filterProductId.Value > 0)
+        {
+            var product = availableProducts.FirstOrDefault(p => p.Id == filterProductId.Value);
+            return product != null ? $"{product.Code} {product.Name}" : null;
+        }
+        return null;
+    }
 }

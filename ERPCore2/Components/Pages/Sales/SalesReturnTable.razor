@@ -48,9 +48,9 @@ else
                 <div class="btn-group-left">
                     <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
-                                          IsDisabled="@(!CanLoadAllReturnable || _hasUndeletableDetails)"
+                                          IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetLoadAllReturnableTooltip()"
-                                          OnClick="LoadAllReturnableItems" />
+                                          OnClick="ShowLoadConfirmModal" />
                 </div>
                 <div class="btn-group-right">
                     <GenericButtonComponent Text="退貨全填"
@@ -85,6 +85,18 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- 載入確認 Modal -->
+<GenericConfirmModalComponent IsVisible="@_showLoadConfirmModal"
+                             IsVisibleChanged="@((bool visible) => _showLoadConfirmModal = visible)"
+                             Title="載入確認"
+                             Icon="bi-box-arrow-in-down"
+                             Message="即將載入以下條件的可退貨明細："
+                             Conditions="@_loadConditions"
+                             SummaryMessage="@_loadSummaryMessage"
+                             ConfirmButtonVariant="ButtonVariant.Blue"
+                             OnConfirm="@ExecuteLoadAllReturnableItems"
+                             OnCancel="@(() => _showLoadConfirmModal = false)" />
+
 @code {
     // ===== InteractiveTableComponent 參考 =====
     private InteractiveTableComponent<ReturnItem>? tableComponent;
@@ -105,6 +117,11 @@ else
     [Parameter] public int? SelectedSalesDeliveryId { get; set; }
     [Parameter] public int? FilterSalesDeliveryId { get; set; }
     [Parameter] public int? FilterProductId { get; set; }
+    
+    // ===== 額外參數（用於顯示確認訊息）=====
+    [Parameter] public string? SelectedCustomerName { get; set; }
+    [Parameter] public string? SelectedSalesDeliveryCode { get; set; }
+    [Parameter] public string? FilterProductName { get; set; }
     
     // ===== 現有明細參數 =====
     [Parameter] public List<SalesReturnDetail> ExistingReturnDetails { get; set; } = new List<SalesReturnDetail>();
@@ -154,6 +171,11 @@ else
     private string selectedProductName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
+    
+    // ===== 載入確認 Modal =====
+    private bool _showLoadConfirmModal = false;
+    private List<string> _loadConditions = new();
+    private string _loadSummaryMessage = string.Empty;
 
     // ===== 計算屬性 =====
     private int? EffectiveCustomerId => CustomerId ?? SelectedCustomerId;
@@ -179,13 +201,13 @@ else
     /// </summary>
     private string GetLoadAllReturnableTooltip()
     {
-        if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
-            return "請先選擇客戶";
+        if (IsReadOnly)
+            return "唯讀模式無法使用";
         
         if (_hasUndeletableDetails)
-            return "部分明細已有沖款記錄，無法使用智能載入";
+            return "部分明細已有沖款記錄，無法使用載入功能";
         
-        return "根據目前篩選條件載入可退貨的出貨明細";
+        return "載入符合條件的可退貨出貨明細";
     }
     
     /// <summary>
@@ -622,8 +644,20 @@ else
     {
         // 檢查項目是否可以刪除（綜合退貨記錄和沖款記錄檢查）
         var canDelete = CanDeleteItem(item, out _);
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         
-        if (canDelete)
+        if (isLastEmptyRow)
+        {
+            // 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="true"
+                                   Title="至少需要保留一個空行"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (canDelete)
         {
             // 可以刪除：顯示刪除按鈕
             <GenericButtonComponent Variant="ButtonVariant.Red"
@@ -1135,31 +1169,86 @@ else
     }
 
     /// <summary>
-    /// 載入所有可退貨商品的主要方法（公開方法，供父組件調用）
+    /// 顯示載入確認 Modal - 收集載入條件並顯示給使用者確認
     /// </summary>
-    public async Task LoadAllReturnableItems()
+    private async Task ShowLoadConfirmModal()
+    {
+        try
+        {
+            // 檢查是否已選擇客戶
+            if (!EffectiveCustomerId.HasValue || EffectiveCustomerId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇客戶");
+                return;
+            }
+            
+            // 建立載入條件清單
+            _loadConditions = new List<string>();
+            
+            // 條件1：客戶
+            var customerName = !string.IsNullOrWhiteSpace(SelectedCustomerName) 
+                ? SelectedCustomerName 
+                : $"客戶 ID: {EffectiveCustomerId.Value}";
+            _loadConditions.Add($"客戶：{customerName}");
+            
+            // 條件2：出貨單（如有選擇）
+            if (EffectiveSalesDeliveryId.HasValue && EffectiveSalesDeliveryId.Value > 0)
+            {
+                var deliveryCode = !string.IsNullOrWhiteSpace(SelectedSalesDeliveryCode)
+                    ? SelectedSalesDeliveryCode
+                    : $"出貨單 ID: {EffectiveSalesDeliveryId.Value}";
+                _loadConditions.Add($"出貨單：{deliveryCode}");
+            }
+            else
+            {
+                _loadConditions.Add("出貨單：全部可退貨出貨單");
+            }
+            
+            // 條件3：商品篩選（如有選擇）
+            if (EffectiveFilterProductId.HasValue && EffectiveFilterProductId.Value > 0)
+            {
+                var productName = !string.IsNullOrWhiteSpace(FilterProductName)
+                    ? FilterProductName
+                    : $"商品 ID: {EffectiveFilterProductId.Value}";
+                _loadConditions.Add($"商品篩選：{productName}");
+            }
+            
+            // 計算符合條件的明細數量
+            var availableDetails = GetAvailableDeliveryDetails();
+            int matchingCount = availableDetails.Count;
+            
+            if (matchingCount == 0)
+            {
+                await NotificationService.ShowInfoAsync("目前沒有符合條件的可退貨明細");
+                return;
+            }
+            
+            _loadSummaryMessage = $"共 {matchingCount} 筆，是否確定載入？";
+            
+            // 顯示確認 Modal
+            _showLoadConfirmModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"準備載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 執行載入所有可退貨商品 - 使用者確認後執行
+    /// </summary>
+    private async Task ExecuteLoadAllReturnableItems()
     {
         try
         {
             var availableDetails = GetAvailableDeliveryDetails();
             
-            //  檢查是否有可載入的明細，若無則顯示詳細的篩選條件
             if (!availableDetails.Any())
             {
-                var conditions = BuildFilterConditionsMessage();
-                await NotificationService.ShowWarningAsync(
-                    $"沒有符合以下條件的可退貨商品：\n{conditions}", 
-                    "查無資料");
+                await NotificationService.ShowWarningAsync("沒有可退貨的出貨明細", "提示");
                 return;
             }
-            
-            //  確認對話框 - 顯示即將載入的數量
-            var confirmed = await NotificationService.ShowConfirmAsync(
-                $"即將載入 {availableDetails.Count} 項可退貨的出貨明細，是否繼續？\n\n" +
-                "提示：如果只需要退貨特定商品，建議使用商品篩選功能。",
-                "智能退貨確認");
-            
-            if (!confirmed) return;
             
             // 清除現有項目但保留已有資料的項目
             var existingItems = ReturnItems.Where(item => item.SelectedProduct != null).ToList();
@@ -1170,13 +1259,14 @@ else
             var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
             
             // 新增所有可退貨的項目
+            int addedCount = 0;
             foreach (var deliveryDetail in availableDetails)
             {
                 // 檢查是否已經存在相同的明細
                 if (ReturnItems.Any(item => item.SelectedDeliveryDetail?.Id == deliveryDetail.Id))
                     continue;
                 
-                //  取得稅率（優先順序：銷貨出貨明細稅率 > 商品稅率 > 系統預設稅率）
+                // 取得稅率（優先順序：銷貨出貨明細稅率 > 商品稅率 > 系統預設稅率）
                 var taxRate = deliveryDetail.TaxRate ?? deliveryDetail.Product?.TaxRate ?? defaultTaxRate;
                 
                 var newItem = new ReturnItem
@@ -1193,16 +1283,25 @@ else
                 };
                 
                 ReturnItems.Add(newItem);
+                addedCount++;
             }
             
             await NotifyDetailsChanged();
-            await NotificationService.ShowSuccessAsync($"已載入 {availableDetails.Count} 項可退貨商品");
-            StateHasChanged(); // 強制更新 UI，確保按鈕狀態正確更新
+            await NotificationService.ShowSuccessAsync($"已載入 {addedCount} 筆可退貨商品");
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入可退貨商品時發生錯誤：{ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 載入所有可退貨商品的主要方法（公開方法，供父組件調用）
+    /// </summary>
+    public async Task LoadAllReturnableItems()
+    {
+        await ExecuteLoadAllReturnableItems();
     }
 
     private async Task RemoveItemAsync(int index)

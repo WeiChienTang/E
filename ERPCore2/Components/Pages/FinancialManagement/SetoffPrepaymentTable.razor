@@ -8,6 +8,7 @@
 
 <div class="card-body p-0">
     <InteractiveTableComponent TItem="SetoffPrepaymentItem" 
+                                @ref="tableComponent"
                                 Items="@PrepaymentItems"
                                 ColumnDefinitions="@GetPrepaymentColumnDefinitions()"
                                 IsReadOnly="@IsReadOnly"
@@ -35,6 +36,7 @@
 @code {
     // ===== 私有欄位 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
+    private InteractiveTableComponent<SetoffPrepaymentItem>? tableComponent;
     
     // ===== 參數定義 =====
     [Parameter] public int? SetoffDocumentId { get; set; }
@@ -596,6 +598,7 @@
     {
         // 檢查項目是否可以刪除（只在編輯模式下才需要檢查）
         bool canDelete = !IsEditMode();
+        var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         
         // 檢查是否可以查看相關單據（只有「預收/預付」類型且已儲存的記錄）
         bool canViewRelated = false;
@@ -605,7 +608,18 @@
             canViewRelated = selectedType != null && !IsTransferType(selectedType.Name);
         }
         
-        if (canDelete)
+        if (isLastEmptyRow)
+        {
+            // 最後一個空行：顯示禁用的刪除按鈕
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   IconClass="bi bi-trash text-white"
+                                   Size="ButtonSize.Large"
+                                   IsDisabled="true"
+                                   Title="至少需要保留一個空行"
+                                   StopPropagation="true"
+                                   CssClass="btn-square" />
+        }
+        else if (canDelete)
         {
             // 可以刪除：顯示刪除按鈕
             <GenericButtonComponent Variant="ButtonVariant.Red"
