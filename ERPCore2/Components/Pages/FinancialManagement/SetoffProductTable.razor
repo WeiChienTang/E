@@ -572,11 +572,13 @@ else
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
                     var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
-                    var displayValue = NumberFormatHelper.FormatForInput(setoffItem.CurrentSetoffAmount, isReturn);
-                    return @<input type="number"
-                                  class="form-control  text-end"
-                                  min="0"
-                                  step="1"
+                    // 使用千分位格式化顯示（退貨顯示負數）
+                    var amount = setoffItem.CurrentSetoffAmount;
+                    var displayAmount = isReturn ? -amount : amount;
+                    var displayValue = amount == 0 ? "" : NumberFormatHelper.FormatSmart(displayAmount);
+                    return @<input type="text"
+                                  class="form-control text-end"
+                                  inputmode="decimal"
                                   value="@displayValue"
                                   placeholder=""
                                   @oninput="@(e => OnSetoffAmountInput(setoffItem, e.Value?.ToString()))"
@@ -599,11 +601,13 @@ else
                 {
                     var setoffItem = (SetoffProductDetailItem)item;
                     var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
-                    var displayValue = NumberFormatHelper.FormatForInput(setoffItem.CurrentAllowanceAmount, isReturn);
-                    return @<input type="number"
-                                  class="form-control  text-end"
-                                  min="0"
-                                  step="1"
+                    // 使用千分位格式化顯示（退貨顯示負數）
+                    var amount = setoffItem.CurrentAllowanceAmount;
+                    var displayAmount = isReturn ? -amount : amount;
+                    var displayValue = amount == 0 ? "" : NumberFormatHelper.FormatSmart(displayAmount);
+                    return @<input type="text"
+                                  class="form-control text-end"
+                                  inputmode="decimal"
                                   value="@displayValue"
                                   placeholder=""
                                   @oninput="@(e => OnAllowanceAmountInput(setoffItem, e.Value?.ToString()))"
