@@ -1,65 +1,7 @@
-namespace ERPCore2.Models;
+// ============================================================================
+// 向後相容性檔案 - 已遷移至 Models/Reports/ReportDefinition.cs
+// 此檔案保留以維持現有程式碼的相容性，建議逐步更新 using 語句至新位置
+// ============================================================================
 
-/// <summary>
-/// 報表定義 - 用於報表索引顯示
-/// </summary>
-public class ReportDefinition
-{
-    /// <summary>
-    /// 報表識別碼（唯一）
-    /// </summary>
-    public string Id { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 報表名稱
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 報表說明
-    /// </summary>
-    public string Description { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 報表圖示 CSS 類別
-    /// </summary>
-    public string IconClass { get; set; } = "bi bi-file-earmark-text";
-    
-    /// <summary>
-    /// 報表分類（Customer/Supplier/Financial/Inventory 等）
-    /// </summary>
-    public string Category { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 所需權限
-    /// </summary>
-    public string? RequiredPermission { get; set; }
-    
-    /// <summary>
-    /// 開啟報表的 Action 識別碼
-    /// </summary>
-    public string ActionId { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 是否啟用
-    /// </summary>
-    public bool IsEnabled { get; set; } = true;
-    
-    /// <summary>
-    /// 排序順序
-    /// </summary>
-    public int SortOrder { get; set; } = 0;
-}
-
-/// <summary>
-/// 報表分類常數
-/// </summary>
-public static class ReportCategory
-{
-    public const string Customer = "Customer";
-    public const string Supplier = "Supplier";
-    public const string Financial = "Financial";
-    public const string Inventory = "Inventory";
-    public const string Sales = "Sales";
-    public const string Purchase = "Purchase";
-}
+// 類別已移至 ERPCore2.Models.Reports 命名空間
+// 透過 global using 導入（在 ReportModels.cs 中設定）

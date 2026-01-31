@@ -1,6 +1,8 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Services;
 using ERPCore2.Services.Reports;
+using ERPCore2.Services.Reports.Configuration;
+using ERPCore2.Services.Reports.Interfaces;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -168,27 +170,28 @@ namespace ERPCore2.Data
             services.AddScoped<IPrinterTestService, PrinterTestService>();
             
             // 報表列印配置服務
-            services.AddScoped<IReportPrintConfigurationService, ReportPrintConfigurationService>();
+            services.AddScoped<ERPCore2.Services.Reports.Configuration.IReportPrintConfigurationService, 
+                              ERPCore2.Services.Reports.Configuration.ReportPrintConfigurationService>();
             
             // 文字訊息範本服務
             services.AddScoped<ITextMessageTemplateService, TextMessageTemplateService>();
             
-            // 報表服務
-            services.AddScoped<IReportService, ReportService>();
+            // 報表服務 - 介面位於 ERPCore2.Services.Reports.Interfaces
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportService, ReportService>();
             // 使用採購單報表服務
-            services.AddScoped<IPurchaseOrderReportService, PurchaseOrderReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService, PurchaseOrderReportService>();
             // 進貨單（入庫單）報表服務
-            services.AddScoped<IPurchaseReceivingReportService, PurchaseReceivingReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseReceivingReportService, PurchaseReceivingReportService>();
             // 進貨退出單報表服務
-            services.AddScoped<IPurchaseReturnReportService, PurchaseReturnReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseReturnReportService, PurchaseReturnReportService>();
             // 銷貨單報表服務
-            services.AddScoped<ISalesOrderReportService, SalesOrderReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesOrderReportService, SalesOrderReportService>();
             // 銷貨退回單報表服務
-            services.AddScoped<ISalesReturnReportService, SalesReturnReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesReturnReportService, SalesReturnReportService>();
             // 報價單報表服務
-            services.AddScoped<IQuotationReportService, QuotationReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IQuotationReportService, QuotationReportService>();
             // 商品條碼報表服務
-            services.AddScoped<IProductBarcodeReportService, ProductBarcodeReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();
         }
 
         /// <summary>

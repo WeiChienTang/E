@@ -1,17 +1,7 @@
-using ERPCore2.Models;
+// ============================================================================
+// 向後相容性檔案 - 已遷移至 Services/Reports/Interfaces/IProductBarcodeReportService.cs
+// 此檔案保留以維持現有程式碼的相容性，建議逐步更新 using 語句至新位置
+// ============================================================================
 
-namespace ERPCore2.Services.Reports
-{
-    /// <summary>
-    /// 商品條碼報表服務介面
-    /// </summary>
-    public interface IProductBarcodeReportService
-    {
-        /// <summary>
-        /// 生成條碼批次列印報表
-        /// </summary>
-        /// <param name="criteria">條碼列印條件</param>
-        /// <returns>可列印的 HTML 內容</returns>
-        Task<string> GenerateBarcodeReportAsync(ProductBarcodePrintCriteria criteria);
-    }
-}
+// 介面已移至 ERPCore2.Services.Reports.Interfaces 命名空間
+// 透過 global using 導入（在 IReportService.cs 中設定）

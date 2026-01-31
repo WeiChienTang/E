@@ -1,43 +1,7 @@
-using ERPCore2.Data.Entities;
-using ERPCore2.Models;
+// ============================================================================
+// 向後相容性檔案 - 已遷移至 Services/Reports/Interfaces/IQuotationReportService.cs
+// 此檔案保留以維持現有程式碼的相容性，建議逐步更新 using 語句至新位置
+// ============================================================================
 
-namespace ERPCore2.Services.Reports
-{
-    /// <summary>
-    /// 報價單報表服務介面
-    /// </summary>
-    public interface IQuotationReportService
-    {
-        /// <summary>
-        /// 生成報價單報表
-        /// </summary>
-        /// <param name="quotationId">報價單ID</param>
-        /// <param name="format">報表格式</param>
-        /// <returns>報表內容</returns>
-        Task<string> GenerateQuotationReportAsync(int quotationId, ReportFormat format = ReportFormat.Html);
-
-        /// <summary>
-        /// 生成報價單報表（帶列印配置）
-        /// </summary>
-        /// <param name="quotationId">報價單ID</param>
-        /// <param name="format">報表格式</param>
-        /// <param name="reportPrintConfig">列印配置</param>
-        /// <returns>報表內容</returns>
-        Task<string> GenerateQuotationReportAsync(
-            int quotationId,
-            ReportFormat format,
-            ReportPrintConfiguration? reportPrintConfig);
-
-        /// <summary>
-        /// 批次生成報價單報表（支援多條件篩選）
-        /// </summary>
-        /// <param name="criteria">批次列印篩選條件</param>
-        /// <param name="format">報表格式</param>
-        /// <param name="reportPrintConfig">列印配置</param>
-        /// <returns>合併後的報表內容</returns>
-        Task<string> GenerateBatchReportAsync(
-            BatchPrintCriteria criteria,
-            ReportFormat format = ReportFormat.Html,
-            ReportPrintConfiguration? reportPrintConfig = null);
-    }
-}
+// 介面已移至 ERPCore2.Services.Reports.Interfaces 命名空間
+// 透過 global using 導入（在 IReportService.cs 中設定）
