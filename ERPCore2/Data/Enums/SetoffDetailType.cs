@@ -21,6 +21,10 @@ namespace ERPCore2.Data.Enums
         
         /// <summary>採購退回明細</summary>
         [Display(Name = "入庫退回明細")]
-        PurchaseReturnDetail = 4
+        PurchaseReturnDetail = 4,
+        
+        /// <summary>銷貨出貨明細</summary>
+        [Display(Name = "出貨明細")]
+        SalesDeliveryDetail = 5
     }
 }

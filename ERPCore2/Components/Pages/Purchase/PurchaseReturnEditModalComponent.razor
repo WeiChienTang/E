@@ -49,6 +49,7 @@
                           GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomModules="@GetCustomModules()"
+                          CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           OnPrint="@HandlePrint"
                           OnEntityLoaded="@HandleEntityLoaded" />
@@ -1095,6 +1096,72 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 取得自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? GetCustomActionButtons() => __builder =>
+    {
+        @* 轉沖款按鈕 - 只在進貨退出已儲存時顯示 *@
+        @if (editModalComponent?.Entity != null && PurchaseReturnId.HasValue)
+        {
+            <GenericButtonComponent Text="轉沖款" 
+                                  Variant="ButtonVariant.Green" 
+                                  OnClick="HandleCreateSetoffFromReturn" />
+        }
+    };
+
+    /// <summary>
+    /// 從進貨退出轉沖款單
+    /// </summary>
+    private async Task HandleCreateSetoffFromReturn()
+    {
+        try
+        {
+            // 1. 驗證進貨退出資料
+            if (!PurchaseReturnId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉沖款：進貨退出資料不存在");
+                return;
+            }
+            
+            // 2. 驗證廠商資料
+            if (editModalComponent.Entity.SupplierId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("進貨退出缺少廠商資訊，無法轉沖款");
+                return;
+            }
+            
+            // 3. 檢查是否有明細
+            if (!purchaseReturnDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("進貨退出沒有明細資料，無法轉沖款");
+                return;
+            }
+            
+            // 4. 檢查是否有可沖款的明細（有未結清餘額）
+            bool hasUnsettledDetails = purchaseReturnDetails
+                .Any(detail => detail.ReturnSubtotalAmount > detail.TotalReceivedAmount && !detail.IsSettled);
+            
+            if (!hasUnsettledDetails)
+            {
+                await NotificationService.ShowWarningAsync("進貨退出所有明細皆已完成沖款，無需再轉沖款");
+                return;
+            }
+            
+            // 5. 呼叫沖款單組件的公開方法
+            await setoffDocumentEditModal!.ShowAddModalWithPrefilledPurchaseReturn(
+                editModalComponent.Entity.SupplierId,
+                PurchaseReturnId.Value
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateSetoffFromReturn), GetType(), 
+                additionalData: $"轉沖款失敗 - PurchaseReturnId: {PurchaseReturnId}");
+            await NotificationService.ShowErrorAsync("轉沖款時發生錯誤");
         }
     }
     

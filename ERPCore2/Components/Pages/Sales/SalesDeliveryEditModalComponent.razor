@@ -76,6 +76,14 @@
                               OnSalesReturnSaved="@HandleSalesReturnSaved"
                               OnCancel="@(() => showSalesReturnModal = false)" />
 
+@* 沖款單編輯 Modal *@
+<SetoffDocumentEditModalComponent @ref="setoffDocumentEditModal"
+                                 IsVisible="@showSetoffDocumentModal"
+                                 IsVisibleChanged="@((bool visible) => showSetoffDocumentModal = visible)"
+                                 SetoffDocumentId="@selectedSetoffDocumentId"
+                                 OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
+                                 OnCancel="@(() => showSetoffDocumentModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -140,6 +148,11 @@
     private SalesReturnEditModalComponent? salesReturnEditModal;
     private bool showSalesReturnModal = false;
     private int? selectedSalesReturnId = null;
+    
+    // ===== 沖款單 Modal =====
+    private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
+    private bool showSetoffDocumentModal = false;
+    private int? selectedSetoffDocumentId = null;
     
     // 下拉選單選項（向下相容）
     private List<Customer> customers = new();
@@ -1349,6 +1362,11 @@
                                           Size="ButtonSize.Small"
                                           CssClass="me-2"
                                           OnClick="HandleCreateReturnFromDelivery" />
+                    <GenericButtonComponent Text="轉沖款" 
+                                          Variant="ButtonVariant.Green" 
+                                          Size="ButtonSize.Small"
+                                          CssClass="me-2"
+                                          OnClick="HandleCreateSetoffFromDelivery" />
                 }
             };
         }
@@ -1471,6 +1489,75 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSalesReturnSaved), GetType());
+        }
+    }
+    
+    /// <summary>
+    /// 處理沖款單儲存後的事件
+    /// </summary>
+    private async Task HandleSetoffDocumentSaved(SetoffDocument savedDocument)
+    {
+        try
+        {
+            showSetoffDocumentModal = false;
+            await NotificationService.ShowSuccessAsync("沖款單已更新");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 從出貨單轉沖款單
+    /// </summary>
+    private async Task HandleCreateSetoffFromDelivery()
+    {
+        try
+        {
+            // 1. 驗證出貨單資料
+            if (!SalesDeliveryId.HasValue || editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("無法轉沖款：出貨單資料不存在");
+                return;
+            }
+            
+            // 2. 驗證客戶資料
+            if (editModalComponent.Entity.CustomerId <= 0)
+            {
+                await NotificationService.ShowWarningAsync("出貨單缺少客戶資訊，無法轉沖款");
+                return;
+            }
+            
+            // 3. 檢查是否有明細
+            if (!salesDeliveryDetails.Any())
+            {
+                await NotificationService.ShowWarningAsync("出貨單沒有明細資料，無法轉沖款");
+                return;
+            }
+            
+            // 4. 檢查是否有可沖款的明細（有未結清餘額）
+            bool hasUnsettledDetails = salesDeliveryDetails
+                .Any(detail => detail.SubtotalAmount > detail.TotalReceivedAmount && !detail.IsSettled);
+            
+            if (!hasUnsettledDetails)
+            {
+                await NotificationService.ShowWarningAsync("出貨單所有明細皆已完成沖款，無需再轉沖款");
+                return;
+            }
+            
+            // 5. 呼叫沖款單組件的公開方法
+            await setoffDocumentEditModal!.ShowAddModalWithPrefilledDelivery(
+                editModalComponent.Entity.CustomerId,
+                SalesDeliveryId.Value
+            );
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateSetoffFromDelivery), GetType(), 
+                additionalData: $"轉沖款失敗 - SalesDeliveryId: {SalesDeliveryId}");
+            await NotificationService.ShowErrorAsync("轉沖款時發生錯誤");
         }
     }
     

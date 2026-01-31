@@ -293,7 +293,43 @@ namespace ERPCore2.Services
 
                 results.AddRange(salesReturnDetails);
 
-                // 3. 查詢每筆明細的歷史累計沖款和折讓金額（從 SetoffProductDetail 表）
+                // 3. 查詢未結清的銷貨出貨明細（包含稅率計算所需欄位）
+                var salesDeliveryRawData = await context.SalesDeliveryDetails
+                    .Include(d => d.SalesDelivery)
+                    .Include(d => d.Product)
+                    .Where(d => d.SalesDelivery.CustomerId == customerId && !d.IsSettled)
+                    .Select(d => new
+                    {
+                        d.Id,
+                        d.SalesDelivery.Code,
+                        d.ProductId,
+                        ProductName = d.Product.Name,
+                        ProductCode = d.Product.Code ?? string.Empty,
+                        d.SubtotalAmount,
+                        d.TaxRate,
+                        d.SalesDelivery.TaxCalculationMethod,
+                        d.TotalReceivedAmount,
+                        d.SalesDelivery.DeliveryDate
+                    })
+                    .ToListAsync();
+
+                var salesDeliveryDetails = salesDeliveryRawData.Select(d => new UnsettledDetailDto
+                {
+                    SourceDetailType = SetoffDetailType.SalesDeliveryDetail,
+                    SourceDetailId = d.Id,
+                    SourceDocumentNumber = d.Code ?? string.Empty,
+                    ProductId = d.ProductId,
+                    ProductName = d.ProductName,
+                    ProductCode = d.ProductCode,
+                    TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
+                    PaidAmount = d.TotalReceivedAmount,
+                    DocumentDate = d.DeliveryDate,
+                    IsReturn = false
+                }).ToList();
+
+                results.AddRange(salesDeliveryDetails);
+
+                // 4. 查詢每筆明細的歷史累計沖款和折讓金額（從 SetoffProductDetail 表）
                 foreach (var detail in results)
                 {
                     var historicalSetoff = await context.SetoffProductDetails
@@ -556,6 +592,30 @@ namespace ERPCore2.Services
                             };
                         }
                         break;
+
+                    case SetoffDetailType.SalesDeliveryDetail:
+                        var salesDeliveryDetail = await context.SalesDeliveryDetails
+                            .Include(d => d.SalesDelivery)
+                            .Include(d => d.Product)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                        
+                        if (salesDeliveryDetail != null)
+                        {
+                            result = new UnsettledDetailDto
+                            {
+                                SourceDetailType = SetoffDetailType.SalesDeliveryDetail,
+                                SourceDetailId = salesDeliveryDetail.Id,
+                                SourceDocumentNumber = salesDeliveryDetail.SalesDelivery.Code ?? string.Empty,
+                                ProductId = salesDeliveryDetail.ProductId,
+                                ProductName = salesDeliveryDetail.Product.Name,
+                                ProductCode = salesDeliveryDetail.Product.Code ?? string.Empty,
+                                TotalAmount = salesDeliveryDetail.SubtotalAmount,
+                                PaidAmount = salesDeliveryDetail.TotalReceivedAmount,
+                                DocumentDate = salesDeliveryDetail.SalesDelivery.DeliveryDate,
+                                IsReturn = false
+                            };
+                        }
+                        break;
                 }
 
                 // 如果找到了來源明細，查詢該明細的歷史累計沖款和折讓金額
@@ -640,6 +700,15 @@ namespace ERPCore2.Services
                         {
                             purchaseReturnDetail.TotalReceivedAmount = totalSetoff;
                             purchaseReturnDetail.IsSettled = purchaseReturnDetail.TotalReceivedAmount >= purchaseReturnDetail.ReturnSubtotalAmount;
+                        }
+                        break;
+
+                    case SetoffDetailType.SalesDeliveryDetail:
+                        var salesDeliveryDetail = await context.SalesDeliveryDetails.FindAsync(sourceDetailId);
+                        if (salesDeliveryDetail != null)
+                        {
+                            salesDeliveryDetail.TotalReceivedAmount = totalSetoff;
+                            salesDeliveryDetail.IsSettled = salesDeliveryDetail.TotalReceivedAmount >= salesDeliveryDetail.SubtotalAmount;
                         }
                         break;
                 }

@@ -61,7 +61,7 @@ else
                                           OnClick="ShowLoadConfirmModal" />
                 </div>
                 <div class="btn-group-right">
-                    <GenericButtonComponent Text="明細清除"
+                    <GenericButtonComponent Text="清除明細"
                                           Variant="ButtonVariant.Red"
                                           IsDisabled="@(IsReadOnly || !DeliveryItems.Any(item => item.ProductId > 0) || _hasUndeletableDetails)"
                                           Title="@GetClearAllDetailsTooltip()"

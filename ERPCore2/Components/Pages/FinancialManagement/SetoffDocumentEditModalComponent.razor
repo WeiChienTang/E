@@ -75,8 +75,14 @@
     [Parameter] public EventCallback OnCancel { get; set; }
     
     // ===== 預填參數（用於轉單功能）=====
+    // 廠商相關（應付帳款）
     [Parameter] public int? PrefilledSupplierId { get; set; }
     [Parameter] public int? PrefilledPurchaseReceivingId { get; set; }
+    [Parameter] public int? PrefilledPurchaseReturnId { get; set; }
+    // 客戶相關（應收帳款）
+    [Parameter] public int? PrefilledCustomerId { get; set; }
+    [Parameter] public int? PrefilledSalesDeliveryId { get; set; }
+    [Parameter] public int? PrefilledSalesReturnId { get; set; }
 
     // ===== 內部狀態 =====
     private GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>? editModalComponent;
@@ -85,7 +91,13 @@
     
     // 轉單自動載入控制
     private bool shouldAutoLoadFromReceiving = false;
+    private bool shouldAutoLoadFromPurchaseReturn = false;
+    private bool shouldAutoLoadFromDelivery = false;
+    private bool shouldAutoLoadFromSalesReturn = false;
     private int? filterPurchaseReceivingId = null;
+    private int? filterPurchaseReturnId = null;
+    private int? filterSalesDeliveryId = null;
+    private int? filterSalesReturnId = null;
     
     // 公司編輯 Modal 相關變數 - 使用泛型管理器
     private CompanyEditModalComponent? companyEditModal;
@@ -886,6 +898,30 @@
                     {
                         filterPurchaseReceivingId = PrefilledPurchaseReceivingId.Value;
                     }
+                    // 設定進貨退出篩選ID
+                    if (PrefilledPurchaseReturnId.HasValue)
+                    {
+                        filterPurchaseReturnId = PrefilledPurchaseReturnId.Value;
+                    }
+                }
+                
+                // 處理預填參數（銷貨轉沖款等場景）
+                if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
+                {
+                    setoffDocument.RelatedPartyId = PrefilledCustomerId.Value;
+                    setoffDocument.RelatedPartyType = "Customer";
+                    setoffDocument.SetoffType = SetoffType.AccountsReceivable;
+                    
+                    // 設定銷貨出貨篩選ID
+                    if (PrefilledSalesDeliveryId.HasValue)
+                    {
+                        filterSalesDeliveryId = PrefilledSalesDeliveryId.Value;
+                    }
+                    // 設定銷貨退回篩選ID
+                    if (PrefilledSalesReturnId.HasValue)
+                    {
+                        filterSalesReturnId = PrefilledSalesReturnId.Value;
+                    }
                 }
                 
                 // 新增模式：清空商品明細、收款記錄和預收付款項
@@ -1626,6 +1662,147 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledReceiving), GetType(), 
                 additionalData: $"開啟預填沖款單Modal失敗 - SupplierId: {supplierId}, ReceivingId: {purchaseReceivingId}");
+            await NotificationService.ShowErrorAsync("開啟沖款單時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 開啟新增沖款單 Modal 並預填進貨退出資訊（公開方法供外部調用）
+    /// </summary>
+    /// <param name="supplierId">廠商ID</param>
+    /// <param name="purchaseReturnId">進貨退出ID</param>
+    public async Task ShowAddModalWithPrefilledPurchaseReturn(int supplierId, int purchaseReturnId)
+    {
+        try
+        {
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
+                {
+                    SetoffDocumentId = null;
+                    PrefilledSupplierId = supplierId;
+                    PrefilledPurchaseReturnId = purchaseReturnId;
+                    DefaultSetoffType = SetoffType.AccountsPayable;
+                    filterPurchaseReturnId = purchaseReturnId;
+                    shouldAutoLoadFromPurchaseReturn = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadFromPurchaseReturn = false;
+                    if (setoffProductDetailManager != null)
+                    {
+                        await setoffProductDetailManager.LoadDetailsFromPurchaseReturn(purchaseReturnId);
+                    }
+                },
+                detailManagerReady: () => setoffProductDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadFromPurchaseReturn,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledPurchaseReturn), GetType(), 
+                additionalData: $"開啟預填沖款單Modal失敗 - SupplierId: {supplierId}, PurchaseReturnId: {purchaseReturnId}");
+            await NotificationService.ShowErrorAsync("開啟沖款單時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 開啟新增沖款單 Modal 並預填銷貨出貨資訊（公開方法供外部調用）
+    /// </summary>
+    /// <param name="customerId">客戶ID</param>
+    /// <param name="salesDeliveryId">銷貨出貨ID</param>
+    public async Task ShowAddModalWithPrefilledDelivery(int customerId, int salesDeliveryId)
+    {
+        try
+        {
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
+                {
+                    SetoffDocumentId = null;
+                    PrefilledCustomerId = customerId;
+                    PrefilledSalesDeliveryId = salesDeliveryId;
+                    DefaultSetoffType = SetoffType.AccountsReceivable;
+                    filterSalesDeliveryId = salesDeliveryId;
+                    shouldAutoLoadFromDelivery = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadFromDelivery = false;
+                    if (setoffProductDetailManager != null)
+                    {
+                        await setoffProductDetailManager.LoadDetailsFromSalesDelivery(salesDeliveryId);
+                    }
+                },
+                detailManagerReady: () => setoffProductDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadFromDelivery,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledDelivery), GetType(), 
+                additionalData: $"開啟預填沖款單Modal失敗 - CustomerId: {customerId}, SalesDeliveryId: {salesDeliveryId}");
+            await NotificationService.ShowErrorAsync("開啟沖款單時發生錯誤");
+        }
+    }
+    
+    /// <summary>
+    /// 開啟新增沖款單 Modal 並預填銷貨退回資訊（公開方法供外部調用）
+    /// </summary>
+    /// <param name="customerId">客戶ID</param>
+    /// <param name="salesReturnId">銷貨退回ID</param>
+    public async Task ShowAddModalWithPrefilledSalesReturn(int customerId, int salesReturnId)
+    {
+        try
+        {
+            var success = await DocumentConversionHelper.ShowConversionModalAsync(
+                setPrefilledValues: () =>
+                {
+                    SetoffDocumentId = null;
+                    PrefilledCustomerId = customerId;
+                    PrefilledSalesReturnId = salesReturnId;
+                    DefaultSetoffType = SetoffType.AccountsReceivable;
+                    filterSalesReturnId = salesReturnId;
+                    shouldAutoLoadFromSalesReturn = true;
+                },
+                isVisibleChanged: IsVisibleChanged,
+                autoLoadAction: async () =>
+                {
+                    shouldAutoLoadFromSalesReturn = false;
+                    if (setoffProductDetailManager != null)
+                    {
+                        await setoffProductDetailManager.LoadDetailsFromSalesReturn(salesReturnId);
+                    }
+                },
+                detailManagerReady: () => setoffProductDetailManager != null,
+                shouldAutoLoad: () => shouldAutoLoadFromSalesReturn,
+                stateHasChangedAction: StateHasChanged,
+                invokeAsync: InvokeAsync
+            );
+
+            if (!success)
+            {
+                throw new Exception("轉單流程執行失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledSalesReturn), GetType(), 
+                additionalData: $"開啟預填沖款單Modal失敗 - CustomerId: {customerId}, SalesReturnId: {salesReturnId}");
             await NotificationService.ShowErrorAsync("開啟沖款單時發生錯誤");
         }
     }

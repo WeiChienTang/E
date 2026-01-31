@@ -3,6 +3,9 @@
 @inject ISetoffProductDetailService SetoffProductDetailService
 @inject IProductService ProductService
 @inject IPurchaseReceivingService PurchaseReceivingService
+@inject IPurchaseReturnService PurchaseReturnService
+@inject ISalesDeliveryService SalesDeliveryService
+@inject ISalesReturnService SalesReturnService
 @inject INotificationService NotificationService
 @using ERPCore2.Components.Shared.Base
 @using ERPCore2.Components.Shared.UI
@@ -1062,6 +1065,237 @@ else
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入進貨明細時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 從進貨退出載入未結清明細（用於「進貨退出轉沖款」轉單功能）
+    /// </summary>
+    /// <param name="purchaseReturnId">進貨退出ID</param>
+    public async Task LoadDetailsFromPurchaseReturn(int purchaseReturnId)
+    {
+        try
+        {
+            // 檢查關聯方是否已設定
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇廠商");
+                return;
+            }
+            
+            // 取得進貨退出的編號（用於篩選）
+            var purchaseReturn = await PurchaseReturnService.GetByIdAsync(purchaseReturnId);
+            if (purchaseReturn == null)
+            {
+                await NotificationService.ShowWarningAsync("找不到指定的進貨退出");
+                return;
+            }
+            var purchaseReturnCode = purchaseReturn.Code;
+            
+            // 確保已載入商品資料
+            if (!Products.Any())
+            {
+                await LoadProductsAsync();
+            }
+            
+            // 載入該廠商的所有未結清明細
+            await LoadUnsettledDetailsAsync();
+            
+            // 篩選出指定進貨退出的明細（透過單號比對）
+            var matchingDetails = UnsettledDetails
+                .Where(d => d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail)
+                .Where(d => !string.IsNullOrEmpty(d.SourceDocumentNumber) && 
+                           d.SourceDocumentNumber == purchaseReturnCode)
+                .ToList();
+            
+            // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
+            SetoffItems = matchingDetails
+                .Select(detail => new SetoffProductDetailItem
+                {
+                    SourceDetailType = detail.SourceDetailType,
+                    SourceDetailId = detail.SourceDetailId,
+                    ProductId = detail.ProductId,
+                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    CurrentSetoffAmount = detail.RemainingAmount,
+                    CurrentAllowanceAmount = 0,
+                    Remarks = null,
+                    ExistingDetail = null,
+                    UnsettledDetail = detail,
+                    NeedsSourceDetailLoad = false
+                }).ToList();
+            
+            _dataLoaded = true;
+            
+            var loadedCount = SetoffItems.Count;
+            if (loadedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 筆進貨退出明細", "載入完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("該進貨退出沒有未結清的應付明細", "提示");
+            }
+            
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入進貨退出明細時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 從銷貨出貨載入未結清明細（用於「銷貨出貨轉沖款」轉單功能）
+    /// </summary>
+    /// <param name="salesDeliveryId">銷貨出貨ID</param>
+    public async Task LoadDetailsFromSalesDelivery(int salesDeliveryId)
+    {
+        try
+        {
+            // 檢查關聯方是否已設定
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇客戶");
+                return;
+            }
+            
+            // 取得銷貨出貨的編號（用於篩選）
+            var salesDelivery = await SalesDeliveryService.GetByIdAsync(salesDeliveryId);
+            if (salesDelivery == null)
+            {
+                await NotificationService.ShowWarningAsync("找不到指定的銷貨出貨單");
+                return;
+            }
+            var salesDeliveryCode = salesDelivery.Code;
+            
+            // 確保已載入商品資料
+            if (!Products.Any())
+            {
+                await LoadProductsAsync();
+            }
+            
+            // 載入該客戶的所有未結清明細
+            await LoadUnsettledDetailsAsync();
+            
+            // 篩選出指定銷貨出貨的明細（透過單號比對）
+            var matchingDetails = UnsettledDetails
+                .Where(d => d.SourceDetailType == SetoffDetailType.SalesDeliveryDetail)
+                .Where(d => !string.IsNullOrEmpty(d.SourceDocumentNumber) && 
+                           d.SourceDocumentNumber == salesDeliveryCode)
+                .ToList();
+            
+            // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
+            SetoffItems = matchingDetails
+                .Select(detail => new SetoffProductDetailItem
+                {
+                    SourceDetailType = detail.SourceDetailType,
+                    SourceDetailId = detail.SourceDetailId,
+                    ProductId = detail.ProductId,
+                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    CurrentSetoffAmount = detail.RemainingAmount,
+                    CurrentAllowanceAmount = 0,
+                    Remarks = null,
+                    ExistingDetail = null,
+                    UnsettledDetail = detail,
+                    NeedsSourceDetailLoad = false
+                }).ToList();
+            
+            _dataLoaded = true;
+            
+            var loadedCount = SetoffItems.Count;
+            if (loadedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 筆銷貨出貨明細", "載入完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("該銷貨出貨單沒有未結清的應收明細", "提示");
+            }
+            
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入銷貨出貨明細時發生錯誤：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 從銷貨退回載入未結清明細（用於「銷貨退回轉沖款」轉單功能）
+    /// </summary>
+    /// <param name="salesReturnId">銷貨退回ID</param>
+    public async Task LoadDetailsFromSalesReturn(int salesReturnId)
+    {
+        try
+        {
+            // 檢查關聯方是否已設定
+            if (!RelatedPartyId.HasValue || RelatedPartyId.Value <= 0)
+            {
+                await NotificationService.ShowWarningAsync("請先選擇客戶");
+                return;
+            }
+            
+            // 取得銷貨退回的編號（用於篩選）
+            var salesReturn = await SalesReturnService.GetByIdAsync(salesReturnId);
+            if (salesReturn == null)
+            {
+                await NotificationService.ShowWarningAsync("找不到指定的銷貨退回");
+                return;
+            }
+            var salesReturnCode = salesReturn.Code;
+            
+            // 確保已載入商品資料
+            if (!Products.Any())
+            {
+                await LoadProductsAsync();
+            }
+            
+            // 載入該客戶的所有未結清明細
+            await LoadUnsettledDetailsAsync();
+            
+            // 篩選出指定銷貨退回的明細（透過單號比對）
+            var matchingDetails = UnsettledDetails
+                .Where(d => d.SourceDetailType == SetoffDetailType.SalesReturnDetail)
+                .Where(d => !string.IsNullOrEmpty(d.SourceDocumentNumber) && 
+                           d.SourceDocumentNumber == salesReturnCode)
+                .ToList();
+            
+            // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
+            SetoffItems = matchingDetails
+                .Select(detail => new SetoffProductDetailItem
+                {
+                    SourceDetailType = detail.SourceDetailType,
+                    SourceDetailId = detail.SourceDetailId,
+                    ProductId = detail.ProductId,
+                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    CurrentSetoffAmount = detail.RemainingAmount,
+                    CurrentAllowanceAmount = 0,
+                    Remarks = null,
+                    ExistingDetail = null,
+                    UnsettledDetail = detail,
+                    NeedsSourceDetailLoad = false
+                }).ToList();
+            
+            _dataLoaded = true;
+            
+            var loadedCount = SetoffItems.Count;
+            if (loadedCount > 0)
+            {
+                await NotificationService.ShowSuccessAsync($"已載入 {loadedCount} 筆銷貨退回明細", "載入完成");
+            }
+            else
+            {
+                await NotificationService.ShowInfoAsync("該銷貨退回沒有未結清的應收明細", "提示");
+            }
+            
+            await NotifyDetailsChanged();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入銷貨退回明細時發生錯誤：{ex.Message}");
         }
     }
     

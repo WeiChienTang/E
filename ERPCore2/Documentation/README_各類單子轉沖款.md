@@ -379,6 +379,60 @@ private async Task HandleCreateSetoffFromReceiving()
 3. 驗證是否有明細資料
 4. 驗證是否有可沖款的明細（未結清）
 
+### 6. 稅率計算一致性
+
+#### 問題描述
+來源單據（如進貨單）的「小計」欄位會根據 `TaxCalculationMethod` 計算含稅金額，但沖款單的未結清明細原本使用的是不含稅的 `SubtotalAmount`，導致金額不一致。
+
+#### 解決方案
+在 `SetoffProductDetailService` 中新增 `CalculateTaxInclusiveAmount` 方法，統一計算含稅金額：
+
+```csharp
+private static decimal CalculateTaxInclusiveAmount(decimal subtotal, decimal? taxRate, TaxCalculationMethod taxMethod)
+{
+    var rate = taxRate ?? 0;
+    return taxMethod switch
+    {
+        // 稅外加：金額 = 小計 × (1 + 稅率/100)
+        TaxCalculationMethod.TaxExclusive => Math.Round(subtotal * (1 + rate / 100), 0),
+        // 稅內含：金額 = 小計（稅已包含在單價中）
+        TaxCalculationMethod.TaxInclusive => Math.Round(subtotal, 0),
+        // 免稅：金額 = 小計
+        TaxCalculationMethod.NoTax => Math.Round(subtotal, 0),
+        _ => Math.Round(subtotal, 0)
+    };
+}
+```
+
+#### 修改的方法
+| 方法名稱 | 影響的單據類型 |
+|---------|--------------|
+| `GetUnsettledReceivableDetailsAsync` | 銷貨訂單明細、銷貨退回明細 |
+| `GetUnsettledPayableDetailsAsync` | 採購進貨明細、採購退回明細 |
+
+#### 實作方式
+查詢時需額外選取 `TaxRate`（明細層級）和 `TaxCalculationMethod`（主檔層級），然後在記憶體中計算含稅金額：
+
+```csharp
+// 查詢時選取必要欄位
+var rawData = await context.PurchaseReceivingDetails
+    .Select(d => new
+    {
+        d.SubtotalAmount,
+        d.TaxRate,
+        d.PurchaseReceiving.TaxCalculationMethod,
+        // ... 其他欄位
+    })
+    .ToListAsync();
+
+// 轉換時計算含稅金額
+var details = rawData.Select(d => new UnsettledDetailDto
+{
+    TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
+    // ... 其他欄位
+}).ToList();
+```
+
 ---
 
 ## 更新記錄
@@ -386,4 +440,5 @@ private async Task HandleCreateSetoffFromReceiving()
 | 日期 | 更新內容 | 修改者 |
 |-----|---------|-------|
 | 2026-01-31 | 初版 - 進貨單轉沖款功能 | - |
+| 2026-01-31 | 新增稅率計算一致性說明 - 修正 SetoffProductDetailService 使用含稅金額 | - |
 
