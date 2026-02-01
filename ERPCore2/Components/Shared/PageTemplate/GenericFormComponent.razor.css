@@ -47,8 +47,8 @@
 }
 
 .section-col-sixth {
-    flex: 1 1 calc(16.666% - 0.83rem);
-    max-width: calc(16.666% - 0.83rem);
+    flex: 1 1 0; /* 使用 flex: 1 讓 6 個 section 平均分配空間 */
+    min-width: 0; /* 允許收縮到任意小 */
 }
 
 /* 區段標題 */
