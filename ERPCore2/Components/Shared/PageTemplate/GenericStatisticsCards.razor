@@ -1,18 +1,32 @@
-@* 通用統計卡片套裝組件 - 可配置的統計卡片組合 *@
-<div class="d-flex flex-wrap mb-4 statistics-cards-container">
-    @foreach (var cardConfig in CardConfigs)
-    {
-        <div class="statistics-card-wrapper">
-            <StatisticsCard Title="@cardConfig.Title"
-                           Value="@GetCardValue(cardConfig)"
-                           IconClass="@cardConfig.IconClass"
-                           BorderColor="@cardConfig.BorderColor"
-                           TextColor="@cardConfig.TextColor"
-                           IsCurrency="@cardConfig.IsCurrency"
-                           IsClickable="@(cardConfig.OnClick.HasDelegate)"
-                           OnClick="@cardConfig.OnClick" />
-        </div>
-    }
+@* 通用統計卡片套裝組件 - 緊湊 Badge 模式 *@
+
+<div class="statistics-compact-container">
+    <div class="statistics-compact-row">
+        @foreach (var cardConfig in CardConfigs)
+        {
+            var value = GetCardValue(cardConfig);
+            var isClickable = cardConfig.OnClick.HasDelegate;
+            <span class="statistics-badge badge-@cardConfig.BorderColor @(isClickable ? "clickable" : "")"
+                  @onclick="@(() => HandleBadgeClick(cardConfig))"
+                  title="@(isClickable ? "點擊查看詳情" : "")">
+                <span class="badge-title">@cardConfig.Title</span>
+                <span class="badge-value">
+                    @if (cardConfig.IsCurrency)
+                    {
+                        <text>$@value.ToString("N0")</text>
+                    }
+                    else
+                    {
+                        @value.ToString("N0")
+                    }
+                </span>
+                @if (isClickable)
+                {
+                    <i class="bi bi-chevron-right badge-arrow"></i>
+                }
+            </span>
+        }
+    </div>
 </div>
 
 @code {
@@ -27,6 +41,17 @@
     /// </summary>
     [Parameter, EditorRequired]
     public Dictionary<string, object> Statistics { get; set; } = new();
+
+    /// <summary>
+    /// 處理 Badge 點擊事件
+    /// </summary>
+    private async Task HandleBadgeClick(StatisticsCardConfig config)
+    {
+        if (config.OnClick.HasDelegate)
+        {
+            await config.OnClick.InvokeAsync();
+        }
+    }
 
     /// <summary>
     /// 取得卡片顯示值

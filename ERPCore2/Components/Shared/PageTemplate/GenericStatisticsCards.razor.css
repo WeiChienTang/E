@@ -1,40 +1,126 @@
-/* 通用統計卡片套裝組件樣式 */
+/* 通用統計卡片套裝組件樣式 - 緊湊 Badge 模式 */
 
-.statistics-cards-container {
-    gap: 15px;
+/* ===== Badge 容器樣式 ===== */
+.statistics-compact-container {
+    margin-bottom: 0.5rem;
 }
 
-.statistics-card-wrapper {
-    flex: 1 1 auto;
-    min-width: 150px;
-    max-width: 100%;
-    /* 當超過8個卡片時自動換行 */
-    flex-basis: calc(12.5% - 15px);
+.statistics-compact-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
 }
 
-/* 響應式設計 */
-@media (max-width: 1400px) {
-    .statistics-card-wrapper {
-        max-width: calc(16.666% - 15px); /* 6 個卡片 */
-    }
+/* ===== 統計 Badge 樣式 ===== */
+.statistics-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
+    font-weight: 500;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
-@media (max-width: 1200px) {
-    .statistics-card-wrapper {
-        max-width: calc(25% - 15px); /* 4 個卡片 */
-    }
+.statistics-badge .badge-title {
+    color: #495057;
+    font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
+    font-weight: 500;
 }
 
+.statistics-badge .badge-value {
+    font-weight: 700;
+    font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
+    color: #212529;
+}
+
+.statistics-badge .badge-arrow {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-left: 0.25rem;
+}
+
+/* ===== Badge 顏色變體 ===== */
+.statistics-badge.badge-primary {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+.statistics-badge.badge-primary .badge-value { color: #0d6efd; }
+
+.statistics-badge.badge-success {
+    border-color: #198754;
+    background-color: rgba(25, 135, 84, 0.1);
+}
+.statistics-badge.badge-success .badge-value { color: #198754; }
+
+.statistics-badge.badge-warning {
+    border-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.15);
+}
+.statistics-badge.badge-warning .badge-value { color: #cc9a06; }
+
+.statistics-badge.badge-danger {
+    border-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+.statistics-badge.badge-danger .badge-value { color: #dc3545; }
+
+.statistics-badge.badge-info {
+    border-color: #0dcaf0;
+    background-color: rgba(13, 202, 240, 0.1);
+}
+.statistics-badge.badge-info .badge-value { color: #0aa2c0; }
+
+.statistics-badge.badge-secondary {
+    border-color: #6c757d;
+    background-color: rgba(108, 117, 125, 0.1);
+}
+.statistics-badge.badge-secondary .badge-value { color: #6c757d; }
+
+/* ===== 可點擊的 Badge ===== */
+.statistics-badge.clickable {
+    cursor: pointer;
+}
+
+.statistics-badge.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+}
+
+.statistics-badge.clickable:active {
+    transform: translateY(0);
+}
+
+/* ===== 響應式設計 ===== */
 @media (max-width: 768px) {
-    .statistics-card-wrapper {
-        max-width: calc(50% - 15px); /* 2 個卡片 */
-        min-width: 150px;
+    .statistics-compact-row {
+        gap: 0.5rem;
+    }
+    
+    .statistics-badge {
+        padding: 0.4rem 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .statistics-badge .badge-title,
+    .statistics-badge .badge-value {
+        font-size: 1rem;
     }
 }
 
 @media (max-width: 576px) {
-    .statistics-card-wrapper {
-        max-width: 100%; /* 1 個卡片 */
-        min-width: 200px;
+    .statistics-compact-row {
+        gap: 0.4rem;
+    }
+    
+    .statistics-badge {
+        padding: 0.35rem 0.6rem;
+        border-radius: 20px;
     }
 }
