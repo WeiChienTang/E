@@ -1,59 +1,31 @@
-@* 供應商推薦詳細欄位範本 *@
+@* 供應商推薦詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
+@using ERPCore2.Helpers
 
-<div class="supplier-recommendation-details">
-    @* 價格資訊 *@
-    <div class="mb-2">
-        @if (Document.UnitPrice.HasValue)
-        {
-            <span class="badge bg-primary me-2">
-                <i class="bi bi-tag-fill me-1"></i>
-                最近價格: NT$ @Document.UnitPrice.Value.ToString("N0")
-            </span>
-        }
-        @if (Document.Amount.HasValue)
-        {
-            <span class="badge bg-info me-2">
-                <i class="bi bi-bar-chart-fill me-1"></i>
-                平均價格: NT$ @Document.Amount.Value.ToString("N0")
-            </span>
-        }
-        @if (Document.CurrentAmount.HasValue && Document.TotalAmount.HasValue)
-        {
-            <span class="badge bg-secondary">
-                <i class="bi bi-graph-down me-1"></i>
-                NT$ @Document.CurrentAmount.Value.ToString("N0") ~ @Document.TotalAmount.Value.ToString("N0")
-            </span>
-        }
-    </div>
-    
-    @* 採購資訊 *@
-    <p class="mb-1 text-muted small">
-        @if (Document.Quantity.HasValue && Document.Quantity.Value > 0)
-        {
-            <span class="text-nowrap me-3">
-                <i class="bi bi-cart-check me-1"></i>
-                採購次數: <strong>@Document.Quantity.Value</strong> 次
-            </span>
-        }
-        @if (Document.DocumentDate != default)
-        {
-            <span class="text-nowrap">
-                <i class="bi bi-calendar3 me-1"></i>
-                最近採購: @Document.DocumentDate.ToString("yyyy-MM-dd")
-            </span>
-        }
-    </p>
-    
-    @* 備註資訊（包含常用標記、交貨天數、料號等） *@
-    @if (!string.IsNullOrEmpty(Document.Remarks))
-    {
-        <p class="mb-0 text-muted small">
-            <i class="bi bi-info-circle me-1"></i>
-            @Document.Remarks
-        </p>
-    }
-</div>
+@if (Document.UnitPrice.HasValue)
+{
+    <span class="badge bg-primary">
+        <i class="bi bi-tag-fill me-1"></i>NT$ @NumberFormatHelper.FormatSmart(Document.UnitPrice.Value)
+    </span>
+}
+@if (Document.Quantity.HasValue && Document.Quantity.Value > 0)
+{
+    <span class="text-muted">
+        <i class="bi bi-cart-check me-1"></i>@NumberFormatHelper.FormatSmart(Document.Quantity.Value) 次
+    </span>
+}
+@if (Document.DocumentDate != default)
+{
+    <span class="text-muted">
+        <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
+    </span>
+}
+@if (!string.IsNullOrEmpty(Document.Remarks))
+{
+    <span class="text-muted text-truncate" style="max-width: 150px;" title="@Document.Remarks">
+        <i class="bi bi-info-circle me-1"></i>@Document.Remarks
+    </span>
+}
 
 @code {
     [Parameter, EditorRequired]

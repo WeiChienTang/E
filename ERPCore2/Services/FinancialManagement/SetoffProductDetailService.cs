@@ -513,7 +513,10 @@ namespace ERPCore2.Services
                                 ProductId = salesDetail.ProductId,
                                 ProductName = salesDetail.Product.Name,
                                 ProductCode = salesDetail.Product.Code ?? string.Empty,
-                                TotalAmount = salesDetail.SubtotalAmount,
+                                TotalAmount = CalculateTaxInclusiveAmount(
+                                    salesDetail.SubtotalAmount,
+                                    salesDetail.TaxRate,
+                                    salesDetail.SalesOrder.TaxCalculationMethod),
                                 PaidAmount = salesDetail.TotalReceivedAmount,
                                 DocumentDate = salesDetail.SalesOrder.OrderDate,
                                 IsReturn = false
@@ -537,7 +540,10 @@ namespace ERPCore2.Services
                                 ProductId = salesReturnDetail.ProductId,
                                 ProductName = salesReturnDetail.Product.Name,
                                 ProductCode = salesReturnDetail.Product.Code ?? string.Empty,
-                                TotalAmount = salesReturnDetail.ReturnSubtotalAmount,
+                                TotalAmount = CalculateTaxInclusiveAmount(
+                                    salesReturnDetail.ReturnSubtotalAmount,
+                                    salesReturnDetail.TaxRate,
+                                    salesReturnDetail.SalesReturn.TaxCalculationMethod),
                                 PaidAmount = salesReturnDetail.TotalPaidAmount,
                                 DocumentDate = salesReturnDetail.SalesReturn.ReturnDate,
                                 IsReturn = true
@@ -561,7 +567,10 @@ namespace ERPCore2.Services
                                 ProductId = purchaseDetail.ProductId,
                                 ProductName = purchaseDetail.Product.Name,
                                 ProductCode = purchaseDetail.Product.Code ?? string.Empty,
-                                TotalAmount = purchaseDetail.SubtotalAmount,
+                                TotalAmount = CalculateTaxInclusiveAmount(
+                                    purchaseDetail.SubtotalAmount,
+                                    purchaseDetail.TaxRate,
+                                    purchaseDetail.PurchaseReceiving.TaxCalculationMethod),
                                 PaidAmount = purchaseDetail.TotalPaidAmount,
                                 DocumentDate = purchaseDetail.PurchaseReceiving.ReceiptDate,
                                 IsReturn = false
@@ -585,7 +594,10 @@ namespace ERPCore2.Services
                                 ProductId = purchaseReturnDetail.ProductId,
                                 ProductName = purchaseReturnDetail.Product.Name,
                                 ProductCode = purchaseReturnDetail.Product.Code ?? string.Empty,
-                                TotalAmount = purchaseReturnDetail.ReturnSubtotalAmount,
+                                TotalAmount = CalculateTaxInclusiveAmount(
+                                    purchaseReturnDetail.ReturnSubtotalAmount,
+                                    purchaseReturnDetail.TaxRate,
+                                    purchaseReturnDetail.PurchaseReturn.TaxCalculationMethod),
                                 PaidAmount = purchaseReturnDetail.TotalReceivedAmount,
                                 DocumentDate = purchaseReturnDetail.PurchaseReturn.ReturnDate,
                                 IsReturn = true
@@ -609,7 +621,10 @@ namespace ERPCore2.Services
                                 ProductId = salesDeliveryDetail.ProductId,
                                 ProductName = salesDeliveryDetail.Product.Name,
                                 ProductCode = salesDeliveryDetail.Product.Code ?? string.Empty,
-                                TotalAmount = salesDeliveryDetail.SubtotalAmount,
+                                TotalAmount = CalculateTaxInclusiveAmount(
+                                    salesDeliveryDetail.SubtotalAmount,
+                                    salesDeliveryDetail.TaxRate,
+                                    salesDeliveryDetail.SalesDelivery.TaxCalculationMethod),
                                 PaidAmount = salesDeliveryDetail.TotalReceivedAmount,
                                 DocumentDate = salesDeliveryDetail.SalesDelivery.DeliveryDate,
                                 IsReturn = false
@@ -664,51 +679,81 @@ namespace ERPCore2.Services
                     .Where(d => d.SourceDetailId == sourceDetailId && d.SourceDetailType == sourceType)
                     .SumAsync(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
 
-                // 根據來源類型更新對應的實體
+                // 根據來源類型更新對應的實體（使用含稅金額判斷是否結清）
                 switch (sourceType)
                 {
                     case SetoffDetailType.SalesOrderDetail:
-                        var salesDetail = await context.SalesOrderDetails.FindAsync(sourceDetailId);
+                        var salesDetail = await context.SalesOrderDetails
+                            .Include(d => d.SalesOrder)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (salesDetail != null)
                         {
                             salesDetail.TotalReceivedAmount = totalSetoff;
-                            salesDetail.IsSettled = salesDetail.TotalReceivedAmount >= salesDetail.SubtotalAmount;
+                            var taxInclusiveAmount = CalculateTaxInclusiveAmount(
+                                salesDetail.SubtotalAmount,
+                                salesDetail.TaxRate,
+                                salesDetail.SalesOrder.TaxCalculationMethod);
+                            salesDetail.IsSettled = salesDetail.TotalReceivedAmount >= taxInclusiveAmount;
                         }
                         break;
 
                     case SetoffDetailType.SalesReturnDetail:
-                        var salesReturnDetail = await context.SalesReturnDetails.FindAsync(sourceDetailId);
+                        var salesReturnDetail = await context.SalesReturnDetails
+                            .Include(d => d.SalesReturn)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (salesReturnDetail != null)
                         {
                             salesReturnDetail.TotalPaidAmount = totalSetoff;
-                            salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= salesReturnDetail.ReturnSubtotalAmount;
+                            var taxInclusiveAmount = CalculateTaxInclusiveAmount(
+                                salesReturnDetail.ReturnSubtotalAmount,
+                                salesReturnDetail.TaxRate,
+                                salesReturnDetail.SalesReturn.TaxCalculationMethod);
+                            salesReturnDetail.IsSettled = salesReturnDetail.TotalPaidAmount >= taxInclusiveAmount;
                         }
                         break;
 
                     case SetoffDetailType.PurchaseReceivingDetail:
-                        var purchaseDetail = await context.PurchaseReceivingDetails.FindAsync(sourceDetailId);
+                        var purchaseDetail = await context.PurchaseReceivingDetails
+                            .Include(d => d.PurchaseReceiving)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (purchaseDetail != null)
                         {
                             purchaseDetail.TotalPaidAmount = totalSetoff;
-                            purchaseDetail.IsSettled = purchaseDetail.TotalPaidAmount >= purchaseDetail.SubtotalAmount;
+                            var taxInclusiveAmount = CalculateTaxInclusiveAmount(
+                                purchaseDetail.SubtotalAmount,
+                                purchaseDetail.TaxRate,
+                                purchaseDetail.PurchaseReceiving.TaxCalculationMethod);
+                            purchaseDetail.IsSettled = purchaseDetail.TotalPaidAmount >= taxInclusiveAmount;
                         }
                         break;
 
                     case SetoffDetailType.PurchaseReturnDetail:
-                        var purchaseReturnDetail = await context.PurchaseReturnDetails.FindAsync(sourceDetailId);
+                        var purchaseReturnDetail = await context.PurchaseReturnDetails
+                            .Include(d => d.PurchaseReturn)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (purchaseReturnDetail != null)
                         {
                             purchaseReturnDetail.TotalReceivedAmount = totalSetoff;
-                            purchaseReturnDetail.IsSettled = purchaseReturnDetail.TotalReceivedAmount >= purchaseReturnDetail.ReturnSubtotalAmount;
+                            var taxInclusiveAmount = CalculateTaxInclusiveAmount(
+                                purchaseReturnDetail.ReturnSubtotalAmount,
+                                purchaseReturnDetail.TaxRate,
+                                purchaseReturnDetail.PurchaseReturn.TaxCalculationMethod);
+                            purchaseReturnDetail.IsSettled = purchaseReturnDetail.TotalReceivedAmount >= taxInclusiveAmount;
                         }
                         break;
 
                     case SetoffDetailType.SalesDeliveryDetail:
-                        var salesDeliveryDetail = await context.SalesDeliveryDetails.FindAsync(sourceDetailId);
+                        var salesDeliveryDetail = await context.SalesDeliveryDetails
+                            .Include(d => d.SalesDelivery)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (salesDeliveryDetail != null)
                         {
                             salesDeliveryDetail.TotalReceivedAmount = totalSetoff;
-                            salesDeliveryDetail.IsSettled = salesDeliveryDetail.TotalReceivedAmount >= salesDeliveryDetail.SubtotalAmount;
+                            var taxInclusiveAmount = CalculateTaxInclusiveAmount(
+                                salesDeliveryDetail.SubtotalAmount,
+                                salesDeliveryDetail.TaxRate,
+                                salesDeliveryDetail.SalesDelivery.TaxCalculationMethod);
+                            salesDeliveryDetail.IsSettled = salesDeliveryDetail.TotalReceivedAmount >= taxInclusiveAmount;
                         }
                         break;
                 }
@@ -874,38 +919,71 @@ namespace ERPCore2.Services
                 decimal totalAmount = 0;
                 decimal paidAmount = 0;
 
-                // 根據來源類型取得金額資訊
+                // 根據來源類型取得金額資訊（使用含稅金額）
                 switch (sourceType)
                 {
                     case SetoffDetailType.SalesOrderDetail:
-                        var salesDetail = await context.SalesOrderDetails.FindAsync(sourceDetailId);
+                        var salesDetail = await context.SalesOrderDetails
+                            .Include(d => d.SalesOrder)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (salesDetail == null)
                             return ServiceResult.Failure("找不到對應的銷貨明細");
-                        totalAmount = salesDetail.SubtotalAmount;
+                        totalAmount = CalculateTaxInclusiveAmount(
+                            salesDetail.SubtotalAmount,
+                            salesDetail.TaxRate,
+                            salesDetail.SalesOrder.TaxCalculationMethod);
                         paidAmount = salesDetail.TotalReceivedAmount;
                         break;
 
                     case SetoffDetailType.SalesReturnDetail:
-                        var salesReturnDetail = await context.SalesReturnDetails.FindAsync(sourceDetailId);
+                        var salesReturnDetail = await context.SalesReturnDetails
+                            .Include(d => d.SalesReturn)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (salesReturnDetail == null)
                             return ServiceResult.Failure("找不到對應的銷貨退回明細");
-                        totalAmount = salesReturnDetail.ReturnSubtotalAmount;
+                        totalAmount = CalculateTaxInclusiveAmount(
+                            salesReturnDetail.ReturnSubtotalAmount,
+                            salesReturnDetail.TaxRate,
+                            salesReturnDetail.SalesReturn.TaxCalculationMethod);
                         paidAmount = salesReturnDetail.TotalPaidAmount;
                         break;
 
+                    case SetoffDetailType.SalesDeliveryDetail:
+                        var salesDeliveryDetail = await context.SalesDeliveryDetails
+                            .Include(d => d.SalesDelivery)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
+                        if (salesDeliveryDetail == null)
+                            return ServiceResult.Failure("找不到對應的銷貨出貨明細");
+                        totalAmount = CalculateTaxInclusiveAmount(
+                            salesDeliveryDetail.SubtotalAmount,
+                            salesDeliveryDetail.TaxRate,
+                            salesDeliveryDetail.SalesDelivery.TaxCalculationMethod);
+                        paidAmount = salesDeliveryDetail.TotalReceivedAmount;
+                        break;
+
                     case SetoffDetailType.PurchaseReceivingDetail:
-                        var purchaseDetail = await context.PurchaseReceivingDetails.FindAsync(sourceDetailId);
+                        var purchaseDetail = await context.PurchaseReceivingDetails
+                            .Include(d => d.PurchaseReceiving)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (purchaseDetail == null)
                             return ServiceResult.Failure("找不到對應的採購進貨明細");
-                        totalAmount = purchaseDetail.SubtotalAmount;
+                        totalAmount = CalculateTaxInclusiveAmount(
+                            purchaseDetail.SubtotalAmount,
+                            purchaseDetail.TaxRate,
+                            purchaseDetail.PurchaseReceiving.TaxCalculationMethod);
                         paidAmount = purchaseDetail.TotalPaidAmount;
                         break;
 
                     case SetoffDetailType.PurchaseReturnDetail:
-                        var purchaseReturnDetail = await context.PurchaseReturnDetails.FindAsync(sourceDetailId);
+                        var purchaseReturnDetail = await context.PurchaseReturnDetails
+                            .Include(d => d.PurchaseReturn)
+                            .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         if (purchaseReturnDetail == null)
                             return ServiceResult.Failure("找不到對應的採購退回明細");
-                        totalAmount = purchaseReturnDetail.ReturnSubtotalAmount;
+                        totalAmount = CalculateTaxInclusiveAmount(
+                            purchaseReturnDetail.ReturnSubtotalAmount,
+                            purchaseReturnDetail.TaxRate,
+                            purchaseReturnDetail.PurchaseReturn.TaxCalculationMethod);
                         paidAmount = purchaseReturnDetail.TotalReceivedAmount;
                         break;
                 }

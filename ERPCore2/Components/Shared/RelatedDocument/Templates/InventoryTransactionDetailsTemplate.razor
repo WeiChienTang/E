@@ -1,35 +1,29 @@
-@* 庫存異動詳細欄位範本 *@
+@* 庫存異動詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
 @using ERPCore2.Helpers
 
-<p class="mb-1 text-muted small">
-    <span class="text-nowrap">
-        <i class="bi bi-calendar3 me-1"></i>
-        @Document.DocumentDate.ToString("yyyy-MM-dd HH:mm")
+<span class="text-muted">
+    <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd HH:mm")
+</span>
+@if (Document.Quantity.HasValue)
+{
+    var quantityClass = Document.Quantity.Value >= 0 ? "text-success" : "text-danger";
+    var quantitySign = Document.Quantity.Value >= 0 ? "+" : "";
+    <span class="@quantityClass fw-bold">
+        <i class="bi bi-box-seam me-1"></i>@quantitySign@NumberFormatHelper.FormatSmart(Document.Quantity.Value)
     </span>
-    @if (Document.Quantity.HasValue)
-    {
-        var quantityClass = Document.Quantity.Value >= 0 ? "text-success" : "text-danger";
-        var quantitySign = Document.Quantity.Value >= 0 ? "+" : "";
-        <span class="ms-3 text-nowrap @quantityClass fw-bold">
-            <i class="bi bi-box-seam me-1"></i>
-            數量: @quantitySign@NumberFormatHelper.FormatSmart(Document.Quantity.Value)
-        </span>
-    }
-    @if (Document.Amount.HasValue && Document.Amount.Value != 0)
-    {
-        <span class="ms-3 text-nowrap">
-            <i class="bi bi-cash me-1"></i>
-            金額: @NumberFormatHelper.FormatSmart(Document.Amount.Value)
-        </span>
-    }
-</p>
+}
+@if (Document.Amount.HasValue && Document.Amount.Value != 0)
+{
+    <span class="text-muted">
+        <i class="bi bi-cash me-1"></i>@NumberFormatHelper.FormatSmart(Document.Amount.Value)
+    </span>
+}
 @if (!string.IsNullOrEmpty(Document.Remarks))
 {
-    <p class="mb-0 text-muted small">
-        <i class="bi bi-chat-left-text me-1"></i>
-        @Document.Remarks
-    </p>
+    <span class="text-muted text-truncate" style="max-width: 150px;" title="@Document.Remarks">
+        <i class="bi bi-chat-left-text me-1"></i>@Document.Remarks
+    </span>
 }
 
 @code {

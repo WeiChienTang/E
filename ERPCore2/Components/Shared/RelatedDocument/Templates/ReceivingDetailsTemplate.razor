@@ -1,32 +1,27 @@
-@* 入庫單詳細欄位範本 *@
+@* 入庫單詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
+@using ERPCore2.Helpers
 
-<p class="mb-1 text-muted small">
-    <span class="text-nowrap">
-        <i class="bi bi-calendar3 me-1"></i>
-        @Document.DocumentDate.ToString("yyyy-MM-dd")
+<span class="text-muted">
+    <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
+</span>
+@if (Document.Quantity.HasValue)
+{
+    <span class="text-muted">
+        <i class="bi bi-box-seam me-1"></i>數量: @NumberFormatHelper.FormatSmart(Document.Quantity.Value)
     </span>
-    @if (Document.Quantity.HasValue)
-    {
-        <span class="ms-3 text-nowrap">
-            <i class="bi bi-box-seam me-1"></i>
-            入庫數量: @Document.Quantity.Value
-        </span>
-    }
-    @if (Document.UnitPrice.HasValue)
-    {
-        <span class="ms-3 text-nowrap">
-            <i class="bi bi-cash me-1"></i>
-            單價: @Document.UnitPrice.Value.ToString("N2")
-        </span>
-    }
-</p>
+}
+@if (Document.UnitPrice.HasValue)
+{
+    <span class="text-muted">
+        <i class="bi bi-cash me-1"></i>單價: @NumberFormatHelper.FormatSmart(Document.UnitPrice.Value)
+    </span>
+}
 @if (!string.IsNullOrEmpty(Document.Remarks))
 {
-    <p class="mb-0 text-muted small">
-        <i class="bi bi-chat-left-text me-1"></i>
-        @Document.Remarks
-    </p>
+    <span class="text-muted text-truncate" style="max-width: 150px;" title="@Document.Remarks">
+        <i class="bi bi-chat-left-text me-1"></i>@Document.Remarks
+    </span>
 }
 
 @code {

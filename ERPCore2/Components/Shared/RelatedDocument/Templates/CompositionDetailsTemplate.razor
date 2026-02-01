@@ -1,18 +1,14 @@
-@* 商品物料清單詳細欄位範本 *@
+@* 商品物料清單詳細欄位範本 - 單行行內顯示 *@
 @using ERPCore2.Models
 
-<p class="mb-1 text-muted small">
-    <span class="text-nowrap">
-        <i class="bi bi-calendar3 me-1"></i>
-        @Document.DocumentDate.ToString("yyyy-MM-dd")
-    </span>
-</p>
+<span class="text-muted">
+    <i class="bi bi-calendar3 me-1"></i>@Document.DocumentDate.ToString("yyyy-MM-dd")
+</span>
 @if (!string.IsNullOrEmpty(Document.Remarks))
 {
-    <p class="mb-0 text-muted small">
-        <i class="bi bi-info-circle me-1"></i>
-        @Document.Remarks
-    </p>
+    <span class="text-muted text-truncate" style="max-width: 150px;" title="@Document.Remarks">
+        <i class="bi bi-info-circle me-1"></i>@Document.Remarks
+    </span>
 }
 
 @code {

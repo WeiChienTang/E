@@ -335,7 +335,7 @@
                     SalesDeliveryId = null;
                     PrefilledCustomerId = customerId;
                     PrefilledSalesOrderId = salesOrderId;
-                    shouldAutoLoadUndelivered = true;  // 🔑 標記需要自動載入
+                    shouldAutoLoadUndelivered = true;  //  標記需要自動載入
                 },
                 isVisibleChanged: IsVisibleChanged,
                 autoLoadAction: async () =>
@@ -369,7 +369,7 @@
     {
         try
         {
-            // 🔑 關鍵修正：每次載入資料時重置狀態變數，避免上次編輯的狀態殘留到新增模式
+            //  關鍵修正：每次載入資料時重置狀態變數，避免上次編輯的狀態殘留到新增模式
             isDetailDataReady = false;
             hasUndeletableDetails = false;
             
@@ -391,7 +391,7 @@
                 // 新增模式：必須先儲存才能轉退貨
                 canCreateReturn = false;
                 
-                // 🔑 修正：不在這裡載入明細，改為設定預填值後由 DocumentConversionHelper 觸發自動載入
+                //  修正：不在這裡載入明細，改為設定預填值後由 DocumentConversionHelper 觸發自動載入
                 // 這樣可以確保 SalesDeliveryTable 組件已經渲染完成
                 if (PrefilledSalesOrderId.HasValue)
                 {
@@ -754,7 +754,7 @@
             // 1. 重新載入明細資料
             await LoadSalesDeliveryDetailsInternal(loadedEntityId);
             
-            // 🔑 關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
+            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
             // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料（與 QuotationEditModalComponent 保持一致）
             StateHasChanged();
             
@@ -779,12 +779,12 @@
     {
         try
         {
-            // 🔑 關鍵修正：使用 GetWithDetailsAsync 重新載入完整實體（包含關聯資料）
+            //  關鍵修正：使用 GetWithDetailsAsync 重新載入完整實體（包含關聯資料）
             // 這確保 Product 等關聯物件都已載入，與 QuotationEditModalComponent 保持一致
             var salesDelivery = await SalesDeliveryService.GetByIdAsync(salesDeliveryId);
             salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDeliveryId);
             
-            // 🔑 關鍵：載入退貨數量資料，用於判斷是否可刪除明細
+            //  關鍵：載入退貨數量資料，用於判斷是否可刪除明細
             await LoadDetailRelatedDataAsync();
         }
         catch (Exception ex)
@@ -1210,7 +1210,7 @@
                     }
                 }
 
-                // 🔑 關鍵：重新載入明細資料以更新UI顯示
+                //  關鍵：重新載入明細資料以更新UI顯示
                 salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDelivery.Id);
             }
 
@@ -1313,6 +1313,7 @@
                                            WarehouseLocationIdPropertyName="@nameof(SalesDeliveryDetail.WarehouseLocationId)"
                                            ShowWarehouse="true"
                                            ShowWarehouseLocation="false"
+                                           OnOpenRelatedDocument="@HandleOpenRelatedDocument"
                                            IsReadOnly="false" />
                     }
                     catch
@@ -1456,7 +1457,7 @@
                 },
                 reloadDetails: async () =>
                 {
-                    // 🔑 關鍵修復：從資料庫重新載入明細資料
+                    //  關鍵修復：從資料庫重新載入明細資料
                     // 這確保 ReturnedQuantity 等欄位都是最新的資料
                     if (editModalComponent?.Entity?.Id > 0)
                     {
@@ -1469,7 +1470,7 @@
                 invokeAsync: InvokeAsync,
                 additionalActions: async () =>
                 {
-                    // 🔑 關鍵修復：先確保 UI 更新（參數傳遞），再刷新 Table 組件
+                    //  關鍵修復：先確保 UI 更新（參數傳遞），再刷新 Table 組件
                     // 這樣可以確保 SalesDeliveryTable 的 ExistingDetails 參數已收到最新的 salesDeliveryDetails
                     await InvokeAsync(StateHasChanged);
                     
@@ -1506,6 +1507,34 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理沖款單儲存事件失敗：{ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// 處理開啟相關單據的事件（從 SalesDeliveryTable 的相關單據 Modal 點擊觸發）
+    /// </summary>
+    private async Task HandleOpenRelatedDocument((RelatedDocumentType type, int id) args)
+    {
+        try
+        {
+            if (args.type == RelatedDocumentType.ReturnDocument)
+            {
+                // 開啟銷貨退貨 Modal
+                selectedSalesReturnId = args.id;
+                showSalesReturnModal = true;
+            }
+            else if (args.type == RelatedDocumentType.SetoffDocument)
+            {
+                // 開啟沖款單 Modal
+                selectedSetoffDocumentId = args.id;
+                showSetoffDocumentModal = true;
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"開啟單據失敗：{ex.Message}");
         }
     }
     
