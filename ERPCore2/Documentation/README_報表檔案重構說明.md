@@ -4,6 +4,7 @@
 2025-01-XX（初版）
 2026-02-02（更新目錄結構說明）
 2026-02-02（新增報表列印配置自動化機制）
+2026-02-02（新增印表機測試列印機制說明）
 
 ## 重構目的
 將分散在多個目錄的報表相關檔案整合至統一的目錄結構，提升程式碼可維護性和可讀性。
@@ -463,3 +464,173 @@ public async Task<IActionResult> GetReport(
 5. **建立控制器端點**
    - 在適當的控制器（`PurchaseReportController.cs` 或 `SalesReportController.cs`）新增端點
    - 或建立新的控制器繼承 `BaseReportController`
+
+---
+
+## 印表機測試列印機制
+
+### 概述
+系統提供印表機測試列印功能，用於驗證印表機配置是否正確。支援 USB（本機）印表機與網路印表機兩種連接方式。
+
+### 相關檔案
+| 檔案 | 位置 | 說明 |
+|-----|------|------|
+| `PrinterConfiguration.cs` | `Data/Entities/Systems/` | 印表機配置實體 |
+| `IPrinterTestService.cs` | `Services/Systems/` | 印表機測試服務介面 |
+| `PrinterTestService.cs` | `Services/Systems/` | 印表機測試服務實作 |
+| `PrinterConfigurationEditModalComponent.razor` | `Components/Pages/Systems/` | 印表機設定編輯組件 |
+
+### PrinterConfiguration 實體欄位
+```csharp
+public class PrinterConfiguration : BaseEntity
+{
+    public string Name { get; set; }                    // 系統印表機名稱（必須與 Windows 印表機名稱完全一致）
+    public string? IpAddress { get; set; }              // IP 位址（網路印表機用）
+    public PrinterConnectionType ConnectionType { get; set; }  // 連接方式
+    public string? UsbPort { get; set; }                // 連接埠（參考用，如 USB001、LPT1）
+    public bool IsDefault { get; set; }                 // 是否為預設印表機
+}
+```
+
+### 連接類型
+```csharp
+public enum PrinterConnectionType
+{
+    Network = 1,  // 網路連接（透過 IP 位址 + Port 9100）
+    USB = 2       // USB/本機連接（透過系統印表機名稱）
+}
+```
+
+### 列印流程架構
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        PrinterTestService.TestPrintAsync()                   │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+              ┌──────────────────┴──────────────────┐
+              │                                     │
+              ▼                                     ▼
+┌─────────────────────────────┐      ┌─────────────────────────────────────────┐
+│    ConnectionType.Network   │      │          ConnectionType.USB             │
+│      TestNetworkPrintAsync  │      │          TestUsbPrintAsync              │
+├─────────────────────────────┤      ├─────────────────────────────────────────┤
+│ 1. 透過 TCP Port 9100 連接  │      │ 1. 直接使用 Name（系統印表機名稱）       │
+│ 2. 依序嘗試 3 種格式:       │      │ 2. 優先使用 System.Drawing.Printing     │
+│    - PCL (HP LaserJet)      │      │    （使用 Windows 印表機驅動程式）       │
+│    - Plain Text + FF        │      │ 3. 備用: Windows API (winspool.drv)     │
+│    - ESC/POS (熱感應印表機) │      │                                         │
+└─────────────────────────────┘      └─────────────────────────────────────────┘
+```
+
+### USB/本機印表機列印方式
+
+#### 方法 1: System.Drawing.Printing（優先使用）
+使用 Windows 印表機驅動程式，自動處理格式轉換：
+```csharp
+using var printDocument = new System.Drawing.Printing.PrintDocument();
+printDocument.PrinterSettings.PrinterName = printerName;  // 直接使用系統印表機名稱
+printDocument.PrintPage += (sender, e) =>
+{
+    using var font = new Font("Courier New", 10);
+    e.Graphics.DrawString(line, font, Brushes.Black, x, y);
+};
+printDocument.Print();
+```
+
+#### 方法 2: Windows API (winspool.drv)
+直接透過 Windows 列印 API 寫入資料：
+```csharp
+// Windows API 宣告
+[DllImport("winspool.drv")]
+static extern bool OpenPrinter(string printerName, out IntPtr hPrinter, IntPtr pDefault);
+[DllImport("winspool.drv")]
+static extern bool WritePrinter(IntPtr hPrinter, byte[] data, int count, out int written);
+
+// 使用流程
+OpenPrinter(printerName, out hPrinter, IntPtr.Zero);
+StartDocPrinter(hPrinter, 1, ref docInfo);
+StartPagePrinter(hPrinter);
+WritePrinter(hPrinter, data, data.Length, out bytesWritten);
+EndPagePrinter(hPrinter);
+EndDocPrinter(hPrinter);
+ClosePrinter(hPrinter);
+```
+
+**DataType 決策邏輯：**
+| 印表機名稱包含 | DataType | 說明 |
+|---------------|----------|------|
+| PCL, EPSON, HP, Canon | `TEXT` | 讓驅動程式處理格式轉換 |
+| 其他 | `RAW` | 直接傳送原始資料（適合標籤機、熱感應印表機） |
+
+### 網路印表機列印方式
+透過 TCP Socket 直接連接印表機 Port 9100：
+```csharp
+using var client = new TcpClient();
+await client.ConnectAsync(ipAddress, 9100);  // 5秒超時
+using var stream = client.GetStream();
+await stream.WriteAsync(data);
+await stream.FlushAsync();
+```
+
+**支援的資料格式（依序嘗試）：**
+| 格式 | 適用印表機 | 說明 |
+|------|-----------|------|
+| PCL | HP LaserJet 系列 | ESC E 重置 + 字型設定 + Form Feed |
+| Plain Text + FF | 一般印表機 | UTF-8 文字 + 0x0C (Form Feed) |
+| ESC/POS | 熱感應/標籤印表機 | ESC @ 初始化 + GS V 切紙 |
+
+### 測試頁內容
+```
+=== 印表機測試頁 ===
+測試時間: 2026-02-02 14:30:00
+印表機名稱: HP LaserJet Pro
+連接方式: USB 連接
+
+如果您能看到此測試頁，表示印表機配置正確！
+
+測試內容:
+- 中文字體測試: 這是中文測試文字
+- 英文字體測試: This is English test text
+- 數字測試: 0123456789
+- 符號測試: !@#$%^&*()
+
+=== 測試頁結束 ===
+```
+
+### 連接檢查邏輯
+
+#### 網路印表機 (CheckNetworkConnectionAsync)
+```
+1. Ping IP 位址（3 秒超時）
+2. TCP 連接 Port 9100（3 秒超時）
+```
+
+#### USB/本機印表機 (CheckUsbConnection)
+```
+1. 透過 WMI (Win32_Printer) 查詢所有已安裝印表機
+2. 比對 Name 欄位是否存在於系統印表機清單
+3. 若找不到，列出可用印表機供使用者參考
+```
+
+### UI 使用流程
+```
+1. 點擊「查詢印表機」按鈕
+       ↓
+2. 從已安裝印表機列表選取（InstalledPrinterListModalComponent）
+       ↓
+3. 自動填入:
+   - Name = 系統印表機名稱（如 "HP LaserJet Pro"）
+   - UsbPort = 連接埠（參考用，如 "USB001"）
+       ↓
+4. 點擊「測試列印」按鈕
+       ↓
+5. PrinterTestService.TestPrintAsync() 直接使用 Name 列印
+```
+
+### 重要設計原則
+| 原則 | 說明 |
+|------|------|
+| **Name 欄位用途** | 必須填入 Windows 系統印表機名稱（與 PrinterSettings.PrinterName 一致） |
+| **UsbPort 欄位用途** | 僅供參考識別，不影響列印邏輯 |
+| **列印優先順序** | System.Drawing.Printing → Windows API |
+| **格式自動選擇** | 網路印表機會依序嘗試 PCL → Plain Text → ESC/POS |
