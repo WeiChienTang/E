@@ -18,14 +18,6 @@ namespace ERPCore2.Data.Entities
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// 紙張類型（如：A4、A3、Letter等）
-        /// </summary>
-        [Required(ErrorMessage = "紙張類型為必填")]
-        [MaxLength(20, ErrorMessage = "紙張類型不可超過20個字元")]
-        [Display(Name = "紙張類型")]
-        public string PaperType { get; set; } = string.Empty;
-
-        /// <summary>
         /// 紙張寬度（單位：毫米）
         /// </summary>
         [Required(ErrorMessage = "紙張寬度為必填")]

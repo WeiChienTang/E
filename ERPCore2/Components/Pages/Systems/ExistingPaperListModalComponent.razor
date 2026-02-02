@@ -1,0 +1,259 @@
+@* 現有紙張設定列表 Modal - 可選取現有紙張設定來套用尺寸 *@
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Base
+@inject IPaperSettingService PaperSettingService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="選取紙張格式"
+                    Icon="bi bi-file-earmark"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                    IsLoading="@isLoading"
+                    LoadingMessage="正在載入紙張設定..."
+                    BodyCssClass="p-4"
+                    OnClose="@HandleCancelClick">
+    
+    <HeaderButtons>
+        <GenericButtonComponent Text="確定"
+                                Icon="bi bi-check-lg"
+                                Variant="ButtonVariant.DarkBlue"
+                                OnClick="@HandleConfirm"
+                                IsDisabled="@(selectedPaper == null)" />
+        <GenericButtonComponent Text="取消"
+                                Icon="bi bi-x-lg"
+                                Variant="ButtonVariant.Red"
+                                OnClick="@HandleCancelClick" />
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (!paperSettings.Any() && !isLoading)
+        {
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                目前沒有已設定的紙張格式，請手動輸入紙張尺寸。
+            </div>
+        }
+        else if (paperSettings.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <InteractiveTableComponent TItem="PaperSetting"
+                                               Items="@paperSettings"
+                                               ColumnDefinitions="@GetColumnDefinitions()"
+                                               ShowHeader="true"
+                                               ShowActions="false"
+                                               ShowRowNumbers="true"
+                                               IsStriped="true"
+                                               IsHoverable="true"
+                                               IsBordered="true"
+                                               EnableRowClick="true"
+                                               EnableRowSelection="true"
+                                               AllowMultipleSelection="false"
+                                               SelectedItems="@selectedPapers"
+                                               OnSelectionChanged="@HandleSelectionChanged"
+                                               OnRowClick="@HandleRowClick"
+                                               CssClass="mb-0" />
+                </div>
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback<PaperSetting> OnPaperSelected { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public int? ExcludeId { get; set; } // 排除目前正在編輯的紙張
+
+    // ===== 內部狀態 =====
+    private List<PaperSetting> paperSettings = new();
+    private bool isLoading = false;
+    private bool hasLoadedData = false;
+    
+    // 選取的紙張
+    private HashSet<PaperSetting> selectedPapers = new();
+    private PaperSetting? selectedPaper => selectedPapers.FirstOrDefault();
+
+    // ===== 生命週期 =====
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !hasLoadedData && !isLoading)
+        {
+            await LoadPaperSettingsAsync();
+        }
+        else if (!IsVisible)
+        {
+            // Modal 關閉時重置狀態
+            hasLoadedData = false;
+            paperSettings.Clear();
+            selectedPapers.Clear();
+        }
+    }
+
+    // ===== 欄位定義 =====
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "編號",
+                PropertyName = nameof(PaperSetting.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px"
+            },
+            new()
+            {
+                Title = "名稱",
+                PropertyName = nameof(PaperSetting.Name),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px"
+            },
+            new()
+            {
+                Title = "寬度 (cm)",
+                PropertyName = nameof(PaperSetting.Width),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px"
+            },
+            new()
+            {
+                Title = "高度 (cm)",
+                PropertyName = nameof(PaperSetting.Height),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px"
+            },
+            new()
+            {
+                Title = "上邊界 (cm)",
+                PropertyName = nameof(PaperSetting.TopMargin),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px"
+            },
+            new()
+            {
+                Title = "下邊界 (cm)",
+                PropertyName = nameof(PaperSetting.BottomMargin),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px"
+            },
+            new()
+            {
+                Title = "左邊界 (cm)",
+                PropertyName = nameof(PaperSetting.LeftMargin),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px"
+            },
+            new()
+            {
+                Title = "右邊界 (cm)",
+                PropertyName = nameof(PaperSetting.RightMargin),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px"
+            },
+            new()
+            {
+                Title = "備註",
+                PropertyName = nameof(PaperSetting.Remarks),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px"
+            }
+        };
+    }
+
+    // ===== 資料載入 =====
+    private async Task LoadPaperSettingsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var allPapers = await PaperSettingService.GetAllAsync();
+            
+            // 排除目前正在編輯的紙張（避免複製自己）
+            if (ExcludeId.HasValue)
+            {
+                paperSettings = allPapers.Where(p => p.Id != ExcludeId.Value).ToList();
+            }
+            else
+            {
+                paperSettings = allPapers;
+            }
+            
+            hasLoadedData = true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPaperSettingsAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入紙張設定失敗");
+            paperSettings = new List<PaperSetting>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 事件處理 =====
+    
+    /// <summary>
+    /// 處理選取變更
+    /// </summary>
+    private void HandleSelectionChanged(HashSet<PaperSetting> selected)
+    {
+        selectedPapers = selected;
+        StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 處理資料列點擊 - 選取紙張並確認
+    /// </summary>
+    private async Task HandleRowClick(PaperSetting paper)
+    {
+        selectedPapers.Clear();
+        selectedPapers.Add(paper);
+        
+        // 直接觸發選取（單擊即選取並關閉）
+        await HandleConfirm();
+    }
+
+    /// <summary>
+    /// 處理確定按鈕
+    /// </summary>
+    private async Task HandleConfirm()
+    {
+        if (selectedPaper != null)
+        {
+            await OnPaperSelected.InvokeAsync(selectedPaper);
+            await CloseModal();
+        }
+    }
+
+    /// <summary>
+    /// 處理取消按鈕
+    /// </summary>
+    private async Task HandleCancelClick()
+    {
+        selectedPapers.Clear();
+        await OnCancel.InvokeAsync();
+        await CloseModal();
+    }
+
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+}

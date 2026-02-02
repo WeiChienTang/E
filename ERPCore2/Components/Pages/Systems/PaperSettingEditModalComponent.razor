@@ -23,7 +23,15 @@
                           RequiredPermission="PaperSetting.Read"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomActionButtons="@CustomActionButtons" />
+
+@* 現有紙張列表 Modal *@
+<ExistingPaperListModalComponent IsVisible="@showExistingPaperModal"
+                                  IsVisibleChanged="@((bool visible) => showExistingPaperModal = visible)"
+                                  OnPaperSelected="@HandleExistingPaperSelected"
+                                  OnCancel="@(() => showExistingPaperModal = false)"
+                                  ExcludeId="@PaperSettingId" />
 
 @code {
     // ===== 參數 =====
@@ -38,6 +46,9 @@
     private GenericEditModalComponent<PaperSetting, IPaperSettingService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    
+    // 現有紙張 Modal 控制
+    private bool showExistingPaperModal = false;
 
     // ===== 生命週期 =====
     
@@ -251,7 +262,8 @@
             formSections = FormSectionHelper<PaperSetting>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     ps => ps.Code,
-                    ps => ps.Name,
+                    ps => ps.Name)
+                .AddToSection("紙張大小",
                     ps => ps.Width,
                     ps => ps.Height,
                     ps => ps.TopMargin,
@@ -271,6 +283,66 @@
     private List<FormFieldDefinition> GetFormFields()
     {
         return formFields;
+    }
+
+    // ===== 自訂操作按鈕 =====
+    
+    /// <summary>
+    /// 自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? CustomActionButtons => __builder =>
+    {
+        @* 查詢紙張按鈕 *@
+        <GenericButtonComponent Text="查詢紙張" 
+                              Icon="bi bi-search"
+                              Variant="ButtonVariant.Blue"
+                              OnClick="@HandleOpenExistingPaperModal"
+                              CssClass="me-2" />
+    };
+    
+    /// <summary>
+    /// 開啟現有紙張列表 Modal
+    /// </summary>
+    private void HandleOpenExistingPaperModal()
+    {
+        showExistingPaperModal = true;
+    }
+    
+    /// <summary>
+    /// 處理選取現有紙張
+    /// </summary>
+    private async Task HandleExistingPaperSelected(PaperSetting selectedPaper)
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowErrorAsync("無法設定紙張資訊");
+                return;
+            }
+            
+            // 將選取的紙張尺寸資訊填入表單（不複製編號和名稱）
+            var entity = editModalComponent.Entity;
+            entity.Width = selectedPaper.Width;
+            entity.Height = selectedPaper.Height;
+            entity.TopMargin = selectedPaper.TopMargin;
+            entity.BottomMargin = selectedPaper.BottomMargin;
+            entity.LeftMargin = selectedPaper.LeftMargin;
+            entity.RightMargin = selectedPaper.RightMargin;
+            
+            // 關閉紙張列表 Modal
+            showExistingPaperModal = false;
+            
+            // 刷新表單顯示
+            StateHasChanged();
+            
+            await NotificationService.ShowSuccessAsync($"已套用「{selectedPaper.Name}」的尺寸設定");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleExistingPaperSelected), GetType());
+            await NotificationService.ShowErrorAsync("設定紙張資訊時發生錯誤");
+        }
     }
 
     // ===== 公開方法 (供父組件調用) =====

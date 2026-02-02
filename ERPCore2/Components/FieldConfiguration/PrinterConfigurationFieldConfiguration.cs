@@ -102,42 +102,7 @@ namespace ERPCore2.FieldConfiguration
                                 }
                             })
                         }
-                    },
-
-                    {
-                        nameof(PrinterConfiguration.IsDefault),
-                        new FieldDefinition<PrinterConfiguration>
-                        {
-                            PropertyName = nameof(PrinterConfiguration.IsDefault),
-                            DisplayName = "預設印表機",
-                            FilterType = SearchFilterType.Select,
-                            TableOrder = 5,
-                            Options = new List<SelectOption>
-                            {
-                                new() { Text = "是", Value = "true" },
-                                new() { Text = "否", Value = "false" }
-                            },
-                            FilterFunction = (model, query) =>
-                            {
-                                var filterValue = model.GetFilterValue(nameof(PrinterConfiguration.IsDefault))?.ToString();
-                                if (!string.IsNullOrWhiteSpace(filterValue) && bool.TryParse(filterValue, out var isDefault))
-                                {
-                                    query = query.Where(p => p.IsDefault == isDefault);
-                                }
-                                return query;
-                            },
-                            CustomTemplate = (data) => (RenderFragment)((builder) =>
-                            {
-                                if (data is PrinterConfiguration printer)
-                                {
-                                    builder.OpenElement(0, "span");
-                                    builder.AddAttribute(1, "class", printer.IsDefault ? "badge bg-success" : "badge bg-secondary");
-                                    builder.AddContent(2, printer.IsDefault ? "是" : "否");
-                                    builder.CloseElement();
-                                }
-                            })
-                        }
-                    }
+                    },                    
                 };
             }
             catch (Exception ex)

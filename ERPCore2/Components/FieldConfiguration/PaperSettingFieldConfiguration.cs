@@ -35,7 +35,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "紙張編號",
                             FilterPlaceholder = "輸入紙張編號搜尋",
                             TableOrder = 1,
-                            FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaperSetting.Code), p => p.Code)
                         }
@@ -48,7 +47,6 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "紙張名稱",
                             FilterPlaceholder = "輸入紙張名稱搜尋",
                             TableOrder = 2,
-                            FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaperSetting.Name), p => p.Name)
                         }
@@ -58,10 +56,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PaperSetting>
                         {
                             PropertyName = nameof(PaperSetting.Width),
-                            DisplayName = "寬度 (mm)",
+                            DisplayName = "寬度 (cm)",
                             FilterPlaceholder = "輸入寬度搜尋",
                             TableOrder = 3,
-                            FilterOrder = 3,
                             // 自訂模板顯示數值並右對齊
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -82,10 +79,9 @@ namespace ERPCore2.FieldConfiguration
                         new FieldDefinition<PaperSetting>
                         {
                             PropertyName = nameof(PaperSetting.Height),
-                            DisplayName = "高度 (mm)",
+                            DisplayName = "高度 (cm)",
                             FilterPlaceholder = "輸入高度搜尋",
                             TableOrder = 4,
-                            FilterOrder = 4,
                             // 自訂模板顯示數值並右對齊
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -99,6 +95,86 @@ namespace ERPCore2.FieldConfiguration
                             }),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaperSetting.Height), p => p.Height.ToString())
+                        }
+                    },
+                    {
+                        nameof(PaperSetting.TopMargin),
+                        new FieldDefinition<PaperSetting>
+                        {
+                            PropertyName = nameof(PaperSetting.TopMargin),
+                            DisplayName = "上邊距 (cm)",
+                            TableOrder = 5,
+                            ColumnType = ColumnDataType.Number,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is PaperSetting paper)
+                                {
+                                    builder.OpenElement(0, "div");
+                                    builder.AddAttribute(1, "class", "text-end");
+                                    builder.AddContent(2, $"{paper.TopMargin:F1}");
+                                    builder.CloseElement();
+                                }
+                            })
+                        }
+                    }, 
+                    {
+                        nameof(PaperSetting.BottomMargin),
+                        new FieldDefinition<PaperSetting>
+                        {
+                            PropertyName = nameof(PaperSetting.BottomMargin),
+                            DisplayName = "下邊距 (cm)",
+                            TableOrder = 6,
+                            ColumnType = ColumnDataType.Number,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is PaperSetting paper)
+                                {
+                                    builder.OpenElement(0, "div");
+                                    builder.AddAttribute(1, "class", "text-end");
+                                    builder.AddContent(2, $"{paper.BottomMargin:F1}");
+                                    builder.CloseElement();
+                                }
+                            })
+                        }
+                    }, 
+                    {
+                        nameof(PaperSetting.LeftMargin),
+                        new FieldDefinition<PaperSetting>
+                        {
+                            PropertyName = nameof(PaperSetting.LeftMargin),
+                            DisplayName = "左邊距 (cm)",
+                            TableOrder = 7,
+                            ColumnType = ColumnDataType.Number,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is PaperSetting paper)
+                                {
+                                    builder.OpenElement(0, "div");
+                                    builder.AddAttribute(1, "class", "text-end");
+                                    builder.AddContent(2, $"{paper.LeftMargin:F1}");
+                                    builder.CloseElement();
+                                }
+                            })
+                        }
+                    }, 
+                    {
+                        nameof(PaperSetting.RightMargin),
+                        new FieldDefinition<PaperSetting>
+                        {
+                            PropertyName = nameof(PaperSetting.RightMargin),
+                            DisplayName = "右邊距 (cm)",
+                            TableOrder = 8,
+                            ColumnType = ColumnDataType.Number,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is PaperSetting paper)
+                                {
+                                    builder.OpenElement(0, "div");
+                                    builder.AddAttribute(1, "class", "text-end");
+                                    builder.AddContent(2, $"{paper.RightMargin:F1}");
+                                    builder.CloseElement();
+                                }
+                            })
                         }
                     }
                 };

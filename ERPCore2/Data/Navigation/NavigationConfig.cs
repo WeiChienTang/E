@@ -589,16 +589,6 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "紙張設定",
-                        Description = "管理列印紙張設定",
-                        Route = "/paper-settings",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "系統管理",
-                        RequiredPermission = "PaperSetting.Read",
-                        SearchKeywords = new List<string> { "紙張設定", "列印設定", "paper setting" }
-                    },
-                    new NavigationItem
-                    {
                         Name = "印表機設定",
                         Description = "管理印表機配置",
                         Route = "/printerCconfigurations",
@@ -606,6 +596,16 @@ public static class NavigationConfig
                         Category = "系統管理",
                         RequiredPermission = "PrinterSetting.Read",
                         SearchKeywords = new List<string> { "印表機", "列印設定", "printer" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "紙張設定",
+                        Description = "管理列印紙張設定",
+                        Route = "/paper-settings",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "系統管理",
+                        RequiredPermission = "PaperSetting.Read",
+                        SearchKeywords = new List<string> { "紙張設定", "列印設定", "paper setting" }
                     },
                     new NavigationItem
                     {

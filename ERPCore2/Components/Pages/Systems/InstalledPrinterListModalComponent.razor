@@ -1,0 +1,275 @@
+@*
+    已安裝印表機列表 Modal 組件
+    用於顯示系統已安裝的印表機，並讓使用者選擇要新增的印表機
+*@
+@using ERPCore2.Models
+@using ERPCore2.Services
+@using ERPCore2.Components.Shared.Base
+@inject IPrinterConfigurationService PrinterConfigurationService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="查詢已安裝印表機"
+                   Icon="bi bi-printer"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   IsLoading="@isLoading"
+                   LoadingMessage="正在查詢系統印表機..."
+                   BodyCssClass="p-4"
+                   OnClose="@HandleClose">
+    
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue" 
+                            Text="確定" 
+                            Icon="bi bi-check-circle"
+                            OnClick="@HandleConfirmSelection"
+                            IsDisabled="@(selectedPrinter == null)"
+                            Title="使用選取的印表機" />
+        <GenericButtonComponent Variant="ButtonVariant.Red" 
+                            Text="取消" 
+                            OnClick="@HandleClose"
+                            Title="取消選擇" />
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (!installedPrinters.Any() && !isLoading)
+        {
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                未偵測到任何已安裝的印表機
+            </div>
+        }
+        else if (installedPrinters.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <InteractiveTableComponent TItem="InstalledPrinterInfo"
+                                             Items="@installedPrinters"
+                                             ColumnDefinitions="@GetColumnDefinitions()"
+                                             ShowHeader="true"
+                                             ShowActions="false"
+                                             ShowRowNumbers="true"
+                                             IsStriped="true"
+                                             IsHoverable="true"
+                                             IsBordered="true"
+                                             EnableRowClick="true"
+                                             EnableRowSelection="true"
+                                             AllowMultipleSelection="false"
+                                             SelectedItems="@selectedPrinters"
+                                             OnSelectionChanged="@HandleSelectionChanged"
+                                             OnRowClick="@HandleRowClick"
+                                             CssClass="mb-0" />
+                </div>
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// 選擇印表機後的回調事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<InstalledPrinterInfo> OnPrinterSelected { get; set; }
+
+    /// <summary>
+    /// 取消選擇的回調事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    // ===== 私有欄位 =====
+    private bool isLoading = false;
+    private List<InstalledPrinterInfo> installedPrinters = new();
+    private HashSet<InstalledPrinterInfo> selectedPrinters = new();
+    private InstalledPrinterInfo? selectedPrinter => selectedPrinters.FirstOrDefault();
+    private bool hasLoadedData = false;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !hasLoadedData && !isLoading)
+        {
+            await LoadInstalledPrintersAsync();
+        }
+        else if (!IsVisible)
+        {
+            // 關閉時重置狀態
+            hasLoadedData = false;
+            installedPrinters.Clear();
+            selectedPrinters.Clear();
+        }
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task LoadInstalledPrintersAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            installedPrinters = await PrinterConfigurationService.GetInstalledPrintersAsync();
+            hasLoadedData = true;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入印表機列表失敗：{ex.Message}");
+            installedPrinters = new List<InstalledPrinterInfo>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "印表機名稱",
+                PropertyName = nameof(InstalledPrinterInfo.Name),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "250px"
+            },
+            new()
+            {
+                Title = "連接埠",
+                PropertyName = nameof(InstalledPrinterInfo.PortName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new()
+            {
+                Title = "類型",
+                PropertyName = nameof(InstalledPrinterInfo.IsNetworkPrinter),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "100px",
+                CustomTemplate = (item) =>
+                {
+                    return (builder) =>
+                    {
+                        var printer = item as InstalledPrinterInfo;
+                        if (printer != null)
+                        {
+                            var icon = printer.IsNetworkPrinter ? "bi bi-globe" : "bi bi-usb-symbol";
+                            var text = printer.IsNetworkPrinter ? "網路" : "本機";
+                            builder.OpenElement(0, "span");
+                            builder.AddAttribute(1, "class", "d-flex align-items-center gap-1");
+                            builder.OpenElement(2, "i");
+                            builder.AddAttribute(3, "class", icon);
+                            builder.CloseElement();
+                            builder.AddContent(4, text);
+                            builder.CloseElement();
+                        }
+                    };
+                }
+            },
+            new()
+            {
+                Title = "系統預設",
+                PropertyName = nameof(InstalledPrinterInfo.IsSystemDefault),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "100px",
+                CellCssClass = "text-center",
+                CustomTemplate = (item) =>
+                {
+                    return (builder) =>
+                    {
+                        var printer = item as InstalledPrinterInfo;
+                        if (printer?.IsSystemDefault == true)
+                        {
+                            builder.OpenElement(0, "span");
+                            builder.AddAttribute(1, "class", "badge bg-success");
+                            builder.AddContent(2, "預設");
+                            builder.CloseElement();
+                        }
+                    };
+                }
+            },
+            new()
+            {
+                Title = "狀態",
+                PropertyName = nameof(InstalledPrinterInfo.Status),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px"
+            }
+        };
+    }
+
+    // ===== 事件處理 =====
+
+    private void HandleSelectionChanged(HashSet<InstalledPrinterInfo> selected)
+    {
+        selectedPrinters = selected;
+        StateHasChanged();
+    }
+
+    private void HandleRowClick(InstalledPrinterInfo printer)
+    {
+        // 點擊行時切換選取狀態（單選）
+        selectedPrinters.Clear();
+        selectedPrinters.Add(printer);
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmSelection()
+    {
+        if (selectedPrinter != null && OnPrinterSelected.HasDelegate)
+        {
+            await OnPrinterSelected.InvokeAsync(selectedPrinter);
+        }
+        await CloseModal();
+    }
+
+    private async Task HandleClose()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 公開方法 =====
+
+    /// <summary>
+    /// 重新載入印表機列表
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        hasLoadedData = false;
+        await LoadInstalledPrintersAsync();
+    }
+}

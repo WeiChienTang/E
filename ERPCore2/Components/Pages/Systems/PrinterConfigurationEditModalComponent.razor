@@ -1,4 +1,5 @@
 @* 可重用的印表機設定編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Models
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPrinterTestService PrinterTestService
 @inject INotificationService NotificationService
@@ -16,17 +17,22 @@
                           Size="GenericEditModalComponent<PrinterConfiguration, IPrinterConfigurationService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@GetFormFields()"
+                          FormSections="@formSections"
                           DataLoader="@LoadPrinterConfigurationData"
                           UseGenericSave="true"
                           SaveSuccessMessage="@(PrinterConfigurationId.HasValue ? "印表機設定更新成功" : "印表機設定新增成功")"
                           SaveFailureMessage="印表機設定儲存失敗"
                           RequiredPermission="PrinterConfiguration.Read"
-                          ShowPrintButton="true"
-                          PrintButtonText="測試列印"
-                          OnPrint="@HandleTestPrint"
                           OnSaveSuccess="@HandleSaveSuccess"
                           OnCancel="@HandleCancel"
-                          OnEntityLoaded="@HandleEntityLoaded" />
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          CustomActionButtons="@CustomActionButtons" />
+
+@* 已安裝印表機列表 Modal *@
+<InstalledPrinterListModalComponent IsVisible="@showInstalledPrinterModal"
+                                    IsVisibleChanged="@((bool visible) => showInstalledPrinterModal = visible)"
+                                    OnPrinterSelected="@HandleInstalledPrinterSelected"
+                                    OnCancel="@(() => showInstalledPrinterModal = false)" />
 
 @code {
     // ===== 參數 =====
@@ -40,6 +46,10 @@
     // ===== 內部狀態 =====
     private GenericEditModalComponent<PrinterConfiguration, IPrinterConfigurationService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    
+    // 已安裝印表機 Modal 控制
+    private bool showInstalledPrinterModal = false;
 
     // ===== 生命週期 =====
     
@@ -64,28 +74,12 @@
     // ===== 事件處理 =====
     private async Task HandleSaveSuccess()
     {
-        try
+        // 直接使用 editModalComponent.Entity，儲存後 GenericEditModalComponent 會更新此實體（包含新增時產生的 Id）
+        if (editModalComponent?.Entity != null)
         {
-            if (OnPrinterConfigurationSaved.HasDelegate)
-            {
-                // 載入最新的印表機設定資料
-                if (PrinterConfigurationId.HasValue)
-                {
-                    var savedPrinterConfiguration = await PrinterConfigurationService.GetByIdAsync(PrinterConfigurationId.Value);
-                    if (savedPrinterConfiguration != null)
-                    {
-                        await OnPrinterConfigurationSaved.InvokeAsync(savedPrinterConfiguration);
-                    }
-                }
-            }
-            // CloseModal 已由 GenericEditModalComponent 統一控制
+            await OnPrinterConfigurationSaved.InvokeAsync(editModalComponent.Entity);
         }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleSaveSuccess), GetType(),
-                additionalData: "處理印表機設定儲存成功事件時發生錯誤");
-            await NotificationService.ShowErrorAsync("處理儲存結果時發生錯誤");
-        }
+        // CloseModal 已由 GenericEditModalComponent 統一控制
     }
 
     private async Task HandleCancel()
@@ -178,7 +172,13 @@
         {
             if (!PrinterConfigurationId.HasValue)
             {
-                var newPrinterConfiguration = new PrinterConfiguration();
+                // 新增模式：建立新的印表機設定實體並生成編號
+                var newPrinterConfiguration = new PrinterConfiguration
+                {
+                    Name = string.Empty,
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<PrinterConfiguration, IPrinterConfigurationService>(PrinterConfigurationService, "PRT"),
+                    ConnectionType = PrinterConnectionType.USB
+                };
                 
                 // 應用預填值
                 PrefilledValueHelper.ApplyPrefilledValues(newPrinterConfiguration, PrefilledValues);
@@ -214,6 +214,17 @@
             {
                 new()
                 {
+                    PropertyName = nameof(PrinterConfiguration.Code),
+                    Label = "印表機編號",
+                    FieldType = FormFieldType.Text,
+                    IsRequired = true,
+                    MaxLength = 50,
+                    Order = 0,
+                    Placeholder = "請輸入印表機編號",
+                    HelpText = "印表機的唯一識別編號，新增時系統會自動產生，也可手動修改"
+                },
+                new()
+                {
                     PropertyName = nameof(PrinterConfiguration.Name),
                     Label = "印表機名稱",
                     FieldType = FormFieldType.Text,
@@ -224,30 +235,14 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(PrinterConfiguration.ConnectionType),
-                    Label = "連接方式",
-                    FieldType = FormFieldType.Select,
-                    IsRequired = true,
-                    Order = 2,
-                    Options = Enum.GetValues(typeof(PrinterConnectionType))
-                        .Cast<PrinterConnectionType>()
-                        .Select(e => new SelectOption
-                        {
-                            Text = GetConnectionTypeDisplayName(e),
-                            Value = ((int)e).ToString()
-                        })
-                        .ToList()
-                },
-                new()
-                {
                     PropertyName = nameof(PrinterConfiguration.UsbPort),
                     Label = "USB連接埠",
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     MaxLength = 50,
-                    Order = 3,
+                    Order = 2,
                     Placeholder = "例如: LPT1, USB001, COM1",
-                    HelpText = "USB印表機需要填寫連接埠。支援格式：LPT1-LPT9, USB001-USB999, COM1-COM99"
+                    HelpText = "USB印表機的連接埠。支援格式：LPT1-LPT9, USB001-USB999, COM1-COM99"
                 },
                 new()
                 {
@@ -256,20 +251,24 @@
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     MaxLength = 50,
-                    Order = 4,
-                    Placeholder = "請輸入IP位址 (選填)",
-                    HelpText = "網路印表機需要填寫IP位址"
+                    Order = 3,
+                    Placeholder = "請輸入IP位址",
+                    HelpText = "網路印表機的IP位址，若USB連接埠無效則自動使用此設定"
                 },
-                new()
-                {
-                    PropertyName = nameof(PrinterConfiguration.IsDefault),
-                    Label = "設為預設印表機",
-                    FieldType = FormFieldType.Checkbox,
-                    IsRequired = false,
-                    Order = 5,
-                    HelpText = "設定後將成為系統預設印表機"
-                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<PrinterConfiguration>()
             };
+
+            formSections = FormSectionHelper<PrinterConfiguration>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    p => p.Code,
+                    p => p.Name)
+                .AddToSection("連接設定",
+                    p => p.UsbPort,
+                    p => p.IpAddress)
+                .AddToSection(FormSectionNames.AdditionalInfo,
+                    p => p.Remarks)
+                .Build();
         }
         catch (Exception)
         {
@@ -326,18 +325,82 @@
         }
     }
 
-        /// <summary>
-        /// 取得印表機連接方式的顯示名稱
-        /// </summary>
-        /// <param name="connectionType">連接方式枚舉</param>
-        /// <returns>顯示名稱</returns>
-        private static string GetConnectionTypeDisplayName(PrinterConnectionType connectionType)
+    // ===== 自訂操作按鈕 =====
+    
+    /// <summary>
+    /// 自訂操作按鈕（顯示在 Modal 頂部左側）
+    /// </summary>
+    private RenderFragment? CustomActionButtons => __builder =>
+    {
+        @* 查詢已安裝印表機按鈕 *@
+        <GenericButtonComponent Text="查詢印表機" 
+                              Icon="bi bi-search"
+                              Variant="ButtonVariant.Blue"
+                              OnClick="@HandleOpenInstalledPrinterModal"
+                              CssClass="me-2" />
+        @* 測試列印按鈕 *@
+        <GenericButtonComponent Text="測試列印" 
+                              Icon="bi bi-printer"
+                              Variant="ButtonVariant.Green"
+                              OnClick="@HandleTestPrint"
+                              CssClass="me-2" />
+    };
+    
+    /// <summary>
+    /// 開啟已安裝印表機列表 Modal
+    /// </summary>
+    private void HandleOpenInstalledPrinterModal()
+    {
+        showInstalledPrinterModal = true;
+    }
+    
+    /// <summary>
+    /// 處理選取已安裝印表機
+    /// </summary>
+    private async Task HandleInstalledPrinterSelected(InstalledPrinterInfo selectedPrinter)
+    {
+        try
         {
-            return connectionType switch
+            if (editModalComponent?.Entity == null)
             {
-                PrinterConnectionType.Network => "網路連接",
-                PrinterConnectionType.USB => "USB 連接",
-                _ => connectionType.ToString()
-            };
+                await NotificationService.ShowErrorAsync("無法設定印表機資訊");
+                return;
+            }
+            
+            // 將選取的印表機資訊填入表單
+            var entity = editModalComponent.Entity;
+            entity.Name = selectedPrinter.Name;
+            
+            // 根據印表機類型填入連接資訊
+            if (selectedPrinter.IsNetworkPrinter)
+            {
+                // 網路印表機：嘗試從共用名稱取得伺服器資訊
+                if (!string.IsNullOrEmpty(selectedPrinter.ShareName))
+                {
+                    entity.UsbPort = string.Empty;
+                    // 將共用路徑作為備註或 IP 位址處理
+                    // 實際 IP 需要使用者手動輸入
+                }
+            }
+            else
+            {
+                // USB/本機印表機：填入連接埠
+                entity.UsbPort = selectedPrinter.PortName;
+                entity.IpAddress = string.Empty;
+            }
+            
+            // 關閉印表機列表 Modal
+            showInstalledPrinterModal = false;
+            
+            // 刷新表單顯示
+            StateHasChanged();
+            
+            await NotificationService.ShowSuccessAsync($"已選取印表機：{selectedPrinter.Name}");
         }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleInstalledPrinterSelected), GetType());
+            await NotificationService.ShowErrorAsync("設定印表機資訊時發生錯誤");
+        }
+    }
 }

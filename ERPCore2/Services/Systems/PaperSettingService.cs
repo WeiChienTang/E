@@ -54,9 +54,6 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("紙張名稱不能為空");
 
-                if (string.IsNullOrWhiteSpace(entity.PaperType))
-                    errors.Add("紙張類型不能為空");
-
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("紙張編號不能為空");
 
@@ -97,9 +94,9 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 返回第一個啟用的 A4 紙張設定作為預設，如果沒有則返回第一個啟用的
+                // 返回第一個名稱為 A4 的紙張設定作為預設，如果沒有則返回第一個啟用的
                 var a4Setting = await context.PaperSettings
-                    .Where(p => p.Status == EntityStatus.Active && p.PaperType == "A4")
+                    .Where(p => p.Status == EntityStatus.Active && p.Name == "A4")
                     .FirstOrDefaultAsync();
 
                 if (a4Setting != null)
@@ -209,8 +206,9 @@ namespace ERPCore2.Services
                     return new List<PaperSetting>();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
+                // 改為根據名稱查詢（因為已移除 PaperType 屬性）
                 return await context.PaperSettings
-                    .Where(p => p.Status == EntityStatus.Active && p.PaperType == paperType)
+                    .Where(p => p.Status == EntityStatus.Active && p.Name.Contains(paperType))
                     .OrderBy(p => p.Code)
                     .ToListAsync();
             }

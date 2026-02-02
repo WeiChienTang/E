@@ -77,6 +77,7 @@ namespace ERPCore2.Data
                     new InventorySeeder(),
                     new SalesReturnReasonSeeder(),  
                     new CurrencySeeder(),          
+                    new PaperSettingSeeder(),
                 };
             }
 
