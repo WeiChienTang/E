@@ -8,6 +8,7 @@
     <input type="text"
            class="@InputCssClass"
            id="@FieldId"
+           @ref="_inputRef"
            name="@($"{FieldId}_{Guid.NewGuid().ToString("N").Substring(0, 8)}")"
            placeholder="@Field.Placeholder"
            readonly="@Field.IsReadOnly"
@@ -32,8 +33,9 @@
         
         @if (_state.IsVisible && _state.Options.Any())
         {
-            <div class="@FormConstants.CssClasses.ListGroup position-absolute w-100" 
-                 style="max-height: @(FormConstants.Defaults.DropdownMaxHeight)px; overflow-y: auto; z-index: @FormConstants.Defaults.DropdownZIndex;">
+            @* 使用 fixed 定位讓下拉選單可以超出 Modal 邊界 *@
+            <div class="@FormConstants.CssClasses.ListGroup autocomplete-dropdown-fixed" 
+                 style="@GetDropdownStyle()">
                 @for (int i = 0; i < _state.Options.Count; i++)
                 {
                     var index = i;
@@ -85,6 +87,67 @@
     
     // 追蹤上一次的 Value，用於偵測值變化方向
     private string? _previousValue;
+    
+    // Input 元素參考（用於計算下拉選單位置）
+    private ElementReference _inputRef;
+    
+    // 下拉選單位置資訊
+    private double _dropdownTop = 0;
+    private double _dropdownLeft = 0;
+    private double _dropdownWidth = 0;
+    
+    /// <summary>
+    /// 取得下拉選單的樣式（使用 fixed 定位）
+    /// </summary>
+    private string GetDropdownStyle()
+    {
+        // 使用 fixed 定位讓下拉選單可以超出父容器（如 Modal）的邊界
+        return $"position: fixed; " +
+               $"top: {_dropdownTop}px; " +
+               $"left: {_dropdownLeft}px; " +
+               $"width: {_dropdownWidth}px; " +
+               $"max-height: {FormConstants.Defaults.DropdownMaxHeight}px; " +
+               $"overflow-y: auto; " +
+               $"z-index: 99999; " +  // 確保在 Modal 之上
+               $"background-color: #fff; " +
+               $"border: 1px solid #dee2e6; " +
+               $"border-radius: 0.375rem; " +
+               $"box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);";
+    }
+    
+    /// <summary>
+    /// 更新下拉選單位置
+    /// </summary>
+    private async Task UpdateDropdownPositionAsync()
+    {
+        try
+        {
+            var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingRect", _inputRef);
+            if (rect != null)
+            {
+                _dropdownTop = rect.Bottom;
+                _dropdownLeft = rect.Left;
+                _dropdownWidth = rect.Width;
+            }
+        }
+        catch
+        {
+            // 如果 JS 呼叫失敗，使用預設值
+        }
+    }
+    
+    /// <summary>
+    /// 用於接收 JS 回傳的元素位置資訊
+    /// </summary>
+    private class BoundingClientRect
+    {
+        public double Top { get; set; }
+        public double Left { get; set; }
+        public double Bottom { get; set; }
+        public double Right { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
 
     protected override void OnParametersSet()
     {
@@ -145,10 +208,13 @@
         _ = PerformSearchAsync(inputValue);
     }
 
-    private void HandleFocus()
+    private async Task HandleFocus()
     {
         _state.HasBlurred = false;
         var inputValue = _state.DisplayValue;
+        
+        // 先更新下拉選單位置
+        await UpdateDropdownPositionAsync();
         
         if (Field.MinSearchLength == 0 || 
             (!string.IsNullOrEmpty(inputValue) && inputValue.Length >= Field.MinSearchLength))

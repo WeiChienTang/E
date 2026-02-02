@@ -104,6 +104,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.TopMargin),
                             DisplayName = "上邊距 (cm)",
                             TableOrder = 5,
+                            FilterPlaceholder = "輸入上邊距搜尋",
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -124,6 +125,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.BottomMargin),
                             DisplayName = "下邊距 (cm)",
                             TableOrder = 6,
+                            FilterPlaceholder = "輸入下邊距搜尋",
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -144,6 +146,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.LeftMargin),
                             DisplayName = "左邊距 (cm)",
                             TableOrder = 7,
+                            FilterPlaceholder = "輸入左邊距搜尋",
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -164,6 +167,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.RightMargin),
                             DisplayName = "右邊距 (cm)",
                             TableOrder = 8,
+                            FilterPlaceholder = "輸入右邊距搜尋",
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {

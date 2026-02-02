@@ -216,3 +216,29 @@ window.popoverHelpers = {
         }
     }
 };
+
+/**
+ * 取得元素的邊界矩形資訊（供 Blazor AutoComplete 下拉選單定位使用）
+ * @param {HTMLElement} element - DOM 元素
+ * @returns {Object} 包含 top, left, bottom, right, width, height 的物件
+ */
+window.getElementBoundingRect = function (element) {
+    if (!element) {
+        return null;
+    }
+    
+    try {
+        const rect = element.getBoundingClientRect();
+        return {
+            top: rect.top,
+            left: rect.left,
+            bottom: rect.bottom,
+            right: rect.right,
+            width: rect.width,
+            height: rect.height
+        };
+    } catch (error) {
+        console.error('Error getting element bounding rect:', error);
+        return null;
+    }
+};

@@ -40,25 +40,13 @@ namespace ERPCore2.FieldConfiguration
                     }
                     },
                     {
-                        nameof(ReportPrintConfiguration.ReportType),
-                        new FieldDefinition<ReportPrintConfiguration>
-                        {
-                            PropertyName = nameof(ReportPrintConfiguration.ReportType),
-                            DisplayName = "報表類型",
-                            FilterPlaceholder = "輸入報表類型搜尋",
-                            TableOrder = 2,
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ReportPrintConfiguration.ReportType), r => r.ReportType)
-                        }
-                    },
-                    {
                         nameof(ReportPrintConfiguration.ReportName),
                         new FieldDefinition<ReportPrintConfiguration>
                         {
                             PropertyName = nameof(ReportPrintConfiguration.ReportName),
                             DisplayName = "報表名稱",
                             FilterPlaceholder = "輸入報表名稱搜尋",
-                            TableOrder = 3,
+                            TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.ReportName), r => r.ReportName)
                         }
@@ -70,7 +58,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "PrinterConfigurationName",
                             DisplayName = "印表機設定",
                             FilterPlaceholder = "輸入印表機名稱搜尋",
-                            TableOrder = 4,
+                            TableOrder = 3,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)
@@ -92,7 +80,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "PaperSettingName",
                             DisplayName = "紙張設定",
                             FilterPlaceholder = "輸入紙張名稱搜尋",
-                            TableOrder = 5,
+                            TableOrder = 4,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)

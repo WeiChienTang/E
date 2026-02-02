@@ -29,11 +29,10 @@ namespace ERPCore2.Services.Reports.Configuration
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .Where(r => (r.ReportType.Contains(searchTerm) ||
-                         r.ReportName.Contains(searchTerm) ||
+                    .Where(r => (r.ReportName.Contains(searchTerm) ||
                          (r.Code != null && r.Code.Contains(searchTerm)) ||
                          (r.Remarks != null && r.Remarks.Contains(searchTerm))))
-                    .OrderBy(r => r.ReportType)
+                    .OrderBy(r => r.ReportName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -53,15 +52,12 @@ namespace ERPCore2.Services.Reports.Configuration
             try
             {
                 // 檢查必填欄位
-                if (string.IsNullOrWhiteSpace(entity.ReportType))
-                    return ServiceResult.Failure("報表類型為必填欄位");
-
                 if (string.IsNullOrWhiteSpace(entity.ReportName))
                     return ServiceResult.Failure("報表名稱為必填欄位");
 
-                // 檢查報表類型是否重複
-                if (await IsReportTypeExistsAsync(entity.ReportType, entity.Id))
-                    return ServiceResult.Failure("報表類型已存在");
+                // 檢查報表名稱是否重複
+                if (await IsReportNameExistsAsync(entity.ReportName, entity.Id))
+                    return ServiceResult.Failure("報表名稱已存在");
 
                 // 檢查印表機設定是否存在（如果有提供的話）
                 using var context = await _contextFactory.CreateDbContextAsync();
@@ -91,7 +87,7 @@ namespace ERPCore2.Services.Reports.Configuration
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ReportType = entity.ReportType
+                    ReportName = entity.ReportName
                 });
                 return ServiceResult.Failure("驗證過程中發生錯誤");
             }
@@ -106,7 +102,7 @@ namespace ERPCore2.Services.Reports.Configuration
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
                     .AsQueryable()
-                    .OrderBy(r => r.ReportType)
+                    .OrderBy(r => r.ReportName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -142,41 +138,41 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public async Task<ReportPrintConfiguration?> GetByReportTypeAsync(string reportType)
+        public async Task<ReportPrintConfiguration?> GetByReportNameAsync(string reportName)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(reportType))
+                if (string.IsNullOrWhiteSpace(reportName))
                     return null;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .FirstOrDefaultAsync(r => r.ReportType == reportType);
+                    .FirstOrDefaultAsync(r => r.ReportName == reportName);
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByReportTypeAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByReportNameAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetByReportTypeAsync),
+                    Method = nameof(GetByReportNameAsync),
                     ServiceType = GetType().Name,
-                    ReportType = reportType
+                    ReportName = reportName
                 });
                 return null;
             }
         }
 
-        public async Task<bool> IsReportTypeExistsAsync(string reportType, int? excludeId = null)
+        public async Task<bool> IsReportNameExistsAsync(string reportName, int? excludeId = null)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(reportType))
+                if (string.IsNullOrWhiteSpace(reportName))
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.ReportPrintConfigurations
-                    .Where(r => r.ReportType == reportType);
+                    .Where(r => r.ReportName == reportName);
 
                 if (excludeId.HasValue)
                     query = query.Where(r => r.Id != excludeId.Value);
@@ -185,11 +181,11 @@ namespace ERPCore2.Services.Reports.Configuration
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsReportTypeExistsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsReportNameExistsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsReportTypeExistsAsync),
+                    Method = nameof(IsReportNameExistsAsync),
                     ServiceType = GetType().Name,
-                    ReportType = reportType,
+                    ReportName = reportName,
                     ExcludeId = excludeId
                 });
                 return false;
@@ -205,7 +201,7 @@ namespace ERPCore2.Services.Reports.Configuration
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
                     .Where(r => r.Status == EntityStatus.Active)
-                    .OrderBy(r => r.ReportType)
+                    .OrderBy(r => r.ReportName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -219,23 +215,23 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public async Task<List<string>> GetReportTypesAsync()
+        public async Task<List<string>> GetReportNamesAsync()
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
                     .AsQueryable()
-                    .Select(r => r.ReportType)
+                    .Select(r => r.ReportName)
                     .Distinct()
-                    .OrderBy(rt => rt)
+                    .OrderBy(rn => rn)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReportTypesAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReportNamesAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetReportTypesAsync),
+                    Method = nameof(GetReportNamesAsync),
                     ServiceType = GetType().Name
                 });
                 return new List<string>();
@@ -251,7 +247,7 @@ namespace ERPCore2.Services.Reports.Configuration
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
                     .Where(r => r.PrinterConfigurationId == printerConfigurationId)
-                    .OrderBy(r => r.ReportType)
+                    .OrderBy(r => r.ReportName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -275,7 +271,7 @@ namespace ERPCore2.Services.Reports.Configuration
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
                     .Where(r => r.PaperSettingId == paperSettingId)
-                    .OrderBy(r => r.ReportType)
+                    .OrderBy(r => r.ReportName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -290,18 +286,18 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public async Task<ReportPrintConfiguration?> GetCompleteConfigurationAsync(string reportType)
+        public async Task<ReportPrintConfiguration?> GetCompleteConfigurationAsync(string reportName)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(reportType))
+                if (string.IsNullOrWhiteSpace(reportName))
                     return null;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ReportPrintConfigurations
                     .Include(r => r.PrinterConfiguration)
                     .Include(r => r.PaperSetting)
-                    .FirstOrDefaultAsync(r => r.ReportType == reportType && r.Status == EntityStatus.Active);
+                    .FirstOrDefaultAsync(r => r.ReportName == reportName && r.Status == EntityStatus.Active);
             }
             catch (Exception ex)
             {
@@ -309,7 +305,7 @@ namespace ERPCore2.Services.Reports.Configuration
                 {
                     Method = nameof(GetCompleteConfigurationAsync),
                     ServiceType = GetType().Name,
-                    ReportType = reportType
+                    ReportName = reportName
                 });
                 return null;
             }
@@ -366,36 +362,34 @@ namespace ERPCore2.Services.Reports.Configuration
             }
         }
 
-        public async Task<bool> CopyConfigurationAsync(string sourceReportType, string targetReportType, string targetReportName)
+        public async Task<bool> CopyConfigurationAsync(string sourceReportName, string targetReportName)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(sourceReportType) || 
-                    string.IsNullOrWhiteSpace(targetReportType) || 
+                if (string.IsNullOrWhiteSpace(sourceReportName) || 
                     string.IsNullOrWhiteSpace(targetReportName))
                     return false;
 
-                // 檢查目標報表類型是否已存在
-                if (await IsReportTypeExistsAsync(targetReportType))
+                // 檢查目標報表名稱是否已存在
+                if (await IsReportNameExistsAsync(targetReportName))
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var sourceConfig = await context.ReportPrintConfigurations
-                    .FirstOrDefaultAsync(r => r.ReportType == sourceReportType);
+                    .FirstOrDefaultAsync(r => r.ReportName == sourceReportName);
 
                 if (sourceConfig == null)
                     return false;
 
                 var newConfig = new ReportPrintConfiguration
                 {
-                    ReportType = targetReportType,
                     ReportName = targetReportName,
                     PrinterConfigurationId = sourceConfig.PrinterConfigurationId,
                     PaperSettingId = sourceConfig.PaperSettingId,
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System",
-                    Remarks = $"複製自 {sourceReportType}"
+                    Remarks = $"複製自 {sourceReportName}"
                 };
 
                 context.ReportPrintConfigurations.Add(newConfig);
@@ -408,8 +402,7 @@ namespace ERPCore2.Services.Reports.Configuration
                 {
                     Method = nameof(CopyConfigurationAsync),
                     ServiceType = GetType().Name,
-                    SourceReportType = sourceReportType,
-                    TargetReportType = targetReportType,
+                    SourceReportName = sourceReportName,
                     TargetReportName = targetReportName
                 });
                 return false;

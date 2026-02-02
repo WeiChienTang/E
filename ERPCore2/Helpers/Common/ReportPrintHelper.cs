@@ -194,7 +194,7 @@ namespace ERPCore2.Helpers
             
             if (configuration != null)
             {
-                url += $"&configId={configuration.Id}&reportType={configuration.ReportType}";
+                url += $"&configId={configuration.Id}&reportName={Uri.EscapeDataString(configuration.ReportName)}";
             }
 
             return url;
@@ -215,11 +215,6 @@ namespace ERPCore2.Helpers
             if (configuration.Status != Data.Enums.EntityStatus.Active)
             {
                 return (false, "列印配置已停用");
-            }
-
-            if (string.IsNullOrEmpty(configuration.ReportType))
-            {
-                return (false, "報表類型不能為空");
             }
 
             if (string.IsNullOrEmpty(configuration.ReportName))
@@ -362,7 +357,7 @@ namespace ERPCore2.Helpers
             if (configuration != null)
             {
                 parameters.Add($"configId={configuration.Id}");
-                parameters.Add($"reportType={Uri.EscapeDataString(configuration.ReportType)}");
+                parameters.Add($"reportName={Uri.EscapeDataString(configuration.ReportName)}");
             }
             
             // 組合 URL

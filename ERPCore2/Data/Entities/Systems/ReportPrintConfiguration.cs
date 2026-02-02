@@ -9,14 +9,6 @@ namespace ERPCore2.Data.Entities
     public class ReportPrintConfiguration : BaseEntity
     {
         /// <summary>
-        /// 報表類型識別碼（如：PurchaseOrder, Invoice, Receipt）
-        /// </summary>
-        [Required(ErrorMessage = "報表類型為必填")]
-        [MaxLength(50, ErrorMessage = "報表類型不可超過50個字元")]
-        [Display(Name = "報表類型")]
-        public string ReportType { get; set; } = string.Empty;
-
-        /// <summary>
         /// 報表顯示名稱
         /// </summary>
         [Required(ErrorMessage = "報表名稱為必填")]

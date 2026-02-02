@@ -85,7 +85,7 @@
         if (fieldConfiguration == null)
         {
             // 如果配置未初始化，回傳基本排序的查詢
-            return query.OrderBy(r => r.ReportType);
+            return query.OrderBy(r => r.ReportName);
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyReportPrintConfigurationFilters), GetType());

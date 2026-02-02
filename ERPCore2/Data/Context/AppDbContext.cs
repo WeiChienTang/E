@@ -985,8 +985,8 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(e => e.PaperSettingId)
                               .OnDelete(DeleteBehavior.SetNull);
 
-                        // 建立複合索引確保報表類型的唯一性
-                        entity.HasIndex(e => e.ReportType)
+                        // 建立索引確保報表名稱的唯一性
+                        entity.HasIndex(e => e.ReportName)
                               .IsUnique();
                   });
 
