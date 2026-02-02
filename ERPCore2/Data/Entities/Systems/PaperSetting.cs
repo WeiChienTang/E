@@ -38,28 +38,28 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Range(0, 999, ErrorMessage = "上邊距必須在0-999毫米之間")]
         [Display(Name = "上邊距(cm)")]
-        public decimal TopMargin { get; set; } = 10;
+        public decimal? TopMargin { get; set; }
 
         /// <summary>
         /// 下邊距（單位：毫米）
         /// </summary>
         [Range(0, 999, ErrorMessage = "下邊距必須在0-999毫米之間")]
         [Display(Name = "下邊距(cm)")]
-        public decimal BottomMargin { get; set; } = 10;
+        public decimal? BottomMargin { get; set; }
 
         /// <summary>
         /// 左邊距（單位：毫米）
         /// </summary>
         [Range(0, 999, ErrorMessage = "左邊距必須在0-999毫米之間")]
         [Display(Name = "左邊距(cm)")]
-        public decimal LeftMargin { get; set; } = 10;
+        public decimal? LeftMargin { get; set; }
 
         /// <summary>
         /// 右邊距（單位：毫米）
         /// </summary>
         [Range(0, 999, ErrorMessage = "右邊距必須在0-999毫米之間")]
         [Display(Name = "右邊距(cm)")]
-        public decimal RightMargin { get; set; } = 10;
+        public decimal? RightMargin { get; set; }
 
         /// <summary>
         /// 紙張方向（Portrait: 直向, Landscape: 橫向）

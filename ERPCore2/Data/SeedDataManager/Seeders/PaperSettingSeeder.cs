@@ -250,6 +250,20 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Remarks = "台灣常用中二刀紙張，為中一刀的一半高度",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now
+                },
+                new PaperSetting
+                {
+                    Code = "PAPER016",
+                    Name = "報表紙全張",
+                    Width = 24.13m,     // 9.5 inch = 24.13cm
+                    Height = 27.94m,    // 11 inch = 27.94cm
+                    TopMargin = 1.0m,
+                    BottomMargin = 1.0m,
+                    LeftMargin = 1.27m,  // 0.5 inch = 1.27cm (針孔邊)
+                    RightMargin = 1.27m, // 0.5 inch = 1.27cm (針孔邊)
+                    Remarks = "連續報表紙全張 (9.5\" x 11\")，針式印表機常用規格",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now
                 }
             };
 

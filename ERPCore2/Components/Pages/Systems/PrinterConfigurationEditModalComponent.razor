@@ -334,16 +334,12 @@
     {
         @* 查詢已安裝印表機按鈕 *@
         <GenericButtonComponent Text="查詢印表機" 
-                              Icon="bi bi-search"
                               Variant="ButtonVariant.Blue"
-                              OnClick="@HandleOpenInstalledPrinterModal"
-                              CssClass="me-2" />
+                              OnClick="@HandleOpenInstalledPrinterModal"/>
         @* 測試列印按鈕 *@
         <GenericButtonComponent Text="測試列印" 
-                              Icon="bi bi-printer"
                               Variant="ButtonVariant.Green"
-                              OnClick="@HandleTestPrint"
-                              CssClass="me-2" />
+                              OnClick="@HandleTestPrint"/>
     };
     
     /// <summary>
