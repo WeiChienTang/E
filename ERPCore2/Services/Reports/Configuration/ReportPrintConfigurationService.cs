@@ -52,15 +52,20 @@ namespace ERPCore2.Services.Reports.Configuration
             try
             {
                 // 檢查必填欄位
+                if (string.IsNullOrWhiteSpace(entity.ReportId))
+                    return ServiceResult.Failure("報表識別碼為必填欄位");
+
                 if (string.IsNullOrWhiteSpace(entity.ReportName))
                     return ServiceResult.Failure("報表名稱為必填欄位");
 
-                // 檢查報表名稱是否重複
-                if (await IsReportNameExistsAsync(entity.ReportName, entity.Id))
-                    return ServiceResult.Failure("報表名稱已存在");
+                // 檢查報表識別碼是否重複
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var reportIdExists = await context.ReportPrintConfigurations
+                    .AnyAsync(r => r.ReportId == entity.ReportId && r.Id != entity.Id);
+                if (reportIdExists)
+                    return ServiceResult.Failure("報表識別碼已存在，每個報表只能有一個列印配置");
 
                 // 檢查印表機設定是否存在（如果有提供的話）
-                using var context = await _contextFactory.CreateDbContextAsync();
                 if (entity.PrinterConfigurationId.HasValue)
                 {
                     var printerExists = await context.PrinterConfigurations
@@ -306,6 +311,31 @@ namespace ERPCore2.Services.Reports.Configuration
                     Method = nameof(GetCompleteConfigurationAsync),
                     ServiceType = GetType().Name,
                     ReportName = reportName
+                });
+                return null;
+            }
+        }
+
+        public async Task<ReportPrintConfiguration?> GetByReportIdAsync(string reportId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(reportId))
+                    return null;
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ReportPrintConfigurations
+                    .Include(r => r.PrinterConfiguration)
+                    .Include(r => r.PaperSetting)
+                    .FirstOrDefaultAsync(r => r.ReportId == reportId && r.Status == EntityStatus.Active);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByReportIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetByReportIdAsync),
+                    ServiceType = GetType().Name,
+                    ReportId = reportId
                 });
                 return null;
             }

@@ -8,7 +8,7 @@
                       Service="@ReportPrintConfigurationService"
                       EntityBasePath="/reportPrintConfigurations"
                       PageTitle="報表列印配置"
-                      PageSubtitle="管理不同報表的列印設定"
+                      PageSubtitle="管理不同報表的列印設定（報表由系統自動建立，僅可編輯印表機與紙張設定）"
                       EntityName="報表列印配置"
                       BreadcrumbItems="@breadcrumbItems"
                       FilterDefinitions="@filterDefinitions"
@@ -17,7 +17,8 @@
                       FilterApplier="@ApplyReportPrintConfigurationFilters"
                       GetEntityDisplayName="@(config => config.ReportName)"
                       RequiredPermission="ReportPrintConfiguration.Read"
-                      OnAddClick="@modalHandler.ShowAddModalAsync"
+                      ShowAddButton="false"
+                      ShowDeleteButton="false"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />
 

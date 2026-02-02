@@ -78,6 +78,7 @@ namespace ERPCore2.Data
                     new SalesReturnReasonSeeder(),  
                     new CurrencySeeder(),          
                     new PaperSettingSeeder(),
+                    new ReportPrintConfigurationSeeder(),  // 報表列印配置（在紙張設定之後）
                 };
             }
 

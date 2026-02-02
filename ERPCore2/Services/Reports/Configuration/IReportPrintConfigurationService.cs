@@ -56,6 +56,13 @@ namespace ERPCore2.Services.Reports.Configuration
         Task<ReportPrintConfiguration?> GetCompleteConfigurationAsync(string reportName);
 
         /// <summary>
+        /// 根據報表識別碼取得完整的報表列印配置（包含印表機和紙張設定）
+        /// </summary>
+        /// <param name="reportId">報表識別碼（如 AR001、AP001）</param>
+        /// <returns>完整的報表列印配置</returns>
+        Task<ReportPrintConfiguration?> GetByReportIdAsync(string reportId);
+
+        /// <summary>
         /// 批量更新報表列印配置
         /// </summary>
         /// <param name="configurations">報表列印配置清單</param>

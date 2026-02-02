@@ -27,17 +27,29 @@ namespace ERPCore2.FieldConfiguration
             {
                 return new Dictionary<string, FieldDefinition<ReportPrintConfiguration>>
                 {
-                                        {
-                    nameof(ReportPrintConfiguration.Code),
-                    new FieldDefinition<ReportPrintConfiguration>
                     {
-                        PropertyName = nameof(ReportPrintConfiguration.Code),
-                        DisplayName = "編號",
-                        FilterPlaceholder = "輸入編號搜尋",
-                        TableOrder = 1,
-                        FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                            model, query, nameof(ReportPrintConfiguration.Code), r => r.Code)
-                    }
+                        nameof(ReportPrintConfiguration.Code),
+                        new FieldDefinition<ReportPrintConfiguration>
+                        {
+                            PropertyName = nameof(ReportPrintConfiguration.Code),
+                            DisplayName = "編號",
+                            FilterPlaceholder = "輸入編號搜尋",
+                            TableOrder = 1,
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, nameof(ReportPrintConfiguration.Code), r => r.Code)
+                        }
+                    },
+                    {
+                        nameof(ReportPrintConfiguration.ReportId),
+                        new FieldDefinition<ReportPrintConfiguration>
+                        {
+                            PropertyName = nameof(ReportPrintConfiguration.ReportId),
+                            DisplayName = "報表識別碼",
+                            FilterPlaceholder = "輸入報表識別碼搜尋",
+                            TableOrder = 2,
+                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
+                                model, query, nameof(ReportPrintConfiguration.ReportId), r => r.ReportId)
+                        }
                     },
                     {
                         nameof(ReportPrintConfiguration.ReportName),
@@ -46,7 +58,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ReportPrintConfiguration.ReportName),
                             DisplayName = "報表名稱",
                             FilterPlaceholder = "輸入報表名稱搜尋",
-                            TableOrder = 2,
+                            TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ReportPrintConfiguration.ReportName), r => r.ReportName)
                         }
@@ -58,7 +70,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "PrinterConfigurationName",
                             DisplayName = "印表機設定",
                             FilterPlaceholder = "輸入印表機名稱搜尋",
-                            TableOrder = 3,
+                            TableOrder = 4,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)
@@ -80,7 +92,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "PaperSettingName",
                             DisplayName = "紙張設定",
                             FilterPlaceholder = "輸入紙張名稱搜尋",
-                            TableOrder = 4,
+                            TableOrder = 5,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
                                 if (data is ReportPrintConfiguration report)

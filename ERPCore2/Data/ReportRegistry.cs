@@ -100,8 +100,7 @@ public static class ReportRegistry
                 ActionId = "OpenSupplierPurchaseAnalysisReport",
                 SortOrder = 3,
                 IsEnabled = false  // 尚未實作
-            },
-            
+            },            
             // ==================== 財務報表 ====================
             // 可依需求繼續擴充...
         };

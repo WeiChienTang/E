@@ -261,100 +261,43 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 測試USB印表機列印 (改進版本)
+        /// 測試USB印表機列印 (簡化版本)
+        /// 直接使用 PrinterConfiguration.Name 作為系統印表機名稱進行列印
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         private async Task<ServiceResult> TestUsbPrintAsync(PrinterConfiguration printerConfiguration)
         {
             try
             {
-                var testContent = GenerateTestPageContent(printerConfiguration);
-                var usbPort = printerConfiguration.UsbPort ?? "LPT1";
-
-                // 首先嘗試找到使用指定埠的印表機
-                var printer = FindPrinterByPort(usbPort);
+                var printerName = printerConfiguration.Name;
                 
-                if (printer != null)
+                if (string.IsNullOrWhiteSpace(printerName))
                 {
-                    
-                    // 方法 1: 優先使用 System.Drawing.Printing (更可靠)
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    {
-                        var systemDrawingResult = await PrintUsingSystemDrawing(printer.Name, testContent);
-                        if (systemDrawingResult.IsSuccess)
-                        {
-                            return ServiceResult.Success();
-                        }
-                        else
-                        {
-                        }
-                    }
-                    
-                    // 方法 2: 如果方法 1 失敗，使用改進的 Windows API
-                    // 使用純文字格式，讓驅動程式處理
-                    var textData = Encoding.UTF8.GetBytes(testContent);
-                    var apiResult = await PrintUsingWindowsApi(printer.Name, textData, "ERP 測試頁");
-                    
-                    if (apiResult.IsSuccess)
+                    return ServiceResult.Failure("印表機名稱不能為空");
+                }
+
+                var testContent = GenerateTestPageContent(printerConfiguration);
+
+                // 方法 1: 優先使用 System.Drawing.Printing (更可靠，使用印表機驅動程式)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var systemDrawingResult = await PrintUsingSystemDrawing(printerName, testContent);
+                    if (systemDrawingResult.IsSuccess)
                     {
                         return ServiceResult.Success();
                     }
-                    else
-                    {
-                    }
-                    
-                    return ServiceResult.Failure($"所有列印方法都失敗。最後錯誤: {apiResult.ErrorMessage}");
                 }
-                else
-                {
-                    // 如果找不到指定埠的印表機，列出所有可用印表機供參考
-                    var availablePrinters = GetAvailablePrinters();
-                    var usbPrinters = availablePrinters.Where(p => 
-                        p.PortName.StartsWith("USB", StringComparison.OrdinalIgnoreCase) ||
-                        p.PortName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase) ||
-                        p.PortName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)).ToList();
 
-                    if (usbPrinters.Any())
-                    {
-                        var suggestedPorts = string.Join(", ", usbPrinters.Select(p => $"'{p.PortName}' ({p.Name})"));
-                        return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機。可用埠: {suggestedPorts}");
-                    }
-                    else
-                    {
-                        // 嘗試直接列印到預設印表機
-                        var defaultPrinter = availablePrinters.FirstOrDefault(p => p.IsDefault);
-                        if (defaultPrinter != null)
-                        {
-                            
-                            // 優先使用 System.Drawing.Printing
-                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                            {
-                                var result = await PrintUsingSystemDrawing(defaultPrinter.Name, testContent);
-                                if (result.IsSuccess)
-                                {
-                                    return ServiceResult.Success();
-                                }
-                            }
-                            
-                            // 備用方案：使用 Windows API
-                            var textData = Encoding.UTF8.GetBytes(testContent);
-                            var result2 = await PrintUsingWindowsApi(defaultPrinter.Name, textData, "ERP 測試頁");
-                            
-                            if (result2.IsSuccess)
-                            {
-                                return ServiceResult.Success();
-                            }
-                            else
-                            {
-                                return ServiceResult.Failure($"預設印表機列印失敗: {result2.ErrorMessage}");
-                            }
-                        }
-                        else
-                        {
-                            return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機，且系統中沒有可用的印表機");
-                        }
-                    }
+                // 方法 2: 如果方法 1 失敗，使用 Windows API 直接寫入
+                var textData = Encoding.UTF8.GetBytes(testContent);
+                var apiResult = await PrintUsingWindowsApi(printerName, textData, "ERP 測試頁");
+
+                if (apiResult.IsSuccess)
+                {
+                    return ServiceResult.Success();
                 }
+
+                return ServiceResult.Failure($"列印失敗: {apiResult.ErrorMessage}");
             }
             catch (Exception ex)
             {
@@ -362,7 +305,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(TestUsbPrintAsync),
                     ServiceType = GetType().Name,
-                    UsbPort = printerConfiguration.UsbPort
+                    PrinterName = printerConfiguration.Name
                 });
                 return ServiceResult.Failure("USB列印測試失敗");
             }
@@ -414,37 +357,39 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 檢查USB印表機連接
+        /// 直接驗證 PrinterConfiguration.Name 對應的系統印表機是否存在
         /// </summary>
         private ServiceResult CheckUsbConnection(PrinterConfiguration printerConfiguration)
         {
             try
             {
-                var usbPort = printerConfiguration.UsbPort ?? "LPT1";
+                var printerName = printerConfiguration.Name;
 
-                // 檢查是否有印表機使用指定的埠
-                var printer = FindPrinterByPort(usbPort);
-                
-                if (printer != null)
+                if (string.IsNullOrWhiteSpace(printerName))
+                {
+                    return ServiceResult.Failure("印表機名稱不能為空");
+                }
+
+                // 檢查系統中是否存在此印表機
+                var availablePrinters = GetAvailablePrinters();
+                var matchedPrinter = availablePrinters.FirstOrDefault(p => 
+                    string.Equals(p.Name, printerName, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedPrinter != null)
                 {
                     return ServiceResult.Success();
                 }
                 else
                 {
-                    // 列出所有可用的 USB/LPT/COM 印表機供參考
-                    var availablePrinters = GetAvailablePrinters();
-                    var localPrinters = availablePrinters.Where(p => 
-                        p.PortName.StartsWith("USB", StringComparison.OrdinalIgnoreCase) ||
-                        p.PortName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase) ||
-                        p.PortName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)).ToList();
-
-                    if (localPrinters.Any())
+                    // 列出可用的印表機供參考
+                    if (availablePrinters.Any())
                     {
-                        var availablePorts = string.Join(", ", localPrinters.Select(p => $"'{p.PortName}' ({p.Name})"));
-                        return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機。可用埠: {availablePorts}");
+                        var availableNames = string.Join(", ", availablePrinters.Select(p => $"'{p.Name}'"));
+                        return ServiceResult.Failure($"找不到印表機 '{printerName}'。可用印表機: {availableNames}");
                     }
                     else
                     {
-                        return ServiceResult.Failure($"找不到使用埠 '{usbPort}' 的印表機，且系統中沒有其他本機印表機");
+                        return ServiceResult.Failure($"找不到印表機 '{printerName}'，且系統中沒有已安裝的印表機");
                     }
                 }
             }
@@ -454,7 +399,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(CheckUsbConnection),
                     ServiceType = GetType().Name,
-                    UsbPort = printerConfiguration.UsbPort
+                    PrinterName = printerConfiguration.Name
                 });
                 return ServiceResult.Failure("檢查USB連接時發生錯誤");
             }

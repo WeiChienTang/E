@@ -1,15 +1,3 @@
-@*
-    報表索引 Modal 組件
-    用途：顯示特定分類的所有報表清單，讓使用者選擇要列印的報表
-    
-    使用方式：
-    <ReportIndexModalComponent IsVisible="@showModal"
-                              IsVisibleChanged="@((bool v) => showModal = v)"
-                              Title="客戶報表中心"
-                              Reports="@reports"
-                              OnReportSelected="@HandleReportSelected" />
-*@
-
 @using ERPCore2.Models
 @using ERPCore2.Components.Shared.Base
 

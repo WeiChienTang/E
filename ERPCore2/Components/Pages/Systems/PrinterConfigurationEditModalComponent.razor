@@ -111,27 +111,20 @@
                 return;
             }
 
-            // 檢查必要欄位
+            // 檢查必要欄位：印表機名稱（系統印表機名稱）
             if (string.IsNullOrWhiteSpace(currentConfiguration.Name))
             {
-                await NotificationService.ShowErrorAsync("請先輸入印表機名稱");
+                await NotificationService.ShowErrorAsync("請先選取印表機（點擊「查詢印表機」按鈕）");
                 return;
             }
 
-            // 根據連接類型檢查必要的配置
+            // 網路印表機需要 IP 位址
             if (currentConfiguration.ConnectionType == PrinterConnectionType.Network)
             {
                 if (string.IsNullOrWhiteSpace(currentConfiguration.IpAddress))
                 {
                     await NotificationService.ShowErrorAsync("網路印表機需要設定IP位址");
                     return;
-                }
-            }
-            else if (currentConfiguration.ConnectionType == PrinterConnectionType.USB)
-            {
-                if (string.IsNullOrWhiteSpace(currentConfiguration.UsbPort))
-                {
-                    await NotificationService.ShowWarningAsync("USB印表機未設定連接埠，將使用預設設定");
                 }
             }
 
@@ -226,23 +219,24 @@
                 new()
                 {
                     PropertyName = nameof(PrinterConfiguration.Name),
-                    Label = "印表機名稱",
+                    Label = "系統印表機名稱",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
                     MaxLength = 100,
                     Order = 1,
-                    Placeholder = "請輸入印表機名稱",
+                    Placeholder = "請點選「查詢印表機」選取",
+                    HelpText = "請使用「查詢印表機」按鈕選取已安裝的印表機，此名稱必須與系統印表機名稱完全一致"
                 },
                 new()
                 {
                     PropertyName = nameof(PrinterConfiguration.UsbPort),
-                    Label = "USB連接埠",
+                    Label = "連接埠",
                     FieldType = FormFieldType.Text,
                     IsRequired = false,
                     MaxLength = 50,
                     Order = 2,
-                    Placeholder = "例如: LPT1, USB001, COM1",
-                    HelpText = "USB印表機的連接埠。支援格式：LPT1-LPT9, USB001-USB999, COM1-COM99"
+                    Placeholder = "自動填入",
+                    HelpText = "選取印表機時自動填入，僅供參考識別用途"
                 },
                 new()
                 {

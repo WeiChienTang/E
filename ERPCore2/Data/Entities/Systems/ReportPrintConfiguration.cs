@@ -9,6 +9,14 @@ namespace ERPCore2.Data.Entities
     public class ReportPrintConfiguration : BaseEntity
     {
         /// <summary>
+        /// 報表識別碼（對應 ReportRegistry 中的 Id，如 AR001、AP001）
+        /// </summary>
+        [Required(ErrorMessage = "報表識別碼為必填")]
+        [MaxLength(50, ErrorMessage = "報表識別碼不可超過50個字元")]
+        [Display(Name = "報表識別碼")]
+        public string ReportId { get; set; } = string.Empty;
+
+        /// <summary>
         /// 報表顯示名稱
         /// </summary>
         [Required(ErrorMessage = "報表名稱為必填")]

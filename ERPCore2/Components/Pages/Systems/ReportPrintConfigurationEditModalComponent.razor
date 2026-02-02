@@ -1,5 +1,7 @@
 @* 可重用的報表列印配置編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Helpers
+@using ERPCore2.Data
+@using ERPCore2.Models
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
@@ -53,10 +55,12 @@
     // 原始資料集合（用於 AutoComplete）
     private List<PrinterConfiguration> availablePrinters = new();
     private List<PaperSetting> availablePaperSettings = new();
+    private List<ReportDefinition> availableReports = new();
 
     // 下拉選單選項（向下相容）
     private List<SelectOption> printerConfigurationOptions = new();
     private List<SelectOption> paperSettingOptions = new();
+    private List<SelectOption> reportOptions = new();
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -130,6 +134,13 @@
     {
         try
         {
+            // 載入報表定義選項（從 ReportRegistry 靜態取得）
+            availableReports = ReportRegistry.GetAllReports();
+            reportOptions = availableReports
+                .Select(r => new SelectOption { Text = $"{r.Id} - {r.Name}", Value = r.Id })
+                .OrderBy(r => r.Value)
+                .ToList();
+
             // 載入印表機設定選項
             var printerConfigurations = await PrinterConfigurationService.GetAllAsync();
             availablePrinters = printerConfigurations.Where(p => p.Status == EntityStatus.Active).ToList();
@@ -155,8 +166,10 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入下拉選單選項時發生錯誤：{ex.Message}");
+            availableReports = new List<ReportDefinition>();
             availablePrinters = new List<PrinterConfiguration>();
             availablePaperSettings = new List<PaperSetting>();
+            reportOptions = new List<SelectOption>();
             printerConfigurationOptions = new List<SelectOption>();
             paperSettingOptions = new List<SelectOption>();
         }
@@ -235,12 +248,24 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(ReportPrintConfiguration.ReportId),
+                    Label = "報表",
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Placeholder = "請選擇報表",
+                    HelpText = "選擇要設定列印配置的報表",
+                    Options = reportOptions,
+                    IsReadOnly = true  // Seed 時已建立，不允許修改
+                },
+                new()
+                {
                     PropertyName = nameof(ReportPrintConfiguration.ReportName),
                     Label = "報表名稱",
                     FieldType = FormFieldType.Text,
                     IsRequired = true,
-                    Placeholder = "請輸入報表顯示名稱",
-                    HelpText = "報表的顯示名稱，用於介面展示"
+                    IsReadOnly = true,
+                    Placeholder = "選擇報表後自動填入",
+                    HelpText = "報表的顯示名稱（由系統自動填入）"
                 },
                 // 列印設定區段
                 new()
@@ -280,8 +305,10 @@
             formSections = FormSectionHelper<ReportPrintConfiguration>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     rpc => rpc.Code,
+                    rpc => rpc.ReportId,
                     rpc => rpc.ReportName,
-                    rpc => rpc.Status,
+                    rpc => rpc.Status)
+                .AddToSection("列印設定",
                     rpc => rpc.PrinterConfigurationId,
                     rpc => rpc.PaperSettingId)
                 .AddToSection(FormSectionNames.AdditionalData,
@@ -299,6 +326,7 @@
         return formFields;
     }
 
+    // ===== 事件處理方法 =====
     // ===== 輔助方法 =====
     private string GenerateReportPrintConfigurationCode()
     {
