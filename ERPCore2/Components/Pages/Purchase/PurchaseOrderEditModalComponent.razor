@@ -1,6 +1,7 @@
 @* 可重用的採購單編輯組件 - 可在任何頁面中嵌入 *@
 
 @using ERPCore2.Helpers
+@using ERPCore2.Services.Reports
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -9,6 +10,8 @@
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject ISystemParameterService SystemParameterService
 @inject ITextMessageTemplateService TextMessageTemplateService
+@inject IPurchaseOrderReportService PurchaseOrderReportService
+@inject IPrinterConfigurationService PrinterConfigurationService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
@@ -285,7 +288,8 @@
     }
 
     /// <summary>
-    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
+    /// 直接執行列印 - 直接呼叫服務（不經過 API）
+    /// 與 PrinterTestService 相同方式：直接使用 System.Drawing.Printing
     /// </summary>
     private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
     {
@@ -298,45 +302,52 @@
                 return;
             }
 
-            // 驗證列印配置
-            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(printConfig);
-            if (!isValid)
+            // 取得印表機名稱
+            string? printerName = null;
+            
+            // 方式 1：從傳入的列印配置取得
+            if (printConfig?.PrinterConfigurationId.HasValue == true)
             {
-                await NotificationService.ShowWarningAsync($"列印配置無效：{errorMessage}");
+                var printerConfig = await PrinterConfigurationService.GetByIdAsync(printConfig.PrinterConfigurationId.Value);
+                printerName = printerConfig?.Name;
+            }
+            
+            // 方式 2：從報表配置取得（使用預設報表 ID）
+            if (string.IsNullOrEmpty(printerName))
+            {
+                var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync("PO001");
+                if (reportConfig?.PrinterConfigurationId.HasValue == true)
+                {
+                    var printerConfig = await PrinterConfigurationService.GetByIdAsync(reportConfig.PrinterConfigurationId.Value);
+                    printerName = printerConfig?.Name;
+                }
+            }
+            
+            if (string.IsNullOrEmpty(printerName))
+            {
+                await NotificationService.ShowWarningAsync("請先設定採購單的列印印表機");
                 return;
             }
 
-            // 使用通用 Helper 建立列印 URL（新版路由）
-            // 使用 Entity.Id 而非 PurchaseOrderId 參數（最可靠的來源）
-            var printUrl = ReportPrintHelper.BuildPrintUrl(
-                baseUrl: NavigationManager.BaseUri,
-                reportType: "purchase-report/order",
-                documentId: editModalComponent.Entity.Id,
-                configuration: printConfig,
-                autoprint: true
-            );
-
-            // 使用通用 Helper 執行列印（隱藏 iframe 方式）
-            var success = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
-                printUrl: printUrl,
-                jsRuntime: JSRuntime,
-                iframeId: "printFrame"
+            // 直接呼叫服務列印（不經過 API，與 PrinterTestService 相同方式）
+            var result = await PurchaseOrderReportService.DirectPrintAsync(
+                editModalComponent.Entity.Id, 
+                printerName
             );
             
-            if (success)
+            if (result.IsSuccess)
             {
-                var configName = ReportPrintHelper.GetDisplayName(printConfig);
-                await NotificationService.ShowSuccessAsync($"已使用 {configName} 送出列印");
+                await NotificationService.ShowSuccessAsync($"已送出列印到印表機：{printerName}");
             }
             else
             {
-                await NotificationService.ShowErrorAsync("列印執行失敗");
+                await NotificationService.ShowErrorAsync($"列印失敗：{result.ErrorMessage}");
             }
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
-                additionalData: $"採購單直接列印失敗 - ID: {editModalComponent?.Entity?.Id}, Config: {printConfig?.ReportName}");
+                additionalData: $"採購單直接列印失敗 - ID: {editModalComponent?.Entity?.Id}");
             await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
         }
     }

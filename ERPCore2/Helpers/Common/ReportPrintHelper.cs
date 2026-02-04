@@ -447,5 +447,125 @@ namespace ERPCore2.Helpers
             
             return (true, "");
         }
+
+        /// <summary>
+        /// 執行伺服器端直接列印（呼叫 /direct API 端點）
+        /// 此方法使用伺服器端的 System.Drawing.Printing 直接列印到預設印表機，
+        /// 不會顯示 Windows 列印對話框
+        /// </summary>
+        /// <param name="baseUrl">基礎 URL</param>
+        /// <param name="reportType">報表類型（如 "purchase-report/order"）</param>
+        /// <param name="documentId">單據 ID</param>
+        /// <param name="httpClient">HttpClient 實例</param>
+        /// <returns>列印結果（成功/失敗及訊息）</returns>
+        public static async Task<(bool IsSuccess, string Message)> ExecuteServerDirectPrintAsync(
+            string baseUrl,
+            string reportType,
+            int documentId,
+            HttpClient httpClient)
+        {
+            try
+            {
+                // 移除尾部的斜線
+                baseUrl = baseUrl.TrimEnd('/');
+                
+                // 建立直接列印 API URL
+                // 格式：POST /api/{reportType}/{documentId}/direct
+                var directPrintUrl = $"{baseUrl}/api/{reportType}/{documentId}/direct";
+                
+                // 發送 POST 請求到伺服器端直接列印
+                var response = await httpClient.PostAsync(directPrintUrl, null);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    // 嘗試解析回應內容以取得印表機名稱
+                    if (content.Contains("成功"))
+                    {
+                        return (true, content);
+                    }
+                    return (true, "列印任務已成功送出至印表機");
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return (false, $"列印失敗：{response.StatusCode} - {errorContent}");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                return (false, $"網路連線錯誤：{ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"列印時發生錯誤：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 執行伺服器端直接列印（使用 IJSRuntime 透過 fetch API）
+        /// 此方法適合在 Blazor 組件中使用，使用 JavaScript fetch 呼叫伺服器 API
+        /// </summary>
+        /// <remarks>
+        /// ⚠️ 此方法已棄用，請改用報表服務的 DirectPrintAsync 方法
+        /// 例如：await PurchaseOrderReportService.DirectPrintAsync(orderId, printerName)
+        /// 直接列印模式不需要經過 API，更簡單可靠
+        /// </remarks>
+        /// <param name="baseUrl">基礎 URL</param>
+        /// <param name="reportType">報表類型（如 "purchase-report/order"）</param>
+        /// <param name="documentId">單據 ID</param>
+        /// <param name="jsRuntime">IJSRuntime 實例</param>
+        /// <returns>列印結果（成功/失敗及訊息）</returns>
+        [Obsolete("此方法已棄用，請改用報表服務的 DirectPrintAsync 方法，例如 PurchaseOrderReportService.DirectPrintAsync()")]
+        public static async Task<(bool IsSuccess, string Message)> ExecuteServerDirectPrintWithJsAsync(
+            string baseUrl,
+            string reportType,
+            int documentId,
+            IJSRuntime jsRuntime)
+        {
+            try
+            {
+                // 移除尾部的斜線
+                baseUrl = baseUrl.TrimEnd('/');
+                
+                // 建立直接列印 API URL（僅保留圖片模式 /direct）
+                var directPrintUrl = $"{baseUrl}/api/{reportType}/{documentId}/direct";
+                
+                // 使用 JavaScript fetch API 發送 POST 請求
+                var result = await jsRuntime.InvokeAsync<string>("eval", $@"
+                    (async function() {{
+                        try {{
+                            const response = await fetch('{directPrintUrl}', {{
+                                method: 'POST',
+                                headers: {{
+                                    'Content-Type': 'application/json'
+                                }}
+                            }});
+                            
+                            if (response.ok) {{
+                                const text = await response.text();
+                                return JSON.stringify({{ success: true, message: text || '列印任務已送出' }});
+                            }} else {{
+                                const errorText = await response.text();
+                                return JSON.stringify({{ success: false, message: '列印失敗: ' + response.status + ' - ' + errorText }});
+                            }}
+                        }} catch (error) {{
+                            return JSON.stringify({{ success: false, message: '網路錯誤: ' + error.message }});
+                        }}
+                    }})();
+                ");
+                
+                // 解析 JSON 結果
+                var jsonResult = System.Text.Json.JsonDocument.Parse(result);
+                var success = jsonResult.RootElement.GetProperty("success").GetBoolean();
+                var message = jsonResult.RootElement.GetProperty("message").GetString() ?? "";
+                
+                return (success, message);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"執行列印時發生錯誤：{ex.Message}");
+            }
+        }
     }
 }

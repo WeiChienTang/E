@@ -100,7 +100,58 @@ public static class ReportRegistry
                 ActionId = "OpenSupplierPurchaseAnalysisReport",
                 SortOrder = 3,
                 IsEnabled = false  // 尚未實作
-            },            
+            },
+            
+            // ==================== 採購報表 ====================
+            new ReportDefinition
+            {
+                Id = "PO001",
+                Name = "採購單",
+                Description = "列印採購訂單（含廠商資訊、商品明細、金額統計）",
+                IconClass = "bi bi-cart-plus",
+                Category = ReportCategory.Purchase,
+                RequiredPermission = "PurchaseOrder.Read",
+                ActionId = "PrintPurchaseOrder",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = "PO002",
+                Name = "進貨單",
+                Description = "列印進貨單（含驗收資訊、入庫明細）",
+                IconClass = "bi bi-box-seam",
+                Category = ReportCategory.Purchase,
+                RequiredPermission = "PurchaseReceiving.Read",
+                ActionId = "PrintPurchaseReceiving",
+                SortOrder = 2,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = "PO003",
+                Name = "進貨退出單",
+                Description = "列印進貨退出單（含退貨原因、退貨明細）",
+                IconClass = "bi bi-arrow-return-left",
+                Category = ReportCategory.Purchase,
+                RequiredPermission = "PurchaseReturn.Read",
+                ActionId = "PrintPurchaseReturn",
+                SortOrder = 3,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = "PO004",
+                Name = "採購單批次列印",
+                Description = "批次列印多張採購單（支援日期、廠商篩選）",
+                IconClass = "bi bi-printer",
+                Category = ReportCategory.Purchase,
+                RequiredPermission = "PurchaseOrder.Read",
+                ActionId = "BatchPrintPurchaseOrder",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+            
             // ==================== 財務報表 ====================
             // 可依需求繼續擴充...
         };
@@ -139,5 +190,23 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetFinancialReports()
     {
         return GetReportsByCategory(ReportCategory.Financial);
+    }
+    
+    /// <summary>
+    /// 取得採購相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetPurchaseReports()
+    {
+        return GetReportsByCategory(ReportCategory.Purchase);
+    }
+    
+    /// <summary>
+    /// 根據報表識別碼取得報表定義
+    /// </summary>
+    /// <param name="reportId">報表識別碼（如 PO001、AR001）</param>
+    /// <returns>報表定義，若找不到則返回 null</returns>
+    public static ReportDefinition? GetReportById(string reportId)
+    {
+        return GetAllReports().FirstOrDefault(r => r.Id == reportId);
     }
 }

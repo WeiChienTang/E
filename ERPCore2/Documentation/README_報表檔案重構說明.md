@@ -1,636 +1,713 @@
-# 報表檔案重構說明
+# 報表檔案架構說明
 
-## 變更日期
-2025-01-XX（初版）
-2026-02-02（更新目錄結構說明）
-2026-02-02（新增報表列印配置自動化機制）
-2026-02-02（新增印表機測試列印機制說明）
+## 更新日期
+2026-02-03（統一純文字報表架構）
 
-## 重構目的
-將分散在多個目錄的報表相關檔案整合至統一的目錄結構，提升程式碼可維護性和可讀性。
+## 設計理念
 
----
-
-## 目前完整目錄結構
-
-### 📁 Services/Reports/ （報表服務主目錄）
-
-#### 根目錄檔案（向後相容性重導向 + 服務實作）
-| 檔案 | 類型 | 說明 |
-|-----|------|------|
-| `IReportService.cs` | 重導向 | 向後相容性檔案，使用 `global using` 導向 Interfaces/ |
-| `IQuotationReportService.cs` | 重導向 | 向後相容性檔案 |
-| `ISalesOrderReportService.cs` | 重導向 | 向後相容性檔案 |
-| `ISalesReturnReportService.cs` | 重導向 | 向後相容性檔案 |
-| `IPurchaseReturnReportService.cs` | 重導向 | 向後相容性檔案 |
-| `IProductBarcodeReportService.cs` | 重導向 | 向後相容性檔案 |
-| `ReportService.cs` | 實作 | 通用報表服務實作 |
-| `PurchaseOrderReportService.cs` | 實作 | 採購單報表服務實作 |
-| `PurchaseReceivingReportService.cs` | 實作 | 進貨單報表服務實作 |
-| `PurchaseReturnReportService.cs` | 實作 | 進貨退出單報表服務實作 |
-| `QuotationReportService.cs` | 實作 | 報價單報表服務實作 |
-| `SalesOrderReportService.cs` | 實作 | 銷貨單報表服務實作 |
-| `SalesReturnReportService.cs` | 實作 | 銷貨退回單報表服務實作 |
-| `ProductBarcodeReportService.cs` | 實作 | 商品條碼報表服務實作 |
-
-#### 📁 Services/Reports/Interfaces/ （介面定義）
-所有報表服務介面的集中位置：
-- `IReportService.cs` - 通用報表服務介面
-- `IPurchaseOrderReportService.cs` - 採購單報表服務介面
-- `IPurchaseReceivingReportService.cs` - 進貨單報表服務介面
-- `IPurchaseReturnReportService.cs` - 進貨退出單報表服務介面
-- `IQuotationReportService.cs` - 報價單報表服務介面
-- `ISalesOrderReportService.cs` - 銷貨單報表服務介面
-- `ISalesReturnReportService.cs` - 銷貨退回單報表服務介面
-- `IProductBarcodeReportService.cs` - 商品條碼報表服務介面
-
-#### 📁 Services/Reports/Configuration/ （列印配置服務）
-報表列印配置服務：
-- `IReportPrintConfigurationService.cs` - 列印配置服務介面
-- `ReportPrintConfigurationService.cs` - 列印配置服務實作
-
-#### 📁 Services/Reports/Common/ （通用報表建構元件）
-報表生成共用元件（Builder Pattern）：
-| 檔案 | 說明 |
-|-----|------|
-| `IReportDetailItem.cs` | 報表明細項目介面（用於分頁計算） |
-| `ReportPage.cs` | 報表頁面資訊類別 |
-| `ReportPageLayout.cs` | 報表頁面配置定義（尺寸、高度等） |
-| `ReportPaginator.cs` | 通用報表分頁計算器 |
-| `ReportHeaderBuilder.cs` | 報表表頭建構器（三欄式設計） |
-| `ReportInfoSectionBuilder.cs` | 報表資訊區塊建構器 |
-| `ReportTableBuilder.cs` | 報表表格建構器（泛型支援） |
-| `ReportSummaryBuilder.cs` | 報表統計區建構器 |
-| `ReportSignatureBuilder.cs` | 報表簽名區建構器 |
-
-### 📁 Controllers/Reports/ （報表控制器）
-報表 API 控制器：
-- `BaseReportController.cs` - 報表控制器基底類別（提供共用邏輯）
-- `PurchaseReportController.cs` - 採購相關報表控制器
-- `SalesReportController.cs` - 銷貨相關報表控制器
-
-### 📁 Models/Reports/ （報表模型）
-報表相關模型類別：
-- `ReportModels.cs` - 報表配置類別（ReportConfiguration、ReportField、ReportHeaderSection 等）
-- `ReportDefinition.cs` - 報表定義類別
-- `BatchPrintCriteria.cs` - 批次列印條件類別
-
-### 📁 Models/ 根目錄（向後相容性）
-保留向後相容性的檔案：
-- `ReportModels.cs` - 使用 `global using` 重導向至 Models/Reports/
-- `ReportDefinition.cs` - 報表定義
-- `BatchPrintCriteria.cs` - 批次列印條件
+本系統報表採用**純文字格式**，具有以下優點：
+- **簡化列印流程**：使用 `System.Drawing.Printing` 直接列印，不需 HTML 轉換
+- **減少依賴**：不需要 Chromium、PDF 閱讀器等額外軟體
+- **高相容性**：適用於各種印表機，包括點陣式、標籤機、熱感應印表機
+- **易於維護**：格式簡單直觀，使用等寬字型確保對齊
 
 ---
 
-## 向後相容性
+## 目錄結構
 
-為確保現有程式碼無需修改，已保留舊檔案並添加重導向：
-
-### 舊介面檔案（Services/Reports/*.cs）
-使用 `global using` 語句重導向至新的 Interfaces 目錄：
-```csharp
-// ============================================================================
-// 向後相容性檔案 - 已遷移至 Services/Reports/Interfaces/
-// 此檔案保留以維持現有程式碼的相容性，建議逐步更新 using 語句至新位置
-// ============================================================================
-global using ERPCore2.Services.Reports.Interfaces;
 ```
-
-### 舊模型檔案（Models/ReportModels.cs）
-- 使用 `global using` 導入 `ERPCore2.Models.Reports` 命名空間
-- 保留 `SortDirection` 枚舉在 `ERPCore2.Models` 命名空間，以支援 `Models.SortDirection` 語法
-
-### 舊服務檔案（Services/Systems/ReportPrintConfigurationService.cs）
-使用 `global using` 語句重導向至新的 Configuration 目錄：
-```csharp
-global using ERPCore2.Services.Reports.Configuration;
-```
-
----
-
-## 命名空間對照
-
-| 舊命名空間 | 新命名空間 |
-|-----------|-----------|
-| `ERPCore2.Services.Reports` (介面) | `ERPCore2.Services.Reports.Interfaces` |
-| `ERPCore2.Services` (ReportPrintConfigurationService) | `ERPCore2.Services.Reports.Configuration` |
-| `ERPCore2.Models` (報表模型) | `ERPCore2.Models.Reports` |
-
----
-
-## ServiceRegistration.cs 配置
-
-已更新服務註冊以使用完整命名空間（位於 `Data/ServiceRegistration.cs`）：
-```csharp
-// 報表列印配置服務
-services.AddScoped<ERPCore2.Services.Reports.Configuration.IReportPrintConfigurationService, 
-                  ERPCore2.Services.Reports.Configuration.ReportPrintConfigurationService>();
-
-// 報表服務 - 介面位於 ERPCore2.Services.Reports.Interfaces
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportService, ReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService, PurchaseOrderReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseReceivingReportService, PurchaseReceivingReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseReturnReportService, PurchaseReturnReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesOrderReportService, SalesOrderReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesReturnReportService, SalesReturnReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.IQuotationReportService, QuotationReportService>();
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();
-```
-
----
-
-## 報表服務架構說明
-
-### 分層架構
-```
-Controllers/Reports/
-    └── BaseReportController.cs          ← 控制器基底類別（處理 HTTP 請求）
-         ├── PurchaseReportController.cs ← 採購報表控制器
-         └── SalesReportController.cs    ← 銷貨報表控制器
-
 Services/Reports/
-    ├── Interfaces/                      ← 介面定義層
-    │    └── I*ReportService.cs
-    ├── *ReportService.cs                ← 服務實作層
-    ├── Configuration/                   ← 列印配置服務
-    └── Common/                          ← 共用元件層（Builder Pattern）
-         ├── ReportPageLayout.cs         ← 頁面尺寸配置
-         ├── ReportPaginator.cs          ← 智能分頁計算
-         ├── ReportHeaderBuilder.cs      ← 表頭建構
-         ├── ReportInfoSectionBuilder.cs ← 資訊區建構
-         ├── ReportTableBuilder.cs       ← 表格建構
-         ├── ReportSummaryBuilder.cs     ← 統計區建構
-         └── ReportSignatureBuilder.cs   ← 簽名區建構
+├── Interfaces/                      ← 介面定義
+│   ├── IReportService.cs
+│   ├── IPurchaseOrderReportService.cs
+│   ├── IPurchaseReceivingReportService.cs
+│   ├── IPurchaseReturnReportService.cs
+│   ├── ISalesOrderReportService.cs
+│   ├── ISalesReturnReportService.cs
+│   ├── IQuotationReportService.cs
+│   └── IProductBarcodeReportService.cs
+├── Configuration/                   ← 列印配置服務
+│   ├── IReportPrintConfigurationService.cs
+│   └── ReportPrintConfigurationService.cs
+├── PurchaseOrderReportService.cs    ← 報表服務實作（範本）
+├── PurchaseReceivingReportService.cs
+├── PurchaseReturnReportService.cs
+├── SalesOrderReportService.cs
+├── SalesReturnReportService.cs
+├── QuotationReportService.cs
+├── ProductBarcodeReportService.cs
+├── PlainTextPrintService.cs         ← 共用列印服務
+└── ReportPrintService.cs
+
+Helpers/Common/
+└── PlainTextFormatter.cs            ← 純文字格式化工具
+
+Controllers/Reports/
+├── BaseReportController.cs          ← 控制器基底類別
+├── PurchaseReportController.cs      ← 採購報表控制器
+└── SalesReportController.cs         ← 銷貨報表控制器
+
+Data/
+└── ReportRegistry.cs                ← 報表定義註冊表
 
 Models/Reports/
-    ├── ReportModels.cs                  ← 報表配置模型
-    ├── ReportDefinition.cs              ← 報表定義
-    └── BatchPrintCriteria.cs            ← 批次列印條件
+├── ReportModels.cs                  ← 報表配置模型
+├── ReportDefinition.cs              ← 報表定義
+└── BatchPrintCriteria.cs            ← 批次列印條件
 ```
 
-### Common 元件使用模式（Builder Pattern）
-報表服務使用 Builder Pattern 組裝報表各區塊：
+---
+
+## 核心元件
+
+### PlainTextFormatter（純文字格式化工具）
+
+位置：`Helpers/Common/PlainTextFormatter.cs`
+
+提供純文字格式化的靜態方法，處理中英文混排的寬度計算與對齊：
 
 ```csharp
-// 1. 定義頁面配置
-var layout = ReportPageLayout.ContinuousForm();
-
-// 2. 使用分頁器分割明細
-var paginator = new ReportPaginator<DetailItem>(layout);
-var pages = paginator.SplitIntoPages(details);
-
-// 3. 為每頁建構 HTML
-foreach (var page in pages)
+public static class PlainTextFormatter
 {
-    // 表頭
-    var header = new ReportHeaderBuilder()
-        .SetCompanyInfo(taxId, phone, fax)
-        .SetCompanyName(companyName)
-        .SetReportTitle("採購單")
-        .SetPageInfo($"第 {pageNum} 頁，共 {totalPages} 頁")
-        .Build();
+    // 常數
+    public const int DefaultLineWidth = 80;  // 預設報表寬度
+    public const string PageBreak = "\f";    // 分頁符號
 
-    // 資訊區
-    var info = new ReportInfoSectionBuilder()
-        .AddRow("採購單號", orderNo, "採購日期", date)
-        .AddRow("廠商名稱", supplierName)
-        .Build();
+    // 文字對齊
+    public static string CenterText(string text, int width);
+    public static string PadRight(string text, int width);   // 左對齊
+    public static string PadLeft(string text, int width);    // 右對齊
 
-    // 表格
-    var table = new ReportTableBuilder<DetailItem>()
-        .AddIndexColumn()
-        .AddTextColumn("品名", "30%", d => d.ProductName)
-        .AddQuantityColumn("數量", "10%", d => d.Quantity)
-        .AddAmountColumn("金額", "15%", d => d.Amount)
-        .Build(page.Items);
+    // 寬度計算（中文=2, 英文=1）
+    public static int GetDisplayWidth(string text);
+    public static bool IsWideChar(char c);
 
-    // 統計區（僅最後一頁）
-    if (page.IsLastPage)
+    // 文字截斷
+    public static string TruncateText(string text, int maxWidth, bool ellipsis = false);
+
+    // 分隔線
+    public static string Separator(int width);       // ════════════
+    public static string ThinSeparator(int width);   // ────────────
+    public static string DottedSeparator(int width); // ............
+
+    // 表格格式化
+    public static string FormatTableRow(IEnumerable<(string Text, int Width, PlainTextAlignment Alignment)> columns);
+
+    // 金額與數量格式化
+    public static string FormatAmount(decimal amount);              // 千分位，無小數
+    public static string FormatAmountWithDecimals(decimal amount);  // 千分位，2位小數
+    public static string FormatQuantity(decimal quantity);          // 千分位，無小數
+
+    // 日期格式化
+    public static string FormatDate(DateTime date);        // yyyy/MM/dd
+    public static string FormatDateTime(DateTime dateTime); // yyyy/MM/dd HH:mm
+
+    // 報表區塊建構
+    public static string BuildTitleSection(string companyName, string reportTitle, int width);
+    public static string BuildSignatureSection(string[] labels, int width);
+    public static string BuildTotalLine(string label, decimal amount, string suffix = "");
+}
+
+public enum PlainTextAlignment { Left, Right, Center }
+```
+
+### PlainTextPrintService（共用列印服務）
+
+位置：`Services/Reports/PlainTextPrintService.cs`
+
+封裝 Windows 列印功能，提供純文字直接列印：
+
+```csharp
+public interface IPlainTextPrintService
+{
+    /// <summary>執行純文字列印</summary>
+    ServiceResult PrintText(string textContent, string printerName, string documentName, float fontSize = 10);
+
+    /// <summary>使用報表配置列印（自動查詢印表機設定）</summary>
+    Task<ServiceResult> PrintTextByReportIdAsync(string textContent, string reportId, string documentName);
+
+    /// <summary>檢查是否支援直接列印</summary>
+    bool IsDirectPrintSupported();
+}
+```
+
+列印參數：
+- 字型：Courier New（等寬字型）
+- 預設字型大小：10pt
+- 列印後等待時間：2000ms
+
+---
+
+## 報表服務介面
+
+以採購單為例：`Services/Reports/Interfaces/IPurchaseOrderReportService.cs`
+
+```csharp
+public interface IPurchaseOrderReportService
+{
+    // 生成純文字報表
+    Task<string> GeneratePlainTextReportAsync(int purchaseOrderId);
+    Task<string> GenerateBatchPlainTextReportAsync(BatchPrintCriteria criteria);
+
+    // 直接列印
+    Task<ServiceResult> DirectPrintAsync(int purchaseOrderId, string printerName);
+    Task<ServiceResult> DirectPrintByReportIdAsync(int purchaseOrderId, string reportId);
+    Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId);
+}
+```
+
+---
+
+## 報表服務實作範本
+
+以 `PurchaseOrderReportService.cs` 為範本：
+
+### 1. 類別結構
+
+```csharp
+public class PurchaseOrderReportService : IPurchaseOrderReportService
+{
+    private readonly IPurchaseOrderService _purchaseOrderService;
+    private readonly ISupplierService _supplierService;
+    private readonly IProductService _productService;
+    private readonly ICompanyService _companyService;
+    private readonly ISystemParameterService _systemParameterService;
+    private readonly IReportPrintConfigurationService _reportPrintConfigService;
+    private readonly IPrinterConfigurationService _printerConfigService;
+    private readonly IPlainTextPrintService _plainTextPrintService;
+    private readonly ILogger<PurchaseOrderReportService>? _logger;
+
+    public PurchaseOrderReportService(
+        IPurchaseOrderService purchaseOrderService,
+        ISupplierService supplierService,
+        IProductService productService,
+        ICompanyService companyService,
+        ISystemParameterService systemParameterService,
+        IReportPrintConfigurationService reportPrintConfigService,
+        IPrinterConfigurationService printerConfigService,
+        IPlainTextPrintService plainTextPrintService,
+        ILogger<PurchaseOrderReportService>? logger = null)
     {
-        var summary = new ReportSummaryBuilder()
-            .SetRemarks(remarks)
-            .AddAmountItem("小計", subtotal)
-            .AddAmountItem("稅額", tax)
-            .AddAmountItem("總計", total)
-            .Build();
-
-        var signature = new ReportSignatureBuilder()
-            .AddSignatures("採購人員", "核准人員", "廠商簽收")
-            .Build();
+        _purchaseOrderService = purchaseOrderService;
+        _supplierService = supplierService;
+        _productService = productService;
+        _companyService = companyService;
+        _systemParameterService = systemParameterService;
+        _reportPrintConfigService = reportPrintConfigService;
+        _printerConfigService = printerConfigService;
+        _plainTextPrintService = plainTextPrintService;
+        _logger = logger;
     }
 }
 ```
 
-### IReportDetailItem 介面
-所有報表明細項目必須實作此介面以支援智能分頁：
-```csharp
-public interface IReportDetailItem
-{
-    /// <summary>取得備註內容（用於高度計算）</summary>
-    string GetRemarks();
+### 2. 生成純文字報表
 
-    /// <summary>取得額外高度因素（mm）</summary>
-    decimal GetExtraHeightFactor() => 0m;
+```csharp
+public async Task<string> GeneratePlainTextReportAsync(int purchaseOrderId)
+{
+    // 載入資料
+    var purchaseOrder = await _purchaseOrderService.GetByIdAsync(purchaseOrderId);
+    if (purchaseOrder == null)
+        throw new ArgumentException($"找不到採購單 ID: {purchaseOrderId}");
+
+    var orderDetails = await _purchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
+
+    Supplier? supplier = purchaseOrder.SupplierId > 0
+        ? await _supplierService.GetByIdAsync(purchaseOrder.SupplierId)
+        : null;
+
+    Company? company = purchaseOrder.CompanyId > 0
+        ? await _companyService.GetByIdAsync(purchaseOrder.CompanyId)
+        : null;
+
+    var allProducts = await _productService.GetAllAsync();
+    var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+
+    // 生成純文字內容
+    return GeneratePlainTextContent(purchaseOrder, orderDetails, supplier, company, productDict);
 }
 ```
 
----
+### 3. 純文字內容生成（核心方法）
 
-## 新程式碼建議使用方式
-
-### 使用介面時
 ```csharp
-using ERPCore2.Services.Reports.Interfaces;
-
-public class MyComponent
+private static string GeneratePlainTextContent(
+    PurchaseOrder purchaseOrder,
+    List<PurchaseOrderDetail> orderDetails,
+    Supplier? supplier,
+    Company? company,
+    Dictionary<int, Product> productDict)
 {
-    [Inject] private IPurchaseOrderReportService ReportService { get; set; }
-}
-```
+    var sb = new StringBuilder();
+    const int lineWidth = PlainTextFormatter.DefaultLineWidth;
 
-### 使用模型時
-```csharp
-using ERPCore2.Models.Reports;
+    // === 標題區 ===
+    sb.Append(PlainTextFormatter.BuildTitleSection(
+        company?.CompanyName ?? "公司名稱",
+        "採 購 單",
+        lineWidth));
 
-var config = new ReportConfiguration
-{
-    Title = "報表標題"
-};
-```
+    // === 基本資訊區 ===
+    sb.AppendLine($"採購單號：{purchaseOrder.Code,-20} 採購日期：{PlainTextFormatter.FormatDate(purchaseOrder.OrderDate)}");
+    sb.AppendLine($"交貨日期：{PlainTextFormatter.FormatDate(purchaseOrder.ExpectedDeliveryDate)}");
+    sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
+    sb.AppendLine($"廠商名稱：{supplier?.CompanyName ?? ""}");
+    sb.AppendLine($"聯 絡 人：{supplier?.ContactPerson ?? "",-20} 統一編號：{supplier?.TaxNumber ?? ""}");
+    sb.AppendLine($"送貨地址：{company?.Address ?? ""}");
+    sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-### 使用配置服務時
-```csharp
-using ERPCore2.Services.Reports.Configuration;
+    // === 明細表頭 ===
+    sb.AppendLine(FormatTableRow("序號", "品名", "數量", "單位", "單價", "小計", "備註"));
+    sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-public class MyService
-{
-    private readonly IReportPrintConfigurationService _configService;
-}
-```
-
-### 使用 Common 元件時
-```csharp
-using ERPCore2.Services.Reports.Common;
-
-// 建立頁面配置
-var layout = ReportPageLayout.ContinuousForm();
-
-// 使用各種 Builder
-var header = new ReportHeaderBuilder();
-var table = new ReportTableBuilder<MyDetailItem>();
-var summary = new ReportSummaryBuilder();
-var signature = new ReportSignatureBuilder();
-```
-
----
-
-## 注意事項
-
-1. **SortDirection 枚舉位置**：保留在 `ERPCore2.Models` 命名空間，因為許多現有程式碼使用 `Models.SortDirection` 語法。
-
-2. **逐步遷移**：現有程式碼可繼續使用舊的命名空間，建議在修改相關檔案時逐步更新至新命名空間。
-
-3. **未來清理**：當所有程式碼都更新至新命名空間後，可移除舊的重導向檔案。
-
-4. **服務實作位置**：報表服務實作檔案（`*ReportService.cs`）保留在 `Services/Reports/` 根目錄，介面檔案則在 `Interfaces/` 子目錄。
-
-5. **Common 元件**：新增報表時，應優先使用 Common 目錄下的 Builder 元件，確保報表風格一致。
-
----
-
-## 報表列印配置自動化機制
-
-### 概述
-系統透過 `ReportRegistry` 集中管理所有報表定義，並在應用程式啟動時自動建立對應的列印配置。
-
-### 相關檔案
-| 檔案 | 位置 | 說明 |
-|-----|------|------|
-| `ReportRegistry.cs` | `Data/` | 靜態報表定義註冊表 |
-| `ReportDefinition.cs` | `Models/Reports/` | 報表定義模型 |
-| `ReportPrintConfiguration.cs` | `Data/Entities/Systems/` | 報表列印配置實體 |
-| `ReportPrintConfigurationSeeder.cs` | `Data/SeedDataManager/Seeders/` | 自動建立列印配置的種子資料器 |
-
-### 資料流程
-```
-ReportRegistry (靜態定義)              ReportPrintConfiguration (資料表)
-┌────────────────────────────┐        ┌─────────────────────────────────────┐
-│ Id: AR001                  │        │ ReportId: AR001                     │
-│ Name: 應收帳款報表          │   →    │ ReportName: 應收帳款報表             │
-│ Description: ...           │        │ PrinterConfigurationId: null        │
-│ IsEnabled: true/false      │        │ PaperSettingId: null                │
-└────────────────────────────┘        └─────────────────────────────────────┘
-        ↓                                      ↓
-   程式碼定義                            資料庫儲存（可編輯印表機/紙張）
-```
-
-### ReportPrintConfiguration 實體欄位
-```csharp
-public class ReportPrintConfiguration : BaseEntity
-{
-    public string ReportId { get; set; }              // 報表識別碼（對應 ReportRegistry.Id）
-    public string ReportName { get; set; }            // 報表名稱（對應 ReportRegistry.Name）
-    public int? PrinterConfigurationId { get; set; }  // 印表機設定 FK
-    public int? PaperSettingId { get; set; }          // 紙張設定 FK
-}
-```
-
-### Seeder 運作邏輯
-`ReportPrintConfigurationSeeder` 在每次應用程式啟動時執行：
-1. 讀取 `ReportRegistry.GetAllReports()` 取得所有報表定義
-2. 查詢資料庫中已存在的 `ReportId`
-3. 對於尚未存在的報表，自動建立 `ReportPrintConfiguration` 記錄
-4. 已存在的配置不會被覆蓋（保留使用者設定的印表機/紙張）
-
-```csharp
-// Seeder 核心邏輯
-foreach (var report in allReports)
-{
-    if (existingReportIds.Contains(report.Id))
-        continue;  // 已存在，跳過
-    
-    // 建立新配置（預設無印表機、無紙張）
-    var config = new ReportPrintConfiguration
+    // === 明細內容 ===
+    int rowNum = 1;
+    foreach (var detail in orderDetails)
     {
-        ReportId = report.Id,
-        ReportName = report.Name,
-        PrinterConfigurationId = null,
-        PaperSettingId = null,
-        Status = report.IsEnabled ? EntityStatus.Active : EntityStatus.Inactive
+        var product = productDict.GetValueOrDefault(detail.ProductId);
+        var productName = PlainTextFormatter.TruncateText(product?.Name ?? "", 28);
+        var remarks = PlainTextFormatter.TruncateText(detail.Remarks ?? "", 8);
+
+        sb.AppendLine(FormatTableRow(
+            rowNum.ToString(),
+            productName,
+            PlainTextFormatter.FormatQuantity(detail.OrderQuantity),
+            "個",
+            PlainTextFormatter.FormatAmountWithDecimals(detail.UnitPrice),
+            PlainTextFormatter.FormatAmountWithDecimals(detail.SubtotalAmount),
+            remarks
+        ));
+        rowNum++;
+    }
+
+    sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
+
+    // === 合計區 ===
+    var taxMethodText = purchaseOrder.TaxCalculationMethod switch
+    {
+        TaxCalculationMethod.TaxExclusive => "外加稅",
+        TaxCalculationMethod.TaxInclusive => "內含稅",
+        TaxCalculationMethod.NoTax => "免稅",
+        _ => ""
     };
+
+    sb.AppendLine(PlainTextFormatter.BuildTotalLine("小　計", purchaseOrder.TotalAmount));
+    sb.AppendLine(PlainTextFormatter.BuildTotalLine("稅　額", purchaseOrder.PurchaseTaxAmount, taxMethodText));
+    sb.AppendLine(PlainTextFormatter.BuildTotalLine("總　計", purchaseOrder.PurchaseTotalAmountIncludingTax));
+
+    // === 備註 ===
+    if (!string.IsNullOrWhiteSpace(purchaseOrder.Remarks))
+    {
+        sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
+        sb.AppendLine($"備註：{purchaseOrder.Remarks}");
+    }
+
+    sb.AppendLine(PlainTextFormatter.Separator(lineWidth));
+
+    // === 簽名區 ===
+    sb.Append(PlainTextFormatter.BuildSignatureSection(
+        new[] { "採購人員", "核准人員", "收貨確認" },
+        lineWidth));
+
+    return sb.ToString();
+}
+```
+
+### 4. 表格行格式化（各報表自訂）
+
+```csharp
+/// <summary>
+/// 格式化表格行 - 採購單專用格式
+/// 欄位配置：序號(4) | 品名(30) | 數量(8) | 單位(6) | 單價(10) | 小計(12) | 備註(10)
+/// </summary>
+private static string FormatTableRow(string col1, string col2, string col3, string col4, string col5, string col6, string col7)
+{
+    return PlainTextFormatter.FormatTableRow(new (string, int, PlainTextAlignment)[]
+    {
+        (col1, 4, PlainTextAlignment.Left),
+        (col2, 30, PlainTextAlignment.Left),
+        (col3, 8, PlainTextAlignment.Right),
+        (col4, 6, PlainTextAlignment.Left),
+        (col5, 10, PlainTextAlignment.Right),
+        (col6, 12, PlainTextAlignment.Right),
+        (col7, 10, PlainTextAlignment.Left)
+    });
+}
+```
+
+### 5. 直接列印方法
+
+```csharp
+[SupportedOSPlatform("windows6.1")]
+public async Task<ServiceResult> DirectPrintAsync(int purchaseOrderId, string printerName)
+{
+    try
+    {
+        var textContent = await GeneratePlainTextReportAsync(purchaseOrderId);
+
+        _logger?.LogInformation("開始直接列印採購單 {OrderId}，印表機：{PrinterName}", purchaseOrderId, printerName);
+
+        // 使用共用列印服務
+        var printResult = _plainTextPrintService.PrintText(textContent, printerName, $"採購單-{purchaseOrderId}");
+
+        if (printResult.IsSuccess)
+            _logger?.LogInformation("採購單 {OrderId} 列印完成", purchaseOrderId);
+
+        return printResult;
+    }
+    catch (Exception ex)
+    {
+        _logger?.LogError(ex, "直接列印採購單 {OrderId} 時發生錯誤", purchaseOrderId);
+        return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+    }
+}
+
+[SupportedOSPlatform("windows6.1")]
+public async Task<ServiceResult> DirectPrintByReportIdAsync(int purchaseOrderId, string reportId)
+{
+    try
+    {
+        var textContent = await GeneratePlainTextReportAsync(purchaseOrderId);
+
+        _logger?.LogInformation("開始列印採購單 {OrderId}，使用配置：{ReportId}", purchaseOrderId, reportId);
+
+        // 使用共用列印服務（自動查詢印表機配置）
+        return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, $"採購單-{purchaseOrderId}");
+    }
+    catch (Exception ex)
+    {
+        _logger?.LogError(ex, "使用配置列印採購單 {OrderId} 時發生錯誤", purchaseOrderId, reportId);
+        return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+    }
 }
 ```
 
 ---
 
-## 新增報表完整步驟
+## 純文字報表輸出範例
 
-### 步驟 1：在 ReportRegistry 定義報表
-在 `Data/ReportRegistry.cs` 的 `GetAllReports()` 方法中新增：
+```
+================================================================================
+                            公司名稱有限公司
+                              採 購 單
+================================================================================
+採購單號：PO-20260203-001      採購日期：2026/02/03
+交貨日期：2026/02/10
+--------------------------------------------------------------------------------
+廠商名稱：測試廠商股份有限公司
+聯 絡 人：張先生              統一編號：12345678
+送貨地址：台北市信義區xxx路xxx號
+--------------------------------------------------------------------------------
+序號 品名                           數量     單位     單價       小計     備註
+--------------------------------------------------------------------------------
+1    測試商品A                        10     個     100.00    1,000.00
+2    測試商品B                         5     個     200.00    1,000.00
+3    這是一個很長的商品名稱會被..       3     個     500.00    1,500.00
+--------------------------------------------------------------------------------
+                                                  小　計：       3,500
+                                                  稅　額：         175 (外加稅)
+                                                  總　計：       3,675
+================================================================================
+
+採購人員：________________    核准人員：________________    收貨確認：________________
+
+================================================================================
+```
+
+---
+
+## 前端組件呼叫方式
+
+以 `PurchaseOrderEditModalComponent.razor` 為範本：
+
+### 1. 注入服務
+
+```razor
+@using ERPCore2.Services.Reports
+@inject IPurchaseOrderReportService PurchaseOrderReportService
+@inject IPrinterConfigurationService PrinterConfigurationService
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
+```
+
+### 2. 列印按鈕處理
+
+```csharp
+/// <summary>
+/// 處理列印按鈕點擊
+/// </summary>
+private async Task HandlePrint()
+{
+    try
+    {
+        // 檢查是否已儲存
+        if (!canPrint)
+        {
+            await NotificationService.ShowWarningAsync("請先儲存採購單");
+            return;
+        }
+
+        // 檢查 Entity 是否已載入
+        if (editModalComponent?.Entity == null)
+        {
+            await NotificationService.ShowWarningAsync("無法列印：採購單資料不存在");
+            return;
+        }
+
+        // 檢查審核狀態（如有需要）
+        if (isApprovalEnabled && !editModalComponent.Entity.IsApproved)
+        {
+            await NotificationService.ShowWarningAsync("此採購單尚未審核通過，無法列印");
+            return;
+        }
+
+        // 執行列印
+        await HandleDirectPrint(null);
+    }
+    catch (Exception ex)
+    {
+        await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
+    }
+}
+
+/// <summary>
+/// 執行直接列印
+/// </summary>
+private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
+{
+    try
+    {
+        if (editModalComponent?.Entity == null)
+        {
+            await NotificationService.ShowWarningAsync("無法列印：採購單資料不存在");
+            return;
+        }
+
+        // 取得印表機名稱
+        string? printerName = null;
+
+        // 方式 1：從傳入的列印配置取得
+        if (printConfig?.PrinterConfigurationId.HasValue == true)
+        {
+            var printerConfig = await PrinterConfigurationService.GetByIdAsync(printConfig.PrinterConfigurationId.Value);
+            printerName = printerConfig?.Name;
+        }
+
+        // 方式 2：從報表配置取得（使用預設報表 ID）
+        if (string.IsNullOrEmpty(printerName))
+        {
+            var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync("PO001");
+            if (reportConfig?.PrinterConfigurationId.HasValue == true)
+            {
+                var printerConfig = await PrinterConfigurationService.GetByIdAsync(reportConfig.PrinterConfigurationId.Value);
+                printerName = printerConfig?.Name;
+            }
+        }
+
+        if (string.IsNullOrEmpty(printerName))
+        {
+            await NotificationService.ShowWarningAsync("請先設定採購單的列印印表機");
+            return;
+        }
+
+        // 直接呼叫服務列印（不經過 API）
+        var result = await PurchaseOrderReportService.DirectPrintAsync(
+            editModalComponent.Entity.Id,
+            printerName
+        );
+
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync($"已送出列印到印表機：{printerName}");
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync($"列印失敗：{result.ErrorMessage}");
+        }
+    }
+    catch (Exception ex)
+    {
+        await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
+    }
+}
+```
+
+---
+
+## API 控制器
+
+位置：`Controllers/Reports/PurchaseReportController.cs`
+
+```csharp
+[Route("api/purchase-report")]
+[ApiController]
+public class PurchaseReportController : BaseReportController
+{
+    private readonly IPurchaseOrderReportService _purchaseOrderReportService;
+
+    /// <summary>
+    /// 取得採購單純文字報表（預覽用）
+    /// </summary>
+    [HttpGet("order/{id}")]
+    public async Task<IActionResult> GetPurchaseOrderReport(int id)
+    {
+        try
+        {
+            var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
+            var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}");
+            return Content(html, "text/html; charset=utf-8");
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 採購單直接列印
+    /// </summary>
+    [HttpPost("order/{id}/direct")]
+    public async Task<IActionResult> DirectPrintPurchaseOrder(int id, [FromQuery] string reportId = "PO001")
+    {
+        try
+        {
+            var result = await _purchaseOrderReportService.DirectPrintByReportIdAsync(id, reportId);
+
+            if (result.IsSuccess)
+                return Ok(new { success = true, message = "列印成功" });
+            else
+                return BadRequest(new { success = false, message = result.ErrorMessage });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "列印時發生錯誤", detail = ex.Message });
+        }
+    }
+}
+```
+
+---
+
+## 報表列印配置
+
+### ReportRegistry（報表定義）
+
+位置：`Data/ReportRegistry.cs`
+
+```csharp
+public static class ReportRegistry
+{
+    public static List<ReportDefinition> GetAllReports()
+    {
+        return new List<ReportDefinition>
+        {
+            new ReportDefinition
+            {
+                Id = "PO001",
+                Name = "採購單",
+                Description = "採購單列印報表",
+                Category = ReportCategory.Purchase,
+                RequiredPermission = "PurchaseOrder.Read",
+                IsEnabled = true
+            },
+            // ... 其他報表定義
+        };
+    }
+}
+```
+
+### ReportPrintConfiguration（資料表）
+
+使用者可在「報表列印配置」頁面設定每個報表的印表機和紙張：
+
+| 欄位 | 說明 |
+|------|------|
+| ReportId | 報表識別碼（對應 ReportRegistry.Id） |
+| ReportName | 報表名稱 |
+| PrinterConfigurationId | 印表機設定 FK |
+| PaperSettingId | 紙張設定 FK |
+
+### 自動建立配置
+
+`ReportPrintConfigurationSeeder` 在應用程式啟動時：
+1. 讀取 `ReportRegistry.GetAllReports()`
+2. 自動建立尚未存在的 `ReportPrintConfiguration` 記錄
+3. 已存在的配置不會被覆蓋
+
+---
+
+## 新增報表步驟
+
+### 步驟 1：定義報表
+
+在 `Data/ReportRegistry.cs` 新增：
+
 ```csharp
 new ReportDefinition
 {
-    Id = "XX001",                    // 唯一識別碼（建議格式：類別代碼 + 序號）
+    Id = "XX001",
     Name = "新報表名稱",
     Description = "報表說明",
-    IconClass = "bi bi-file-text",   // Bootstrap Icons
-    Category = ReportCategory.Sales, // 報表分類
+    Category = ReportCategory.Sales,
     RequiredPermission = "Entity.Read",
-    ActionId = "OpenNewReport",
-    SortOrder = 1,
-    IsEnabled = true                 // false = 尚未實作
+    IsEnabled = true
 }
 ```
 
-### 步驟 2：建立報表服務介面
-在 `Services/Reports/Interfaces/` 新增 `I{ReportName}ReportService.cs`
+### 步驟 2：建立介面
 
-### 步驟 3：建立報表服務實作
-在 `Services/Reports/` 新增 `{ReportName}ReportService.cs`，使用 Common 元件組裝報表
+在 `Services/Reports/Interfaces/` 新增 `INewReportService.cs`：
+
+```csharp
+public interface INewReportService
+{
+    Task<string> GeneratePlainTextReportAsync(int entityId);
+    Task<string> GenerateBatchPlainTextReportAsync(BatchPrintCriteria criteria);
+    Task<ServiceResult> DirectPrintAsync(int entityId, string printerName);
+    Task<ServiceResult> DirectPrintByReportIdAsync(int entityId, string reportId);
+    Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId);
+}
+```
+
+### 步驟 3：建立實作
+
+在 `Services/Reports/` 新增 `NewReportService.cs`，參考 `PurchaseOrderReportService` 的結構。
 
 ### 步驟 4：註冊服務
+
 在 `Data/ServiceRegistration.cs` 新增：
+
 ```csharp
-services.AddScoped<ERPCore2.Services.Reports.Interfaces.I{ReportName}ReportService, {ReportName}ReportService>();
+services.AddScoped<ERPCore2.Services.Reports.Interfaces.INewReportService, NewReportService>();
 ```
 
 ### 步驟 5：建立控制器端點
-在適當的控制器新增端點，或建立新控制器繼承 `BaseReportController`
+
+在適當的控制器新增端點，或建立新控制器繼承 `BaseReportController`。
 
 ### 步驟 6：重新啟動應用程式
-- Seeder 會自動偵測新報表並建立 `ReportPrintConfiguration` 記錄
-- 在「報表列印配置」頁面 (`/reportPrintConfigurations`) 可看到新報表
-- 使用者可編輯設定印表機和紙張
 
-### 注意事項
-| 操作 | 結果 |
+Seeder 會自動在「報表列印配置」頁面建立新報表的配置記錄。
+
+---
+
+## 平台限制
+
+| 項目 | 說明 |
 |------|------|
-| 在 ReportRegistry 新增報表 | 重啟後自動建立配置 ✅ |
-| 修改 ReportRegistry 的 Name | 不影響已存在的配置（以 ReportId 比對） |
-| 刪除 ReportRegistry 的報表 | 不會自動刪除資料庫配置（需手動處理） |
-| 修改已存在配置的印表機/紙張 | 不會被 Seeder 覆蓋 ✅ |
+| 直接列印功能 | 僅支援 Windows 平台（使用 System.Drawing.Printing） |
+| 服務註冊 | 使用 `OperatingSystem.IsWindowsVersionAtLeast(6, 1)` 檢查 |
+| 屬性標記 | 使用 `[SupportedOSPlatform("windows6.1")]` 標記方法 |
 
 ---
 
-## 報表列印配置服務 API
+## 現有報表清單
 
-### 透過 ReportId 取得配置
-```csharp
-// 推薦使用 ReportId 查詢（精確匹配）
-var config = await _configService.GetByReportIdAsync("AR001");
-
-// 也支援透過 ReportName 查詢（向下相容）
-var config = await _configService.GetCompleteConfigurationAsync("應收帳款報表");
-```
-
-### 在控制器中使用
-```csharp
-[HttpGet("order/{id}")]
-public async Task<IActionResult> GetReport(
-    int id,
-    [FromQuery] string? reportType = null)  // 傳入 ReportId 如 "PO001"
-{
-    ReportPrintConfiguration? printConfig = null;
-    if (!string.IsNullOrEmpty(reportType))
-    {
-        printConfig = await _configService.GetByReportIdAsync(reportType);
-    }
-    
-    // 使用 printConfig 中的印表機/紙張設定...
-}
-```
-
----
-
-## 新增報表服務步驟（舊版，保留相容性）
-
-1. **建立介面**
-   - 在 `Services/Reports/Interfaces/` 新增 `I{ReportName}ReportService.cs`
-   
-2. **建立實作**
-   - 在 `Services/Reports/` 新增 `{ReportName}ReportService.cs`
-   - 使用 Common 元件組裝報表
-
-3. **註冊服務**
-   - 在 `Data/ServiceRegistration.cs` 新增：
-   ```csharp
-   services.AddScoped<ERPCore2.Services.Reports.Interfaces.I{ReportName}ReportService, {ReportName}ReportService>();
-   ```
-
-4. **（可選）新增向後相容性檔案**
-   - 在 `Services/Reports/` 新增 `I{ReportName}ReportService.cs` 重導向檔案
-
-5. **建立控制器端點**
-   - 在適當的控制器（`PurchaseReportController.cs` 或 `SalesReportController.cs`）新增端點
-   - 或建立新的控制器繼承 `BaseReportController`
-
----
-
-## 印表機測試列印機制
-
-### 概述
-系統提供印表機測試列印功能，用於驗證印表機配置是否正確。支援 USB（本機）印表機與網路印表機兩種連接方式。
-
-### 相關檔案
-| 檔案 | 位置 | 說明 |
-|-----|------|------|
-| `PrinterConfiguration.cs` | `Data/Entities/Systems/` | 印表機配置實體 |
-| `IPrinterTestService.cs` | `Services/Systems/` | 印表機測試服務介面 |
-| `PrinterTestService.cs` | `Services/Systems/` | 印表機測試服務實作 |
-| `PrinterConfigurationEditModalComponent.razor` | `Components/Pages/Systems/` | 印表機設定編輯組件 |
-
-### PrinterConfiguration 實體欄位
-```csharp
-public class PrinterConfiguration : BaseEntity
-{
-    public string Name { get; set; }                    // 系統印表機名稱（必須與 Windows 印表機名稱完全一致）
-    public string? IpAddress { get; set; }              // IP 位址（網路印表機用）
-    public PrinterConnectionType ConnectionType { get; set; }  // 連接方式
-    public string? UsbPort { get; set; }                // 連接埠（參考用，如 USB001、LPT1）
-    public bool IsDefault { get; set; }                 // 是否為預設印表機
-}
-```
-
-### 連接類型
-```csharp
-public enum PrinterConnectionType
-{
-    Network = 1,  // 網路連接（透過 IP 位址 + Port 9100）
-    USB = 2       // USB/本機連接（透過系統印表機名稱）
-}
-```
-
-### 列印流程架構
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        PrinterTestService.TestPrintAsync()                   │
-└────────────────────────────────┬────────────────────────────────────────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              │                                     │
-              ▼                                     ▼
-┌─────────────────────────────┐      ┌─────────────────────────────────────────┐
-│    ConnectionType.Network   │      │          ConnectionType.USB             │
-│      TestNetworkPrintAsync  │      │          TestUsbPrintAsync              │
-├─────────────────────────────┤      ├─────────────────────────────────────────┤
-│ 1. 透過 TCP Port 9100 連接  │      │ 1. 直接使用 Name（系統印表機名稱）       │
-│ 2. 依序嘗試 3 種格式:       │      │ 2. 優先使用 System.Drawing.Printing     │
-│    - PCL (HP LaserJet)      │      │    （使用 Windows 印表機驅動程式）       │
-│    - Plain Text + FF        │      │ 3. 備用: Windows API (winspool.drv)     │
-│    - ESC/POS (熱感應印表機) │      │                                         │
-└─────────────────────────────┘      └─────────────────────────────────────────┘
-```
-
-### USB/本機印表機列印方式
-
-#### 方法 1: System.Drawing.Printing（優先使用）
-使用 Windows 印表機驅動程式，自動處理格式轉換：
-```csharp
-using var printDocument = new System.Drawing.Printing.PrintDocument();
-printDocument.PrinterSettings.PrinterName = printerName;  // 直接使用系統印表機名稱
-printDocument.PrintPage += (sender, e) =>
-{
-    using var font = new Font("Courier New", 10);
-    e.Graphics.DrawString(line, font, Brushes.Black, x, y);
-};
-printDocument.Print();
-```
-
-#### 方法 2: Windows API (winspool.drv)
-直接透過 Windows 列印 API 寫入資料：
-```csharp
-// Windows API 宣告
-[DllImport("winspool.drv")]
-static extern bool OpenPrinter(string printerName, out IntPtr hPrinter, IntPtr pDefault);
-[DllImport("winspool.drv")]
-static extern bool WritePrinter(IntPtr hPrinter, byte[] data, int count, out int written);
-
-// 使用流程
-OpenPrinter(printerName, out hPrinter, IntPtr.Zero);
-StartDocPrinter(hPrinter, 1, ref docInfo);
-StartPagePrinter(hPrinter);
-WritePrinter(hPrinter, data, data.Length, out bytesWritten);
-EndPagePrinter(hPrinter);
-EndDocPrinter(hPrinter);
-ClosePrinter(hPrinter);
-```
-
-**DataType 決策邏輯：**
-| 印表機名稱包含 | DataType | 說明 |
-|---------------|----------|------|
-| PCL, EPSON, HP, Canon | `TEXT` | 讓驅動程式處理格式轉換 |
-| 其他 | `RAW` | 直接傳送原始資料（適合標籤機、熱感應印表機） |
-
-### 網路印表機列印方式
-透過 TCP Socket 直接連接印表機 Port 9100：
-```csharp
-using var client = new TcpClient();
-await client.ConnectAsync(ipAddress, 9100);  // 5秒超時
-using var stream = client.GetStream();
-await stream.WriteAsync(data);
-await stream.FlushAsync();
-```
-
-**支援的資料格式（依序嘗試）：**
-| 格式 | 適用印表機 | 說明 |
-|------|-----------|------|
-| PCL | HP LaserJet 系列 | ESC E 重置 + 字型設定 + Form Feed |
-| Plain Text + FF | 一般印表機 | UTF-8 文字 + 0x0C (Form Feed) |
-| ESC/POS | 熱感應/標籤印表機 | ESC @ 初始化 + GS V 切紙 |
-
-### 測試頁內容
-```
-=== 印表機測試頁 ===
-測試時間: 2026-02-02 14:30:00
-印表機名稱: HP LaserJet Pro
-連接方式: USB 連接
-
-如果您能看到此測試頁，表示印表機配置正確！
-
-測試內容:
-- 中文字體測試: 這是中文測試文字
-- 英文字體測試: This is English test text
-- 數字測試: 0123456789
-- 符號測試: !@#$%^&*()
-
-=== 測試頁結束 ===
-```
-
-### 連接檢查邏輯
-
-#### 網路印表機 (CheckNetworkConnectionAsync)
-```
-1. Ping IP 位址（3 秒超時）
-2. TCP 連接 Port 9100（3 秒超時）
-```
-
-#### USB/本機印表機 (CheckUsbConnection)
-```
-1. 透過 WMI (Win32_Printer) 查詢所有已安裝印表機
-2. 比對 Name 欄位是否存在於系統印表機清單
-3. 若找不到，列出可用印表機供使用者參考
-```
-
-### UI 使用流程
-```
-1. 點擊「查詢印表機」按鈕
-       ↓
-2. 從已安裝印表機列表選取（InstalledPrinterListModalComponent）
-       ↓
-3. 自動填入:
-   - Name = 系統印表機名稱（如 "HP LaserJet Pro"）
-   - UsbPort = 連接埠（參考用，如 "USB001"）
-       ↓
-4. 點擊「測試列印」按鈕
-       ↓
-5. PrinterTestService.TestPrintAsync() 直接使用 Name 列印
-```
-
-### 重要設計原則
-| 原則 | 說明 |
-|------|------|
-| **Name 欄位用途** | 必須填入 Windows 系統印表機名稱（與 PrinterSettings.PrinterName 一致） |
-| **UsbPort 欄位用途** | 僅供參考識別，不影響列印邏輯 |
-| **列印優先順序** | System.Drawing.Printing → Windows API |
-| **格式自動選擇** | 網路印表機會依序嘗試 PCL → Plain Text → ESC/POS |
+| 報表 ID | 報表名稱 | 服務類別 | 狀態 |
+|---------|---------|---------|------|
+| PO001 | 採購單 | PurchaseOrderReportService | ✅ 已實作 |
+| PR001 | 進貨單 | PurchaseReceivingReportService | ✅ 已實作 |
+| PT001 | 進貨退出單 | PurchaseReturnReportService | ✅ 已實作 |
+| SO001 | 銷貨單 | SalesOrderReportService | ✅ 已實作 |
+| SR001 | 銷貨退回單 | SalesReturnReportService | ✅ 已實作 |
+| QT001 | 報價單 | QuotationReportService | ✅ 已實作 |

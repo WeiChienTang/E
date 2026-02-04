@@ -58,42 +58,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-
-                // 解析報表格式
-                var reportFormat = format.ToLower() switch
-                {
-                    "html" => ReportFormat.Html,
-                    "pdf" => throw new NotImplementedException("PDF 格式尚未實作"),
-                    "excel" => ReportFormat.Excel,
-                    _ => ReportFormat.Html
-                };
-
-                // 生成報表
-                var reportHtml = await _purchaseOrderReportService.GeneratePurchaseOrderReportAsync(
-                    id,
-                    reportFormat,
-                    printConfig);
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 使用純文字報表
+                var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
+                var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}");
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
             {
                 return NotFound(new { message = ex.Message });
-            }
-            catch (NotImplementedException ex)
-            {
-                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -116,37 +88,10 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-
-                // 生成報表 HTML
-                var reportHtml = await _purchaseOrderReportService.GeneratePurchaseOrderReportAsync(
-                    id,
-                    ReportFormat.Html,
-                    printConfig);
-
-                // 添加自動列印的 JavaScript
-                var printScript = @"
-<script>
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    });
-</script>
-";
-                reportHtml = reportHtml.Replace("</body>", printScript + "</body>");
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 使用純文字報表，自動列印
+                var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
+                var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}", autoPrint: true);
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
             {
@@ -173,25 +118,10 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-
-                // 生成報表
-                var reportHtml = await _purchaseOrderReportService.GeneratePurchaseOrderReportAsync(
-                    id,
-                    ReportFormat.Html,
-                    printConfig);
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 使用純文字報表
+                var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
+                var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}");
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
             {
@@ -241,11 +171,9 @@ namespace ERPCore2.Controllers
                     printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(criteria.ReportType);
                 }
 
-                // 生成批次報表
-                var reportHtml = await _purchaseOrderReportService.GenerateBatchReportAsync(
-                    criteria,
-                    ReportFormat.Html,
-                    printConfig);
+                // 生成批次純文字報表並包裝成 HTML
+                var plainText = await _purchaseOrderReportService.GenerateBatchPlainTextReportAsync(criteria);
+                var reportHtml = WrapPlainTextAsHtml(plainText, "採購單批次報表");
 
                 return Content(reportHtml, "text/html; charset=utf-8");
             }
@@ -324,42 +252,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-
-                // 解析報表格式
-                var reportFormat = format.ToLower() switch
-                {
-                    "html" => ReportFormat.Html,
-                    "pdf" => throw new NotImplementedException("PDF 格式尚未實作"),
-                    "excel" => ReportFormat.Excel,
-                    _ => ReportFormat.Html
-                };
-
-                // 生成報表
-                var reportHtml = await _purchaseReceivingReportService.GeneratePurchaseReceivingReportAsync(
-                    id,
-                    reportFormat,
-                    printConfig);
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 使用純文字報表
+                var plainText = await _purchaseReceivingReportService.GeneratePlainTextReportAsync(id);
+                var html = WrapPlainTextAsHtml(plainText, $"進貨單報表 - {id}");
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
             {
                 return NotFound(new { message = ex.Message });
-            }
-            catch (NotImplementedException ex)
-            {
-                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -382,37 +282,10 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-
-                // 生成報表 HTML
-                var reportHtml = await _purchaseReceivingReportService.GeneratePurchaseReceivingReportAsync(
-                    id,
-                    ReportFormat.Html,
-                    printConfig);
-
-                // 添加自動列印的 JavaScript
-                var printScript = @"
-<script>
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    });
-</script>
-";
-                reportHtml = reportHtml.Replace("</body>", printScript + "</body>");
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 使用純文字報表，自動列印
+                var plainText = await _purchaseReceivingReportService.GeneratePlainTextReportAsync(id);
+                var html = WrapPlainTextAsHtml(plainText, $"進貨單報表 - {id}", autoPrint: true);
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
             {
@@ -439,25 +312,10 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-
-                // 生成報表
-                var reportHtml = await _purchaseReceivingReportService.GeneratePurchaseReceivingReportAsync(
-                    id,
-                    ReportFormat.Html,
-                    printConfig);
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 使用純文字報表
+                var plainText = await _purchaseReceivingReportService.GeneratePlainTextReportAsync(id);
+                var html = WrapPlainTextAsHtml(plainText, $"進貨單報表 - {id}");
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
             {
@@ -484,7 +342,6 @@ namespace ERPCore2.Controllers
         {
             try
             {
-
                 // 驗證篩選條件
                 var validation = criteria.Validate();
                 if (!validation.IsValid)
@@ -492,26 +349,9 @@ namespace ERPCore2.Controllers
                     return BadRequest(new { message = "篩選條件驗證失敗", errors = validation.Errors });
                 }
 
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-                else if (!string.IsNullOrEmpty(criteria.ReportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(criteria.ReportType);
-                }
-
-                // 生成批次報表
-                var reportHtml = await _purchaseReceivingReportService.GenerateBatchReportAsync(
-                    criteria,
-                    ReportFormat.Html,
-                    printConfig);
+                // 生成批次純文字報表並包裝成 HTML
+                var plainText = await _purchaseReceivingReportService.GenerateBatchPlainTextReportAsync(criteria);
+                var reportHtml = WrapPlainTextAsHtml(plainText, "進貨單批次報表");
 
                 return Content(reportHtml, "text/html; charset=utf-8");
             }
@@ -600,6 +440,41 @@ namespace ERPCore2.Controllers
             {
                 return StatusCode(500, new { message = "批次列印條碼時發生錯誤", detail = ex.Message });
             }
+        }
+
+        #endregion
+
+        #region 純文字報表輔助方法
+
+        /// <summary>
+        /// 將純文字包裝成 HTML 格式（用於瀏覽器預覽）
+        /// </summary>
+        private static string WrapPlainTextAsHtml(string plainText, string title, bool autoPrint = false)
+        {
+            var escapedText = System.Net.WebUtility.HtmlEncode(plainText);
+            var autoPrintScript = autoPrint 
+                ? @"
+    window.addEventListener('load', function() {
+        setTimeout(function() { window.print(); }, 500);
+    });" 
+                : "";
+            
+            return $@"<!DOCTYPE html>
+<html lang='zh-TW'>
+<head>
+    <meta charset='UTF-8'>
+    <title>{title}</title>
+    <style>
+        body {{ font-family: 'Courier New', Consolas, monospace; font-size: 12px; margin: 20px; }}
+        pre {{ white-space: pre-wrap; margin: 0; }}
+        @media print {{ body {{ margin: 0; }} }}
+    </style>
+</head>
+<body>
+<pre>{escapedText}</pre>
+<script>{autoPrintScript}</script>
+</body>
+</html>";
         }
 
         #endregion

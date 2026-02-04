@@ -28,7 +28,7 @@ namespace ERPCore2.Data
                 .ConfigureWarnings(warnings => 
                     warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
             
-            // ⭐ 加入記憶體快取服務 (權限快取、參考資料快取使用)
+            //  加入記憶體快取服務 (權限快取、參考資料快取使用)
             services.AddMemoryCache();
         }
 
@@ -178,6 +178,13 @@ namespace ERPCore2.Data
             
             // 報表服務 - 介面位於 ERPCore2.Services.Reports.Interfaces
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportService, ReportService>();
+            // 報表列印服務（伺服器端直接列印）- 僅 Windows 平台
+            if (OperatingSystem.IsWindowsVersionAtLeast(6, 1))
+            {
+                services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportPrintService, ERPCore2.Services.Reports.ReportPrintService>();
+                // 純文字列印服務（共用的純文字報表列印功能）
+                services.AddScoped<IPlainTextPrintService, PlainTextPrintService>();
+            }
             // 使用採購單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService, PurchaseOrderReportService>();
             // 進貨單（入庫單）報表服務

@@ -229,10 +229,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     Name = "中一刀",
                     Width = 26.7m,      // 267mm = 26.7cm
                     Height = 38.1m,     // 381mm = 38.1cm (15英吋)
-                    TopMargin = 1.0m,
-                    BottomMargin = 1.0m,
-                    LeftMargin = 1.0m,
-                    RightMargin = 1.0m,
+                    TopMargin = 0m,
+                    BottomMargin = 0m,
+                    LeftMargin = 0m,
+                    RightMargin = 0m,
                     Remarks = "台灣常用中一刀紙張，適合報表列印",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now

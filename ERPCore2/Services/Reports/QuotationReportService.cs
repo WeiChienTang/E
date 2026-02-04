@@ -1,15 +1,18 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
+using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Services;
-using ERPCore2.Services.Reports.Common;
+using Microsoft.Extensions.Logging;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 報價單報表服務實作 - A4 格式報價單
-    /// 格式包含：標題區、商品明細區、金額區、說明區、簽章區
+    /// 報價單報表服務實作 - 純文字版本
+    /// 設計理念：統一使用純文字格式，支援直接列印和預覽
     /// </summary>
     public class QuotationReportService : IQuotationReportService
     {
@@ -20,6 +23,10 @@ namespace ERPCore2.Services.Reports
         private readonly IUnitService _unitService;
         private readonly ICompanyService _companyService;
         private readonly ISystemParameterService _systemParameterService;
+        private readonly IReportPrintConfigurationService _reportPrintConfigService;
+        private readonly IPrinterConfigurationService _printerConfigService;
+        private readonly IPlainTextPrintService _plainTextPrintService;
+        private readonly ILogger<QuotationReportService>? _logger;
 
         public QuotationReportService(
             IQuotationService quotationService,
@@ -28,7 +35,11 @@ namespace ERPCore2.Services.Reports
             IProductService productService,
             IUnitService unitService,
             ICompanyService companyService,
-            ISystemParameterService systemParameterService)
+            ISystemParameterService systemParameterService,
+            IReportPrintConfigurationService reportPrintConfigService,
+            IPrinterConfigurationService printerConfigService,
+            IPlainTextPrintService plainTextPrintService,
+            ILogger<QuotationReportService>? logger = null)
         {
             _quotationService = quotationService;
             _customerService = customerService;
@@ -37,652 +48,57 @@ namespace ERPCore2.Services.Reports
             _unitService = unitService;
             _companyService = companyService;
             _systemParameterService = systemParameterService;
+            _reportPrintConfigService = reportPrintConfigService;
+            _printerConfigService = printerConfigService;
+            _plainTextPrintService = plainTextPrintService;
+            _logger = logger;
         }
 
-        public async Task<string> GenerateQuotationReportAsync(int quotationId, ReportFormat format = ReportFormat.Html)
-        {
-            return await GenerateQuotationReportAsync(quotationId, format, null);
-        }
+        #region 純文字報表生成
 
-        public async Task<string> GenerateQuotationReportAsync(
-            int quotationId,
-            ReportFormat format,
-            ReportPrintConfiguration? reportPrintConfig)
+        /// <summary>
+        /// 生成純文字格式的報價單報表
+        /// 直接生成格式化的純文字，適合直接列印和預覽
+        /// </summary>
+        public async Task<string> GeneratePlainTextReportAsync(int quotationId)
         {
-            try
+            // 載入資料
+            var quotation = await _quotationService.GetWithDetailsAsync(quotationId);
+            if (quotation == null)
             {
-                // 載入資料
-                var quotation = await _quotationService.GetWithDetailsAsync(quotationId);
-                if (quotation == null)
-                {
-                    throw new ArgumentException($"找不到報價單 ID: {quotationId}");
-                }
-
-                var quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
-
-                Customer? customer = null;
-                if (quotation.CustomerId > 0)
-                {
-                    customer = await _customerService.GetByIdAsync(quotation.CustomerId);
-                }
-
-                Employee? employee = null;
-                if (quotation.EmployeeId.HasValue && quotation.EmployeeId.Value > 0)
-                {
-                    employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
-                }
-
-                // 取得主要公司
-                Company? company = await _companyService.GetPrimaryCompanyAsync();
-
-                var allProducts = await _productService.GetAllAsync();
-                var productDict = allProducts.ToDictionary(p => p.Id, p => p);
-
-                var allUnits = await _unitService.GetAllAsync();
-                var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
-
-                // 根據格式生成報表
-                return format switch
-                {
-                    ReportFormat.Html => GenerateHtmlReport(quotation, quotationDetails, customer, employee, company,
-                        productDict, unitDict),
-                    ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
-                    _ => throw new ArgumentException($"不支援的報表格式: {format}")
-                };
+                throw new ArgumentException($"找不到報價單 ID: {quotationId}");
             }
-            catch (Exception ex)
+
+            var quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+
+            Customer? customer = null;
+            if (quotation.CustomerId > 0)
             {
-                throw new InvalidOperationException($"生成報價單報表時發生錯誤: {ex.Message}", ex);
+                customer = await _customerService.GetByIdAsync(quotation.CustomerId);
             }
-        }
 
-        private string GenerateHtmlReport(
-            Quotation quotation,
-            List<QuotationDetail> quotationDetails,
-            Customer? customer,
-            Employee? employee,
-            Company? company,
-            Dictionary<int, Product> productDict,
-            Dictionary<int, Unit> unitDict)
-        {
-            var html = new StringBuilder();
-
-            // HTML 文件開始
-            html.AppendLine("<!DOCTYPE html>");
-            html.AppendLine("<html lang='zh-TW'>");
-            html.AppendLine("<head>");
-            html.AppendLine("    <meta charset='UTF-8'>");
-            html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>報價單 - {quotation.Code}</title>");
-            html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
-            html.AppendLine("    <style>");
-            html.AppendLine(GetQuotationCustomStyles());
-            html.AppendLine("    </style>");
-            html.AppendLine("</head>");
-            html.AppendLine("<body>");
-
-            // A4 報價單容器
-            html.AppendLine("    <div class='print-container quotation-container'>");
-            html.AppendLine("        <div class='print-a4-layout'>");
-
-            // 1. 標題區
-            GenerateTitleSection(html, company, quotation, customer, employee);
-
-            // 2. 商品明細區
-            GenerateProductDetailSection(html, quotationDetails, productDict, unitDict);
-
-            // 3. 金額區 + 說明區（橫向排列）
-            GenerateAmountAndDescriptionSection(html, quotation);
-
-            // 4. 簽章區
-            GenerateSignatureSection(html);
-
-            html.AppendLine("        </div>");
-            html.AppendLine("    </div>");
-
-            // 列印腳本
-            html.AppendLine(GetPrintScript());
-
-            html.AppendLine("</body>");
-            html.AppendLine("</html>");
-
-            return html.ToString();
-        }
-
-        /// <summary>
-        /// 1. 標題區 - 包含公司資訊和客戶資訊
-        /// </summary>
-        private void GenerateTitleSection(
-            StringBuilder html,
-            Company? company,
-            Quotation quotation,
-            Customer? customer,
-            Employee? employee)
-        {
-            html.AppendLine("            <!-- 標題區 -->");
-            html.AppendLine("            <div class='quotation-title-section'>");
-            
-            // 第一行：Logo（靠左） + 公司名稱和報價單標題（絕對置中）
-            html.AppendLine("                <div class='quotation-header-row-1'>");
-            
-            // 從 company-logos 資料夾中取得唯一的圖片
-            var logoPath = "/Resources/CompanyLOGO.png"; // 預設
-            var logoDirectory = Path.Combine("wwwroot", "uploads", "company-logos");
-            if (Directory.Exists(logoDirectory))
+            Employee? employee = null;
+            if (quotation.EmployeeId.HasValue && quotation.EmployeeId.Value > 0)
             {
-                var logoFiles = Directory.GetFiles(logoDirectory);
-                if (logoFiles.Length > 0)
-                {
-                    var logoFileName = Path.GetFileName(logoFiles[0]);
-                    logoPath = $"/uploads/company-logos/{logoFileName}";
-                }
-            }
-            
-            html.AppendLine($"                    <img src='{logoPath}' alt='公司Logo' class='company-logo' />");
-            html.AppendLine("                    <div class='quotation-title-wrapper'>");
-            html.AppendLine("                        <div class='quotation-company-name'>");
-            html.AppendLine($"                            {company?.CompanyName ?? "公司名稱"}");
-            html.AppendLine("                        </div>");
-            html.AppendLine("                        <div class='quotation-doc-title'>");
-            html.AppendLine("                            報價單");
-            html.AppendLine("                        </div>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='quotation-date-info'>");
-            html.AppendLine($"                        <div>報價日期：{quotation.QuotationDate:yyyy/MM/dd}</div>");
-            html.AppendLine($"                        <div>報價單號：{quotation.Code}</div>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                </div>");
-            
-            // 聯絡資訊（一行顯示完成）
-            html.AppendLine("                <div class='quotation-header-row-2'>");
-            html.AppendLine($"                    電話：{company?.Phone ?? ""}　傳真：{company?.Fax ?? ""}　E-mail：{company?.Email ?? ""}　地址：{company?.Address ?? ""}");
-            html.AppendLine("                </div>");
-            
-            // 報價單資訊（無框線設計）
-            html.AppendLine("                <div class='quotation-doc-info'>");
-            html.AppendLine("                    <div class='quotation-info-row'>");
-            html.AppendLine($"                        <span class='info-label'>客　　戶：</span><span class='info-value'>{customer?.CompanyName ?? ""}</span>");
-            html.AppendLine($"                        <span class='info-label'>統一編號：</span><span class='info-value'>{customer?.TaxNumber ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='quotation-info-row'>");
-            html.AppendLine($"                        <span class='info-label'>聯 絡 人：</span><span class='info-value'>{customer?.ContactPerson ?? ""}</span>");
-            html.AppendLine($"                        <span class='info-label'>信　　箱：</span><span class='info-value'>{customer?.Email ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='quotation-info-row'>");
-            html.AppendLine($"                        <span class='info-label'>連絡電話：</span><span class='info-value'>{customer?.ContactPhone ?? ""} {customer?.MobilePhone ?? ""}</span>");
-            html.AppendLine($"                        <span class='info-label'>傳　　真：</span><span class='info-value'>{customer?.Fax ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='quotation-info-row'>");
-            html.AppendLine($"                        <span class='info-label'>聯絡地址：</span><span class='info-value info-value-full'>{customer?.ContactAddress ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                    <div class='quotation-info-row'>");
-            html.AppendLine($"                        <span class='info-label'>運貨地點：</span><span class='info-value'>{customer?.ShippingAddress ?? ""}</span>");
-            html.AppendLine($"                        <span class='info-label'>工程名稱：</span><span class='info-value'>{quotation?.ProjectName ?? ""}</span>");
-            html.AppendLine("                    </div>");
-            html.AppendLine("                </div>");
-            
-            html.AppendLine("            </div>");
-        }
-
-        /// <summary>
-        /// 2. 商品明細區 - 帶黃色標題列的商品明細表格
-        /// </summary>
-        private void GenerateProductDetailSection(
-            StringBuilder html,
-            List<QuotationDetail> quotationDetails,
-            Dictionary<int, Product> productDict,
-            Dictionary<int, Unit> unitDict)
-        {
-            html.AppendLine("            <!-- 商品明細區 -->");
-            html.AppendLine("            <div class='quotation-product-section'>");
-            html.AppendLine("                <table class='quotation-product-table'>");
-            
-            // 明細表頭（黃色背景，參考 Excel）
-            html.AppendLine("                    <thead>");
-            html.AppendLine("                        <tr class='yellow-header'>");
-            html.AppendLine("                            <th width='50px'>項次</th>");
-            html.AppendLine("                            <th>項目名稱/規格</th>");
-            html.AppendLine("                            <th width='50px'>單位</th>");
-            html.AppendLine("                            <th width='70px'>數量</th>");
-            html.AppendLine("                            <th width='90px'>單價(元)</th>");
-            html.AppendLine("                            <th width='90px'>總價(元)</th>");
-            html.AppendLine("                            <th width='150px'>備註</th>");
-            html.AppendLine("                        </tr>");
-            html.AppendLine("                    </thead>");
-            
-            // 明細內容
-            html.AppendLine("                    <tbody>");        
-            
-            // 商品明細列
-            if (quotationDetails.Any())
-            {
-                int rowNum = 1;
-                foreach (var detail in quotationDetails)
-                {
-                    var product = productDict.GetValueOrDefault(detail.ProductId);
-                    var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
-                    
-                    // 組合商品名稱與規格說明
-                    // 優先使用明細的規格說明，若無則使用商品主檔的規格說明
-                    var productName = product?.Name ?? "";
-                    var specification = detail.Specification ?? product?.Specification ?? "";
-                    var displayName = string.IsNullOrEmpty(specification) 
-                        ? productName 
-                        : $"{productName}<br/><span class='specification-text'>{specification}</span>";
-                    
-                    // 主商品行
-                    html.AppendLine("                        <tr>");
-                    html.AppendLine($"                            <td class='text-center'>{rowNum}</td>");
-                    html.AppendLine($"                            <td class='text-left'>{displayName}</td>");
-                    html.AppendLine($"                            <td class='text-center'>{unit?.Name ?? ""}</td>");
-                    html.AppendLine($"                            <td class='text-right'>{detail.Quantity:N2}</td>");
-                    html.AppendLine($"                            <td class='text-right'>{detail.UnitPrice:N2}</td>");
-                    html.AppendLine($"                            <td class='text-right'>{detail.SubtotalAmount:N2}</td>");
-                    html.AppendLine($"                            <td class='text-left'>{detail.Remarks ?? ""}</td>");
-                    html.AppendLine("                        </tr>");
-                    
-                    // BOM 組成明細行（根據判斷邏輯決定是否顯示）
-                    if (product != null && ShouldShowBom(detail, product))
-                    {
-                        GenerateBomCompositionRows(html, detail, unitDict);
-                    }
-                    
-                    rowNum++;
-                }
-            }
-            else
-            {
-                // 無明細時顯示空行
-                html.AppendLine("                        <tr>");
-                html.AppendLine("                            <td colspan='7' class='text-center' style='padding: 30px; color: #999;'>尚無報價商品</td>");
-                html.AppendLine("                        </tr>");
-            }
-            
-            html.AppendLine("                    </tbody>");
-            html.AppendLine("                </table>");            
-            html.AppendLine("            </div>");
-        }
-
-        /// <summary>
-        /// 判斷是否應該在報價單列印時顯示 BOM 組成
-        /// 新邏輯：檢查是否有任何組件商品的 ShowBomOnPrint = true
-        /// </summary>
-        /// <param name="detail">報價單明細</param>
-        /// <param name="product">商品（保留參數以維持介面一致性）</param>
-        /// <returns>是否顯示 BOM</returns>
-        private bool ShouldShowBom(QuotationDetail detail, Product product)
-        {
-            // 1. 檢查是否有 BOM 組成資料
-            if (detail.CompositionDetails == null || !detail.CompositionDetails.Any())
-                return false;
-            
-            // 2. 檢查是否有任何組件商品設定為「在 BOM 中顯示」
-            // 只要有一個組件的 ShowBomOnPrint = true，就顯示 BOM 區塊
-            return detail.CompositionDetails.Any(cd => 
-                cd.ComponentProduct?.ShowBomOnPrint == true);
-        }
-
-        /// <summary>
-        /// 生成 BOM 組成明細行
-        /// 只輸出 ComponentProduct.ShowBomOnPrint = true 的組件
-        /// 改為橫向顯示：組件A、組件B、組件C
-        /// </summary>
-        private void GenerateBomCompositionRows(
-            StringBuilder html, 
-            QuotationDetail detail, 
-            Dictionary<int, Unit> unitDict)
-        {
-            // 只取出 ShowBomOnPrint = true 的組件
-            var compositions = detail.CompositionDetails?
-                .Where(cd => cd.ComponentProduct?.ShowBomOnPrint == true)
-                .ToList() ?? new List<QuotationCompositionDetail>();
-            if (!compositions.Any()) return;
-            
-            // 收集所有組件名稱，用頓號串接
-            var componentNames = compositions
-                .Select(comp => comp.ComponentProduct?.Name ?? "")
-                .Where(name => !string.IsNullOrEmpty(name));
-            
-            var bomText = string.Join("、", componentNames);
-            
-            // 只產生一行，橫向顯示所有組件
-            html.AppendLine("                        <tr class='bom-composition-row'>");
-            html.AppendLine($"                            <td></td>"); // 項次欄空白
-            html.AppendLine($"                            <td colspan='6' class='text-left bom-inline-list'>{bomText}</td>");
-            html.AppendLine("                        </tr>");
-        }
-
-        /// <summary>
-        /// 3. 金額區（合計、稅額、總計金額、訂金）
-        /// </summary>
-        private void GenerateAmountAndDescriptionSection(
-            StringBuilder html,
-            Quotation quotation)
-        {
-            html.AppendLine("            <!-- 金額區 -->");
-            html.AppendLine("            <div class='quotation-bottom-section'>");
-            html.AppendLine("                <table class='quotation-amount-table'>");
-            html.AppendLine("                    <tr>");
-            html.AppendLine("                        <td class='amount-label'>合　　　　計</td>");
-            html.AppendLine("                        <td class='amount-value'></td>");
-            html.AppendLine("                    </tr>");
-            html.AppendLine("                    <tr>");
-            html.AppendLine("                        <td class='amount-label'>稅　額　5　%</td>");
-            html.AppendLine("                        <td class='amount-value'></td>");
-            html.AppendLine("                    </tr>");
-            html.AppendLine("                    <tr class='total-row'>");
-            html.AppendLine("                        <td class='amount-label'>總 計 金 額</td>");
-            html.AppendLine($"                        <td class='amount-value'>NT$ {quotation.TotalAmount:N0}</td>");
-            html.AppendLine("                    </tr>");
-            html.AppendLine("                    <tr>");
-            html.AppendLine("                        <td class='amount-label'>訂　　　　金</td>");
-            html.AppendLine("                        <td class='amount-value'></td>");
-            html.AppendLine("                    </tr>");
-            html.AppendLine("                </table>");
-            html.AppendLine("            </div>");
-        }
-
-        /// <summary>
-        /// 4. 簽章區 - 買方簽章、經辦業務、驗收
-        /// </summary>
-        private void GenerateSignatureSection(StringBuilder html)
-        {
-            html.AppendLine("            <!-- 簽章區 -->");
-            html.AppendLine("            <div class='quotation-signature-section'>");
-            html.AppendLine("                <table class='quotation-signature-table'>");
-            html.AppendLine("                    <tr>");
-            html.AppendLine("                        <td width='33%' class='signature-cell'>");
-            html.AppendLine("                            <div class='signature-label'>買方簽章：</div>");
-            html.AppendLine("                            <div class='signature-space'></div>");
-            html.AppendLine("                        </td>");
-            html.AppendLine("                        <td width='34%' class='signature-cell'>");
-            html.AppendLine("                            <div class='signature-label'>經辦業務：</div>");
-            html.AppendLine("                            <div class='signature-space'></div>");
-            html.AppendLine("                        </td>");
-            html.AppendLine("                        <td width='33%' class='signature-cell'>");
-            html.AppendLine("                            <div class='signature-label'>驗　　收：</div>");
-            html.AppendLine("                            <div class='signature-space'></div>");
-            html.AppendLine("                        </td>");
-            html.AppendLine("                    </tr>");
-            html.AppendLine("                </table>");
-            html.AppendLine("            </div>");
-        }
-
-        /// <summary>
-        /// 報價單專用樣式（符合 Excel 格式設計）
-        /// </summary>
-        private string GetQuotationCustomStyles()
-        {
-            return @"
-        /* 報價單專用容器 */
-        .quotation-container {
-            font-family: '標楷體', 'DFKai-SB', 'BiauKai', 'Kaiti TC', serif;
-        }
-
-        .print-a4-layout {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 5mm 5mm 5mm 5mm; /* 調整為：上5mm 右5mm 下5mm 左5mm */
-            background: white;
-            box-sizing: border-box;
-        }
-
-        /* 1. 標題區 */
-        .quotation-title-section {
-            margin-bottom: 0;
-            position: relative;
-        }
-
-        /* 第一行：Logo（靠左） + 公司名稱和報價單（置中） + 報價資訊（靠右） */
-        .quotation-header-row-1 {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            min-height: 90px;
-            gap: 10px; /* 添加間距 */
-        }
-
-        .company-logo {
-            height: auto;
-            width: auto;
-            max-height: 80px;
-            max-width: 100px;
-            object-fit: contain;
-            flex-shrink: 0;
-            margin-right: auto; /* Logo 靠左 */
-        }
-
-        .quotation-title-wrapper {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-        }
-
-        .quotation-date-info {
-            text-align: right;
-            font-size: 11pt;
-            line-height: 1.6;
-            white-space: nowrap;
-            flex-shrink: 0;
-            margin-left: auto; /* 報價資訊靠右 */
-        }
-
-        .quotation-company-name {
-            font-size: 24pt;
-            font-weight: bold;
-            text-align: center;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-        }
-
-        .quotation-doc-title {
-            font-size: 20pt;
-            font-weight: bold;
-            text-align: center;
-            letter-spacing: 8px;
-        }
-
-        /* 第二行：聯絡資訊（一行） */
-        .quotation-header-row-2 {
-            text-align: center;
-            font-size: 10pt;
-            margin-bottom: 1px;
-            line-height: 1.5;
-        }
-
-        .quotation-doc-info {
-            margin-bottom: 5px;
-            padding: 3px 0;
-        }
-
-        .quotation-info-row {
-            display: flex;
-            align-items: baseline;
-            padding: 1px 0;
-            font-size: 11pt;
-            line-height: 1.3;
-        }
-
-        .info-label {
-            font-weight: bold;
-            margin-right: 4px;
-            white-space: nowrap;
-        }
-
-        .info-value {
-            flex: 1;
-            margin-right: 20px;
-        }
-
-        .info-value-full {
-            flex: 3;
-            margin-right: 0;
-        }
-
-        .highlight-field {
-            background-color: #ffeb9c;
-            font-weight: bold;
-        }
-
-        /* 2. 商品明細區 */
-        .quotation-product-section {
-            margin-bottom: 0;
-        }
-
-        .quotation-product-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11pt;
-            margin-top: -1px; /* 避免與上方表格邊框重疊 */
-        }
-
-        .quotation-product-table th,
-        .quotation-product-table td {
-            border: 1px solid #000;
-            padding: 1px 8px;
-        }
-
-        .quotation-product-table thead tr {
-            background-color: #ffc000;
-            font-weight: bold;
-        }
-
-        .yellow-header th {
-            background-color: #ffc000 !important;
-        }
-
-        .yellow-row td {
-            background-color: #ffeb9c;
-        }
-
-        /* BOM 組成明細行樣式 - 橫向顯示 */
-        .bom-composition-row td {
-            background-color: #f8f9fa;
-            font-size: 10pt;
-            color: #555;
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
-        }
-
-        .bom-inline-list {
-            padding-left: 20px !important;
-            font-style: italic;
-        }
-
-        /* 規格說明樣式 */
-        .specification-text {
-            font-size: 9pt;
-            color: #666;
-            font-style: normal;
-        }
-
-        .quotation-note {
-            text-align: center;
-            margin-top: 5px;
-            font-size: 10pt;
-            font-weight: bold;
-        }
-
-        /* 3. 金額區 */
-        .quotation-bottom-section {
-            margin-bottom: 0;
-        }
-
-        .quotation-amount-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11pt;
-            margin-top: -1px; /* 避免與上方表格邊框重疊 */
-        }
-
-        .quotation-amount-table td {
-            border: none;
-            padding: 1px 8px;
-        }
-
-        .amount-label {
-            font-weight: bold;
-            text-align: center;
-            width: 30%;
-        }
-
-        .amount-value {
-            text-align: right;
-            width: 70%;
-        }
-
-        .total-row .amount-label,
-        .total-row .amount-value {
-            background-color: #ffeb9c;
-            font-weight: bold;
-        }
-
-        /* 4. 簽章區 */
-        .quotation-signature-section {
-            margin-top: 0;
-        }
-
-        .quotation-signature-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11pt;
-            margin-top: -1px; /* 避免與上方表格邊框重疊 */
-        }
-
-        .quotation-signature-table td {
-            border: none;
-            padding: 1px 8px;
-            text-align: center;
-            height: 60px;
-            vertical-align: top;
-        }
-
-        .signature-label {
-            font-weight: bold;
-            text-align: left;
-            margin-bottom: 5px;
-        }
-
-        .signature-space {
-            height: 40px;
-        }
-
-        /* 通用樣式 */
-        .text-left { text-align: left; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-
-        /* 列印樣式 */
-        @media print {
-            .print-a4-layout {
-                margin: 0;
-                padding: 5mm 8mm; /* 列印時使用較小的邊距 */
-                box-shadow: none;
+                employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
             }
 
-            @page {
-                size: A4 portrait;
-                margin: 0; /* 瀏覽器邊距設為0，由 padding 控制內容邊距 */
-            }
+            Company? company = await _companyService.GetPrimaryCompanyAsync();
 
-            body {
-                margin: 0;
-                padding: 0;
-            }
-        }
-";
+            var allProducts = await _productService.GetAllAsync();
+            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+
+            var allUnits = await _unitService.GetAllAsync();
+            var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
+
+            // 生成純文字報表
+            return GeneratePlainTextContent(quotation, quotationDetails, customer, employee, company, productDict, unitDict);
         }
 
         /// <summary>
-        /// 批次生成報價單報表
+        /// 批次生成純文字報表（支援多條件篩選）
         /// </summary>
-        public async Task<string> GenerateBatchReportAsync(
-            BatchPrintCriteria criteria,
-            ReportFormat format = ReportFormat.Html,
-            ReportPrintConfiguration? reportPrintConfig = null)
+        public async Task<string> GenerateBatchPlainTextReportAsync(BatchPrintCriteria criteria)
         {
             try
             {
@@ -698,17 +114,51 @@ namespace ERPCore2.Services.Reports
 
                 if (quotations == null || !quotations.Any())
                 {
-                    // 返回空結果提示頁面
-                    return GenerateEmptyResultPage(criteria);
+                    return $"無符合條件的報價單\n篩選條件：{criteria.GetSummary()}";
                 }
 
-                // 根據格式生成報表
-                return format switch
+                // 載入共用資料
+                var allProducts = await _productService.GetAllAsync();
+                var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+
+                var allUnits = await _unitService.GetAllAsync();
+                var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
+
+                var sb = new StringBuilder();
+                var pageBreak = "\f"; // Form Feed 字元，用於分頁
+
+                for (int i = 0; i < quotations.Count; i++)
                 {
-                    ReportFormat.Html => await GenerateBatchHtmlReportAsync(quotations, reportPrintConfig, criteria),
-                    ReportFormat.Excel => throw new NotImplementedException("Excel 格式尚未實作"),
-                    _ => throw new ArgumentException($"不支援的報表格式: {format}")
-                };
+                    var quotation = quotations[i];
+
+                    // 載入該報價單的相關資料
+                    var quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+                    
+                    Customer? customer = null;
+                    if (quotation.CustomerId > 0)
+                    {
+                        customer = await _customerService.GetByIdAsync(quotation.CustomerId);
+                    }
+
+                    Employee? employee = null;
+                    if (quotation.EmployeeId.HasValue && quotation.EmployeeId.Value > 0)
+                    {
+                        employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
+                    }
+
+                    Company? company = await _companyService.GetPrimaryCompanyAsync();
+
+                    // 生成該報價單的純文字內容
+                    sb.Append(GeneratePlainTextContent(quotation, quotationDetails, customer, employee, company, productDict, unitDict));
+
+                    // 加入分頁符號（最後一張不需要）
+                    if (i < quotations.Count - 1)
+                    {
+                        sb.Append(pageBreak);
+                    }
+                }
+
+                return sb.ToString();
             }
             catch (Exception ex)
             {
@@ -716,116 +166,272 @@ namespace ERPCore2.Services.Reports
             }
         }
 
-        private string GenerateEmptyResultPage(BatchPrintCriteria criteria)
+        /// <summary>
+        /// 生成純文字內容（固定寬度格式，適合等寬字型列印）
+        /// </summary>
+        private static string GeneratePlainTextContent(
+            Quotation quotation,
+            List<QuotationDetail> quotationDetails,
+            Customer? customer,
+            Employee? employee,
+            Company? company,
+            Dictionary<int, Product> productDict,
+            Dictionary<int, Unit> unitDict)
         {
-            return $@"
-<!DOCTYPE html>
-<html lang='zh-TW'>
-<head>
-    <meta charset='UTF-8'>
-    <title>批次列印 - 無符合條件的資料</title>
-    <link href='/css/print-styles.css' rel='stylesheet' />
-</head>
-<body>
-    <div style='text-align: center; padding: 50px;'>
-        <h1>無符合條件的報價單</h1>
-        <p>篩選條件：{criteria.GetSummary()}</p>
-        <p>請調整篩選條件後重新查詢。</p>
-    </div>
-</body>
-</html>";
-        }
+            var sb = new StringBuilder();
+            const int lineWidth = PlainTextFormatter.DefaultLineWidth;
 
-        private async Task<string> GenerateBatchHtmlReportAsync(
-            List<Quotation> quotations,
-            ReportPrintConfiguration? reportPrintConfig,
-            BatchPrintCriteria criteria)
-        {
-            var html = new StringBuilder();
+            // === 標題區 ===
+            sb.Append(PlainTextFormatter.BuildTitleSection(
+                company?.CompanyName ?? "公司名稱",
+                "報 價 單",
+                lineWidth));
 
-            // HTML 文件開始
-            html.AppendLine("<!DOCTYPE html>");
-            html.AppendLine("<html lang='zh-TW'>");
-            html.AppendLine("<head>");
-            html.AppendLine("    <meta charset='UTF-8'>");
-            html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            html.AppendLine($"    <title>報價單批次列印 ({quotations.Count} 筆)</title>");
-            html.AppendLine("    <link href='/css/print-styles.css' rel='stylesheet' />");
-            html.AppendLine("    <style>");
-            html.AppendLine(GetQuotationCustomStyles());
-            html.AppendLine("    </style>");
-            html.AppendLine("</head>");
-            html.AppendLine("<body>");
+            // === 公司聯絡資訊 ===
+            sb.AppendLine($"電話：{company?.Phone ?? ""}  傳真：{company?.Fax ?? ""}");
+            sb.AppendLine($"地址：{company?.Address ?? ""}");
+            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-            // 載入共用資料
-            var allProducts = await _productService.GetAllAsync();
-            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
-
-            var allUnits = await _unitService.GetAllAsync();
-            var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
-
-            // 逐一生成每張報價單
-            for (int i = 0; i < quotations.Count; i++)
+            // === 基本資訊區 ===
+            sb.AppendLine($"報價單號：{quotation.Code,-20} 報價日期：{PlainTextFormatter.FormatDate(quotation.QuotationDate)}");
+            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
+            sb.AppendLine($"客戶名稱：{customer?.CompanyName ?? ""}");
+            sb.AppendLine($"聯 絡 人：{customer?.ContactPerson ?? "",-20} 統一編號：{customer?.TaxNumber ?? ""}");
+            sb.AppendLine($"連絡電話：{customer?.ContactPhone ?? ""}");
+            sb.AppendLine($"聯絡地址：{customer?.ContactAddress ?? ""}");
+            if (!string.IsNullOrWhiteSpace(quotation.ProjectName))
             {
-                var quotation = quotations[i];
-                var quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+                sb.AppendLine($"工程名稱：{quotation.ProjectName}");
+            }
+            sb.AppendLine($"業 務 員：{employee?.Name ?? ""}");
+            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-                Customer? customer = null;
-                if (quotation.CustomerId > 0)
+            // === 明細表頭 ===
+            // 項次(4) | 品名/規格(32) | 單位(6) | 數量(8) | 單價(10) | 總價(12) | 備註(8)
+            sb.AppendLine(FormatTableRow("項次", "品名/規格", "單位", "數量", "單價", "總價", "備註"));
+            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
+
+            // === 明細內容 ===
+            int rowNum = 1;
+            foreach (var detail in quotationDetails)
+            {
+                var product = productDict.GetValueOrDefault(detail.ProductId);
+                var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
+                
+                // 組合商品名稱與規格說明
+                var productName = product?.Name ?? "";
+                var specification = detail.Specification ?? product?.Specification ?? "";
+                var displayName = string.IsNullOrEmpty(specification) 
+                    ? productName 
+                    : $"{productName}";
+                displayName = PlainTextFormatter.TruncateText(displayName, 30);
+                var remarks = PlainTextFormatter.TruncateText(detail.Remarks ?? "", 6);
+
+                sb.AppendLine(FormatTableRow(
+                    rowNum.ToString(),
+                    displayName,
+                    unit?.Name ?? "",
+                    PlainTextFormatter.FormatQuantity(detail.Quantity),
+                    PlainTextFormatter.FormatAmountWithDecimals(detail.UnitPrice),
+                    PlainTextFormatter.FormatAmountWithDecimals(detail.SubtotalAmount),
+                    remarks
+                ));
+
+                // 如果有規格說明，另起一行顯示
+                if (!string.IsNullOrEmpty(specification))
                 {
-                    customer = await _customerService.GetByIdAsync(quotation.CustomerId);
+                    var specText = PlainTextFormatter.TruncateText($"  規格：{specification}", 76);
+                    sb.AppendLine($"    {specText}");
                 }
 
-                Employee? employee = null;
-                if (quotation.EmployeeId.HasValue && quotation.EmployeeId.Value > 0)
+                // BOM 組成明細（如果需要顯示）
+                if (product != null && ShouldShowBom(detail, product))
                 {
-                    employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
+                    var bomText = GetBomText(detail);
+                    if (!string.IsNullOrEmpty(bomText))
+                    {
+                        sb.AppendLine($"    組成：{bomText}");
+                    }
                 }
 
-                Company? company = await _companyService.GetPrimaryCompanyAsync();
-
-                // 生成單一報價單內容
-                html.AppendLine("    <div class='print-container quotation-container'>");
-                html.AppendLine("        <div class='print-a4-layout'>");
-                GenerateTitleSection(html, company, quotation, customer, employee);
-                GenerateProductDetailSection(html, quotationDetails, productDict, unitDict);
-                GenerateAmountAndDescriptionSection(html, quotation);
-                GenerateSignatureSection(html);
-                html.AppendLine("        </div>");
-                html.AppendLine("    </div>");
+                rowNum++;
             }
 
-            // 列印腳本
-            html.AppendLine(GetPrintScript());
+            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-            html.AppendLine("</body>");
-            html.AppendLine("</html>");
+            // === 合計區 ===
+            var taxMethodText = quotation.TaxCalculationMethod switch
+            {
+                TaxCalculationMethod.TaxExclusive => "外加稅",
+                TaxCalculationMethod.TaxInclusive => "內含稅",
+                TaxCalculationMethod.NoTax => "免稅",
+                _ => ""
+            };
 
-            return html.ToString();
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("小　計", quotation.SubtotalBeforeDiscount));
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("折　扣", quotation.DiscountAmount));
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("稅　額", quotation.QuotationTaxAmount, taxMethodText));
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("總　計", quotation.TotalAmount));
+
+            // === 說明區 ===
+            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
+            sb.AppendLine("【報價說明】");
+            
+            if (!string.IsNullOrWhiteSpace(quotation.PaymentTerms))
+            {
+                sb.AppendLine($"付款條件：{quotation.PaymentTerms}");
+            }
+            if (!string.IsNullOrWhiteSpace(quotation.DeliveryTerms))
+            {
+                sb.AppendLine($"交貨條件：{quotation.DeliveryTerms}");
+            }
+            if (!string.IsNullOrWhiteSpace(quotation.Remarks))
+            {
+                sb.AppendLine($"備　　註：{quotation.Remarks}");
+            }
+
+            sb.AppendLine(PlainTextFormatter.Separator(lineWidth));
+
+            // === 簽名區 ===
+            sb.Append(PlainTextFormatter.BuildSignatureSection(
+                new[] { "業務代表", "主管核准", "客戶確認" },
+                lineWidth));
+
+            return sb.ToString();
         }
 
-        private string GetPrintScript()
+        /// <summary>
+        /// 判斷是否應該在報價單列印時顯示 BOM 組成
+        /// </summary>
+        private static bool ShouldShowBom(QuotationDetail detail, Product product)
         {
-            return @"
-    <script>
-        window.addEventListener('load', function() {
-            // 檢查是否需要自動列印
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('autoprint') === 'true') {
-                setTimeout(function() {
-                    window.print();
-                }, 500);
-            }
-        });
-        
-        // Ctrl+P 優化列印
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'p') {
-                e.preventDefault();
-                window.print();
-            }
-        });
-    </script>";
+            if (detail.CompositionDetails == null || !detail.CompositionDetails.Any())
+                return false;
+            
+            return detail.CompositionDetails.Any(cd => 
+                cd.ComponentProduct?.ShowBomOnPrint == true);
         }
+
+        /// <summary>
+        /// 取得 BOM 組成文字（橫向顯示）
+        /// </summary>
+        private static string GetBomText(QuotationDetail detail)
+        {
+            var compositions = detail.CompositionDetails?
+                .Where(cd => cd.ComponentProduct?.ShowBomOnPrint == true)
+                .ToList() ?? new List<QuotationCompositionDetail>();
+            
+            if (!compositions.Any()) return "";
+            
+            var componentNames = compositions
+                .Select(comp => comp.ComponentProduct?.Name ?? "")
+                .Where(name => !string.IsNullOrEmpty(name));
+            
+            return string.Join("、", componentNames);
+        }
+
+        #endregion
+
+        #region 直接列印
+
+        /// <summary>
+        /// 直接列印報價單（使用 System.Drawing.Printing）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<ServiceResult> DirectPrintAsync(int quotationId, string printerName)
+        {
+            try
+            {
+                // 生成純文字報表
+                var textContent = await GeneratePlainTextReportAsync(quotationId);
+
+                _logger?.LogInformation("開始直接列印報價單 {QuotationId}，印表機：{PrinterName}", quotationId, printerName);
+
+                // 使用共用的列印服務
+                var printResult = _plainTextPrintService.PrintText(textContent, printerName, $"報價單-{quotationId}");
+                
+                if (printResult.IsSuccess)
+                {
+                    _logger?.LogInformation("報價單 {QuotationId} 列印完成", quotationId);
+                }
+                
+                return printResult;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "直接列印報價單 {QuotationId} 時發生錯誤", quotationId);
+                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 直接列印報價單（使用報表列印配置）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<ServiceResult> DirectPrintByReportIdAsync(int quotationId, string reportId)
+        {
+            try
+            {
+                // 生成純文字報表
+                var textContent = await GeneratePlainTextReportAsync(quotationId);
+
+                _logger?.LogInformation("開始列印報價單 {QuotationId}，使用配置：{ReportId}", quotationId, reportId);
+
+                // 使用共用的列印服務
+                return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, $"報價單-{quotationId}");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "使用配置列印報價單 {QuotationId} 時發生錯誤，ReportId: {ReportId}", quotationId, reportId);
+                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 批次直接列印（使用報表列印配置）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId)
+        {
+            try
+            {
+                // 生成批次純文字報表
+                var textContent = await GenerateBatchPlainTextReportAsync(criteria);
+
+                _logger?.LogInformation("開始批次列印報價單，使用配置：{ReportId}", reportId);
+
+                // 使用共用的列印服務
+                return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, "報價單批次列印");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "批次列印報價單時發生錯誤");
+                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region 純文字格式化輔助方法（保留供表格格式化使用）
+
+        /// <summary>
+        /// 格式化表格行（固定寬度）- 報價單專用格式
+        /// </summary>
+        private static string FormatTableRow(string col1, string col2, string col3, string col4, string col5, string col6, string col7)
+        {
+            // 項次(4) | 品名/規格(32) | 單位(6) | 數量(8) | 單價(10) | 總價(12) | 備註(8)
+            return PlainTextFormatter.FormatTableRow(new (string, int, PlainTextAlignment)[]
+            {
+                (col1, 4, PlainTextAlignment.Left),
+                (col2, 32, PlainTextAlignment.Left),
+                (col3, 6, PlainTextAlignment.Left),
+                (col4, 8, PlainTextAlignment.Right),
+                (col5, 10, PlainTextAlignment.Right),
+                (col6, 12, PlainTextAlignment.Right),
+                (col7, 8, PlainTextAlignment.Left)
+            });
+        }
+
+        #endregion
     }
 }

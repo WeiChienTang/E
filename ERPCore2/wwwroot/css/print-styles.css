@@ -78,6 +78,14 @@ body {
     }
 }
 
+/* 列印時移除所有邊框 */
+@media print {
+    .print-container {
+        border: none !important;
+        margin-bottom: 0 !important;
+    }
+}
+
 /* 列印時的容器高度控制 */
 @media print {
     .print-container {
