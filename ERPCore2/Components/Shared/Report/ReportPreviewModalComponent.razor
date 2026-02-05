@@ -1,0 +1,671 @@
+@* 通用報表預覽 Modal - 整合預覽與列印功能 *@
+@* 設計理念：使用者先預覽報表內容，確認無誤後再按「列印」發送到印表機 *@
+@* 支援紙張變更時動態重新生成報表內容 *@
+
+@using ERPCore2.Services.Reports
+@using ERPCore2.Helpers
+@inject INotificationService NotificationService
+@inject IPlainTextPrintService PlainTextPrintService
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject IPrinterConfigurationService PrinterConfigurationService
+@inject IPaperSettingService PaperSettingService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@GetModalTitle()"
+                   Icon="fas fa-file-alt"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   CloseOnEscape="true"
+                   CloseOnBackdropClick="false"
+                   ShowCloseButton="true"
+                   IsLoading="@IsLoading"
+                   LoadingMessage="@LoadingMessage"
+                   ShowFooter="false"
+                   BodyCssClass="p-0 report-preview-modal-body"
+                   OnClose="@HandleCancel">
+    
+    <HeaderButtons>
+        <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
+            @* 右側：操作按鈕 *@
+            <div class="d-flex gap-2 ms-auto">
+                <GenericButtonComponent Text="列印" 
+                                      Variant="ButtonVariant.Blue" 
+                                      OnClick="HandlePrint" 
+                                      IsDisabled="@(IsLoading || IsPrinting || string.IsNullOrEmpty(_printerName))" />
+                
+                <GenericButtonComponent Text="取消" 
+                                      Variant="ButtonVariant.Red" 
+                                      OnClick="HandleCancel" 
+                                      IsDisabled="@(IsLoading || IsPrinting)" />
+            </div>
+        </div>
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (IsPrinting)
+        {
+            <div class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border text-primary me-3" role="status">
+                    <span class="visually-hidden">列印中...</span>
+                </div>
+                <span class="fs-5">正在發送到印表機...</span>
+            </div>
+        }
+        else
+        {
+            @* 左右分欄佈局：左側設定區域、右側預覽區域 *@
+            <div class="report-modal-layout">
+                @* 左側：列印設定區域 *@
+                <div class="print-settings-panel">
+                    <h6 class="settings-section-title">
+                        <i class="fas fa-cog me-2"></i>列印設定
+                    </h6>
+                    
+                    @* 印表機選擇 *@
+                    <div class="setting-item-row">
+                        <label class="setting-label-inline">
+                            <i class="fas fa-print me-1"></i>印表機
+                        </label>
+                        <select class="form-select form-select-sm setting-input" 
+                                @bind="_selectedPrinterConfigurationId" 
+                                @bind:after="OnPrinterChanged"
+                                disabled="@IsLoading">
+                            <option value="">-- 請選擇 --</option>
+                            @foreach (var printer in _printerConfigurations)
+                            {
+                                <option value="@printer.Id">@printer.Name</option>
+                            }
+                        </select>
+                    </div>
+                    @if (string.IsNullOrEmpty(_printerName))
+                    {
+                        <small class="text-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>請選擇印表機
+                        </small>
+                    }
+                    
+                    @* 紙張選擇 *@
+                    <div class="setting-item-row">
+                        <label class="setting-label-inline">
+                            <i class="fas fa-file me-1"></i>紙張
+                        </label>
+                        <select class="form-select form-select-sm setting-input" 
+                                @bind="_selectedPaperSettingId"
+                                @bind:after="OnPaperChanged"
+                                disabled="@IsLoading">
+                            <option value="">-- 請選擇 --</option>
+                            @foreach (var paper in _paperSettings)
+                            {
+                                <option value="@paper.Id">@paper.Name (@paper.Width×@paper.Height cm)</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    @* 預覽縮放 *@
+                    <div class="setting-item-row">
+                        <label class="setting-label-inline">
+                            <i class="fas fa-search-plus me-1"></i>縮放
+                        </label>
+                        <div class="d-flex align-items-center gap-1 setting-input">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    @onclick="ZoomOut" disabled="@(_previewZoom <= 50)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <div class="zoom-display">@_previewZoom%</div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    @onclick="ZoomIn" disabled="@(_previewZoom >= 200)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3" />
+                    
+                    @* 列印份數 *@
+                    <div class="setting-item-row">
+                        <label class="setting-label-inline">
+                            <i class="fas fa-copy me-1"></i>份數
+                        </label>
+                        <input type="number" 
+                               class="form-control form-control-sm setting-input-small" 
+                               @bind="_copies" 
+                               min="1" 
+                               max="99"
+                               disabled="@IsLoading" />
+                    </div>
+                    
+                    @* 頁數顯示 *@
+                    <div class="setting-item-row">
+                        <label class="setting-label-inline">
+                            <i class="fas fa-file-alt me-1"></i>頁數
+                        </label>
+                        <div class="form-control form-control-sm bg-light text-center setting-input-small">
+                            @_estimatedPages 頁
+                        </div>
+                    </div>
+                </div>
+                
+                @* 右側：報表預覽區域 *@
+                <div class="report-preview-outer-container">
+                    @if (!string.IsNullOrEmpty(ReportContent))
+                    {
+                        <div class="paper-preview-wrapper" style="@GetPreviewZoomStyle()">
+                            <div class="paper-preview" style="@GetPaperContainerStyle()">
+                                <div class="paper-content-scaler" style="@GetContentScaleStyle()">
+                                    <pre class="report-preview-content">@ReportContent</pre>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-center align-items-center py-5 text-muted h-100">
+                            <div class="text-center">
+                                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                                <div class="fs-5">無報表內容</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+    
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter] public bool IsVisible { get; set; } = false;
+    
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// Modal 標題
+    /// </summary>
+    [Parameter] public string Title { get; set; } = "報表預覽";
+    
+    /// <summary>
+    /// 報表純文字內容
+    /// </summary>
+    [Parameter] public string ReportContent { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 報表 ID（用於查詢印表機配置）
+    /// 例如：PO001（採購單）、PR001（進貨單）、SO001（銷貨單）
+    /// </summary>
+    [Parameter] public string ReportId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 列印文件名稱（顯示在列印佇列中）
+    /// </summary>
+    [Parameter] public string DocumentName { get; set; } = "報表列印";
+    
+    /// <summary>
+    /// 列印成功事件
+    /// </summary>
+    [Parameter] public EventCallback OnPrintSuccess { get; set; }
+    
+    /// <summary>
+    /// 列印失敗事件
+    /// </summary>
+    [Parameter] public EventCallback<string> OnPrintFailure { get; set; }
+    
+    /// <summary>
+    /// 取消事件
+    /// </summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    /// <summary>
+    /// 紙張變更時的報表重新生成回調
+    /// 當使用者變更紙張設定時，會觸發此回調請求重新生成報表
+    /// 父組件應根據 PaperLayout 重新生成報表內容並更新 ReportContent
+    /// </summary>
+    [Parameter] public EventCallback<PaperLayout> OnPaperLayoutChanged { get; set; }
+    
+    // ===== 內部狀態 =====
+    
+    private bool IsLoading { get; set; } = false;
+    private bool IsPrinting { get; set; } = false;
+    private string LoadingMessage { get; set; } = "載入中...";
+    
+    // 印表機相關
+    private string? _printerName = null;
+    private int? _printerConfigurationId = null;
+    private int _selectedPrinterConfigurationId;
+    private List<PrinterConfiguration> _printerConfigurations = new();
+    
+    // 紙張相關
+    private int? _paperSettingId = null;
+    private int _selectedPaperSettingId;
+    private List<PaperSetting> _paperSettings = new();
+    private PaperSetting? _selectedPaper = null;
+    
+    // 列印設定
+    private int _copies = 1;
+    private int _estimatedPages = 1;
+    
+    // 紙張預覽設定
+    private const decimal PreviewScale = 35.0m;  // 預覽縮放比例 (1cm = 35px)，提高以讓預覽更清晰
+    private const int BaseReportWidth = 80;      // 報表基準寬度（字元數）
+    
+    // 計算出的預覽字型大小 (px)
+    private decimal _previewFontSizePx = 12m;
+    // 計算出的列印字型大小 (pt)
+    private float _calculatedPrintFontSize = 10f;
+    
+    // 預覽縮放控制
+    private int _previewZoom = 100;  // 縮放百分比（50-200）
+    
+    // ===== 生命週期 =====
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadPrintConfigurations();
+            CalculateContentScale();
+            CalculateEstimatedPages();
+        }
+    }
+    
+    // ===== 資料載入 =====
+    
+    /// <summary>
+    /// 載入所有列印相關配置
+    /// </summary>
+    private async Task LoadPrintConfigurations()
+    {
+        try
+        {
+            IsLoading = true;
+            LoadingMessage = "載入列印配置...";
+            StateHasChanged();
+            
+            // 載入所有印表機和紙張選項
+            var printerTask = PrinterConfigurationService.GetAllAsync();
+            var paperTask = PaperSettingService.GetAllAsync();
+            
+            await Task.WhenAll(printerTask, paperTask);
+            
+            _printerConfigurations = (await printerTask)?.ToList() ?? new List<PrinterConfiguration>();
+            _paperSettings = (await paperTask)?.ToList() ?? new List<PaperSetting>();
+            
+            // 根據 ReportId 查詢預設配置
+            if (!string.IsNullOrEmpty(ReportId))
+            {
+                var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync(ReportId);
+                
+                if (reportConfig != null)
+                {
+                    // 設定預設印表機
+                    if (reportConfig.PrinterConfigurationId.HasValue)
+                    {
+                        _selectedPrinterConfigurationId = reportConfig.PrinterConfigurationId.Value;
+                        _printerConfigurationId = reportConfig.PrinterConfigurationId.Value;
+                        var printerConfig = _printerConfigurations.FirstOrDefault(p => p.Id == _printerConfigurationId);
+                        _printerName = printerConfig?.Name;
+                    }
+                    
+                    // 設定預設紙張
+                    if (reportConfig.PaperSettingId.HasValue)
+                    {
+                        _selectedPaperSettingId = reportConfig.PaperSettingId.Value;
+                        _paperSettingId = reportConfig.PaperSettingId.Value;
+                        _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _paperSettingId);
+                    }
+                }
+            }
+            
+            // 重設列印份數
+            _copies = 1;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入列印配置失敗：{ex.Message}");
+            _printerName = null;
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 計算預估頁數
+    /// </summary>
+    private void CalculateEstimatedPages()
+    {
+        if (string.IsNullOrEmpty(ReportContent))
+        {
+            _estimatedPages = 0;
+            return;
+        }
+        
+        // 簡單估算：根據行數計算頁數（假設每頁約 60 行）
+        var lineCount = ReportContent.Split('\n').Length;
+        const int linesPerPage = 60;
+        _estimatedPages = Math.Max(1, (int)Math.Ceiling((double)lineCount / linesPerPage));
+    }
+    
+    /// <summary>
+    /// 取得紙張容器的樣式（寬度、高度）
+    /// </summary>
+    private string GetPaperContainerStyle()
+    {
+        decimal width, height, leftMargin, topMargin, rightMargin, bottomMargin;
+        
+        if (_selectedPaper == null)
+        {
+            // 預設 A4 紙張：21cm × 29.7cm，邊距 1cm
+            width = 21m;
+            height = 29.7m;
+            leftMargin = topMargin = rightMargin = bottomMargin = 1m;
+        }
+        else
+        {
+            // 直接使用紙張設定的寬度和高度（紙張設定已包含方向）
+            width = _selectedPaper.Width;
+            height = _selectedPaper.Height;
+            leftMargin = _selectedPaper.LeftMargin ?? 1m;
+            topMargin = _selectedPaper.TopMargin ?? 1m;
+            rightMargin = _selectedPaper.RightMargin ?? 1m;
+            bottomMargin = _selectedPaper.BottomMargin ?? 1m;
+        }
+        
+        // 轉換為像素 (1cm = 20px for preview)
+        var widthPx = width * PreviewScale;
+        var heightPx = height * PreviewScale;
+        var paddingTop = topMargin * PreviewScale;
+        var paddingRight = rightMargin * PreviewScale;
+        var paddingBottom = bottomMargin * PreviewScale;
+        var paddingLeft = leftMargin * PreviewScale;
+        
+        return $"width: {widthPx:F0}px; height: {heightPx:F0}px; " +
+               $"padding: {paddingTop:F0}px {paddingRight:F0}px {paddingBottom:F0}px {paddingLeft:F0}px;";
+    }
+    
+    /// <summary>
+    /// 取得內容字型樣式
+    /// 根據紙張大小計算適合的字型大小
+    /// </summary>
+    private string GetContentScaleStyle()
+    {
+        // 使用計算出的預覽字型大小
+        return $"font-size: {_previewFontSizePx:F1}px;";  
+    }
+    
+    /// <summary>
+    /// 取得預覽縮放樣式
+    /// </summary>
+    private string GetPreviewZoomStyle()
+    {
+        var scale = _previewZoom / 100.0;
+        return $"transform: scale({scale:F2});";
+    }
+    
+    /// <summary>
+    /// 放大預覽
+    /// </summary>
+    private void ZoomIn()
+    {
+        if (_previewZoom < 200)
+        {
+            _previewZoom += 10;
+        }
+    }
+    
+    /// <summary>
+    /// 縮小預覽
+    /// </summary>
+    private void ZoomOut()
+    {
+        if (_previewZoom > 50)
+        {
+            _previewZoom -= 10;
+        }
+    }
+    
+    /// <summary>
+    /// 印表機變更事件
+    /// </summary>
+    private void OnPrinterChanged()
+    {
+        if (_selectedPrinterConfigurationId > 0)
+        {
+            var printer = _printerConfigurations.FirstOrDefault(p => p.Id == _selectedPrinterConfigurationId);
+            _printerName = printer?.Name;
+            _printerConfigurationId = _selectedPrinterConfigurationId;
+        }
+        else
+        {
+            _printerName = null;
+            _printerConfigurationId = null;
+        }
+    }
+    
+    /// <summary>
+    /// 紙張變更事件
+    /// </summary>
+    private void OnPaperChanged()
+    {
+        if (_selectedPaperSettingId > 0)
+        {
+            _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _selectedPaperSettingId);
+            _paperSettingId = _selectedPaperSettingId;
+        }
+        else
+        {
+            _selectedPaper = null;
+            _paperSettingId = null;
+        }
+        
+        // 重新計算縮放比例
+        CalculateContentScale();
+        
+        // 重新計算頁數
+        CalculateEstimatedPages();
+    }
+    
+    /// <summary>
+    /// 計算預覽和列印的字型大小
+    /// 根據紙張可用寬度計算適合的字型大小，讓內容剛好填滿紙張寬度
+    /// 
+    /// 核心公式：
+    /// - 列印字型大小(pt) = 可用寬度(cm) / (報表字元數 × 字元寬度係數)
+    /// - 字元寬度係數 = 0.0352778(cm/pt) × 0.6(等寬字型比) = 0.0211667
+    /// - 預覽字型大小(px) = 列印字型大小(pt) × (PreviewScale / 2.8346457)
+    ///   其中 2.8346457 是 1cm 有多少 pt (72pt/25.4mm)
+    /// </summary>
+    private void CalculateContentScale()
+    {
+        // 取得紙張的可用寬度（cm）
+        decimal paperWidth, leftMargin, rightMargin;
+        
+        if (_selectedPaper == null)
+        {
+            // 預設 A4：21cm，邊距各 1cm
+            paperWidth = 21m;
+            leftMargin = 1m;
+            rightMargin = 1m;
+        }
+        else
+        {
+            // 直接使用紙張設定的寬度（紙張設定已包含方向）
+            paperWidth = _selectedPaper.Width;
+            leftMargin = _selectedPaper.LeftMargin ?? 1m;
+            rightMargin = _selectedPaper.RightMargin ?? 1m;
+        }
+        
+        // 可用寬度（cm）
+        var availableWidthCm = paperWidth - leftMargin - rightMargin;
+        
+        // 計算列印字型大小（pt）
+        // Courier New 等寬字型：1pt 字型的字元寬度 ≈ 0.0211667 cm
+        // 所以：字型大小(pt) = 可用寬度(cm) / (字元數 × 0.0211667)
+        const decimal CharWidthPerPt = 0.0211667m; // cm per pt (for Courier New)
+        var printFontSizePt = availableWidthCm / (BaseReportWidth * CharWidthPerPt);
+        _calculatedPrintFontSize = Math.Max(6f, Math.Min(14f, (float)printFontSizePt));
+        
+        // 計算預覽字型大小（px）
+        // 預覽比例：1cm = 35px（PreviewScale）
+        // pt 轉 cm：1pt = 0.0352778cm
+        // 所以預覽中 1pt = 0.0352778 × 35 = 1.2347 px
+        const decimal PtToPxInPreview = 1.2347m; // 預覽中 1pt 對應的 px（根據 PreviewScale=35 計算）
+        _previewFontSizePx = (decimal)_calculatedPrintFontSize * PtToPxInPreview;
+        _previewFontSizePx = Math.Max(8m, Math.Min(25m, _previewFontSizePx));
+    }
+    
+    // ===== 事件處理 =====
+    
+    /// <summary>
+    /// 處理列印按鈕點擊
+    /// </summary>
+    private async Task HandlePrint()
+    {
+        if (IsPrinting || string.IsNullOrEmpty(ReportContent))
+            return;
+        
+        if (string.IsNullOrEmpty(_printerName))
+        {
+            await NotificationService.ShowWarningAsync("請先選擇印表機");
+            return;
+        }
+        
+        // 確保份數至少為 1
+        if (_copies < 1) _copies = 1;
+        
+        try
+        {
+            IsPrinting = true;
+            StateHasChanged();
+            
+            // 從紙張設定取得邊距
+            var margins = PrintMargins.FromPaperSetting(_selectedPaper);
+            
+            // 使用 PlainTextPrintService 直接列印
+            // 使用計算出的字型大小，確保內容能剛好填滿紙張寬度
+            var result = PlainTextPrintService.PrintText(
+                textContent: ReportContent, 
+                printerName: _printerName, 
+                documentName: DocumentName, 
+                fontSize: _calculatedPrintFontSize,
+                copies: _copies,
+                margins: margins);
+            
+            if (result.IsSuccess)
+            {
+                var message = _copies > 1 
+                    ? $"已送出 {_copies} 份列印到印表機：{_printerName}" 
+                    : $"已送出列印到印表機：{_printerName}";
+                await NotificationService.ShowSuccessAsync(message);
+                
+                if (OnPrintSuccess.HasDelegate)
+                {
+                    await OnPrintSuccess.InvokeAsync();
+                }
+                
+                // 列印成功後關閉 Modal
+                await CloseModal();
+            }
+            else
+            {
+                var errorMessage = result.ErrorMessage ?? "列印失敗";
+                await NotificationService.ShowErrorAsync($"列印失敗：{errorMessage}");
+                
+                if (OnPrintFailure.HasDelegate)
+                {
+                    await OnPrintFailure.InvokeAsync(errorMessage);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"列印時發生錯誤：{ex.Message}");
+            
+            if (OnPrintFailure.HasDelegate)
+            {
+                await OnPrintFailure.InvokeAsync(ex.Message);
+            }
+        }
+        finally
+        {
+            IsPrinting = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 處理取消按鈕點擊
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+        
+        await CloseModal();
+    }
+    
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    private async Task CloseModal()
+    {
+        // 重設狀態
+        _copies = 1;
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+    
+    // ===== 輔助方法 =====
+    
+    /// <summary>
+    /// 取得 Modal 標題
+    /// </summary>
+    private string GetModalTitle()
+    {
+        return string.IsNullOrEmpty(Title) ? "報表預覽" : Title;
+    }
+    
+    /// <summary>
+    /// 取得紙張資訊文字
+    /// </summary>
+    private string GetPaperInfoText()
+    {
+        if (_selectedPaper == null)
+        {
+            return "A4 (21×29.7 cm)";
+        }
+        
+        return $"{_selectedPaper.Name} ({_selectedPaper.Width}×{_selectedPaper.Height} cm)";
+    }
+
+    /// <summary>
+    /// 取得當前的紙張版面配置
+    /// 可供父組件在需要時取得當前設定
+    /// </summary>
+    public PaperLayout GetCurrentPaperLayout()
+    {
+        return PaperLayoutCalculator.Calculate(_selectedPaper);
+    }
+
+    /// <summary>
+    /// 取得當前選擇的紙張設定
+    /// </summary>
+    public PaperSetting? GetSelectedPaperSetting()
+    {
+        return _selectedPaper;
+    }
+}

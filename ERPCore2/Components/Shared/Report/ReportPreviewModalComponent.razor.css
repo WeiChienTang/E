@@ -1,0 +1,223 @@
+/* 覆蓋 modal-body 的預設樣式，防止雙重滾動條 */
+::deep .report-preview-modal-body {
+    overflow: hidden !important;
+    max-height: none !important;
+    padding: 0 !important;
+}
+
+/* 左右分欄佈局 */
+.report-modal-layout {
+    display: flex;
+    height: calc(100vh - 210px); /* 配合 BaseModalComponent 的 modal-body max-height */
+    min-height: 300px;
+    overflow: hidden; /* 防止整體佈局產生滾動條 */
+}
+
+/* 左側設定面板 */
+.print-settings-panel {
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding: 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.settings-section-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #0d6efd;
+}
+
+/* 橫向排列的設定項目 [標題] [選擇/值] */
+.setting-item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.setting-label-inline {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #6c757d;
+    white-space: nowrap;
+    min-width: 70px;
+}
+
+.setting-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.setting-input-small {
+    width: 70px;
+    flex: none;
+}
+
+.zoom-display {
+    min-width: 45px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+/* 預覽區域外層容器 - 網格背景，置中對齊 */
+.report-preview-outer-container {
+    flex: 1;
+    overflow: auto; /* 預覽區域允許滾動 */
+    background-color: #6c757d;
+    background-image: 
+        linear-gradient(45deg, #5a6268 25%, transparent 25%),
+        linear-gradient(-45deg, #5a6268 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #5a6268 75%),
+        linear-gradient(-45deg, transparent 75%, #5a6268 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* 紙張預覽包裝器 - 置中對齊 */
+.paper-preview-wrapper {
+    position: relative;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    transform-origin: top center;
+}
+
+/* 紙張預覽 - 模擬真實紙張外觀 */
+.paper-preview {
+    background-color: #fff;
+    box-shadow: 
+        0 0 0 1px rgba(0, 0, 0, 0.1),
+        0 4px 8px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* 報表內容 - 等寬字型，字型大小由 style 動態設定 */
+.report-preview-content {
+    font-family: 'Courier New', Consolas, 'Microsoft JhengHei', monospace;
+    /* font-size 由 GetContentScaleStyle() 動態設定 */
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;  /* padding 由紙張容器控制 */
+    white-space: pre;
+    background-color: #fff;
+    color: #212529;
+}
+
+/* 縮放提示 */
+.scale-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+@media print {
+    .report-modal-layout {
+        display: block;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+    }
+    
+    .print-settings-panel {
+        display: none;
+    }
+    
+    .report-preview-outer-container {
+        max-height: none;
+        overflow: visible;
+        background: none;
+        padding: 0;
+    }
+    
+    .paper-preview {
+        box-shadow: none;
+    }
+}
+
+/* ===== 響應式設計 ===== */
+
+/* 手機螢幕 (小於 768px) */
+@media (max-width: 767.98px) {
+    .report-modal-layout {
+        flex-direction: column;
+        height: auto;
+        max-height: calc(100vh - 150px);
+    }
+    
+    .print-settings-panel {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        flex-shrink: 0;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .setting-item-row {
+        flex-wrap: wrap;
+    }
+    
+    .setting-label-inline {
+        min-width: 60px;
+        font-size: 0.8rem;
+    }
+    
+    .report-preview-outer-container {
+        flex: 1;
+        min-height: 300px;
+        padding: 1rem;
+    }
+    
+    /* 手機模式下紙張自動縮放 */
+    .paper-preview-wrapper {
+        transform-origin: top center !important;
+        max-width: 100%;
+    }
+    
+    .paper-preview {
+        max-width: calc(100vw - 2rem);
+        height: auto !important;
+    }
+    
+    .report-preview-content {
+        font-size: 8px !important;
+    }
+}
+
+/* 平板螢幕 (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .print-settings-panel {
+        width: 200px;
+        min-width: 200px;
+        max-width: 200px;
+    }
+    
+    .report-preview-outer-container {
+        padding: 1.5rem;
+    }
+}

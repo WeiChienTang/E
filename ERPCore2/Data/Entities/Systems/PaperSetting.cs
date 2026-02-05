@@ -18,46 +18,46 @@ namespace ERPCore2.Data.Entities
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// 紙張寬度（單位：毫米）
+        /// 紙張寬度（單位：公分）
         /// </summary>
         [Required(ErrorMessage = "紙張寬度為必填")]
-        [Range(1, 9999, ErrorMessage = "紙張寬度必須在1-9999毫米之間")]
+        [Range(1, 9999, ErrorMessage = "紙張寬度必須在1-9999公分之間")]
         [Display(Name = "寬度(cm)")]
         public decimal Width { get; set; }
 
         /// <summary>
-        /// 紙張高度（單位：毫米）
+        /// 紙張高度（單位：公分）
         /// </summary>
         [Required(ErrorMessage = "紙張高度為必填")]
-        [Range(1, 9999, ErrorMessage = "紙張高度必須在1-9999毫米之間")]
+        [Range(1, 9999, ErrorMessage = "紙張高度必須在1-9999公分之間")]
         [Display(Name = "高度(cm)")]
         public decimal Height { get; set; }
 
         /// <summary>
-        /// 上邊距（單位：毫米）
+        /// 上邊距（單位：公分）
         /// </summary>
-        [Range(0, 999, ErrorMessage = "上邊距必須在0-999毫米之間")]
+        [Range(0, 999, ErrorMessage = "上邊距必須在0-999公分之間")]
         [Display(Name = "上邊距(cm)")]
         public decimal? TopMargin { get; set; }
 
         /// <summary>
-        /// 下邊距（單位：毫米）
+        /// 下邊距（單位：公分）
         /// </summary>
-        [Range(0, 999, ErrorMessage = "下邊距必須在0-999毫米之間")]
+        [Range(0, 999, ErrorMessage = "下邊距必須在0-999公分之間")]
         [Display(Name = "下邊距(cm)")]
         public decimal? BottomMargin { get; set; }
 
         /// <summary>
-        /// 左邊距（單位：毫米）
+        /// 左邊距（單位：公分）
         /// </summary>
-        [Range(0, 999, ErrorMessage = "左邊距必須在0-999毫米之間")]
+        [Range(0, 999, ErrorMessage = "左邊距必須在0-999公分之間")]
         [Display(Name = "左邊距(cm)")]
         public decimal? LeftMargin { get; set; }
 
         /// <summary>
-        /// 右邊距（單位：毫米）
+        /// 右邊距（單位：公分）
         /// </summary>
-        [Range(0, 999, ErrorMessage = "右邊距必須在0-999毫米之間")]
+        [Range(0, 999, ErrorMessage = "右邊距必須在0-999公分之間")]
         [Display(Name = "右邊距(cm)")]
         public decimal? RightMargin { get; set; }
 

@@ -1,10 +1,64 @@
+using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using Microsoft.Extensions.Logging;
+using System.Drawing.Printing;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace ERPCore2.Services.Reports
 {
+    /// <summary>
+    /// 列印邊距設定（單位：百分之一英寸）
+    /// </summary>
+    public class PrintMargins
+    {
+        /// <summary>左邊距（單位：百分之一英寸）</summary>
+        public int Left { get; set; }
+        /// <summary>上邊距（單位：百分之一英寸）</summary>
+        public int Top { get; set; }
+        /// <summary>右邊距（單位：百分之一英寸）</summary>
+        public int Right { get; set; }
+        /// <summary>下邊距（單位：百分之一英寸）</summary>
+        public int Bottom { get; set; }
+
+        /// <summary>
+        /// 從公分轉換為百分之一英寸
+        /// 1 公分 = 0.393701 英寸 = 39.3701 百分之一英寸
+        /// </summary>
+        public static int CmToHundredthsOfInch(decimal cm)
+        {
+            return (int)Math.Round((double)cm * 39.3701);
+        }
+
+        /// <summary>
+        /// 從紙張設定建立邊距（預設為 0.5 公分）
+        /// </summary>
+        public static PrintMargins FromPaperSetting(PaperSetting? paperSetting)
+        {
+            const decimal defaultMarginCm = 0.5m; // 預設邊距 0.5 公分
+
+            if (paperSetting == null)
+            {
+                var defaultMargin = CmToHundredthsOfInch(defaultMarginCm);
+                return new PrintMargins
+                {
+                    Left = defaultMargin,
+                    Top = defaultMargin,
+                    Right = defaultMargin,
+                    Bottom = defaultMargin
+                };
+            }
+
+            return new PrintMargins
+            {
+                Left = CmToHundredthsOfInch(paperSetting.LeftMargin ?? defaultMarginCm),
+                Top = CmToHundredthsOfInch(paperSetting.TopMargin ?? defaultMarginCm),
+                Right = CmToHundredthsOfInch(paperSetting.RightMargin ?? defaultMarginCm),
+                Bottom = CmToHundredthsOfInch(paperSetting.BottomMargin ?? defaultMarginCm)
+            };
+        }
+    }
+
     /// <summary>
     /// 純文字列印服務介面
     /// 提供純文字報表的直接列印功能
@@ -18,8 +72,10 @@ namespace ERPCore2.Services.Reports
         /// <param name="printerName">印表機名稱</param>
         /// <param name="documentName">文件名稱</param>
         /// <param name="fontSize">字型大小（預設 10）</param>
+        /// <param name="copies">列印份數（預設 1）</param>
+        /// <param name="margins">邊距設定（可選，若未提供則使用預設邊距 0.5 公分）</param>
         /// <returns>列印結果</returns>
-        ServiceResult PrintText(string textContent, string printerName, string documentName, float fontSize = 10);
+        ServiceResult PrintText(string textContent, string printerName, string documentName, float fontSize = 10, int copies = 1, PrintMargins? margins = null);
 
         /// <summary>
         /// 使用報表配置列印純文字
@@ -27,8 +83,9 @@ namespace ERPCore2.Services.Reports
         /// <param name="textContent">純文字內容</param>
         /// <param name="reportId">報表識別碼</param>
         /// <param name="documentName">文件名稱</param>
+        /// <param name="copies">列印份數（預設 1）</param>
         /// <returns>列印結果</returns>
-        Task<ServiceResult> PrintTextByReportIdAsync(string textContent, string reportId, string documentName);
+        Task<ServiceResult> PrintTextByReportIdAsync(string textContent, string reportId, string documentName, int copies = 1);
 
         /// <summary>
         /// 檢查是否支援直接列印
@@ -46,6 +103,7 @@ namespace ERPCore2.Services.Reports
     {
         private readonly IReportPrintConfigurationService _reportPrintConfigService;
         private readonly IPrinterConfigurationService _printerConfigService;
+        private readonly IPaperSettingService _paperSettingService;
         private readonly ILogger<PlainTextPrintService>? _logger;
 
         /// <summary>
@@ -66,10 +124,12 @@ namespace ERPCore2.Services.Reports
         public PlainTextPrintService(
             IReportPrintConfigurationService reportPrintConfigService,
             IPrinterConfigurationService printerConfigService,
+            IPaperSettingService paperSettingService,
             ILogger<PlainTextPrintService>? logger = null)
         {
             _reportPrintConfigService = reportPrintConfigService;
             _printerConfigService = printerConfigService;
+            _paperSettingService = paperSettingService;
             _logger = logger;
         }
 
@@ -85,7 +145,7 @@ namespace ERPCore2.Services.Reports
         /// 執行純文字列印
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public ServiceResult PrintText(string textContent, string printerName, string documentName, float fontSize = DefaultFontSize)
+        public ServiceResult PrintText(string textContent, string printerName, string documentName, float fontSize = DefaultFontSize, int copies = 1, PrintMargins? margins = null)
         {
             try
             {
@@ -104,11 +164,29 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure("印表機名稱不能為空");
                 }
 
-                _logger?.LogInformation("開始列印 {DocumentName}，印表機：{PrinterName}", documentName, printerName);
+                if (copies < 1)
+                {
+                    copies = 1;
+                }
+
+                // 使用預設邊距（0.5 公分）如果未提供
+                margins ??= PrintMargins.FromPaperSetting(null);
+
+                _logger?.LogInformation("開始列印 {DocumentName}，印表機：{PrinterName}，份數：{Copies}，邊距(百分之一英寸)：L={Left}, T={Top}, R={Right}, B={Bottom}", 
+                    documentName, printerName, copies, margins.Left, margins.Top, margins.Right, margins.Bottom);
 
                 using var printDocument = new System.Drawing.Printing.PrintDocument();
                 printDocument.PrinterSettings.PrinterName = printerName;
                 printDocument.DocumentName = documentName;
+                printDocument.PrinterSettings.Copies = (short)Math.Min(copies, short.MaxValue);
+
+                // 設定邊距（單位：百分之一英寸）
+                printDocument.DefaultPageSettings.Margins = new Margins(
+                    margins.Left,
+                    margins.Right,
+                    margins.Top,
+                    margins.Bottom
+                );
 
                 // 檢查印表機是否有效
                 if (!printDocument.PrinterSettings.IsValid)
@@ -187,7 +265,7 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 使用報表配置列印純文字
         /// </summary>
-        public async Task<ServiceResult> PrintTextByReportIdAsync(string textContent, string reportId, string documentName)
+        public async Task<ServiceResult> PrintTextByReportIdAsync(string textContent, string reportId, string documentName, int copies = 1)
         {
             try
             {
@@ -215,8 +293,24 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure("印表機配置不存在");
                 }
 
-                // 執行列印
-                return PrintText(textContent, printerConfig.Name, documentName);
+                // 載入紙張設定以取得邊距
+                PaperSetting? paperSetting = null;
+                if (printConfig.PaperSettingId.HasValue)
+                {
+                    paperSetting = await _paperSettingService.GetByIdAsync(printConfig.PaperSettingId.Value);
+                    _logger?.LogInformation("載入紙張設定：{PaperName}，邊距(cm)：L={Left}, T={Top}, R={Right}, B={Bottom}",
+                        paperSetting?.Name ?? "未知",
+                        paperSetting?.LeftMargin ?? 0,
+                        paperSetting?.TopMargin ?? 0,
+                        paperSetting?.RightMargin ?? 0,
+                        paperSetting?.BottomMargin ?? 0);
+                }
+
+                // 從紙張設定建立邊距
+                var margins = PrintMargins.FromPaperSetting(paperSetting);
+
+                // 執行列印（帶份數和邊距）
+                return PrintText(textContent, printerConfig.Name, documentName, copies: copies, margins: margins);
             }
             catch (Exception ex)
             {

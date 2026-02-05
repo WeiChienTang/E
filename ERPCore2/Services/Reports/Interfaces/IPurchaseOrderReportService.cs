@@ -1,4 +1,5 @@
 using ERPCore2.Data.Entities;
+using ERPCore2.Helpers;
 using ERPCore2.Models;
 
 namespace ERPCore2.Services.Reports.Interfaces
@@ -14,10 +15,20 @@ namespace ERPCore2.Services.Reports.Interfaces
         /// <summary>
         /// 生成純文字格式的採購單報表（適合直接列印和預覽）
         /// 直接生成格式化的純文字，不需要經過 HTML
+        /// 使用預設版面配置（80 字元寬）
         /// </summary>
         /// <param name="purchaseOrderId">採購單 ID</param>
         /// <returns>格式化的純文字報表內容</returns>
         Task<string> GeneratePlainTextReportAsync(int purchaseOrderId);
+
+        /// <summary>
+        /// 生成純文字格式的採購單報表（根據紙張版面配置）
+        /// 根據指定的紙張設定動態調整報表寬度和欄位配置
+        /// </summary>
+        /// <param name="purchaseOrderId">採購單 ID</param>
+        /// <param name="layout">紙張版面配置</param>
+        /// <returns>格式化的純文字報表內容</returns>
+        Task<string> GeneratePlainTextReportAsync(int purchaseOrderId, PaperLayout layout);
         
         /// <summary>
         /// 批次生成純文字報表（支援多條件篩選）

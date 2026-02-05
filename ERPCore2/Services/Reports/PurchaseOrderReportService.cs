@@ -50,11 +50,22 @@ namespace ERPCore2.Services.Reports
 
         #region 純文字報表生成
 
+        // 採購單表格的基準欄位寬度（基於 80 字元總寬度）
+        // 序號(4) | 品名(30) | 數量(8) | 單位(6) | 單價(10) | 小計(12) | 備註(10) = 80
+        private static readonly int[] BaseColumnWidths = { 4, 30, 8, 6, 10, 12, 10 };
+
         /// <summary>
-        /// 生成純文字格式的採購單報表
-        /// 直接生成格式化的純文字，適合直接列印和預覽
+        /// 生成純文字格式的採購單報表（使用預設版面配置）
         /// </summary>
         public async Task<string> GeneratePlainTextReportAsync(int purchaseOrderId)
+        {
+            return await GeneratePlainTextReportAsync(purchaseOrderId, PaperLayout.Default);
+        }
+
+        /// <summary>
+        /// 生成純文字格式的採購單報表（根據紙張版面配置）
+        /// </summary>
+        public async Task<string> GeneratePlainTextReportAsync(int purchaseOrderId, PaperLayout layout)
         {
             // 載入資料
             var purchaseOrder = await _purchaseOrderService.GetByIdAsync(purchaseOrderId);
@@ -80,8 +91,11 @@ namespace ERPCore2.Services.Reports
             var allProducts = await _productService.GetAllAsync();
             var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
-            // 生成純文字報表
-            return GeneratePlainTextContent(purchaseOrder, orderDetails, supplier, company, productDict);
+            // 計算調整後的欄位寬度
+            var columnWidths = PaperLayoutCalculator.CalculateColumnWidths(layout, BaseColumnWidths);
+
+            // 生成純文字報表（使用動態版面配置）
+            return GeneratePlainTextContent(purchaseOrder, orderDetails, supplier, company, productDict, layout, columnWidths);
         }
 
         /// <summary>
@@ -152,6 +166,7 @@ namespace ERPCore2.Services.Reports
 
         /// <summary>
         /// 生成純文字內容（固定寬度格式，適合等寬字型列印）
+        /// 使用預設 80 字元寬度
         /// </summary>
         private static string GeneratePlainTextContent(
             PurchaseOrder purchaseOrder,
@@ -160,8 +175,25 @@ namespace ERPCore2.Services.Reports
             Company? company,
             Dictionary<int, Product> productDict)
         {
+            // 使用預設版面配置和欄位寬度
+            return GeneratePlainTextContent(purchaseOrder, orderDetails, supplier, company, productDict, 
+                PaperLayout.Default, BaseColumnWidths);
+        }
+
+        /// <summary>
+        /// 生成純文字內容（根據版面配置動態調整寬度）
+        /// </summary>
+        private static string GeneratePlainTextContent(
+            PurchaseOrder purchaseOrder,
+            List<PurchaseOrderDetail> orderDetails,
+            Supplier? supplier,
+            Company? company,
+            Dictionary<int, Product> productDict,
+            PaperLayout layout,
+            int[] columnWidths)
+        {
             var sb = new StringBuilder();
-            const int lineWidth = PlainTextFormatter.DefaultLineWidth;
+            var lineWidth = layout.LineWidth;
 
             // === 標題區 ===
             sb.Append(PlainTextFormatter.BuildTitleSection(
@@ -178,34 +210,41 @@ namespace ERPCore2.Services.Reports
             sb.AppendLine($"送貨地址：{company?.Address ?? ""}");
             sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-            // === 明細表頭 ===
-            // 序號(4) | 品名(30) | 數量(8) | 單位(6) | 單價(10) | 小計(12) | 備註(10)
-            sb.AppendLine(FormatTableRow("序號", "品名", "數量", "單位", "單價", "小計", "備註"));
+            // === 明細表頭（使用動態欄位寬度）===
+            sb.AppendLine(FormatTableRowDynamic(
+                new[] { "序號", "品名", "數量", "單位", "單價", "小計", "備註" },
+                columnWidths));
             sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
             // === 明細內容 ===
             int rowNum = 1;
+            // 品名欄位的最大寬度（用於截斷）
+            var productNameMaxWidth = Math.Max(4, columnWidths[1] - 2);
+            var remarksMaxWidth = Math.Max(2, columnWidths[6] - 2);
+
             foreach (var detail in orderDetails)
             {
                 var product = productDict.GetValueOrDefault(detail.ProductId);
-                var productName = PlainTextFormatter.TruncateText(product?.Name ?? "", 28);
-                var remarks = PlainTextFormatter.TruncateText(detail.Remarks ?? "", 8);
+                var productName = PlainTextFormatter.TruncateText(product?.Name ?? "", productNameMaxWidth);
+                var remarks = PlainTextFormatter.TruncateText(detail.Remarks ?? "", remarksMaxWidth);
 
-                sb.AppendLine(FormatTableRow(
-                    rowNum.ToString(),
-                    productName,
-                    PlainTextFormatter.FormatQuantity(detail.OrderQuantity),
-                    "個",
-                    PlainTextFormatter.FormatAmountWithDecimals(detail.UnitPrice),
-                    PlainTextFormatter.FormatAmountWithDecimals(detail.SubtotalAmount),
-                    remarks
-                ));
+                sb.AppendLine(FormatTableRowDynamic(
+                    new[] {
+                        rowNum.ToString(),
+                        productName,
+                        PlainTextFormatter.FormatQuantity(detail.OrderQuantity),
+                        "個",
+                        PlainTextFormatter.FormatAmountWithDecimals(detail.UnitPrice),
+                        PlainTextFormatter.FormatAmountWithDecimals(detail.SubtotalAmount),
+                        remarks
+                    },
+                    columnWidths));
                 rowNum++;
             }
 
             sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
 
-            // === 合計區 ===
+            // === 合計區（根據行寬動態調整標籤位置）===
             var taxMethodText = purchaseOrder.TaxCalculationMethod switch
             {
                 TaxCalculationMethod.TaxExclusive => "外加稅",
@@ -214,9 +253,13 @@ namespace ERPCore2.Services.Reports
                 _ => ""
             };
 
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("小　計", purchaseOrder.TotalAmount));
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("稅　額", purchaseOrder.PurchaseTaxAmount, taxMethodText));
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("總　計", purchaseOrder.PurchaseTotalAmountIncludingTax));
+            // 計算合計區的標籤前空白寬度（根據行寬按比例調整）
+            var totalLabelWidth = Math.Max(20, lineWidth - 30);
+            var totalAmountWidth = Math.Max(10, lineWidth - totalLabelWidth - 10);
+
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("小　計", purchaseOrder.TotalAmount, "", totalLabelWidth, totalAmountWidth));
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("稅　額", purchaseOrder.PurchaseTaxAmount, taxMethodText, totalLabelWidth, totalAmountWidth));
+            sb.AppendLine(PlainTextFormatter.BuildTotalLine("總　計", purchaseOrder.PurchaseTotalAmountIncludingTax, "", totalLabelWidth, totalAmountWidth));
 
             // === 備註 ===
             if (!string.IsNullOrWhiteSpace(purchaseOrder.Remarks))
@@ -322,6 +365,7 @@ namespace ERPCore2.Services.Reports
 
         /// <summary>
         /// 格式化表格行（固定寬度）- 採購單專用格式
+        /// 使用預設欄位寬度，適用於 80 字元寬度的報表
         /// </summary>
         private static string FormatTableRow(string col1, string col2, string col3, string col4, string col5, string col6, string col7)
         {
@@ -336,6 +380,35 @@ namespace ERPCore2.Services.Reports
                 (col6, 12, PlainTextAlignment.Right),
                 (col7, 10, PlainTextAlignment.Left)
             });
+        }
+
+        /// <summary>
+        /// 格式化表格行（動態寬度）- 根據紙張版面配置調整欄位寬度
+        /// </summary>
+        /// <param name="values">欄位值陣列（序號、品名、數量、單位、單價、小計、備註）</param>
+        /// <param name="columnWidths">欄位寬度陣列</param>
+        /// <returns>格式化後的表格行</returns>
+        private static string FormatTableRowDynamic(string[] values, int[] columnWidths)
+        {
+            // 對齊方式：序號(左)、品名(左)、數量(右)、單位(左)、單價(右)、小計(右)、備註(左)
+            var alignments = new PlainTextAlignment[]
+            {
+                PlainTextAlignment.Left,   // 序號
+                PlainTextAlignment.Left,   // 品名
+                PlainTextAlignment.Right,  // 數量
+                PlainTextAlignment.Left,   // 單位
+                PlainTextAlignment.Right,  // 單價
+                PlainTextAlignment.Right,  // 小計
+                PlainTextAlignment.Left    // 備註
+            };
+
+            var columns = new List<(string Text, int Width, PlainTextAlignment Alignment)>();
+            for (int i = 0; i < Math.Min(values.Length, columnWidths.Length); i++)
+            {
+                columns.Add((values[i], columnWidths[i], alignments[i]));
+            }
+
+            return PlainTextFormatter.FormatTableRow(columns);
         }
 
         #endregion

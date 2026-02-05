@@ -217,7 +217,7 @@ namespace ERPCore2.Models.Reports
         public bool IsStatisticsSection { get; set; } = false;
         
         /// <summary>
-        /// 頂部間距（以毫米為單位）
+        /// 頂部間距（以公分為單位）
         /// </summary>
         public int TopMargin { get; set; } = 0;
     }

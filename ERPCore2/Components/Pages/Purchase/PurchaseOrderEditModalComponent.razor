@@ -48,6 +48,7 @@
                           CustomValidator="@ValidatePurchaseOrderDetailsAsync"
                           CustomModules="@GetCustomModules()"
                           ShowPrintButton = "true"
+                          PrintButtonText="列印"
                           OnPrint="@HandlePrint"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
                           ApprovalPermission="PurchaseOrder.Approve"
@@ -84,6 +85,16 @@
                                        TextMessageTemplateId="@currentTemplateId"
                                        OnTemplateSaved="@HandleTemplateSaved"
                                        OnCancel="@(() => showTemplateSettingModal = false)" />
+
+@* 報表預覽 Modal *@
+<ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
+                             IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
+                             Title="採購單預覽"
+                             ReportContent="@_reportPreviewContent"
+                             ReportId="PO001"
+                             DocumentName="@_reportDocumentName"
+                             OnPrintSuccess="@HandleReportPrintSuccess"
+                             OnCancel="@(() => _showReportPreviewModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -148,6 +159,9 @@
     
     // ===== 列印狀態 =====
     private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
+    private bool _showReportPreviewModal = false; // 是否顯示報表預覽 Modal
+    private string _reportPreviewContent = string.Empty; // 報表預覽內容
+    private string _reportDocumentName = string.Empty; // 列印文件名稱
 
     // ===== 複製訊息狀態 =====
     private bool canCopyMessage = false; // 是否可以複製訊息（新增模式需先儲存，編輯模式直接為 true）
@@ -249,7 +263,8 @@
     }
 
     /// <summary>
-    /// 處理列印 - 簡化版本，套用「A單轉B單簡化修改」的設計模式
+    /// 處理列印 - 開啟報表預覽 Modal，使用者確認後再執行列印
+    /// 設計理念：先預覽後列印，列印時使用設定的印表機（System.Drawing.Printing）
     /// </summary>
     private async Task HandlePrint()
     {
@@ -276,8 +291,8 @@
                 return;
             }
             
-            // 直接執行列印，使用 Entity.Id（最可靠的來源）
-            await HandleDirectPrint(null);
+            // 第四步：生成報表內容並開啟預覽 Modal
+            await OpenReportPreviewModal();
         }
         catch (Exception ex)
         {
@@ -288,68 +303,41 @@
     }
 
     /// <summary>
-    /// 直接執行列印 - 直接呼叫服務（不經過 API）
-    /// 與 PrinterTestService 相同方式：直接使用 System.Drawing.Printing
+    /// 開啟報表預覽 Modal
     /// </summary>
-    private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
+    private async Task OpenReportPreviewModal()
     {
         try
         {
-            // 安全檢查：確保 Entity 已載入
             if (editModalComponent?.Entity == null)
             {
-                await NotificationService.ShowWarningAsync("無法列印：採購單資料不存在");
+                await NotificationService.ShowWarningAsync("無法預覽：採購單資料不存在");
                 return;
             }
 
-            // 取得印表機名稱
-            string? printerName = null;
+            // 生成純文字報表內容
+            _reportPreviewContent = await PurchaseOrderReportService.GeneratePlainTextReportAsync(editModalComponent.Entity.Id);
+            _reportDocumentName = $"採購單-{editModalComponent.Entity.Code}";
             
-            // 方式 1：從傳入的列印配置取得
-            if (printConfig?.PrinterConfigurationId.HasValue == true)
-            {
-                var printerConfig = await PrinterConfigurationService.GetByIdAsync(printConfig.PrinterConfigurationId.Value);
-                printerName = printerConfig?.Name;
-            }
-            
-            // 方式 2：從報表配置取得（使用預設報表 ID）
-            if (string.IsNullOrEmpty(printerName))
-            {
-                var reportConfig = await ReportPrintConfigurationService.GetByReportIdAsync("PO001");
-                if (reportConfig?.PrinterConfigurationId.HasValue == true)
-                {
-                    var printerConfig = await PrinterConfigurationService.GetByIdAsync(reportConfig.PrinterConfigurationId.Value);
-                    printerName = printerConfig?.Name;
-                }
-            }
-            
-            if (string.IsNullOrEmpty(printerName))
-            {
-                await NotificationService.ShowWarningAsync("請先設定採購單的列印印表機");
-                return;
-            }
-
-            // 直接呼叫服務列印（不經過 API，與 PrinterTestService 相同方式）
-            var result = await PurchaseOrderReportService.DirectPrintAsync(
-                editModalComponent.Entity.Id, 
-                printerName
-            );
-            
-            if (result.IsSuccess)
-            {
-                await NotificationService.ShowSuccessAsync($"已送出列印到印表機：{printerName}");
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync($"列印失敗：{result.ErrorMessage}");
-            }
+            // 開啟預覽 Modal
+            _showReportPreviewModal = true;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
-                additionalData: $"採購單直接列印失敗 - ID: {editModalComponent?.Entity?.Id}");
-            await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenReportPreviewModal), GetType(), 
+                additionalData: $"開啟採購單預覽失敗 - ID: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync("開啟預覽時發生錯誤");
         }
+    }
+
+    /// <summary>
+    /// 處理報表列印成功事件
+    /// </summary>
+    private Task HandleReportPrintSuccess()
+    {
+        // 列印成功後可以執行的額外邏輯（如記錄列印次數等）
+        return Task.CompletedTask;
     }
 
     private async Task CloseModal()

@@ -136,6 +136,14 @@
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
 
+                @if (ShowPreviewButton)
+                {
+                    <GenericButtonComponent Text="@PreviewButtonText" 
+                                          Variant="ButtonVariant.Blue" 
+                                          OnClick="HandlePreview" 
+                                          IsDisabled="@(IsSubmitting || IsLoading)" />
+                }
+
                 @if (ShowRefreshButton && Entity != null && Entity.Id > 0)
                 {
                     <GenericButtonComponent Text="重整" 
@@ -302,10 +310,12 @@
     [Parameter] public string SaveButtonText { get; set; } = "儲存";
     [Parameter] public string CancelButtonText { get; set; } = "取消";
     [Parameter] public string PrintButtonText { get; set; } = "列印";
+    [Parameter] public string PreviewButtonText { get; set; } = "預覽";
     [Parameter] public bool ShowSaveButton { get; set; } = true;
     [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public bool ShowRefreshButton { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = false;
+    [Parameter] public bool ShowPreviewButton { get; set; } = false;
     [Parameter] public bool ShowDeleteButton { get; set; } = true;
     [Parameter] public bool ShowReturnToLastButton { get; set; } = true;
     [Parameter] public string ReturnToLastButtonText { get; set; } = "返回編輯";
@@ -367,6 +377,7 @@
     [Parameter] public EventCallback OnSaveFailure { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public EventCallback OnPrint { get; set; }
+    [Parameter] public EventCallback OnPreview { get; set; }
     [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
     
     /// <summary>
@@ -905,6 +916,14 @@
         if (OnPrint.HasDelegate)
         {
             await OnPrint.InvokeAsync();
+        }
+    }
+
+    private async Task HandlePreview()
+    {
+        if (OnPreview.HasDelegate)
+        {
+            await OnPreview.InvokeAsync();
         }
     }
     
