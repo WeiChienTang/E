@@ -2,6 +2,8 @@
 
 @using ERPCore2.Helpers
 @using ERPCore2.Services.Reports
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -90,10 +92,12 @@
 <ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
                              IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
                              Title="採購單預覽"
-                             ReportContent="@_reportPreviewContent"
+                             PreviewImages="@_reportPreviewImages"
+                             FormattedDocument="@_formattedDocument"
                              ReportId="PO001"
                              DocumentName="@_reportDocumentName"
                              OnPrintSuccess="@HandleReportPrintSuccess"
+                             OnPaperSettingChanged="@HandlePaperSettingChanged"
                              OnCancel="@(() => _showReportPreviewModal = false)" />
 
 @code {
@@ -160,7 +164,8 @@
     // ===== 列印狀態 =====
     private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
     private bool _showReportPreviewModal = false; // 是否顯示報表預覽 Modal
-    private string _reportPreviewContent = string.Empty; // 報表預覽內容
+    private List<byte[]>? _reportPreviewImages = null; // 報表預覽圖片（格式化模式）
+    private FormattedDocument? _formattedDocument = null; // 格式化文件（用於列印）
     private string _reportDocumentName = string.Empty; // 列印文件名稱
 
     // ===== 複製訊息狀態 =====
@@ -315,8 +320,12 @@
                 return;
             }
 
-            // 生成純文字報表內容
-            _reportPreviewContent = await PurchaseOrderReportService.GeneratePlainTextReportAsync(editModalComponent.Entity.Id);
+            // 生成報表文件
+            _formattedDocument = await PurchaseOrderReportService.GenerateReportAsync(editModalComponent.Entity.Id);
+            
+            // 渲染為預覽圖片
+            _reportPreviewImages = await PurchaseOrderReportService.RenderToImagesAsync(editModalComponent.Entity.Id);
+            
             _reportDocumentName = $"採購單-{editModalComponent.Entity.Code}";
             
             // 開啟預覽 Modal
@@ -338,6 +347,42 @@
     {
         // 列印成功後可以執行的額外邏輯（如記錄列印次數等）
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 處理紙張設定變更事件
+    /// 當用戶在預覽 Modal 中變更紙張時，重新渲染預覽圖片
+    /// </summary>
+    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null) return;
+            
+            // 更新 FormattedDocument 的紙張尺寸（用於列印時正確分頁）
+            if (_formattedDocument != null)
+            {
+                _formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
+                _formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
+                _formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
+                _formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
+                _formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
+                _formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
+            }
+            
+            // 根據新的紙張設定重新渲染預覽圖片
+            _reportPreviewImages = await PurchaseOrderReportService.RenderToImagesAsync(
+                editModalComponent.Entity.Id, 
+                paperSetting);
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaperSettingChanged), GetType(),
+                additionalData: $"重新渲染採購單預覽失敗 - ID: {editModalComponent?.Entity?.Id}, 紙張: {paperSetting?.Name}");
+            await NotificationService.ShowErrorAsync("更新預覽時發生錯誤");
+        }
     }
 
     private async Task CloseModal()

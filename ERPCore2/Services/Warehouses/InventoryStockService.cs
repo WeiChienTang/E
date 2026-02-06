@@ -1090,7 +1090,6 @@ namespace ERPCore2.Services
                     
                     if (stock == null)
                     {
-                        ConsoleHelper.WriteError($"找不到庫存記錄 - 商品ID: {productId}, 交易編號: {transactionNumber}");
                         return ServiceResult.Failure("找不到庫存記錄");
                     }
                     
@@ -1109,64 +1108,11 @@ namespace ERPCore2.Services
                     
                     if (stockDetail == null)
                     {
-                        // 🔍 除錯：輸出找不到庫存記錄的詳細資訊
-                        ConsoleHelper.WriteError($"找不到倉庫庫存記錄");
-                        ConsoleHelper.WriteWarning($"  商品: {productInfo}");
-                        ConsoleHelper.WriteWarning($"  倉庫ID: {warehouseId}, 庫位ID: {locationId}");
-                        ConsoleHelper.WriteWarning($"  交易編號: {transactionNumber}");
-                        
                         return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
                     }
 
                     if (stockDetail.AvailableStock < quantity)
                     {
-                        // 🔍 除錯：輸出庫存不足的詳細資訊
-                        ConsoleHelper.WriteError($"庫存扣減失敗 - 可用庫存不足");
-                        ConsoleHelper.WriteWarning($"  商品: {productInfo}");
-                        ConsoleHelper.WriteWarning($"  倉庫ID: {warehouseId}, 庫位ID: {locationId}");
-                        ConsoleHelper.WriteWarning($"  需要扣減: {quantity}, 目前可用: {stockDetail.AvailableStock}");
-                        ConsoleHelper.WriteWarning($"  目前庫存: {stockDetail.CurrentStock}, 交易類型: {transactionType}");
-                        ConsoleHelper.WriteWarning($"  交易編號: {transactionNumber}");
-                        
-                        // 🔍 進階除錯：顯示該商品所有倉庫的庫存狀態
-                        ConsoleHelper.WriteInfo($"  === 該商品所有倉庫庫存明細 ===");
-                        if (stock.InventoryStockDetails?.Any() == true)
-                        {
-                            foreach (var detail in stock.InventoryStockDetails)
-                            {
-                                ConsoleHelper.WriteDebug($"    倉庫ID:{detail.WarehouseId}, 庫位ID:{detail.WarehouseLocationId}, " +
-                                    $"現有:{detail.CurrentStock}, 可用:{detail.AvailableStock}, 保留:{detail.ReservedStock}");
-                            }
-                        }
-                        else
-                        {
-                            ConsoleHelper.WriteWarning($"  該商品沒有任何庫存明細記錄！");
-                        }
-                        
-                        // 🔍 進階除錯：查看最近的庫存異動記錄
-                        ConsoleHelper.WriteInfo($"  === 該商品最近 5 筆庫存異動 ===");
-                        var recentTransactions = await context.InventoryTransactionDetails
-                            .Include(td => td.InventoryTransaction)
-                            .Where(td => td.ProductId == productId)
-                            .OrderByDescending(td => td.Id)
-                            .Take(5)
-                            .ToListAsync();
-                        
-                        if (recentTransactions.Any())
-                        {
-                            foreach (var trans in recentTransactions)
-                            {
-                                var transCode = trans.InventoryTransaction?.TransactionNumber ?? "N/A";
-                                var transType = trans.InventoryTransaction?.TransactionType.ToString() ?? "N/A";
-                                ConsoleHelper.WriteDebug($"    [{transCode}] 類型:{transType}, 數量:{trans.Quantity}, " +
-                                    $"庫存前:{trans.StockBefore}, 庫存後:{trans.StockAfter}");
-                            }
-                        }
-                        else
-                        {
-                            ConsoleHelper.WriteWarning($"  該商品沒有任何庫存異動記錄！");
-                        }
-                        
                         return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{stockDetail.AvailableStock}");
                     }
                     

@@ -184,6 +184,8 @@ namespace ERPCore2.Data
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportPrintService, ERPCore2.Services.Reports.ReportPrintService>();
                 // 純文字列印服務（共用的純文字報表列印功能）
                 services.AddScoped<IPlainTextPrintService, PlainTextPrintService>();
+                // 格式化列印服務（支援表格線、圖片等格式化列印）
+                services.AddScoped<ERPCore2.Services.Reports.Interfaces.IFormattedPrintService, FormattedPrintService>();
             }
             // 使用採購單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService, PurchaseOrderReportService>();

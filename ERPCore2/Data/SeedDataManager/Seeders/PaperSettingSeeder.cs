@@ -227,12 +227,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PAPER014",
                     Name = "中一刀",
-                    Width = 26.7m,      // 267mm = 26.7cm
-                    Height = 38.1m,     // 381mm = 38.1cm (15英吋)
-                    TopMargin = 0m,
-                    BottomMargin = 0m,
-                    LeftMargin = 0m,
-                    RightMargin = 0m,
+                    Width = 24.1m,      // 241mm = 24.1cm
+                    Height = 14m,       // 140mm = 14cm
+                    TopMargin = 0.3m,   // 點陣印表機需要預留邊距
+                    BottomMargin = 0.3m,
+                    LeftMargin = 0.8m,  // 左右預留約 8mm 避免被裁切
+                    RightMargin = 0.8m,
                     Remarks = "台灣常用中一刀紙張，適合報表列印",
                     Status = EntityStatus.Active,
                     CreatedAt = DateTime.Now
@@ -241,8 +241,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PAPER015",
                     Name = "中二刀",
-                    Width = 26.7m,      // 267mm = 26.7cm
-                    Height = 19.05m,    // 190.5mm = 19.05cm (中一刀的一半)
+                    Width = 24.1m,      // 241mm = 24.1cm
+                    Height = 7.0m,      // 70mm = 7.0cm (中一刀的一半)
                     TopMargin = 0.5m,
                     BottomMargin = 0.5m,
                     LeftMargin = 1.0m,
@@ -255,8 +255,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 {
                     Code = "PAPER016",
                     Name = "報表紙全張",
-                    Width = 24.13m,     // 9.5 inch = 24.13cm
-                    Height = 27.94m,    // 11 inch = 27.94cm
+                    Width = 24.1m,     // 9.5 inch = 24.13cm
+                    Height = 27.5m,    // 11 inch = 27.cm
                     TopMargin = 1.0m,
                     BottomMargin = 1.0m,
                     LeftMargin = 1.27m,  // 0.5 inch = 1.27cm (針孔邊)

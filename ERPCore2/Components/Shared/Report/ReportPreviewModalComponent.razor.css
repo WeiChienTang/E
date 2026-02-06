@@ -221,3 +221,67 @@
         padding: 1.5rem;
     }
 }
+
+/* ===== 格式化預覽模式樣式 ===== */
+
+/* 格式化預覽包裝器 */
+.formatted-preview-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 0;
+    transition: transform 0.2s ease;
+    transform-origin: top center;
+}
+
+/* 頁面預覽容器 */
+.page-preview-container {
+    position: relative;
+    background-color: #fff;
+    box-shadow: 
+        0 0 0 1px rgba(0, 0, 0, 0.1),
+        0 4px 8px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+}
+
+/* 頁碼標籤 */
+.page-number-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #0d6efd;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 2px 12px;
+    border-radius: 10px;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* 格式化頁面預覽圖片 */
+.formatted-page-preview {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #e9ecef;
+}
+
+/* 響應式調整 */
+@media (max-width: 767.98px) {
+    .formatted-preview-wrapper {
+        padding: 0.5rem 0;
+        gap: 1rem;
+    }
+    
+    .page-preview-container {
+        max-width: calc(100vw - 2rem);
+    }
+    
+    .formatted-page-preview {
+        max-width: 100%;
+    }
+}

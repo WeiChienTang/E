@@ -1,11 +1,13 @@
 @* 通用報表預覽 Modal - 整合預覽與列印功能 *@
 @* 設計理念：使用者先預覽報表內容，確認無誤後再按「列印」發送到印表機 *@
-@* 支援紙張變更時動態重新生成報表內容 *@
+@* 統一使用格式化模式：圖片預覽，支援表格線、圖片 *@
 
 @using ERPCore2.Services.Reports
+@using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Helpers
+@using ERPCore2.Models.Reports
 @inject INotificationService NotificationService
-@inject IPlainTextPrintService PlainTextPrintService
+@inject IFormattedPrintService FormattedPrintService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject IPrinterConfigurationService PrinterConfigurationService
 @inject IPaperSettingService PaperSettingService
@@ -148,14 +150,19 @@
                 
                 @* 右側：報表預覽區域 *@
                 <div class="report-preview-outer-container">
-                    @if (!string.IsNullOrEmpty(ReportContent))
+                    @if (PreviewImages != null && PreviewImages.Any())
                     {
-                        <div class="paper-preview-wrapper" style="@GetPreviewZoomStyle()">
-                            <div class="paper-preview" style="@GetPaperContainerStyle()">
-                                <div class="paper-content-scaler" style="@GetContentScaleStyle()">
-                                    <pre class="report-preview-content">@ReportContent</pre>
+                        @* 顯示圖片預覽 *@
+                        <div class="formatted-preview-wrapper" style="@GetPreviewZoomStyle()">
+                            @foreach (var (imageData, index) in PreviewImages.Select((img, i) => (img, i)))
+                            {
+                                <div class="page-preview-container mb-3">
+                                    <div class="page-number-badge">第 @(index + 1) 頁</div>
+                                    <img src="data:image/png;base64,@Convert.ToBase64String(imageData)" 
+                                         class="formatted-page-preview" 
+                                         alt="預覽第 @(index + 1) 頁" />
                                 </div>
-                            </div>
+                            }
                         </div>
                     }
                     else
@@ -192,9 +199,15 @@
     [Parameter] public string Title { get; set; } = "報表預覽";
     
     /// <summary>
-    /// 報表純文字內容
+    /// 報表預覽圖片
+    /// 由 RenderToImages 生成的 PNG 圖片 byte[] 列表
     /// </summary>
-    [Parameter] public string ReportContent { get; set; } = string.Empty;
+    [Parameter] public List<byte[]>? PreviewImages { get; set; }
+    
+    /// <summary>
+    /// 格式化文件（列印時需要）
+    /// </summary>
+    [Parameter] public FormattedDocument? FormattedDocument { get; set; }
     
     /// <summary>
     /// 報表 ID（用於查詢印表機配置）
@@ -223,11 +236,10 @@
     [Parameter] public EventCallback OnCancel { get; set; }
     
     /// <summary>
-    /// 紙張變更時的報表重新生成回調
-    /// 當使用者變更紙張設定時，會觸發此回調請求重新生成報表
-    /// 父組件應根據 PaperLayout 重新生成報表內容並更新 ReportContent
+    /// 紙張設定變更事件
+    /// 當用戶變更紙張選擇時觸發，父組件應根據新紙張重新渲染預覽圖片
     /// </summary>
-    [Parameter] public EventCallback<PaperLayout> OnPaperLayoutChanged { get; set; }
+    [Parameter] public EventCallback<PaperSetting> OnPaperSettingChanged { get; set; }
     
     // ===== 內部狀態 =====
     
@@ -251,17 +263,11 @@
     private int _copies = 1;
     private int _estimatedPages = 1;
     
-    // 紙張預覽設定
-    private const decimal PreviewScale = 35.0m;  // 預覽縮放比例 (1cm = 35px)，提高以讓預覽更清晰
-    private const int BaseReportWidth = 80;      // 報表基準寬度（字元數）
-    
-    // 計算出的預覽字型大小 (px)
-    private decimal _previewFontSizePx = 12m;
-    // 計算出的列印字型大小 (pt)
-    private float _calculatedPrintFontSize = 10f;
-    
     // 預覽縮放控制
     private int _previewZoom = 100;  // 縮放百分比（50-200）
+    
+    // 初始化標記（避免參數變更時重複載入配置）
+    private bool _isConfigurationLoaded = false;
     
     // ===== 生命週期 =====
     
@@ -269,9 +275,17 @@
     {
         if (IsVisible)
         {
-            await LoadPrintConfigurations();
-            CalculateContentScale();
+            // 只在第一次開啟 Modal 時載入預設配置
+            if (!_isConfigurationLoaded)
+            {
+                await LoadPrintConfigurations();
+            }
             CalculateEstimatedPages();
+        }
+        else
+        {
+            // Modal 關閉時重設標記，下次開啟時重新載入
+            _isConfigurationLoaded = false;
         }
     }
     
@@ -325,6 +339,16 @@
             
             // 重設列印份數
             _copies = 1;
+            
+            // 標記配置已載入
+            _isConfigurationLoaded = true;
+            
+            // 如果有預設紙張設定，通知父組件用正確的紙張尺寸重新渲染預覽
+            // 這確保預覽圖片與設定的紙張格式一致（例如中一刀而非預設 A4）
+            if (_selectedPaper != null && OnPaperSettingChanged.HasDelegate)
+            {
+                await OnPaperSettingChanged.InvokeAsync(_selectedPaper);
+            }
         }
         catch (Exception ex)
         {
@@ -343,63 +367,14 @@
     /// </summary>
     private void CalculateEstimatedPages()
     {
-        if (string.IsNullOrEmpty(ReportContent))
+        // 根據圖片數量計算頁數
+        if (PreviewImages != null)
         {
-            _estimatedPages = 0;
+            _estimatedPages = PreviewImages.Count;
             return;
         }
         
-        // 簡單估算：根據行數計算頁數（假設每頁約 60 行）
-        var lineCount = ReportContent.Split('\n').Length;
-        const int linesPerPage = 60;
-        _estimatedPages = Math.Max(1, (int)Math.Ceiling((double)lineCount / linesPerPage));
-    }
-    
-    /// <summary>
-    /// 取得紙張容器的樣式（寬度、高度）
-    /// </summary>
-    private string GetPaperContainerStyle()
-    {
-        decimal width, height, leftMargin, topMargin, rightMargin, bottomMargin;
-        
-        if (_selectedPaper == null)
-        {
-            // 預設 A4 紙張：21cm × 29.7cm，邊距 1cm
-            width = 21m;
-            height = 29.7m;
-            leftMargin = topMargin = rightMargin = bottomMargin = 1m;
-        }
-        else
-        {
-            // 直接使用紙張設定的寬度和高度（紙張設定已包含方向）
-            width = _selectedPaper.Width;
-            height = _selectedPaper.Height;
-            leftMargin = _selectedPaper.LeftMargin ?? 1m;
-            topMargin = _selectedPaper.TopMargin ?? 1m;
-            rightMargin = _selectedPaper.RightMargin ?? 1m;
-            bottomMargin = _selectedPaper.BottomMargin ?? 1m;
-        }
-        
-        // 轉換為像素 (1cm = 20px for preview)
-        var widthPx = width * PreviewScale;
-        var heightPx = height * PreviewScale;
-        var paddingTop = topMargin * PreviewScale;
-        var paddingRight = rightMargin * PreviewScale;
-        var paddingBottom = bottomMargin * PreviewScale;
-        var paddingLeft = leftMargin * PreviewScale;
-        
-        return $"width: {widthPx:F0}px; height: {heightPx:F0}px; " +
-               $"padding: {paddingTop:F0}px {paddingRight:F0}px {paddingBottom:F0}px {paddingLeft:F0}px;";
-    }
-    
-    /// <summary>
-    /// 取得內容字型樣式
-    /// 根據紙張大小計算適合的字型大小
-    /// </summary>
-    private string GetContentScaleStyle()
-    {
-        // 使用計算出的預覽字型大小
-        return $"font-size: {_previewFontSizePx:F1}px;";  
+        _estimatedPages = 0;
     }
     
     /// <summary>
@@ -454,7 +429,7 @@
     /// <summary>
     /// 紙張變更事件
     /// </summary>
-    private void OnPaperChanged()
+    private async Task OnPaperChanged()
     {
         if (_selectedPaperSettingId > 0)
         {
@@ -467,70 +442,26 @@
             _paperSettingId = null;
         }
         
-        // 重新計算縮放比例
-        CalculateContentScale();
-        
         // 重新計算頁數
         CalculateEstimatedPages();
-    }
-    
-    /// <summary>
-    /// 計算預覽和列印的字型大小
-    /// 根據紙張可用寬度計算適合的字型大小，讓內容剛好填滿紙張寬度
-    /// 
-    /// 核心公式：
-    /// - 列印字型大小(pt) = 可用寬度(cm) / (報表字元數 × 字元寬度係數)
-    /// - 字元寬度係數 = 0.0352778(cm/pt) × 0.6(等寬字型比) = 0.0211667
-    /// - 預覽字型大小(px) = 列印字型大小(pt) × (PreviewScale / 2.8346457)
-    ///   其中 2.8346457 是 1cm 有多少 pt (72pt/25.4mm)
-    /// </summary>
-    private void CalculateContentScale()
-    {
-        // 取得紙張的可用寬度（cm）
-        decimal paperWidth, leftMargin, rightMargin;
         
-        if (_selectedPaper == null)
+        // 通知父組件紙張已變更，需要重新渲染預覽圖片
+        if (_selectedPaper != null && OnPaperSettingChanged.HasDelegate)
         {
-            // 預設 A4：21cm，邊距各 1cm
-            paperWidth = 21m;
-            leftMargin = 1m;
-            rightMargin = 1m;
+            await OnPaperSettingChanged.InvokeAsync(_selectedPaper);
         }
-        else
-        {
-            // 直接使用紙張設定的寬度（紙張設定已包含方向）
-            paperWidth = _selectedPaper.Width;
-            leftMargin = _selectedPaper.LeftMargin ?? 1m;
-            rightMargin = _selectedPaper.RightMargin ?? 1m;
-        }
-        
-        // 可用寬度（cm）
-        var availableWidthCm = paperWidth - leftMargin - rightMargin;
-        
-        // 計算列印字型大小（pt）
-        // Courier New 等寬字型：1pt 字型的字元寬度 ≈ 0.0211667 cm
-        // 所以：字型大小(pt) = 可用寬度(cm) / (字元數 × 0.0211667)
-        const decimal CharWidthPerPt = 0.0211667m; // cm per pt (for Courier New)
-        var printFontSizePt = availableWidthCm / (BaseReportWidth * CharWidthPerPt);
-        _calculatedPrintFontSize = Math.Max(6f, Math.Min(14f, (float)printFontSizePt));
-        
-        // 計算預覽字型大小（px）
-        // 預覽比例：1cm = 35px（PreviewScale）
-        // pt 轉 cm：1pt = 0.0352778cm
-        // 所以預覽中 1pt = 0.0352778 × 35 = 1.2347 px
-        const decimal PtToPxInPreview = 1.2347m; // 預覽中 1pt 對應的 px（根據 PreviewScale=35 計算）
-        _previewFontSizePx = (decimal)_calculatedPrintFontSize * PtToPxInPreview;
-        _previewFontSizePx = Math.Max(8m, Math.Min(25m, _previewFontSizePx));
     }
     
     // ===== 事件處理 =====
     
     /// <summary>
     /// 處理列印按鈕點擊
+    /// 使用格式化列印服務
     /// </summary>
     private async Task HandlePrint()
     {
-        if (IsPrinting || string.IsNullOrEmpty(ReportContent))
+        // 檢查是否有內容可列印
+        if (IsPrinting || FormattedDocument == null)
             return;
         
         if (string.IsNullOrEmpty(_printerName))
@@ -547,18 +478,12 @@
             IsPrinting = true;
             StateHasChanged();
             
-            // 從紙張設定取得邊距
-            var margins = PrintMargins.FromPaperSetting(_selectedPaper);
+            // Debug: 確認列印時的邊距設定
+            Console.WriteLine($"[HandlePrint] FormattedDocument 邊距: 左={FormattedDocument.PageSettings.LeftMargin}, 右={FormattedDocument.PageSettings.RightMargin}, 上={FormattedDocument.PageSettings.TopMargin}, 下={FormattedDocument.PageSettings.BottomMargin}");
+            Console.WriteLine($"[HandlePrint] FormattedDocument 紙張: {FormattedDocument.PageSettings.PageWidth}x{FormattedDocument.PageSettings.PageHeight} cm");
             
-            // 使用 PlainTextPrintService 直接列印
-            // 使用計算出的字型大小，確保內容能剛好填滿紙張寬度
-            var result = PlainTextPrintService.PrintText(
-                textContent: ReportContent, 
-                printerName: _printerName, 
-                documentName: DocumentName, 
-                fontSize: _calculatedPrintFontSize,
-                copies: _copies,
-                margins: margins);
+            // 使用格式化列印服務（支援表格線、圖片）
+            var result = FormattedPrintService.Print(FormattedDocument, _printerName, _copies);
             
             if (result.IsSuccess)
             {

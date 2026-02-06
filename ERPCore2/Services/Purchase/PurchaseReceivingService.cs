@@ -339,14 +339,6 @@ namespace ERPCore2.Services
                             .ToListAsync();
                         
                         // 3. 對每個明細進行庫存回退
-                        ConsoleHelper.WriteTitle($"刪除進貨單 [{purchaseReceiving.Code}] - 開始庫存回退");
-                        ConsoleHelper.WriteInfo($"共有 {eligibleDetails.Count} 筆明細需要回退庫存");
-                        
-                        if (existingDelDetails.Any())
-                        {
-                            ConsoleHelper.WriteWarning($"發現已有 {existingDelDetails.Count} 筆刪除記錄，將跳過已處理的明細");
-                        }
-                        
                         foreach (var detail in eligibleDetails)
                         {
                             // 檢查此明細是否已經被處理過（有對應的刪除記錄）
@@ -356,13 +348,8 @@ namespace ERPCore2.Services
                             
                             if (alreadyProcessed)
                             {
-                                ConsoleHelper.WriteWarning($"跳過明細 ID:{detail.Id}, 商品ID:{detail.ProductId} - 已有刪除記錄");
                                 continue;
                             }
-                            
-                            // 🔍 除錯：輸出即將回退的明細資訊
-                            ConsoleHelper.WriteStep(eligibleDetails.IndexOf(detail) + 1, 
-                                $"回退明細 ID:{detail.Id}, 商品ID:{detail.ProductId}, 倉庫ID:{detail.WarehouseId}, 數量:{detail.ReceivedQuantity}");
                             
                             var reduceResult = await _inventoryStockService.ReduceStockAsync(
                                 detail.ProductId,
@@ -379,13 +366,8 @@ namespace ERPCore2.Services
                             
                             if (!reduceResult.IsSuccess)
                             {
-                                ConsoleHelper.WriteError($"庫存回退失敗！明細ID:{detail.Id}, 商品ID:{detail.ProductId}");
                                 await transaction.RollbackAsync();
                                 return ServiceResult.Failure($"庫存回退失敗：{reduceResult.ErrorMessage}");
-                            }
-                            else
-                            {
-                                ConsoleHelper.WriteSuccess($"明細 ID:{detail.Id} 庫存回退成功");
                             }
                         }
                     }
@@ -470,14 +452,6 @@ namespace ERPCore2.Services
                             .Select(td => new { td.ProductId, td.SourceDetailId })
                             .ToListAsync();
                         
-                        ConsoleHelper.WriteTitle($"永久刪除進貨單 [{entity.Code}] - 開始庫存回退");
-                        ConsoleHelper.WriteInfo($"共有 {eligibleDetails.Count} 筆明細需要回退庫存");
-                        
-                        if (existingDelDetails.Any())
-                        {
-                            ConsoleHelper.WriteWarning($"發現已有 {existingDelDetails.Count} 筆刪除記錄，將跳過已處理的明細");
-                        }
-                        
                         foreach (var detail in eligibleDetails)
                         {
                             // 檢查此明細是否已經被處理過（有對應的刪除記錄）
@@ -487,13 +461,8 @@ namespace ERPCore2.Services
                             
                             if (alreadyProcessed)
                             {
-                                ConsoleHelper.WriteWarning($"跳過明細 ID:{detail.Id}, 商品ID:{detail.ProductId} - 已有刪除記錄");
                                 continue;
                             }
-                            
-                            // 🔍 除錯：輸出即將回退的明細資訊
-                            ConsoleHelper.WriteStep(eligibleDetails.IndexOf(detail) + 1, 
-                                $"回退明細 ID:{detail.Id}, 商品ID:{detail.ProductId}, 倉庫ID:{detail.WarehouseId}, 數量:{detail.ReceivedQuantity}");
                             
                             var reduceResult = await _inventoryStockService.ReduceStockAsync(
                                 detail.ProductId,
@@ -510,13 +479,8 @@ namespace ERPCore2.Services
                             
                             if (!reduceResult.IsSuccess)
                             {
-                                ConsoleHelper.WriteError($"庫存回退失敗！明細ID:{detail.Id}, 商品ID:{detail.ProductId}");
                                 await transaction.RollbackAsync();
                                 return ServiceResult.Failure($"庫存回退失敗：{reduceResult.ErrorMessage}");
-                            }
-                            else
-                            {
-                                ConsoleHelper.WriteSuccess($"明細 ID:{detail.Id} 庫存回退成功");
                             }
                         }
                     }
@@ -1035,9 +999,6 @@ namespace ERPCore2.Services
                     if (currentReceiving == null)
                         return ServiceResult.Failure("找不到指定的進貨單");
 
-                    ConsoleHelper.WriteTitle($"庫存差異更新 - 進貨單 {currentReceiving.Code}");
-                    ConsoleHelper.WriteInfo($"進貨單ID: {currentReceiving.Id}, 明細數: {currentReceiving.PurchaseReceivingDetails.Count}");
-
                     // 🔑 簡化設計：查詢該單據的所有異動明細，透過 TransactionNumber + SourceDocumentId 精確匹配
                     var allTransactionDetails = await context.InventoryTransactionDetails
                         .Include(d => d.InventoryTransaction)
@@ -1048,7 +1009,6 @@ namespace ERPCore2.Services
                         .ThenBy(d => d.Id)
                         .ToListAsync();
                     
-                    ConsoleHelper.WriteInfo($"查詢條件: TransactionNumber={currentReceiving.Code}, SourceDocumentId={currentReceiving.Id}");
                     // 找到最後一次刪除記錄（OperationType = Delete）
                     var lastDeleteDetail = allTransactionDetails
                         .Where(d => d.OperationType == InventoryOperationTypeEnum.Delete)
@@ -1061,18 +1021,6 @@ namespace ERPCore2.Services
                         ? allTransactionDetails.Where(d => d.Id > lastDeleteDetail.Id && 
                                                           d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
                         : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
-
-                    ConsoleHelper.WriteInfo($"找到 {allTransactionDetails.Count} 筆交易記錄，有效記錄 {existingDetails.Count} 筆");
-                    
-                    // 🔍 除錯：顯示所有異動記錄明細
-                    ConsoleHelper.WriteSeparator('=', 60);
-                    ConsoleHelper.WriteInfo("已存在的異動記錄明細：");
-                    foreach (var detail in existingDetails)
-                    {
-                        ConsoleHelper.WriteDebug($"  ID:{detail.Id}, 商品:{detail.ProductId}, 數量:{detail.Quantity}, " +
-                            $"操作類型:{detail.OperationType}, 時間:{detail.OperationTime:HH:mm:ss}");
-                    }
-                    ConsoleHelper.WriteSeparator('=', 60);
 
                     // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
                     var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal? UnitPrice)>();
@@ -1087,7 +1035,6 @@ namespace ERPCore2.Services
                         // 累加所有交易的淨值（Quantity已經包含正負號）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
                         var newQty = oldQty + detail.Quantity;
-                        ConsoleHelper.WriteDebug($"  累加: {key} => 舊淨值:{oldQty} + 數量:{detail.Quantity} = 新淨值:{newQty}");
                         processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
                                                   processedInventory[key].LocationId, newQty, 
                                                   detail.UnitCost);
@@ -1110,21 +1057,6 @@ namespace ERPCore2.Services
                                                detail.UnitPrice);
                     }
 
-                    // 🔍 除錯：顯示當前明細
-                    ConsoleHelper.WriteInfo("當前進貨明細：");
-                    foreach (var kv in currentInventory)
-                    {
-                        ConsoleHelper.WriteDebug($"  {kv.Key} => 目標數量:{kv.Value.CurrentQuantity}");
-                    }
-                    
-                    // 🔍 除錯：顯示已處理庫存
-                    ConsoleHelper.WriteInfo("已處理庫存淨值：");
-                    foreach (var kv in processedInventory)
-                    {
-                        ConsoleHelper.WriteDebug($"  {kv.Key} => 已處理數量:{kv.Value.NetProcessedQuantity}");
-                    }
-                    ConsoleHelper.WriteSeparator('=', 60);
-                    
                     // 處理庫存差異 - 使用淨值計算方式
                     var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
                     
@@ -1141,11 +1073,6 @@ namespace ERPCore2.Services
                         
                         // 計算需要調整的數量
                         decimal adjustmentNeeded = targetQuantity - processedQuantity;
-
-                        // 🔍 除錯：顯示調整計算
-                        ConsoleHelper.WriteStep(1, $"調整計算 - {key}");
-                        ConsoleHelper.WriteDebug($"  目標數量:{targetQuantity}, 已處理數量:{processedQuantity}");
-                        ConsoleHelper.WriteDebug($"  調整數量:{adjustmentNeeded} (目標 - 已處理 = {targetQuantity} - {processedQuantity})");
                         
                         // 檢查價格是否變化（用於更新平均成本）
                         decimal? currentPrice = hasCurrent ? currentInventory[key].UnitPrice : (decimal?)null;

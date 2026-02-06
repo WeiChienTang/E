@@ -58,9 +58,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                // 使用純文字報表
-                var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
-                var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}");
+                // 使用格式化報表渲染為圖片
+                var images = await _purchaseOrderReportService.RenderToImagesAsync(id);
+                if (images == null || !images.Any())
+                {
+                    return NotFound(new { message = $"無法生成採購單報表：找不到 ID {id}" });
+                }
+                
+                var html = WrapImagesAsHtml(images, $"採購單報表 - {id}");
                 return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
@@ -88,9 +93,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                // 使用純文字報表，自動列印
-                var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
-                var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}", autoPrint: true);
+                // 使用格式化報表渲染為圖片，並自動列印
+                var images = await _purchaseOrderReportService.RenderToImagesAsync(id);
+                if (images == null || !images.Any())
+                {
+                    return NotFound(new { message = $"無法生成採購單報表：找不到 ID {id}" });
+                }
+                
+                var html = WrapImagesAsHtml(images, $"採購單報表 - {id}", autoPrint: true);
                 return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
@@ -118,9 +128,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                // 使用純文字報表
-                var plainText = await _purchaseOrderReportService.GeneratePlainTextReportAsync(id);
-                var html = WrapPlainTextAsHtml(plainText, $"採購單報表 - {id}");
+                // 使用格式化報表渲染為圖片
+                var images = await _purchaseOrderReportService.RenderToImagesAsync(id);
+                if (images == null || !images.Any())
+                {
+                    return NotFound(new { message = $"無法生成採購單報表：找不到 ID {id}" });
+                }
+                
+                var html = WrapImagesAsHtml(images, $"採購單報表 - {id}");
                 return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
@@ -134,103 +149,35 @@ namespace ERPCore2.Controllers
         }
 
         /// <summary>
-        /// 批次生成採購單報表（支援多條件篩選）
+        /// 批次生成採購單報表（已棄用）
         /// </summary>
-        /// <param name="criteria">批次列印篩選條件</param>
-        /// <param name="configId">列印配置ID（可選）</param>
-        /// <param name="reportType">報表類型（可選）</param>
-        /// <returns>合併後的報表內容</returns>
+        /// <returns>錯誤訊息：此端點已棄用</returns>
         [HttpPost("purchase-order/batch")]
-        public async Task<IActionResult> BatchPrintPurchaseOrders(
+        public IActionResult BatchPrintPurchaseOrders(
             [FromBody] BatchPrintCriteria criteria,
             [FromQuery] int? configId = null,
             [FromQuery] string? reportType = null)
         {
-            try
-            {
-
-                // 驗證篩選條件
-                var validation = criteria.Validate();
-                if (!validation.IsValid)
-                {
-                    return BadRequest(new { message = "篩選條件驗證失敗", errors = validation.Errors });
-                }
-
-                // 載入列印配置
-                ReportPrintConfiguration? printConfig = null;
-                if (configId.HasValue)
-                {
-                    printConfig = await _reportPrintConfigurationService.GetByIdAsync(configId.Value);
-                }
-                else if (!string.IsNullOrEmpty(reportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(reportType);
-                }
-                else if (!string.IsNullOrEmpty(criteria.ReportType))
-                {
-                    printConfig = await _reportPrintConfigurationService.GetCompleteConfigurationAsync(criteria.ReportType);
-                }
-
-                // 生成批次純文字報表並包裝成 HTML
-                var plainText = await _purchaseOrderReportService.GenerateBatchPlainTextReportAsync(criteria);
-                var reportHtml = WrapPlainTextAsHtml(plainText, "採購單批次報表");
-
-                return Content(reportHtml, "text/html; charset=utf-8");
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "批次生成報表時發生錯誤", detail = ex.Message });
-            }
+            return StatusCode(410, new { 
+                message = "此端點已棄用", 
+                detail = "批次列印功能請使用 UI 介面操作" 
+            });
         }
 
         /// <summary>
-        /// 批次生成採購單報表並自動列印（支援多條件篩選）
+        /// 批次生成採購單報表並自動列印（已棄用）
         /// </summary>
-        /// <param name="criteria">批次列印篩選條件</param>
-        /// <param name="configId">列印配置ID（可選）</param>
-        /// <param name="reportType">報表類型（可選）</param>
-        /// <returns>可列印的報表內容</returns>
+        /// <returns>錯誤訊息：此端點已棄用</returns>
         [HttpPost("purchase-order/batch/print")]
-        public async Task<IActionResult> BatchPrintPurchaseOrdersWithAuto(
+        public IActionResult BatchPrintPurchaseOrdersWithAuto(
             [FromBody] BatchPrintCriteria criteria,
             [FromQuery] int? configId = null,
             [FromQuery] string? reportType = null)
         {
-            try
-            {
-
-                // 先生成報表
-                var response = await BatchPrintPurchaseOrders(criteria, configId, reportType);
-                
-                if (response is ContentResult contentResult)
-                {
-                    var reportHtml = contentResult.Content;
-                    
-                    // 添加自動列印的 JavaScript
-                    var printScript = @"
-<script>
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    });
-</script>
-";
-                    reportHtml = reportHtml!.Replace("</body>", printScript + "</body>");
-
-                    return Content(reportHtml, "text/html; charset=utf-8");
-                }
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "批次列印報表時發生錯誤", detail = ex.Message });
-            }
+            return StatusCode(410, new { 
+                message = "此端點已棄用", 
+                detail = "批次列印功能請使用 UI 介面操作" 
+            });
         }
 
         #region 進貨單報表
@@ -472,6 +419,48 @@ namespace ERPCore2.Controllers
 </head>
 <body>
 <pre>{escapedText}</pre>
+<script>{autoPrintScript}</script>
+</body>
+</html>";
+        }
+
+        /// <summary>
+        /// 將圖片列表包裝成 HTML 頁面
+        /// </summary>
+        private static string WrapImagesAsHtml(List<byte[]> images, string title, bool autoPrint = false)
+        {
+            var autoPrintScript = autoPrint 
+                ? @"
+    window.addEventListener('load', function() {
+        setTimeout(function() { window.print(); }, 500);
+    });" 
+                : "";
+            
+            var imagesHtml = string.Join("\n", images.Select((img, i) => 
+                $@"<div class='page'>
+                    <div class='page-number'>第 {i + 1} 頁</div>
+                    <img src='data:image/png;base64,{Convert.ToBase64String(img)}' alt='第 {i + 1} 頁' />
+                </div>"));
+
+            return $@"<!DOCTYPE html>
+<html lang='zh-TW'>
+<head>
+    <meta charset='UTF-8'>
+    <title>{title}</title>
+    <style>
+        body {{ font-family: sans-serif; margin: 20px; background: #f0f0f0; }}
+        .page {{ background: white; margin: 20px auto; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); max-width: 100%; }}
+        .page img {{ width: 100%; height: auto; display: block; }}
+        .page-number {{ text-align: center; color: #666; font-size: 12px; margin-bottom: 10px; }}
+        @media print {{ 
+            body {{ margin: 0; background: white; }} 
+            .page {{ box-shadow: none; margin: 0; page-break-after: always; }}
+            .page-number {{ display: none; }}
+        }}
+    </style>
+</head>
+<body>
+{imagesHtml}
 <script>{autoPrintScript}</script>
 </body>
 </html>";
