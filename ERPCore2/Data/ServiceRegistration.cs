@@ -187,6 +187,8 @@ namespace ERPCore2.Data
                 // 格式化列印服務（支援表格線、圖片等格式化列印）
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IFormattedPrintService, FormattedPrintService>();
             }
+            // Excel 匯出服務（跨平台）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IExcelExportService, ExcelExportService>();
             // 使用採購單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService, PurchaseOrderReportService>();
             // 進貨單（入庫單）報表服務
