@@ -33,8 +33,8 @@
         <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
             @* 右側：操作按鈕 *@
             <div class="d-flex gap-2 ms-auto">
-                <GenericButtonComponent Text="轉Excel" 
-                                      Variant="ButtonVariant.Gray" 
+                <GenericButtonComponent Text="匯出Excel" 
+                                      Variant="ButtonVariant.Green" 
                                       OnClick="HandleExportExcel" 
                                       IsDisabled="@(IsLoading || IsPrinting || IsExporting || FormattedDocument == null)" />
                 
@@ -604,10 +604,6 @@
         {
             IsPrinting = true;
             StateHasChanged();
-            
-            // Debug: 確認列印時的邊距設定
-            Console.WriteLine($"[HandlePrint] FormattedDocument 邊距: 左={FormattedDocument.PageSettings.LeftMargin}, 右={FormattedDocument.PageSettings.RightMargin}, 上={FormattedDocument.PageSettings.TopMargin}, 下={FormattedDocument.PageSettings.BottomMargin}");
-            Console.WriteLine($"[HandlePrint] FormattedDocument 紙張: {FormattedDocument.PageSettings.PageWidth}x{FormattedDocument.PageSettings.PageHeight} cm");
             
             // 使用格式化列印服務（支援表格線、圖片）
             var result = FormattedPrintService.Print(FormattedDocument, _printerName, _copies);

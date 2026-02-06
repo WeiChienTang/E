@@ -199,9 +199,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                // 使用純文字報表
-                var plainText = await _purchaseReceivingReportService.GeneratePlainTextReportAsync(id);
-                var html = WrapPlainTextAsHtml(plainText, $"進貨單報表 - {id}");
+                // 使用格式化報表渲染為圖片
+                var images = await _purchaseReceivingReportService.RenderToImagesAsync(id);
+                if (images == null || !images.Any())
+                {
+                    return NotFound(new { message = $"無法生成進貨單報表：找不到 ID {id}" });
+                }
+                
+                var html = WrapImagesAsHtml(images, $"進貨單報表 - {id}");
                 return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
@@ -229,9 +234,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                // 使用純文字報表，自動列印
-                var plainText = await _purchaseReceivingReportService.GeneratePlainTextReportAsync(id);
-                var html = WrapPlainTextAsHtml(plainText, $"進貨單報表 - {id}", autoPrint: true);
+                // 使用格式化報表渲染為圖片，並自動列印
+                var images = await _purchaseReceivingReportService.RenderToImagesAsync(id);
+                if (images == null || !images.Any())
+                {
+                    return NotFound(new { message = $"無法生成進貨單報表：找不到 ID {id}" });
+                }
+                
+                var html = WrapImagesAsHtml(images, $"進貨單報表 - {id}", autoPrint: true);
                 return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
@@ -259,9 +269,14 @@ namespace ERPCore2.Controllers
         {
             try
             {
-                // 使用純文字報表
-                var plainText = await _purchaseReceivingReportService.GeneratePlainTextReportAsync(id);
-                var html = WrapPlainTextAsHtml(plainText, $"進貨單報表 - {id}");
+                // 使用格式化報表渲染為圖片
+                var images = await _purchaseReceivingReportService.RenderToImagesAsync(id);
+                if (images == null || !images.Any())
+                {
+                    return NotFound(new { message = $"無法生成進貨單報表：找不到 ID {id}" });
+                }
+                
+                var html = WrapImagesAsHtml(images, $"進貨單報表 - {id}");
                 return Content(html, "text/html; charset=utf-8");
             }
             catch (ArgumentException ex)
@@ -276,6 +291,7 @@ namespace ERPCore2.Controllers
 
         /// <summary>
         /// 批次生成進貨單報表（支援多條件篩選）
+        /// 注意：批次列印建議使用 DirectPrintBatchAsync 方法直接發送到印表機
         /// </summary>
         /// <param name="criteria">批次列印篩選條件</param>
         /// <param name="configId">列印配置ID（可選）</param>
@@ -296,11 +312,8 @@ namespace ERPCore2.Controllers
                     return BadRequest(new { message = "篩選條件驗證失敗", errors = validation.Errors });
                 }
 
-                // 生成批次純文字報表並包裝成 HTML
-                var plainText = await _purchaseReceivingReportService.GenerateBatchPlainTextReportAsync(criteria);
-                var reportHtml = WrapPlainTextAsHtml(plainText, "進貨單批次報表");
-
-                return Content(reportHtml, "text/html; charset=utf-8");
+                // 批次報表目前不支援透過 HTTP 預覽，請使用 DirectPrintBatchAsync 方法直接列印
+                return BadRequest(new { message = "批次報表請使用 DirectPrintBatchAsync 方法直接列印" });
             }
             catch (ArgumentException ex)
             {
