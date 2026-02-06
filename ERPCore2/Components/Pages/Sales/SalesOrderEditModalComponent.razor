@@ -755,6 +755,7 @@
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
                         <SalesOrderTable @ref="salesOrderDetailManager"
+                                                          @key="@editModalComponent.Entity.Id"
                                                           TMainEntity="SalesOrder" 
                                                           TDetailEntity="SalesOrderDetail"
                                                           MainEntity="@editModalComponent.Entity"

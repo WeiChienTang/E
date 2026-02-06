@@ -247,7 +247,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // 初始化時記錄當前客戶ID，避免 OnParametersSetAsync 誤判為變更
+        // 初始化追蹤變數
         _previousSelectedCustomerId = SelectedCustomerId;
         
         await LoadExistingDetailsAsync();
@@ -263,8 +263,10 @@ else
     {
         base.OnParametersSet();
         
-        // 檢查客戶是否變更
-        if (_previousSelectedCustomerId != SelectedCustomerId)
+        // 檢查客戶是否變更（使用 @key 方案後，ExistingDetails 變更會觸發組件重建，不需要手動追蹤）
+        bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
+        
+        if (customerChanged)
         {
             _previousSelectedCustomerId = SelectedCustomerId;
             
@@ -274,8 +276,6 @@ else
             
             // 檢查是否有歷史報價記錄
             await CheckLastQuotationRecordAsync();
-            
-            return; // 客戶變更時已經處理完畢，直接返回
         }
     }
     
@@ -983,91 +983,91 @@ else
 
         QuotationItems.Clear();
         
-        foreach (var detail in ExistingDetails)
-        {
-            // 轉換為正確的實體類型
-            if (detail is QuotationDetail quotationDetail)
+            foreach (var detail in ExistingDetails)
             {
-                var item = new QuotationItem
-                {
-                    // 直接使用 Navigation Properties
-                    SelectedProduct = quotationDetail.Product,
-                    SelectedUnit = quotationDetail.Unit,
-                    
-                    // 設定搜尋顯示值（修正編輯模式顯示問題）
-                    ProductSearchValue = quotationDetail.Product != null ? 
-                        $"[{quotationDetail.Product.Code}] {quotationDetail.Product.Name}" : string.Empty,
-                    
-                    // 直接使用屬性值
-                    Quantity = quotationDetail.Quantity,
-                    UnitPrice = quotationDetail.UnitPrice,
-                    DiscountPercentage = quotationDetail.DiscountPercentage,
-                    ConvertedQuantity = quotationDetail.ConvertedQuantity,
-                    TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? defaultTaxRate,
-                    Specification = quotationDetail.Specification ?? quotationDetail.Product?.Specification ?? string.Empty,
-                    Remarks = quotationDetail.Remarks ?? string.Empty,
-                    ExistingDetailEntity = detail
-                };
-                
-                // 載入該明細的組合明細資料（如果有的話）
-                if (quotationDetail.Id > 0)
-                {
-                    var compositionDetails = await QuotationCompositionDetailService
-                        .GetByQuotationDetailIdAsync(quotationDetail.Id);
-                    
-                    if (compositionDetails.Any())
-                    {
-                        item.CustomCompositionDetails = compositionDetails;
-                        // 注意：無法得知原始選擇的配方ID，視為已自定義
-                        item.IsCustomComposition = true;
-                    }
-                }
-                
-                QuotationItems.Add(item);
-            }
-            else
-            {
-                // 對於非 QuotationDetail 類型，保留原有的泛型邏輯作為後備
-                var productId = GetPropertyValue<int>(detail, "ProductId");
-                var product = Products.FirstOrDefault(p => p.Id == productId);
-                
-                if (product != null)
+                // 轉換為正確的實體類型
+                if (detail is QuotationDetail quotationDetail)
                 {
                     var item = new QuotationItem
                     {
-                        SelectedProduct = product,
-                        ProductSearchValue = $"[{product.Code}] {product.Name}",  // 設定搜尋顯示值
-                        Quantity = Convert.ToDecimal(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0m),
-                        UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
-                        DiscountPercentage = Convert.ToDecimal(GetPropertyValue<object>(detail, DiscountPercentagePropertyName) ?? 0m),
-                        ConvertedQuantity = Convert.ToDecimal(GetPropertyValue<object>(detail, "ConvertedQuantity") ?? 0m),
-                        TaxRate = product.TaxRate ?? defaultTaxRate,
-                        Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
+                        // 直接使用 Navigation Properties
+                        SelectedProduct = quotationDetail.Product,
+                        SelectedUnit = quotationDetail.Unit,
+                    
+                        // 設定搜尋顯示值（修正編輯模式顯示問題）
+                        ProductSearchValue = quotationDetail.Product != null ? 
+                            $"[{quotationDetail.Product.Code}] {quotationDetail.Product.Name}" : string.Empty,
+                    
+                        // 直接使用屬性值
+                        Quantity = quotationDetail.Quantity,
+                        UnitPrice = quotationDetail.UnitPrice,
+                        DiscountPercentage = quotationDetail.DiscountPercentage,
+                        ConvertedQuantity = quotationDetail.ConvertedQuantity,
+                        TaxRate = quotationDetail.TaxRate ?? quotationDetail.Product?.TaxRate ?? defaultTaxRate,
+                        Specification = quotationDetail.Specification ?? quotationDetail.Product?.Specification ?? string.Empty,
+                        Remarks = quotationDetail.Remarks ?? string.Empty,
                         ExistingDetailEntity = detail
                     };
-                    
-                    // 載入單位資訊
-                    if (!string.IsNullOrEmpty(UnitIdPropertyName))
+                
+                    // 載入該明細的組合明細資料（如果有的話）
+                    if (quotationDetail.Id > 0)
                     {
-                        var unitId = GetPropertyValue<int?>(detail, UnitIdPropertyName);
-                        if (unitId.HasValue)
+                        var compositionDetails = await QuotationCompositionDetailService
+                            .GetByQuotationDetailIdAsync(quotationDetail.Id);
+                    
+                        if (compositionDetails.Any())
                         {
-                            item.SelectedUnit = Units.FirstOrDefault(u => u.Id == unitId.Value);
+                            item.CustomCompositionDetails = compositionDetails;
+                            // 注意：無法得知原始選擇的配方ID，視為已自定義
+                            item.IsCustomComposition = true;
                         }
                     }
-                    
+                
                     QuotationItems.Add(item);
                 }
+                else
+                {
+                    // 對於非 QuotationDetail 類型，保留原有的泛型邏輯作為後備
+                    var productId = GetPropertyValue<int>(detail, "ProductId");
+                    var product = Products.FirstOrDefault(p => p.Id == productId);
+                
+                    if (product != null)
+                    {
+                        var item = new QuotationItem
+                        {
+                            SelectedProduct = product,
+                            ProductSearchValue = $"[{product.Code}] {product.Name}",  // 設定搜尋顯示值
+                            Quantity = Convert.ToDecimal(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0m),
+                            UnitPrice = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
+                            DiscountPercentage = Convert.ToDecimal(GetPropertyValue<object>(detail, DiscountPercentagePropertyName) ?? 0m),
+                            ConvertedQuantity = Convert.ToDecimal(GetPropertyValue<object>(detail, "ConvertedQuantity") ?? 0m),
+                            TaxRate = product.TaxRate ?? defaultTaxRate,
+                            Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
+                            ExistingDetailEntity = detail
+                        };
+                    
+                        // 載入單位資訊
+                        if (!string.IsNullOrEmpty(UnitIdPropertyName))
+                        {
+                            var unitId = GetPropertyValue<int?>(detail, UnitIdPropertyName);
+                            if (unitId.HasValue)
+                            {
+                                item.SelectedUnit = Units.FirstOrDefault(u => u.Id == unitId.Value);
+                            }
+                        }
+                    
+                        QuotationItems.Add(item);
+                    }
+                }
             }
-        }
         
-        // 檢查是否有不可刪除的明細（已轉訂單）
-        bool hasUndeletableDetails = QuotationItems.Any(item => 
-            item.SelectedProduct != null && !DetailLockHelper.CanDeleteItem(item, out _, checkConversion: true));
-        if (_hasUndeletableDetails != hasUndeletableDetails)
-        {
-            _hasUndeletableDetails = hasUndeletableDetails;
-        }
+            // 檢查是否有不可刪除的明細（已轉訂單）
+            bool hasUndeletableDetails = QuotationItems.Any(item => 
+                item.SelectedProduct != null && !DetailLockHelper.CanDeleteItem(item, out _, checkConversion: true));
+            if (_hasUndeletableDetails != hasUndeletableDetails)
+            {
+                _hasUndeletableDetails = hasUndeletableDetails;
+            }
     }
 
     private List<TDetailEntity> ConvertToDetailEntities()

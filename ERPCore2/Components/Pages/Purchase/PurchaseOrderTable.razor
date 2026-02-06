@@ -133,7 +133,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // 初始化時記錄當前廠商ID，避免 OnParametersSetAsync 誤判為變更
+        // 初始化追蹤變數
         _previousSelectedSupplierId = SelectedSupplierId;
         
         await LoadExistingDetailsAsync();
@@ -146,8 +146,10 @@ else
     {
         base.OnParametersSet();
         
-        // 檢查廠商是否變更
-        if (_previousSelectedSupplierId != SelectedSupplierId)
+        // 檢查廠商是否變更（使用 @key 方案後，ExistingDetails 變更會觸發組件重建，不需要手動追蹤）
+        bool supplierChanged = _previousSelectedSupplierId != SelectedSupplierId;
+        
+        if (supplierChanged)
         {
             _previousSelectedSupplierId = SelectedSupplierId;
             
@@ -157,8 +159,6 @@ else
             
             // 檢查是否有歷史採購記錄
             await CheckLastPurchaseRecordAsync();
-            
-            return; // 廠商變更時已經處理完畢，直接返回
         }
     }
     
@@ -524,48 +524,49 @@ else
         
         ProductItems.Clear();
         
-        foreach (var detail in ExistingDetails)
-        {
-            var productId = GetPropertyValue<int>(detail, "ProductId");
-            var product = Products.FirstOrDefault(p => p.Id == productId);
-            
-            if (product != null)
+            foreach (var detail in ExistingDetails)
             {
-                var taxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
-                var item = new ProductItem
+                var productId = GetPropertyValue<int>(detail, "ProductId");
+                var product = Products.FirstOrDefault(p => p.Id == productId);
+            
+                if (product != null)
                 {
-                    SelectedProduct = product,
-                    SelectedProductId = productId,  //  同步設定 ID
-                    ProductSearchValue = $"[{product.Code}] {product.Name}",  // 設定搜尋顯示值
-                    Quantity = Convert.ToInt32(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0),
-                    ReceivedQuantity = Convert.ToInt32(GetPropertyValue<object>(detail, ReceivedQuantityPropertyName) ?? 0),
-                    Price = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
-                    TaxRate = taxRate ?? await SystemParameterService.GetTaxRateAsync(),
-                    Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
-                    IsReceivingCompleted = !string.IsNullOrEmpty(IsReceivingCompletedPropertyName) ? 
-                        Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
-                    CompletedByEmployeeId = GetPropertyValue<int?>(detail, "CompletedByEmployeeId"),
-                    CompletedAt = GetPropertyValue<DateTime?>(detail, "CompletedAt"),
-                    ExistingDetailEntity = detail
-                };
+                    var taxRate = GetPropertyValue<decimal?>(detail, "TaxRate");
+                    var item = new ProductItem
+                    {
+                        SelectedProduct = product,
+                        SelectedProductId = productId,  //  同步設定 ID
+                        ProductSearchValue = $"[{product.Code}] {product.Name}",  // 設定搜尋顯示值
+                        Quantity = Convert.ToInt32(GetPropertyValue<object>(detail, QuantityPropertyName) ?? 0),
+                        ReceivedQuantity = Convert.ToInt32(GetPropertyValue<object>(detail, ReceivedQuantityPropertyName) ?? 0),
+                        Price = Convert.ToDecimal(GetPropertyValue<object>(detail, UnitPricePropertyName) ?? 0m),
+                        TaxRate = taxRate ?? await SystemParameterService.GetTaxRateAsync(),
+                        Remarks = GetPropertyValue<string>(detail, RemarksPropertyName) ?? string.Empty,
+                        IsReceivingCompleted = !string.IsNullOrEmpty(IsReceivingCompletedPropertyName) ? 
+                            Convert.ToBoolean(GetPropertyValue<object>(detail, IsReceivingCompletedPropertyName) ?? false) : false,
+                        CompletedByEmployeeId = GetPropertyValue<int?>(detail, "CompletedByEmployeeId"),
+                        CompletedAt = GetPropertyValue<DateTime?>(detail, "CompletedAt"),
+                        ExistingDetailEntity = detail
+                    };
                 
-                // 檢查是否已被入庫單使用
-                item.HasUsageRecordCache = await HasUsageRecord(item);
+                    // 檢查是否已被入庫單使用
+                    item.HasUsageRecordCache = await HasUsageRecord(item);
                 
-                ProductItems.Add(item);
+                    ProductItems.Add(item);
+                }
             }
-        }
         
-        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
-        bool hasUndeletableDetails = ProductItems.Any(p => !DetailLockHelper.CanDeleteItem(p, out _, checkReceiving: true));
-        if (_hasUndeletableDetails != hasUndeletableDetails)
-        {
-            _hasUndeletableDetails = hasUndeletableDetails;
-        }
+            // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
+            bool hasUndeletableDetails = ProductItems.Any(p => !DetailLockHelper.CanDeleteItem(p, out _, checkReceiving: true));
+            if (_hasUndeletableDetails != hasUndeletableDetails)
+            {
+                _hasUndeletableDetails = hasUndeletableDetails;
+            }
         
-        //  資料載入完成 - 觸發空行檢查（此時 _hasUndeletableDetails 已經是正確的值）
-        _dataLoadCompleted = true;
-        StateHasChanged();
+            //  資料載入完成 - 觸發空行檢查（此時 _hasUndeletableDetails 已經是正確的值）
+            _dataLoadCompleted = true;
+        
+            StateHasChanged();
     }
 
     /// <summary>

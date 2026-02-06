@@ -1287,6 +1287,7 @@
                     try
                     {
                         <SalesDeliveryTable @ref="salesDeliveryDetailManager"
+                                           @key="@editModalComponent.Entity.Id"
                                            TMainEntity="SalesDelivery"
                                            TDetailEntity="SalesDeliveryDetail"
                                            MainEntity="@editModalComponent.Entity"

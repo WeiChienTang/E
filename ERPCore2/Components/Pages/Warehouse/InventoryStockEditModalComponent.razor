@@ -678,6 +678,7 @@
                     @if (editModalComponent.Entity.ProductId > 0)
                     {
                         <InventoryStockTable @ref="inventoryStockDetailManager"
+                                                       @key="@editModalComponent.Entity.Id"
                                                        TMainEntity="InventoryStock"
                                                        TDetailEntity="InventoryStockDetail"
                                                        MainEntity="@editModalComponent.Entity"

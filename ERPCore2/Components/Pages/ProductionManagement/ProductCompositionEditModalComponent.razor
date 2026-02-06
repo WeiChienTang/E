@@ -512,6 +512,7 @@
                     @if (editModalComponent.Entity.ParentProductId > 0)
                     {
                         <ProductCompositionTable @ref="detailManager"
+                                                                 @key="@editModalComponent.Entity.Id"
                                                                  Items="@compositionDetails"
                                                                  AvailableProducts="@availableComponentProducts"
                                                                  AvailableUnits="@availableUnits"

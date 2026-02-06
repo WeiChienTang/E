@@ -885,6 +885,7 @@
                     @if (editModalComponent.Entity.CustomerId > 0)
                     {
                         <QuotationTable @ref="quotationDetailManager"
+                                                @key="@editModalComponent.Entity.Id"
                                                 TMainEntity="Quotation"
                                                 TDetailEntity="QuotationDetail"
                                                 MainEntity="@editModalComponent?.Entity"
