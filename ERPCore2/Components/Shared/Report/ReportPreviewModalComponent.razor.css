@@ -63,6 +63,39 @@
     flex: none;
 }
 
+/* 邊距設定群組 */
+.margin-settings-group {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
+.margin-inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.margin-input-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.margin-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    min-width: 20px;
+    text-align: right;
+}
+
+.margin-input {
+    width: 60px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
 .zoom-display {
     min-width: 45px;
     text-align: center;

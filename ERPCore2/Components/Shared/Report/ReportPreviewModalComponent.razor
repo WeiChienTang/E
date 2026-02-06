@@ -103,7 +103,7 @@
                             }
                         </select>
                     </div>
-                    
+
                     @* 預覽縮放 *@
                     <div class="setting-item-row">
                         <label class="setting-label-inline">
@@ -121,6 +121,61 @@
                             </button>
                         </div>
                     </div>
+                    
+                    @* 邊距設定 *@
+                    <div class="margin-settings-group mt-2">
+                        <label class="setting-label-inline mb-1">
+                            <i class="fas fa-border-style me-1"></i>邊距 (cm)
+                        </label>
+                        <div class="margin-inputs-grid">
+                            <div class="margin-input-item">
+                                <label class="margin-label">上</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm margin-input" 
+                                       @bind="_marginTop" 
+                                       @bind:after="OnMarginChanged"
+                                       step="0.1"
+                                       min="0" 
+                                       max="10"
+                                       disabled="@(IsLoading || _selectedPaper == null)" />
+                            </div>
+                            <div class="margin-input-item">
+                                <label class="margin-label">下</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm margin-input" 
+                                       @bind="_marginBottom" 
+                                       @bind:after="OnMarginChanged"
+                                       step="0.1"
+                                       min="0" 
+                                       max="10"
+                                       disabled="@(IsLoading || _selectedPaper == null)" />
+                            </div>
+                            <div class="margin-input-item">
+                                <label class="margin-label">左</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm margin-input" 
+                                       @bind="_marginLeft" 
+                                       @bind:after="OnMarginChanged"
+                                       step="0.1"
+                                       min="0" 
+                                       max="10"
+                                       disabled="@(IsLoading || _selectedPaper == null)" />
+                            </div>
+                            <div class="margin-input-item">
+                                <label class="margin-label">右</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm margin-input" 
+                                       @bind="_marginRight" 
+                                       @bind:after="OnMarginChanged"
+                                       step="0.1"
+                                       min="0" 
+                                       max="10"
+                                       disabled="@(IsLoading || _selectedPaper == null)" />
+                            </div>
+                        </div>
+                    </div>
+                    
+
                     
                     <hr class="my-3" />
                     
@@ -259,6 +314,12 @@
     private List<PaperSetting> _paperSettings = new();
     private PaperSetting? _selectedPaper = null;
     
+    // 邊距設定（單位：公分）
+    private decimal _marginTop = 0.3m;
+    private decimal _marginBottom = 0.3m;
+    private decimal _marginLeft = 0.8m;
+    private decimal _marginRight = 0.8m;
+    
     // 列印設定
     private int _copies = 1;
     private int _estimatedPages = 1;
@@ -333,6 +394,15 @@
                         _selectedPaperSettingId = reportConfig.PaperSettingId.Value;
                         _paperSettingId = reportConfig.PaperSettingId.Value;
                         _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _paperSettingId);
+                        
+                        // 初始化邊距值
+                        if (_selectedPaper != null)
+                        {
+                            _marginTop = _selectedPaper.TopMargin ?? 0.3m;
+                            _marginBottom = _selectedPaper.BottomMargin ?? 0.3m;
+                            _marginLeft = _selectedPaper.LeftMargin ?? 0.8m;
+                            _marginRight = _selectedPaper.RightMargin ?? 0.8m;
+                        }
                     }
                 }
             }
@@ -345,10 +415,7 @@
             
             // 如果有預設紙張設定，通知父組件用正確的紙張尺寸重新渲染預覽
             // 這確保預覽圖片與設定的紙張格式一致（例如中一刀而非預設 A4）
-            if (_selectedPaper != null && OnPaperSettingChanged.HasDelegate)
-            {
-                await OnPaperSettingChanged.InvokeAsync(_selectedPaper);
-            }
+            await NotifyPaperSettingChanged();
         }
         catch (Exception ex)
         {
@@ -435,19 +502,71 @@
         {
             _selectedPaper = _paperSettings.FirstOrDefault(p => p.Id == _selectedPaperSettingId);
             _paperSettingId = _selectedPaperSettingId;
+            
+            // 載入該紙張的預設邊距值
+            if (_selectedPaper != null)
+            {
+                _marginTop = _selectedPaper.TopMargin ?? 0.3m;
+                _marginBottom = _selectedPaper.BottomMargin ?? 0.3m;
+                _marginLeft = _selectedPaper.LeftMargin ?? 0.8m;
+                _marginRight = _selectedPaper.RightMargin ?? 0.8m;
+            }
         }
         else
         {
             _selectedPaper = null;
             _paperSettingId = null;
+            // 重設為預設邊距
+            _marginTop = 0.3m;
+            _marginBottom = 0.3m;
+            _marginLeft = 0.8m;
+            _marginRight = 0.8m;
         }
         
         // 重新計算頁數
         CalculateEstimatedPages();
         
         // 通知父組件紙張已變更，需要重新渲染預覽圖片
+        await NotifyPaperSettingChanged();
+    }
+    
+    /// <summary>
+    /// 邊距變更事件
+    /// </summary>
+    private async Task OnMarginChanged()
+    {
+        // 確保邊距值在合理範圍內
+        _marginTop = Math.Max(0, Math.Min(10, _marginTop));
+        _marginBottom = Math.Max(0, Math.Min(10, _marginBottom));
+        _marginLeft = Math.Max(0, Math.Min(10, _marginLeft));
+        _marginRight = Math.Max(0, Math.Min(10, _marginRight));
+        
+        // 更新 _selectedPaper 的邊距值
+        if (_selectedPaper != null)
+        {
+            _selectedPaper.TopMargin = _marginTop;
+            _selectedPaper.BottomMargin = _marginBottom;
+            _selectedPaper.LeftMargin = _marginLeft;
+            _selectedPaper.RightMargin = _marginRight;
+        }
+        
+        // 通知父組件重新渲染預覽圖片
+        await NotifyPaperSettingChanged();
+    }
+    
+    /// <summary>
+    /// 通知父組件紙張設定已變更
+    /// </summary>
+    private async Task NotifyPaperSettingChanged()
+    {
         if (_selectedPaper != null && OnPaperSettingChanged.HasDelegate)
         {
+            // 確保邊距值已更新到 _selectedPaper
+            _selectedPaper.TopMargin = _marginTop;
+            _selectedPaper.BottomMargin = _marginBottom;
+            _selectedPaper.LeftMargin = _marginLeft;
+            _selectedPaper.RightMargin = _marginRight;
+            
             await OnPaperSettingChanged.InvokeAsync(_selectedPaper);
         }
     }

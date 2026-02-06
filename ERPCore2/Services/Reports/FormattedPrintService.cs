@@ -2,7 +2,6 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Models.Reports;
 using ERPCore2.Services.Reports.Interfaces;
-using Microsoft.Extensions.Logging;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -23,7 +22,6 @@ namespace ERPCore2.Services.Reports
         private readonly IReportPrintConfigurationService _reportPrintConfigService;
         private readonly IPrinterConfigurationService _printerConfigService;
         private readonly IPaperSettingService _paperSettingService;
-        private readonly ILogger<FormattedPrintService>? _logger;
 
         /// <summary>
         /// 列印後等待時間（毫秒）
@@ -38,13 +36,11 @@ namespace ERPCore2.Services.Reports
         public FormattedPrintService(
             IReportPrintConfigurationService reportPrintConfigService,
             IPrinterConfigurationService printerConfigService,
-            IPaperSettingService paperSettingService,
-            ILogger<FormattedPrintService>? logger = null)
+            IPaperSettingService paperSettingService)
         {
             _reportPrintConfigService = reportPrintConfigService;
             _printerConfigService = printerConfigService;
             _paperSettingService = paperSettingService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -80,9 +76,6 @@ namespace ERPCore2.Services.Reports
 
                 copies = Math.Max(1, Math.Min(copies, 99));
 
-                _logger?.LogInformation("開始列印格式化文件 {DocumentName}，印表機：{PrinterName}，份數：{Copies}",
-                    document.DocumentName, printerName, copies);
-
                 using var printDocument = new PrintDocument();
                 printDocument.PrinterSettings.PrinterName = printerName;
                 printDocument.DocumentName = document.DocumentName;
@@ -95,10 +88,6 @@ namespace ERPCore2.Services.Reports
                 var paperHeightHundredthsInch = (int)(document.PageSettings.PageHeight * CmToHundredthsInch);
                 var customPaperSize = new PaperSize("Custom", paperWidthHundredthsInch, paperHeightHundredthsInch);
                 printDocument.DefaultPageSettings.PaperSize = customPaperSize;
-                
-                _logger?.LogInformation("列印紙張尺寸: {Width}x{Height} cm = {WidthInch}x{HeightInch} 百分之一英吋",
-                    document.PageSettings.PageWidth, document.PageSettings.PageHeight,
-                    paperWidthHundredthsInch, paperHeightHundredthsInch);
 
                 // 設定邊距（Margins 使用百分之一英吋為單位，與 PaperSize 一致）
                 var margins = new Margins(
@@ -108,12 +97,6 @@ namespace ERPCore2.Services.Reports
                     (int)(document.PageSettings.BottomMargin * CmToHundredthsInch)
                 );
                 printDocument.DefaultPageSettings.Margins = margins;
-                
-                _logger?.LogInformation("列印邊距(公分): 左={Left}, 右={Right}, 上={Top}, 下={Bottom}",
-                    document.PageSettings.LeftMargin, document.PageSettings.RightMargin,
-                    document.PageSettings.TopMargin, document.PageSettings.BottomMargin);
-                _logger?.LogInformation("列印邊距(百分之一英吋): 左={Left}, 右={Right}, 上={Top}, 下={Bottom}",
-                    margins.Left, margins.Right, margins.Top, margins.Bottom);
 
                 if (!printDocument.PrinterSettings.IsValid)
                 {
@@ -229,15 +212,6 @@ namespace ERPCore2.Services.Reports
                             contentHeight = (int)printableArea.Height - marginTop - marginBottom;
                         }
                         
-                        _logger?.LogInformation(
-                            "列印頁面渲染: PageBounds={BoundsWidth}x{BoundsHeight}, " +
-                            "PrintableArea=({PAX},{PAY}) {PAWidth}x{PAHeight}, " +
-                            "邊距=L{ML}/T{MT}/R{MR}/B{MB}, 內容區域={CW}x{CH}",
-                            e.PageBounds.Width, e.PageBounds.Height,
-                            printableArea.X, printableArea.Y, printableArea.Width, printableArea.Height,
-                            marginLeft, marginTop, marginRight, marginBottom,
-                            contentWidth, contentHeight);
-                        
                         // 渲染起點：由於 Graphics 原點已在 PrintableArea 左上角，
                         // 所以 (0,0) 就是可列印區域的起點
                         var actualBounds = new Rectangle(
@@ -262,16 +236,13 @@ namespace ERPCore2.Services.Reports
 
                 if (printException != null)
                 {
-                    _logger?.LogError(printException, "列印 {DocumentName} 時發生錯誤", document.DocumentName);
                     return ServiceResult.Failure($"列印時發生錯誤: {printException.Message}");
                 }
 
-                _logger?.LogInformation("{DocumentName} 列印完成", document.DocumentName);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "列印 {DocumentName} 時發生錯誤", document.DocumentName);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -322,8 +293,6 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "使用配置列印 {DocumentName} 時發生錯誤，ReportId: {ReportId}",
-                    document.DocumentName, reportId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -357,9 +326,6 @@ namespace ERPCore2.Services.Reports
             {
                 (pageWidth, pageHeight) = (pageHeight, pageWidth);
             }
-
-            _logger?.LogInformation("RenderToImages: 紙張={Paper}, 尺寸={Width}x{Height}cm, DPI={DPI}, 像素={PixelWidth}x{PixelHeight}",
-                paperSetting.Name, paperSetting.Width, paperSetting.Height, dpi, pageWidth, pageHeight);
 
             return RenderToImages(document, pageWidth, pageHeight, dpi);
         }
@@ -429,13 +395,6 @@ namespace ERPCore2.Services.Reports
                 contentWidth,
                 contentHeight
             );
-            
-            _logger?.LogDebug(
-                "RenderToImages: 紙張={PageWidth}x{PageHeight}px, " +
-                "可列印區域={PrintableWidth}x{PrintableHeight}px, " +
-                "內容區域=({BoundsX},{BoundsY}) {ContentWidth}x{ContentHeight}px",
-                pageWidth, pageHeight, printableWidth, printableHeight,
-                bounds.X, bounds.Y, contentWidth, contentHeight);
 
             // 第一次渲染：計算總頁數
             int pageCount = 0;
@@ -587,9 +546,9 @@ namespace ERPCore2.Services.Reports
 
                 return new ThreeColumnHeaderElement
                 {
-                    LeftText = ReplaceInText(header.LeftText),
-                    CenterText = ReplaceInText(header.CenterText),
-                    RightText = ReplaceInText(header.RightText),
+                    LeftText = ReplaceInText(header.LeftText) ?? "",
+                    CenterText = ReplaceInText(header.CenterText) ?? "",
+                    RightText = ReplaceInText(header.RightText) ?? "",
                     CenterFontSize = header.CenterFontSize,
                     SideFontSize = header.SideFontSize,
                     CenterBold = header.CenterBold
@@ -1208,9 +1167,8 @@ namespace ERPCore2.Services.Reports
 
                 return y + imgHeight + 5;
             }
-            catch (Exception ex)
+            catch
             {
-                _logger?.LogWarning(ex, "繪製圖片時發生錯誤");
                 return y;
             }
         }

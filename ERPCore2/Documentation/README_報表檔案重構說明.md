@@ -119,8 +119,11 @@ public interface IFormattedPrintService
     // 使用報表配置列印
     Task<ServiceResult> PrintByReportIdAsync(FormattedDocument document, string reportId, int copies = 1);
     
-    // 渲染為圖片（用於預覽）
-    List<byte[]> RenderToImages(FormattedDocument document, int pageWidth = 794, int pageHeight = 1123);
+    // 渲染為圖片（用於預覽，使用預設 A4 尺寸）
+    List<byte[]> RenderToImages(FormattedDocument document, int pageWidth = 794, int pageHeight = 1123, int dpi = 96);
+    
+    // 渲染為圖片（用於預覽，根據紙張設定計算尺寸）
+    List<byte[]> RenderToImages(FormattedDocument document, PaperSetting paperSetting, int dpi = 96);
     
     // 檢查是否支援
     bool IsSupported();
@@ -139,8 +142,11 @@ public interface IPurchaseOrderReportService
     /// <summary>生成報表文件</summary>
     Task<FormattedDocument> GenerateReportAsync(int purchaseOrderId);
 
-    /// <summary>渲染為圖片（用於預覽）</summary>
+    /// <summary>渲染為圖片（用於預覽，使用預設 A4 尺寸）</summary>
     Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId);
+
+    /// <summary>渲染為圖片（用於預覽，根據紙張設定計算尺寸）</summary>
+    Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId, PaperSetting paperSetting);
 
     /// <summary>直接列印</summary>
     Task<ServiceResult> DirectPrintAsync(int purchaseOrderId, string reportId, int copies = 1);
@@ -167,14 +173,18 @@ public interface IPurchaseOrderReportService
 | `ReportId` | `string` | 報表 ID（用於查詢印表機配置） |
 | `DocumentName` | `string` | 列印文件名稱 |
 | `OnPrintSuccess` | `EventCallback` | 列印成功事件 |
+| `OnPrintFailure` | `EventCallback<string>` | 列印失敗事件 |
 | `OnCancel` | `EventCallback` | 取消事件 |
+| `OnPaperSettingChanged` | `EventCallback<PaperSetting>` | 紙張設定變更事件（用於重新渲染預覽） |
 
 ### 使用方式
 
 ```razor
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
+@using ERPCore2.Data.Entities
 @inject IPurchaseOrderReportService PurchaseOrderReportService
+@inject IFormattedPrintService FormattedPrintService
 
 @* 報表預覽 Modal *@
 <ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
@@ -185,6 +195,7 @@ public interface IPurchaseOrderReportService
                              ReportId="PO001"
                              DocumentName="@_reportDocumentName"
                              OnPrintSuccess="@HandleReportPrintSuccess"
+                             OnPaperSettingChanged="@HandlePaperSettingChanged"
                              OnCancel="@(() => _showReportPreviewModal = false)" />
 
 @code {
@@ -192,18 +203,33 @@ public interface IPurchaseOrderReportService
     private List<byte[]>? _reportPreviewImages = null;
     private FormattedDocument? _formattedDocument = null;
     private string _reportDocumentName = string.Empty;
+    private int _currentEntityId;
 
-    private async Task OpenReportPreviewModal()
+    private async Task OpenReportPreviewModal(int entityId, string entityCode)
     {
+        _currentEntityId = entityId;
+        
         // 生成報表文件
         _formattedDocument = await PurchaseOrderReportService.GenerateReportAsync(entityId);
         
-        // 渲染為預覽圖片
+        // 渲染為預覽圖片（使用預設紙張，Modal 開啟後會根據紙張設定重新渲染）
         _reportPreviewImages = await PurchaseOrderReportService.RenderToImagesAsync(entityId);
         
         _reportDocumentName = $"採購單-{entityCode}";
         _showReportPreviewModal = true;
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 紙張設定變更時重新渲染預覽圖片
+    /// </summary>
+    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
+    {
+        if (_formattedDocument != null)
+        {
+            _reportPreviewImages = FormattedPrintService.RenderToImages(_formattedDocument, paperSetting);
+            StateHasChanged();
+        }
     }
 }
 ```
@@ -212,7 +238,8 @@ public interface IPurchaseOrderReportService
 
 ```
 使用者點擊「列印」→ GenerateReportAsync() → RenderToImagesAsync() 
-→ ReportPreviewModal 顯示圖片預覽 → FormattedPrintService.Print()
+→ ReportPreviewModal 顯示圖片預覽 → 使用者可調整紙張/邊距 
+→ OnPaperSettingChanged 重新渲染預覽 → FormattedPrintService.Print()
 ```
 
 ---
@@ -229,22 +256,19 @@ public class PurchaseOrderReportService : IPurchaseOrderReportService
     private readonly IProductService _productService;
     private readonly ICompanyService _companyService;
     private readonly IFormattedPrintService _formattedPrintService;
-    private readonly ILogger<PurchaseOrderReportService>? _logger;
 
     public PurchaseOrderReportService(
         IPurchaseOrderService purchaseOrderService,
         ISupplierService supplierService,
         IProductService productService,
         ICompanyService companyService,
-        IFormattedPrintService formattedPrintService,
-        ILogger<PurchaseOrderReportService>? logger = null)
+        IFormattedPrintService formattedPrintService)
     {
         _purchaseOrderService = purchaseOrderService;
         _supplierService = supplierService;
         _productService = productService;
         _companyService = companyService;
         _formattedPrintService = formattedPrintService;
-        _logger = logger;
     }
 
     public async Task<FormattedDocument> GenerateReportAsync(int purchaseOrderId)
@@ -261,15 +285,24 @@ public class PurchaseOrderReportService : IPurchaseOrderReportService
         var company = purchaseOrder.CompanyId > 0
             ? await _companyService.GetByIdAsync(purchaseOrder.CompanyId)
             : null;
+        
+        var allProducts = await _productService.GetAllAsync();
+        var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
         // 建構 FormattedDocument
-        return BuildFormattedDocument(purchaseOrder, orderDetails, supplier, company);
+        return BuildFormattedDocument(purchaseOrder, orderDetails, supplier, company, productDict);
     }
 
     public async Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId)
     {
         var document = await GenerateReportAsync(purchaseOrderId);
         return _formattedPrintService.RenderToImages(document);
+    }
+    
+    public async Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId, PaperSetting paperSetting)
+    {
+        var document = await GenerateReportAsync(purchaseOrderId);
+        return _formattedPrintService.RenderToImages(document, paperSetting);
     }
 
     public async Task<ServiceResult> DirectPrintAsync(int purchaseOrderId, string reportId, int copies = 1)
@@ -282,7 +315,8 @@ public class PurchaseOrderReportService : IPurchaseOrderReportService
         PurchaseOrder purchaseOrder,
         List<PurchaseOrderDetail> orderDetails,
         Supplier? supplier,
-        Company? company)
+        Company? company,
+        Dictionary<int, Product> productDict)
     {
         var doc = new FormattedDocument()
             .SetDocumentName($"採購單-{purchaseOrder.Code}")
