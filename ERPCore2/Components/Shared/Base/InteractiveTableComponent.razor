@@ -174,27 +174,31 @@
                                 {
                                     @* 數字輸入框 - 支援千分位顯示（預設啟用） *@
                                     var value = GetPropertyValue(item, column.PropertyName);
+                                    var inputId = $"number_{column.PropertyName}_{GetHashCode()}_{currentIndex}";
                                     var stringValue = "";
                                     
+                                    // 檢查此輸入框是否正在被編輯（聚焦中）
+                                    var isBeingEdited = _focusedNumberInputId == inputId;
+                                    
                                     // 智能格式化數字：整數不顯示小數點，有小數才顯示
+                                    // 但如果正在編輯中，跳過格式化以避免覆蓋用戶輸入
                                     if (value != null && decimal.TryParse(value.ToString(), out var decimalValue))
                                     {
-                                        if (decimalValue != 0)
+                                        if (isBeingEdited)
                                         {
-                                            if (column.UseThousandsSeparator)
-                                            {
-                                                // 啟用千分位：整數用 N0，有小數用 N2
-                                                stringValue = decimalValue % 1 == 0 
-                                                    ? decimalValue.ToString("N0")
-                                                    : decimalValue.ToString("N2");
-                                            }
-                                            else
-                                            {
-                                                // 不啟用千分位：整數用 F0，有小數直接顯示
-                                                stringValue = decimalValue % 1 == 0 
-                                                    ? decimalValue.ToString("F0") 
-                                                    : decimalValue.ToString();
-                                            }
+                                            // 正在編輯：顯示無格式化的原始數字
+                                            stringValue = decimalValue != 0 
+                                                ? (decimalValue % 1 == 0 ? decimalValue.ToString("F0") : decimalValue.ToString())
+                                                : "";
+                                        }
+                                        else if (decimalValue != 0)
+                                        {
+                                            // 使用 NumberFormatHelper.FormatSmartTrim 智能格式化，自動移除尾隨零
+                                            stringValue = NumberFormatHelper.FormatSmartTrim(
+                                                decimalValue, 
+                                                maxDecimalPlaces: 6, 
+                                                useThousandsSeparator: column.UseThousandsSeparator
+                                            );
                                         }
                                     }
                                     
@@ -205,7 +209,6 @@
                                     @if (column.UseThousandsSeparator)
                                     {
                                         // 使用千分位：用 text 輸入框 + 格式化
-                                        var inputId = $"number_{column.PropertyName}_{GetHashCode()}_{currentIndex}";
                                         <input type="text" 
                                                id="@inputId"
                                                class="form-control text-end @validationClass" 
@@ -562,6 +565,9 @@
     
     // 全選 checkbox 相關
     private string _selectAllCheckboxId = "";     // 全選 checkbox 的唯一 ID
+    
+    // Number 輸入框編輯狀態追蹤（防止輸入過程中被格式化覆蓋）
+    private string? _focusedNumberInputId = null;
     
     #endregion
 
@@ -1436,10 +1442,13 @@
     #region Number 千分位輸入處理
     
     /// <summary>
-    /// Number 聚焦時：移除千分位，顯示純數字以方便編輯
+    /// Number 聚焦時：記錄正在編輯的輸入框，移除千分位顯示純數字
     /// </summary>
     private void OnNumberFocus(InteractiveColumnDefinition column, TItem item, string inputId)
     {
+        // 記錄正在編輯的輸入框 ID
+        _focusedNumberInputId = inputId;
+        
         var value = GetPropertyValue(item, column.PropertyName);
         if (value != null && decimal.TryParse(value.ToString(), out var decimalValue))
         {
@@ -1454,10 +1463,13 @@
     }
     
     /// <summary>
-    /// Number 失焦時：重新格式化為千分位顯示
+    /// Number 失焦時：清除編輯狀態，重新格式化為千分位顯示
     /// </summary>
     private void OnNumberBlur()
     {
+        // 清除正在編輯的輸入框 ID
+        _focusedNumberInputId = null;
+        
         // 失焦時觸發 StateHasChanged 以重新格式化顯示
         StateHasChanged();
     }

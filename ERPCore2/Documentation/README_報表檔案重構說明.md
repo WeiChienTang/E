@@ -1,12 +1,15 @@
 # 報表檔案架構說明
 
 ## 更新日期
-2026-02-05（簡化為單一格式化模式）
+2026-02-06（新增 Excel 匯出功能）
 
 ### 變更記錄
 
 | 日期 | 變更內容 |
 |------|---------|
+| 2026-02-06 | **新增 Excel 匯出**：報表預覽 Modal 新增「轉Excel」按鈕 |
+| 2026-02-06 | 新增 `IExcelExportService` 介面和 `ExcelExportService` 實作 |
+| 2026-02-06 | 安裝 ClosedXML NuGet 套件 |
 | 2026-02-05 | **重大簡化**：移除純文字模式，統一使用格式化列印 |
 | 2026-02-05 | 移除舊版 API 控制器（ReportController、PurchaseReportController 等） |
 | 2026-02-05 | 簡化 ReportPreviewModalComponent，移除雙模式切換 |
@@ -22,6 +25,7 @@
 - **精確排版**：自動計算位置，支援多種對齊方式
 - **自動換頁**：內容超過頁面時自動分頁
 - **預覽功能**：可渲染為圖片供預覽
+- **Excel 匯出**：支援將報表轉換為 .xlsx 檔案
 
 ---
 
@@ -31,8 +35,10 @@
 Services/Reports/
 ├── Interfaces/
 │   ├── IFormattedPrintService.cs      ← 格式化列印介面
+│   ├── IExcelExportService.cs         ← Excel 匯出介面
 │   └── IPurchaseOrderReportService.cs ← 報表服務介面（範本）
 ├── FormattedPrintService.cs           ← 格式化列印服務實作
+├── ExcelExportService.cs              ← Excel 匯出服務實作
 ├── PurchaseOrderReportService.cs      ← 報表服務實作（範本）
 └── ...
 
@@ -43,6 +49,9 @@ Models/Reports/
 
 Components/Shared/Report/
 └── ReportPreviewModalComponent.razor  ← 報表預覽 Modal
+
+wwwroot/js/
+└── file-download-helper.js            ← 檔案下載 JS 函數
 ```
 
 ---
@@ -132,6 +141,74 @@ public interface IFormattedPrintService
 
 ---
 
+## Excel 匯出服務（ExcelExportService）
+
+位置：`Services/Reports/ExcelExportService.cs`
+
+使用 **ClosedXML** 套件將 FormattedDocument 轉換為 Excel 檔案（.xlsx 格式）。
+
+### 支援的元素轉換
+
+| FormattedDocument 元素 | Excel 對應 |
+|------------------------|------------|
+| `TextElement` | 儲存格 + 字型樣式（大小、粗體、對齊） |
+| `TableElement` | Excel 表格（邊框、表頭背景色） |
+| `KeyValueRowElement` | 鍵值對欄位 |
+| `ThreeColumnHeaderElement` | 三欄合併儲存格 |
+| `ReportHeaderBlockElement` | 多行標題區塊 |
+| `TwoColumnSectionElement` | 左右並排區塊 |
+| `LineElement` | 底線樣式 |
+| `SpacingElement` | 空白列 |
+| `SignatureSectionElement` | 簽名欄位 |
+| `PageBreakElement` | Excel 分頁符號 |
+| `ImageElement` | 暫不支援（跳過） |
+
+### 介面定義
+
+```csharp
+public interface IExcelExportService
+{
+    /// <summary>
+    /// 將 FormattedDocument 匯出為 Excel 檔案
+    /// </summary>
+    byte[] ExportToExcel(FormattedDocument document);
+
+    /// <summary>
+    /// 將 FormattedDocument 匯出為 Excel 檔案（非同步版本）
+    /// </summary>
+    Task<byte[]> ExportToExcelAsync(FormattedDocument document);
+
+    /// <summary>
+    /// 檢查服務是否可用
+    /// </summary>
+    bool IsSupported();
+}
+```
+
+### 使用方式
+
+```csharp
+@inject IExcelExportService ExcelExportService
+@inject IJSRuntime JSRuntime
+
+// 匯出 Excel
+var excelBytes = await ExcelExportService.ExportToExcelAsync(formattedDocument);
+
+// 下載檔案（需搭配 file-download-helper.js）
+var fileName = $"{formattedDocument.DocumentName}.xlsx";
+var base64 = Convert.ToBase64String(excelBytes);
+var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", fileName, base64, contentType);
+```
+
+### 相依套件
+
+```xml
+<PackageReference Include="ClosedXML" Version="0.105.0" />
+```
+
+---
+
 ## 報表服務介面
 
 以採購單為例：`Services/Reports/Interfaces/IPurchaseOrderReportService.cs`
@@ -161,6 +238,14 @@ public interface IPurchaseOrderReportService
 ## 報表預覽 Modal
 
 位置：`Components/Shared/Report/ReportPreviewModalComponent.razor`
+
+### 功能按鈕
+
+| 按鈕 | 說明 |
+|------|------|
+| **轉Excel** | 將報表轉換為 .xlsx 檔案並下載 |
+| **列印** | 發送到選定的印表機列印 |
+| **取消** | 關閉預覽視窗 |
 
 ### 參數說明
 
@@ -240,6 +325,13 @@ public interface IPurchaseOrderReportService
 使用者點擊「列印」→ GenerateReportAsync() → RenderToImagesAsync() 
 → ReportPreviewModal 顯示圖片預覽 → 使用者可調整紙張/邊距 
 → OnPaperSettingChanged 重新渲染預覽 → FormattedPrintService.Print()
+```
+
+### Excel 匯出流程
+
+```
+使用者點擊「轉Excel」→ ExcelExportService.ExportToExcelAsync(FormattedDocument)
+→ 生成 .xlsx byte[] → JSRuntime.InvokeAsync("downloadFileFromBase64") → 下載檔案
 ```
 
 ---
@@ -388,6 +480,6 @@ public class PurchaseOrderReportService : IPurchaseOrderReportService
 ## 注意事項
 
 1. **Windows 專屬**：`FormattedPrintService` 使用 `System.Drawing.Printing`，僅支援 Windows
-2. **無外部套件依賴**：使用 .NET 內建 API，無需安裝額外套件
+2. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台
 3. **預覽與列印一致**：`RenderToImages` 和 `Print` 使用相同的渲染邏輯
 4. **SQL 配置印表機**：透過 `ReportPrintConfiguration` 資料表設定預設印表機

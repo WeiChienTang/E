@@ -1,0 +1,426 @@
+@*
+    報表列印設定缺失 Modal 組件
+    用於批次設定未設定印表機或紙張的報表
+*@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Services
+@using ERPCore2.Services.Reports.Configuration
+@using ERPCore2.Components.Shared.PageTemplate
+@using ERPCore2.Components.Shared.Base
+@using ERPCore2.Models
+@inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject IPrinterConfigurationService PrinterConfigurationService
+@inject IPaperSettingService PaperSettingService
+@inject INotificationService NotificationService
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@IsVisibleChanged"
+                   Title="@Title"
+                   Icon="bi bi-gear-wide-connected"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                   IsLoading="@isLoading"
+                   LoadingMessage="正在載入未設定的報表..."
+                   BodyCssClass="p-4"
+                   OnClose="@HandleCancel">
+    
+    <HeaderButtons>
+        @* Modal Actions - 按鈕區塊移到 Header *@
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            @if (!isLoading && reportConfigs.Any())
+            {
+                <div class="text-muted small me-2" style="font-size: 0.875rem;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    共 @reportConfigs.Count 筆
+                </div>
+                
+                @* 批次填入輸入區 *@
+                <div class="input-group input-group-sm" style="width: 200px;">
+                    <span class="input-group-text">印表機</span>
+                    <select class="form-select form-select-sm" @bind="batchPrinterId">
+                        <option value="">-- 選擇 --</option>
+                        @foreach (var printer in printers)
+                        {
+                            <option value="@printer.Id">@printer.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="input-group input-group-sm" style="width: 200px;">
+                    <span class="input-group-text">紙張</span>
+                    <select class="form-select form-select-sm" @bind="batchPaperId">
+                        <option value="">-- 選擇 --</option>
+                        @foreach (var paper in papers)
+                        {
+                            <option value="@paper.Id">@paper.Name</option>
+                        }
+                    </select>
+                </div>
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                      Size="ButtonSize.Small"
+                                      Text="批次填入"
+                                      OnClick="ApplyBatchFill"
+                                      Title="批次設定所有報表的印表機和紙張" />
+                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                      Size="ButtonSize.Small"
+                                      Text="儲存"
+                                      OnClick="HandleSave"
+                                      IsDisabled="@(!reportConfigs.Any())"
+                                      Title="儲存設定" />
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                      Size="ButtonSize.Small"
+                                      Text="清空"
+                                      OnClick="HandleClearAll"
+                                      Title="清空所有已設定的印表機和紙張" />
+
+            }
+        </div>
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (!reportConfigs.Any() && !isLoading)
+        {
+            <div class="alert alert-success mb-0">
+                <i class="bi bi-check-circle me-1"></i>
+                所有報表均已設定完成，狀態為 "停用" 的報表為開發中或已下架的報表故無法設定印表機和紙張。
+            </div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                        <InteractiveTableComponent TItem="ReportPrintSettingItem"
+                                                 Items="@reportConfigs"
+                                                 ColumnDefinitions="@GetColumnDefinitions()"
+                                                 ShowHeader="true"
+                                                 ShowActions="false"
+                                                 ShowRowNumbers="true"
+                                                 IsStriped="true"
+                                                 IsHoverable="true"
+                                                 IsBordered="true"
+                                                 CssClass="mb-0" />
+                </div>
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@code {
+    // ===== 參數定義 =====
+
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// Modal 標題
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "設定報表列印配置";
+
+    /// <summary>
+    /// 儲存成功後的回調
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+    // ===== 私有欄位 =====
+    private bool isLoading = false;
+    private List<ReportPrintSettingItem> reportConfigs = new();
+    private List<PrinterConfiguration> printers = new();
+    private List<PaperSetting> papers = new();
+    
+    // 批次填入相關
+    private int? batchPrinterId = null;
+    private int? batchPaperId = null;
+
+    // ===== 生命週期方法 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isLoading && !reportConfigs.Any())
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    // ===== 資料載入方法 =====
+
+    /// <summary>
+    /// 載入資料
+    /// </summary>
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // 載入印表機和紙張選項
+            printers = await PrinterConfigurationService.GetAllAsync();
+            papers = await PaperSettingService.GetAllAsync();
+
+            // 載入未設定的報表
+            var configs = await ReportPrintConfigurationService.GetReportsWithoutPrinterOrPaperSettingAsync();
+            
+            reportConfigs = configs.Select(c => new ReportPrintSettingItem
+            {
+                ConfigId = c.Id,
+                ReportId = c.ReportId,
+                ReportName = c.ReportName,
+                PrinterConfigurationId = c.PrinterConfigurationId,
+                PaperSettingId = c.PaperSettingId,
+                CurrentPrinterName = c.PrinterConfiguration?.Name ?? "未設定",
+                CurrentPaperName = c.PaperSetting?.Name ?? "未設定"
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 表格欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var printerOptions = printers.Select(p => new InteractiveSelectOption
+        {
+            Value = p.Id,
+            Text = p.Name
+        }).ToList();
+
+        var paperOptions = papers.Select(p => new InteractiveSelectOption
+        {
+            Value = p.Id,
+            Text = p.Name
+        }).ToList();
+
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = "報表識別碼",
+                PropertyName = nameof(ReportPrintSettingItem.ReportId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new()
+            {                
+                Title = "報表名稱",
+                PropertyName = nameof(ReportPrintSettingItem.ReportName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px"
+            },
+            new()
+            {
+                Title = "印表機",
+                PropertyName = nameof(ReportPrintSettingItem.PrinterConfigurationId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "180px",
+                Options = printerOptions,
+                Placeholder = "請選擇印表機"
+            },
+            new()
+            {
+                Title = "紙張",
+                PropertyName = nameof(ReportPrintSettingItem.PaperSettingId),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "180px",
+                Options = paperOptions,
+                Placeholder = "請選擇紙張"
+            }
+        };
+    }
+
+    // ===== 事件處理方法 =====
+
+    /// <summary>
+    /// 處理儲存按鈕點擊
+    /// </summary>
+    private async Task HandleSave()
+    {
+        try
+        {
+            if (!reportConfigs.Any())
+            {
+                await NotificationService.ShowWarningAsync("沒有需要儲存的資料");
+                return;
+            }
+
+            // 檢查是否有任何變更
+            var hasChanges = reportConfigs.Any(c => 
+                (c.PrinterConfigurationId.HasValue && c.PrinterConfigurationId.Value > 0) ||
+                (c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0));
+
+            if (!hasChanges)
+            {
+                await NotificationService.ShowWarningAsync("請至少設定一個印表機或紙張");
+                return;
+            }
+
+            isLoading = true;
+            StateHasChanged();
+
+            // 準備更新資料（只更新有設定值的）
+            var updates = reportConfigs
+                .Where(c => (c.PrinterConfigurationId.HasValue && c.PrinterConfigurationId.Value > 0) ||
+                           (c.PaperSettingId.HasValue && c.PaperSettingId.Value > 0))
+                .Select(item => (
+                    item.ConfigId, 
+                    item.PrinterConfigurationId.HasValue && item.PrinterConfigurationId.Value > 0 ? item.PrinterConfigurationId : null,
+                    item.PaperSettingId.HasValue && item.PaperSettingId.Value > 0 ? item.PaperSettingId : null
+                ))
+                .ToList();
+
+            // 批次更新
+            var result = await ReportPrintConfigurationService.BatchUpdatePrinterAndPaperSettingsAsync(updates);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"成功更新 {updates.Count} 筆報表列印配置");
+                
+                // 清空資料並關閉 Modal
+                reportConfigs.Clear();
+                
+                if (OnSaved.HasDelegate)
+                {
+                    await OnSaved.InvokeAsync();
+                }
+                
+                await CloseModal();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"儲存失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 處理取消按鈕點擊
+    /// </summary>
+    private async Task HandleCancel()
+    {
+        await CloseModal();
+    }
+
+    /// <summary>
+    /// 套用批次填入
+    /// </summary>
+    private async Task ApplyBatchFill()
+    {
+        try
+        {
+            // 驗證輸入
+            if (!batchPrinterId.HasValue && !batchPaperId.HasValue)
+            {
+                await NotificationService.ShowWarningAsync("請至少選擇印表機或紙張");
+                return;
+            }
+
+            // 套用到所有項目
+            foreach (var item in reportConfigs)
+            {
+                if (batchPrinterId.HasValue && batchPrinterId.Value > 0)
+                {
+                    item.PrinterConfigurationId = batchPrinterId.Value;
+                }
+                
+                if (batchPaperId.HasValue && batchPaperId.Value > 0)
+                {
+                    item.PaperSettingId = batchPaperId.Value;
+                }
+            }
+
+            // 清空輸入值
+            batchPrinterId = null;
+            batchPaperId = null;
+            
+            await NotificationService.ShowSuccessAsync($"已批次填入 {reportConfigs.Count} 筆設定");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"批次填入時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 處理清空按鈕
+    /// </summary>
+    private async Task HandleClearAll()
+    {
+        try
+        {
+            // 清空所有設定
+            foreach (var item in reportConfigs)
+            {
+                item.PrinterConfigurationId = null;
+                item.PaperSettingId = null;
+            }
+
+            await NotificationService.ShowSuccessAsync("已清空所有設定");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"清空時發生錯誤：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 關閉 Modal
+    /// </summary>
+    private async Task CloseModal()
+    {
+        reportConfigs.Clear();
+        printers.Clear();
+        papers.Clear();
+        batchPrinterId = null;
+        batchPaperId = null;
+        
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    // ===== 內部類別 =====
+
+    /// <summary>
+    /// 報表列印設定項目
+    /// </summary>
+    public class ReportPrintSettingItem
+    {
+        public int ConfigId { get; set; }
+        public string ReportId { get; set; } = string.Empty;
+        public string ReportName { get; set; } = string.Empty;
+        public int? PrinterConfigurationId { get; set; }
+        public int? PaperSettingId { get; set; }
+        public string CurrentPrinterName { get; set; } = string.Empty;
+        public string CurrentPaperName { get; set; } = string.Empty;
+    }
+}

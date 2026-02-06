@@ -121,6 +121,52 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
+        /// 智能格式化數字（自動移除尾隨零）：整數不顯示小數點，有小數自動移除尾隨零
+        /// 例如：0.5 顯示為 "0.5"，0.500000 顯示為 "0.5"，1234.56 顯示為 "1,234.56"
+        /// </summary>
+        /// <param name="value">要格式化的數值</param>
+        /// <param name="maxDecimalPlaces">最大小數位數（預設6位）</param>
+        /// <param name="useThousandsSeparator">是否使用千分位分隔符號（預設true）</param>
+        /// <returns>格式化後的字串</returns>
+        public static string FormatSmartTrim(decimal value, int maxDecimalPlaces = 6, bool useThousandsSeparator = true)
+        {
+            // 整數：不顯示小數點
+            if (value % 1 == 0)
+            {
+                return useThousandsSeparator 
+                    ? value.ToString("N0")  // 使用千分位，無小數點
+                    : value.ToString("F0"); // 不使用千分位，無小數點
+            }
+            
+            // 有小數：使用自定義格式字串，自動移除尾隨零
+            // "#" 代表可選數字（如果是0則不顯示）
+            var decimalPart = new string('#', maxDecimalPlaces);
+            var format = useThousandsSeparator 
+                ? $"#,##0.{decimalPart}"  // 例如：#,##0.######
+                : $"0.{decimalPart}";      // 例如：0.######
+            
+            return value.ToString(format);
+        }
+
+        /// <summary>
+        /// 智能格式化數字（自動移除尾隨零，零值顯示為空）
+        /// </summary>
+        /// <param name="value">要格式化的數值</param>
+        /// <param name="maxDecimalPlaces">最大小數位數（預設6位）</param>
+        /// <param name="useThousandsSeparator">是否使用千分位分隔符號（預設true）</param>
+        /// <param name="zeroDisplayText">零值時顯示的文字（預設為空字串）</param>
+        /// <returns>格式化後的字串</returns>
+        public static string FormatSmartTrimZeroAsEmpty(decimal value, int maxDecimalPlaces = 6, bool useThousandsSeparator = true, string zeroDisplayText = "")
+        {
+            if (value == 0)
+            {
+                return zeroDisplayText;
+            }
+            
+            return FormatSmartTrim(value, maxDecimalPlaces, useThousandsSeparator);
+        }
+
+        /// <summary>
         /// 智能格式化數字用於輸入框顯示（不使用千分位，適合input type="number"）
         /// 整數不顯示小數點，有小數才顯示，零值顯示為空
         /// </summary>

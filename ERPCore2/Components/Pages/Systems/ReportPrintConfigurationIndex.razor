@@ -3,6 +3,8 @@
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 
+@using ERPCore2.Models
+
 <GenericIndexPageComponent TEntity="ReportPrintConfiguration" 
                       TService="IReportPrintConfigurationService"
                       Service="@ReportPrintConfigurationService"
@@ -19,6 +21,9 @@
                       RequiredPermission="ReportPrintConfiguration.Read"
                       ShowAddButton="false"
                       ShowDeleteButton="false"
+                      ShowStatisticsCards="true"
+                      StatisticsCardConfigs="@statisticsCardConfigs"
+                      StatisticsDataLoader="@LoadStatisticsDataAsync"
                       OnRowClick="@modalHandler.ShowEditModalAsync"
                       @ref="indexComponent" />
 
@@ -28,6 +33,11 @@
                           OnReportPrintConfigurationSaved="@modalHandler.OnEntitySavedAsync"
                           OnCancel="@modalHandler.OnModalCancelAsync" />
 
+@* 報表列印設定缺失 Modal *@
+<ReportPrintSettingAlertModalComponent IsVisible="@showPrintSettingAlertModal"
+                                      IsVisibleChanged="@((bool visible) => showPrintSettingAlertModal = visible)"
+                                      OnSaved="@OnPrintSettingAlertSaved" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<ReportPrintConfiguration, IReportPrintConfigurationService> indexComponent = default!;
@@ -35,6 +45,7 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingReportPrintConfigurationId = null;
+    private bool showPrintSettingAlertModal = false;
     
     // Modal 處理器
     private ModalHandler<ReportPrintConfiguration, GenericIndexPageComponent<ReportPrintConfiguration, IReportPrintConfigurationService>> modalHandler = default!;
@@ -46,6 +57,9 @@
     private List<SearchFilterDefinition> filterDefinitions = new();
     private List<TableColumnDefinition> columnDefinitions = new();
     private List<BreadcrumbItem> breadcrumbItems = new();
+    
+    // 統計卡片相關
+    private List<StatisticsCardConfig> statisticsCardConfigs = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -67,6 +81,9 @@
             // 使用欄位配置建立篩選器和表格欄位
             filterDefinitions = fieldConfiguration.BuildFilters();
             columnDefinitions = fieldConfiguration.BuildColumns();
+            
+            // 初始化統計卡片配置
+            InitializeStatisticsCardConfigs();
         }
         catch (Exception ex)
         {
@@ -90,5 +107,88 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplyReportPrintConfigurationFilters), GetType());
+    }
+
+    // ===== 統計相關方法 =====
+    
+    /// <summary>
+    /// 初始化統計卡片配置
+    /// </summary>
+    private void InitializeStatisticsCardConfigs()
+    {
+        try
+        {
+            statisticsCardConfigs = new List<StatisticsCardConfig>
+            {
+                new()
+                {
+                    Title = "未設定印表機/紙張",
+                    DataKey = "NoSettingCount",
+                    BorderColor = "warning",
+                    TextColor = "warning",
+                    OnClick = EventCallback.Factory.Create(this, HandleNoSettingClick)
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤但不顯示通知，因為這不是關鍵功能
+            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(InitializeStatisticsCardConfigs), GetType(), additionalData: "初始化統計卡片配置失敗"));
+            // 設定安全的預設值
+            statisticsCardConfigs = new List<StatisticsCardConfig>();
+        }
+    }
+    
+    /// <summary>
+    /// 載入統計資料
+    /// </summary>
+    private async Task<Dictionary<string, object>> LoadStatisticsDataAsync()
+    {
+        try
+        {
+            return await ReportPrintConfigurationService.GetStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadStatisticsDataAsync), GetType(), additionalData: "載入統計資料失敗");
+            await NotificationService.ShowErrorAsync("載入統計資料失敗");
+            // 返回空的統計資料
+            return new Dictionary<string, object>();
+        }
+    }
+    
+    /// <summary>
+    /// 處理未設定印表機/紙張卡片點擊
+    /// </summary>
+    private async Task HandleNoSettingClick()
+    {
+        try
+        {
+            showPrintSettingAlertModal = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleNoSettingClick), GetType());
+        }
+    }
+    
+    /// <summary>
+    /// 處理設定儲存後的刷新
+    /// </summary>
+    private async Task OnPrintSettingAlertSaved()
+    {
+        try
+        {
+            // 刷新資料
+            if (indexComponent != null)
+            {
+                await indexComponent.Refresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnPrintSettingAlertSaved), GetType());
+        }
     }
 }

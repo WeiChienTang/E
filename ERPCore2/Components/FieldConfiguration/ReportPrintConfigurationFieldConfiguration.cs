@@ -107,6 +107,30 @@ namespace ERPCore2.FieldConfiguration
                                 r => r.PaperSetting != null ? r.PaperSetting.Name : string.Empty)
                         }
                     },
+                    {
+                        nameof(ReportPrintConfiguration.Status),
+                        new FieldDefinition<ReportPrintConfiguration>
+                        {
+                            PropertyName = nameof(ReportPrintConfiguration.Status),
+                            DisplayName = "狀態",
+                            FilterPlaceholder = "選擇狀態搜尋",
+                            TableOrder = 6,
+                            CustomTemplate = (data) => (RenderFragment)((builder) =>
+                            {
+                                if (data is ReportPrintConfiguration report)
+                                {
+                                    var statusText = report.Status == EntityStatus.Active ? "啟用" : "停用";
+                                    var badgeClass = report.Status == EntityStatus.Active ? "badge bg-success" : "badge bg-secondary";
+
+                                    builder.OpenElement(0, "span");
+                                    builder.AddAttribute(1, "class", badgeClass);
+                                    builder.AddContent(2, statusText);
+                                    builder.CloseElement();
+                                }
+                            }),
+                            FilterFunction = (model, query) => FilterHelper.ApplyStatusFilter(model, query)
+                        }
+                    }
 
                 };
             }

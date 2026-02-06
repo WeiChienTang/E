@@ -438,5 +438,139 @@ namespace ERPCore2.Services.Reports.Configuration
                 return false;
             }
         }
+
+        public async Task<List<ReportPrintConfiguration>> GetReportsWithoutPrinterOrPaperSettingAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.ReportPrintConfigurations
+                    .Include(r => r.PrinterConfiguration)
+                    .Include(r => r.PaperSetting)
+                    .Where(r => r.Status == EntityStatus.Active &&
+                               (!r.PrinterConfigurationId.HasValue || !r.PaperSettingId.HasValue))
+                    .OrderBy(r => r.ReportName)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReportsWithoutPrinterOrPaperSettingAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetReportsWithoutPrinterOrPaperSettingAsync),
+                    ServiceType = GetType().Name
+                });
+                return new List<ReportPrintConfiguration>();
+            }
+        }
+
+        public async Task<ServiceResult> BatchUpdatePrinterAndPaperSettingsAsync(List<(int configId, int? printerConfigurationId, int? paperSettingId)> updates)
+        {
+            try
+            {
+                if (updates == null || !updates.Any())
+                    return ServiceResult.Failure("更新資料不能為空");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+                
+                var configIds = updates.Select(u => u.configId).ToList();
+                var configs = await context.ReportPrintConfigurations
+                    .Where(r => configIds.Contains(r.Id))
+                    .ToListAsync();
+
+                if (configs.Count != updates.Count)
+                    return ServiceResult.Failure("部分報表配置不存在");
+
+                // 驗證印表機和紙張設定是否存在
+                var printerIds = updates.Where(u => u.printerConfigurationId.HasValue)
+                    .Select(u => u.printerConfigurationId!.Value).Distinct().ToList();
+                var paperIds = updates.Where(u => u.paperSettingId.HasValue)
+                    .Select(u => u.paperSettingId!.Value).Distinct().ToList();
+
+                if (printerIds.Any())
+                {
+                    var existingPrinters = await context.PrinterConfigurations
+                        .Where(p => printerIds.Contains(p.Id))
+                        .Select(p => p.Id)
+                        .ToListAsync();
+                    if (existingPrinters.Count != printerIds.Count)
+                        return ServiceResult.Failure("部分印表機設定不存在");
+                }
+
+                if (paperIds.Any())
+                {
+                    var existingPapers = await context.PaperSettings
+                        .Where(p => paperIds.Contains(p.Id))
+                        .Select(p => p.Id)
+                        .ToListAsync();
+                    if (existingPapers.Count != paperIds.Count)
+                        return ServiceResult.Failure("部分紙張設定不存在");
+                }
+
+                // 執行更新
+                foreach (var update in updates)
+                {
+                    var config = configs.First(c => c.Id == update.configId);
+                    if (update.printerConfigurationId.HasValue)
+                        config.PrinterConfigurationId = update.printerConfigurationId.Value;
+                    if (update.paperSettingId.HasValue)
+                        config.PaperSettingId = update.paperSettingId.Value;
+                    config.UpdatedAt = DateTime.UtcNow;
+                    config.UpdatedBy = "System";
+                }
+
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(BatchUpdatePrinterAndPaperSettingsAsync), GetType(), _logger, new
+                {
+                    Method = nameof(BatchUpdatePrinterAndPaperSettingsAsync),
+                    ServiceType = GetType().Name,
+                    UpdateCount = updates?.Count ?? 0
+                });
+                return ServiceResult.Failure($"批次更新失敗：{ex.Message}");
+            }
+        }
+
+        public async Task<Dictionary<string, object>> GetStatisticsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var statistics = new Dictionary<string, object>();
+
+                // 總報表數量
+                var totalCount = await context.ReportPrintConfigurations
+                    .Where(r => r.Status == EntityStatus.Active)
+                    .CountAsync();
+                statistics["TotalCount"] = totalCount;
+
+                // 未設定印表機或紙張的報表數量
+                var noSettingCount = await context.ReportPrintConfigurations
+                    .Where(r => r.Status == EntityStatus.Active &&
+                               (!r.PrinterConfigurationId.HasValue || !r.PaperSettingId.HasValue))
+                    .CountAsync();
+                statistics["NoSettingCount"] = noSettingCount;
+
+                // 已完整設定的報表數量
+                var configuredCount = await context.ReportPrintConfigurations
+                    .Where(r => r.Status == EntityStatus.Active &&
+                               r.PrinterConfigurationId.HasValue && r.PaperSettingId.HasValue)
+                    .CountAsync();
+                statistics["ConfiguredCount"] = configuredCount;
+
+                return statistics;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetStatisticsAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetStatisticsAsync),
+                    ServiceType = GetType().Name
+                });
+                return new Dictionary<string, object>();
+            }
+        }
     }
 }
