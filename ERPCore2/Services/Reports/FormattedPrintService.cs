@@ -120,26 +120,42 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"印表機 '{printerName}' 無效或不可用");
                 }
 
-                // === 第一次模擬渲染：計算總頁數（與預覽相同的兩次渲染策略）===
+                // === 第一次模擬渲染：計算總頁數（與預覽相同的邏輯）===
                 int totalPages = 0;
                 {
                     var countState = new PrintState(document);
                     int maxPages = 100;
                     
-                    // 使用與列印相同的 DPI 與尺寸計算邏輯來模擬分頁
-                    // 這裡使用印表機的預設 DPI（通常 300-600），但由於我們無法在 PrintPage 外取得 DPI，
-                    // 改用文件的頁面設定以 96 DPI 模擬（與預覽一致），分頁結果是一樣的
+                    // 使用與預覽相同的計算邏輯（包含硬邊界模擬）
                     const float simDpi = 96f;
                     float simCmToPixels = simDpi / 2.54f;
+                    
+                    // 預設硬邊界（與預覽一致）
+                    const float DefaultHardMarginCm = 0.3f;
+                    int simHardMargin = (int)(DefaultHardMarginCm * simCmToPixels);
+                    
                     int simPageWidth = (int)(document.PageSettings.PageWidth * simCmToPixels);
                     int simPageHeight = (int)(document.PageSettings.PageHeight * simCmToPixels);
+                    
+                    // 可列印區域
+                    int simPrintableWidth = simPageWidth - simHardMargin * 2;
+                    int simPrintableHeight = simPageHeight - simHardMargin * 2;
+                    
+                    // 使用者邊距
                     int simMarginLeft = (int)(document.PageSettings.LeftMargin * simCmToPixels);
                     int simMarginTop = (int)(document.PageSettings.TopMargin * simCmToPixels);
                     int simMarginRight = (int)(document.PageSettings.RightMargin * simCmToPixels);
                     int simMarginBottom = (int)(document.PageSettings.BottomMargin * simCmToPixels);
-                    int simContentWidth = simPageWidth - simMarginLeft - simMarginRight;
-                    int simContentHeight = simPageHeight - simMarginTop - simMarginBottom;
-                    var simBounds = new Rectangle(simMarginLeft, simMarginTop, simContentWidth, simContentHeight);
+                    
+                    // 內容區域（基於可列印區域）
+                    int simContentWidth = simPrintableWidth - simMarginLeft - simMarginRight;
+                    int simContentHeight = simPrintableHeight - simMarginTop - simMarginBottom;
+                    
+                    var simBounds = new Rectangle(
+                        simHardMargin + simMarginLeft, 
+                        simHardMargin + simMarginTop, 
+                        simContentWidth, 
+                        simContentHeight);
 
                     while (!countState.IsComplete && totalPages < maxPages)
                     {
@@ -166,25 +182,64 @@ namespace ERPCore2.Services.Reports
                         
                         currentPageNumber++;
                         
-                        // ===== 使用與預覽相同的計算邏輯 =====
-                        // 不使用 PrintableArea 限制，讓預覽和列印完全一致
-                        // 如果內容超出可列印範圍，印表機會自行裁切
-                        // 用戶只需調整邊距即可解決裁切問題
+                        // ===== 修正預覽與列印不一致的問題 =====
+                        // 
+                        // 關鍵理解：
+                        // 1. e.PageBounds 使用 1/100 英吋為單位（不是像素）
+                        // 2. e.Graphics.DpiX 是印表機實際 DPI（如 300-600），但 Graphics 座標系統與 PageBounds 一致
+                        // 3. Graphics 原點在 PrintableArea 左上角，不是紙張左上角
+                        //
+                        // 問題根因：
+                        // - 預覽使用完整紙張尺寸渲染（Bitmap 大小 = 紙張尺寸）
+                        // - 列印時 Graphics 原點在 HardMargin 處，內容會往右下偏移
+                        // - 如果內容超出 PrintableArea，右側會被裁切
+                        //
+                        // 解決方案：
+                        // - 使用 PrintableArea 作為可用區域，確保內容在可列印範圍內
+                        // - 邊距相對於 PrintableArea 而非紙張
                         
-                        float dpi = e.Graphics.DpiX;
-                        float cmToPixels = dpi / 2.54f;
+                        // 公分轉 1/100 英吋（與 PageBounds 單位一致）
+                        const float CmToHundredthsInch = 39.37f;
                         
-                        int marginLeft = (int)(document.PageSettings.LeftMargin * cmToPixels);
-                        int marginTop = (int)(document.PageSettings.TopMargin * cmToPixels);
-                        int marginRight = (int)(document.PageSettings.RightMargin * cmToPixels);
-                        int marginBottom = (int)(document.PageSettings.BottomMargin * cmToPixels);
+                        // 獲取可列印區域（已排除印表機硬邊界）
+                        var printableArea = e.PageSettings.PrintableArea;
                         
-                        // 計算內容區域（與預覽邏輯完全一致）
-                        int pageWidth = e.PageBounds.Width;
-                        int pageHeight = e.PageBounds.Height;
-                        int contentWidth = pageWidth - marginLeft - marginRight;
-                        int contentHeight = pageHeight - marginTop - marginBottom;
+                        // 使用者設定的邊距（轉換為 1/100 英吋）
+                        int marginLeft = (int)(document.PageSettings.LeftMargin * CmToHundredthsInch);
+                        int marginTop = (int)(document.PageSettings.TopMargin * CmToHundredthsInch);
+                        int marginRight = (int)(document.PageSettings.RightMargin * CmToHundredthsInch);
+                        int marginBottom = (int)(document.PageSettings.BottomMargin * CmToHundredthsInch);
                         
+                        // 內容區域基於可列印區域（而非完整紙張）
+                        // 這確保內容不會超出印表機可列印範圍
+                        int contentWidth = (int)printableArea.Width - marginLeft - marginRight;
+                        int contentHeight = (int)printableArea.Height - marginTop - marginBottom;
+                        
+                        // 確保內容區域不為負
+                        if (contentWidth < 100) 
+                        {
+                            marginLeft = (int)(printableArea.Width * 0.05f);
+                            marginRight = (int)(printableArea.Width * 0.05f);
+                            contentWidth = (int)printableArea.Width - marginLeft - marginRight;
+                        }
+                        if (contentHeight < 100)
+                        {
+                            marginTop = (int)(printableArea.Height * 0.05f);
+                            marginBottom = (int)(printableArea.Height * 0.05f);
+                            contentHeight = (int)printableArea.Height - marginTop - marginBottom;
+                        }
+                        
+                        _logger?.LogInformation(
+                            "列印頁面渲染: PageBounds={BoundsWidth}x{BoundsHeight}, " +
+                            "PrintableArea=({PAX},{PAY}) {PAWidth}x{PAHeight}, " +
+                            "邊距=L{ML}/T{MT}/R{MR}/B{MB}, 內容區域={CW}x{CH}",
+                            e.PageBounds.Width, e.PageBounds.Height,
+                            printableArea.X, printableArea.Y, printableArea.Width, printableArea.Height,
+                            marginLeft, marginTop, marginRight, marginBottom,
+                            contentWidth, contentHeight);
+                        
+                        // 渲染起點：由於 Graphics 原點已在 PrintableArea 左上角，
+                        // 所以 (0,0) 就是可列印區域的起點
                         var actualBounds = new Rectangle(
                             marginLeft,
                             marginTop,
@@ -324,23 +379,63 @@ namespace ERPCore2.Services.Reports
             var printState = new PrintState(document);
             var pageImages = new List<byte[]>();
 
-            // 計算邊距區域（公分轉像素：pixels = cm * dpi / 2.54）
+            // ===== 預覽與列印一致的關鍵：模擬印表機硬邊界 =====
+            // 
+            // 問題：預覽使用完整紙張尺寸，但列印時印表機有硬邊界（通常左右各 3-8mm）
+            // 解決：在預覽時也預留硬邊界空間，確保預覽所見即列印所得
+            //
+            // 預設印表機硬邊界（針孔印表機/連續報表紙通常較小，一般印表機約 5mm）
+            const float DefaultHardMarginCm = 0.3f;  // 3mm 硬邊界
+            
             float cmToPixels = dpi / 2.54f;
+            
+            // 模擬印表機可列印區域（紙張減去硬邊界）
+            int hardMarginLeft = (int)(DefaultHardMarginCm * cmToPixels);
+            int hardMarginRight = (int)(DefaultHardMarginCm * cmToPixels);
+            int hardMarginTop = (int)(DefaultHardMarginCm * cmToPixels);
+            int hardMarginBottom = (int)(DefaultHardMarginCm * cmToPixels);
+            
+            int printableWidth = pageWidth - hardMarginLeft - hardMarginRight;
+            int printableHeight = pageHeight - hardMarginTop - hardMarginBottom;
+            
+            // 使用者設定的邊距（相對於可列印區域）
             var marginLeft = (int)(document.PageSettings.LeftMargin * cmToPixels);
             var marginTop = (int)(document.PageSettings.TopMargin * cmToPixels);
             var marginRight = (int)(document.PageSettings.RightMargin * cmToPixels);
             var marginBottom = (int)(document.PageSettings.BottomMargin * cmToPixels);
 
-            // 計算內容區域寬度（與列印邏輯一致）
-            int contentWidth = pageWidth - marginLeft - marginRight;
-            int contentHeight = pageHeight - marginTop - marginBottom;
-
+            // 內容區域（基於可列印區域，與列印邏輯一致）
+            int contentWidth = printableWidth - marginLeft - marginRight;
+            int contentHeight = printableHeight - marginTop - marginBottom;
+            
+            // 確保內容區域不為負
+            if (contentWidth < 50) 
+            {
+                marginLeft = (int)(printableWidth * 0.05f);
+                marginRight = (int)(printableWidth * 0.05f);
+                contentWidth = printableWidth - marginLeft - marginRight;
+            }
+            if (contentHeight < 50)
+            {
+                marginTop = (int)(printableHeight * 0.05f);
+                marginBottom = (int)(printableHeight * 0.05f);
+                contentHeight = printableHeight - marginTop - marginBottom;
+            }
+            
+            // 渲染起點需要加上硬邊界偏移
             var bounds = new Rectangle(
-                marginLeft,
-                marginTop,
+                hardMarginLeft + marginLeft,
+                hardMarginTop + marginTop,
                 contentWidth,
                 contentHeight
             );
+            
+            _logger?.LogDebug(
+                "RenderToImages: 紙張={PageWidth}x{PageHeight}px, " +
+                "可列印區域={PrintableWidth}x{PrintableHeight}px, " +
+                "內容區域=({BoundsX},{BoundsY}) {ContentWidth}x{ContentHeight}px",
+                pageWidth, pageHeight, printableWidth, printableHeight,
+                bounds.X, bounds.Y, contentWidth, contentHeight);
 
             // 第一次渲染：計算總頁數
             int pageCount = 0;
