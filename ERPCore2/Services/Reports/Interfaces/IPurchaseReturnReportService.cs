@@ -1,58 +1,55 @@
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
+using ERPCore2.Models.Reports;
 
 namespace ERPCore2.Services.Reports.Interfaces
 {
     /// <summary>
     /// 進貨退出單報表服務介面
-    /// 設計理念：統一使用純文字格式，支援直接列印和預覽
+    /// 統一使用格式化報表模式（FormattedDocument），支援表格線、圖片嵌入
     /// </summary>
     public interface IPurchaseReturnReportService
     {
-        #region 純文字報表
-        
         /// <summary>
-        /// 生成純文字格式的進貨退出單報表（適合直接列印和預覽）
+        /// 生成格式化進貨退出單報表文件
+        /// 支援表格框線、圖片嵌入、精確排版
         /// </summary>
         /// <param name="purchaseReturnId">進貨退出單 ID</param>
-        /// <returns>格式化的純文字報表內容</returns>
-        Task<string> GeneratePlainTextReportAsync(int purchaseReturnId);
-        
+        /// <returns>格式化報表文件</returns>
+        Task<FormattedDocument> GenerateReportAsync(int purchaseReturnId);
+
         /// <summary>
-        /// 批次生成純文字報表（支援多條件篩選）
-        /// </summary>
-        /// <param name="criteria">批次列印篩選條件</param>
-        /// <returns>合併後的純文字報表內容（每張單據以分頁符號分隔）</returns>
-        Task<string> GenerateBatchPlainTextReportAsync(BatchPrintCriteria criteria);
-        
-        #endregion
-        
-        #region 直接列印
-        
-        /// <summary>
-        /// 直接列印進貨退出單（使用 System.Drawing.Printing）
+        /// 將報表渲染為圖片（用於預覽）
+        /// 使用預設的 A4 紙張尺寸
         /// </summary>
         /// <param name="purchaseReturnId">進貨退出單 ID</param>
-        /// <param name="printerName">印表機名稱</param>
-        /// <returns>列印結果</returns>
-        Task<ServiceResult> DirectPrintAsync(int purchaseReturnId, string printerName);
-        
+        /// <returns>各頁面的圖片資料（PNG 格式）</returns>
+        Task<List<byte[]>> RenderToImagesAsync(int purchaseReturnId);
+
+        /// <summary>
+        /// 將報表渲染為圖片（用於預覽）
+        /// 根據指定紙張設定計算頁面尺寸
+        /// </summary>
+        /// <param name="purchaseReturnId">進貨退出單 ID</param>
+        /// <param name="paperSetting">紙張設定</param>
+        /// <returns>各頁面的圖片資料（PNG 格式）</returns>
+        Task<List<byte[]>> RenderToImagesAsync(int purchaseReturnId, PaperSetting paperSetting);
+
         /// <summary>
         /// 直接列印進貨退出單（使用報表列印配置）
         /// </summary>
         /// <param name="purchaseReturnId">進貨退出單 ID</param>
-        /// <param name="reportId">報表識別碼（用於載入列印配置）</param>
+        /// <param name="reportId">報表識別碼</param>
+        /// <param name="copies">列印份數</param>
         /// <returns>列印結果</returns>
-        Task<ServiceResult> DirectPrintByReportIdAsync(int purchaseReturnId, string reportId);
-        
+        Task<ServiceResult> DirectPrintAsync(int purchaseReturnId, string reportId, int copies = 1);
+
         /// <summary>
-        /// 批次直接列印（使用報表列印配置）
+        /// 批次列印進貨退出單
         /// </summary>
         /// <param name="criteria">批次列印篩選條件</param>
         /// <param name="reportId">報表識別碼</param>
         /// <returns>列印結果</returns>
         Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId);
-        
-        #endregion
     }
 }

@@ -2,17 +2,17 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
+using ERPCore2.Models.Reports;
 using ERPCore2.Services;
+using ERPCore2.Services.Reports.Interfaces;
 using Microsoft.Extensions.Logging;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
 
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 銷貨單報表服務實作 - 純文字版本
-    /// 設計理念：統一使用純文字格式，支援直接列印和預覽
+    /// 訂單報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
+    /// 設計理念：統一使用格式化報表，支援表格框線、圖片嵌入等進階功能
     /// </summary>
     public class SalesOrderReportService : ISalesOrderReportService
     {
@@ -21,11 +21,8 @@ namespace ERPCore2.Services.Reports
         private readonly IProductService _productService;
         private readonly ICompanyService _companyService;
         private readonly IEmployeeService _employeeService;
-        private readonly IWarehouseService _warehouseService;
-        private readonly ISystemParameterService _systemParameterService;
-        private readonly IReportPrintConfigurationService _reportPrintConfigService;
-        private readonly IPrinterConfigurationService _printerConfigService;
-        private readonly IPlainTextPrintService _plainTextPrintService;
+        private readonly IUnitService _unitService;
+        private readonly IFormattedPrintService _formattedPrintService;
         private readonly ILogger<SalesOrderReportService>? _logger;
 
         public SalesOrderReportService(
@@ -34,11 +31,8 @@ namespace ERPCore2.Services.Reports
             IProductService productService,
             ICompanyService companyService,
             IEmployeeService employeeService,
-            IWarehouseService warehouseService,
-            ISystemParameterService systemParameterService,
-            IReportPrintConfigurationService reportPrintConfigService,
-            IPrinterConfigurationService printerConfigService,
-            IPlainTextPrintService plainTextPrintService,
+            IUnitService unitService,
+            IFormattedPrintService formattedPrintService,
             ILogger<SalesOrderReportService>? logger = null)
         {
             _salesOrderService = salesOrderService;
@@ -46,31 +40,27 @@ namespace ERPCore2.Services.Reports
             _productService = productService;
             _companyService = companyService;
             _employeeService = employeeService;
-            _warehouseService = warehouseService;
-            _systemParameterService = systemParameterService;
-            _reportPrintConfigService = reportPrintConfigService;
-            _printerConfigService = printerConfigService;
-            _plainTextPrintService = plainTextPrintService;
+            _unitService = unitService;
+            _formattedPrintService = formattedPrintService;
             _logger = logger;
         }
 
-        #region 純文字報表生成
+        #region 報表生成
 
         /// <summary>
-        /// 生成純文字格式的銷貨單報表
-        /// 直接生成格式化的純文字，適合直接列印和預覽
+        /// 生成訂單報表文件
         /// </summary>
-        public async Task<string> GeneratePlainTextReportAsync(int salesOrderId)
+        public async Task<FormattedDocument> GenerateReportAsync(int salesOrderId)
         {
             // 載入資料
             var salesOrder = await _salesOrderService.GetByIdAsync(salesOrderId);
             if (salesOrder == null)
             {
-                throw new ArgumentException($"找不到銷貨單 ID: {salesOrderId}");
+                throw new ArgumentException($"找不到訂單 ID: {salesOrderId}");
             }
 
             var orderDetails = salesOrder.SalesOrderDetails?.ToList() ?? new List<SalesOrderDetail>();
-            
+
             Customer? customer = null;
             if (salesOrder.CustomerId > 0)
             {
@@ -88,286 +78,245 @@ namespace ERPCore2.Services.Reports
             var allProducts = await _productService.GetAllAsync();
             var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
-            var allWarehouses = await _warehouseService.GetAllAsync();
-            var warehouseDict = allWarehouses.ToDictionary(w => w.Id, w => w);
+            var allUnits = await _unitService.GetAllAsync();
+            var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
 
-            decimal taxRate = 5.0m;
-            try
-            {
-                taxRate = await _systemParameterService.GetTaxRateAsync();
-            }
-            catch
-            {
-                // 使用預設稅率
-            }
-
-            // 生成純文字報表
-            return GeneratePlainTextContent(salesOrder, orderDetails, customer, employee, company, productDict, warehouseDict, taxRate);
+            // 建構格式化文件
+            return BuildFormattedDocument(salesOrder, orderDetails, customer, employee, company, productDict, unitDict);
         }
 
         /// <summary>
-        /// 批次生成純文字報表（支援多條件篩選）
-        /// </summary>
-        public async Task<string> GenerateBatchPlainTextReportAsync(BatchPrintCriteria criteria)
-        {
-            try
-            {
-                // 驗證篩選條件
-                var validation = criteria.Validate();
-                if (!validation.IsValid)
-                {
-                    throw new ArgumentException($"批次列印條件驗證失敗：{validation.GetAllErrors()}");
-                }
-
-                // 根據條件查詢銷貨單
-                var salesOrders = await _salesOrderService.GetByBatchCriteriaAsync(criteria);
-
-                if (salesOrders == null || !salesOrders.Any())
-                {
-                    return $"無符合條件的銷貨單\n篩選條件：{criteria.GetSummary()}";
-                }
-
-                // 載入共用資料
-                var allProducts = await _productService.GetAllAsync();
-                var productDict = allProducts.ToDictionary(p => p.Id, p => p);
-
-                var allWarehouses = await _warehouseService.GetAllAsync();
-                var warehouseDict = allWarehouses.ToDictionary(w => w.Id, w => w);
-
-                decimal taxRate = 5.0m;
-                try
-                {
-                    taxRate = await _systemParameterService.GetTaxRateAsync();
-                }
-                catch
-                {
-                    // 使用預設稅率
-                }
-
-                var sb = new StringBuilder();
-                var pageBreak = "\f"; // Form Feed 字元，用於分頁
-
-                for (int i = 0; i < salesOrders.Count; i++)
-                {
-                    var salesOrder = salesOrders[i];
-
-                    // 載入該銷貨單的相關資料
-                    var orderDetails = salesOrder.SalesOrderDetails?.ToList() ?? new List<SalesOrderDetail>();
-                    
-                    Customer? customer = null;
-                    if (salesOrder.CustomerId > 0)
-                    {
-                        customer = await _customerService.GetByIdAsync(salesOrder.CustomerId);
-                    }
-
-                    Employee? employee = null;
-                    if (salesOrder.EmployeeId.HasValue && salesOrder.EmployeeId.Value > 0)
-                    {
-                        employee = await _employeeService.GetByIdAsync(salesOrder.EmployeeId.Value);
-                    }
-
-                    Company? company = await _companyService.GetPrimaryCompanyAsync();
-
-                    // 生成該銷貨單的純文字內容
-                    sb.Append(GeneratePlainTextContent(salesOrder, orderDetails, customer, employee, company, productDict, warehouseDict, taxRate));
-
-                    // 加入分頁符號（最後一張不需要）
-                    if (i < salesOrders.Count - 1)
-                    {
-                        sb.Append(pageBreak);
-                    }
-                }
-
-                return sb.ToString();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"生成批次銷貨單報表時發生錯誤: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// 生成純文字內容（固定寬度格式，適合等寬字型列印）
-        /// </summary>
-        private static string GeneratePlainTextContent(
-            SalesOrder salesOrder,
-            List<SalesOrderDetail> orderDetails,
-            Customer? customer,
-            Employee? employee,
-            Company? company,
-            Dictionary<int, Product> productDict,
-            Dictionary<int, Warehouse> warehouseDict,
-            decimal taxRate)
-        {
-            var sb = new StringBuilder();
-            const int lineWidth = PlainTextFormatter.DefaultLineWidth;
-
-            // === 標題區 ===
-            sb.Append(PlainTextFormatter.BuildTitleSection(
-                company?.CompanyName ?? "公司名稱",
-                "銷 貨 單",
-                lineWidth));
-
-            // === 基本資訊區 ===
-            sb.AppendLine($"銷貨單號：{salesOrder.Code,-20} 訂單日期：{PlainTextFormatter.FormatDate(salesOrder.OrderDate)}");
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-            sb.AppendLine($"客戶名稱：{customer?.CompanyName ?? ""}");
-            sb.AppendLine($"聯 絡 人：{customer?.ContactPerson ?? "",-20} 統一編號：{customer?.TaxNumber ?? ""}");
-            sb.AppendLine($"業 務 員：{employee?.Name ?? ""}");
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-
-            // === 明細表頭 ===
-            // 序號(4) | 品名(26) | 數量(8) | 單位(6) | 單價(10) | 折扣(6) | 小計(12) | 備註(8)
-            sb.AppendLine(FormatTableRow("序號", "品名", "數量", "單位", "單價", "折扣%", "小計", "備註"));
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-
-            // === 明細內容 ===
-            int rowNum = 1;
-            foreach (var detail in orderDetails)
-            {
-                var product = productDict.GetValueOrDefault(detail.ProductId);
-                var productName = PlainTextFormatter.TruncateText(product?.Name ?? "", 24);
-                var remarks = PlainTextFormatter.TruncateText(detail.Remarks ?? "", 6);
-
-                sb.AppendLine(FormatTableRow(
-                    rowNum.ToString(),
-                    productName,
-                    PlainTextFormatter.FormatQuantity(detail.OrderQuantity),
-                    "個",
-                    PlainTextFormatter.FormatAmountWithDecimals(detail.UnitPrice),
-                    PlainTextFormatter.FormatQuantity(detail.DiscountPercentage),
-                    PlainTextFormatter.FormatAmountWithDecimals(detail.SubtotalAmount),
-                    remarks
-                ));
-                rowNum++;
-            }
-
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-
-            // === 合計區 ===
-            var taxMethodText = $"({taxRate:F2}%)";
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("小　計", salesOrder.TotalAmount));
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("稅　額", salesOrder.SalesTaxAmount, taxMethodText));
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("總　計", salesOrder.TotalAmountWithTax));
-
-            // === 備註 ===
-            if (!string.IsNullOrWhiteSpace(salesOrder.Remarks))
-            {
-                sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-                sb.AppendLine($"備註：{salesOrder.Remarks}");
-            }
-
-            sb.AppendLine(PlainTextFormatter.Separator(lineWidth));
-
-            // === 簽名區 ===
-            sb.Append(PlainTextFormatter.BuildSignatureSection(
-                new[] { "製單人員", "業務人員", "核准人員" },
-                lineWidth));
-
-            return sb.ToString();
-        }
-
-        #endregion
-
-        #region 直接列印
-
-        /// <summary>
-        /// 直接列印銷貨單（使用 System.Drawing.Printing）
+        /// 直接列印訂單
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<ServiceResult> DirectPrintAsync(int salesOrderId, string printerName)
+        public async Task<ServiceResult> DirectPrintAsync(int salesOrderId, string reportId, int copies = 1)
         {
             try
             {
-                // 生成純文字報表
-                var textContent = await GeneratePlainTextReportAsync(salesOrderId);
-
-                _logger?.LogInformation("開始直接列印銷貨單 {OrderId}，印表機：{PrinterName}", salesOrderId, printerName);
-
-                // 使用共用的列印服務
-                var printResult = _plainTextPrintService.PrintText(textContent, printerName, $"銷貨單-{salesOrderId}");
+                var document = await GenerateReportAsync(salesOrderId);
                 
-                if (printResult.IsSuccess)
-                {
-                    _logger?.LogInformation("銷貨單 {OrderId} 列印完成", salesOrderId);
-                }
-                
-                return printResult;
+                _logger?.LogInformation("開始列印訂單 {SalesOrderId}，使用配置：{ReportId}", salesOrderId, reportId);
+
+                return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "直接列印銷貨單 {OrderId} 時發生錯誤", salesOrderId);
+                _logger?.LogError(ex, "列印訂單 {SalesOrderId} 時發生錯誤", salesOrderId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 直接列印銷貨單（使用報表列印配置）
+        /// 將報表渲染為圖片（用於預覽）
+        /// 使用預設的 A4 紙張尺寸
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<ServiceResult> DirectPrintByReportIdAsync(int salesOrderId, string reportId)
+        public async Task<List<byte[]>> RenderToImagesAsync(int salesOrderId)
         {
-            try
-            {
-                // 生成純文字報表
-                var textContent = await GeneratePlainTextReportAsync(salesOrderId);
-
-                _logger?.LogInformation("開始列印銷貨單 {OrderId}，使用配置：{ReportId}", salesOrderId, reportId);
-
-                // 使用共用的列印服務
-                return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, $"銷貨單-{salesOrderId}");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "使用配置列印銷貨單 {OrderId} 時發生錯誤，ReportId: {ReportId}", salesOrderId, reportId);
-                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
-            }
+            var document = await GenerateReportAsync(salesOrderId);
+            return _formattedPrintService.RenderToImages(document);
         }
 
         /// <summary>
-        /// 批次直接列印（使用報表列印配置）
+        /// 將報表渲染為圖片（用於預覽）
+        /// 根據指定紙張設定計算頁面尺寸
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<List<byte[]>> RenderToImagesAsync(int salesOrderId, PaperSetting paperSetting)
+        {
+            var document = await GenerateReportAsync(salesOrderId);
+            return _formattedPrintService.RenderToImages(document, paperSetting);
+        }
+
+        /// <summary>
+        /// 批次直接列印
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         public async Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId)
         {
             try
             {
-                // 生成批次純文字報表
-                var textContent = await GenerateBatchPlainTextReportAsync(criteria);
+                // 根據條件查詢訂單
+                var salesOrders = await _salesOrderService.GetByBatchCriteriaAsync(criteria);
 
-                _logger?.LogInformation("開始批次列印銷貨單，使用配置：{ReportId}", reportId);
+                if (salesOrders == null || !salesOrders.Any())
+                {
+                    return ServiceResult.Failure($"無符合條件的訂單\n篩選條件：{criteria.GetSummary()}");
+                }
 
-                // 使用共用的列印服務
-                return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, "銷貨單批次列印");
+                _logger?.LogInformation("開始批次列印 {Count} 張訂單，使用配置：{ReportId}", salesOrders.Count, reportId);
+
+                // 逐一列印
+                foreach (var salesOrder in salesOrders)
+                {
+                    var result = await DirectPrintAsync(salesOrder.Id, reportId, 1);
+                    if (!result.IsSuccess)
+                    {
+                        _logger?.LogWarning("批次列印中訂單 {SalesOrderId} 失敗：{ErrorMessage}", salesOrder.Id, result.ErrorMessage);
+                    }
+                }
+
+                _logger?.LogInformation("已完成 {Count} 張訂單的列印", salesOrders.Count);
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次列印銷貨單時發生錯誤");
-                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+                _logger?.LogError(ex, "批次列印訂單時發生錯誤");
+                return ServiceResult.Failure($"批次列印時發生錯誤: {ex.Message}");
             }
         }
 
         #endregion
 
-        #region 純文字格式化輔助方法（保留供表格格式化使用）
+        #region 私有方法 - 建構報表文件
 
-        /// <summary>
-        /// 格式化表格行（固定寬度）- 銷貨單專用格式
-        /// </summary>
-        private static string FormatTableRow(string col1, string col2, string col3, string col4, string col5, string col6, string col7, string col8)
+        private FormattedDocument BuildFormattedDocument(
+            SalesOrder salesOrder,
+            List<SalesOrderDetail> orderDetails,
+            Customer? customer,
+            Employee? employee,
+            Company? company,
+            Dictionary<int, Product> productDict,
+            Dictionary<int, Unit> unitDict)
         {
-            // 序號(4) | 品名(26) | 數量(8) | 單位(6) | 單價(10) | 折扣(6) | 小計(12) | 備註(8)
-            return PlainTextFormatter.FormatTableRow(new (string, int, PlainTextAlignment)[]
+            var doc = new FormattedDocument()
+                .SetDocumentName($"訂單-{salesOrder.Code}")
+                .SetMargins(0.8f, 0.3f, 0.8f, 0.3f);
+
+            // === 頁首區（每頁都會重複顯示）===
+            doc.BeginHeader(header =>
             {
-                (col1, 4, PlainTextAlignment.Left),
-                (col2, 26, PlainTextAlignment.Left),
-                (col3, 8, PlainTextAlignment.Right),
-                (col4, 6, PlainTextAlignment.Left),
-                (col5, 10, PlainTextAlignment.Right),
-                (col6, 6, PlainTextAlignment.Right),
-                (col7, 12, PlainTextAlignment.Right),
-                (col8, 8, PlainTextAlignment.Left)
+                // 中間公司名稱+訂單（置中），右側單號/日期/頁次
+                header.AddReportHeaderBlock(
+                    centerLines: new List<(string, float, bool)>
+                    {
+                        (company?.CompanyName ?? "公司名稱", 14f, true),
+                        ("銷 貨 單", 16f, true)
+                    },
+                    rightLines: new List<string>
+                    {
+                        $"單號：{salesOrder.Code ?? ""}",
+                        $"日期：{salesOrder.OrderDate:yyyy/MM/dd}",
+                        $"頁次：{{PAGE}}/{{PAGES}}"
+                    },
+                    rightFontSize: 10f);
+
+                header.AddSpacing(3);
+
+                // === 公司聯絡資訊 ===
+                header.AddKeyValueRow(
+                    ("電話", company?.Phone ?? ""),
+                    ("傳真", company?.Fax ?? ""));
+
+                header.AddKeyValueRow(
+                    ("地址", company?.Address ?? ""));
+
+                header.AddSpacing(3);
+
+                // === 客戶資訊區（第一行）===
+                header.AddKeyValueRow(
+                    ("客戶名稱", customer?.CompanyName ?? ""),
+                    ("統一編號", customer?.TaxNumber ?? ""),
+                    ("聯絡人", customer?.ContactPerson ?? ""),
+                    ("連絡電話", customer?.ContactPhone ?? ""));
+
+                // === 客戶資訊區（第二行）===
+                header.AddKeyValueRow(
+                    ("聯絡地址", customer?.ContactAddress ?? ""));
+
+                // === 業務員 ===
+                header.AddKeyValueRow(
+                    ("業務員", employee?.Name ?? ""));
+
+                header.AddSpacing(3);
             });
+
+            // === 明細表格（主要內容）===
+            doc.AddTable(table =>
+            {
+                // 定義欄位
+                table.AddColumn("項次", 0.4f, Models.Reports.TextAlignment.Center)
+                     .AddColumn("品名/規格", 2.2f, Models.Reports.TextAlignment.Left)
+                     .AddColumn("單位", 0.5f, Models.Reports.TextAlignment.Center)
+                     .AddColumn("數量", 0.7f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("單價", 0.8f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("折扣%", 0.5f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("總價", 0.9f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("備註", 1.0f, Models.Reports.TextAlignment.Left)
+                     .ShowBorder(false)
+                     .ShowHeaderBackground(false)
+                     .ShowHeaderSeparator(false)
+                     .SetRowHeight(20);
+
+                // 新增資料列
+                int rowNum = 1;
+                foreach (var detail in orderDetails)
+                {
+                    var product = productDict.GetValueOrDefault(detail.ProductId);
+                    var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
+                    
+                    // 組合商品名稱與規格說明
+                    var productName = product?.Name ?? "";
+                    var specification = product?.Specification ?? "";
+                    var displayName = string.IsNullOrEmpty(specification) 
+                        ? productName 
+                        : $"{productName}\n規格：{specification}";
+
+                    table.AddRow(
+                        rowNum.ToString(),
+                        displayName,
+                        unit?.Name ?? "",
+                        NumberFormatHelper.FormatSmart(detail.OrderQuantity),
+                        NumberFormatHelper.FormatSmart(detail.UnitPrice),
+                        NumberFormatHelper.FormatSmart(detail.DiscountPercentage),
+                        NumberFormatHelper.FormatSmart(detail.SubtotalAmount),
+                        detail.Remarks ?? ""
+                    );
+                    rowNum++;
+                }
+            });
+
+            // === 頁尾區（只在最後一頁顯示）===
+            doc.BeginFooter(footer =>
+            {
+                // 稅別說明
+                var taxMethodText = salesOrder.TaxCalculationMethod switch
+                {
+                    TaxCalculationMethod.TaxExclusive => "外加稅",
+                    TaxCalculationMethod.TaxInclusive => "內含稅",
+                    TaxCalculationMethod.NoTax => "免稅",
+                    _ => ""
+                };
+
+                // 合計區（說明在左、金額在右）
+                var leftLines = new List<string>();
+                if (!string.IsNullOrWhiteSpace(salesOrder.Remarks))
+                {
+                    leftLines.Add("【訂單備註】");
+                    leftLines.Add(salesOrder.Remarks);
+                }
+
+                var amountLines = new List<string>
+                {
+                    $"小　計：{NumberFormatHelper.FormatSmart(salesOrder.TotalAmount)}",
+                    $"稅　額：{NumberFormatHelper.FormatSmart(salesOrder.SalesTaxAmount)} ({taxMethodText})",
+                    $"總　計：{NumberFormatHelper.FormatSmart(salesOrder.TotalAmountWithTax)}"
+                };
+
+                footer.AddSpacing(5)
+                      .AddTwoColumnSection(
+                          leftContent: leftLines,
+                          leftTitle: null,
+                          leftHasBorder: false,
+                          rightContent: amountLines,
+                          leftWidthRatio: 0.7f);
+
+                // 簽名區
+                footer.AddSpacing(20)
+                      .AddSignatureSection("製單人員", "業務人員", "核准人員");
+            });
+
+            return doc;
         }
 
         #endregion

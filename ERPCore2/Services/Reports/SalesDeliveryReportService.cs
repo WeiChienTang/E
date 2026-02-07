@@ -11,36 +11,39 @@ using System.Runtime.Versioning;
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 報價單報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
+    /// 出貨單報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
     /// 設計理念：統一使用格式化報表，支援表格框線、圖片嵌入等進階功能
     /// </summary>
-    public class QuotationReportService : IQuotationReportService
+    public class SalesDeliveryReportService : ISalesDeliveryReportService
     {
-        private readonly IQuotationService _quotationService;
+        private readonly ISalesDeliveryService _salesDeliveryService;
+        private readonly ISalesDeliveryDetailService _salesDeliveryDetailService;
         private readonly ICustomerService _customerService;
-        private readonly IEmployeeService _employeeService;
         private readonly IProductService _productService;
-        private readonly IUnitService _unitService;
         private readonly ICompanyService _companyService;
+        private readonly IEmployeeService _employeeService;
+        private readonly IUnitService _unitService;
         private readonly IFormattedPrintService _formattedPrintService;
-        private readonly ILogger<QuotationReportService>? _logger;
+        private readonly ILogger<SalesDeliveryReportService>? _logger;
 
-        public QuotationReportService(
-            IQuotationService quotationService,
+        public SalesDeliveryReportService(
+            ISalesDeliveryService salesDeliveryService,
+            ISalesDeliveryDetailService salesDeliveryDetailService,
             ICustomerService customerService,
-            IEmployeeService employeeService,
             IProductService productService,
-            IUnitService unitService,
             ICompanyService companyService,
+            IEmployeeService employeeService,
+            IUnitService unitService,
             IFormattedPrintService formattedPrintService,
-            ILogger<QuotationReportService>? logger = null)
+            ILogger<SalesDeliveryReportService>? logger = null)
         {
-            _quotationService = quotationService;
+            _salesDeliveryService = salesDeliveryService;
+            _salesDeliveryDetailService = salesDeliveryDetailService;
             _customerService = customerService;
-            _employeeService = employeeService;
             _productService = productService;
-            _unitService = unitService;
             _companyService = companyService;
+            _employeeService = employeeService;
+            _unitService = unitService;
             _formattedPrintService = formattedPrintService;
             _logger = logger;
         }
@@ -48,29 +51,29 @@ namespace ERPCore2.Services.Reports
         #region 報表生成
 
         /// <summary>
-        /// 生成報價單報表文件
+        /// 生成出貨單報表文件
         /// </summary>
-        public async Task<FormattedDocument> GenerateReportAsync(int quotationId)
+        public async Task<FormattedDocument> GenerateReportAsync(int salesDeliveryId)
         {
             // 載入資料
-            var quotation = await _quotationService.GetWithDetailsAsync(quotationId);
-            if (quotation == null)
+            var salesDelivery = await _salesDeliveryService.GetByIdAsync(salesDeliveryId);
+            if (salesDelivery == null)
             {
-                throw new ArgumentException($"找不到報價單 ID: {quotationId}");
+                throw new ArgumentException($"找不到出貨單 ID: {salesDeliveryId}");
             }
 
-            var quotationDetails = quotation.QuotationDetails?.ToList() ?? new List<QuotationDetail>();
+            var deliveryDetails = await _salesDeliveryDetailService.GetByDeliveryIdAsync(salesDeliveryId);
 
             Customer? customer = null;
-            if (quotation.CustomerId > 0)
+            if (salesDelivery.CustomerId > 0)
             {
-                customer = await _customerService.GetByIdAsync(quotation.CustomerId);
+                customer = await _customerService.GetByIdAsync(salesDelivery.CustomerId);
             }
 
             Employee? employee = null;
-            if (quotation.EmployeeId.HasValue && quotation.EmployeeId.Value > 0)
+            if (salesDelivery.EmployeeId.HasValue && salesDelivery.EmployeeId.Value > 0)
             {
-                employee = await _employeeService.GetByIdAsync(quotation.EmployeeId.Value);
+                employee = await _employeeService.GetByIdAsync(salesDelivery.EmployeeId.Value);
             }
 
             Company? company = await _companyService.GetPrimaryCompanyAsync();
@@ -82,26 +85,26 @@ namespace ERPCore2.Services.Reports
             var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
 
             // 建構格式化文件
-            return BuildFormattedDocument(quotation, quotationDetails, customer, employee, company, productDict, unitDict);
+            return BuildFormattedDocument(salesDelivery, deliveryDetails, customer, employee, company, productDict, unitDict);
         }
 
         /// <summary>
-        /// 直接列印報價單
+        /// 直接列印出貨單
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<ServiceResult> DirectPrintAsync(int quotationId, string reportId, int copies = 1)
+        public async Task<ServiceResult> DirectPrintAsync(int salesDeliveryId, string reportId, int copies = 1)
         {
             try
             {
-                var document = await GenerateReportAsync(quotationId);
+                var document = await GenerateReportAsync(salesDeliveryId);
                 
-                _logger?.LogInformation("開始列印報價單 {QuotationId}，使用配置：{ReportId}", quotationId, reportId);
+                _logger?.LogInformation("開始列印出貨單 {SalesDeliveryId}，使用配置：{ReportId}", salesDeliveryId, reportId);
 
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "列印報價單 {QuotationId} 時發生錯誤", quotationId);
+                _logger?.LogError(ex, "列印出貨單 {SalesDeliveryId} 時發生錯誤", salesDeliveryId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -111,9 +114,9 @@ namespace ERPCore2.Services.Reports
         /// 使用預設的 A4 紙張尺寸
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<List<byte[]>> RenderToImagesAsync(int quotationId)
+        public async Task<List<byte[]>> RenderToImagesAsync(int salesDeliveryId)
         {
-            var document = await GenerateReportAsync(quotationId);
+            var document = await GenerateReportAsync(salesDeliveryId);
             return _formattedPrintService.RenderToImages(document);
         }
 
@@ -122,9 +125,9 @@ namespace ERPCore2.Services.Reports
         /// 根據指定紙張設定計算頁面尺寸
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<List<byte[]>> RenderToImagesAsync(int quotationId, PaperSetting paperSetting)
+        public async Task<List<byte[]>> RenderToImagesAsync(int salesDeliveryId, PaperSetting paperSetting)
         {
-            var document = await GenerateReportAsync(quotationId);
+            var document = await GenerateReportAsync(salesDeliveryId);
             return _formattedPrintService.RenderToImages(document, paperSetting);
         }
 
@@ -136,32 +139,46 @@ namespace ERPCore2.Services.Reports
         {
             try
             {
-                // 根據條件查詢報價單
-                var quotations = await _quotationService.GetByBatchCriteriaAsync(criteria);
+                // 根據條件查詢出貨單
+                var startDate = criteria.StartDate ?? DateTime.Today.AddMonths(-1);
+                var endDate = criteria.EndDate ?? DateTime.Today;
+                
+                var allDeliveries = await _salesDeliveryService.GetAllAsync();
+                var filteredDeliveries = allDeliveries
+                    .Where(d => d.DeliveryDate >= startDate && d.DeliveryDate <= endDate)
+                    .ToList();
 
-                if (quotations == null || !quotations.Any())
+                // 如果有指定客戶ID，進行篩選
+                if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
                 {
-                    return ServiceResult.Failure($"無符合條件的報價單\n篩選條件：{criteria.GetSummary()}");
+                    filteredDeliveries = filteredDeliveries
+                        .Where(d => criteria.RelatedEntityIds.Contains(d.CustomerId))
+                        .ToList();
                 }
 
-                _logger?.LogInformation("開始批次列印 {Count} 張報價單，使用配置：{ReportId}", quotations.Count, reportId);
+                if (filteredDeliveries == null || !filteredDeliveries.Any())
+                {
+                    return ServiceResult.Failure($"無符合條件的出貨單\n篩選條件：{criteria.GetSummary()}");
+                }
+
+                _logger?.LogInformation("開始批次列印 {Count} 張出貨單，使用配置：{ReportId}", filteredDeliveries.Count, reportId);
 
                 // 逐一列印
-                foreach (var quotation in quotations)
+                foreach (var delivery in filteredDeliveries)
                 {
-                    var result = await DirectPrintAsync(quotation.Id, reportId, 1);
+                    var result = await DirectPrintAsync(delivery.Id, reportId, 1);
                     if (!result.IsSuccess)
                     {
-                        _logger?.LogWarning("批次列印中報價單 {QuotationId} 失敗：{ErrorMessage}", quotation.Id, result.ErrorMessage);
+                        _logger?.LogWarning("批次列印中出貨單 {SalesDeliveryId} 失敗：{ErrorMessage}", delivery.Id, result.ErrorMessage);
                     }
                 }
 
-                _logger?.LogInformation("已完成 {Count} 張報價單的列印", quotations.Count);
+                _logger?.LogInformation("已完成 {Count} 張出貨單的列印", filteredDeliveries.Count);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "批次列印報價單時發生錯誤");
+                _logger?.LogError(ex, "批次列印出貨單時發生錯誤");
                 return ServiceResult.Failure($"批次列印時發生錯誤: {ex.Message}");
             }
         }
@@ -171,8 +188,8 @@ namespace ERPCore2.Services.Reports
         #region 私有方法 - 建構報表文件
 
         private FormattedDocument BuildFormattedDocument(
-            Quotation quotation,
-            List<QuotationDetail> quotationDetails,
+            SalesDelivery salesDelivery,
+            List<SalesDeliveryDetail> deliveryDetails,
             Customer? customer,
             Employee? employee,
             Company? company,
@@ -180,23 +197,23 @@ namespace ERPCore2.Services.Reports
             Dictionary<int, Unit> unitDict)
         {
             var doc = new FormattedDocument()
-                .SetDocumentName($"報價單-{quotation.Code}")
-                .SetMargins(0.8f, 0.3f, 0.8f, 0.3f); // 縮小邊距，尤其是上下邊距
+                .SetDocumentName($"出貨單-{salesDelivery.Code}")
+                .SetMargins(0.8f, 0.3f, 0.8f, 0.3f);
 
             // === 頁首區（每頁都會重複顯示）===
             doc.BeginHeader(header =>
             {
-                // 左側留空（給公司圖），中間公司名稱+報價單（置中），右側單號/日期/頁次（緊湊排列）
+                // 中間公司名稱+出貨單（置中），右側單號/日期/頁次
                 header.AddReportHeaderBlock(
                     centerLines: new List<(string, float, bool)>
                     {
                         (company?.CompanyName ?? "公司名稱", 14f, true),
-                        ("報 價 單", 16f, true)
+                        ("出 貨 單", 16f, true)
                     },
                     rightLines: new List<string>
                     {
-                        $"單號：{quotation.Code ?? ""}",
-                        $"日期：{quotation.QuotationDate:yyyy/MM/dd}",
+                        $"單號：{salesDelivery.Code ?? ""}",
+                        $"日期：{salesDelivery.DeliveryDate:yyyy/MM/dd}",
                         $"頁次：{{PAGE}}/{{PAGES}}"
                     },
                     rightFontSize: 10f);
@@ -222,20 +239,11 @@ namespace ERPCore2.Services.Reports
 
                 // === 客戶資訊區（第二行）===
                 header.AddKeyValueRow(
-                    ("聯絡地址", customer?.ContactAddress ?? ""));
+                    ("送貨地址", salesDelivery.DeliveryAddress ?? customer?.ShippingAddress ?? ""));
 
-                // === 工程名稱和業務員 ===
-                if (!string.IsNullOrWhiteSpace(quotation.ProjectName))
-                {
-                    header.AddKeyValueRow(
-                        ("工程名稱", quotation.ProjectName),
-                        ("業務員", employee?.Name ?? ""));
-                }
-                else
-                {
-                    header.AddKeyValueRow(
-                        ("業務員", employee?.Name ?? ""));
-                }
+                // === 業務員 ===
+                header.AddKeyValueRow(
+                    ("業務員", employee?.Name ?? ""));
 
                 header.AddSpacing(3);
             });
@@ -245,47 +253,39 @@ namespace ERPCore2.Services.Reports
             {
                 // 定義欄位
                 table.AddColumn("項次", 0.4f, Models.Reports.TextAlignment.Center)
-                     .AddColumn("品名/規格", 2.0f, Models.Reports.TextAlignment.Left)
+                     .AddColumn("品名/規格", 2.2f, Models.Reports.TextAlignment.Left)
                      .AddColumn("單位", 0.5f, Models.Reports.TextAlignment.Center)
                      .AddColumn("數量", 0.7f, Models.Reports.TextAlignment.Right)
                      .AddColumn("單價", 0.8f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("折扣%", 0.5f, Models.Reports.TextAlignment.Right)
                      .AddColumn("總價", 0.9f, Models.Reports.TextAlignment.Right)
-                     .AddColumn("備註", 1.6f, Models.Reports.TextAlignment.Left)
-                     .ShowBorder(false)              // 不顯示表格邊框
-                     .ShowHeaderBackground(false)    // 不顯示表頭背景
-                     .ShowHeaderSeparator(false)     // 不顯示表頭 | 分隔符
+                     .AddColumn("備註", 1.0f, Models.Reports.TextAlignment.Left)
+                     .ShowBorder(false)
+                     .ShowHeaderBackground(false)
+                     .ShowHeaderSeparator(false)
                      .SetRowHeight(20);
 
                 // 新增資料列
                 int rowNum = 1;
-                foreach (var detail in quotationDetails)
+                foreach (var detail in deliveryDetails)
                 {
                     var product = productDict.GetValueOrDefault(detail.ProductId);
                     var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
                     
                     // 組合商品名稱與規格說明
                     var productName = product?.Name ?? "";
-                    var specification = detail.Specification ?? product?.Specification ?? "";
+                    var specification = product?.Specification ?? "";
                     var displayName = string.IsNullOrEmpty(specification) 
                         ? productName 
                         : $"{productName}\n規格：{specification}";
-
-                    // BOM 組成明細
-                    if (product != null && ShouldShowBom(detail, product))
-                    {
-                        var bomText = GetBomText(detail);
-                        if (!string.IsNullOrEmpty(bomText))
-                        {
-                            displayName += $"\n組成：{bomText}";
-                        }
-                    }
 
                     table.AddRow(
                         rowNum.ToString(),
                         displayName,
                         unit?.Name ?? "",
-                        NumberFormatHelper.FormatSmart(detail.Quantity),
+                        NumberFormatHelper.FormatSmart(detail.DeliveryQuantity),
                         NumberFormatHelper.FormatSmart(detail.UnitPrice),
+                        NumberFormatHelper.FormatSmart(detail.DiscountPercentage),
                         NumberFormatHelper.FormatSmart(detail.SubtotalAmount),
                         detail.Remarks ?? ""
                     );
@@ -297,7 +297,7 @@ namespace ERPCore2.Services.Reports
             doc.BeginFooter(footer =>
             {
                 // 稅別說明
-                var taxMethodText = quotation.TaxCalculationMethod switch
+                var taxMethodText = salesDelivery.TaxCalculationMethod switch
                 {
                     TaxCalculationMethod.TaxExclusive => "外加稅",
                     TaxCalculationMethod.TaxInclusive => "內含稅",
@@ -307,26 +307,17 @@ namespace ERPCore2.Services.Reports
 
                 // 合計區（說明在左、金額在右）
                 var leftLines = new List<string>();
-                leftLines.Add("【報價說明】");
-                if (!string.IsNullOrWhiteSpace(quotation.PaymentTerms))
+                if (!string.IsNullOrWhiteSpace(salesDelivery.Remarks))
                 {
-                    leftLines.Add($"付款條件：{quotation.PaymentTerms}");
-                }
-                if (!string.IsNullOrWhiteSpace(quotation.DeliveryTerms))
-                {
-                    leftLines.Add($"交貨條件：{quotation.DeliveryTerms}");
-                }
-                if (!string.IsNullOrWhiteSpace(quotation.Remarks))
-                {
-                    leftLines.Add($"備　　註：{quotation.Remarks}");
+                    leftLines.Add("【出貨備註】");
+                    leftLines.Add(salesDelivery.Remarks);
                 }
 
                 var amountLines = new List<string>
                 {
-                    $"小　計：{NumberFormatHelper.FormatSmart(quotation.SubtotalBeforeDiscount)}",
-                    $"折　扣：{NumberFormatHelper.FormatSmart(quotation.DiscountAmount)}",
-                    $"稅　額：{NumberFormatHelper.FormatSmart(quotation.QuotationTaxAmount)} ({taxMethodText})",
-                    $"總　計：{NumberFormatHelper.FormatSmart(quotation.TotalAmount)}"
+                    $"小　計：{NumberFormatHelper.FormatSmart(salesDelivery.TotalAmount)}",
+                    $"稅　額：{NumberFormatHelper.FormatSmart(salesDelivery.TaxAmount)} ({taxMethodText})",
+                    $"總　計：{NumberFormatHelper.FormatSmart(salesDelivery.TotalAmountWithTax)}"
                 };
 
                 footer.AddSpacing(5)
@@ -339,40 +330,10 @@ namespace ERPCore2.Services.Reports
 
                 // 簽名區
                 footer.AddSpacing(20)
-                      .AddSignatureSection("業務代表", "主管核准", "客戶確認");
+                      .AddSignatureSection("製單人員", "業務人員", "客戶簽收");
             });
 
             return doc;
-        }
-
-        /// <summary>
-        /// 判斷是否應該在報價單列印時顯示 BOM 組成
-        /// </summary>
-        private static bool ShouldShowBom(QuotationDetail detail, Product product)
-        {
-            if (detail.CompositionDetails == null || !detail.CompositionDetails.Any())
-                return false;
-            
-            return detail.CompositionDetails.Any(cd => 
-                cd.ComponentProduct?.ShowBomOnPrint == true);
-        }
-
-        /// <summary>
-        /// 取得 BOM 組成文字（橫向顯示）
-        /// </summary>
-        private static string GetBomText(QuotationDetail detail)
-        {
-            var compositions = detail.CompositionDetails?
-                .Where(cd => cd.ComponentProduct?.ShowBomOnPrint == true)
-                .ToList() ?? new List<QuotationCompositionDetail>();
-            
-            if (!compositions.Any()) return "";
-            
-            var componentNames = compositions
-                .Select(comp => comp.ComponentProduct?.Name ?? "")
-                .Where(name => !string.IsNullOrEmpty(name));
-            
-            return string.Join("、", componentNames);
         }
 
         #endregion

@@ -298,7 +298,7 @@ namespace ERPCore2.Controllers
         /// <param name="reportType">報表類型（可選）</param>
         /// <returns>合併後的報表內容</returns>
         [HttpPost("purchase-receiving/batch")]
-        public async Task<IActionResult> BatchPrintPurchaseReceivings(
+        public IActionResult BatchPrintPurchaseReceivings(
             [FromBody] BatchPrintCriteria criteria,
             [FromQuery] int? configId = null,
             [FromQuery] string? reportType = null)
@@ -333,7 +333,7 @@ namespace ERPCore2.Controllers
         /// <param name="reportType">報表類型（可選）</param>
         /// <returns>可列印的報表內容</returns>
         [HttpPost("purchase-receiving/batch/print")]
-        public async Task<IActionResult> BatchPrintPurchaseReceivingsWithAuto(
+        public IActionResult BatchPrintPurchaseReceivingsWithAuto(
             [FromBody] BatchPrintCriteria criteria,
             [FromQuery] int? configId = null,
             [FromQuery] string? reportType = null)
@@ -342,7 +342,7 @@ namespace ERPCore2.Controllers
             {
 
                 // 先生成報表
-                var response = await BatchPrintPurchaseReceivings(criteria, configId, reportType);
+                var response = BatchPrintPurchaseReceivings(criteria, configId, reportType);
                 
                 if (response is ContentResult contentResult)
                 {

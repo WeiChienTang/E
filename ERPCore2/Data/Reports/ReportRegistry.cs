@@ -152,6 +152,70 @@ public static class ReportRegistry
                 IsEnabled = true
             },
             
+            // ==================== 銷售報表 ====================
+            new ReportDefinition
+            {
+                Id = "SO001",
+                Name = "報價單",
+                Description = "列印報價單（含客戶資訊、商品明細、金額統計）",
+                IconClass = "bi bi-file-earmark-text",
+                Category = ReportCategory.Sales,
+                RequiredPermission = "Quotation.Read",
+                ActionId = "PrintQuotation",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = "SO002",
+                Name = "銷貨訂單",
+                Description = "列印銷貨訂單（含客戶資訊、商品明細、金額統計）",
+                IconClass = "bi bi-receipt",
+                Category = ReportCategory.Sales,
+                RequiredPermission = "SalesOrder.Read",
+                ActionId = "PrintSalesOrder",
+                SortOrder = 2,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = "SO003",
+                Name = "銷貨退回單",
+                Description = "列印銷貨退回單（含退貨原因、退貨明細）",
+                IconClass = "bi bi-arrow-return-right",
+                Category = ReportCategory.Sales,
+                RequiredPermission = "SalesReturn.Read",
+                ActionId = "PrintSalesReturn",
+                SortOrder = 3,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = "SO004",
+                Name = "出貨單",
+                Description = "列印出貨單（含客戶資訊、商品明細、金額統計）",
+                IconClass = "bi bi-truck",
+                Category = ReportCategory.Sales,
+                RequiredPermission = "SalesDelivery.Read",
+                ActionId = "PrintSalesDelivery",
+                SortOrder = 4,
+                IsEnabled = true
+            },
+            
+            // ==================== 庫存報表 ====================
+            new ReportDefinition
+            {
+                Id = "IV001",
+                Name = "商品條碼",
+                Description = "列印商品條碼標籤",
+                IconClass = "bi bi-upc-scan",
+                Category = ReportCategory.Inventory,
+                RequiredPermission = "Product.Read",
+                ActionId = "PrintProductBarcode",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            
             // ==================== 財務報表 ====================
             // 可依需求繼續擴充...
         };
@@ -198,6 +262,22 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetPurchaseReports()
     {
         return GetReportsByCategory(ReportCategory.Purchase);
+    }
+    
+    /// <summary>
+    /// 取得銷售相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetSalesReports()
+    {
+        return GetReportsByCategory(ReportCategory.Sales);
+    }
+    
+    /// <summary>
+    /// 取得庫存相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetInventoryReports()
+    {
+        return GetReportsByCategory(ReportCategory.Inventory);
     }
     
     /// <summary>

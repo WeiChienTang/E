@@ -1,3 +1,5 @@
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
 @inject IQuotationCompositionDetailService QuotationCompositionDetailService
@@ -11,6 +13,7 @@
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISystemParameterService SystemParameterService
+@inject IQuotationReportService QuotationReportService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject IJSRuntime JSRuntime
@@ -90,6 +93,18 @@
                              OnSalesOrderSaved="@HandleSalesOrderSaved"
                              OnCancel="@(() => showSalesOrderModal = false)" />
 
+@* 報表預覽 Modal *@
+<ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
+                             IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
+                             Title="報價單預覽"
+                             PreviewImages="@_reportPreviewImages"
+                             FormattedDocument="@_formattedDocument"
+                             ReportId="SO001"
+                             DocumentName="@_reportDocumentName"
+                             OnPrintSuccess="@HandleReportPrintSuccess"
+                             OnPaperSettingChanged="@HandlePaperSettingChanged"
+                             OnCancel="@(() => _showReportPreviewModal = false)" />
+
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
@@ -148,6 +163,13 @@
     
     // ===== 已刪除的明細 ID 暫存（儲存時才真正刪除） =====
     private List<int> _deletedDetailIds = new();
+    
+    // ===== 列印相關狀態 =====
+    private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
+    private bool _showReportPreviewModal = false; // 是否顯示報表預覽 Modal
+    private List<byte[]>? _reportPreviewImages = null; // 報表預覽圖片（格式化模式）
+    private FormattedDocument? _formattedDocument = null; // 格式化文件（用於列印）
+    private string _reportDocumentName = string.Empty; // 列印文件名稱
     
     // ===== 明細載入狀態 =====
     private bool isDetailDataReady = false;  // 標記明細相關資料是否已完整載入
@@ -216,6 +238,7 @@
         if (editModalComponent?.Entity != null)
         {
             await OnQuotationSaved.InvokeAsync(editModalComponent.Entity);
+            canPrint = true; // 儲存成功後可以列印
         }
         // CloseModal 已由 GenericEditModalComponent 統一控制
     }
@@ -238,6 +261,7 @@
             // 🔑 關鍵修正：每次載入資料時重置狀態變數，避免上次編輯的狀態殘留到新增模式
             isDetailDataReady = false;
             hasUndeletableDetails = false;
+            canPrint = false; // 預設不可列印
             
             if (!QuotationId.HasValue)
             {
@@ -276,6 +300,9 @@
                 
                 //  標記明細資料已準備就緒
                 isDetailDataReady = true;
+                
+                // 編輯模式可以列印
+                canPrint = true;
                 
                 // 如果已轉單或已審核，需要鎖定欄位
                 if (hasUndeletableDetails || quotation.IsApproved)
@@ -888,14 +915,14 @@
                                                 @key="@editModalComponent.Entity.Id"
                                                 TMainEntity="Quotation"
                                                 TDetailEntity="QuotationDetail"
-                                                MainEntity="@editModalComponent?.Entity"
+                                                MainEntity="@editModalComponent.Entity"
                                                 ExistingDetails="@quotationDetails"
                                                 OnDetailsChanged="@HandleQuotationDetailsChanged"
                                                 OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
                                                 Products="@availableProducts"
                                                 Units="@availableUnits"
-                                                SelectedCustomerId="@editModalComponent?.Entity?.CustomerId"
-                                                TaxCalculationMethod="@(editModalComponent?.Entity?.TaxCalculationMethod ?? TaxCalculationMethod.TaxExclusive)"
+                                                SelectedCustomerId="@editModalComponent.Entity.CustomerId"
+                                                TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                 MainEntityIdPropertyName="@nameof(QuotationDetail.QuotationId)"
                                                 QuantityPropertyName="@nameof(QuotationDetail.Quantity)"
                                                 UnitPricePropertyName="@nameof(QuotationDetail.UnitPrice)"
@@ -1709,91 +1736,112 @@
     }
 
     /// <summary>
-    /// 處理列印事件
+    /// 處理列印事件 - 開啟報表預覽 Modal
     /// </summary>
     private async Task HandlePrint()
     {
         try
         {
-            // 使用通用 Helper 進行完整驗證（實體、ID）
-            // 報價單不需要核准即可列印
-            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
-                entity: editModalComponent?.Entity,
-                entityId: QuotationId,
-                isApproved: true, // 報價單不需審核
-                entityName: "報價單",
-                requireApproval: false
-            );
-            
-            if (!isValid)
+            // 第一步：檢查是否可列印（需先儲存）
+            if (!canPrint || !QuotationId.HasValue)
             {
-                await NotificationService.ShowWarningAsync(errorMessage);
+                await NotificationService.ShowWarningAsync("請先儲存報價單後再進行列印");
                 return;
             }
             
-            // 直接執行列印，使用預設設定
-            await HandleDirectPrint(null);
+            // 第二步：安全檢查 - 確保 Entity 已載入
+            if (editModalComponent?.Entity == null)
+            {
+                await NotificationService.ShowWarningAsync("報價單資料載入失敗，請重新整理頁面");
+                return;
+            }
+            
+            // 第三步：生成報表內容並開啟預覽 Modal
+            await OpenReportPreviewModal();
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
-                additionalData: $"報價單列印處理失敗 - ID: {QuotationId}");
+                additionalData: $"報價單列印處理失敗 - ID: {editModalComponent?.Entity?.Id}");
             await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
         }
     }
 
     /// <summary>
-    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
+    /// 開啟報表預覽 Modal
     /// </summary>
-    private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
+    private async Task OpenReportPreviewModal()
     {
         try
         {
-            if (!QuotationId.HasValue)
+            if (editModalComponent?.Entity == null)
             {
-                await NotificationService.ShowWarningAsync("請先儲存報價單後再進行列印");
+                await NotificationService.ShowWarningAsync("無法預覽：報價單資料不存在");
                 return;
             }
 
-            // 驗證列印配置
-            var (isValid, errorMessage) = ReportPrintHelper.ValidateConfiguration(printConfig);
-            if (!isValid)
-            {
-                await NotificationService.ShowWarningAsync(errorMessage);
-                return;
-            }
-
-            // 使用通用 Helper 建立列印 URL（新版路由）
-            var printUrl = ReportPrintHelper.BuildPrintUrl(
-                baseUrl: NavigationManager.BaseUri,
-                reportType: "sales-report/quotation",
-                documentId: QuotationId.Value,
-                configuration: printConfig,
-                autoprint: true
-            );
-
-            // 使用通用 Helper 執行列印（隱藏 iframe 方式）
-            var success = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
-                printUrl: printUrl,
-                jsRuntime: JSRuntime,
-                iframeId: "printFrame"
-            );
+            // 生成報表文件
+            _formattedDocument = await QuotationReportService.GenerateReportAsync(editModalComponent.Entity.Id);
             
-            if (success)
-            {
-                // 可選：顯示成功訊息
-                // await NotificationService.ShowSuccessAsync("報價單列印已送出");
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync("列印執行失敗");
-            }
+            // 渲染為預覽圖片
+            _reportPreviewImages = await QuotationReportService.RenderToImagesAsync(editModalComponent.Entity.Id);
+            
+            _reportDocumentName = $"報價單-{editModalComponent.Entity.Code}";
+            
+            // 開啟預覽 Modal
+            _showReportPreviewModal = true;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
-                additionalData: $"報價單直接列印失敗 - ID: {QuotationId}, Config: {printConfig?.ReportName}");
-            await NotificationService.ShowErrorAsync("列印執行時發生錯誤");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenReportPreviewModal), GetType(), 
+                additionalData: $"開啟報價單預覽失敗 - ID: {editModalComponent?.Entity?.Id}");
+            await NotificationService.ShowErrorAsync("開啟預覽時發生錯誤");
+        }
+    }
+
+    /// <summary>
+    /// 處理報表列印成功事件
+    /// </summary>
+    private Task HandleReportPrintSuccess()
+    {
+        // 列印成功後可以執行的額外邏輯（如記錄列印次數等）
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 處理紙張設定變更事件
+    /// 當用戶在預覽 Modal 中變更紙張時，重新渲染預覽圖片
+    /// </summary>
+    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
+    {
+        try
+        {
+            if (editModalComponent?.Entity == null) return;
+            
+            // 更新 FormattedDocument 的紙張尺寸（用於列印時正確分頁）
+            if (_formattedDocument != null)
+            {
+                _formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
+                _formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
+                _formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
+                _formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
+                _formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
+                _formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
+            }
+            
+            // 根據新的紙張設定重新渲染預覽圖片
+            _reportPreviewImages = await QuotationReportService.RenderToImagesAsync(
+                editModalComponent.Entity.Id, 
+                paperSetting);
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaperSettingChanged), GetType(),
+                additionalData: $"重新渲染報價單預覽失敗 - ID: {editModalComponent?.Entity?.Id}, 紙張: {paperSetting?.Name}");
+            await NotificationService.ShowErrorAsync("更新預覽時發生錯誤");
         }
     }
 }

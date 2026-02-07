@@ -1011,7 +1011,7 @@
     {
         try
         {
-            // 🔑 關鍵修復：導航到已存在的記錄時，允許轉單和列印
+            //  關鍵修復：導航到已存在的記錄時，允許轉單和列印
             // 因為 NavigateToRecordAsync 不會呼叫 LoadPurchaseOrderData，
             // 所以需要在這裡手動設置狀態
             canCreateReceiving = true;
@@ -1295,7 +1295,7 @@
             }
             else
             {
-                // 🔑 確保新增模式下 Id 為 0（避免 IDENTITY_INSERT 錯誤）
+                //  確保新增模式下 Id 為 0（避免 IDENTITY_INSERT 錯誤）
                 purchaseOrder.Id = 0;
                 result = await PurchaseOrderService.CreateAsync(purchaseOrder);
             }
@@ -1310,10 +1310,10 @@
             // 確保 GenericEditModalComponent 能正確偵測到從新增轉為編輯模式
             if (isNewRecord && result.Data.Id > 0)
             {
-                // 🔑 修復1：更新傳入的實體物件 ID（讓 GenericEditModalComponent 能偵測到）
+                //  修復1：更新傳入的實體物件 ID（讓 GenericEditModalComponent 能偵測到）
                 purchaseOrder.Id = result.Data.Id;
                 
-                // 🔑 修復2：更新組件參數（用於後續判斷模式）
+                //  修復2：更新組件參數（用於後續判斷模式）
                 PurchaseOrderId = result.Data.Id;
             }
 

@@ -2,17 +2,17 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Data.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
+using ERPCore2.Models.Reports;
 using ERPCore2.Services;
+using ERPCore2.Services.Reports.Interfaces;
 using Microsoft.Extensions.Logging;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
 
 namespace ERPCore2.Services.Reports
 {
     /// <summary>
-    /// 進貨退出單報表服務實作 - 純文字版本
-    /// 設計理念：統一使用純文字格式，支援直接列印和預覽
+    /// 進貨退出單報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
+    /// 設計理念：統一使用格式化報表，支援表格框線、圖片嵌入等進階功能
     /// </summary>
     public class PurchaseReturnReportService : IPurchaseReturnReportService
     {
@@ -20,10 +20,7 @@ namespace ERPCore2.Services.Reports
         private readonly ISupplierService _supplierService;
         private readonly IProductService _productService;
         private readonly ICompanyService _companyService;
-        private readonly ISystemParameterService _systemParameterService;
-        private readonly IReportPrintConfigurationService _reportPrintConfigService;
-        private readonly IPrinterConfigurationService _printerConfigService;
-        private readonly IPlainTextPrintService _plainTextPrintService;
+        private readonly IFormattedPrintService _formattedPrintService;
         private readonly ILogger<PurchaseReturnReportService>? _logger;
 
         public PurchaseReturnReportService(
@@ -31,30 +28,23 @@ namespace ERPCore2.Services.Reports
             ISupplierService supplierService,
             IProductService productService,
             ICompanyService companyService,
-            ISystemParameterService systemParameterService,
-            IReportPrintConfigurationService reportPrintConfigService,
-            IPrinterConfigurationService printerConfigService,
-            IPlainTextPrintService plainTextPrintService,
+            IFormattedPrintService formattedPrintService,
             ILogger<PurchaseReturnReportService>? logger = null)
         {
             _purchaseReturnService = purchaseReturnService;
             _supplierService = supplierService;
             _productService = productService;
             _companyService = companyService;
-            _systemParameterService = systemParameterService;
-            _reportPrintConfigService = reportPrintConfigService;
-            _printerConfigService = printerConfigService;
-            _plainTextPrintService = plainTextPrintService;
+            _formattedPrintService = formattedPrintService;
             _logger = logger;
         }
 
-        #region 純文字報表生成
+        #region 報表生成
 
         /// <summary>
-        /// 生成純文字格式的進貨退出單報表
-        /// 直接生成格式化的純文字，適合直接列印和預覽
+        /// 生成進貨退出單報表文件
         /// </summary>
-        public async Task<string> GeneratePlainTextReportAsync(int purchaseReturnId)
+        public async Task<FormattedDocument> GenerateReportAsync(int purchaseReturnId)
         {
             // 載入資料
             var purchaseReturn = await _purchaseReturnService.GetWithDetailsAsync(purchaseReturnId);
@@ -64,7 +54,7 @@ namespace ERPCore2.Services.Reports
             }
 
             var returnDetails = purchaseReturn.PurchaseReturnDetails?.ToList() ?? new List<PurchaseReturnDetail>();
-            
+
             Supplier? supplier = null;
             if (purchaseReturn.SupplierId > 0)
             {
@@ -76,268 +66,202 @@ namespace ERPCore2.Services.Reports
             var allProducts = await _productService.GetAllAsync();
             var productDict = allProducts.ToDictionary(p => p.Id, p => p);
 
-            decimal taxRate = 5.0m;
-            try
-            {
-                taxRate = await _systemParameterService.GetTaxRateAsync();
-            }
-            catch
-            {
-                // 使用預設稅率
-            }
-
-            // 生成純文字報表
-            return GeneratePlainTextContent(purchaseReturn, returnDetails, supplier, company, productDict, taxRate);
+            // 建構格式化文件
+            return BuildFormattedDocument(purchaseReturn, returnDetails, supplier, company, productDict);
         }
 
         /// <summary>
-        /// 批次生成純文字報表（支援多條件篩選）
-        /// </summary>
-        public async Task<string> GenerateBatchPlainTextReportAsync(BatchPrintCriteria criteria)
-        {
-            try
-            {
-                // 驗證篩選條件
-                var validation = criteria.Validate();
-                if (!validation.IsValid)
-                {
-                    throw new ArgumentException($"批次列印條件驗證失敗：{validation.GetAllErrors()}");
-                }
-
-                // 根據條件查詢進貨退出單
-                var purchaseReturns = await _purchaseReturnService.GetByBatchCriteriaAsync(criteria);
-
-                if (purchaseReturns == null || !purchaseReturns.Any())
-                {
-                    return $"無符合條件的進貨退出單\n篩選條件：{criteria.GetSummary()}";
-                }
-
-                // 載入共用資料
-                var allProducts = await _productService.GetAllAsync();
-                var productDict = allProducts.ToDictionary(p => p.Id, p => p);
-
-                decimal taxRate = 5.0m;
-                try
-                {
-                    taxRate = await _systemParameterService.GetTaxRateAsync();
-                }
-                catch
-                {
-                    // 使用預設稅率
-                }
-
-                var sb = new StringBuilder();
-                var pageBreak = "\f"; // Form Feed 字元，用於分頁
-
-                for (int i = 0; i < purchaseReturns.Count; i++)
-                {
-                    var purchaseReturn = purchaseReturns[i];
-
-                    // 載入該進貨退出單的相關資料
-                    var returnDetails = purchaseReturn.PurchaseReturnDetails?.ToList() ?? new List<PurchaseReturnDetail>();
-                    
-                    Supplier? supplier = null;
-                    if (purchaseReturn.SupplierId > 0)
-                    {
-                        supplier = await _supplierService.GetByIdAsync(purchaseReturn.SupplierId);
-                    }
-
-                    Company? company = await _companyService.GetPrimaryCompanyAsync();
-
-                    // 生成該進貨退出單的純文字內容
-                    sb.Append(GeneratePlainTextContent(purchaseReturn, returnDetails, supplier, company, productDict, taxRate));
-
-                    // 加入分頁符號（最後一張不需要）
-                    if (i < purchaseReturns.Count - 1)
-                    {
-                        sb.Append(pageBreak);
-                    }
-                }
-
-                return sb.ToString();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"生成批次進貨退出單報表時發生錯誤: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// 生成純文字內容（固定寬度格式，適合等寬字型列印）
-        /// </summary>
-        private static string GeneratePlainTextContent(
-            PurchaseReturn purchaseReturn,
-            List<PurchaseReturnDetail> returnDetails,
-            Supplier? supplier,
-            Company? company,
-            Dictionary<int, Product> productDict,
-            decimal taxRate)
-        {
-            var sb = new StringBuilder();
-            const int lineWidth = PlainTextFormatter.DefaultLineWidth;
-
-            // === 標題區 ===
-            sb.Append(PlainTextFormatter.BuildTitleSection(
-                company?.CompanyName ?? "公司名稱",
-                "進 貨 退 出 單",
-                lineWidth));
-
-            // === 基本資訊區 ===
-            sb.AppendLine($"退出單號：{purchaseReturn.Code,-20} 退出日期：{PlainTextFormatter.FormatDate(purchaseReturn.ReturnDate)}");
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-            sb.AppendLine($"廠商名稱：{supplier?.CompanyName ?? ""}");
-            sb.AppendLine($"聯 絡 人：{supplier?.ContactPerson ?? "",-20} 統一編號：{supplier?.TaxNumber ?? ""}");
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-
-            // === 明細表頭 ===
-            // 序號(4) | 品名(30) | 數量(8) | 單位(6) | 單價(10) | 小計(12) | 備註(10)
-            sb.AppendLine(FormatTableRow("序號", "品名", "退出數量", "單位", "單價", "小計", "備註"));
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-
-            // === 明細內容 ===
-            int rowNum = 1;
-            foreach (var detail in returnDetails)
-            {
-                var product = productDict.GetValueOrDefault(detail.ProductId);
-                var productName = PlainTextFormatter.TruncateText(product?.Name ?? "", 28);
-                var remarks = PlainTextFormatter.TruncateText(detail.Remarks ?? "", 8);
-
-                sb.AppendLine(FormatTableRow(
-                    rowNum.ToString(),
-                    productName,
-                    PlainTextFormatter.FormatQuantity(detail.ReturnQuantity),
-                    "個",
-                    PlainTextFormatter.FormatAmountWithDecimals(detail.OriginalUnitPrice),
-                    PlainTextFormatter.FormatAmountWithDecimals(detail.ReturnSubtotalAmount),
-                    remarks
-                ));
-                rowNum++;
-            }
-
-            sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-
-            // === 合計區 ===
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("小　計", purchaseReturn.TotalReturnAmount));
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("稅　額", purchaseReturn.ReturnTaxAmount, $"{taxRate:F2}%"));
-            sb.AppendLine(PlainTextFormatter.BuildTotalLine("總　計", purchaseReturn.TotalReturnAmountWithTax));
-
-            // === 備註 ===
-            if (!string.IsNullOrWhiteSpace(purchaseReturn.Remarks))
-            {
-                sb.AppendLine(PlainTextFormatter.ThinSeparator(lineWidth));
-                sb.AppendLine($"備註：{purchaseReturn.Remarks}");
-            }
-
-            sb.AppendLine(PlainTextFormatter.Separator(lineWidth));
-
-            // === 簽名區 ===
-            sb.Append(PlainTextFormatter.BuildSignatureSection(
-                new[] { "處理人員", "倉管人員", "核准人員" },
-                lineWidth));
-
-            return sb.ToString();
-        }
-
-        #endregion
-
-        #region 直接列印
-
-        /// <summary>
-        /// 直接列印進貨退出單（使用 System.Drawing.Printing）
+        /// 直接列印進貨退出單
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<ServiceResult> DirectPrintAsync(int purchaseReturnId, string printerName)
+        public async Task<ServiceResult> DirectPrintAsync(int purchaseReturnId, string reportId, int copies = 1)
         {
             try
             {
-                // 生成純文字報表
-                var textContent = await GeneratePlainTextReportAsync(purchaseReturnId);
-
-                _logger?.LogInformation("開始直接列印進貨退出單 {OrderId}，印表機：{PrinterName}", purchaseReturnId, printerName);
-
-                // 使用共用的列印服務
-                var printResult = _plainTextPrintService.PrintText(textContent, printerName, $"進貨退出單-{purchaseReturnId}");
+                var document = await GenerateReportAsync(purchaseReturnId);
                 
-                if (printResult.IsSuccess)
-                {
-                    _logger?.LogInformation("進貨退出單 {OrderId} 列印完成", purchaseReturnId);
-                }
-                
-                return printResult;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "直接列印進貨退出單 {OrderId} 時發生錯誤", purchaseReturnId);
-                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 直接列印進貨退出單（使用報表列印配置）
-        /// </summary>
-        [SupportedOSPlatform("windows6.1")]
-        public async Task<ServiceResult> DirectPrintByReportIdAsync(int purchaseReturnId, string reportId)
-        {
-            try
-            {
-                // 生成純文字報表
-                var textContent = await GeneratePlainTextReportAsync(purchaseReturnId);
-
                 _logger?.LogInformation("開始列印進貨退出單 {OrderId}，使用配置：{ReportId}", purchaseReturnId, reportId);
 
-                // 使用共用的列印服務
-                return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, $"進貨退出單-{purchaseReturnId}");
+                return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "使用配置列印進貨退出單 {OrderId} 時發生錯誤，ReportId: {ReportId}", purchaseReturnId, reportId);
+                _logger?.LogError(ex, "列印進貨退出單 {OrderId} 時發生錯誤", purchaseReturnId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 批次直接列印（使用報表列印配置）
+        /// 將報表渲染為圖片（用於預覽）
+        /// 使用預設的 A4 紙張尺寸
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<List<byte[]>> RenderToImagesAsync(int purchaseReturnId)
+        {
+            var document = await GenerateReportAsync(purchaseReturnId);
+            return _formattedPrintService.RenderToImages(document);
+        }
+
+        /// <summary>
+        /// 將報表渲染為圖片（用於預覽）
+        /// 根據指定紙張設定計算頁面尺寸
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<List<byte[]>> RenderToImagesAsync(int purchaseReturnId, PaperSetting paperSetting)
+        {
+            var document = await GenerateReportAsync(purchaseReturnId);
+            return _formattedPrintService.RenderToImages(document, paperSetting);
+        }
+
+        /// <summary>
+        /// 批次直接列印
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
         public async Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId)
         {
             try
             {
-                // 生成批次純文字報表
-                var textContent = await GenerateBatchPlainTextReportAsync(criteria);
+                // 根據條件查詢進貨退出單
+                var purchaseReturns = await _purchaseReturnService.GetByBatchCriteriaAsync(criteria);
 
-                _logger?.LogInformation("開始批次列印進貨退出單，使用配置：{ReportId}", reportId);
+                if (purchaseReturns == null || !purchaseReturns.Any())
+                {
+                    return ServiceResult.Failure($"無符合條件的進貨退出單\n篩選條件：{criteria.GetSummary()}");
+                }
 
-                // 使用共用的列印服務
-                return await _plainTextPrintService.PrintTextByReportIdAsync(textContent, reportId, "進貨退出單批次列印");
+                _logger?.LogInformation("開始批次列印 {Count} 張進貨退出單，使用配置：{ReportId}", purchaseReturns.Count, reportId);
+
+                // 逐一列印
+                foreach (var purchaseReturn in purchaseReturns)
+                {
+                    var result = await DirectPrintAsync(purchaseReturn.Id, reportId, 1);
+                    if (!result.IsSuccess)
+                    {
+                        _logger?.LogWarning("批次列印中進貨退出單 {OrderId} 失敗：{ErrorMessage}", purchaseReturn.Id, result.ErrorMessage);
+                    }
+                }
+
+                _logger?.LogInformation("已完成 {Count} 張進貨退出單的列印", purchaseReturns.Count);
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "批次列印進貨退出單時發生錯誤");
-                return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
+                return ServiceResult.Failure($"批次列印時發生錯誤: {ex.Message}");
             }
         }
 
         #endregion
 
-        #region 純文字格式化輔助方法（保留供表格格式化使用）
-
-        /// <summary>
-        /// 格式化表格行（固定寬度）- 進貨退出單專用格式
-        /// </summary>
-        private static string FormatTableRow(string col1, string col2, string col3, string col4, string col5, string col6, string col7)
+        #region 私有方法 - 建構報表文件
+        private FormattedDocument BuildFormattedDocument(
+            PurchaseReturn purchaseReturn,
+            List<PurchaseReturnDetail> returnDetails,
+            Supplier? supplier,
+            Company? company,
+            Dictionary<int, Product> productDict)
         {
-            // 序號(4) | 品名(30) | 數量(8) | 單位(6) | 單價(10) | 小計(12) | 備註(10)
-            return PlainTextFormatter.FormatTableRow(new (string, int, PlainTextAlignment)[]
+            var doc = new FormattedDocument()
+                .SetDocumentName($"進貨退出單-{purchaseReturn.Code}")
+                .SetMargins(0.8f, 0.3f, 0.8f, 0.3f); // 縮小邊距，尤其是上下邊距
+
+            // === 頁首區（每頁都會重複顯示）===
+            doc.BeginHeader(header =>
             {
-                (col1, 4, PlainTextAlignment.Left),
-                (col2, 30, PlainTextAlignment.Left),
-                (col3, 8, PlainTextAlignment.Right),
-                (col4, 6, PlainTextAlignment.Left),
-                (col5, 10, PlainTextAlignment.Right),
-                (col6, 12, PlainTextAlignment.Right),
-                (col7, 10, PlainTextAlignment.Left)
+                // 左側留空（給公司圖），中間公司名稱+進貨退出單（置中），右側單號/日期/頁次（緊湊排列）
+                header.AddReportHeaderBlock(
+                    centerLines: new List<(string, float, bool)>
+                    {
+                        (company?.CompanyName ?? "公司名稱", 14f, true),
+                        ("進 貨 退 出 單", 16f, true)
+                    },
+                    rightLines: new List<string>
+                    {
+                        $"單號：{purchaseReturn.Code ?? ""}",
+                        $"日期：{purchaseReturn.ReturnDate:yyyy/MM/dd}",
+                        $"頁次：{{PAGE}}/{{PAGES}}"
+                    },
+                    rightFontSize: 10f);
+
+                header.AddSpacing(3);
+
+                // === 廠商資訊區（第一行）===
+                header.AddKeyValueRow(
+                    ("廠商名稱", supplier?.CompanyName ?? ""),
+                    ("統一編號", supplier?.TaxNumber ?? ""),
+                    ("聯絡人", supplier?.ContactPerson ?? ""),
+                    ("連絡電話", supplier?.ContactPhone ?? ""));
+
+                // === 廠商資訊區（第二行）===
+                header.AddKeyValueRow(
+                    ("廠商地址", supplier?.SupplierAddress ?? ""));
+
+                header.AddSpacing(3);
             });
+
+            // === 明細表格（主要內容）===
+            doc.AddTable(table =>
+            {
+                // 定義欄位（含明細備註）
+                table.AddColumn("序號", 0.5f, Models.Reports.TextAlignment.Center)
+                     .AddColumn("品名", 1.8f, Models.Reports.TextAlignment.Left)
+                     .AddColumn("退出數量", 0.7f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("單位", 0.5f, Models.Reports.TextAlignment.Center)
+                     .AddColumn("單價", 0.8f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("小計", 0.9f, Models.Reports.TextAlignment.Right)
+                     .AddColumn("備註", 2.7f, Models.Reports.TextAlignment.Left)
+                     .ShowBorder(false)              // 不顯示表格邊框
+                     .ShowHeaderBackground(false)    // 不顯示表頭背景
+                     .ShowHeaderSeparator(false)     // 不顯示表頭 | 分隔符
+                     .SetRowHeight(20);
+
+                // 新增資料列
+                int rowNum = 1;
+                foreach (var detail in returnDetails)
+                {
+                    var product = productDict.GetValueOrDefault(detail.ProductId);
+                    table.AddRow(
+                        rowNum.ToString(),
+                        product?.Name ?? "",
+                        NumberFormatHelper.FormatSmart(detail.ReturnQuantity),
+                        "個",
+                        NumberFormatHelper.FormatSmart(detail.OriginalUnitPrice),
+                        NumberFormatHelper.FormatSmart(detail.ReturnSubtotalAmount),
+                        detail.Remarks ?? ""
+                    );
+                    rowNum++;
+                }
+            });
+
+            // === 頁尾區（只在最後一頁顯示）===
+            doc.BeginFooter(footer =>
+            {
+                // 合計區（備註在左、金額在右）
+                var remarkLines = new List<string>();
+                var remarkText = !string.IsNullOrWhiteSpace(purchaseReturn.Remarks) ? purchaseReturn.Remarks : "";
+                remarkLines.Add($"備 註：{remarkText}");
+
+                var amountLines = new List<string>
+                {
+                    $"小　計：{NumberFormatHelper.FormatSmart(purchaseReturn.TotalReturnAmount)}",
+                    $"稅　額：{NumberFormatHelper.FormatSmart(purchaseReturn.ReturnTaxAmount)}",
+                    $"總　計：{NumberFormatHelper.FormatSmart(purchaseReturn.TotalReturnAmountWithTax)}"
+                };
+
+                footer.AddSpacing(5)
+                      .AddTwoColumnSection(
+                          leftContent: remarkLines,
+                          leftTitle: null,
+                          leftHasBorder: false,
+                          rightContent: amountLines,
+                          leftWidthRatio: 0.8f);
+
+                // 簽名區
+                footer.AddSpacing(20)
+                      .AddSignatureSection("處理人員", "倉管人員", "核准人員");
+            });
+
+            return doc;
         }
 
         #endregion

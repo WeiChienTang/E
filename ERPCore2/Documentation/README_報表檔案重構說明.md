@@ -474,6 +474,36 @@ public class PurchaseOrderReportService : IPurchaseOrderReportService
 2. 修改注入的服務（如 `ISalesOrderService`）
 3. 修改 `BuildFormattedDocument` 方法，根據報表需求調整內容
 4. 在 `ServiceRegistration.cs` 中註冊新服務
+5. **在 `Data/Reports/ReportRegistry.cs` 中註冊報表定義**（重要！）
+
+### 報表註冊表（ReportRegistry.cs）
+
+新增報表服務時，**必須**在 `ReportRegistry.cs` 中新增對應的報表定義，否則系統無法正確識別報表：
+
+```csharp
+new ReportDefinition
+{
+    Id = "XX001",              // 報表識別碼（須唯一）
+    Name = "報表名稱",
+    Description = "報表描述說明",
+    IconClass = "bi bi-xxx",   // Bootstrap Icons 類別
+    Category = ReportCategory.Sales,  // 分類：Customer、Supplier、Sales、Purchase、Inventory、Financial
+    RequiredPermission = "Entity.Read", // 權限要求
+    ActionId = "PrintXxx",     // 動作識別碼
+    SortOrder = 1,             // 排序順序
+    IsEnabled = true           // 是否啟用
+},
+```
+
+**報表 ID 命名規則：**
+| 前綴 | 分類 | 範例 |
+|------|------|------|
+| AR | 客戶報表 | AR001、AR002 |
+| AP | 廠商報表 | AP001、AP002 |
+| PO | 採購報表 | PO001、PO002 |
+| SO | 銷售報表 | SO001、SO002 |
+| IV | 庫存報表 | IV001、IV002 |
+| FN | 財務報表 | FN001、FN002 |
 
 ---
 

@@ -197,6 +197,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IPurchaseReturnReportService, PurchaseReturnReportService>();
             // 銷貨單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesOrderReportService, SalesOrderReportService>();
+            // 出貨單報表服務
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesDeliveryReportService, SalesDeliveryReportService>();
             // 銷貨退回單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesReturnReportService, SalesReturnReportService>();
             // 報價單報表服務
