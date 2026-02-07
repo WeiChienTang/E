@@ -3,7 +3,6 @@
 @using ERPCore2.Helpers
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
-@using ERPCore2.Models.Reports
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -51,7 +50,10 @@
                           CustomModules="@GetCustomModules()"
                           ShowPrintButton = "true"
                           PrintButtonText="列印"
-                          OnPrint="@HandlePrint"
+                          ReportService="@PurchaseOrderReportService"
+                          ReportId="PO001"
+                          ReportPreviewTitle="採購單預覽"
+                          GetReportDocumentName="@(e => $"採購單-{e.Code}")"
                           ShowApprovalSection="@ShouldShowApprovalSection()"
                           ApprovalPermission="PurchaseOrder.Approve"
                           OnApprove="@HandlePurchaseOrderApprove"
@@ -87,18 +89,6 @@
                                        TextMessageTemplateId="@currentTemplateId"
                                        OnTemplateSaved="@HandleTemplateSaved"
                                        OnCancel="@(() => showTemplateSettingModal = false)" />
-
-@* 報表預覽 Modal *@
-<ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
-                             IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
-                             Title="採購單預覽"
-                             PreviewImages="@_reportPreviewImages"
-                             FormattedDocument="@_formattedDocument"
-                             ReportId="PO001"
-                             DocumentName="@_reportDocumentName"
-                             OnPrintSuccess="@HandleReportPrintSuccess"
-                             OnPaperSettingChanged="@HandlePaperSettingChanged"
-                             OnCancel="@(() => _showReportPreviewModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -161,13 +151,6 @@
     private int? prefilledProductId = null;
     private decimal? prefilledUnitPrice = null;
     
-    // ===== 列印狀態 =====
-    private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
-    private bool _showReportPreviewModal = false; // 是否顯示報表預覽 Modal
-    private List<byte[]>? _reportPreviewImages = null; // 報表預覽圖片（格式化模式）
-    private FormattedDocument? _formattedDocument = null; // 格式化文件（用於列印）
-    private string _reportDocumentName = string.Empty; // 列印文件名稱
-
     // ===== 複製訊息狀態 =====
     private bool canCopyMessage = false; // 是否可以複製訊息（新增模式需先儲存，編輯模式直接為 true）
     private bool showTemplateSettingModal = false; // 是否顯示訊息範本設定 Modal
@@ -267,124 +250,6 @@
         }
     }
 
-    /// <summary>
-    /// 處理列印 - 開啟報表預覽 Modal，使用者確認後再執行列印
-    /// 設計理念：先預覽後列印，列印時使用設定的印表機（System.Drawing.Printing）
-    /// </summary>
-    private async Task HandlePrint()
-    {
-        try
-        {
-            // 第一步：確認是否已儲存（新增模式需先儲存，編輯模式直接通過）
-            if (!canPrint)
-            {
-                await NotificationService.ShowWarningAsync("請先儲存採購單後再進行列印");
-                return;
-            }
-            
-            // 第二步：安全檢查 - 確保 Entity 已載入
-            if (editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("採購單資料載入失敗，請重新整理頁面");
-                return;
-            }
-            
-            // 第三步：根據系統參數檢查是否需要審核才能列印
-            if (isApprovalEnabled && !editModalComponent.Entity.IsApproved)
-            {
-                await NotificationService.ShowWarningAsync("採購單需審核通過後才能列印");
-                return;
-            }
-            
-            // 第四步：生成報表內容並開啟預覽 Modal
-            await OpenReportPreviewModal();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
-                additionalData: $"採購單列印處理失敗 - ID: {editModalComponent?.Entity?.Id}");
-            await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 開啟報表預覽 Modal
-    /// </summary>
-    private async Task OpenReportPreviewModal()
-    {
-        try
-        {
-            if (editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("無法預覽：採購單資料不存在");
-                return;
-            }
-
-            // 生成報表文件
-            _formattedDocument = await PurchaseOrderReportService.GenerateReportAsync(editModalComponent.Entity.Id);
-            
-            // 渲染為預覽圖片
-            _reportPreviewImages = await PurchaseOrderReportService.RenderToImagesAsync(editModalComponent.Entity.Id);
-            
-            _reportDocumentName = $"採購單-{editModalComponent.Entity.Code}";
-            
-            // 開啟預覽 Modal
-            _showReportPreviewModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenReportPreviewModal), GetType(), 
-                additionalData: $"開啟採購單預覽失敗 - ID: {editModalComponent?.Entity?.Id}");
-            await NotificationService.ShowErrorAsync("開啟預覽時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 處理報表列印成功事件
-    /// </summary>
-    private Task HandleReportPrintSuccess()
-    {
-        // 列印成功後可以執行的額外邏輯（如記錄列印次數等）
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// 處理紙張設定變更事件
-    /// 當用戶在預覽 Modal 中變更紙張時，重新渲染預覽圖片
-    /// </summary>
-    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
-    {
-        try
-        {
-            if (editModalComponent?.Entity == null) return;
-            
-            // 更新 FormattedDocument 的紙張尺寸（用於列印時正確分頁）
-            if (_formattedDocument != null)
-            {
-                _formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
-                _formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
-                _formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
-                _formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
-                _formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
-                _formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
-            }
-            
-            // 根據新的紙張設定重新渲染預覽圖片
-            _reportPreviewImages = await PurchaseOrderReportService.RenderToImagesAsync(
-                editModalComponent.Entity.Id, 
-                paperSetting);
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaperSettingChanged), GetType(),
-                additionalData: $"重新渲染採購單預覽失敗 - ID: {editModalComponent?.Entity?.Id}, 紙張: {paperSetting?.Name}");
-            await NotificationService.ShowErrorAsync("更新預覽時發生錯誤");
-        }
-    }
-
     private async Task CloseModal()
     {
         try
@@ -470,7 +335,6 @@
                 
                 // 新增模式：必須先儲存才能轉單和列印
                 canCreateReceiving = false;
-                canPrint = false;
                 canCopyMessage = false;
                 
                 return newOrder;
@@ -478,7 +342,6 @@
 
             // 編輯模式 - 載入採購單和明細
             canCreateReceiving = true; // 編輯模式：可以直接轉單
-            canPrint = true; // 編輯模式：可以直接列印
             canCopyMessage = true; // 編輯模式：可以直接複製訊息
             
             var purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId.Value);
@@ -1011,11 +874,10 @@
     {
         try
         {
-            //  關鍵修復：導航到已存在的記錄時，允許轉單和列印
+            //  關鍵修復：導航到已存在的記錄時，允許轉單
             // 因為 NavigateToRecordAsync 不會呼叫 LoadPurchaseOrderData，
             // 所以需要在這裡手動設置狀態
             canCreateReceiving = true;
-            canPrint = true;
             canCopyMessage = true;
             
             // 重新載入明細資料
@@ -1209,11 +1071,10 @@
         
         var result = await SavePurchaseOrderWithDetails(purchaseOrder, isPreApprovalSave: false);
         
-        // 儲存成功後允許轉進貨和列印
+        // 儲存成功後允許轉進貨
         if (result)
         {
             canCreateReceiving = true;
-            canPrint = true;
             canCopyMessage = true;
         }
         

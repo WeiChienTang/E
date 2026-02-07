@@ -5,6 +5,8 @@
 @using System.Reflection
 @using ERPCore2.Components.Shared.Base
 @using ERPCore2.Helpers
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @typeparam TEntity where TEntity : BaseEntity, new()
 @typeparam TService
 
@@ -239,6 +241,21 @@
                             OnConfirm="@HandleRejectConfirm"
                             OnCancel="@HandleRejectCancel" />
 
+@* 內建報表預覽 Modal（當有設定 ReportService 時自動啟用） *@
+@if (ReportService != null)
+{
+    <ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
+                                 IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
+                                 Title="@ReportPreviewTitle"
+                                 PreviewImages="@_reportPreviewImages"
+                                 FormattedDocument="@_formattedDocument"
+                                 ReportId="@ReportId"
+                                 DocumentName="@_reportDocumentName"
+                                 OnPrintSuccess="@HandleReportPrintSuccess"
+                                 OnPaperSettingChanged="@HandlePaperSettingChanged"
+                                 OnCancel="@(() => _showReportPreviewModal = false)" />
+}
+
 </PagePermissionCheck>
 
 @code {
@@ -380,6 +397,35 @@
     [Parameter] public EventCallback OnPreview { get; set; }
     [Parameter] public Func<(string PropertyName, object? Value), Task>? OnFieldChanged { get; set; }
     
+    // ===== 內建列印功能參數 =====
+    
+    /// <summary>
+    /// 報表服務（實作 IEntityReportService&lt;TEntity&gt;）
+    /// 設定此參數後，列印功能將自動整合，不需在外部寫 HandlePrint 等方法
+    /// </summary>
+    [Parameter] public IEntityReportService<TEntity>? ReportService { get; set; }
+    
+    /// <summary>
+    /// 報表識別碼（用於讀取列印配置，如 "SO004"）
+    /// </summary>
+    [Parameter] public string ReportId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 報表預覽標題
+    /// </summary>
+    [Parameter] public string ReportPreviewTitle { get; set; } = "報表預覽";
+    
+    /// <summary>
+    /// 取得列印文件名稱的函式
+    /// 範例：GetReportDocumentName="@(e => $"出貨單-{e.Code}")"
+    /// </summary>
+    [Parameter] public Func<TEntity, string>? GetReportDocumentName { get; set; }
+    
+    /// <summary>
+    /// 列印成功回呼
+    /// </summary>
+    [Parameter] public EventCallback OnPrintSuccess { get; set; }
+    
     /// <summary>
     /// 實體載入完成事件（導航切換時觸發）
     /// 參數為已載入的實體 ID，用於通知父組件重新載入相關資料（如明細）
@@ -455,6 +501,12 @@
     private RejectConfirmModalComponent? _rejectConfirmModal;
     private bool _isRejectConfirmModalVisible = false;
     
+    // ===== 內建列印狀態 =====
+    private bool _showReportPreviewModal = false;
+    private List<byte[]>? _reportPreviewImages = null;
+    private FormattedDocument? _formattedDocument = null;
+    private string _reportDocumentName = string.Empty;
+    
     // 狀態訊息快取
     private string? _cachedStatusMessage;
     private BadgeVariant _cachedStatusVariant = BadgeVariant.Info;
@@ -522,7 +574,7 @@
             return;  // 無變更，跳過所有處理
         }
         
-        // 🔑 關鍵修復：如果 _currentId 存在且與傳入的 Id 不同，
+        // 關鍵修復：如果 _currentId 存在且與傳入的 Id 不同，
         // 說明是導航後的狀態，不應該被外部參數覆蓋（例如父組件刷新時傳入舊 ID）
         if (_currentId.HasValue && _currentId != Id && !_isNavigating && IsVisible)
         {
@@ -809,7 +861,7 @@
                 
                 if (wasNewRecord && Entity != null && Entity.Id > 0)
                 {
-                    // 🔑 檢查是否要保持新增模式
+                    // 檢查是否要保持新增模式
                     // 條件1：透過「新增」按鈕觸發 (_stayInAddMode = true)
                     // 條件2：在新增模式下且啟用了 ShowAddButton（Index 頁面場景）
                     bool shouldStayInAddMode = _stayInAddMode || (ShowAddButton && wasNewRecord);
@@ -825,7 +877,7 @@
                             await OnSaveSuccess.InvokeAsync();
                         }
                         
-                        // 🔑 關鍵修正：重置所有狀態，否則 HandleAddClick 會因為 IsSubmitting/IsLoading 而直接返回
+                        // 關鍵修正：重置所有狀態，否則 HandleAddClick 會因為 IsSubmitting/IsLoading 而直接返回
                         IsSubmitting = false;
                         IsLoading = false;
                         StateHasChanged();
@@ -913,9 +965,95 @@
     
     private async Task HandlePrint()
     {
+        // 如果有內建報表服務，使用內建列印流程
+        if (ReportService != null)
+        {
+            await HandlePrintInternal();
+            return;
+        }
+        
+        // 否則觸發外部事件（向下相容）
         if (OnPrint.HasDelegate)
         {
             await OnPrint.InvokeAsync();
+        }
+    }
+    
+    /// <summary>
+    /// 內建列印處理方法
+    /// </summary>
+    private async Task HandlePrintInternal()
+    {
+        try
+        {
+            // 檢查實體是否已儲存
+            if (Entity == null || Entity.Id <= 0)
+            {
+                await NotificationService.ShowWarningAsync($"請先儲存{EntityName}後再進行列印");
+                return;
+            }
+            
+            // 生成報表文件
+            _formattedDocument = await ReportService!.GenerateReportAsync(Entity.Id);
+            
+            // 渲染為預覽圖片
+            _reportPreviewImages = await ReportService.RenderToImagesAsync(Entity.Id);
+            
+            // 取得文件名稱
+            _reportDocumentName = GetReportDocumentName?.Invoke(Entity) ?? $"{EntityName}-{Entity.Id}";
+            
+            // 開啟預覽 Modal
+            _showReportPreviewModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
+            LogError("HandlePrintInternal", ex);
+        }
+    }
+    
+    /// <summary>
+    /// 處理報表列印成功事件
+    /// </summary>
+    private async Task HandleReportPrintSuccess()
+    {
+        if (OnPrintSuccess.HasDelegate)
+        {
+            await OnPrintSuccess.InvokeAsync();
+        }
+    }
+    
+    /// <summary>
+    /// 處理紙張設定變更事件
+    /// 當用戶在預覽 Modal 中變更紙張時，重新渲染預覽圖片
+    /// </summary>
+    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
+    {
+        try
+        {
+            if (Entity == null || Entity.Id <= 0 || ReportService == null) return;
+            
+            // 更新 FormattedDocument 的紙張尺寸
+            if (_formattedDocument != null)
+            {
+                _formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
+                _formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
+                _formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
+                _formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
+                _formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
+                _formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
+            }
+            
+            // 根據新的紙張設定重新渲染預覽圖片
+            _reportPreviewImages = await ReportService.RenderToImagesAsync(Entity.Id, paperSetting);
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync("更新預覽時發生錯誤");
+            LogError("HandlePaperSettingChanged", ex);
         }
     }
 
@@ -2101,10 +2239,10 @@
         
         try
         {
-            // 🔑 設定旗標：儲存後保持新增模式
+            // 設定旗標：儲存後保持新增模式
             _stayInAddMode = true;
             
-            // 🔑 關鍵修復：重置狀態並強制觸發完整的載入流程
+            // 關鍵修復：重置狀態並強制觸發完整的載入流程
             // 將 _lastId 設為非 null 值，這樣 OnParametersSetAsync 才會偵測到變化
             _lastId = -1;  // 設為一個不可能的值，確保觸發重新載入
             Id = null;
@@ -2116,11 +2254,11 @@
                 await IdChanged.InvokeAsync(null);
             }
             
-            // 🔑 直接調用 LoadAllData，確保完整的載入流程
+            // 直接調用 LoadAllData，確保完整的載入流程
             // 這會載入新增模式的實體（包含自動產生的 Code）
             await LoadAllData();
             
-            // 🔑 關鍵修復：同步 _lastId 為 null，防止 OnParametersSetAsync 錯誤觸發
+            // 關鍵修復：同步 _lastId 為 null，防止 OnParametersSetAsync 錯誤觸發
             // 在巢狀 Modal 場景（如從 ProductEditModal 開啟 ProductCompositionEditModal）
             // 如果父組件沒有使用 @bind-Id（只是單向綁定），OnParametersSetAsync 可能會
             // 因為 _lastId != Id 而再次載入舊資料，這裡確保 _lastId 與 Id 同步

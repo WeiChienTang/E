@@ -1,5 +1,4 @@
 @using ERPCore2.Services.Reports.Interfaces
-@using ERPCore2.Models.Reports
 @inject ISalesDeliveryService SalesDeliveryService
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject ISalesOrderService SalesOrderService
@@ -54,7 +53,10 @@
                           CustomActionButtons="@CustomActionButtons"
                           ShowPrintButton="true"
                           PrintButtonText="列印"
-                          OnPrint="@HandlePrint"
+                          ReportService="@SalesDeliveryReportService"
+                          ReportId="SO004"
+                          ReportPreviewTitle="出貨單預覽"
+                          GetReportDocumentName="@(e => $"出貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded">
 </GenericEditModalComponent>
 
@@ -89,18 +91,6 @@
                                  SetoffDocumentId="@selectedSetoffDocumentId"
                                  OnSetoffDocumentSaved="@HandleSetoffDocumentSaved"
                                  OnCancel="@(() => showSetoffDocumentModal = false)" />
-
-@* 報表預覽 Modal *@
-<ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
-                             IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
-                             Title="出貨單預覽"
-                             PreviewImages="@_reportPreviewImages"
-                             FormattedDocument="@_formattedDocument"
-                             ReportId="SO004"
-                             DocumentName="@_reportDocumentName"
-                             OnPrintSuccess="@HandleReportPrintSuccess"
-                             OnPaperSettingChanged="@HandlePaperSettingChanged"
-                             OnCancel="@(() => _showReportPreviewModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -189,13 +179,6 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
-    
-    // ===== 列印相關狀態 =====
-    private bool canPrint = false; // 是否可以列印（新增模式需先儲存，編輯模式直接為 true）
-    private bool _showReportPreviewModal = false; // 是否顯示報表預覽 Modal
-    private List<byte[]>? _reportPreviewImages = null; // 報表預覽圖片（格式化模式）
-    private FormattedDocument? _formattedDocument = null; // 格式化文件（用於列印）
-    private string _reportDocumentName = string.Empty; // 列印文件名稱
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,9 +225,8 @@
     {
         try
         {
-            // 儲存成功後允許轉退貨和列印
+            // 儲存成功後允許轉退貨
             canCreateReturn = true;
-            canPrint = true;
             
             // 重新載入剛儲存的明細資料
             if (editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
@@ -398,7 +380,6 @@
             //  關鍵修正：每次載入資料時重置狀態變數，避免上次編輯的狀態殘留到新增模式
             isDetailDataReady = false;
             hasUndeletableDetails = false;
-            canPrint = false; // 預設不可列印
             
             if (!SalesDeliveryId.HasValue)
             {
@@ -444,10 +425,9 @@
                 
                 return newDelivery;
             }
-
+            
             // 編輯模式 - 載入銷貨出貨單和明細
             canCreateReturn = true;  // 編輯模式：可以直接轉退貨
-            canPrint = true;  // 編輯模式：可以直接列印
             var salesDelivery = await SalesDeliveryService.GetByIdAsync(SalesDeliveryId.Value);
             
             if (salesDelivery != null)
@@ -1656,117 +1636,5 @@
             return product != null ? $"{product.Code} {product.Name}" : null;
         }
         return null;
-    }
-    
-    // ===== 列印相關方法 =====
-    
-    /// <summary>
-    /// 處理列印事件 - 開啟報表預覽 Modal
-    /// </summary>
-    private async Task HandlePrint()
-    {
-        try
-        {
-            // 第一步：檢查是否可列印（需先儲存）
-            if (!canPrint || !SalesDeliveryId.HasValue)
-            {
-                await NotificationService.ShowWarningAsync("請先儲存出貨單後再進行列印");
-                return;
-            }
-            
-            // 第二步：安全檢查 - 確保 Entity 已載入
-            if (editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("出貨單資料載入失敗，請重新整理頁面");
-                return;
-            }
-            
-            // 第三步：生成報表內容並開啟預覽 Modal
-            await OpenReportPreviewModal();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
-                additionalData: $"出貨單列印處理失敗 - ID: {editModalComponent?.Entity?.Id}");
-            await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 開啟報表預覽 Modal
-    /// </summary>
-    private async Task OpenReportPreviewModal()
-    {
-        try
-        {
-            if (editModalComponent?.Entity == null)
-            {
-                await NotificationService.ShowWarningAsync("無法預覽：出貨單資料不存在");
-                return;
-            }
-
-            // 生成報表文件
-            _formattedDocument = await SalesDeliveryReportService.GenerateReportAsync(editModalComponent.Entity.Id);
-            
-            // 渲染為預覽圖片
-            _reportPreviewImages = await SalesDeliveryReportService.RenderToImagesAsync(editModalComponent.Entity.Id);
-            
-            _reportDocumentName = $"出貨單-{editModalComponent.Entity.Code}";
-            
-            // 開啟預覽 Modal
-            _showReportPreviewModal = true;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenReportPreviewModal), GetType(), 
-                additionalData: $"開啟出貨單預覽失敗 - ID: {editModalComponent?.Entity?.Id}");
-            await NotificationService.ShowErrorAsync("開啟預覽時發生錯誤");
-        }
-    }
-
-    /// <summary>
-    /// 處理報表列印成功事件
-    /// </summary>
-    private Task HandleReportPrintSuccess()
-    {
-        // 列印成功後可以執行的額外邏輯（如記錄列印次數等）
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// 處理紙張設定變更事件
-    /// 當用戶在預覽 Modal 中變更紙張時，重新渲染預覽圖片
-    /// </summary>
-    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
-    {
-        try
-        {
-            if (editModalComponent?.Entity == null) return;
-            
-            // 更新 FormattedDocument 的紙張尺寸（用於列印時正確分頁）
-            if (_formattedDocument != null)
-            {
-                _formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
-                _formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
-                _formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
-                _formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
-                _formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
-                _formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
-            }
-            
-            // 根據新的紙張設定重新渲染預覽圖片
-            _reportPreviewImages = await SalesDeliveryReportService.RenderToImagesAsync(
-                editModalComponent.Entity.Id, 
-                paperSetting);
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePaperSettingChanged), GetType(),
-                additionalData: $"重新渲染出貨單預覽失敗 - ID: {editModalComponent?.Entity?.Id}, 紙張: {paperSetting?.Name}");
-            await NotificationService.ShowErrorAsync("更新預覽時發生錯誤");
-        }
     }
 }

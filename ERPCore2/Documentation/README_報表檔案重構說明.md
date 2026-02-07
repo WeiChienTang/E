@@ -1,12 +1,15 @@
 # 報表檔案架構說明
 
 ## 更新日期
-2026-02-06（新增 Excel 匯出功能）
+2026-02-07（GenericEditModalComponent 內建列印整合）
 
 ### 變更記錄
 
 | 日期 | 變更內容 |
 |------|---------|
+| 2026-02-07 | **重大簡化**：所有 EditModalComponent 統一使用 GenericEditModalComponent 內建列印整合 |
+| 2026-02-07 | 移除各組件中重複的 ReportPreviewModalComponent、列印狀態變數、列印方法 |
+| 2026-02-07 | 新增 `IEntityReportService<TEntity>` 泛型介面 |
 | 2026-02-06 | **新增 Excel 匯出**：報表預覽 Modal 新增「轉Excel」按鈕 |
 | 2026-02-06 | 新增 `IExcelExportService` 介面和 `ExcelExportService` 實作 |
 | 2026-02-06 | 安裝 ClosedXML NuGet 套件 |
@@ -235,9 +238,114 @@ public interface IPurchaseOrderReportService
 
 ---
 
-## 報表預覽 Modal
+## GenericEditModalComponent 列印整合（推薦）
+
+位置：`Components/Shared/PageTemplate/GenericEditModalComponent.razor`
+
+### 概述
+
+`GenericEditModalComponent` 已內建完整的報表列印整合功能，包含：
+- 自動管理 `ReportPreviewModalComponent` 的顯示/隱藏
+- 自動處理預覽圖片生成與紙張設定變更
+- 內建儲存檢查（新增模式需先儲存才能列印）
+- 統一的錯誤處理機制
+
+### 使用方式
+
+只需在 `GenericEditModalComponent` 設定 4 個參數即可啟用列印功能：
+
+```razor
+@using ERPCore2.Services.Reports.Interfaces
+@inject IPurchaseOrderReportService PurchaseOrderReportService
+
+<GenericEditModalComponent TEntity="PurchaseOrder" 
+                          TService="IPurchaseOrderService"
+                          ...其他參數...
+                          ShowPrintButton="true"
+                          ReportService="@PurchaseOrderReportService"
+                          ReportId="PO001"
+                          ReportPreviewTitle="採購單預覽"
+                          GetReportDocumentName="@(e => $"採購單-{e.Code}")" />
+```
+
+### 參數說明
+
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `ShowPrintButton` | `bool` | 是否顯示列印按鈕 |
+| `ReportService` | `IEntityReportService<TEntity>` | 報表服務（需實作 `IEntityReportService<TEntity>` 介面） |
+| `ReportId` | `string` | 報表 ID（用於查詢印表機配置，如 `PO001`、`SO002`） |
+| `ReportPreviewTitle` | `string` | 報表預覽 Modal 標題 |
+| `GetReportDocumentName` | `Func<TEntity, string>` | 產生列印文件名稱的函數 |
+| `OnPrintSuccess` | `EventCallback` | （可選）列印成功後的回調事件 |
+
+### 完整範例
+
+以 `PurchaseOrderEditModalComponent.razor` 為例：
+
+```razor
+@using ERPCore2.Services.Reports.Interfaces
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IPurchaseOrderReportService PurchaseOrderReportService
+
+<GenericEditModalComponent TEntity="PurchaseOrder" 
+                          TService="IPurchaseOrderService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@PurchaseOrderId"
+                          Service="@PurchaseOrderService"
+                          EntityName="採購單"
+                          ModalTitle="@(PurchaseOrderId.HasValue ? "編輯採購單" : "新增採購單")"
+                          ShowPrintButton="true"
+                          ReportService="@PurchaseOrderReportService"
+                          ReportId="PO001"
+                          ReportPreviewTitle="採購單預覽"
+                          GetReportDocumentName="@(e => $"採購單-{e.Code}")"
+                          ...其他參數... />
+```
+
+### 已轉換的組件
+
+| 組件 | 報表ID | 文件名稱 |
+|------|--------|----------|
+| QuotationEditModalComponent | SO001 | 報價單-{Code} |
+| SalesOrderEditModalComponent | SO002 | 銷貨單-{Code} |
+| SalesDeliveryEditModalComponent | SO004 | 出貨單-{Code} |
+| SalesReturnEditModalComponent | SO005 | 銷貨退回單-{Code} |
+| PurchaseOrderEditModalComponent | PO001 | 採購單-{Code} |
+| PurchaseReceivingEditModalComponent | PO002 | 進貨單-{Code} |
+| PurchaseReturnEditModalComponent | PO003 | 進貨退出單-{Code} |
+
+### IEntityReportService 介面
+
+所有報表服務皆須實作此泛型介面：
+
+```csharp
+// Services/Reports/Interfaces/IEntityReportService.cs
+public interface IEntityReportService<TEntity> where TEntity : class
+{
+    /// <summary>生成報表文件</summary>
+    Task<FormattedDocument> GenerateReportAsync(int entityId);
+
+    /// <summary>渲染為圖片（用於預覽）</summary>
+    Task<List<byte[]>> RenderToImagesAsync(int entityId);
+
+    /// <summary>渲染為圖片（根據紙張設定）</summary>
+    Task<List<byte[]>> RenderToImagesAsync(int entityId, PaperSetting paperSetting);
+
+    /// <summary>直接列印</summary>
+    Task<ServiceResult> DirectPrintAsync(int entityId, string reportId, int copies = 1);
+}
+```
+
+---
+
+## 報表預覽 Modal（內部元件）
 
 位置：`Components/Shared/Report/ReportPreviewModalComponent.razor`
+
+> **注意**：此元件由 `GenericEditModalComponent` 內部管理，一般情況下不需要直接使用。
 
 ### 功能按鈕
 
@@ -262,73 +370,17 @@ public interface IPurchaseOrderReportService
 | `OnCancel` | `EventCallback` | 取消事件 |
 | `OnPaperSettingChanged` | `EventCallback<PaperSetting>` | 紙張設定變更事件（用於重新渲染預覽） |
 
-### 使用方式
+### 內部流程
 
-```razor
-@using ERPCore2.Services.Reports.Interfaces
-@using ERPCore2.Models.Reports
-@using ERPCore2.Data.Entities
-@inject IPurchaseOrderReportService PurchaseOrderReportService
-@inject IFormattedPrintService FormattedPrintService
-
-@* 報表預覽 Modal *@
-<ReportPreviewModalComponent IsVisible="@_showReportPreviewModal"
-                             IsVisibleChanged="@((bool visible) => _showReportPreviewModal = visible)"
-                             Title="採購單預覽"
-                             PreviewImages="@_reportPreviewImages"
-                             FormattedDocument="@_formattedDocument"
-                             ReportId="PO001"
-                             DocumentName="@_reportDocumentName"
-                             OnPrintSuccess="@HandleReportPrintSuccess"
-                             OnPaperSettingChanged="@HandlePaperSettingChanged"
-                             OnCancel="@(() => _showReportPreviewModal = false)" />
-
-@code {
-    private bool _showReportPreviewModal = false;
-    private List<byte[]>? _reportPreviewImages = null;
-    private FormattedDocument? _formattedDocument = null;
-    private string _reportDocumentName = string.Empty;
-    private int _currentEntityId;
-
-    private async Task OpenReportPreviewModal(int entityId, string entityCode)
-    {
-        _currentEntityId = entityId;
-        
-        // 生成報表文件
-        _formattedDocument = await PurchaseOrderReportService.GenerateReportAsync(entityId);
-        
-        // 渲染為預覽圖片（使用預設紙張，Modal 開啟後會根據紙張設定重新渲染）
-        _reportPreviewImages = await PurchaseOrderReportService.RenderToImagesAsync(entityId);
-        
-        _reportDocumentName = $"採購單-{entityCode}";
-        _showReportPreviewModal = true;
-        StateHasChanged();
-    }
-    
-    /// <summary>
-    /// 紙張設定變更時重新渲染預覽圖片
-    /// </summary>
-    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
-    {
-        if (_formattedDocument != null)
-        {
-            _reportPreviewImages = FormattedPrintService.RenderToImages(_formattedDocument, paperSetting);
-            StateHasChanged();
-        }
-    }
-}
+列印流程：
+```
+使用者點擊「列印」→ GenericEditModalComponent 呼叫 ReportService.GenerateReportAsync() 
+→ ReportService.RenderToImagesAsync() → ReportPreviewModal 顯示圖片預覽 
+→ 使用者可調整紙張/邊距 → OnPaperSettingChanged 重新渲染預覽 
+→ FormattedPrintService.Print()
 ```
 
-### 列印流程
-
-```
-使用者點擊「列印」→ GenerateReportAsync() → RenderToImagesAsync() 
-→ ReportPreviewModal 顯示圖片預覽 → 使用者可調整紙張/邊距 
-→ OnPaperSettingChanged 重新渲染預覽 → FormattedPrintService.Print()
-```
-
-### Excel 匯出流程
-
+Excel 匯出流程：
 ```
 使用者點擊「轉Excel」→ ExcelExportService.ExportToExcelAsync(FormattedDocument)
 → 生成 .xlsx byte[] → JSRuntime.InvokeAsync("downloadFileFromBase64") → 下載檔案

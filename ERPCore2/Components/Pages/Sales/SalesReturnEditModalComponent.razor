@@ -1,4 +1,5 @@
 @* 銷售退貨編輯模態組件 *@
+@using ERPCore2.Services.Reports.Interfaces
 @inject ISalesReturnService SalesReturnService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject ISalesDeliveryService SalesDeliveryService
@@ -13,7 +14,7 @@
 @inject ISystemParameterService SystemParameterService
 @inject ActionButtonHelper ActionButtonHelper
 @inject ISetoffDocumentService SetoffDocumentService
-@inject IReportPrintConfigurationService ReportPrintConfigurationService
+@inject ISalesReturnReportService SalesReturnReportService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ERPCore2.Data.Context.AppDbContext DbContext
@@ -57,7 +58,10 @@
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
-                          OnPrint="@HandlePrint"
+                          ReportService="@SalesReturnReportService"
+                          ReportId="SO003"
+                          ReportPreviewTitle="銷貨退回單預覽"
+                          GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded" />
 
 @* 客戶編輯 Modal *@
@@ -288,80 +292,6 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"處理取消事件時發生錯誤：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 處理列印事件
-    /// </summary>
-    private async Task HandlePrint()
-    {
-        try
-        {
-            // 使用通用 Helper 進行完整驗證（實體、ID）
-            // 銷貨退回單不需要核准即可列印
-            var (isValid, errorMessage) = ReportPrintHelper.ValidateForPrint(
-                entity: editModalComponent?.Entity,
-                entityId: SalesReturnId,
-                isApproved: true, // 不需要核准狀態檢查
-                entityName: "銷貨退回單",
-                requireApproval: false // 銷貨退回單不需要核准即可列印
-            );
-            
-            if (!isValid)
-            {
-                await NotificationService.ShowWarningAsync(errorMessage);
-                return;
-            }
-            
-            // 直接執行列印，使用預設設定
-            await HandleDirectPrint(null);
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePrint), GetType(), 
-                additionalData: $"銷貨退回單列印處理失敗 - ID: {SalesReturnId}");
-            await NotificationService.ShowErrorAsync("列印失敗，請稍後再試");
-        }
-    }
-
-    /// <summary>
-    /// 直接執行列印 - 可以使用指定的列印配置或預設配置
-    /// </summary>
-    private async Task HandleDirectPrint(ReportPrintConfiguration? printConfig)
-    {
-        try
-        {
-            // 建立列印 URL - 使用新的路由格式 /api/sales-report/return/{id}
-            var printUrl = ReportPrintHelper.BuildPrintUrl(
-                baseUrl: NavigationManager.BaseUri,
-                reportType: "sales-report/return",
-                documentId: SalesReturnId!.Value,
-                configuration: printConfig,
-                autoprint: true
-            );
-
-            // 使用隱藏 iframe 列印（不阻擋主視窗操作）
-            var printSuccess = await ReportPrintHelper.ExecutePrintWithHiddenIframeAsync(
-                printUrl: printUrl,
-                jsRuntime: JSRuntime,
-                iframeId: "salesReturnPrintFrame"
-            );
-
-            if (printSuccess)
-            {
-                await NotificationService.ShowSuccessAsync("列印指令已送出");
-            }
-            else
-            {
-                await NotificationService.ShowWarningAsync("列印指令送出失敗，請稍後再試");
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDirectPrint), GetType(), 
-                additionalData: $"銷貨退回單直接列印失敗 - ID: {SalesReturnId}");
-            await NotificationService.ShowErrorAsync($"執行列印時發生錯誤：{ex.Message}");
         }
     }
 
@@ -1398,7 +1328,7 @@
                 return false;
             }
 
-            // 🔥 關鍵：儲存成功後，使用差異計算更新庫存
+            //  關鍵：儲存成功後，使用差異計算更新庫存
             if (result.Data != null)
             {
                 await UpdateInventoryByDifferenceAsync(result.Data.Id);
@@ -1705,7 +1635,7 @@
     /// </summary>
     private async Task CreateInventoryTransactionsAsync(List<SalesReturnDetail> details, string returnNumber)
     {
-        // 🔥 新版本統一使用 UpdateInventoryByDifferenceAsync 處理新增和編輯
+        //  新版本統一使用 UpdateInventoryByDifferenceAsync 處理新增和編輯
         // 這個方法保留只是為了向下相容，實際不再使用
         await Task.CompletedTask;
     }
