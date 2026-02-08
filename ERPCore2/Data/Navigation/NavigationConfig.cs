@@ -270,6 +270,22 @@ public static class NavigationConfig
                         RequiredPermission = "ProductionSchedule.Read",
                         SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" }
                     },
+
+                                        // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    NavigationActionHelper.CreateActionItem(
+                        name: "商品報表中心",
+                        description: "查看和列印所有商品相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenProductReportIndex",
+                        category: "商品管理",
+                        requiredPermission: "Product.Read",
+                        searchKeywords: new List<string> { "商品報表", "商品報表中心", "product report", "產品報表" }
+                    ),
                 }
             },
 

@@ -10,7 +10,8 @@
 
 ```
 Models/
-└── ReportDefinition.cs              # 報表定義模型
+├── ReportDefinition.cs              # 報表定義模型
+└── ReportCategoryConfig.cs          # 報表分類設定（標題、圖示）
 
 Data/
 └── ReportRegistry.cs                # 報表註冊表（集中管理）
@@ -22,8 +23,7 @@ Components/
 │
 └── Pages/
     └── Reports/
-        ├── CustomerReportIndexPage.razor    # 客戶報表中心
-        ├── SupplierReportIndexPage.razor    # 廠商報表中心
+        ├── GenericReportIndexPage.razor     # 通用報表中心（支援所有分類）
         └── AccountsReceivableReportPage.razor  # 應收帳款報表（現有）
 ```
 
@@ -33,7 +33,7 @@ Components/
 ┌─────────────────────────────────────────────────────────────────┐
 │                         MainLayout                               │
 │  ┌─────────────────────────────────────────────────────────────┐│
-│  │  CustomerReportIndexPage / SupplierReportIndexPage          ││
+│  │      GenericReportIndexPage (Category=Customer/Supplier/...)  ││
 │  │  ┌───────────────────────────────────────────────────────┐  ││
 │  │  │           ReportIndexModalComponent                    │  ││
 │  │  │  ┌─────────────────────────────────────────────────┐  │  ││
@@ -107,7 +107,7 @@ NavigationActionHelper.CreateActionItem(
 ## 🔄 流程說明
 
 1. 使用者從導航選單點擊「客戶報表中心」
-2. 開啟 `CustomerReportIndexPage` Modal
+2. 開啟 `GenericReportIndexPage` Modal（Category=Customer）
 3. Modal 使用 `InteractiveTableComponent` 顯示所有客戶相關報表
 4. 使用者點擊某報表的「列印」按鈕
 5. 關閉報表索引 Modal
@@ -130,10 +130,14 @@ public static class ReportCategory
 
 ## ✅ 目前已實作
 
-| 報表中心 | 導航位置 | Action ID |
-|----------|----------|-----------|
-| 客戶報表中心 | 客戶管理 → 客戶報表中心 | `OpenCustomerReportIndex` |
-| 廠商報表中心 | 廠商管理 → 廠商報表中心 | `OpenSupplierReportIndex` |
+| 報表中心 | Category 參數 | Action ID |
+|----------|---------------|----------|
+| 客戶報表中心 | `Customer` | `OpenCustomerReportIndex` |
+| 廠商報表中心 | `Supplier` | `OpenSupplierReportIndex` |
+| 庫存報表中心 | `Inventory` | `OpenInventoryReportIndex` |
+| 銷售報表中心 | `Sales` | `OpenSalesReportIndex` |
+| 採購報表中心 | `Purchase` | `OpenPurchaseReportIndex` |
+| 財務報表中心 | `Financial` | `OpenFinancialReportIndex` |
 
 ## 📝 待實作報表
 

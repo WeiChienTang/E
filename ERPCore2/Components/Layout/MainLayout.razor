@@ -36,15 +36,11 @@
 <AccountsReceivableReportPage IsVisible="@showAccountsReceivableReport"
                              IsVisibleChanged="@((bool visible) => showAccountsReceivableReport = visible)" />
 
-@* 客戶報表中心 Modal *@
-<CustomerReportIndexPage IsVisible="@showCustomerReportIndex"
-                        IsVisibleChanged="@((bool visible) => showCustomerReportIndex = visible)"
-                        OnReportSelected="@HandleReportSelected" />
-
-@* 廠商報表中心 Modal *@
-<SupplierReportIndexPage IsVisible="@showSupplierReportIndex"
-                        IsVisibleChanged="@((bool visible) => showSupplierReportIndex = visible)"
-                        OnReportSelected="@HandleReportSelected" />
+@* 通用報表中心 Modal *@
+<GenericReportIndexPage IsVisible="@(!string.IsNullOrEmpty(currentReportCategory))"
+                       IsVisibleChanged="@((bool visible) => { if (!visible) currentReportCategory = string.Empty; })"
+                       Category="@currentReportCategory"
+                       OnReportSelected="@HandleReportSelected" />
 
 @* 權限組權限管理 Modal *@
 <RolePermissionManagement IsVisible="@showRolePermissionManagement"
@@ -66,11 +62,8 @@
     // 應收帳款報表 Modal 狀態
     private bool showAccountsReceivableReport = false;
     
-    // 客戶報表中心 Modal 狀態
-    private bool showCustomerReportIndex = false;
-    
-    // 廠商報表中心 Modal 狀態
-    private bool showSupplierReportIndex = false;
+    // 通用報表中心 Modal 狀態（存放當前開啟的報表分類，空字串表示關閉）
+    private string currentReportCategory = string.Empty;
     
     // 角色權限管理 Modal 狀態
     private bool showRolePermissionManagement = false;
@@ -100,9 +93,10 @@
         
         // 註册所有 Action 處理器
         actionRegistry.Register("OpenAccountsReceivableReport", OpenAccountsReceivableReport);
-        actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);        actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
+        actionRegistry.Register("OpenRolePermissionManagement", OpenRolePermissionManagement);        
+        actionRegistry.Register("OpenCustomerReportIndex", OpenCustomerReportIndex);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
-        // 未來可在此繼續註冊其他 Action
+        actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
     }
 
@@ -227,38 +221,39 @@
     }
     
     /// <summary>
-    /// 開啟客戶報表中心 Modal
+    /// 開啟報表中心 Modal
     /// </summary>
-    [JSInvokable]
-    public void OpenCustomerReportIndex()
+    /// <param name="category">報表分類（使用 ReportCategory 常數）</param>
+    public void OpenReportIndex(string category)
     {
         try
         {
-            showCustomerReportIndex = true;
+            currentReportCategory = category;
             StateHasChanged();
         }
         catch
         {
-            // 忽略開啟客戶報表中心失敗
+            // 忽略開啟報表中心失敗
         }
     }
     
     /// <summary>
-    /// 開啟廠商報表中心 Modal
+    /// 開啟客戶報表中心 Modal（保留供 JSInvokable 使用）
     /// </summary>
     [JSInvokable]
-    public void OpenSupplierReportIndex()
-    {
-        try
-        {
-            showSupplierReportIndex = true;
-            StateHasChanged();
-        }
-        catch
-        {
-            // 忽略開啟廠商報表中心失敗
-        }
-    }
+    public void OpenCustomerReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Customer);
+    
+    /// <summary>
+    /// 開啟廠商報表中心 Modal（保留供 JSInvokable 使用）
+    /// </summary>
+    [JSInvokable]
+    public void OpenSupplierReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Supplier);
+
+    /// <summary>
+    /// 開啟商品報表中心 Modal（保留供 JSInvokable 使用）
+    /// </summary>
+    [JSInvokable]
+    public void OpenProductReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Product);
     
     /// <summary>
     /// 處理報表中心選擇的報表

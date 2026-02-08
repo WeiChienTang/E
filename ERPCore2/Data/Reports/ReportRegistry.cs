@@ -202,6 +202,44 @@ public static class ReportRegistry
                 IsEnabled = true
             },
             
+            // ==================== 商品報表 ====================
+            new ReportDefinition
+            {
+                Id = "PD001",
+                Name = "商品資料表",
+                Description = "列印商品基本資料清單",
+                IconClass = "bi bi-box-seam",
+                Category = ReportCategory.Product,
+                RequiredPermission = "Product.Read",
+                ActionId = "PrintProductList",
+                SortOrder = 1,
+                IsEnabled = false  // 尚未實作
+            },
+            new ReportDefinition
+            {
+                Id = "PD002",
+                Name = "物料清單報表",
+                Description = "列印商品BOM物料清單",
+                IconClass = "bi bi-diagram-3",
+                Category = ReportCategory.Product,
+                RequiredPermission = "ProductComposition.Read",
+                ActionId = "PrintBOMReport",
+                SortOrder = 2,
+                IsEnabled = false  // 尚未實作
+            },
+            new ReportDefinition
+            {
+                Id = "PD003",
+                Name = "商品條碼標籤",
+                Description = "列印商品條碼標籤",
+                IconClass = "bi bi-upc-scan",
+                Category = ReportCategory.Product,
+                RequiredPermission = "Product.Read",
+                ActionId = "PrintProductBarcode",
+                SortOrder = 3,
+                IsEnabled = true
+            },
+            
             // ==================== 庫存報表 ====================
             new ReportDefinition
             {
@@ -278,6 +316,14 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetInventoryReports()
     {
         return GetReportsByCategory(ReportCategory.Inventory);
+    }
+    
+    /// <summary>
+    /// 取得商品相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetProductReports()
+    {
+        return GetReportsByCategory(ReportCategory.Product);
     }
     
     /// <summary>

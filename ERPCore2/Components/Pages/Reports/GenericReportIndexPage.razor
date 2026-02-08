@@ -1,16 +1,16 @@
 @*
-    廠商報表中心
-    用途：顯示所有廠商相關的報表清單
-    開啟方式：透過導航 Action 觸發
+    通用報表中心
+    用途：顯示指定分類的報表清單
+    使用方式：透過 Category 參數指定要顯示的報表分類
 *@
 
 @using ERPCore2.Data
-@using ERPCore2.Models
+@using ERPCore2.Models.Reports
 
 <ReportIndexModalComponent IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          Title="廠商報表中心"
-                          Icon="bi-building"
+                          Title="@categoryConfig.Title"
+                          Icon="@categoryConfig.Icon"
                           Reports="@reports"
                           OnReportSelected="@HandleReportSelected" />
 
@@ -30,6 +30,12 @@
     public EventCallback<bool> IsVisibleChanged { get; set; }
     
     /// <summary>
+    /// 報表分類（使用 ReportCategory 常數）
+    /// </summary>
+    [Parameter]
+    public string Category { get; set; } = string.Empty;
+    
+    /// <summary>
     /// 報表選擇事件（傳遞 ActionId 給 MainLayout 處理）
     /// </summary>
     [Parameter]
@@ -38,13 +44,30 @@
     // ===== 私有欄位 =====
     
     private List<ReportDefinition> reports = new();
+    private ReportCategoryConfig categoryConfig = new();
     
     // ===== 生命週期方法 =====
     
     protected override void OnInitialized()
     {
-        // 載入廠商相關報表
-        reports = ReportRegistry.GetSupplierReports();
+        LoadReports();
+    }
+    
+    protected override void OnParametersSet()
+    {
+        // 當 Category 參數變更時重新載入
+        LoadReports();
+    }
+    
+    // ===== 私有方法 =====
+    
+    private void LoadReports()
+    {
+        if (!string.IsNullOrEmpty(Category))
+        {
+            categoryConfig = ReportCategoryConfig.GetConfig(Category);
+            reports = ReportRegistry.GetReportsByCategory(Category);
+        }
     }
     
     // ===== 事件處理方法 =====
