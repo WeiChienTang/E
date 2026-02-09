@@ -1,9 +1,11 @@
 @*
     通用搜尋 Modal 組件
     用於快速搜尋並選擇項目（支援頁面導航、報表等）
+    使用 InteractiveTableComponent 統一 UI 風格
 *@
 @using ERPCore2.Models
 @using ERPCore2.Components.Shared.PageTemplate
+@using ERPCore2.Components.Shared.Base
 @using ERPCore2.Helpers
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
@@ -17,87 +19,73 @@
                    Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    UseWhiteCloseButton="true"
-                   BodyCssClass="pt-3"
+                   BodyCssClass="p-0"
                    OnClose="@HandleClose"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true">
     
     <BodyContent>
-        @* 搜尋輸入框 *@
-        <div class="search-input-wrapper mb-3">
-            <i class="bi bi-search search-icon"></i>
-            <input @ref="searchInput"
-                   type="text" 
-                   class="form-control ps-5" 
-                   placeholder="@Placeholder"
-                   @bind="searchTerm"
-                   @bind:event="oninput"
-                   @bind:after="OnSearchTermChanged"
-                   @onkeydown="HandleKeyDown" />
-            @if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                <button type="button" 
-                        class="btn btn-sm btn-link clear-button" 
-                        @onclick="ClearSearch"
-                        title="清除搜尋">
-                    <i class="bi bi-x-circle-fill"></i>
-                </button>
-            }
-        </div>
-
-        @* 搜尋結果區域 *@
-        <div class="search-results-container">
-            @if (searchResults.Any())
-            {
-                <div class="search-results-section">
-                    <div class="search-results-list">
-                        @for (int i = 0; i < searchResults.Count; i++)
-                        {
-                            var index = i;
-                            var item = searchResults[i];
-                            var isSelected = index == selectedIndex;
-                            
-                            <div class="search-result-item @(isSelected ? "keyboard-selected" : "")" 
-                                 id="search-result-@index"
-                                 @onclick="@(() => HandleItemClick(item))"
-                                 @onmouseenter="@(() => HandleMouseEnter(index))"
-                                 @onmouseleave="@HandleMouseLeave">
-                                <div class="d-flex align-items-center gap-2">
-                                    @if (ShowIcon && !string.IsNullOrWhiteSpace(item.IconClass))
-                                    {
-                                        <span class="result-icon">
-                                            <i class="@item.IconClass"></i>
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="result-arrow">›</span>
-                                    }
-                                    <span class="result-name">@item.Name</span>
-                                    @if (!string.IsNullOrWhiteSpace(item.Description))
-                                    {
-                                        <span class="result-description">@item.Description</span>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(item.Category))
-                                    {
-                                        <span class="result-category">@GetCategoryDisplayName(item.Category)</span>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
+        <div class="p-3">
+            @* 搜尋輸入框 *@
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input @ref="searchInput"
+                           type="text" 
+                           class="form-control" 
+                           placeholder="@Placeholder"
+                           @bind="searchTerm"
+                           @bind:event="oninput"
+                           @bind:after="OnSearchTermChanged" />
+                    @if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    }
                 </div>
+            </div>
+
+            @* 搜尋結果區域 *@
+            @if (hasSearched && searchResults.Any())
+            {
+                <InteractiveTableComponent TItem="ISearchableItem"
+                                          Items="@searchResults"
+                                          ColumnDefinitions="@columnDefinitions"
+                                          ShowRowNumbers="true"
+                                          IsReadOnly="true"
+                                          ShowBuiltInActions="true"
+                                          ShowBuiltInDeleteButton="false"
+                                          IsStriped="true"
+                                          IsHoverable="true"
+                                          IsBordered="true"
+                                          EnableRowClick="true"
+                                          OnRowClick="@HandleItemClick"
+                                          EmptyMessage="@EmptyResultMessage">
+                    <CustomActionsTemplate>
+                        @{
+                            var item = context;
+                            var isEnabled = IsItemEnabled(item);
+                        }
+                        <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
+                                              Size="ButtonSize.Small"
+                                              Text="前往"
+                                              IsDisabled="@(!isEnabled)"
+                                              Title="@(isEnabled ? $"前往 {item.Name}" : "此項目無法使用")"
+                                              OnClick="@(() => HandleItemClick(item))" />
+                    </CustomActionsTemplate>
+                </InteractiveTableComponent>
             }
             else if (hasSearched)
             {
-                <div class="search-empty-state text-center py-5">
+                <div class="text-center py-5">
                     <i class="bi bi-emoji-frown fs-1 text-muted d-block mb-3"></i>
                     <p class="text-muted mb-0">@EmptyResultMessage</p>
                 </div>
             }
             else
             {
-                <div class="search-empty-state text-center py-5">
+                <div class="text-center py-5">
                     <i class="@EmptyStateIcon fs-1 text-primary d-block mb-3"></i>
                     <p class="text-muted mb-1">@EmptyStateMessage</p>
                     <small class="text-muted">@EmptyStateHint</small>
@@ -135,7 +123,7 @@
     [Parameter] public string ResultUnitName { get; set; } = "項目";
     
     /// <summary>
-    /// 是否顯示圖示
+    /// 是否顯示圖示欄位
     /// </summary>
     [Parameter] public bool ShowIcon { get; set; } = false;
     
@@ -172,16 +160,20 @@
     
     private ElementReference searchInput;
     private List<ISearchableItem> searchResults = new();
+    private List<InteractiveColumnDefinition> columnDefinitions = new();
     private string searchTerm = "";
     private bool hasSearched = false;
     private bool _isDisposed = false;
-    private int selectedIndex = -1;
-    private bool isUsingKeyboard = false;
     
     // 防抖計時器
     private System.Threading.Timer? _searchDebounceTimer;
 
     // ===== 生命週期方法 =====
+    
+    protected override void OnInitialized()
+    {
+        InitializeColumnDefinitions();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -190,13 +182,35 @@
             try
             {
                 await Task.Delay(100);
-                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.search-input-wrapper input')?.focus()");
+                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.input-group input')?.focus()");
             }
             catch
             {
                 // 忽略聚焦錯誤
             }
         }
+    }
+    
+    // ===== 初始化方法 =====
+    
+    private void InitializeColumnDefinitions()
+    {
+        columnDefinitions = new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "Name",
+                Title = "名稱",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "200px"
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = "Description",
+                Title = "說明",
+                ColumnType = InteractiveColumnType.Display
+            },
+        };
     }
 
     // ===== 公開方法 =====
@@ -210,7 +224,6 @@
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
-        selectedIndex = -1;
         await IsVisibleChanged.InvokeAsync(true);
         StateHasChanged();
     }
@@ -230,59 +243,10 @@
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
-        selectedIndex = -1;
         
         if (IsVisibleChanged.HasDelegate)
         {
             await IsVisibleChanged.InvokeAsync(false);
-        }
-    }
-
-    private async Task HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "ArrowDown" || e.Key == "Down")
-        {
-            if (searchResults.Any())
-            {
-                isUsingKeyboard = true;
-                selectedIndex = (selectedIndex + 1) % searchResults.Count;
-                await ScrollToSelectedItem();
-                StateHasChanged();
-            }
-        }
-        else if (e.Key == "ArrowUp" || e.Key == "Up")
-        {
-            if (searchResults.Any())
-            {
-                isUsingKeyboard = true;
-                selectedIndex = selectedIndex <= 0 ? searchResults.Count - 1 : selectedIndex - 1;
-                await ScrollToSelectedItem();
-                StateHasChanged();
-            }
-        }
-        else if (e.Key == "Enter")
-        {
-            if (selectedIndex >= 0 && selectedIndex < searchResults.Count)
-            {
-                var selectedItem = searchResults[selectedIndex];
-                await HandleItemClick(selectedItem);
-            }
-        }
-    }
-
-    private void HandleMouseEnter(int index)
-    {
-        isUsingKeyboard = false;
-        selectedIndex = index;
-        StateHasChanged();
-    }
-
-    private void HandleMouseLeave()
-    {
-        if (!isUsingKeyboard)
-        {
-            selectedIndex = -1;
-            StateHasChanged();
         }
     }
 
@@ -306,13 +270,11 @@
         {
             searchResults.Clear();
             hasSearched = false;
-            selectedIndex = -1;
         }
         else
         {
             searchResults = SearchFunction(searchTerm);
             hasSearched = true;
-            selectedIndex = searchResults.Any() ? 0 : -1;
         }
         
         await Task.CompletedTask;
@@ -323,12 +285,26 @@
         searchTerm = "";
         searchResults.Clear();
         hasSearched = false;
-        selectedIndex = -1;
         StateHasChanged();
+    }
+    
+    /// <summary>
+    /// 判斷項目是否可用
+    /// </summary>
+    private bool IsItemEnabled(ISearchableItem item)
+    {
+        // 有 ActionId 或有效的 Route 都視為可用
+        return !string.IsNullOrWhiteSpace(item.ActionId) || 
+               (!string.IsNullOrEmpty(item.Route) && item.Route != "#");
     }
 
     private async Task HandleItemClick(ISearchableItem item)
     {
+        if (!IsItemEnabled(item))
+        {
+            return;
+        }
+        
         // 優先處理 ActionId
         if (!string.IsNullOrWhiteSpace(item.ActionId))
         {
@@ -356,27 +332,16 @@
 
     private string GetCategoryDisplayName(string category)
     {
+        if (string.IsNullOrEmpty(category))
+        {
+            return "";
+        }
+        
         if (CategoryDisplayNameFunc != null)
         {
             return CategoryDisplayNameFunc(category);
         }
         return category;
-    }
-
-    private async Task ScrollToSelectedItem()
-    {
-        if (selectedIndex >= 0 && !_isDisposed)
-        {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("eval", 
-                    $"document.getElementById('search-result-{selectedIndex}')?.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }})");
-            }
-            catch
-            {
-                // 忽略滾動錯誤
-            }
-        }
     }
 
     // ===== 資源清理 =====

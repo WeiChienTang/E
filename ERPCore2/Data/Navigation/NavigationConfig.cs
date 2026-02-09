@@ -407,7 +407,23 @@ public static class NavigationConfig
                         Category = "採購管理",
                         RequiredPermission = "PurchaseReturn.Read",
                         SearchKeywords = new List<string> { "進貨退出", "退貨", "return", "退回" }
-                    }
+                    },
+                    
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    NavigationActionHelper.CreateActionItem(
+                        name: "採購報表中心",
+                        description: "查看和列印所有採購相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenPurchaseReportIndex",
+                        category: "採購管理",
+                        requiredPermission: "PurchaseOrder.Read",
+                        searchKeywords: new List<string> { "採購報表", "採購報表中心", "purchase report", "進貨報表" }
+                    ),
                 }
             },
 
