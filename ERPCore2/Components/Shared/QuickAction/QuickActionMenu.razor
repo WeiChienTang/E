@@ -34,6 +34,14 @@
                 <span class="quick-action-label">頁面搜尋</span>
             </button>
 
+            @* 報表搜尋 *@
+            <button class="quick-action-item" 
+                    @onclick="HandleReportSearchClick"
+                    title="報表搜尋 (Alt + R)">
+                <span class="bi bi-printer"></span>
+                <span class="quick-action-label">報表搜尋</span>
+            </button>
+
             @* 快捷鍵說明 *@
             <button class="quick-action-item" 
                     @onclick="HandleShortcutKeysClick"
@@ -98,6 +106,12 @@
     /// </summary>
     [Parameter]
     public EventCallback OnShortcutKeysClick { get; set; }
+
+    /// <summary>
+    /// 當點擊報表搜尋時觸發
+    /// </summary>
+    [Parameter]
+    public EventCallback OnReportSearchClick { get; set; }
 
     /// <summary>
     /// 是否顯示通知功能（預留）
@@ -218,6 +232,18 @@
         if (OnShortcutKeysClick.HasDelegate)
         {
             await OnShortcutKeysClick.InvokeAsync();
+        }
+    }
+
+    /// <summary>
+    /// 處理報表搜尋點擊
+    /// </summary>
+    private async Task HandleReportSearchClick()
+    {
+        CloseMenu();
+        if (OnReportSearchClick.HasDelegate)
+        {
+            await OnReportSearchClick.InvokeAsync();
         }
     }
 

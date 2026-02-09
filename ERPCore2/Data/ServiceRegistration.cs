@@ -150,6 +150,9 @@ namespace ERPCore2.Data
             // 導航搜尋服務
             services.AddScoped<INavigationSearchService, NavigationSearchService>();
             
+            // 報表搜尋服務
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IReportSearchService, ERPCore2.Services.Reports.ReportSearchService>();
+            
             // 錯誤記錄服務
             services.AddScoped<IErrorLogService, ErrorLogService>();
             

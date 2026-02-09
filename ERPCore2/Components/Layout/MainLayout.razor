@@ -3,10 +3,14 @@
 @using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Helpers
 @using ERPCore2.Services
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models
 @using Microsoft.JSInterop
 @inherits LayoutComponentBase
 @inject IJSRuntime JSRuntime
 @inject INavigationPermissionService NavigationPermissionService
+@inject INavigationSearchService NavigationSearchService
+@inject IReportSearchService ReportSearchService
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
@@ -23,10 +27,37 @@
 </div>
 
 @* 全域頁面搜尋 Modal *@
-<PageSearchModalComponent @ref="pageSearchModal" 
-                         IsVisible="@showPageSearch"
-                         IsVisibleChanged="@((bool visible) => showPageSearch = visible)"
-                         ActionRegistry="@actionRegistry" />
+<GenericSearchModalComponent @ref="pageSearchModal" 
+                            IsVisible="@showPageSearch"
+                            IsVisibleChanged="@((bool visible) => showPageSearch = visible)"
+                            ActionRegistry="@actionRegistry"
+                            Title="頁面搜尋"
+                            Icon="bi-search"
+                            Placeholder="輸入功能名稱或關鍵字搜尋..."
+                            ResultUnitName="功能"
+                            ShowIcon="false"
+                            EmptyStateIcon="bi bi-lightning-charge"
+                            EmptyStateMessage="開始輸入以搜尋功能頁面"
+                            EmptyStateHint="支援功能名稱、關鍵字搜尋"
+                            EmptyResultMessage="沒有找到符合條件的功能，請嘗試使用其他關鍵字"
+                            SearchFunction="@SearchNavigationItems" />
+
+@* 全域報表搜尋 Modal *@
+<GenericSearchModalComponent @ref="reportSearchModal" 
+                            IsVisible="@showReportSearch"
+                            IsVisibleChanged="@((bool visible) => showReportSearch = visible)"
+                            ActionRegistry="@actionRegistry"
+                            Title="報表搜尋"
+                            Icon="bi-printer"
+                            Placeholder="輸入報表名稱或關鍵字搜尋..."
+                            ResultUnitName="報表"
+                            ShowIcon="true"
+                            EmptyStateIcon="bi bi-printer"
+                            EmptyStateMessage="開始輸入以搜尋報表"
+                            EmptyStateHint="支援報表名稱、描述、分類關鍵字搜尋"
+                            EmptyResultMessage="沒有找到符合條件的報表，請嘗試使用其他關鍵字"
+                            SearchFunction="@SearchReports"
+                            CategoryDisplayNameFunc="@ReportSearchService.GetCategoryDisplayName" />
 
 @* 快捷鍵說明 Modal *@
 <ShortcutKeysModalComponent IsVisible="@showShortcutKeys"
@@ -49,12 +80,17 @@
 @* 快速功能表（右下角浮動按鈕） *@
 <QuickActionMenu @rendermode="InteractiveServer" 
                 OnPageSearchClick="@OpenPageSearch"
+                OnReportSearchClick="@OpenReportSearch"
                 OnShortcutKeysClick="@OpenShortcutKeys" />
 
 @code {
     // 頁面搜尋 Modal 參考
-    private PageSearchModalComponent? pageSearchModal;
+    private GenericSearchModalComponent? pageSearchModal;
     private bool showPageSearch = false;
+    
+    // 報表搜尋 Modal 參考
+    private GenericSearchModalComponent? reportSearchModal;
+    private bool showReportSearch = false;
     
     // 快捷鍵說明 Modal 狀態
     private bool showShortcutKeys = false;
@@ -138,6 +174,39 @@
                         window.altSRegistered = true;
                     }
                 ");
+                
+                // 註冊 Alt+R 快捷鍵開啟報表搜尋
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    if (!window.altRRegistered) {
+                        document.addEventListener('keydown', function(e) {
+                            if (e.altKey && (e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.shiftKey) {
+                                e.preventDefault();
+                                
+                                // 嘗試直接點擊報表搜尋按鈕（如果快速功能表已展開）
+                                var reportSearchBtn = document.querySelector('.quick-action-item[title*=""報表搜尋""]');
+                                if (reportSearchBtn) {
+                                    reportSearchBtn.click();
+                                    return;
+                                }
+                                
+                                // 如果功能表未展開，先展開再點擊報表搜尋
+                                var quickActionBtn = document.querySelector('.quick-action-main-btn');
+                                if (quickActionBtn) {
+                                    quickActionBtn.click();
+                                    
+                                    // 等待 DOM 更新後再點擊報表搜尋按鈕
+                                    setTimeout(function() {
+                                        var reportSearchBtn = document.querySelector('.quick-action-item[title*=""報表搜尋""]');
+                                        if (reportSearchBtn) {
+                                            reportSearchBtn.click();
+                                        }
+                                    }, 100);
+                                }
+                            }
+                        });
+                        window.altRRegistered = true;
+                    }
+                ");
             }
             catch
             {
@@ -165,6 +234,28 @@
         catch
         {
             // 忽略開啟頁面搜尋失敗
+        }
+    }
+
+    /// <summary>
+    /// 開啟報表搜尋 Modal
+    /// </summary>
+    [JSInvokable]
+    public async Task OpenReportSearch()
+    {
+        try
+        {
+            showReportSearch = true;
+            StateHasChanged();
+            
+            if (reportSearchModal != null)
+            {
+                await reportSearchModal.Open();
+            }
+        }
+        catch
+        {
+            // 忽略開啟報表搜尋失敗
         }
     }
 
@@ -263,6 +354,31 @@
     {
         // 使用 ActionHandlerRegistry 執行對應的報表 Action
         actionRegistry?.Execute(actionId);
+    }
+    
+    // ===== 搜尋函數 =====
+    
+    /// <summary>
+    /// 搜尋導航項目（頁面搜尋用）
+    /// </summary>
+    private List<ISearchableItem> SearchNavigationItems(string searchTerm)
+    {
+        return NavigationSearchService.SearchNavigationItems(searchTerm)
+            .Where(item => !item.IsParent && 
+                (item.ItemType == NavigationItemType.Action || 
+                 (!string.IsNullOrEmpty(item.Route) && item.Route != "#")))
+            .Cast<ISearchableItem>()
+            .ToList();
+    }
+    
+    /// <summary>
+    /// 搜尋報表（報表搜尋用）
+    /// </summary>
+    private List<ISearchableItem> SearchReports(string searchTerm)
+    {
+        return ReportSearchService.SearchReports(searchTerm, onlyEnabled: true)
+            .Cast<ISearchableItem>()
+            .ToList();
     }
     
     /// <summary>

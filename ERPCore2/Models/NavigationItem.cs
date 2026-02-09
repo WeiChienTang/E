@@ -19,7 +19,7 @@ public enum NavigationItemType
 /// <summary>
 /// 導航項目模型
 /// </summary>
-public class NavigationItem
+public class NavigationItem : ISearchableItem
 {
     /// <summary>
     /// 功能名稱
@@ -35,6 +35,9 @@ public class NavigationItem
     /// 路由路徑（當 ItemType 為 Route 時使用）
     /// </summary>
     public string Route { get; set; } = string.Empty;
+    
+    // 顯式實作 ISearchableItem.Route（轉型為 string?）
+    string? ISearchableItem.Route => string.IsNullOrEmpty(Route) ? null : Route;
     
     /// <summary>
     /// 導航項目類型

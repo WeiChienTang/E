@@ -3,7 +3,7 @@ namespace ERPCore2.Models.Reports
     /// <summary>
     /// 報表定義 - 用於報表索引顯示
     /// </summary>
-    public class ReportDefinition
+    public class ReportDefinition : ISearchableItem
     {
         /// <summary>
         /// 報表識別碼（唯一）
@@ -39,6 +39,12 @@ namespace ERPCore2.Models.Reports
         /// 開啟報表的 Action 識別碼
         /// </summary>
         public string ActionId { get; set; } = string.Empty;
+        
+        // 顯式實作 ISearchableItem.ActionId（轉型為 string?）
+        string? ISearchableItem.ActionId => string.IsNullOrEmpty(ActionId) ? null : ActionId;
+        
+        // 顯式實作 ISearchableItem.Route（報表沒有路由，返回 null）
+        string? ISearchableItem.Route => null;
         
         /// <summary>
         /// 是否啟用
