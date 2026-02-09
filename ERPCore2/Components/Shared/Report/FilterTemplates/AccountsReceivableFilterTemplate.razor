@@ -1,0 +1,138 @@
+@* 
+    應收帳款報表篩選模板
+    實作 IFilterTemplateComponent 介面，提供應收帳款報表的篩選 UI
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject ICustomerService CustomerService
+@inject INotificationService NotificationService
+
+@* 區塊 1: 客戶多選篩選 *@
+<FilterSectionComponent>
+    <div class="mb-3">
+        <label class="form-label fw-bold">
+            <i class="bi bi-people me-1"></i>選擇客戶
+        </label>
+        <MultiSelectFilterComponent TItem="Customer"
+                                   Items="@customers"
+                                   @bind-SelectedItems="@selectedCustomers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="請輸入客戶名稱搜尋..."
+                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的應收帳款"
+                                   ShowCard="false" />
+    </div>
+</FilterSectionComponent>
+
+@* 區塊 2: 日期範圍篩選 *@
+<FilterSectionComponent>
+    <div class="mb-3">
+        <label class="form-label fw-bold">
+            <i class="bi bi-calendar-range me-1"></i>統計日期
+        </label>
+        <DateRangeFilterComponent @bind-StartDate="@startDate"
+                                 @bind-EndDate="@endDate"
+                                 StartDateLabel="起始日期"
+                                 EndDateLabel="結束日期"
+                                 ShowQuickSelectors="true"
+                                 AutoValidate="true"
+                                 ShowValidationMessage="true" />
+    </div>
+</FilterSectionComponent>
+
+@* 區塊 3: 帳款狀態篩選 *@
+<FilterSectionComponent>
+    <div class="mb-3">
+        <label class="form-label fw-bold">
+            <i class="bi bi-filter me-1"></i>帳款狀態
+        </label>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeSettled" @bind="includeSettled">
+                    <label class="form-check-label" for="includeSettled">
+                        包含已結清帳款
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="onlyOverdue" @bind="onlyOverdue">
+                    <label class="form-check-label" for="onlyOverdue">
+                        僅顯示逾期帳款
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</FilterSectionComponent>
+
+@code {
+    // ===== 內部狀態 =====
+    
+    private List<Customer> customers = new();
+    private List<Customer> selectedCustomers = new();
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+    private bool includeSettled = false;
+    private bool onlyOverdue = false;
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入客戶清單
+            customers = await CustomerService.GetAllAsync();
+            
+            // 設定預設日期範圍（本月）
+            startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            endDate = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入資料失敗");
+            customers = new List<Customer>();
+        }
+    }
+    
+    // ===== IFilterTemplateComponent 實作 =====
+    
+    /// <summary>
+    /// 取得目前的篩選條件
+    /// </summary>
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new AccountsReceivableCriteria
+        {
+            CustomerIds = selectedCustomers.Select(c => c.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            IncludeSettled = includeSettled,
+            OnlyOverdue = onlyOverdue
+        };
+    }
+    
+    /// <summary>
+    /// 重置篩選條件為預設值
+    /// </summary>
+    public void Reset()
+    {
+        selectedCustomers = new();
+        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        endDate = DateTime.Now;
+        includeSettled = false;
+        onlyOverdue = false;
+        StateHasChanged();
+    }
+}

@@ -183,6 +183,38 @@ namespace ERPCore2.Services.Reports
             }
         }
 
+        /// <summary>
+        /// 批次渲染報表為圖片（用於批次預覽）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(BatchPrintCriteria criteria)
+        {
+            // 手動篩選邏輯
+            var startDate = criteria.StartDate ?? DateTime.Today.AddMonths(-1);
+            var endDate = criteria.EndDate ?? DateTime.Today;
+
+            var allDeliveries = await _salesDeliveryService.GetAllAsync();
+            var filteredDeliveries = allDeliveries
+                .Where(d => d.DeliveryDate >= startDate && d.DeliveryDate <= endDate)
+                .ToList();
+
+            if (criteria.RelatedEntityIds != null && criteria.RelatedEntityIds.Any())
+            {
+                filteredDeliveries = filteredDeliveries
+                    .Where(d => criteria.RelatedEntityIds.Contains(d.CustomerId))
+                    .ToList();
+            }
+
+            return await BatchReportHelper.RenderBatchToImagesAsync(
+                filteredDeliveries,
+                (id, _) => GenerateReportAsync(id),
+                _formattedPrintService,
+                "出貨單",
+                criteria.PaperSetting,
+                criteria.GetSummary(),
+                _logger);
+        }
+
         #endregion
 
         #region 私有方法 - 建構報表文件

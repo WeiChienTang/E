@@ -1,21 +1,7 @@
 # 報表檔案架構說明
 
 ## 更新日期
-2026-02-07（GenericEditModalComponent 內建列印整合）
-
-### 變更記錄
-
-| 日期 | 變更內容 |
-|------|---------|
-| 2026-02-07 | **重大簡化**：所有 EditModalComponent 統一使用 GenericEditModalComponent 內建列印整合 |
-| 2026-02-07 | 移除各組件中重複的 ReportPreviewModalComponent、列印狀態變數、列印方法 |
-| 2026-02-07 | 新增 `IEntityReportService<TEntity>` 泛型介面 |
-| 2026-02-06 | **新增 Excel 匯出**：報表預覽 Modal 新增「轉Excel」按鈕 |
-| 2026-02-06 | 新增 `IExcelExportService` 介面和 `ExcelExportService` 實作 |
-| 2026-02-06 | 安裝 ClosedXML NuGet 套件 |
-| 2026-02-05 | **重大簡化**：移除純文字模式，統一使用格式化列印 |
-| 2026-02-05 | 移除舊版 API 控制器（ReportController、PurchaseReportController 等） |
-| 2026-02-05 | 簡化 ReportPreviewModalComponent，移除雙模式切換 |
+2026-02-09
 
 ---
 
@@ -35,27 +21,66 @@
 ## 目錄結構
 
 ```
+Helpers/
+└── BatchReportHelper.cs                    # 批次報表產生 Helper
+
 Services/Reports/
 ├── Interfaces/
-│   ├── IFormattedPrintService.cs      ← 格式化列印介面
-│   ├── IExcelExportService.cs         ← Excel 匯出介面
-│   └── IPurchaseOrderReportService.cs ← 報表服務介面（範本）
-├── FormattedPrintService.cs           ← 格式化列印服務實作
-├── ExcelExportService.cs              ← Excel 匯出服務實作
-├── PurchaseOrderReportService.cs      ← 報表服務實作（範本）
+│   ├── IFormattedPrintService.cs           # 格式化列印介面
+│   ├── IExcelExportService.cs              # Excel 匯出介面
+│   ├── IEntityReportService.cs             # 報表服務泛型介面 + BatchPreviewResult
+│   └── IPurchaseOrderReportService.cs      # 報表服務介面（範本）
+├── FormattedPrintService.cs                # 格式化列印服務實作
+├── ExcelExportService.cs                   # Excel 匯出服務實作
+├── PurchaseOrderReportService.cs           # 報表服務實作（範本）
 └── ...
 
 Models/Reports/
-├── FormattedDocument.cs               ← 格式化報表文件模型
-├── TableDefinition.cs                 ← 表格定義
-└── ...
+├── BatchPrintCriteria.cs                   # 批次列印篩選條件（含 PaperSetting）
+├── FormattedDocument.cs                    # 格式化報表文件模型（含 MergeFrom 方法）
+├── TableDefinition.cs                      # 表格定義
+├── FilterCriteria/                         # 篩選條件 DTO
+│   ├── IReportFilterCriteria.cs
+│   └── PurchaseOrderBatchPrintCriteria.cs
+└── FilterTemplates/                        # 篩選模板配置
+    ├── ReportFilterConfig.cs
+    └── FilterTemplateRegistry.cs
 
 Components/Shared/Report/
-└── ReportPreviewModalComponent.razor  ← 報表預覽 Modal
-
-wwwroot/js/
-└── file-download-helper.js            ← 檔案下載 JS 函數
+├── ReportPreviewModalComponent.razor       # 報表預覽 Modal
+├── GenericReportFilterModalComponent.razor # 通用篩選 Modal（呼叫 RenderBatchToImagesAsync）
+├── FilterTemplateInitializer.cs            # 篩選模板初始化
+└── FilterTemplates/                        # 篩選模板組件
+    └── PurchaseOrderBatchFilterTemplate.razor
 ```
+
+---
+
+## 報表列印方式
+
+系統提供兩種報表列印入口：
+
+### 方式一：EditModal 內建列印（單筆）
+
+適用於：編輯畫面中列印單一單據
+
+```razor
+<GenericEditModalComponent TEntity="PurchaseOrder" 
+                          TService="IPurchaseOrderService"
+                          ShowPrintButton="true"
+                          ReportService="@PurchaseOrderReportService"
+                          ReportId="PO001"
+                          ReportPreviewTitle="採購單預覽"
+                          GetReportDocumentName="@(e => $"採購單-{e.Code}")" />
+```
+
+### 方式二：報表中心篩選列印（批次）
+
+適用於：從報表中心選擇條件後批次列印
+
+流程：報表中心 → 篩選 Modal → 預覽 → 列印
+
+參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 
 ---
 
@@ -81,7 +106,7 @@ wwwroot/js/
 ```csharp
 var document = new FormattedDocument()
     .SetDocumentName("採購單-PO20260205001")
-    .SetMargins(1.5f, 1.5f, 1.5f, 1.5f)  // 邊距（公分）
+    .SetMargins(1.5f, 1.5f, 1.5f, 1.5f)
     
     // 標題
     .AddTitle("公司名稱有限公司", fontSize: 14)
@@ -104,11 +129,7 @@ var document = new FormattedDocument()
              .ShowHeaderBackground(true);
         
         table.AddRow("1", "測試商品A", "10", "100.00", "1,000.00");
-        table.AddRow("2", "測試商品B", "5", "200.00", "1,000.00");
     })
-    
-    // 合計
-    .AddText("總計：2,000", alignment: TextAlignment.Right, bold: true)
     
     // 簽名區
     .AddSignatureSection("採購人員", "核准人員", "收貨確認");
@@ -125,19 +146,10 @@ var images = _formattedPrintService.RenderToImages(document);
 ```csharp
 public interface IFormattedPrintService
 {
-    // 列印到指定印表機
     ServiceResult Print(FormattedDocument document, string printerName, int copies = 1);
-    
-    // 使用報表配置列印
     Task<ServiceResult> PrintByReportIdAsync(FormattedDocument document, string reportId, int copies = 1);
-    
-    // 渲染為圖片（用於預覽，使用預設 A4 尺寸）
     List<byte[]> RenderToImages(FormattedDocument document, int pageWidth = 794, int pageHeight = 1123, int dpi = 96);
-    
-    // 渲染為圖片（用於預覽，根據紙張設定計算尺寸）
     List<byte[]> RenderToImages(FormattedDocument document, PaperSetting paperSetting, int dpi = 96);
-    
-    // 檢查是否支援
     bool IsSupported();
 }
 ```
@@ -148,61 +160,19 @@ public interface IFormattedPrintService
 
 位置：`Services/Reports/ExcelExportService.cs`
 
-使用 **ClosedXML** 套件將 FormattedDocument 轉換為 Excel 檔案（.xlsx 格式）。
+使用 **ClosedXML** 套件將 FormattedDocument 轉換為 Excel 檔案。
 
 ### 支援的元素轉換
 
 | FormattedDocument 元素 | Excel 對應 |
 |------------------------|------------|
-| `TextElement` | 儲存格 + 字型樣式（大小、粗體、對齊） |
+| `TextElement` | 儲存格 + 字型樣式 |
 | `TableElement` | Excel 表格（邊框、表頭背景色） |
 | `KeyValueRowElement` | 鍵值對欄位 |
-| `ThreeColumnHeaderElement` | 三欄合併儲存格 |
-| `ReportHeaderBlockElement` | 多行標題區塊 |
-| `TwoColumnSectionElement` | 左右並排區塊 |
 | `LineElement` | 底線樣式 |
 | `SpacingElement` | 空白列 |
 | `SignatureSectionElement` | 簽名欄位 |
 | `PageBreakElement` | Excel 分頁符號 |
-| `ImageElement` | 暫不支援（跳過） |
-
-### 介面定義
-
-```csharp
-public interface IExcelExportService
-{
-    /// <summary>
-    /// 將 FormattedDocument 匯出為 Excel 檔案
-    /// </summary>
-    byte[] ExportToExcel(FormattedDocument document);
-
-    /// <summary>
-    /// 將 FormattedDocument 匯出為 Excel 檔案（非同步版本）
-    /// </summary>
-    Task<byte[]> ExportToExcelAsync(FormattedDocument document);
-
-    /// <summary>
-    /// 檢查服務是否可用
-    /// </summary>
-    bool IsSupported();
-}
-```
-
-### 使用方式
-
-```csharp
-@inject IExcelExportService ExcelExportService
-@inject IJSRuntime JSRuntime
-
-// 匯出 Excel
-var excelBytes = await ExcelExportService.ExportToExcelAsync(formattedDocument);
-
-// 下載檔案（需搭配 file-download-helper.js）
-var fileName = $"{formattedDocument.DocumentName}.xlsx";
-var base64 = Convert.ToBase64String(excelBytes);
-var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", fileName, base64, contentType);
-```
 
 ### 相依套件
 
@@ -214,101 +184,138 @@ await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", fileName, base64, co
 
 ## 報表服務介面
 
-以採購單為例：`Services/Reports/Interfaces/IPurchaseOrderReportService.cs`
+### IEntityReportService（泛型介面）
 
 ```csharp
-public interface IPurchaseOrderReportService
+public interface IEntityReportService<TEntity> where TEntity : BaseEntity
 {
-    /// <summary>生成報表文件</summary>
-    Task<FormattedDocument> GenerateReportAsync(int purchaseOrderId);
-
-    /// <summary>渲染為圖片（用於預覽，使用預設 A4 尺寸）</summary>
-    Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId);
-
-    /// <summary>渲染為圖片（用於預覽，根據紙張設定計算尺寸）</summary>
-    Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId, PaperSetting paperSetting);
-
-    /// <summary>直接列印</summary>
-    Task<ServiceResult> DirectPrintAsync(int purchaseOrderId, string reportId, int copies = 1);
-
-    /// <summary>批次列印</summary>
+    Task<FormattedDocument> GenerateReportAsync(int entityId);
+    Task<List<byte[]>> RenderToImagesAsync(int entityId);
+    Task<List<byte[]>> RenderToImagesAsync(int entityId, PaperSetting paperSetting);
+    Task<ServiceResult> DirectPrintAsync(int entityId, string reportId, int copies = 1);
     Task<ServiceResult> DirectPrintBatchAsync(BatchPrintCriteria criteria, string reportId);
+    Task<BatchPreviewResult> RenderBatchToImagesAsync(BatchPrintCriteria criteria);
 }
+```
+
+### BatchPreviewResult（批次預覽結果）
+
+```csharp
+public class BatchPreviewResult
+{
+    public bool IsSuccess { get; set; }
+    public string? ErrorMessage { get; set; }
+    public List<byte[]> PreviewImages { get; set; }    // 所有頁面的預覽圖片
+    public FormattedDocument? MergedDocument { get; set; } // 合併的文件（用於列印）
+    public int DocumentCount { get; set; }              // 符合條件的單據數量
+    public int TotalPages { get; set; }                 // 總頁數
+    
+    public static BatchPreviewResult Success(List<byte[]> images, FormattedDocument? document, int documentCount);
+    public static BatchPreviewResult Failure(string errorMessage);
+}
+```
+
+### 已實作的報表服務
+
+| 服務 | 介面 | 報表 ID |
+|------|------|---------|
+| PurchaseOrderReportService | IPurchaseOrderReportService | PO001 |
+| PurchaseReceivingReportService | IPurchaseReceivingReportService | PO002 |
+| PurchaseReturnReportService | IPurchaseReturnReportService | PO003 |
+| QuotationReportService | IQuotationReportService | SO001 |
+| SalesOrderReportService | ISalesOrderReportService | SO002 |
+| SalesDeliveryReportService | ISalesDeliveryReportService | SO004 |
+| SalesReturnReportService | ISalesReturnReportService | SO005 |
+
+---
+
+## BatchReportHelper（批次報表 Helper）
+
+位置：`Helpers/BatchReportHelper.cs`
+
+提供通用的批次預覽邏輯，避免各報表服務重複實作。支援紙張設定（`PaperSetting`）動態變更。
+
+### 使用方式
+
+```csharp
+// 在報表服務中使用
+public async Task<BatchPreviewResult> RenderBatchToImagesAsync(BatchPrintCriteria criteria)
+{
+    var entities = await _entityService.GetByBatchCriteriaAsync(criteria);
+
+    return await BatchReportHelper.RenderBatchToImagesAsync(
+        entities,
+        (id, _) => GenerateReportAsync(id),  // 委派接受 (id, PaperSetting?)
+        _formattedPrintService,
+        "採購單",                        // 實體顯示名稱
+        criteria.PaperSetting,            // 紙張設定（可為 null）
+        criteria.GetSummary(),
+        _logger);
+}
+```
+
+### Helper 方法簽名（支援紙張設定）
+
+```csharp
+public static async Task<BatchPreviewResult> RenderBatchToImagesAsync<TEntity>(
+    IEnumerable<TEntity> entities,
+    Func<TEntity, int> getEntityId,
+    Func<int, PaperSetting?, Task<FormattedDocument>> generateReportAsync,
+    IFormattedPrintService formattedPrintService,
+    string entityDisplayName,
+    PaperSetting? paperSetting = null,
+    string? criteriaMessage = null,
+    ILogger? logger = null)
+```
+
+### 簡化版本（實體須繼承 BaseEntity）
+
+```csharp
+public static Task<BatchPreviewResult> RenderBatchToImagesAsync<TEntity>(
+    IEnumerable<TEntity> entities,
+    Func<int, PaperSetting?, Task<FormattedDocument>> generateReportAsync,
+    IFormattedPrintService formattedPrintService,
+    string entityDisplayName,
+    PaperSetting? paperSetting = null,
+    string? criteriaMessage = null,
+    ILogger? logger = null) where TEntity : BaseEntity
+```
+
+> **向下相容**：保留舊版本的方法簽名（不帶 PaperSetting），內部自動包裝為新版本。
+
+---
+
+## FormattedDocument 合併功能
+
+用於批次列印時將多個報表合併為單一文件：
+
+```csharp
+// 合併另一個文件的內容
+mergedDocument.AddPageBreak();
+mergedDocument.MergeFrom(document);
 ```
 
 ---
 
-## GenericEditModalComponent 列印整合（推薦）
+## GenericEditModalComponent 列印整合
 
 位置：`Components/Shared/PageTemplate/GenericEditModalComponent.razor`
-
-### 概述
-
-`GenericEditModalComponent` 已內建完整的報表列印整合功能，包含：
-- 自動管理 `ReportPreviewModalComponent` 的顯示/隱藏
-- 自動處理預覽圖片生成與紙張設定變更
-- 內建儲存檢查（新增模式需先儲存才能列印）
-- 統一的錯誤處理機制
-
-### 使用方式
-
-只需在 `GenericEditModalComponent` 設定 4 個參數即可啟用列印功能：
-
-```razor
-@using ERPCore2.Services.Reports.Interfaces
-@inject IPurchaseOrderReportService PurchaseOrderReportService
-
-<GenericEditModalComponent TEntity="PurchaseOrder" 
-                          TService="IPurchaseOrderService"
-                          ...其他參數...
-                          ShowPrintButton="true"
-                          ReportService="@PurchaseOrderReportService"
-                          ReportId="PO001"
-                          ReportPreviewTitle="採購單預覽"
-                          GetReportDocumentName="@(e => $"採購單-{e.Code}")" />
-```
 
 ### 參數說明
 
 | 參數 | 類型 | 說明 |
 |------|------|------|
 | `ShowPrintButton` | `bool` | 是否顯示列印按鈕 |
-| `ReportService` | `IEntityReportService<TEntity>` | 報表服務（需實作 `IEntityReportService<TEntity>` 介面） |
-| `ReportId` | `string` | 報表 ID（用於查詢印表機配置，如 `PO001`、`SO002`） |
+| `ReportService` | `IEntityReportService<TEntity>` | 報表服務 |
+| `ReportId` | `string` | 報表 ID（用於查詢印表機配置） |
 | `ReportPreviewTitle` | `string` | 報表預覽 Modal 標題 |
 | `GetReportDocumentName` | `Func<TEntity, string>` | 產生列印文件名稱的函數 |
-| `OnPrintSuccess` | `EventCallback` | （可選）列印成功後的回調事件 |
+| `OnPrintSuccess` | `EventCallback` | 列印成功後的回調事件 |
 
-### 完整範例
+### 已整合的組件
 
-以 `PurchaseOrderEditModalComponent.razor` 為例：
-
-```razor
-@using ERPCore2.Services.Reports.Interfaces
-@inject IPurchaseOrderService PurchaseOrderService
-@inject IPurchaseOrderReportService PurchaseOrderReportService
-
-<GenericEditModalComponent TEntity="PurchaseOrder" 
-                          TService="IPurchaseOrderService"
-                          @ref="editModalComponent"
-                          IsVisible="@IsVisible"
-                          IsVisibleChanged="@IsVisibleChanged"
-                          @bind-Id="@PurchaseOrderId"
-                          Service="@PurchaseOrderService"
-                          EntityName="採購單"
-                          ModalTitle="@(PurchaseOrderId.HasValue ? "編輯採購單" : "新增採購單")"
-                          ShowPrintButton="true"
-                          ReportService="@PurchaseOrderReportService"
-                          ReportId="PO001"
-                          ReportPreviewTitle="採購單預覽"
-                          GetReportDocumentName="@(e => $"採購單-{e.Code}")"
-                          ...其他參數... />
-```
-
-### 已轉換的組件
-
-| 組件 | 報表ID | 文件名稱 |
-|------|--------|----------|
+| 組件 | 報表 ID | 文件名稱 |
+|------|---------|----------|
 | QuotationEditModalComponent | SO001 | 報價單-{Code} |
 | SalesOrderEditModalComponent | SO002 | 銷貨單-{Code} |
 | SalesDeliveryEditModalComponent | SO004 | 出貨單-{Code} |
@@ -317,237 +324,18 @@ public interface IPurchaseOrderReportService
 | PurchaseReceivingEditModalComponent | PO002 | 進貨單-{Code} |
 | PurchaseReturnEditModalComponent | PO003 | 進貨退出單-{Code} |
 
-### IEntityReportService 介面
-
-所有報表服務皆須實作此泛型介面：
-
-```csharp
-// Services/Reports/Interfaces/IEntityReportService.cs
-public interface IEntityReportService<TEntity> where TEntity : class
-{
-    /// <summary>生成報表文件</summary>
-    Task<FormattedDocument> GenerateReportAsync(int entityId);
-
-    /// <summary>渲染為圖片（用於預覽）</summary>
-    Task<List<byte[]>> RenderToImagesAsync(int entityId);
-
-    /// <summary>渲染為圖片（根據紙張設定）</summary>
-    Task<List<byte[]>> RenderToImagesAsync(int entityId, PaperSetting paperSetting);
-
-    /// <summary>直接列印</summary>
-    Task<ServiceResult> DirectPrintAsync(int entityId, string reportId, int copies = 1);
-}
-```
-
 ---
 
-## 報表預覽 Modal（內部元件）
+## 新增報表服務步驟
 
-位置：`Components/Shared/Report/ReportPreviewModalComponent.razor`
+1. **建立介面**（繼承 `IEntityReportService<T>`）
+2. **建立服務實作**（參考 `PurchaseOrderReportService.cs`）
+3. **在 ServiceRegistration.cs 註冊服務**
+4. **在 ReportRegistry.cs 註冊報表定義**
+5. **（可選）建立篩選模板**（參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)）
 
-> **注意**：此元件由 `GenericEditModalComponent` 內部管理，一般情況下不需要直接使用。
+### 報表 ID 命名規則
 
-### 功能按鈕
-
-| 按鈕 | 說明 |
-|------|------|
-| **轉Excel** | 將報表轉換為 .xlsx 檔案並下載 |
-| **列印** | 發送到選定的印表機列印 |
-| **取消** | 關閉預覽視窗 |
-
-### 參數說明
-
-| 參數 | 類型 | 說明 |
-|------|------|------|
-| `IsVisible` | `bool` | Modal 是否顯示 |
-| `Title` | `string` | Modal 標題 |
-| `PreviewImages` | `List<byte[]>?` | 預覽圖片列表（PNG 格式） |
-| `FormattedDocument` | `FormattedDocument?` | 格式化文件（列印用） |
-| `ReportId` | `string` | 報表 ID（用於查詢印表機配置） |
-| `DocumentName` | `string` | 列印文件名稱 |
-| `OnPrintSuccess` | `EventCallback` | 列印成功事件 |
-| `OnPrintFailure` | `EventCallback<string>` | 列印失敗事件 |
-| `OnCancel` | `EventCallback` | 取消事件 |
-| `OnPaperSettingChanged` | `EventCallback<PaperSetting>` | 紙張設定變更事件（用於重新渲染預覽） |
-
-### 內部流程
-
-列印流程：
-```
-使用者點擊「列印」→ GenericEditModalComponent 呼叫 ReportService.GenerateReportAsync() 
-→ ReportService.RenderToImagesAsync() → ReportPreviewModal 顯示圖片預覽 
-→ 使用者可調整紙張/邊距 → OnPaperSettingChanged 重新渲染預覽 
-→ FormattedPrintService.Print()
-```
-
-Excel 匯出流程：
-```
-使用者點擊「轉Excel」→ ExcelExportService.ExportToExcelAsync(FormattedDocument)
-→ 生成 .xlsx byte[] → JSRuntime.InvokeAsync("downloadFileFromBase64") → 下載檔案
-```
-
----
-
-## 報表服務實作範本
-
-以 `PurchaseOrderReportService.cs` 為範本：
-
-```csharp
-public class PurchaseOrderReportService : IPurchaseOrderReportService
-{
-    private readonly IPurchaseOrderService _purchaseOrderService;
-    private readonly ISupplierService _supplierService;
-    private readonly IProductService _productService;
-    private readonly ICompanyService _companyService;
-    private readonly IFormattedPrintService _formattedPrintService;
-
-    public PurchaseOrderReportService(
-        IPurchaseOrderService purchaseOrderService,
-        ISupplierService supplierService,
-        IProductService productService,
-        ICompanyService companyService,
-        IFormattedPrintService formattedPrintService)
-    {
-        _purchaseOrderService = purchaseOrderService;
-        _supplierService = supplierService;
-        _productService = productService;
-        _companyService = companyService;
-        _formattedPrintService = formattedPrintService;
-    }
-
-    public async Task<FormattedDocument> GenerateReportAsync(int purchaseOrderId)
-    {
-        // 載入資料
-        var purchaseOrder = await _purchaseOrderService.GetByIdAsync(purchaseOrderId);
-        if (purchaseOrder == null)
-            throw new ArgumentException($"找不到採購單 ID: {purchaseOrderId}");
-
-        var orderDetails = await _purchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
-        var supplier = purchaseOrder.SupplierId > 0
-            ? await _supplierService.GetByIdAsync(purchaseOrder.SupplierId)
-            : null;
-        var company = purchaseOrder.CompanyId > 0
-            ? await _companyService.GetByIdAsync(purchaseOrder.CompanyId)
-            : null;
-        
-        var allProducts = await _productService.GetAllAsync();
-        var productDict = allProducts.ToDictionary(p => p.Id, p => p);
-
-        // 建構 FormattedDocument
-        return BuildFormattedDocument(purchaseOrder, orderDetails, supplier, company, productDict);
-    }
-
-    public async Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId)
-    {
-        var document = await GenerateReportAsync(purchaseOrderId);
-        return _formattedPrintService.RenderToImages(document);
-    }
-    
-    public async Task<List<byte[]>> RenderToImagesAsync(int purchaseOrderId, PaperSetting paperSetting)
-    {
-        var document = await GenerateReportAsync(purchaseOrderId);
-        return _formattedPrintService.RenderToImages(document, paperSetting);
-    }
-
-    public async Task<ServiceResult> DirectPrintAsync(int purchaseOrderId, string reportId, int copies = 1)
-    {
-        var document = await GenerateReportAsync(purchaseOrderId);
-        return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
-    }
-
-    private FormattedDocument BuildFormattedDocument(
-        PurchaseOrder purchaseOrder,
-        List<PurchaseOrderDetail> orderDetails,
-        Supplier? supplier,
-        Company? company,
-        Dictionary<int, Product> productDict)
-    {
-        var doc = new FormattedDocument()
-            .SetDocumentName($"採購單-{purchaseOrder.Code}")
-            .SetMargins(1.5f, 1.5f, 1.5f, 1.5f);
-
-        // 標題區
-        doc.AddTitle(company?.CompanyName ?? "公司名稱", fontSize: 14, bold: true)
-           .AddTitle("採 購 單", fontSize: 18, bold: true)
-           .AddLine(LineStyle.Double, 2);
-
-        // 基本資訊區
-        doc.AddSpacing(10)
-           .AddKeyValueRow(
-               ("採購單號", purchaseOrder.Code ?? ""),
-               ("採購日期", purchaseOrder.OrderDate.ToString("yyyy/MM/dd")))
-           .AddLine(LineStyle.Dashed)
-           .AddKeyValueRow(("廠商名稱", supplier?.CompanyName ?? ""));
-
-        // 明細表格
-        doc.AddTable(table =>
-        {
-            table.AddColumn("序號", 0.5f, TextAlignment.Center)
-                 .AddColumn("品名", 3f, TextAlignment.Left)
-                 .AddColumn("數量", 1f, TextAlignment.Right)
-                 .AddColumn("單價", 1.2f, TextAlignment.Right)
-                 .AddColumn("小計", 1.5f, TextAlignment.Right)
-                 .ShowBorder(true)
-                 .ShowHeaderBackground(true);
-
-            int rowNum = 1;
-            foreach (var detail in orderDetails)
-            {
-                table.AddRow(
-                    rowNum.ToString(),
-                    detail.ProductName ?? "",
-                    detail.OrderQuantity.ToString("N0"),
-                    detail.UnitPrice.ToString("N2"),
-                    detail.SubtotalAmount.ToString("N2")
-                );
-                rowNum++;
-            }
-        });
-
-        // 合計與簽名區
-        doc.AddSpacing(10)
-           .AddText($"總計：{purchaseOrder.PurchaseTotalAmountIncludingTax:N0}", 
-                    fontSize: 12, alignment: TextAlignment.Right, bold: true)
-           .AddSpacing(30)
-           .AddSignatureSection("採購人員", "核准人員", "收貨確認");
-
-        return doc;
-    }
-}
-```
-
----
-
-## 新增其他報表服務
-
-複製 `PurchaseOrderReportService.cs` 並修改：
-
-1. 將類別名稱改為對應的報表服務名稱（如 `SalesOrderReportService`）
-2. 修改注入的服務（如 `ISalesOrderService`）
-3. 修改 `BuildFormattedDocument` 方法，根據報表需求調整內容
-4. 在 `ServiceRegistration.cs` 中註冊新服務
-5. **在 `Data/Reports/ReportRegistry.cs` 中註冊報表定義**（重要！）
-
-### 報表註冊表（ReportRegistry.cs）
-
-新增報表服務時，**必須**在 `ReportRegistry.cs` 中新增對應的報表定義，否則系統無法正確識別報表：
-
-```csharp
-new ReportDefinition
-{
-    Id = "XX001",              // 報表識別碼（須唯一）
-    Name = "報表名稱",
-    Description = "報表描述說明",
-    IconClass = "bi bi-xxx",   // Bootstrap Icons 類別
-    Category = ReportCategory.Sales,  // 分類：Customer、Supplier、Sales、Purchase、Inventory、Financial
-    RequiredPermission = "Entity.Read", // 權限要求
-    ActionId = "PrintXxx",     // 動作識別碼
-    SortOrder = 1,             // 排序順序
-    IsEnabled = true           // 是否啟用
-},
-```
-
-**報表 ID 命名規則：**
 | 前綴 | 分類 | 範例 |
 |------|------|------|
 | AR | 客戶報表 | AR001、AR002 |

@@ -1,4 +1,5 @@
 @using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Report
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Helpers
@@ -46,7 +47,6 @@
 <GenericSearchModalComponent @ref="reportSearchModal" 
                             IsVisible="@showReportSearch"
                             IsVisibleChanged="@((bool visible) => showReportSearch = visible)"
-                            ActionRegistry="@actionRegistry"
                             Title="報表搜尋"
                             Icon="bi-printer"
                             Placeholder="輸入報表名稱或關鍵字搜尋..."
@@ -57,15 +57,22 @@
                             EmptyStateHint="支援報表名稱、描述、分類關鍵字搜尋"
                             EmptyResultMessage="沒有找到符合條件的報表，請嘗試使用其他關鍵字"
                             SearchFunction="@SearchReports"
-                            CategoryDisplayNameFunc="@ReportSearchService.GetCategoryDisplayName" />
+                            CategoryDisplayNameFunc="@ReportSearchService.GetCategoryDisplayName"
+                            OnItemSelected="@HandleReportSelected" />
 
 @* 快捷鍵說明 Modal *@
 <ShortcutKeysModalComponent IsVisible="@showShortcutKeys"
                            IsVisibleChanged="@((bool visible) => showShortcutKeys = visible)" />
 
-@* 應收帳款報表 Modal *@
+@* 應收帳款報表 Modal（舊版，將逐步替換為 GenericReportFilterModalComponent） *@
 <AccountsReceivableReportPage IsVisible="@showAccountsReceivableReport"
                              IsVisibleChanged="@((bool visible) => showAccountsReceivableReport = visible)" />
+
+@* 通用報表篩選 Modal *@
+<GenericReportFilterModalComponent IsVisible="@(!string.IsNullOrEmpty(currentFilterReportId))"
+                                  IsVisibleChanged="@((bool visible) => { if (!visible) currentFilterReportId = string.Empty; })"
+                                  ReportId="@currentFilterReportId"
+                                  OnPrintSuccess="@HandleFilterPrintSuccess" />
 
 @* 通用報表中心 Modal *@
 <GenericReportIndexPage IsVisible="@(!string.IsNullOrEmpty(currentReportCategory))"
@@ -101,6 +108,9 @@
     // 通用報表中心 Modal 狀態（存放當前開啟的報表分類，空字串表示關閉）
     private string currentReportCategory = string.Empty;
     
+    // 通用報表篩選 Modal 狀態（存放當前要篩選的報表 ID，空字串表示關閉）
+    private string currentFilterReportId = string.Empty;
+    
     // 角色權限管理 Modal 狀態
     private bool showRolePermissionManagement = false;
     
@@ -109,6 +119,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // 初始化報表篩選模板註冊表
+        FilterTemplateInitializer.EnsureInitialized();
+        
         try
         {
             // 預先載入當前使用者的所有權限到快取
@@ -359,8 +372,33 @@
     /// </summary>
     private void HandleReportSelected(string actionId)
     {
-        // 使用 ActionHandlerRegistry 執行對應的報表 Action
+        // 從 ActionId 查找對應的 ReportId
+        var reportDef = Data.ReportRegistry.GetAllReports()
+            .FirstOrDefault(r => r.ActionId == actionId);
+        
+        if (reportDef != null)
+        {
+            // 檢查是否有對應的篩選模板配置
+            if (Models.Reports.FilterTemplates.FilterTemplateRegistry.HasConfig(reportDef.Id))
+            {
+                // 使用新的通用篩選 Modal
+                currentFilterReportId = reportDef.Id;
+                StateHasChanged();
+                return;
+            }
+        }
+        
+        // 沒有篩選配置，使用舊的 ActionHandlerRegistry 執行
         actionRegistry?.Execute(actionId);
+    }
+    
+    /// <summary>
+    /// 處理篩選 Modal 列印成功事件
+    /// </summary>
+    private void HandleFilterPrintSuccess()
+    {
+        currentFilterReportId = string.Empty;
+        StateHasChanged();
     }
     
     // ===== 搜尋函數 =====

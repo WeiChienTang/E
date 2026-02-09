@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using ERPCore2.Models; // 引用 SortDirection 枚舉
+using ERPCore2.Data.Entities; // 引用 PaperSetting
 
 namespace ERPCore2.Models.Reports
 {
@@ -9,6 +10,12 @@ namespace ERPCore2.Models.Reports
     /// </summary>
     public class BatchPrintCriteria
     {
+        /// <summary>
+        /// 紙張設定（用於渲染預覽圖片和列印）
+        /// 當值為 null 時，使用預設紙張設定
+        /// </summary>
+        public PaperSetting? PaperSetting { get; set; }
+        
         /// <summary>
         /// 開始日期（用於日期範圍篩選）
         /// </summary>

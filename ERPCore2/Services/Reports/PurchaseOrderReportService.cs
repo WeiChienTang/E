@@ -155,6 +155,25 @@ namespace ERPCore2.Services.Reports
             }
         }
 
+        /// <summary>
+        /// 批次渲染報表為圖片（用於批次預覽）
+        /// </summary>
+        [SupportedOSPlatform("windows6.1")]
+        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(BatchPrintCriteria criteria)
+        {
+            // 根據條件查詢採購單
+            var purchaseOrders = await _purchaseOrderService.GetByBatchCriteriaAsync(criteria);
+
+            return await BatchReportHelper.RenderBatchToImagesAsync(
+                purchaseOrders,
+                (id, _) => GenerateReportAsync(id),
+                _formattedPrintService,
+                "採購單",
+                criteria.PaperSetting,
+                criteria.GetSummary(),
+                _logger);
+        }
+
         #endregion
 
         #region 私有方法 - 建構報表文件

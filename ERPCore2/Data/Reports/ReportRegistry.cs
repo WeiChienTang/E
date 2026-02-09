@@ -140,18 +140,7 @@ public static class ReportRegistry
                 SortOrder = 3,
                 IsEnabled = true
             },
-            new ReportDefinition
-            {
-                Id = "PO004",
-                Name = "採購單批次列印",
-                Description = "批次列印多張採購單（支援日期、廠商篩選）",
-                IconClass = "bi bi-printer",
-                Category = ReportCategory.Purchase,
-                RequiredPermission = "PurchaseOrder.Read",
-                ActionId = "BatchPrintPurchaseOrder",
-                SortOrder = 4,
-                IsEnabled = true
-            },
+            // PO004 已移除 - 採購單批次列印功能已整合至 PO001（從報表中心進入時顯示篩選）
             
             // ==================== 銷售報表 ====================
             new ReportDefinition

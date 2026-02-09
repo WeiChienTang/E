@@ -1,0 +1,238 @@
+@* 
+    採購單批次列印篩選模板
+    實作 IFilterTemplateComponent 介面，提供採購單批次列印的篩選 UI
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@using ERPCore2.Data.Enums
+@implements IFilterTemplateComponent
+@inject ISupplierService SupplierService
+@inject INotificationService NotificationService
+
+@* 區塊 1: 廠商多選篩選 *@
+<FilterSectionComponent>
+    <div class="mb-3">
+        <label class="form-label fw-bold">
+            <i class="bi bi-building me-1"></i>選擇廠商
+        </label>
+        <MultiSelectFilterComponent TItem="Supplier"
+                                   Items="@suppliers"
+                                   @bind-SelectedItems="@selectedSuppliers"
+                                   DisplayProperty="CompanyName"
+                                   ValueProperty="Id"
+                                   Placeholder="請輸入廠商名稱搜尋..."
+                                   EmptyMessage="尚未選擇廠商，留空表示列印所有廠商的採購單"
+                                   ShowCard="false" />
+    </div>
+</FilterSectionComponent>
+
+@* 區塊 2: 日期範圍篩選 *@
+<FilterSectionComponent>
+    <div class="mb-3">
+        <label class="form-label fw-bold">
+            <i class="bi bi-calendar-range me-1"></i>訂單日期範圍
+        </label>
+        <DateRangeFilterComponent @bind-StartDate="@startDate"
+                                 @bind-EndDate="@endDate"
+                                 StartDateLabel="起始日期"
+                                 EndDateLabel="結束日期"
+                                 ShowQuickSelectors="true"
+                                 AutoValidate="true"
+                                 ShowValidationMessage="true" />
+    </div>
+</FilterSectionComponent>
+
+@* 區塊 3: 單號搜尋與審核狀態 *@
+<FilterSectionComponent>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">
+                <i class="bi bi-search me-1"></i>單號關鍵字
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   @bind="documentNumberKeyword" 
+                   placeholder="輸入採購單號搜尋..." />
+            <small class="form-text text-muted">支援模糊搜尋，留空表示不限</small>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">
+                <i class="bi bi-check-circle me-1"></i>審核狀態
+            </label>
+            <div class="mt-2">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="approvalAll" 
+                           checked="@(approvalFilter == ApprovalFilter.All)"
+                           @onchange="@(() => approvalFilter = ApprovalFilter.All)">
+                    <label class="form-check-label" for="approvalAll">全部</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="approvalApproved" 
+                           checked="@(approvalFilter == ApprovalFilter.ApprovedOnly)"
+                           @onchange="@(() => approvalFilter = ApprovalFilter.ApprovedOnly)">
+                    <label class="form-check-label" for="approvalApproved">已審核</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="approvalPending" 
+                           checked="@(approvalFilter == ApprovalFilter.PendingOnly)"
+                           @onchange="@(() => approvalFilter = ApprovalFilter.PendingOnly)">
+                    <label class="form-check-label" for="approvalPending">待審核</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</FilterSectionComponent>
+
+@* 區塊 4: 進階選項 *@
+<FilterSectionComponent>
+    <div class="mb-3">
+        <a class="text-decoration-none" style="cursor: pointer;" @onclick="() => showAdvanced = !showAdvanced">
+            <i class="bi @(showAdvanced ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+            進階選項
+        </a>
+    </div>
+    
+    @if (showAdvanced)
+    {
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">最大筆數</label>
+                <select class="form-select" @bind="maxResults">
+                    <option value="50">50 筆</option>
+                    <option value="100">100 筆</option>
+                    <option value="200">200 筆</option>
+                    <option value="500">500 筆</option>
+                    <option value="1000">1000 筆</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">排序方式</label>
+                <select class="form-select" @bind="sortBy">
+                    <option value="OrderDate">訂單日期</option>
+                    <option value="Code">單號</option>
+                    <option value="TotalAmount">金額</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">排序方向</label>
+                <select class="form-select" @bind="sortDescending">
+                    <option value="true">由新到舊</option>
+                    <option value="false">由舊到新</option>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeCancelled" @bind="includeCancelled">
+                    <label class="form-check-label" for="includeCancelled">
+                        包含已取消/刪除的單據
+                    </label>
+                </div>
+            </div>
+        </div>
+    }
+</FilterSectionComponent>
+
+@code {
+    // ===== 內部狀態 =====
+    
+    private List<Supplier> suppliers = new();
+    private List<Supplier> selectedSuppliers = new();
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+    private string? documentNumberKeyword = null;
+    private ApprovalFilter approvalFilter = ApprovalFilter.All;
+    private bool includeCancelled = false;
+    private int maxResults = 100;
+    private string sortBy = "OrderDate";
+    private bool sortDescending = true;
+    private bool showAdvanced = false;
+    
+    private enum ApprovalFilter
+    {
+        All,
+        ApprovedOnly,
+        PendingOnly
+    }
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入廠商清單
+            suppliers = await SupplierService.GetAllAsync();
+            
+            // 設定預設日期範圍（本月）
+            startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            endDate = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入資料失敗");
+            suppliers = new List<Supplier>();
+        }
+    }
+    
+    // ===== IFilterTemplateComponent 實作 =====
+    
+    /// <summary>
+    /// 取得目前的篩選條件
+    /// </summary>
+    public IReportFilterCriteria GetCriteria()
+    {
+        var statuses = new List<string>();
+        
+        // 根據審核狀態篩選
+        switch (approvalFilter)
+        {
+            case ApprovalFilter.ApprovedOnly:
+                statuses.Add("Approved");
+                break;
+            case ApprovalFilter.PendingOnly:
+                statuses.Add("Pending");
+                break;
+        }
+        
+        return new PurchaseOrderBatchPrintCriteria
+        {
+            SupplierIds = selectedSuppliers.Select(s => s.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            Statuses = statuses,
+            DocumentNumberKeyword = documentNumberKeyword,
+            IncludeCancelled = includeCancelled,
+            MaxResults = maxResults,
+            SortBy = sortBy,
+            SortDescending = sortDescending
+        };
+    }
+    
+    /// <summary>
+    /// 重置篩選條件為預設值
+    /// </summary>
+    public void Reset()
+    {
+        selectedSuppliers = new();
+        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        endDate = DateTime.Now;
+        documentNumberKeyword = null;
+        approvalFilter = ApprovalFilter.All;
+        includeCancelled = false;
+        maxResults = 100;
+        sortBy = "OrderDate";
+        sortDescending = true;
+        showAdvanced = false;
+        StateHasChanged();
+    }
+}

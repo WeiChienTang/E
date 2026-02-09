@@ -1,0 +1,431 @@
+@* 
+    通用報表篩選 Modal
+    根據 ReportId 動態載入對應的篩選模板，確認後可直接呼叫報表服務產生報表
+*@
+
+@using ERPCore2.Models.Reports
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Components.Shared.PageTemplate
+@using ERPCore2.Data.Entities
+@inject INotificationService NotificationService
+@inject IServiceProvider ServiceProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                   IsVisibleChanged="@HandleVisibilityChanged"
+                   Title="@GetTitle()"
+                   Icon="@GetIcon()"
+                   Size="BaseModalComponent.ModalSize.ExtraLarge"
+                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
+                   UseWhiteCloseButton="true"
+                   BodyCssClass="p-4"
+                   IsLoading="@isLoading"
+                   LoadingMessage="@loadingMessage"
+                   OnClose="@HandleCancel">
+    
+    <HeaderButtons>
+        <div class="d-flex gap-2">
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue" 
+                                  Size="ButtonSize.Small"
+                                  Text="預覽列印" 
+                                  OnClick="HandleConfirmAsync"
+                                  IsDisabled="@isLoading"
+                                  Title="確認篩選條件並預覽報表" />
+            <GenericButtonComponent Variant="ButtonVariant.Red" 
+                                  Size="ButtonSize.Small"
+                                  Text="取消" 
+                                  OnClick="HandleCancel"
+                                  IsDisabled="@isLoading"
+                                  Title="取消並關閉" />
+        </div>
+    </HeaderButtons>
+    
+    <BodyContent>
+        @if (filterConfig == null)
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                找不到報表 ID「@ReportId」的篩選配置
+            </div>
+        }
+        else if (filterConfig.FilterTemplateType != null && filterConfig.FilterTemplateType != typeof(object))
+        {
+            <DynamicComponent Type="@filterConfig.FilterTemplateType" 
+                             @ref="dynamicComponentRef"
+                             Parameters="@GetTemplateParameters()" />
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                此報表尚未配置篩選模板
+            </div>
+        }
+    </BodyContent>
+    
+</BaseModalComponent>
+
+@* 報表預覽 Modal *@
+<ReportPreviewModalComponent @ref="reportPreviewModal"
+                            IsVisible="@showPreview"
+                            IsVisibleChanged="@((bool v) => showPreview = v)"
+                            Title="@(filterConfig?.PreviewTitle ?? "報表預覽")"
+                            PreviewImages="@previewImages"
+                            FormattedDocument="@formattedDocument"
+                            ReportId="@savedReportId"
+                            DocumentName="@documentName"
+                            OnPrintSuccess="@HandlePrintSuccess"
+                            OnCancel="@HandlePreviewCancel"
+                            OnPaperSettingChanged="@HandlePaperSettingChanged" />
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>
+    /// Modal 是否顯示
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+    
+    /// <summary>
+    /// Modal 顯示狀態變更事件
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    /// <summary>
+    /// 報表識別碼（對應 FilterTemplateRegistry 中的配置）
+    /// </summary>
+    [Parameter]
+    public string ReportId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 列印成功事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnPrintSuccess { get; set; }
+    
+    /// <summary>
+    /// 取消事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    // ===== 私有欄位 =====
+    
+    private ReportFilterConfig? filterConfig;
+    private DynamicComponent? dynamicComponentRef;
+    private ReportPreviewModalComponent? reportPreviewModal;
+    
+    private bool isLoading = false;
+    private string loadingMessage = "處理中...";
+    private bool showPreview = false;
+    
+    private List<byte[]>? previewImages;
+    private FormattedDocument? formattedDocument;
+    private string documentName = "";
+    
+    // 保存 ReportId 的本地副本，避免關閉篩選 Modal 時參數被外部清空
+    private string savedReportId = string.Empty;
+    
+    // 保存當前的報表服務和篩選條件，用於紙張變更時重新產生預覽
+    private object? currentReportService;
+    private BatchPrintCriteria? currentBatchCriteria;
+    
+    // ===== 生命週期方法 =====
+    
+    protected override void OnParametersSet()
+    {
+        if (IsVisible && !string.IsNullOrEmpty(ReportId))
+        {
+            // 保存 ReportId 的本地副本，避免關閉篩選 Modal 時參數被外部清空
+            savedReportId = ReportId;
+            LoadFilterConfig();
+        }
+    }
+    
+    // ===== 私有方法 =====
+    
+    private void LoadFilterConfig()
+    {
+        filterConfig = FilterTemplateRegistry.GetConfig(ReportId);
+        if (filterConfig == null)
+        {
+            // 嘗試建立預設配置（用於尚未註冊的報表）
+            var reportDef = Data.ReportRegistry.GetReportById(ReportId);
+            if (reportDef != null)
+            {
+                filterConfig = new ReportFilterConfig
+                {
+                    ReportId = ReportId,
+                    FilterTitle = $"{reportDef.Name}篩選條件",
+                    PreviewTitle = $"{reportDef.Name}預覽",
+                    IconClass = reportDef.IconClass
+                };
+            }
+        }
+    }
+    
+    private string GetTitle()
+    {
+        return filterConfig?.FilterTitle ?? "報表篩選條件";
+    }
+    
+    private string GetIcon()
+    {
+        return filterConfig?.IconClass ?? "bi-funnel";
+    }
+    
+    private Dictionary<string, object> GetTemplateParameters()
+    {
+        return new Dictionary<string, object>
+        {
+            // 模板可能需要的參數可以在這裡傳遞
+        };
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task HandleVisibilityChanged(bool visible)
+    {
+        if (!visible)
+        {
+            // 清理狀態
+            previewImages = null;
+            formattedDocument = null;
+        }
+        
+        await IsVisibleChanged.InvokeAsync(visible);
+    }
+    
+    private async Task HandleConfirmAsync()
+    {
+        try
+        {
+            // 取得篩選條件
+            IReportFilterCriteria criteria;
+            
+            // 從 DynamicComponent 取得模板實例
+            var templateInstance = dynamicComponentRef?.Instance;
+            
+            if (templateInstance is IFilterTemplateComponent templateComponent)
+            {
+                criteria = templateComponent.GetCriteria();
+            }
+            else
+            {
+                // 使用預設空篩選條件
+                criteria = filterConfig?.CreateDefaultCriteria() ?? new EmptyFilterCriteria();
+            }
+            
+            // 驗證篩選條件
+            if (!criteria.Validate(out var errorMessage))
+            {
+                await NotificationService.ShowWarningAsync(errorMessage!);
+                return;
+            }
+            
+            isLoading = true;
+            loadingMessage = "正在產生報表...";
+            StateHasChanged();
+            
+            // 產生文件名稱
+            documentName = filterConfig?.GetDocumentName?.Invoke(criteria) 
+                          ?? $"報表-{DateTime.Now:yyyyMMddHHmmss}";
+            
+            // 檢查是否有對應的報表服務
+            if (filterConfig?.ReportServiceType != null)
+            {
+                // 動態取得報表服務
+                var reportService = ServiceProvider.GetService(filterConfig.ReportServiceType);
+                
+                if (reportService == null)
+                {
+                    await NotificationService.ShowErrorAsync($"無法取得報表服務：{filterConfig.ReportServiceType.Name}");
+                    return;
+                }
+                
+                // 轉換篩選條件為 BatchPrintCriteria
+                BatchPrintCriteria batchCriteria;
+                
+                // 嘗試使用 ToBatchPrintCriteria 方法轉換
+                var toBatchMethod = criteria.GetType().GetMethod("ToBatchPrintCriteria");
+                if (toBatchMethod != null)
+                {
+                    batchCriteria = (BatchPrintCriteria)toBatchMethod.Invoke(criteria, null)!;
+                }
+                else
+                {
+                    // 使用預設轉換
+                    batchCriteria = ConvertToBatchCriteria(criteria);
+                }
+                
+                // 呼叫批次預覽方法
+                var renderMethod = reportService.GetType().GetMethod("RenderBatchToImagesAsync");
+                if (renderMethod != null)
+                {
+                    loadingMessage = "正在產生預覽圖片...";
+                    StateHasChanged();
+                    
+                    var task = (Task<BatchPreviewResult>)renderMethod.Invoke(reportService, new object[] { batchCriteria })!;
+                    var result = await task;
+                    
+                    if (!result.IsSuccess)
+                    {
+                        await NotificationService.ShowWarningAsync(result.ErrorMessage ?? "產生預覽失敗");
+                        return;
+                    }
+                    
+                    // 設定預覽資料
+                    previewImages = result.PreviewImages;
+                    formattedDocument = result.MergedDocument;
+                    
+                    // 保存報表服務和篩選條件，用於紙張變更時重新產生預覽
+                    currentReportService = reportService;
+                    currentBatchCriteria = batchCriteria;
+                    
+                    // 關閉篩選 Modal，開啟預覽 Modal
+                    await IsVisibleChanged.InvokeAsync(false);
+                    showPreview = true;
+                    
+                    await NotificationService.ShowSuccessAsync($"已產生 {result.DocumentCount} 筆單據的預覽，共 {result.TotalPages} 頁");
+                }
+                else
+                {
+                    await NotificationService.ShowWarningAsync($"報表服務 {filterConfig.ReportServiceType.Name} 尚未實作批次預覽方法");
+                }
+            }
+            else
+            {
+                // 尚無服務，顯示篩選結果
+                await NotificationService.ShowInfoAsync(
+                    $"📊 篩選條件：\n" +
+                    $"{System.Text.Json.JsonSerializer.Serialize(criteria.ToQueryParameters(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true })}\n\n" +
+                    $"（報表服務尚未配置）");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleConfirmAsync), GetType());
+            await NotificationService.ShowErrorAsync($"產生報表失敗：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task HandleCancel()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+        
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+    
+    private async Task HandlePrintSuccess()
+    {
+        showPreview = false;
+        await IsVisibleChanged.InvokeAsync(false);
+        
+        if (OnPrintSuccess.HasDelegate)
+        {
+            await OnPrintSuccess.InvokeAsync();
+        }
+    }
+    
+    private void HandlePreviewCancel()
+    {
+        showPreview = false;
+        // 保持篩選 Modal 開啟，讓使用者可以修改條件
+    }
+    
+    /// <summary>
+    /// 處理紙張設定變更事件
+    /// 當使用者在預覽 Modal 中變更紙張時，重新渲染預覽圖片
+    /// </summary>
+    private async Task HandlePaperSettingChanged(PaperSetting paperSetting)
+    {
+        try
+        {
+            if (currentReportService == null || currentBatchCriteria == null) return;
+            
+            isLoading = true;
+            loadingMessage = "正在更新預覽...";
+            StateHasChanged();
+            
+            // 更新批次篩選條件的紙張設定
+            currentBatchCriteria.PaperSetting = paperSetting;
+            
+            // 更新 FormattedDocument 的紙張尺寸
+            if (formattedDocument != null)
+            {
+                formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
+                formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
+                formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
+                formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
+                formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
+                formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
+            }
+            
+            // 呼叫批次預覽方法（使用新的紙張設定）
+            var renderMethod = currentReportService.GetType().GetMethod("RenderBatchToImagesAsync");
+            if (renderMethod != null)
+            {
+                var task = (Task<BatchPreviewResult>)renderMethod.Invoke(currentReportService, new object[] { currentBatchCriteria })!;
+                var result = await task;
+                
+                if (result.IsSuccess)
+                {
+                    previewImages = result.PreviewImages;
+                    formattedDocument = result.MergedDocument;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"更新預覽時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    /// <summary>
+    /// 將 IReportFilterCriteria 轉換為 BatchPrintCriteria（預設實作）
+    /// </summary>
+    private BatchPrintCriteria ConvertToBatchCriteria(IReportFilterCriteria criteria)
+    {
+        var batchCriteria = new BatchPrintCriteria();
+        var queryParams = criteria.ToQueryParameters();
+        
+        // 嘗試從查詢參數中取得常用欄位
+        if (queryParams.TryGetValue("startDate", out var startDate) && startDate is DateTime start)
+        {
+            batchCriteria.StartDate = start;
+        }
+        
+        if (queryParams.TryGetValue("endDate", out var endDate) && endDate is DateTime end)
+        {
+            batchCriteria.EndDate = end;
+        }
+        
+        if (queryParams.TryGetValue("supplierIds", out var supplierIds) && supplierIds is List<int> ids)
+        {
+            batchCriteria.RelatedEntityIds = ids;
+        }
+        
+        if (queryParams.TryGetValue("maxResults", out var maxResults) && maxResults is int max)
+        {
+            batchCriteria.MaxResults = max;
+        }
+        
+        return batchCriteria;
+    }
+}

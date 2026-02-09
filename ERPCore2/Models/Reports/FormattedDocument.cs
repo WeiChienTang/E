@@ -166,6 +166,24 @@ namespace ERPCore2.Models.Reports
         }
 
         /// <summary>
+        /// 合併另一個文件的內容到此文件
+        /// 用於批次列印時將多個報表合併為一個文件
+        /// </summary>
+        /// <param name="other">要合併的文件</param>
+        public FormattedDocument MergeFrom(FormattedDocument other)
+        {
+            if (other == null) return this;
+            
+            // 合併主要元素
+            Elements.AddRange(other.Elements);
+            
+            // 保留第一個文件的頁首頁尾設定
+            // 不合併 HeaderElements 和 FooterElements
+            
+            return this;
+        }
+
+        /// <summary>
         /// 新增簽名區
         /// </summary>
         public FormattedDocument AddSignatureSection(params string[] labels)
