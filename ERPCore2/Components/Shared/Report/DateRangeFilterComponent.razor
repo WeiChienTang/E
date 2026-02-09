@@ -1,64 +1,54 @@
-<div class="row g-3">
-    <div class="col-md-8">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label fw-bold">
-                    @if (!string.IsNullOrEmpty(StartDateIconClass))
-                    {
-                        <i class="@StartDateIconClass me-1"></i>
-                    }
-                    @StartDateLabel
-                </label>
-                <input type="date" 
-                       class="form-control @StartDateCssClass" 
-                       @bind="StartDate"
-                       @bind:after="OnStartDateChanged"
-                       max="@MaxStartDate"
-                       min="@MinStartDate"
-                       placeholder="@StartDatePlaceholder" />
-                @if (!string.IsNullOrEmpty(StartDateHelpText))
-                {
-                    <small class="form-text text-muted">@StartDateHelpText</small>
-                }
-            </div>
-            <div class="col-md-6">
-                <label class="form-label fw-bold">
-                    @if (!string.IsNullOrEmpty(EndDateIconClass))
-                    {
-                        <i class="@EndDateIconClass me-1"></i>
-                    }
-                    @EndDateLabel
-                </label>
-                <input type="date" 
-                       class="form-control @EndDateCssClass" 
-                       @bind="EndDate"
-                       @bind:after="OnEndDateChanged"
-                       max="@MaxEndDate"
-                       min="@MinEndDate"
-                       placeholder="@EndDatePlaceholder" />
-                @if (!string.IsNullOrEmpty(EndDateHelpText))
-                {
-                    <small class="form-text text-muted">@EndDateHelpText</small>
-                }
-            </div>
-        </div>
+@using ERPCore2.Components.Shared.UI.Form
+
+<div class="row g-2">
+    @* 起始日期 *@
+    <div class="col-auto d-flex align-items-center gap-2">
+        <span class="fw-bold text-nowrap">@StartDateLabel</span>
+        <input type="date" 
+               class="form-control form-control-sm @StartDateCssClass" 
+               style="width: auto;"
+               @bind="StartDate"
+               @bind:after="OnStartDateChanged"
+               max="@(MaxStartDate ?? FormConstants.Defaults.DateMax)"
+               min="@(MinStartDate ?? FormConstants.Defaults.DateMin)"
+               placeholder="@StartDatePlaceholder" />
     </div>
     
+    @* 結束日期 *@
+    <div class="col-auto d-flex align-items-center gap-2">
+        <span class="fw-bold text-nowrap">@EndDateLabel</span>
+        <input type="date" 
+               class="form-control form-control-sm @EndDateCssClass" 
+               style="width: auto;"
+               @bind="EndDate"
+               @bind:after="OnEndDateChanged"
+               max="@(MaxEndDate ?? FormConstants.Defaults.DateMax)"
+               min="@(MinEndDate ?? FormConstants.Defaults.DateMin)"
+               placeholder="@EndDatePlaceholder" />
+    </div>
+    
+    @* 快速選擇按鈕 *@
     @if (ShowQuickSelectors)
     {
-        <div class="col-md-4 text-end">
-            <label class="form-label d-block fw-bold">快速選擇</label>
-            <div class="d-flex gap-2 justify-content-end">
-                <GenericButtonComponent Text="今日" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetToday" />
-                <GenericButtonComponent Text="本週" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisWeek" />
-                <GenericButtonComponent Text="本月" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisMonth" />
-                <GenericButtonComponent Text="上月" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetLastMonth" />
-                <GenericButtonComponent Text="今年" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisYear" />
-                <GenericButtonComponent Text="清空" Variant="ButtonVariant.Red" Size="ButtonSize.Small" OnClick="ClearDates" />
-            </div>
+        <div class="col-auto d-flex gap-1 align-items-center">
+            <GenericButtonComponent Text="今日" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetToday" />
+            <GenericButtonComponent Text="本週" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisWeek" />
+            <GenericButtonComponent Text="本月" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisMonth" />
+            <GenericButtonComponent Text="上月" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetLastMonth" />
+            <GenericButtonComponent Text="今年" Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small" OnClick="SetThisYear" />
+            <GenericButtonComponent Text="清空" Variant="ButtonVariant.Red" Size="ButtonSize.Small" OnClick="ClearDates" />
         </div>
     }
 </div>
+
+@if (!string.IsNullOrEmpty(StartDateHelpText) || !string.IsNullOrEmpty(EndDateHelpText))
+{
+    <small class="form-text text-muted">
+        @if (!string.IsNullOrEmpty(StartDateHelpText)) { @StartDateHelpText }
+        @if (!string.IsNullOrEmpty(StartDateHelpText) && !string.IsNullOrEmpty(EndDateHelpText)) { <text> | </text> }
+        @if (!string.IsNullOrEmpty(EndDateHelpText)) { @EndDateHelpText }
+    </small>
+}
 
 @if (ShowValidationMessage && !string.IsNullOrEmpty(ValidationMessage))
 {

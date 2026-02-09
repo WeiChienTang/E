@@ -1,6 +1,7 @@
 @* 
     應收帳款報表篩選模板
     實作 IFilterTemplateComponent 介面，提供應收帳款報表的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
 *@
 
 @using ERPCore2.Models
@@ -10,65 +11,69 @@
 @inject ICustomerService CustomerService
 @inject INotificationService NotificationService
 
-@* 區塊 1: 客戶多選篩選 *@
-<FilterSectionComponent>
-    <div class="mb-3">
-        <label class="form-label fw-bold">
-            <i class="bi bi-people me-1"></i>選擇客戶
-        </label>
-        <MultiSelectFilterComponent TItem="Customer"
-                                   Items="@customers"
-                                   @bind-SelectedItems="@selectedCustomers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="請輸入客戶名稱搜尋..."
-                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的應收帳款"
-                                   ShowCard="false" />
+<div>
+    @* 第一行: 客戶選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <label class="form-label mb-1">
+                <i class="bi bi-people me-1"></i>客戶
+                <small class="text-muted fw-normal">（留空=全部）</small>
+            </label>
+            <MultiSelectFilterComponent TItem="Customer"
+                                       Items="@customers"
+                                       @bind-SelectedItems="@selectedCustomers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋客戶..."
+                                       EmptyMessage="未選擇客戶"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
     </div>
-</FilterSectionComponent>
 
-@* 區塊 2: 日期範圍篩選 *@
-<FilterSectionComponent>
-    <div class="mb-3">
-        <label class="form-label fw-bold">
-            <i class="bi bi-calendar-range me-1"></i>統計日期
-        </label>
-        <DateRangeFilterComponent @bind-StartDate="@startDate"
-                                 @bind-EndDate="@endDate"
-                                 StartDateLabel="起始日期"
-                                 EndDateLabel="結束日期"
-                                 ShowQuickSelectors="true"
-                                 AutoValidate="true"
-                                 ShowValidationMessage="true" />
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="row g-2 mb-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label mb-1">
+                <i class="bi bi-calendar me-1"></i>起始日期
+            </label>
+            <input type="date" class="form-control" @bind="startDate" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-1">結束日期</label>
+            <input type="date" class="form-control" @bind="endDate" />
+        </div>
+        <div class="col-md-6">
+            <div class="btn-group btn-group-sm w-100" role="group">
+                <button type="button" class="btn btn-outline-secondary" @onclick="SetToday">今日</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="SetThisWeek">本週</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="SetThisMonth">本月</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="SetLastMonth">上月</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="SetThisYear">今年</button>
+                <button type="button" class="btn btn-outline-danger" @onclick="ClearDates">清空</button>
+            </div>
+        </div>
     </div>
-</FilterSectionComponent>
 
-@* 區塊 3: 帳款狀態篩選 *@
-<FilterSectionComponent>
-    <div class="mb-3">
-        <label class="form-label fw-bold">
-            <i class="bi bi-filter me-1"></i>帳款狀態
-        </label>
-        <div class="row">
-            <div class="col-md-6">
+    @* 第三行: 帳款狀態篩選 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <label class="form-label mb-1">
+                <i class="bi bi-filter me-1"></i>帳款狀態
+            </label>
+            <div class="d-flex gap-3">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="includeSettled" @bind="includeSettled">
-                    <label class="form-check-label" for="includeSettled">
-                        包含已結清帳款
-                    </label>
+                    <label class="form-check-label" for="includeSettled">包含已結清帳款</label>
                 </div>
-            </div>
-            <div class="col-md-6">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="onlyOverdue" @bind="onlyOverdue">
-                    <label class="form-check-label" for="onlyOverdue">
-                        僅顯示逾期帳款
-                    </label>
+                    <label class="form-check-label" for="onlyOverdue">僅顯示逾期帳款</label>
                 </div>
             </div>
         </div>
     </div>
-</FilterSectionComponent>
+</div>
 
 @code {
     // ===== 內部狀態 =====
@@ -134,5 +139,47 @@
         includeSettled = false;
         onlyOverdue = false;
         StateHasChanged();
+    }
+    
+    // ===== 快速日期選擇方法 =====
+    
+    private void SetToday()
+    {
+        startDate = DateTime.Today;
+        endDate = DateTime.Today;
+    }
+    
+    private void SetThisWeek()
+    {
+        var today = DateTime.Today;
+        var dayOfWeek = (int)today.DayOfWeek;
+        var diff = dayOfWeek == 0 ? 6 : dayOfWeek - 1; // 週一為起始
+        startDate = today.AddDays(-diff);
+        endDate = today;
+    }
+    
+    private void SetThisMonth()
+    {
+        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        endDate = DateTime.Today;
+    }
+    
+    private void SetLastMonth()
+    {
+        var lastMonth = DateTime.Now.AddMonths(-1);
+        startDate = new DateTime(lastMonth.Year, lastMonth.Month, 1);
+        endDate = new DateTime(lastMonth.Year, lastMonth.Month, DateTime.DaysInMonth(lastMonth.Year, lastMonth.Month));
+    }
+    
+    private void SetThisYear()
+    {
+        startDate = new DateTime(DateTime.Now.Year, 1, 1);
+        endDate = DateTime.Today;
+    }
+    
+    private void ClearDates()
+    {
+        startDate = null;
+        endDate = null;
     }
 }

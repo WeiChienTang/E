@@ -16,7 +16,7 @@
                    IsVisibleChanged="@HandleVisibilityChanged"
                    Title="@GetTitle()"
                    Icon="@GetIcon()"
-                   Size="BaseModalComponent.ModalSize.ExtraLarge"
+                   Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    UseWhiteCloseButton="true"
                    BodyCssClass="p-4"
@@ -26,7 +26,7 @@
     
     <HeaderButtons>
         <div class="d-flex gap-2">
-            <GenericButtonComponent Variant="ButtonVariant.DarkBlue" 
+            <GenericButtonComponent Variant="ButtonVariant.Green" 
                                   Size="ButtonSize.Small"
                                   Text="預覽列印" 
                                   OnClick="HandleConfirmAsync"

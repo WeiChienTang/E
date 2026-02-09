@@ -1,6 +1,7 @@
 @* 
     採購單批次列印篩選模板
     實作 IFilterTemplateComponent 介面，提供採購單批次列印的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
 *@
 
 @using ERPCore2.Models
@@ -11,130 +12,110 @@
 @inject ISupplierService SupplierService
 @inject INotificationService NotificationService
 
-@* 區塊 1: 廠商多選篩選 *@
-<FilterSectionComponent>
-    <div class="mb-3">
-        <label class="form-label fw-bold">
-            <i class="bi bi-building me-1"></i>選擇廠商
-        </label>
-        <MultiSelectFilterComponent TItem="Supplier"
-                                   Items="@suppliers"
-                                   @bind-SelectedItems="@selectedSuppliers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="請輸入廠商名稱搜尋..."
-                                   EmptyMessage="尚未選擇廠商，留空表示列印所有廠商的採購單"
-                                   ShowCard="false" />
+<div>
+    @* 第一行: 廠商選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Supplier"
+                                       Items="@suppliers"
+                                       @bind-SelectedItems="@selectedSuppliers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋廠商..."
+                                       EmptyMessage="未選擇廠商"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
     </div>
-</FilterSectionComponent>
 
-@* 區塊 2: 日期範圍篩選 *@
-<FilterSectionComponent>
-    <div class="mb-3">
-        <label class="form-label fw-bold">
-            <i class="bi bi-calendar-range me-1"></i>訂單日期範圍
-        </label>
-        <DateRangeFilterComponent @bind-StartDate="@startDate"
-                                 @bind-EndDate="@endDate"
-                                 StartDateLabel="起始日期"
-                                 EndDateLabel="結束日期"
-                                 ShowQuickSelectors="true"
-                                 AutoValidate="true"
-                                 ShowValidationMessage="true" />
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="mb-2">
+        <DateRangeFilterComponent @bind-StartDate="startDate"
+                                  @bind-EndDate="endDate"
+                                  ShowQuickSelectors="true"
+                                  AutoValidate="true"
+                                  ShowValidationMessage="true" />
     </div>
-</FilterSectionComponent>
 
-@* 區塊 3: 單號搜尋與審核狀態 *@
-<FilterSectionComponent>
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label class="form-label fw-bold">
-                <i class="bi bi-search me-1"></i>單號關鍵字
+    @* 第三行: 單號 + 審核狀態 *@
+    <div class="row g-2 mb-2 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label mb-1">
+                <i class="bi bi-search me-1"></i>單號
             </label>
             <input type="text" 
                    class="form-control" 
                    @bind="documentNumberKeyword" 
-                   placeholder="輸入採購單號搜尋..." />
-            <small class="form-text text-muted">支援模糊搜尋，留空表示不限</small>
+                   placeholder="模糊搜尋..." />
         </div>
-        <div class="col-md-6">
-            <label class="form-label fw-bold">
+        <div class="col-md-7">
+            <label class="form-label mb-1">
                 <i class="bi bi-check-circle me-1"></i>審核狀態
             </label>
-            <div class="mt-2">
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="approvalAll" 
-                           checked="@(approvalFilter == ApprovalFilter.All)"
-                           @onchange="@(() => approvalFilter = ApprovalFilter.All)">
-                    <label class="form-check-label" for="approvalAll">全部</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="approvalApproved" 
-                           checked="@(approvalFilter == ApprovalFilter.ApprovedOnly)"
-                           @onchange="@(() => approvalFilter = ApprovalFilter.ApprovedOnly)">
-                    <label class="form-check-label" for="approvalApproved">已審核</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="approvalPending" 
-                           checked="@(approvalFilter == ApprovalFilter.PendingOnly)"
-                           @onchange="@(() => approvalFilter = ApprovalFilter.PendingOnly)">
-                    <label class="form-check-label" for="approvalPending">待審核</label>
-                </div>
+            <div class="btn-group btn-group-sm w-100" role="group">
+                <input type="radio" class="btn-check" id="approvalAll" autocomplete="off"
+                       checked="@(approvalFilter == ApprovalFilter.All)"
+                       @onchange="@(() => approvalFilter = ApprovalFilter.All)">
+                <label class="btn btn-outline-secondary" for="approvalAll">全部</label>
+                
+                <input type="radio" class="btn-check" id="approvalApproved" autocomplete="off"
+                       checked="@(approvalFilter == ApprovalFilter.ApprovedOnly)"
+                       @onchange="@(() => approvalFilter = ApprovalFilter.ApprovedOnly)">
+                <label class="btn btn-outline-success" for="approvalApproved">已審核</label>
+                
+                <input type="radio" class="btn-check" id="approvalPending" autocomplete="off"
+                       checked="@(approvalFilter == ApprovalFilter.PendingOnly)"
+                       @onchange="@(() => approvalFilter = ApprovalFilter.PendingOnly)">
+                <label class="btn btn-outline-warning" for="approvalPending">待審核</label>
             </div>
         </div>
     </div>
-</FilterSectionComponent>
 
-@* 區塊 4: 進階選項 *@
-<FilterSectionComponent>
-    <div class="mb-3">
-        <a class="text-decoration-none" style="cursor: pointer;" @onclick="() => showAdvanced = !showAdvanced">
+    @* 第四行: 進階選項（可收合） *@
+    <div class="border-top pt-2 mt-1">
+        <a class="text-decoration-none small" style="cursor: pointer;" @onclick="() => showAdvanced = !showAdvanced">
             <i class="bi @(showAdvanced ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
             進階選項
         </a>
-    </div>
-    
-    @if (showAdvanced)
-    {
-        <div class="row">
-            <div class="col-md-4">
-                <label class="form-label">最大筆數</label>
-                <select class="form-select" @bind="maxResults">
-                    <option value="50">50 筆</option>
-                    <option value="100">100 筆</option>
-                    <option value="200">200 筆</option>
-                    <option value="500">500 筆</option>
-                    <option value="1000">1000 筆</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">排序方式</label>
-                <select class="form-select" @bind="sortBy">
-                    <option value="OrderDate">訂單日期</option>
-                    <option value="Code">單號</option>
-                    <option value="TotalAmount">金額</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">排序方向</label>
-                <select class="form-select" @bind="sortDescending">
-                    <option value="true">由新到舊</option>
-                    <option value="false">由舊到新</option>
-                </select>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-md-12">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="includeCancelled" @bind="includeCancelled">
-                    <label class="form-check-label" for="includeCancelled">
-                        包含已取消/刪除的單據
-                    </label>
+        
+        @if (showAdvanced)
+        {
+            <div class="row g-2 mt-2">
+                <div class="col-md-3">
+                    <label class="form-label mb-1">最大筆數</label>
+                    <select class="form-select" @bind="maxResults">
+                        <option value="50">50 筆</option>
+                        <option value="100">100 筆</option>
+                        <option value="200">200 筆</option>
+                        <option value="500">500 筆</option>
+                        <option value="1000">1000 筆</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1">排序方式</label>
+                    <select class="form-select" @bind="sortBy">
+                        <option value="OrderDate">訂單日期</option>
+                        <option value="Code">單號</option>
+                        <option value="TotalAmount">金額</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1">排序方向</label>
+                    <select class="form-select" @bind="sortDescending">
+                        <option value="true">由新到舊</option>
+                        <option value="false">由舊到新</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="includeCancelled" @bind="includeCancelled">
+                        <label class="form-check-label" for="includeCancelled">含已取消</label>
+                    </div>
                 </div>
             </div>
-        </div>
-    }
-</FilterSectionComponent>
+        }
+    </div>
+</div>
 
 @code {
     // ===== 內部狀態 =====
@@ -172,9 +153,7 @@
             // 載入廠商清單
             suppliers = await SupplierService.GetAllAsync();
             
-            // 設定預設日期範圍（本月）
-            startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            endDate = DateTime.Now;
+            // 預設日期不填寫
         }
         catch (Exception ex)
         {
@@ -224,8 +203,8 @@
     public void Reset()
     {
         selectedSuppliers = new();
-        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        endDate = DateTime.Now;
+        startDate = null;
+        endDate = null;
         documentNumberKeyword = null;
         approvalFilter = ApprovalFilter.All;
         includeCancelled = false;
