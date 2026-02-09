@@ -1,4 +1,5 @@
 @using ERPCore2.Models
+@using ERPCore2.Models.Reports
 @using ERPCore2.Components.Shared.Base
 
 <BaseModalComponent IsVisible="@IsVisible"
@@ -22,8 +23,26 @@
             }
             else
             {
+                @* 搜尋區域 *@
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               placeholder="搜尋報表名稱..."
+                               @bind="searchKeyword"
+                               @bind:event="oninput" />
+                        @if (!string.IsNullOrEmpty(searchKeyword))
+                        {
+                            <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+                
                 <InteractiveTableComponent TItem="ReportDefinition"
-                                          Items="@Reports.ToList()"
+                                          Items="@FilteredReports"
                                           ColumnDefinitions="@columnDefinitions"
                                           ShowRowNumbers="true"
                                           IsReadOnly="true"
@@ -32,7 +51,7 @@
                                           IsStriped="true"
                                           IsHoverable="true"
                                           IsBordered="true"
-                                          EmptyMessage="目前沒有可用的報表">
+                                          EmptyMessage="@GetEmptyMessage()">
                     <CustomActionsTemplate>
                         @{
                             var report = context;
@@ -107,6 +126,32 @@
     // ===== 私有欄位 =====
     
     private List<InteractiveColumnDefinition> columnDefinitions = new();
+    private string searchKeyword = string.Empty;
+    
+    // ===== 計算屬性 =====
+    
+    /// <summary>
+    /// 篩選後的報表清單
+    /// </summary>
+    private List<ReportDefinition> FilteredReports
+    {
+        get
+        {
+            if (Reports == null)
+                return new List<ReportDefinition>();
+            
+            var result = Reports.AsEnumerable();
+            
+            // 關鍵字搜尋（報表名稱）
+            if (!string.IsNullOrWhiteSpace(searchKeyword))
+            {
+                var keyword = searchKeyword.Trim().ToLower();
+                result = result.Where(r => r.Name.ToLower().Contains(keyword));
+            }
+            
+            return result.OrderBy(r => r.SortOrder).ToList();
+        }
+    }
     
     // ===== 生命週期方法 =====
     
@@ -156,9 +201,32 @@
     
     private async Task HandleClose()
     {
+        // 關閉時清除搜尋條件
+        searchKeyword = string.Empty;
+        
         if (OnClose.HasDelegate)
         {
             await OnClose.InvokeAsync();
         }
+    }
+    
+    /// <summary>
+    /// 清除搜尋關鍵字
+    /// </summary>
+    private void ClearSearch()
+    {
+        searchKeyword = string.Empty;
+    }
+    
+    /// <summary>
+    /// 取得空資料訊息
+    /// </summary>
+    private string GetEmptyMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(searchKeyword))
+        {
+            return $"找不到符合「{searchKeyword}」的報表";
+        }
+        return "目前沒有可用的報表";
     }
 }

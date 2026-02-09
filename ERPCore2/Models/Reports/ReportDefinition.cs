@@ -50,4 +50,18 @@ namespace ERPCore2.Models.Reports
         /// </summary>
         public int SortOrder { get; set; } = 0;
     }
+    
+    /// <summary>
+    /// 報表分類常數
+    /// </summary>
+    public static class ReportCategory
+    {
+        public const string Customer = "Customer";
+        public const string Supplier = "Supplier";
+        public const string Product = "Product";
+        public const string Financial = "Financial";
+        public const string Inventory = "Inventory";
+        public const string Sales = "Sales";
+        public const string Purchase = "Purchase";
+    }
 }

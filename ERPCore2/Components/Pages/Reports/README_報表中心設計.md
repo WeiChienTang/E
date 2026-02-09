@@ -138,12 +138,3 @@ public static class ReportCategory
 | 銷售報表中心 | `Sales` | `OpenSalesReportIndex` |
 | 採購報表中心 | `Purchase` | `OpenPurchaseReportIndex` |
 | 財務報表中心 | `Financial` | `OpenFinancialReportIndex` |
-
-## 📝 待實作報表
-
-- [ ] 客戶對帳單 (`OpenCustomerStatementReport`)
-- [ ] 客戶銷售分析 (`OpenCustomerSalesAnalysisReport`)
-- [ ] 客戶交易明細 (`OpenCustomerTransactionReport`)
-- [ ] 應付帳款報表 (`OpenAccountsPayableReport`)
-- [ ] 廠商對帳單 (`OpenSupplierStatementReport`)
-- [ ] 廠商進貨分析 (`OpenSupplierPurchaseAnalysisReport`)

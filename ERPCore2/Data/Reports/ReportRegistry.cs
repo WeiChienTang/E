@@ -1,4 +1,5 @@
 using ERPCore2.Models;
+using ERPCore2.Models.Reports;
 
 namespace ERPCore2.Data;
 
