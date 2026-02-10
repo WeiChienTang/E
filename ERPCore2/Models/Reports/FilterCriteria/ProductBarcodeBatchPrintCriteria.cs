@@ -1,3 +1,4 @@
+using ERPCore2.Data.Entities;
 using ERPCore2.Models.Barcode;
 using ERPCore2.Models.Reports.FilterCriteria;
 
@@ -58,6 +59,11 @@ public class ProductBarcodeBatchPrintCriteria : IReportFilterCriteria
     /// 商品名稱關鍵字（模糊搜尋）
     /// </summary>
     public string? ProductNameKeyword { get; set; }
+    
+    /// <summary>
+    /// 紙張設定（用於預覽渲染）
+    /// </summary>
+    public PaperSetting? PaperSetting { get; set; }
 
     /// <summary>
     /// 驗證篩選條件

@@ -194,7 +194,7 @@ public static class ReportRegistry
             // ==================== 商品報表 ====================
             new ReportDefinition
             {
-                Id = "PD001",
+                Id = "PD001",  // 尚未定義在 ReportIds
                 Name = "商品資料表",
                 Description = "列印商品基本資料清單",
                 IconClass = "bi bi-box-seam",
@@ -206,7 +206,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "PD002",
+                Id = "PD002",  // 尚未定義在 ReportIds
                 Name = "物料清單報表",
                 Description = "列印商品BOM物料清單",
                 IconClass = "bi bi-diagram-3",
@@ -218,28 +218,14 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "PD003",
-                Name = "商品條碼標籤",
-                Description = "列印商品條碼標籤",
+                Id = ReportIds.ProductBarcode,
+                Name = "商品條碼",
+                Description = "列印商品條碼",
                 IconClass = "bi bi-upc-scan",
                 Category = ReportCategory.Product,
                 RequiredPermission = "Product.Read",
                 ActionId = "PrintProductBarcode",
                 SortOrder = 3,
-                IsEnabled = true
-            },
-            
-            // ==================== 庫存報表 ====================
-            new ReportDefinition
-            {
-                Id = "IV001",
-                Name = "商品條碼",
-                Description = "列印商品條碼標籤",
-                IconClass = "bi bi-upc-scan",
-                Category = ReportCategory.Inventory,
-                RequiredPermission = "Product.Read",
-                ActionId = "PrintProductBarcode",
-                SortOrder = 1,
                 IsEnabled = true
             },
             

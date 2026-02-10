@@ -54,6 +54,14 @@ namespace ERPCore2.Services.Reports.Interfaces
             string printerName, 
             PaperSetting? paperSetting, 
             string documentName);
+
+        /// <summary>
+        /// 將 HTML 渲染為圖片（用於預覽）
+        /// </summary>
+        /// <param name="htmlContent">HTML 內容</param>
+        /// <param name="paperSetting">紙張設定（可選，用於決定頁面尺寸）</param>
+        /// <returns>圖片資料清單（PNG 格式）</returns>
+        Task<List<byte[]>> RenderHtmlToImagesAsync(string htmlContent, PaperSetting? paperSetting = null);
     }
 
     /// <summary>

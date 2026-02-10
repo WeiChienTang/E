@@ -131,6 +131,7 @@
     // 保存當前的報表服務和篩選條件，用於紙張變更時重新產生預覽
     private object? currentReportService;
     private BatchPrintCriteria? currentBatchCriteria;
+    private IReportFilterCriteria? currentTypedCriteria; // 具體類型的 Criteria（用於條碼等特殊報表）
     
     // ===== 生命週期方法 =====
     
@@ -272,9 +273,10 @@
                     previewImages = result.PreviewImages;
                     formattedDocument = result.MergedDocument;
                     
-                    // 保存報表服務（紙張變更時不支援重新產生，因為使用的是具體 Criteria）
+                    // 保存報表服務和具體類型的 Criteria（紙張變更時用）
                     currentReportService = reportService;
                     currentBatchCriteria = null;
+                    currentTypedCriteria = criteria;
                     
                     // 關閉篩選 Modal，開啟預覽 Modal
                     await IsVisibleChanged.InvokeAsync(false);
@@ -393,38 +395,71 @@
     {
         try
         {
-            if (currentReportService == null || currentBatchCriteria == null) return;
+            if (currentReportService == null) return;
+            
+            // 必須有 BatchPrintCriteria 或 TypedCriteria 其中一個
+            if (currentBatchCriteria == null && currentTypedCriteria == null) return;
             
             isLoading = true;
             loadingMessage = "正在更新預覽...";
             StateHasChanged();
             
-            // 更新批次篩選條件的紙張設定
-            currentBatchCriteria.PaperSetting = paperSetting;
+            BatchPreviewResult? result = null;
             
-            // 更新 FormattedDocument 的紙張尺寸
-            if (formattedDocument != null)
+            if (currentTypedCriteria != null)
             {
-                formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
-                formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
-                formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
-                formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
-                formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
-                formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
+                // 使用具體類型的 Criteria（如 ProductBarcodeBatchPrintCriteria）
+                // 透過反射設定 PaperSetting 屬性
+                var paperSettingProp = currentTypedCriteria.GetType().GetProperty("PaperSetting");
+                if (paperSettingProp != null && paperSettingProp.CanWrite)
+                {
+                    paperSettingProp.SetValue(currentTypedCriteria, paperSetting);
+                }
+                
+                // 呼叫具體類型的 RenderBatchToImagesAsync 方法
+                var criteriaType = currentTypedCriteria.GetType();
+                var typedRenderMethod = currentReportService.GetType().GetMethods()
+                    .FirstOrDefault(m => m.Name == "RenderBatchToImagesAsync" && 
+                                        m.GetParameters().Length == 1 &&
+                                        m.GetParameters()[0].ParameterType == criteriaType);
+                
+                if (typedRenderMethod != null)
+                {
+                    var task = (Task<BatchPreviewResult>)typedRenderMethod.Invoke(currentReportService, new object[] { currentTypedCriteria })!;
+                    result = await task;
+                }
+            }
+            else if (currentBatchCriteria != null)
+            {
+                // 使用標準 BatchPrintCriteria
+                currentBatchCriteria.PaperSetting = paperSetting;
+                
+                // 更新 FormattedDocument 的紙張尺寸
+                if (formattedDocument != null)
+                {
+                    formattedDocument.PageSettings.PageWidth = (float)paperSetting.Width;
+                    formattedDocument.PageSettings.PageHeight = (float)paperSetting.Height;
+                    formattedDocument.PageSettings.LeftMargin = (float)(paperSetting.LeftMargin ?? 1.0m);
+                    formattedDocument.PageSettings.TopMargin = (float)(paperSetting.TopMargin ?? 1.0m);
+                    formattedDocument.PageSettings.RightMargin = (float)(paperSetting.RightMargin ?? 1.0m);
+                    formattedDocument.PageSettings.BottomMargin = (float)(paperSetting.BottomMargin ?? 1.0m);
+                }
+                
+                // 呼叫批次預覽方法
+                var renderMethod = currentReportService.GetType().GetMethod("RenderBatchToImagesAsync", 
+                    new[] { typeof(BatchPrintCriteria) });
+                if (renderMethod != null)
+                {
+                    var task = (Task<BatchPreviewResult>)renderMethod.Invoke(currentReportService, new object[] { currentBatchCriteria })!;
+                    result = await task;
+                }
             }
             
-            // 呼叫批次預覽方法（使用新的紙張設定）
-            var renderMethod = currentReportService.GetType().GetMethod("RenderBatchToImagesAsync");
-            if (renderMethod != null)
+            // 更新預覽圖片
+            if (result != null && result.IsSuccess)
             {
-                var task = (Task<BatchPreviewResult>)renderMethod.Invoke(currentReportService, new object[] { currentBatchCriteria })!;
-                var result = await task;
-                
-                if (result.IsSuccess)
-                {
-                    previewImages = result.PreviewImages;
-                    formattedDocument = result.MergedDocument;
-                }
+                previewImages = result.PreviewImages;
+                formattedDocument = result.MergedDocument;
             }
         }
         catch (Exception ex)

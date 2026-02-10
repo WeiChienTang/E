@@ -2,21 +2,22 @@ namespace ERPCore2.Models.Enums
 {
     /// <summary>
     /// 條碼尺寸枚舉
+    /// 注意：目前系統固定使用 Large (58mm x 28mm)，一行可放 3 張
     /// </summary>
     public enum BarcodeSize
     {
         /// <summary>
-        /// 小尺寸 (40mm x 20mm)
+        /// 小尺寸 (僅供參考，目前未使用)
         /// </summary>
         Small,
         
         /// <summary>
-        /// 中尺寸 (50mm x 25mm)
+        /// 中尺寸 (僅供參考，目前未使用)
         /// </summary>
         Medium,
         
         /// <summary>
-        /// 大尺寸 (70mm x 35mm)
+        /// 大尺寸 (58mm x 28mm) - 目前固定使用此尺寸
         /// </summary>
         Large
     }

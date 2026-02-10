@@ -272,6 +272,35 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
+        /// 將 HTML 渲染為圖片（用於預覽）
+        /// 使用 PuppeteerSharp 將 HTML 內容轉換為 PNG 圖片
+        /// </summary>
+        /// <param name="htmlContent">HTML 內容</param>
+        /// <param name="paperSetting">紙張設定（可選，用於決定頁面尺寸）</param>
+        /// <returns>圖片資料清單（PNG 格式）</returns>
+        public async Task<List<byte[]>> RenderHtmlToImagesAsync(string htmlContent, PaperSetting? paperSetting = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(htmlContent))
+                {
+                    return new List<byte[]>();
+                }
+
+                // 確保 Chromium 已下載
+                await EnsureBrowserDownloadedAsync();
+
+                // 使用內部方法渲染
+                return await ConvertHtmlToImagesDirectAsync(htmlContent, paperSetting);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "HTML 渲染為圖片失敗");
+                return new List<byte[]>();
+            }
+        }
+
+        /// <summary>
         /// 使用 PuppeteerSharp 將 HTML 直接渲染為圖片（不經過 PDF）
         /// 這是最簡單、最可靠的方式
         /// </summary>

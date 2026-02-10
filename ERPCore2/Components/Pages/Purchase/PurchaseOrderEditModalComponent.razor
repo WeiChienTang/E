@@ -929,8 +929,6 @@
     {
         try
         {
-            ConsoleHelper.WriteDebug($"[PurchaseOrderEditModal] LoadPurchaseOrderDetails - 開始載入 OrderId: {purchaseOrderId}");
-            
             // 從服務載入採購單明細
             purchaseOrderDetails = await PurchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
             
@@ -940,15 +938,12 @@
                 purchaseOrderDetails = new List<PurchaseOrderDetail>();
             }
             
-            ConsoleHelper.WriteSuccess($"[PurchaseOrderEditModal] LoadPurchaseOrderDetails - 載入完成，共 {purchaseOrderDetails.Count} 筆明細");
-            
             //  載入明細後,檢查是否有不可刪除的明細(有進貨記錄)
             var hasReceiving = purchaseOrderDetails.Any(d => d.ReceivedQuantity > 0);
             await HandleHasUndeletableDetailsChanged(hasReceiving);
         }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteError($"[PurchaseOrderEditModal] LoadPurchaseOrderDetails 失敗 - {ex.Message}");
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadPurchaseOrderDetails), GetType(), 
                 additionalData: $"載入採購單明細失敗 - OrderId: {purchaseOrderId}");
             purchaseOrderDetails = new List<PurchaseOrderDetail>();

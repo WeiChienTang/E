@@ -189,6 +189,8 @@ namespace ERPCore2.Data
                 services.AddScoped<IPlainTextPrintService, PlainTextPrintService>();
                 // 格式化列印服務（支援表格線、圖片等格式化列印）
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IFormattedPrintService, FormattedPrintService>();
+                // 商品條碼報表服務（使用 System.Drawing，僅 Windows 平台）
+                services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();
             }
             // Excel 匯出服務（跨平台）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IExcelExportService, ExcelExportService>();
@@ -206,8 +208,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISalesReturnReportService, SalesReturnReportService>();
             // 報價單報表服務
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IQuotationReportService, QuotationReportService>();
-            // 商品條碼報表服務
-            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();
+            // 條碼生成服務
+            services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
         }
 
         /// <summary>

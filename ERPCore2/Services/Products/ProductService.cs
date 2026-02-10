@@ -142,6 +142,15 @@ namespace ERPCore2.Services
                 {
                     errors.Add("條碼編號為必填欄位");
                 }
+                else
+                {
+                    // 檢查條碼編號唯一性
+                    var isBarcodeExists = await IsBarcodeExistsAsync(entity.Barcode, entity.Id);
+                    if (isBarcodeExists)
+                    {
+                        errors.Add("條碼編號已存在");
+                    }
+                }
                 
                 if (!entity.ProductCategoryId.HasValue || entity.ProductCategoryId <= 0)
                 {
@@ -230,6 +239,26 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductCodeExistsAsync), GetType(), _logger, new { ProductCode = productCode, ExcludeId = excludeId });
+                throw;
+            }
+        }
+
+        public async Task<bool> IsBarcodeExistsAsync(string barcode, int? excludeId = null)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            try
+            {
+                var query = context.Products.Where(p => p.Barcode == barcode);
+                
+                if (excludeId.HasValue)
+                    query = query.Where(p => p.Id != excludeId.Value);
+                    
+                return await query.AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsBarcodeExistsAsync), GetType(), _logger, new { Barcode = barcode, ExcludeId = excludeId });
                 throw;
             }
         }

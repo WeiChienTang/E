@@ -15,18 +15,15 @@
 <div>
     @* 商品選擇表格 *@
     <div class="mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <small class="text-muted">
-                已選擇 @selectedItems.Count 個商品，共 @GetTotalPrintQuantity() 張條碼
-            </small>
-            <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="SelectAll">
-                    <i class="bi bi-check-all me-1"></i>全選
-                </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="DeselectAll">
-                    <i class="bi bi-x-lg me-1"></i>取消全選
-                </button>
-            </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end mb-2">
+            <GenericButtonComponent Text="全選" 
+                                    Variant="ButtonVariant.Green" 
+                                    Size="ButtonSize.Small" 
+                                    OnClick="SelectAll" />
+            <GenericButtonComponent Text="取消全選" 
+                                    Variant="ButtonVariant.Red" 
+                                    Size="ButtonSize.Small" 
+                                    OnClick="DeselectAll" />
         </div>
         
         @if (barcodeItems == null || !barcodeItems.Any())
@@ -60,7 +57,7 @@
             <div class="d-flex align-items-center gap-4 flex-wrap">
                 <div>
                     <span class="text-muted small">條碼尺寸：</span>
-                    <span class="fw-bold small">大 (70mm x 35mm)</span>
+                    <span class="fw-bold small">58mm × 28mm（一行 3 張）</span>
                 </div>
                 
                 <div class="form-check">
@@ -80,11 +77,6 @@
                         顯示商品編號
                     </label>
                 </div>
-            </div>
-            
-            <div class="alert alert-info mt-2 mb-0 py-1 small" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                提示：一張 A4 可以印 24 張條碼
             </div>
         </div>
     </div>
