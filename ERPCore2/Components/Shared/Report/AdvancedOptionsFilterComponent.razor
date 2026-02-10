@@ -1,0 +1,65 @@
+@*
+    進階選項篩選組件
+    提供可收合的進階選項容器，內部可放置任意篩選組件
+    適用於所有需要進階篩選選項的報表
+*@
+
+<div class="@($"border-top pt-2 mt-1 {CssClass}")">
+    <a class="text-decoration-none small" 
+       style="cursor: pointer;" 
+       @onclick="ToggleExpanded">
+        <i class="bi @(IsExpanded ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+        @Title
+    </a>
+    
+    @if (IsExpanded)
+    {
+        <div class="@ContentCssClass" style="@ContentStyle">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>標題文字</summary>
+    [Parameter]
+    public string Title { get; set; } = "進階選項";
+    
+    /// <summary>是否展開（雙向綁定）</summary>
+    [Parameter]
+    public bool IsExpanded { get; set; } = false;
+    
+    /// <summary>展開狀態變更事件</summary>
+    [Parameter]
+    public EventCallback<bool> IsExpandedChanged { get; set; }
+    
+    /// <summary>子內容（放置於摺疊區域內的組件）</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    /// <summary>外層容器額外 CSS 類別</summary>
+    [Parameter]
+    public string CssClass { get; set; } = "";
+    
+    /// <summary>內容區域額外 CSS 類別</summary>
+    [Parameter]
+    public string ContentCssClass { get; set; } = "mt-2";
+    
+    /// <summary>內容區域額外樣式</summary>
+    [Parameter]
+    public string ContentStyle { get; set; } = "";
+    
+    /// <summary>是否顯示上方分隔線</summary>
+    [Parameter]
+    public bool ShowBorderTop { get; set; } = true;
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task ToggleExpanded()
+    {
+        IsExpanded = !IsExpanded;
+        await IsExpandedChanged.InvokeAsync(IsExpanded);
+    }
+}

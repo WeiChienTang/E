@@ -1,0 +1,128 @@
+@*
+    審核狀態篩選組件
+    提供全部/已審核/待審核三種狀態的 Radio Button 群組篩選介面
+    適用於所有需要審核狀態篩選的報表
+*@
+
+<div class="d-flex align-items-center gap-2 @CssClass">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="form-label mb-0 text-nowrap">
+            @if (!string.IsNullOrEmpty(IconClass))
+            {
+                <i class="@IconClass me-1"></i>
+            }
+            @Label
+        </label>
+    }
+    
+    <div class="btn-group btn-group-sm @(FullWidth ? "w-100" : "")" role="group">
+        <input type="radio" 
+               class="btn-check" 
+               id="@($"{ComponentId}_all")" 
+               autocomplete="off"
+               checked="@(Value == ApprovalFilterValue.All)"
+               @onchange="@(() => SetValue(ApprovalFilterValue.All))">
+        <label class="btn btn-outline-secondary" for="@($"{ComponentId}_all")">@AllLabel</label>
+        
+        <input type="radio" 
+               class="btn-check" 
+               id="@($"{ComponentId}_approved")" 
+               autocomplete="off"
+               checked="@(Value == ApprovalFilterValue.ApprovedOnly)"
+               @onchange="@(() => SetValue(ApprovalFilterValue.ApprovedOnly))">
+        <label class="btn btn-outline-success" for="@($"{ComponentId}_approved")">@ApprovedLabel</label>
+        
+        <input type="radio" 
+               class="btn-check" 
+               id="@($"{ComponentId}_pending")" 
+               autocomplete="off"
+               checked="@(Value == ApprovalFilterValue.PendingOnly)"
+               @onchange="@(() => SetValue(ApprovalFilterValue.PendingOnly))">
+        <label class="btn btn-outline-warning" for="@($"{ComponentId}_pending")">@PendingLabel</label>
+    </div>
+</div>
+
+@code {
+    // ===== 列舉定義 =====
+    
+    /// <summary>審核狀態篩選值</summary>
+    public enum ApprovalFilterValue
+    {
+        /// <summary>全部</summary>
+        All,
+        /// <summary>僅已審核</summary>
+        ApprovedOnly,
+        /// <summary>僅待審核</summary>
+        PendingOnly
+    }
+    
+    // ===== 參數定義 =====
+    
+    /// <summary>目前選擇的值（雙向綁定）</summary>
+    [Parameter]
+    public ApprovalFilterValue Value { get; set; } = ApprovalFilterValue.All;
+    
+    /// <summary>值變更事件</summary>
+    [Parameter]
+    public EventCallback<ApprovalFilterValue> ValueChanged { get; set; }
+    
+    /// <summary>標籤文字</summary>
+    [Parameter]
+    public string Label { get; set; } = "審核狀態";
+    
+    /// <summary>標籤圖示 CSS 類別</summary>
+    [Parameter]
+    public string IconClass { get; set; } = "bi bi-check-circle";
+    
+    /// <summary>「全部」按鈕顯示文字</summary>
+    [Parameter]
+    public string AllLabel { get; set; } = "全部";
+    
+    /// <summary>「已審核」按鈕顯示文字</summary>
+    [Parameter]
+    public string ApprovedLabel { get; set; } = "已審核";
+    
+    /// <summary>「待審核」按鈕顯示文字</summary>
+    [Parameter]
+    public string PendingLabel { get; set; } = "待審核";
+    
+    /// <summary>是否寬度填滿</summary>
+    [Parameter]
+    public bool FullWidth { get; set; } = true;
+    
+    /// <summary>額外 CSS 類別</summary>
+    [Parameter]
+    public string CssClass { get; set; } = "";
+    
+    // ===== 內部狀態 =====
+    
+    /// <summary>元件唯一識別碼（用於 radio button 的 id）</summary>
+    private string ComponentId { get; } = $"approval_{Guid.NewGuid():N}";
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task SetValue(ApprovalFilterValue newValue)
+    {
+        if (Value != newValue)
+        {
+            Value = newValue;
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+    
+    // ===== 輔助方法 =====
+    
+    /// <summary>
+    /// 將篩選值轉換為狀態字串清單（供查詢使用）
+    /// </summary>
+    public static List<string> ToStatusList(ApprovalFilterValue value)
+    {
+        return value switch
+        {
+            ApprovalFilterValue.ApprovedOnly => new List<string> { "Approved" },
+            ApprovalFilterValue.PendingOnly => new List<string> { "Pending" },
+            _ => new List<string>()
+        };
+    }
+}

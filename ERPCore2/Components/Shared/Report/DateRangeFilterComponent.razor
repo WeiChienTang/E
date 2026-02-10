@@ -3,9 +3,9 @@
 <div class="row g-2">
     @* 起始日期 *@
     <div class="col-auto d-flex align-items-center gap-2">
-        <span class="fw-bold text-nowrap">@StartDateLabel</span>
+        <label class="form-label mb-0 text-nowrap">@StartDateLabel</label>
         <input type="date" 
-               class="form-control form-control-sm @StartDateCssClass" 
+               class="form-control @StartDateCssClass" 
                style="width: auto;"
                @bind="StartDate"
                @bind:after="OnStartDateChanged"
@@ -16,9 +16,9 @@
     
     @* 結束日期 *@
     <div class="col-auto d-flex align-items-center gap-2">
-        <span class="fw-bold text-nowrap">@EndDateLabel</span>
+        <label class="form-label mb-0 text-nowrap">@EndDateLabel</label>
         <input type="date" 
-               class="form-control form-control-sm @EndDateCssClass" 
+               class="form-control @EndDateCssClass" 
                style="width: auto;"
                @bind="EndDate"
                @bind:after="OnEndDateChanged"

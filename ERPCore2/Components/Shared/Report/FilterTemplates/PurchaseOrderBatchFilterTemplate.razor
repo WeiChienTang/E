@@ -37,83 +37,13 @@
                                   ShowValidationMessage="true" />
     </div>
 
-    @* 第三行: 單號 + 審核狀態 *@
-    <div class="row g-2 mb-2 align-items-end">
-        <div class="col-md-5">
-            <label class="form-label mb-1">
-                <i class="bi bi-search me-1"></i>單號
-            </label>
-            <input type="text" 
-                   class="form-control" 
-                   @bind="documentNumberKeyword" 
-                   placeholder="模糊搜尋..." />
+    @* 第三行: 單號 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-12">
+            <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
+                                       Label="單號"
+                                       Placeholder="模糊搜尋..." />
         </div>
-        <div class="col-md-7">
-            <label class="form-label mb-1">
-                <i class="bi bi-check-circle me-1"></i>審核狀態
-            </label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-                <input type="radio" class="btn-check" id="approvalAll" autocomplete="off"
-                       checked="@(approvalFilter == ApprovalFilter.All)"
-                       @onchange="@(() => approvalFilter = ApprovalFilter.All)">
-                <label class="btn btn-outline-secondary" for="approvalAll">全部</label>
-                
-                <input type="radio" class="btn-check" id="approvalApproved" autocomplete="off"
-                       checked="@(approvalFilter == ApprovalFilter.ApprovedOnly)"
-                       @onchange="@(() => approvalFilter = ApprovalFilter.ApprovedOnly)">
-                <label class="btn btn-outline-success" for="approvalApproved">已審核</label>
-                
-                <input type="radio" class="btn-check" id="approvalPending" autocomplete="off"
-                       checked="@(approvalFilter == ApprovalFilter.PendingOnly)"
-                       @onchange="@(() => approvalFilter = ApprovalFilter.PendingOnly)">
-                <label class="btn btn-outline-warning" for="approvalPending">待審核</label>
-            </div>
-        </div>
-    </div>
-
-    @* 第四行: 進階選項（可收合） *@
-    <div class="border-top pt-2 mt-1">
-        <a class="text-decoration-none small" style="cursor: pointer;" @onclick="() => showAdvanced = !showAdvanced">
-            <i class="bi @(showAdvanced ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
-            進階選項
-        </a>
-        
-        @if (showAdvanced)
-        {
-            <div class="row g-2 mt-2">
-                <div class="col-md-3">
-                    <label class="form-label mb-1">最大筆數</label>
-                    <select class="form-select" @bind="maxResults">
-                        <option value="50">50 筆</option>
-                        <option value="100">100 筆</option>
-                        <option value="200">200 筆</option>
-                        <option value="500">500 筆</option>
-                        <option value="1000">1000 筆</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label mb-1">排序方式</label>
-                    <select class="form-select" @bind="sortBy">
-                        <option value="OrderDate">訂單日期</option>
-                        <option value="Code">單號</option>
-                        <option value="TotalAmount">金額</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label mb-1">排序方向</label>
-                    <select class="form-select" @bind="sortDescending">
-                        <option value="true">由新到舊</option>
-                        <option value="false">由舊到新</option>
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="includeCancelled" @bind="includeCancelled">
-                        <label class="form-check-label" for="includeCancelled">含已取消</label>
-                    </div>
-                </div>
-            </div>
-        }
     </div>
 </div>
 
@@ -125,19 +55,6 @@
     private DateTime? startDate = null;
     private DateTime? endDate = null;
     private string? documentNumberKeyword = null;
-    private ApprovalFilter approvalFilter = ApprovalFilter.All;
-    private bool includeCancelled = false;
-    private int maxResults = 100;
-    private string sortBy = "OrderDate";
-    private bool sortDescending = true;
-    private bool showAdvanced = false;
-    
-    private enum ApprovalFilter
-    {
-        All,
-        ApprovedOnly,
-        PendingOnly
-    }
     
     // ===== 生命週期方法 =====
     
@@ -170,30 +87,12 @@
     /// </summary>
     public IReportFilterCriteria GetCriteria()
     {
-        var statuses = new List<string>();
-        
-        // 根據審核狀態篩選
-        switch (approvalFilter)
-        {
-            case ApprovalFilter.ApprovedOnly:
-                statuses.Add("Approved");
-                break;
-            case ApprovalFilter.PendingOnly:
-                statuses.Add("Pending");
-                break;
-        }
-        
         return new PurchaseOrderBatchPrintCriteria
         {
             SupplierIds = selectedSuppliers.Select(s => s.Id).ToList(),
             StartDate = startDate,
             EndDate = endDate,
-            Statuses = statuses,
-            DocumentNumberKeyword = documentNumberKeyword,
-            IncludeCancelled = includeCancelled,
-            MaxResults = maxResults,
-            SortBy = sortBy,
-            SortDescending = sortDescending
+            DocumentNumberKeyword = documentNumberKeyword
         };
     }
     
@@ -206,12 +105,6 @@
         startDate = null;
         endDate = null;
         documentNumberKeyword = null;
-        approvalFilter = ApprovalFilter.All;
-        includeCancelled = false;
-        maxResults = 100;
-        sortBy = "OrderDate";
-        sortDescending = true;
-        showAdvanced = false;
         StateHasChanged();
     }
 }

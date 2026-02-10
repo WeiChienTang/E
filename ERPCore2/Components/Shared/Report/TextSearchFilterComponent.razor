@@ -1,0 +1,71 @@
+@*
+    文字搜尋篩選組件
+    提供帶標籤的文字輸入框，適用於單號、關鍵字等模糊搜尋
+    適用於所有需要文字搜尋篩選的報表
+*@
+
+<div class="d-flex align-items-center gap-2 @CssClass">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="form-label mb-0 text-nowrap">@Label</label>
+    }
+    <input type="text"
+           class="form-control @InputCssClass"
+           @bind="Value"
+           @bind:after="OnValueChanged"
+           placeholder="@Placeholder"
+           maxlength="@(MaxLength > 0 ? MaxLength : null)"
+           disabled="@Disabled" />
+</div>
+
+@if (!string.IsNullOrEmpty(HelpText))
+{
+    <small class="form-text text-muted">@HelpText</small>
+}
+
+@code {
+    // ===== 參數定義 =====
+    
+    /// <summary>搜尋文字（雙向綁定）</summary>
+    [Parameter]
+    public string? Value { get; set; }
+    
+    /// <summary>值變更事件</summary>
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+    
+    /// <summary>標籤文字</summary>
+    [Parameter]
+    public string Label { get; set; } = "單號";
+    
+    /// <summary>輸入框提示文字</summary>
+    [Parameter]
+    public string Placeholder { get; set; } = "模糊搜尋...";
+    
+    /// <summary>說明文字</summary>
+    [Parameter]
+    public string? HelpText { get; set; }
+    
+    /// <summary>最大輸入長度（0 表示不限制）</summary>
+    [Parameter]
+    public int MaxLength { get; set; } = 0;
+    
+    /// <summary>是否禁用</summary>
+    [Parameter]
+    public bool Disabled { get; set; } = false;
+    
+    /// <summary>輸入框額外 CSS 類別</summary>
+    [Parameter]
+    public string InputCssClass { get; set; } = "";
+    
+    /// <summary>外層容器額外 CSS 類別</summary>
+    [Parameter]
+    public string CssClass { get; set; } = "";
+    
+    // ===== 事件處理方法 =====
+    
+    private async Task OnValueChanged()
+    {
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

@@ -39,11 +39,6 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
     public bool IncludeCancelled { get; set; } = false;
     
     /// <summary>
-    /// 最大筆數限制
-    /// </summary>
-    public int MaxResults { get; set; } = 100;
-    
-    /// <summary>
     /// 排序欄位
     /// </summary>
     public string SortBy { get; set; } = "OrderDate";
@@ -73,19 +68,6 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
             }
         }
         
-        // 最大筆數驗證
-        if (MaxResults <= 0)
-        {
-            errorMessage = "最大筆數必須大於0";
-            return false;
-        }
-        
-        if (MaxResults > 1000)
-        {
-            errorMessage = "最大筆數不能超過1000筆（避免效能問題）";
-            return false;
-        }
-        
         errorMessage = null;
         return true;
     }
@@ -100,7 +82,6 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
             ["statuses"] = Statuses.Any() ? Statuses : null,
             ["documentNumberKeyword"] = string.IsNullOrWhiteSpace(DocumentNumberKeyword) ? null : DocumentNumberKeyword,
             ["includeCancelled"] = IncludeCancelled,
-            ["maxResults"] = MaxResults,
             ["sortBy"] = SortBy,
             ["sortDescending"] = SortDescending
         };
@@ -119,7 +100,7 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
             Statuses = Statuses,
             DocumentNumberKeyword = DocumentNumberKeyword,
             IncludeCancelled = IncludeCancelled,
-            MaxResults = MaxResults,
+            MaxResults = null,
             SortBy = SortBy,
             SortDirection = SortDescending ? SortDirection.Descending : SortDirection.Ascending,
             ReportType = "PurchaseOrder"
@@ -153,8 +134,6 @@ public class PurchaseOrderBatchPrintCriteria : IReportFilterCriteria
         {
             summary.Add($"單號含：{DocumentNumberKeyword}");
         }
-
-        summary.Add($"最多 {MaxResults} 筆");
 
         return string.Join(" | ", summary);
     }
