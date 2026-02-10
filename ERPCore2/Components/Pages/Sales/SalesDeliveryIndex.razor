@@ -1,4 +1,5 @@
 @page "/salesDeliveries"
+@using ERPCore2.Models.Reports
 @inject ISalesDeliveryService SalesDeliveryService
 @inject ICustomerService CustomerService
 @inject ISalesOrderService SalesOrderService
@@ -22,6 +23,8 @@
                           FilterApplier="@ApplySalesDeliveryFilters"
                           GetEntityDisplayName="@(delivery => delivery.Code)"
                           RequiredPermission="SalesDelivery.Read"
+                          ShowBatchPrintButton="true"
+                          OnBatchPrintClick="@HandleBatchPrintAsync"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           @ref="indexComponent" />
@@ -33,6 +36,12 @@
                                 OnSalesDeliverySaved="@modalHandler.OnEntitySavedAsync"
                                 OnCancel="@modalHandler.OnModalCancelAsync" />
 
+@* 批次列印篩選 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
+<GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
+                                  IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
+                                  ReportId="@ReportIds.SalesDelivery"
+                                  OnPrintSuccess="@HandleBatchPrintSuccess" />
+
 @code {
     // 組件參考
     private GenericIndexPageComponent<SalesDelivery, ISalesDeliveryService> indexComponent = default!;
@@ -40,6 +49,9 @@
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingSalesDeliveryId = null;
+    
+    // 批次列印 Modal 相關狀態
+    private bool showBatchPrintModal = false;
 
     // Modal 處理器
     private ModalHandler<SalesDelivery, GenericIndexPageComponent<SalesDelivery, ISalesDeliveryService>> modalHandler = default!;
@@ -166,6 +178,28 @@
         }
 
         return fieldConfiguration.ApplyFilters(searchModel, query, nameof(ApplySalesDeliveryFilters), GetType());
+    }
+    
+    // 多筆列印處理方法
+    private async Task HandleBatchPrintAsync()
+    {
+        try
+        {
+            // 顯示批次列印篩選 Modal
+            showBatchPrintModal = true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintAsync), GetType(), additionalData: "開啟多筆列印視窗失敗");
+            await NotificationService.ShowErrorAsync("開啟多筆列印視窗失敗");
+        }
+    }
+
+    // 處理批次列印成功
+    private void HandleBatchPrintSuccess()
+    {
+        showBatchPrintModal = false;
+        StateHasChanged();
     }
 }
 

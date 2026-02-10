@@ -1,5 +1,6 @@
 @page "/salesReturns"
 @using ERPCore2.Models
+@using ERPCore2.Models.Reports
 @inject ISalesReturnService SalesReturnService
 @inject ISalesDeliveryService SalesDeliveryService
 @inject IWarehouseService WarehouseService
@@ -37,37 +38,11 @@
                                OnSalesReturnSaved="@modalHandler.OnEntitySavedAsync"
                                OnCancel="@modalHandler.OnModalCancelAsync" />
 
-@* 批次列印篩選 Modal - 使用新架構 *@
-<BatchPrintFilterModalComponent IsVisible="@showBatchPrintModal"
-                               IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
-                               Title="銷貨退回單批次列印條件"
-                               OnConfirm="@HandleBatchPrintConfirmAsync"
-                               OnCancel="@HandleBatchPrintCancelAsync">
-    @* 區塊 1: 客戶多選篩選 *@
-    <FilterSectionComponent Title="客戶篩選 (可多選)" 
-                           Badge="@($"{selectedCustomers.Count} / {customers.Count}")">
-        <MultiSelectFilterComponent TItem="Customer"
-                                   Items="@customers"
-                                   @bind-SelectedItems="@selectedCustomers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="請輸入客戶名稱搜尋..."
-                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的銷貨退回單"
-                                   ShowCard="false" />
-    </FilterSectionComponent>
-    
-    @* 區塊 2: 退回日期範圍 - 使用日期範圍元件 *@
-    <FilterSectionComponent Title="退回日期" 
-                           IconClass="bi bi-calendar-range">
-        <DateRangeFilterComponent @bind-StartDate="@batchPrintStartDate"
-                                 @bind-EndDate="@batchPrintEndDate"
-                                 StartDateLabel="起始日期"
-                                 EndDateLabel="結束日期"
-                                 ShowQuickSelectors="true"
-                                 AutoValidate="true"
-                                 ShowValidationMessage="true" />
-    </FilterSectionComponent>
-</BatchPrintFilterModalComponent>
+@* 批次列印篩選 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
+<GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
+                                  IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
+                                  ReportId="@ReportIds.SalesReturn"
+                                  OnPrintSuccess="@HandleBatchPrintSuccess" />
 
 @code {
     // 組件參考
@@ -79,9 +54,6 @@
     
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
-    private List<Customer> selectedCustomers = new();
-    private DateTime? batchPrintStartDate = null;
-    private DateTime? batchPrintEndDate = null;
     
     // Modal 處理器
     private ModalHandler<SalesReturn, GenericIndexPageComponent<SalesReturn, ISalesReturnService>> modalHandler = default!;
@@ -211,72 +183,18 @@
         }
     }
 
-    // 處理批次列印確認
-    private async Task HandleBatchPrintConfirmAsync()
+    /// <summary>
+    /// 處理批次列印成功回呼
+    /// </summary>
+    private async Task HandleBatchPrintSuccess()
     {
         try
         {
-            // 組裝批次列印條件
-            var criteria = new BatchPrintCriteria
-            {
-                StartDate = batchPrintStartDate,
-                EndDate = batchPrintEndDate,
-                RelatedEntityIds = selectedCustomers.Select(c => c.Id).ToList(),
-                ReportType = "SalesReturn",
-                MaxResults = 100,
-                IncludeCancelled = false
-            };
-
-            // 驗證篩選條件
-            var validation = criteria.Validate();
-            if (!validation.IsValid)
-            {
-                await NotificationService.ShowErrorAsync($"篩選條件錯誤：{validation.GetAllErrors()}");
-                return;
-            }
-
-            // 序列化條件為 JSON
-            var jsonPayload = System.Text.Json.JsonSerializer.Serialize(criteria);
-
-            // 開啟新視窗顯示批次報表（使用新路由）
-            var apiUrl = "/api/sales-report/return/batch?autoprint=true";
-            await JSRuntime.InvokeVoidAsync("openBatchPrintWindow", apiUrl, jsonPayload);
-
-            // 顯示成功訊息
-            await NotificationService.ShowSuccessAsync($"已開啟批次列印視窗 ({criteria.GetSummary()})");
-            
-            // 關閉 Modal
-            showBatchPrintModal = false;
-            
-            // 清空選擇
-            selectedCustomers.Clear();
-            batchPrintStartDate = null;
-            batchPrintEndDate = null;
+            await NotificationService.ShowSuccessAsync("已開啟批次列印視窗");
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintConfirmAsync), GetType(), additionalData: "執行批次列印失敗");
-            await NotificationService.ShowErrorAsync("執行批次列印失敗");
-        }
-    }
-
-    // 處理批次列印取消
-    private async Task HandleBatchPrintCancelAsync()
-    {
-        try
-        {
-            showBatchPrintModal = false;
-            
-            // 清空所有篩選條件
-            selectedCustomers.Clear();
-            batchPrintStartDate = null;
-            batchPrintEndDate = null;
-            
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintCancelAsync), GetType(), additionalData: "取消批次列印失敗");
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintSuccess), GetType(), additionalData: "列印成功回呼處理失敗");
         }
     }
 }

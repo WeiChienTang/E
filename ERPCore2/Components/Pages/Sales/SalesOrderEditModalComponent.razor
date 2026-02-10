@@ -1,4 +1,5 @@
 @using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
@@ -58,7 +59,7 @@
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesOrderReportService"
-                          ReportId="SO002"
+                          ReportId="@ReportIds.SalesOrder"
                           ReportPreviewTitle="銷貨單預覽"
                           GetReportDocumentName="@(e => $"銷貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded">

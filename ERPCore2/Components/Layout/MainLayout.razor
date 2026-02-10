@@ -147,6 +147,7 @@
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
         actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
         actionRegistry.Register("OpenPurchaseReportIndex", OpenPurchaseReportIndex);
+        actionRegistry.Register("OpenSalesReportIndex", OpenSalesReportIndex);
         // actionRegistry.Register("OpenAnotherModal", OpenAnotherModal);
     }
 
@@ -365,6 +366,12 @@
     /// </summary>
     [JSInvokable]
     public void OpenPurchaseReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Purchase);
+
+    /// <summary>
+    /// 開啟銷貨報表中心 Modal（保留供 JSInvokable 使用）
+    /// </summary>
+    [JSInvokable]
+    public void OpenSalesReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Sales);
     
     /// <summary>
     /// 處理報表中心選擇的報表

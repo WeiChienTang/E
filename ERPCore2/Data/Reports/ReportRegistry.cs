@@ -140,7 +140,6 @@ public static class ReportRegistry
                 SortOrder = 3,
                 IsEnabled = true
             },
-            // PO004 已移除 - 採購單批次列印功能已整合至 PO001（從報表中心進入時顯示篩選）
             
             // ==================== 銷售報表 ====================
             new ReportDefinition
@@ -169,18 +168,6 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = ReportIds.SalesReturn,
-                Name = "銷貨退回單",
-                Description = "列印銷貨退回單（含退貨原因、退貨明細）",
-                IconClass = "bi bi-arrow-return-right",
-                Category = ReportCategory.Sales,
-                RequiredPermission = "SalesReturn.Read",
-                ActionId = "PrintSalesReturn",
-                SortOrder = 3,
-                IsEnabled = true
-            },
-            new ReportDefinition
-            {
                 Id = ReportIds.SalesDelivery,
                 Name = "出貨單",
                 Description = "列印出貨單（含客戶資訊、商品明細、金額統計）",
@@ -188,6 +175,18 @@ public static class ReportRegistry
                 Category = ReportCategory.Sales,
                 RequiredPermission = "SalesDelivery.Read",
                 ActionId = "PrintSalesDelivery",
+                SortOrder = 3,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.SalesReturn,
+                Name = "銷貨退回單",
+                Description = "列印銷貨退回單（含退貨原因、退貨明細）",
+                IconClass = "bi bi-arrow-return-right",
+                Category = ReportCategory.Sales,
+                RequiredPermission = "SalesReturn.Read",
+                ActionId = "PrintSalesReturn",
                 SortOrder = 4,
                 IsEnabled = true
             },

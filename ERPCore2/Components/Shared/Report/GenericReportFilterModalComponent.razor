@@ -245,29 +245,21 @@
                     return;
                 }
                 
-                // 轉換篩選條件為 BatchPrintCriteria
-                BatchPrintCriteria batchCriteria;
+                // 嘗試找接受具體 Criteria 類型的 RenderBatchToImagesAsync 方法
+                // 這樣特殊報表（如條碼列印）可以直接接收其專屬的 Criteria 類型
+                var criteriaType = criteria.GetType();
+                var typedRenderMethod = reportService.GetType().GetMethods()
+                    .FirstOrDefault(m => m.Name == "RenderBatchToImagesAsync" && 
+                                        m.GetParameters().Length == 1 &&
+                                        m.GetParameters()[0].ParameterType == criteriaType);
                 
-                // 嘗試使用 ToBatchPrintCriteria 方法轉換
-                var toBatchMethod = criteria.GetType().GetMethod("ToBatchPrintCriteria");
-                if (toBatchMethod != null)
+                if (typedRenderMethod != null)
                 {
-                    batchCriteria = (BatchPrintCriteria)toBatchMethod.Invoke(criteria, null)!;
-                }
-                else
-                {
-                    // 使用預設轉換
-                    batchCriteria = ConvertToBatchCriteria(criteria);
-                }
-                
-                // 呼叫批次預覽方法
-                var renderMethod = reportService.GetType().GetMethod("RenderBatchToImagesAsync");
-                if (renderMethod != null)
-                {
+                    // 使用具體類型的 RenderBatchToImagesAsync 方法
                     loadingMessage = "正在產生預覽圖片...";
                     StateHasChanged();
                     
-                    var task = (Task<BatchPreviewResult>)renderMethod.Invoke(reportService, new object[] { batchCriteria })!;
+                    var task = (Task<BatchPreviewResult>)typedRenderMethod.Invoke(reportService, new object[] { criteria })!;
                     var result = await task;
                     
                     if (!result.IsSuccess)
@@ -280,19 +272,69 @@
                     previewImages = result.PreviewImages;
                     formattedDocument = result.MergedDocument;
                     
-                    // 保存報表服務和篩選條件，用於紙張變更時重新產生預覽
+                    // 保存報表服務（紙張變更時不支援重新產生，因為使用的是具體 Criteria）
                     currentReportService = reportService;
-                    currentBatchCriteria = batchCriteria;
+                    currentBatchCriteria = null;
                     
                     // 關閉篩選 Modal，開啟預覽 Modal
                     await IsVisibleChanged.InvokeAsync(false);
                     showPreview = true;
                     
-                    await NotificationService.ShowSuccessAsync($"已產生 {result.DocumentCount} 筆單據的預覽，共 {result.TotalPages} 頁");
+                    await NotificationService.ShowSuccessAsync($"已產生 {result.DocumentCount} 筆資料的預覽，共 {result.TotalPages} 頁");
                 }
                 else
                 {
-                    await NotificationService.ShowWarningAsync($"報表服務 {filterConfig.ReportServiceType.Name} 尚未實作批次預覽方法");
+                    // 降級使用 BatchPrintCriteria 方式
+                    // 轉換篩選條件為 BatchPrintCriteria
+                    BatchPrintCriteria batchCriteria;
+                    
+                    // 嘗試使用 ToBatchPrintCriteria 方法轉換
+                    var toBatchMethod = criteriaType.GetMethod("ToBatchPrintCriteria");
+                    if (toBatchMethod != null)
+                    {
+                        batchCriteria = (BatchPrintCriteria)toBatchMethod.Invoke(criteria, null)!;
+                    }
+                    else
+                    {
+                        // 使用預設轉換
+                        batchCriteria = ConvertToBatchCriteria(criteria);
+                    }
+                    
+                    // 呼叫批次預覽方法
+                    var renderMethod = reportService.GetType().GetMethod("RenderBatchToImagesAsync", 
+                        new[] { typeof(BatchPrintCriteria) });
+                    if (renderMethod != null)
+                    {
+                        loadingMessage = "正在產生預覽圖片...";
+                        StateHasChanged();
+                        
+                        var task = (Task<BatchPreviewResult>)renderMethod.Invoke(reportService, new object[] { batchCriteria })!;
+                        var result = await task;
+                        
+                        if (!result.IsSuccess)
+                        {
+                            await NotificationService.ShowWarningAsync(result.ErrorMessage ?? "產生預覽失敗");
+                            return;
+                        }
+                        
+                        // 設定預覽資料
+                        previewImages = result.PreviewImages;
+                        formattedDocument = result.MergedDocument;
+                        
+                        // 保存報表服務和篩選條件，用於紙張變更時重新產生預覽
+                        currentReportService = reportService;
+                        currentBatchCriteria = batchCriteria;
+                        
+                        // 關閉篩選 Modal，開啟預覽 Modal
+                        await IsVisibleChanged.InvokeAsync(false);
+                        showPreview = true;
+                        
+                        await NotificationService.ShowSuccessAsync($"已產生 {result.DocumentCount} 筆單據的預覽，共 {result.TotalPages} 頁");
+                    }
+                    else
+                    {
+                        await NotificationService.ShowWarningAsync($"報表服務 {filterConfig.ReportServiceType.Name} 尚未實作批次預覽方法");
+                    }
                 }
             }
             else

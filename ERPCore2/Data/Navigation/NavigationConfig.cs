@@ -489,7 +489,23 @@ public static class NavigationConfig
                         Category = "銷售管理",
                         RequiredPermission = "SalesReturnReason.Read",
                         SearchKeywords = new List<string> { "退回原因", "退貨原因", "return reason" }
-                    }
+                    },
+                    
+                    // 分隔線 - 區分資料維護與報表
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    NavigationActionHelper.CreateActionItem(
+                        name: "銷貨報表中心",
+                        description: "查看和列印所有銷貨相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenSalesReportIndex",
+                        category: "銷售管理",
+                        requiredPermission: "SalesOrder.Read",
+                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表中心", "sales report", "銷售報表" }
+                    ),
                 }
             },
 

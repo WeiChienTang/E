@@ -1,0 +1,110 @@
+@* 
+    訂單批次列印篩選模板
+    實作 IFilterTemplateComponent 介面，提供訂單批次列印的篩選 UI
+    設計原則：緊湊單欄式佈局，樣式由 GenericReportFilterModalComponent 統一控制
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@using ERPCore2.Models.Enums
+@implements IFilterTemplateComponent
+@inject ICustomerService CustomerService
+@inject INotificationService NotificationService
+
+<div>
+    @* 第一行: 客戶選擇 *@
+    <div class="row g-2 mb-2">
+        <div class="col-12">
+            <MultiSelectFilterComponent TItem="Customer"
+                                       Items="@customers"
+                                       @bind-SelectedItems="@selectedCustomers"
+                                       DisplayProperty="CompanyName"
+                                       ValueProperty="Id"
+                                       Placeholder="搜尋客戶..."
+                                       EmptyMessage="未選擇客戶"
+                                       ListHeight="120px"
+                                       ShowCard="false" />
+        </div>
+    </div>
+
+    @* 第二行: 日期範圍 + 快速選擇 *@
+    <div class="mb-2">
+        <DateRangeFilterComponent @bind-StartDate="startDate"
+                                  @bind-EndDate="endDate"
+                                  ShowQuickSelectors="true"
+                                  AutoValidate="true"
+                                  ShowValidationMessage="true" />
+    </div>
+
+    @* 第三行: 單號 *@
+    <div class="row g-2 align-items-end">
+        <div class="col-12">
+            <TextSearchFilterComponent @bind-Value="documentNumberKeyword"
+                                       Label="單號"
+                                       Placeholder="模糊搜尋..." />
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+    
+    private List<Customer> customers = new();
+    private List<Customer> selectedCustomers = new();
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+    private string? documentNumberKeyword = null;
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            // 載入客戶清單
+            customers = await CustomerService.GetAllAsync();
+            
+            // 預設日期不填寫
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入資料失敗");
+            customers = new List<Customer>();
+        }
+    }
+    
+    // ===== IFilterTemplateComponent 實作 =====
+    
+    /// <summary>
+    /// 取得目前的篩選條件
+    /// </summary>
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new SalesOrderBatchPrintCriteria
+        {
+            CustomerIds = selectedCustomers.Select(c => c.Id).ToList(),
+            StartDate = startDate,
+            EndDate = endDate,
+            DocumentNumberKeyword = documentNumberKeyword
+        };
+    }
+    
+    /// <summary>
+    /// 重置篩選條件為預設值
+    /// </summary>
+    public void Reset()
+    {
+        selectedCustomers.Clear();
+        startDate = null;
+        endDate = null;
+        documentNumberKeyword = null;
+        StateHasChanged();
+    }
+}

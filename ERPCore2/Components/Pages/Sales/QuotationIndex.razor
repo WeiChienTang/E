@@ -1,4 +1,5 @@
 @page "/quotations"
+@using ERPCore2.Models.Reports
 @inject IQuotationService QuotationService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -49,37 +50,11 @@
                             OnViewClick="@HandleApprovalViewClick"
                             OnApprovalCompleted="@HandleApprovalCompleted" />
 
-@* 批次列印篩選 Modal - 使用新架構 *@
-<BatchPrintFilterModalComponent IsVisible="@showBatchPrintModal"
-                               IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
-                               Title="報價單批次列印條件"
-                               OnConfirm="@HandleBatchPrintConfirmAsync"
-                               OnCancel="@HandleBatchPrintCancelAsync">
-    @* 區塊 1: 客戶多選篩選 *@
-    <FilterSectionComponent Title="客戶篩選 (可多選)" 
-                           Badge="@($"{selectedCustomers.Count} / {customers.Count}")">
-        <MultiSelectFilterComponent TItem="Customer"
-                                   Items="@customers"
-                                   @bind-SelectedItems="@selectedCustomers"
-                                   DisplayProperty="CompanyName"
-                                   ValueProperty="Id"
-                                   Placeholder="請輸入客戶名稱搜尋..."
-                                   EmptyMessage="尚未選擇客戶，留空表示列印所有客戶的報價單"
-                                   ShowCard="false" />
-    </FilterSectionComponent>
-    
-    @* 區塊 2: 報價日期範圍 - 使用日期範圍元件 *@
-    <FilterSectionComponent Title="報價日期" 
-                           IconClass="bi bi-calendar-range">
-        <DateRangeFilterComponent @bind-StartDate="@batchPrintStartDate"
-                                 @bind-EndDate="@batchPrintEndDate"
-                                 StartDateLabel="起始日期"
-                                 EndDateLabel="結束日期"
-                                 ShowQuickSelectors="true"
-                                 AutoValidate="true"
-                                 ShowValidationMessage="true" />
-    </FilterSectionComponent>
-</BatchPrintFilterModalComponent>
+@* 批次列印篩選 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
+<GenericReportFilterModalComponent IsVisible="@showBatchPrintModal"
+                                  IsVisibleChanged="@((bool visible) => showBatchPrintModal = visible)"
+                                  ReportId="@ReportIds.Quotation"
+                                  OnPrintSuccess="@HandleBatchPrintSuccess" />
 
 @code {
     // 組件參考
@@ -94,9 +69,6 @@
     
     // 批次列印 Modal 相關狀態
     private bool showBatchPrintModal = false;
-    private List<Customer> selectedCustomers = new();
-    private DateTime? batchPrintStartDate = null;
-    private DateTime? batchPrintEndDate = null;
     
     // Modal 處理器
     private ModalHandler<Quotation, GenericIndexPageComponent<Quotation, IQuotationService>> modalHandler = default!;
@@ -308,14 +280,8 @@
     {
         try
         {
-            // 初始化批次列印條件
-            selectedCustomers = new List<Customer>();
-            batchPrintStartDate = null;
-            batchPrintEndDate = null;
-            
-            // 顯示批次列印篩選 Modal
+            // 顯示批次列印篩選 Modal（使用 GenericReportFilterModalComponent）
             showBatchPrintModal = true;
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -325,59 +291,11 @@
     }
 
     /// <summary>
-    /// 處理批次列印確認
+    /// 處理批次列印成功事件
     /// </summary>
-    private async Task HandleBatchPrintConfirmAsync()
-    {
-        try
-        {
-            // 建立篩選條件
-            var criteria = new BatchPrintCriteria
-            {
-                StartDate = batchPrintStartDate,
-                EndDate = batchPrintEndDate,
-                RelatedEntityIds = selectedCustomers.Select(c => c.Id).ToList(),
-                SortDirection = SortDirection.Descending,
-                MaxResults = 1000 // 限制最大筆數
-            };
-
-            // 取得符合條件的報價單
-            var quotations = await QuotationService.GetByBatchCriteriaAsync(criteria);
-
-            if (!quotations.Any())
-            {
-                await NotificationService.ShowWarningAsync("沒有符合條件的報價單資料");
-                showBatchPrintModal = false;
-                return;
-            }
-
-            // TODO: 實作報價單批次列印邏輯
-            // 這裡可以調用報表服務來產生 PDF 或直接列印
-            await NotificationService.ShowInfoAsync($"找到 {quotations.Count} 筆報價單，準備列印...");
-            
-            // 關閉 Modal
-            showBatchPrintModal = false;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBatchPrintConfirmAsync), GetType(), 
-                additionalData: new {
-                    SelectedCustomersCount = selectedCustomers?.Count ?? 0,
-                    StartDate = batchPrintStartDate,
-                    EndDate = batchPrintEndDate
-                });
-            await NotificationService.ShowErrorAsync("批次列印處理失敗");
-        }
-    }
-
-    /// <summary>
-    /// 處理批次列印取消
-    /// </summary>
-    private Task HandleBatchPrintCancelAsync()
+    private void HandleBatchPrintSuccess()
     {
         showBatchPrintModal = false;
         StateHasChanged();
-        return Task.CompletedTask;
     }
 }

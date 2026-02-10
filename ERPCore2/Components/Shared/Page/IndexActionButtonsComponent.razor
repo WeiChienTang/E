@@ -24,9 +24,9 @@
 
     @if (ShowBatchPrintButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="多筆列印" 
+        <GenericButtonComponent Variant="ButtonVariant.Blue" Text="報表列印" 
                                OnClick="HandleBatchPrintClick" IsDisabled="@(IsLoading || IsBatchPrintDisabled)" 
-                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="多筆列印"/>
+                               IsLoading="@(IsLoading && LoadingOnBatchPrint)" Title="報表列印"/>
     }
 
     @if (ShowImportScheduleButton)
@@ -98,9 +98,9 @@
     [Parameter] public bool LoadingOnExportPdf { get; set; } = false;
     [Parameter] public EventCallback OnExportPdfClick { get; set; }
 
-    // 多筆列印按鈕相關參數
+    // 列印按鈕相關參數
     [Parameter] public bool ShowBatchPrintButton { get; set; } = false;
-    [Parameter] public string BatchPrintButtonText { get; set; } = "多筆列印"; // 保留參數但不使用，固定顯示「多筆列印」
+    [Parameter] public string BatchPrintButtonText { get; set; } = "列印"; // 保留參數但不使用，固定顯示「列印」
     [Parameter] public string BatchPrintButtonTitle { get; set; } = ""; // 保留參數但不使用
     [Parameter] public string BatchPrintButtonIconClass { get; set; } = "fas fa-print";
     [Parameter] public bool IsBatchPrintDisabled { get; set; } = false;

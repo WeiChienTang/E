@@ -62,6 +62,149 @@ public static class FilterTemplateRegistry
             }
         });
         
+        // 進貨單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.PurchaseReceiving,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.PurchaseReceivingBatchFilterTemplate",
+            CriteriaType = typeof(PurchaseReceivingBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IPurchaseReceivingReportService),
+            PreviewTitle = "進貨單列印預覽",
+            FilterTitle = "進貨單列印篩選條件",
+            IconClass = "bi-box-arrow-in-down",
+            GetDocumentName = criteria => 
+            {
+                var c = (PurchaseReceivingBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"進貨單-{dateRange}";
+            }
+        });
+        
+        // 進貨退出單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.PurchaseReturn,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.PurchaseReturnBatchFilterTemplate",
+            CriteriaType = typeof(PurchaseReturnBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IPurchaseReturnReportService),
+            PreviewTitle = "進貨退出單列印預覽",
+            FilterTitle = "進貨退出單列印篩選條件",
+            IconClass = "bi-box-arrow-up",
+            GetDocumentName = criteria => 
+            {
+                var c = (PurchaseReturnBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"進貨退出單-{dateRange}";
+            }
+        });
+        
+        // ==================== 銷售報表 ====================
+        
+        // 報價單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.Quotation,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.QuotationBatchFilterTemplate",
+            CriteriaType = typeof(QuotationBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IQuotationReportService),
+            PreviewTitle = "報價單列印預覽",
+            FilterTitle = "報價單列印篩選條件",
+            IconClass = "bi-file-earmark-text",
+            GetDocumentName = criteria => 
+            {
+                var c = (QuotationBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"報價單-{dateRange}";
+            }
+        });
+        
+        // 訂單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SalesOrder,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SalesOrderBatchFilterTemplate",
+            CriteriaType = typeof(SalesOrderBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISalesOrderReportService),
+            PreviewTitle = "訂單列印預覽",
+            FilterTitle = "訂單列印篩選條件",
+            IconClass = "bi-file-earmark-text",
+            GetDocumentName = criteria => 
+            {
+                var c = (SalesOrderBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"訂單-{dateRange}";
+            }
+        });
+        
+        // 銷貨單（出貨單）（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SalesDelivery,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SalesDeliveryBatchFilterTemplate",
+            CriteriaType = typeof(SalesDeliveryBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISalesDeliveryReportService),
+            PreviewTitle = "銷貨單列印預覽",
+            FilterTitle = "銷貨單列印篩選條件",
+            IconClass = "bi-file-earmark-text",
+            GetDocumentName = criteria => 
+            {
+                var c = (SalesDeliveryBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"銷貨單-{dateRange}";
+            }
+        });
+        
+        // 銷貨退回單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.SalesReturn,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.SalesReturnBatchFilterTemplate",
+            CriteriaType = typeof(SalesReturnBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ISalesReturnReportService),
+            PreviewTitle = "銷貨退回單列印預覽",
+            FilterTitle = "銷貨退回單列印篩選條件",
+            IconClass = "bi-file-earmark-text",
+            GetDocumentName = criteria => 
+            {
+                var c = (SalesReturnBatchPrintCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue 
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}" 
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"銷貨退回單-{dateRange}";
+            }
+        });
+        
+        // ==================== 商品報表 ====================
+        
+        // 商品條碼標籤
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.ProductBarcode,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductBarcodeBatchFilterTemplate",
+            CriteriaType = typeof(ProductBarcodeBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService),
+            PreviewTitle = "商品條碼標籤預覽",
+            FilterTitle = "商品條碼列印篩選條件",
+            IconClass = "bi-upc-scan",
+            GetDocumentName = criteria => 
+            {
+                var c = (ProductBarcodeBatchPrintCriteria)criteria;
+                var count = c.ProductIds.Count;
+                var total = c.PrintQuantities.Values.Sum();
+                return $"商品條碼-{count}品項-{total}張-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+        
         // 可在此繼續註冊其他報表...
         
         _isInitialized = true;

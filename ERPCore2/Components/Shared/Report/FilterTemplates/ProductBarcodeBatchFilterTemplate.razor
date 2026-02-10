@@ -1,0 +1,212 @@
+@* 
+    商品條碼批次列印篩選模板
+    實作 IFilterTemplateComponent 介面，提供商品條碼批次列印的篩選 UI
+    設計原則：緊湊式佈局，整合商品選擇表格與列印設定
+*@
+
+@using ERPCore2.Models
+@using ERPCore2.Models.Barcode
+@using ERPCore2.Models.Reports.FilterCriteria
+@using ERPCore2.Models.Reports.FilterTemplates
+@implements IFilterTemplateComponent
+@inject IProductService ProductService
+@inject INotificationService NotificationService
+
+<div>
+    @* 商品選擇表格 *@
+    <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">
+                已選擇 @selectedItems.Count 個商品，共 @GetTotalPrintQuantity() 張條碼
+            </small>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="SelectAll">
+                    <i class="bi bi-check-all me-1"></i>全選
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="DeselectAll">
+                    <i class="bi bi-x-lg me-1"></i>取消全選
+                </button>
+            </div>
+        </div>
+        
+        @if (barcodeItems == null || !barcodeItems.Any())
+        {
+            <div class="alert alert-info py-2">
+                <i class="bi bi-info-circle me-2"></i>
+                目前沒有可列印的商品條碼
+            </div>
+        }
+        else
+        {
+            <div style="max-height: 300px; overflow-y: auto;">
+                <ProductBarcodePrintTable Items="@barcodeItems"
+                                        SelectedItems="@selectedItems"
+                                        OnSelectionChanged="@HandleSelectionChanged"
+                                        OnPrintQuantityChanged="@HandlePrintQuantityChanged"
+                                        GetRowCssClass="@GetRowCssClass" />
+            </div>
+        }
+    </div>
+    
+    @* 列印設定區 *@
+    <div class="card">
+        <div class="card-header bg-light py-2">
+            <h6 class="mb-0 small">
+                <i class="bi bi-gear me-2"></i>
+                列印設定
+            </h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div>
+                    <span class="text-muted small">條碼尺寸：</span>
+                    <span class="fw-bold small">大 (70mm x 35mm)</span>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" 
+                           @bind="showProductName" 
+                           id="showProductName">
+                    <label class="form-check-label small" for="showProductName">
+                        顯示商品名稱
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" 
+                           @bind="showProductCode" 
+                           id="showProductCode">
+                    <label class="form-check-label small" for="showProductCode">
+                        顯示商品編號
+                    </label>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-2 mb-0 py-1 small" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                提示：一張 A4 可以印 24 張條碼
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 內部狀態 =====
+    
+    private List<ProductBarcodeItem> barcodeItems = new();
+    private HashSet<ProductBarcodeItem> selectedItems = new();
+    private bool showProductName = true;
+    private bool showProductCode = true;
+    
+    // ===== 生命週期方法 =====
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+    
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var allProducts = await ProductService.GetAllAsync();
+            
+            if (allProducts == null || !allProducts.Any())
+            {
+                barcodeItems = new();
+                return;
+            }
+            
+            barcodeItems = allProducts
+                .Where(p => !string.IsNullOrWhiteSpace(p.Barcode))
+                .Select(p => new ProductBarcodeItem
+                {
+                    ProductId = p.Id,
+                    Code = p.Code ?? "",
+                    Name = p.Name ?? "",
+                    Barcode = p.Barcode ?? "",
+                    PrintQuantity = 1
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入商品資料失敗");
+            barcodeItems = new();
+        }
+    }
+    
+    // ===== 事件處理方法 =====
+    
+    private void HandleSelectionChanged(HashSet<ProductBarcodeItem> items)
+    {
+        selectedItems = items;
+        StateHasChanged();
+    }
+    
+    private string GetRowCssClass(ProductBarcodeItem item, int index)
+    {
+        return selectedItems.Contains(item) ? "table-row-selected" : "";
+    }
+    
+    private void HandlePrintQuantityChanged((ProductBarcodeItem item, string? value) args)
+    {
+        // 數值已經在 Table 元件中更新
+        StateHasChanged();
+    }
+    
+    private void SelectAll()
+    {
+        selectedItems = barcodeItems.ToHashSet();
+        StateHasChanged();
+    }
+    
+    private void DeselectAll()
+    {
+        selectedItems.Clear();
+        StateHasChanged();
+    }
+    
+    private int GetTotalPrintQuantity()
+    {
+        return selectedItems.Sum(x => x.PrintQuantity);
+    }
+    
+    // ===== IFilterTemplateComponent 實作 =====
+    
+    /// <summary>
+    /// 取得目前的篩選條件
+    /// </summary>
+    public IReportFilterCriteria GetCriteria()
+    {
+        return new ProductBarcodeBatchPrintCriteria
+        {
+            ProductIds = selectedItems.Select(x => x.ProductId).ToList(),
+            BarcodeSize = BarcodeSize.Large,
+            BarcodesPerPage = 24,
+            ShowProductName = showProductName,
+            ShowProductCode = showProductCode,
+            OnlyWithBarcode = true,
+            PrintQuantities = selectedItems.ToDictionary(x => x.ProductId, x => x.PrintQuantity)
+        };
+    }
+    
+    /// <summary>
+    /// 重置篩選條件為預設值
+    /// </summary>
+    public void Reset()
+    {
+        selectedItems.Clear();
+        showProductName = true;
+        showProductCode = true;
+        
+        // 重置每個商品的列印數量為 1
+        foreach (var item in barcodeItems)
+        {
+            item.PrintQuantity = 1;
+        }
+        
+        StateHasChanged();
+    }
+}

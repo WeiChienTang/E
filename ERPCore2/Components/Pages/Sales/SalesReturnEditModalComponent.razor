@@ -1,5 +1,6 @@
 @* 銷售退貨編輯模態組件 *@
 @using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject ISalesReturnService SalesReturnService
 @inject ISalesReturnDetailService SalesReturnDetailService
 @inject ISalesDeliveryService SalesDeliveryService
@@ -59,7 +60,7 @@
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
                           ReportService="@SalesReturnReportService"
-                          ReportId="SO003"
+                          ReportId="@ReportIds.SalesReturn"
                           ReportPreviewTitle="銷貨退回單預覽"
                           GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded" />

@@ -59,6 +59,11 @@ public static class ReportIds
     /// <summary>銷貨退回單</summary>
     public const string SalesReturn = "SO005";
     
+    // ==================== 商品報表 (PD) ====================
+    
+    /// <summary>商品條碼標籤</summary>
+    public const string ProductBarcode = "PD003";
+    
     // ==================== 庫存報表 (IV) ====================
     
     /// <summary>庫存異動明細</summary>

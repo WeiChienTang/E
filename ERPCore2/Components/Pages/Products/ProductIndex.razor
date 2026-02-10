@@ -1,5 +1,6 @@
 @page "/products"
 @using ERPCore2.Models
+@using ERPCore2.Models.Reports
 @inject IProductService ProductService
 @inject ISizeService SizeService
 @rendermode InteractiveServer
@@ -33,10 +34,11 @@
                           OnProductSaved="@modalHandler.OnEntitySavedAsync"
                           OnCancel="@modalHandler.OnModalCancelAsync" />
 
-@* 條碼列印 Modal *@
-<ProductBarcodePrintModalComponent IsVisible="@showBarcodePrintModal"
+@* 條碼列印 Modal - 使用 GenericReportFilterModalComponent 統一架構 *@
+<GenericReportFilterModalComponent IsVisible="@showBarcodePrintModal"
                                   IsVisibleChanged="@((bool visible) => showBarcodePrintModal = visible)"
-                                  OnPrintCompleted="@HandleBarcodePrintCompleted" />
+                                  ReportId="@ReportIds.ProductBarcode"
+                                  OnPrintSuccess="@HandleBarcodePrintSuccess" />
 
 @code {
     // 組件參考
@@ -161,10 +163,18 @@
         StateHasChanged();
     }
     
-    private async Task HandleBarcodePrintCompleted()
+    /// <summary>
+    /// 處理條碼列印成功回呼
+    /// </summary>
+    private async Task HandleBarcodePrintSuccess()
     {
-        showBarcodePrintModal = false;
-        StateHasChanged();
-        await Task.CompletedTask;
+        try
+        {
+            await NotificationService.ShowSuccessAsync("已開啟條碼列印視窗");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleBarcodePrintSuccess), GetType(), additionalData: "列印成功回呼處理失敗");
+        }
     }
 }

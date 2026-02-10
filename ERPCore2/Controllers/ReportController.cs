@@ -376,11 +376,15 @@ namespace ERPCore2.Controllers
         #region 商品條碼列印
 
         /// <summary>
-        /// 批次生成商品條碼列印報表
+        /// 批次生成商品條碼列印報表（HTML 輸出 - 舊式 API）
+        /// 由於條碼需要瀏覽器 JavaScript 渲染，此 API 保留用於實際條碼列印
+        /// 新的統一報表架構使用 RenderBatchToImagesAsync 產生預覽摘要
+        /// 未來可透過 ZXing.Net 等後端條碼生成庫完全整合至統一架構
         /// </summary>
         /// <param name="criteria">條碼列印條件</param>
         /// <returns>可列印的條碼 HTML</returns>
         [HttpPost("products/barcode/batch")]
+        [Obsolete("建議使用 GenericReportFilterModalComponent 統一架構，此 API 保留用於條碼 HTML 輸出")]
         public async Task<IActionResult> BatchPrintProductBarcodes(
             [FromBody] ProductBarcodePrintCriteria criteria)
         {

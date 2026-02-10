@@ -1,6 +1,10 @@
 using System.Text;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
+using ERPCore2.Models.Barcode;
+using ERPCore2.Models.Reports;
+using ERPCore2.Models.Reports.FilterCriteria;
+using ERPCore2.Services.Reports.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace ERPCore2.Services.Reports
@@ -11,13 +15,16 @@ namespace ERPCore2.Services.Reports
     public class ProductBarcodeReportService : IProductBarcodeReportService
     {
         private readonly IProductService _productService;
+        private readonly IFormattedPrintService _formattedPrintService;
         private readonly ILogger<ProductBarcodeReportService> _logger;
 
         public ProductBarcodeReportService(
             IProductService productService,
+            IFormattedPrintService formattedPrintService,
             ILogger<ProductBarcodeReportService> logger)
         {
             _productService = productService;
+            _formattedPrintService = formattedPrintService;
             _logger = logger;
         }
 
@@ -371,6 +378,129 @@ namespace ERPCore2.Services.Reports
 </body>
 </html>";
         }
+        
+        /// <summary>
+        /// 批次渲染條碼報表為圖片（統一報表架構）
+        /// 由於條碼需要瀏覽器 JavaScript 渲染，此方法產生預覽摘要頁面
+        /// 實際列印使用 HTML 輸出
+        /// </summary>
+        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ProductBarcodeBatchPrintCriteria criteria)
+        {
+            try
+            {
+                // 驗證條件
+                if (!criteria.Validate(out var errorMessage))
+                {
+                    return BatchPreviewResult.Failure(errorMessage ?? "條件驗證失敗");
+                }
+                
+                // 轉換為舊版 Criteria 以重用現有邏輯
+                var legacyCriteria = criteria.ToLegacyCriteria();
+                
+                // 載入商品資料
+                var products = await LoadProductsAsync(legacyCriteria);
+                
+                if (products == null || !products.Any())
+                {
+                    return BatchPreviewResult.Failure("無符合條件的商品條碼");
+                }
+                
+                // 計算總列印數量
+                var totalQuantity = criteria.PrintQuantities.Values.Sum();
+                if (totalQuantity == 0)
+                {
+                    totalQuantity = products.Count; // 預設每個商品 1 張
+                }
+                
+                // 建立預覽摘要文件
+                var document = CreateBarcodePreviewDocument(products, criteria, totalQuantity);
+                
+                // 渲染為圖片
+                var images = _formattedPrintService.RenderToImages(document);
+                
+                return new BatchPreviewResult
+                {
+                    IsSuccess = true,
+                    PreviewImages = images,
+                    MergedDocument = document,
+                    DocumentCount = products.Count,
+                    TotalPages = images.Count
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "產生條碼預覽失敗");
+                return BatchPreviewResult.Failure($"產生預覽失敗：{ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 建立條碼預覽摘要文件
+        /// </summary>
+        private FormattedDocument CreateBarcodePreviewDocument(
+            List<Product> products, 
+            ProductBarcodeBatchPrintCriteria criteria,
+            int totalQuantity)
+        {
+            var document = new FormattedDocument();
+            
+            // 標題
+            document.AddTitle("商品條碼列印預覽", 18, true);
+            document.AddSpacing(15);
+            
+            // 摘要資訊
+            document.AddText($"列印日期：{DateTime.Now:yyyy/MM/dd HH:mm}", 10);
+            document.AddText($"選擇商品：{products.Count} 個", 10);
+            document.AddText($"總列印數量：{totalQuantity} 張", 10);
+            document.AddText($"條碼尺寸：{GetBarcodeSizeText(criteria.BarcodeSize)}", 10);
+            document.AddSpacing(10);
+            
+            // 商品清單表格
+            document.AddTable(builder =>
+            {
+                builder.AddColumn("序號", 0.5f, TextAlignment.Center)
+                       .AddColumn("商品編號", 1.2f, TextAlignment.Left)
+                       .AddColumn("商品名稱", 2f, TextAlignment.Left)
+                       .AddColumn("條碼", 1.5f, TextAlignment.Left)
+                       .AddColumn("數量", 0.6f, TextAlignment.Center)
+                       .ShowBorder(true)
+                       .ShowHeaderBackground(true);
+                
+                int index = 1;
+                foreach (var product in products.Take(30))
+                {
+                    var printQty = criteria.PrintQuantities.TryGetValue(product.Id, out var qty) ? qty : 1;
+                    builder.AddRow(
+                        index.ToString(),
+                        product.Code ?? "",
+                        product.Name ?? "",
+                        product.Barcode ?? "",
+                        printQty.ToString()
+                    );
+                    index++;
+                }
+            });
+            
+            if (products.Count > 30)
+            {
+                document.AddSpacing(10);
+                document.AddText($"（還有 {products.Count - 30} 個商品未顯示於預覽）", 9, TextAlignment.Center);
+            }
+            
+            // 備註
+            document.AddSpacing(20);
+            document.AddText("※ 此為預覽摘要，實際條碼將在確認列印後產生", 9, TextAlignment.Center);
+            
+            return document;
+        }
+        
+        private string GetBarcodeSizeText(BarcodeSize size) => size switch
+        {
+            BarcodeSize.Small => "小 (35mm x 20mm)",
+            BarcodeSize.Medium => "中 (50mm x 25mm)",
+            BarcodeSize.Large => "大 (70mm x 35mm)",
+            _ => "中"
+        };
 
         /// <summary>
         /// 生成錯誤頁面
