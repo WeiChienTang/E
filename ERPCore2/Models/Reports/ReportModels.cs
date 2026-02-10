@@ -298,4 +298,20 @@ namespace ERPCore2.Models.Reports
         [Description("Excel")]
         Excel
     }
+
+    /// <summary>
+    /// 排序方向列舉
+    /// </summary>
+    public enum SortDirection
+    {
+        /// <summary>
+        /// 升序
+        /// </summary>
+        Ascending,
+
+        /// <summary>
+        /// 降序
+        /// </summary>
+        Descending
+    }
 }

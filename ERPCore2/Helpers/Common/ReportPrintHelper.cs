@@ -31,7 +31,7 @@ namespace ERPCore2.Helpers
                 }
 
                 // 如果找到配置且狀態為啟用，則使用該配置
-                if (configuration.Status == Data.Enums.EntityStatus.Active)
+                if (configuration.Status == EntityStatus.Active)
                 {
                     return configuration;
                 }
@@ -70,7 +70,7 @@ namespace ERPCore2.Helpers
                 }
 
                 // 如果找到配置且狀態為啟用，則使用該配置
-                if (configuration.Status == Data.Enums.EntityStatus.Active)
+                if (configuration.Status == EntityStatus.Active)
                 {
                     await jsRuntime.InvokeVoidAsync("console.log", $"使用報表類型 '{reportType}' 的列印配置：{configuration.ReportName}");
                     return configuration;
@@ -212,7 +212,7 @@ namespace ERPCore2.Helpers
                 return (true, ""); // null 配置被認為是有效的（使用系統預設）
             }
 
-            if (configuration.Status != Data.Enums.EntityStatus.Active)
+            if (configuration.Status != EntityStatus.Active)
             {
                 return (false, "列印配置已停用");
             }
@@ -224,14 +224,14 @@ namespace ERPCore2.Helpers
 
             // 檢查印表機配置是否存在且啟用
             if (configuration.PrinterConfiguration != null && 
-                configuration.PrinterConfiguration.Status != Data.Enums.EntityStatus.Active)
+                configuration.PrinterConfiguration.Status != EntityStatus.Active)
             {
                 return (false, "指定的印表機配置已停用");
             }
 
             // 檢查紙張設定是否存在且啟用
             if (configuration.PaperSetting != null && 
-                configuration.PaperSetting.Status != Data.Enums.EntityStatus.Active)
+                configuration.PaperSetting.Status != EntityStatus.Active)
             {
                 return (false, "指定的紙張設定已停用");
             }

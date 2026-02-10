@@ -150,7 +150,7 @@
                 ["TotalErrors"] = allErrors.Count,
                 ["UnresolvedErrors"] = allErrors.Count(e => !e.IsResolved),
                 ["ResolvedErrors"] = allErrors.Count(e => e.IsResolved),
-                ["CriticalErrors"] = allErrors.Count(e => e.Level == Data.Enums.ErrorLevel.Critical)
+                ["CriticalErrors"] = allErrors.Count(e => e.Level == ErrorLevel.Critical)
             };
         }
         catch (Exception ex)

@@ -1,6 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
@@ -413,13 +413,13 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="baseTransactionNumber">基礎交易編號</param>
         /// <param name="productId">商品ID（可選，用於過濾特定商品的異動）</param>
-        /// <returns>包含原始交易和所有調整記錄的 RelatedDocument 列表</returns>
-        public async Task<List<ERPCore2.Models.RelatedDocument>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null)
+        /// <returns>包含原始交易和所有調整記錄的 RelatedDocumentInfo 列表</returns>
+        public async Task<List<ERPCore2.Models.Documents.RelatedDocumentInfo>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(baseTransactionNumber))
-                    return new List<ERPCore2.Models.RelatedDocument>();
+                    return new List<ERPCore2.Models.Documents.RelatedDocumentInfo>();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
@@ -437,9 +437,9 @@ namespace ERPCore2.Services
                     .FirstOrDefaultAsync(t => t.TransactionNumber == cleanBaseNumber);
                 
                 if (transaction == null)
-                    return new List<ERPCore2.Models.RelatedDocument>();
+                    return new List<ERPCore2.Models.Documents.RelatedDocumentInfo>();
                 
-                var documents = new List<ERPCore2.Models.RelatedDocument>();
+                var documents = new List<ERPCore2.Models.Documents.RelatedDocumentInfo>();
                 
                 // 如果有指定商品ID，只處理包含該商品的明細
                 var relevantDetails = productId.HasValue
@@ -474,10 +474,10 @@ namespace ERPCore2.Services
                         _ => GetTransactionTypeDisplayName(transaction.TransactionType)
                     };
                     
-                    documents.Add(new ERPCore2.Models.RelatedDocument
+                    documents.Add(new ERPCore2.Models.Documents.RelatedDocumentInfo
                     {
                         DocumentId = transaction.Id,
-                        DocumentType = ERPCore2.Models.RelatedDocumentType.InventoryTransaction,
+                        DocumentType = RelatedDocumentType.InventoryTransaction,
                         DocumentNumber = $"{transaction.TransactionNumber} {label}",
                         DocumentDate = latestTime,
                         Quantity = netQuantity,
@@ -493,7 +493,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetRelatedTransactionsAsync), typeof(InventoryTransactionService), _logger);
-                return new List<ERPCore2.Models.RelatedDocument>();
+                return new List<ERPCore2.Models.Documents.RelatedDocumentInfo>();
             }
         }
         

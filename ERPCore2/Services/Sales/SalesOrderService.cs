@@ -1,6 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -663,7 +663,7 @@ namespace ERPCore2.Services
                 }
 
                 // 排序：先按客戶分組，同客戶內再按日期和單據編號排序
-                query = criteria.SortDirection == Models.SortDirection.Ascending
+                query = criteria.SortDirection == SortDirection.Ascending
                     ? query.OrderBy(so => so.Customer.CompanyName)
                            .ThenBy(so => so.OrderDate)
                            .ThenBy(so => so.Code)

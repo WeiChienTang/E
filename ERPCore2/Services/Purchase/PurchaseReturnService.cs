@@ -1,6 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using Microsoft.EntityFrameworkCore;
@@ -226,7 +226,7 @@ namespace ERPCore2.Services
 
                 // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
                 // 這樣列印時同一廠商的退貨單會集中在一起
-                query = criteria.SortDirection == Models.SortDirection.Ascending
+                query = criteria.SortDirection == SortDirection.Ascending
                     ? query.OrderBy(pr => pr.Supplier.CompanyName)
                            .ThenBy(pr => pr.ReturnDate)
                            .ThenBy(pr => pr.Code)
@@ -419,7 +419,7 @@ namespace ERPCore2.Services
                 
                 switch (purchaseReturn.TaxCalculationMethod)
                 {
-                    case Data.Enums.TaxCalculationMethod.TaxExclusive:
+                    case TaxCalculationMethod.TaxExclusive:
                         // 外加稅：金額 = Σ(退回數量 × 單價)（四捨五入到整數），稅額 = 金額 × 稅率%（四捨五入到整數）
                         purchaseReturn.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
                         purchaseReturn.ReturnTaxAmount = detailSubtotals.Sum(d =>
@@ -429,7 +429,7 @@ namespace ERPCore2.Services
                         });
                         break;
                         
-                    case Data.Enums.TaxCalculationMethod.TaxInclusive:
+                    case TaxCalculationMethod.TaxInclusive:
                         // 內含稅：總額 = Σ(退回數量 × 單價)，金額 = 總額 - 稅額，稅額 = 總額 / (1 + 稅率%) × 稅率%（四捨五入到整數）
                         var totalWithTax = detailSubtotals.Sum(d => d.BaseAmount);
                         var totalTax = detailSubtotals.Sum(d =>
@@ -441,7 +441,7 @@ namespace ERPCore2.Services
                         purchaseReturn.ReturnTaxAmount = totalTax;
                         break;
                         
-                    case Data.Enums.TaxCalculationMethod.NoTax:
+                    case TaxCalculationMethod.NoTax:
                         // 免稅：金額 = Σ(退回數量 × 單價)（四捨五入到整數），稅額 = 0
                         purchaseReturn.TotalReturnAmount = Math.Round(detailSubtotals.Sum(d => d.BaseAmount), 0, MidpointRounding.AwayFromZero);
                         purchaseReturn.ReturnTaxAmount = 0;

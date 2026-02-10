@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 

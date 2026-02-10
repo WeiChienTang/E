@@ -1,6 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -792,11 +792,11 @@ namespace ERPCore2.Services
                         productId: entity.ProductId,
                         warehouseId: entity.WarehouseId,
                         quantity: entity.ReceivedQuantity,
-                        transactionType: Data.Enums.InventoryTransactionTypeEnum.Adjustment,
+                        transactionType: InventoryTransactionTypeEnum.Adjustment,
                         transactionNumber: $"取消進貨-{entity.Id}",
                         locationId: entity.WarehouseLocationId,
                         remarks: $"取消進貨明細ID: {entity.Id}",
-                        sourceDocumentType: Data.Enums.InventorySourceDocumentTypes.PurchaseReceiving,
+                        sourceDocumentType: InventorySourceDocumentTypes.PurchaseReceiving,
                         sourceDocumentId: entity.PurchaseReceivingId
                     );
 

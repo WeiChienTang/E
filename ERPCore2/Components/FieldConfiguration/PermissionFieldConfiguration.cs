@@ -58,8 +58,8 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 3,
                             Options = new List<SelectOption>
                             {
-                                new SelectOption { Text = "一般權限", Value = ((int)Data.Enums.PermissionLevel.Normal).ToString() },
-                                new SelectOption { Text = "敏感權限", Value = ((int)Data.Enums.PermissionLevel.Sensitive).ToString() }
+                                new SelectOption { Text = "一般權限", Value = ((int)PermissionLevel.Normal).ToString() },
+                                new SelectOption { Text = "敏感權限", Value = ((int)PermissionLevel.Sensitive).ToString() }
                             },
                             FilterFunction = (model, query) =>
                             {
@@ -73,7 +73,7 @@ namespace ERPCore2.FieldConfiguration
                             CustomTemplate = item => builder =>
                             {
                                 var permission = (Permission)item;
-                                var isSensitive = permission.Level == Data.Enums.PermissionLevel.Sensitive;
+                                var isSensitive = permission.Level == PermissionLevel.Sensitive;
                                 builder.OpenElement(0, "span");
                                 builder.AddAttribute(1, "class", "badge text-white");
                                 builder.AddAttribute(2, "style", isSensitive ? "background-color: #dc3545;" : "background-color: #28a745;");

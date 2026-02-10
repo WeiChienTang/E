@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using ERPCore2.Models; // 引用 SortDirection 枚舉
 using ERPCore2.Data.Entities; // 引用 PaperSetting
 
 namespace ERPCore2.Models.Reports

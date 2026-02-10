@@ -1,4 +1,4 @@
-using ERPCore2.Models;
+using ERPCore2.Models.Documents;
 
 namespace ERPCore2.Components.Shared.RelatedDocument.Config;
 

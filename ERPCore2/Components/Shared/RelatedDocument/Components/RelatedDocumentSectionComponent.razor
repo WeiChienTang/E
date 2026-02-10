@@ -60,7 +60,7 @@
     /// 要顯示的單據清單
     /// </summary>
     [Parameter, EditorRequired]
-    public List<RelatedDocument> Documents { get; set; } = new();
+    public List<RelatedDocumentInfo> Documents { get; set; } = new();
     
     /// <summary>
     /// 區塊配置
@@ -72,11 +72,11 @@
     /// 詳細欄位的自訂範本（可選）
     /// </summary>
     [Parameter]
-    public RenderFragment<RelatedDocument>? DetailsTemplate { get; set; }
+    public RenderFragment<RelatedDocumentInfo>? DetailsTemplate { get; set; }
     
     /// <summary>
     /// 當點擊單據時觸發
     /// </summary>
     [Parameter]
-    public EventCallback<RelatedDocument> OnDocumentClick { get; set; }
+    public EventCallback<RelatedDocumentInfo> OnDocumentClick { get; set; }
 }

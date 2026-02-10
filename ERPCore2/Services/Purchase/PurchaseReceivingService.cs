@@ -1,6 +1,6 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using Microsoft.EntityFrameworkCore;
@@ -1348,7 +1348,7 @@ namespace ERPCore2.Services
 
                 // 排序：先按廠商分組，同廠商內再按日期和單據編號排序
                 // 這樣列印時同一廠商的進貨單會集中在一起
-                query = criteria.SortDirection == Models.SortDirection.Ascending
+                query = criteria.SortDirection == SortDirection.Ascending
                     ? query.OrderBy(pr => pr.Supplier.CompanyName)
                            .ThenBy(pr => pr.ReceiptDate)
                            .ThenBy(pr => pr.Code)

@@ -1,7 +1,7 @@
 using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Components.Shared.PageTemplate;
 using ERPCore2.Data;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using System.Linq.Expressions;
 using System.Reflection;
 

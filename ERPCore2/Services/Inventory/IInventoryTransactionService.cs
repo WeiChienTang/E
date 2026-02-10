@@ -1,5 +1,5 @@
 using ERPCore2.Data.Entities;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -98,8 +98,8 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="baseTransactionNumber">基礎交易編號</param>
         /// <param name="productId">商品ID（可選，用於過濾特定商品的異動）</param>
-        /// <returns>包含原始交易和所有調整記錄的 RelatedDocument 列表</returns>
-        Task<List<ERPCore2.Models.RelatedDocument>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null);
+        /// <returns>包含原始交易和所有調整記錄的 RelatedDocumentInfo 列表</returns>
+        Task<List<ERPCore2.Models.Documents.RelatedDocumentInfo>> GetRelatedTransactionsAsync(string baseTransactionNumber, int? productId = null);
 
         [Obsolete("沖銷功能需重新設計以支援主/明細結構")]
         Task<ServiceResult> ReverseTransactionAsync(int transactionId, string reason, int? employeeId = null);

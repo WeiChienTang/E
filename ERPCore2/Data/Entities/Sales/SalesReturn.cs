@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 
 // 使用別名來避免命名衝突
 using EntitySalesReturnReason = ERPCore2.Data.Entities.SalesReturnReason;

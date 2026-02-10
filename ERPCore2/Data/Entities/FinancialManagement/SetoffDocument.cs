@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERPCore2.Data.Entities

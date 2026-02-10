@@ -1,4 +1,4 @@
-using ERPCore2.Data.Enums;
+using ERPCore2.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace ERPCore2.Data

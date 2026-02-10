@@ -749,7 +749,7 @@
             if (editModalComponent?.Entity?.SupplierId == null || editModalComponent.Entity.SupplierId <= 0)
             {
                 options.AddRange(products
-                    .Where(p => p.ProcurementType == Data.Enums.ProcurementType.Purchased)
+                    .Where(p => p.ProcurementType == ProcurementType.Purchased)
                     .Select(p => new SelectOption
                     {
                         Value = p.Id.ToString(),
@@ -779,7 +779,7 @@
                 
                 // 根據商品ID從 products 列表中找出對應的商品，並且只顯示「外購」類型
                 var supplierProducts = products
-                    .Where(p => productIds.Contains(p.Id) && p.ProcurementType == Data.Enums.ProcurementType.Purchased)
+                    .Where(p => productIds.Contains(p.Id) && p.ProcurementType == ProcurementType.Purchased)
                     .OrderBy(p => p.Code)
                     .ToList();
                 
@@ -866,14 +866,14 @@
                 
                 // 根據商品ID從 products 列表中找出對應的商品，並且只顯示「外購」類型
                 filteredProducts = products
-                    .Where(p => productIds.Contains(p.Id) && p.ProcurementType == Data.Enums.ProcurementType.Purchased)
+                    .Where(p => productIds.Contains(p.Id) && p.ProcurementType == ProcurementType.Purchased)
                     .OrderBy(p => p.Code)
                     .ToList();
             }
             else
             {
                 // 如果沒有選擇廠商，顯示全部外購類型商品
-                filteredProducts = products.Where(p => p.ProcurementType == Data.Enums.ProcurementType.Purchased).ToList();
+                filteredProducts = products.Where(p => p.ProcurementType == ProcurementType.Purchased).ToList();
             }
             
             // 更新 AutoComplete 的資料集合
