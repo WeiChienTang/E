@@ -48,9 +48,9 @@
                 找不到報表 ID「@ReportId」的篩選配置
             </div>
         }
-        else if (filterConfig.FilterTemplateType != null && filterConfig.FilterTemplateType != typeof(object))
+        else if (filterConfig.GetFilterTemplateType() != typeof(object))
         {
-            <DynamicComponent Type="@filterConfig.FilterTemplateType" 
+            <DynamicComponent Type="@filterConfig.GetFilterTemplateType()" 
                              @ref="dynamicComponentRef"
                              Parameters="@GetTemplateParameters()" />
         }

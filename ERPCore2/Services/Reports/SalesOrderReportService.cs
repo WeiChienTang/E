@@ -94,8 +94,6 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var document = await GenerateReportAsync(salesOrderId);
-                
-                _logger?.LogInformation("開始列印訂單 {SalesOrderId}，使用配置：{ReportId}", salesOrderId, reportId);
 
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
@@ -144,8 +142,6 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"無符合條件的訂單\n篩選條件：{criteria.GetSummary()}");
                 }
 
-                _logger?.LogInformation("開始批次列印 {Count} 張訂單，使用配置：{ReportId}", salesOrders.Count, reportId);
-
                 // 逐一列印
                 foreach (var salesOrder in salesOrders)
                 {
@@ -156,7 +152,6 @@ namespace ERPCore2.Services.Reports
                     }
                 }
 
-                _logger?.LogInformation("已完成 {Count} 張訂單的列印", salesOrders.Count);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

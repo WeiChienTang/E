@@ -229,8 +229,6 @@ namespace ERPCore2.Services.Reports
                     return ReportPrintResult.Failure("目前僅支援 Windows 平台的直接列印功能");
                 }
 
-                _logger?.LogInformation("開始列印報表：{DocumentName}，印表機：{PrinterName}", documentName, printerName);
-
                 // 步驟 1：確保 Chromium 已下載
                 await EnsureBrowserDownloadedAsync();
 
@@ -240,8 +238,6 @@ namespace ERPCore2.Services.Reports
                 try
                 {
                     pageImages = await ConvertHtmlToImagesDirectAsync(htmlContent, paperSetting);
-                    _logger?.LogInformation("圖片生成完成：{DocumentName}，共 {PageCount} 頁", 
-                        documentName, pageImages.Count);
                     
                     if (pageImages.Count == 0)
                     {
@@ -259,7 +255,6 @@ namespace ERPCore2.Services.Reports
                 
                 if (printResult.IsSuccess)
                 {
-                    _logger?.LogInformation("列印成功：{DocumentName}，共 {PageCount} 頁", documentName, pageImages.Count);
                 }
                 
                 return printResult;
@@ -298,9 +293,6 @@ namespace ERPCore2.Services.Reports
             int viewportWidth = (int)(widthCm / 2.54m * DPI);
             int viewportHeight = (int)(heightCm / 2.54m * DPI);
 
-            _logger?.LogInformation("Viewport 尺寸：{Width}x{Height} px（{DPI} DPI），紙張：{PaperW}x{PaperH} cm", 
-                viewportWidth, viewportHeight, DPI, widthCm, heightCm);
-
             // 啟動 Headless Chrome
             await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
@@ -335,8 +327,6 @@ namespace ERPCore2.Services.Reports
             
             if (pageElements.Length > 0)
             {
-                _logger?.LogInformation("找到 {Count} 個 .report-page 元素，逐頁截圖", pageElements.Length);
-                
                 // 逐頁截圖
                 foreach (var pageElement in pageElements)
                 {
@@ -348,7 +338,6 @@ namespace ERPCore2.Services.Reports
                     if (screenshotBytes.Length > 1000)
                     {
                         images.Add(screenshotBytes);
-                        _logger?.LogInformation("頁面截圖成功，大小：{Size} bytes", screenshotBytes.Length);
                     }
                 }
             }
@@ -359,8 +348,6 @@ namespace ERPCore2.Services.Reports
                 
                 if (printContainers.Length > 0)
                 {
-                    _logger?.LogInformation("找到 {Count} 個 .print-container 元素，逐頁截圖", printContainers.Length);
-                    
                     foreach (var container in printContainers)
                     {
                         var screenshotBytes = await container.ScreenshotDataAsync(new ElementScreenshotOptions
@@ -371,15 +358,12 @@ namespace ERPCore2.Services.Reports
                         if (screenshotBytes.Length > 1000)
                         {
                             images.Add(screenshotBytes);
-                            _logger?.LogInformation("容器截圖成功，大小：{Size} bytes", screenshotBytes.Length);
                         }
                     }
                 }
                 else
                 {
                     // 都沒找到，截取整個頁面
-                    _logger?.LogInformation("未找到 .report-page 或 .print-container 元素，截取整個頁面");
-                    
                     var screenshotBytes = await page.ScreenshotDataAsync(new ScreenshotOptions
                     {
                         Type = ScreenshotType.Png,
@@ -389,7 +373,6 @@ namespace ERPCore2.Services.Reports
                     if (screenshotBytes.Length > 1000)
                     {
                         images.Add(screenshotBytes);
-                        _logger?.LogInformation("整頁截圖成功，大小：{Size} bytes", screenshotBytes.Length);
                     }
                 }
             }
@@ -406,7 +389,6 @@ namespace ERPCore2.Services.Reports
                     {
                         var debugPath = Path.Combine(debugDir, $"page_{DateTime.Now:yyyyMMdd_HHmmss}_{i + 1}.png");
                         await File.WriteAllBytesAsync(debugPath, images[i]);
-                        _logger?.LogInformation("調試截圖已保存：{Path}（{Size} bytes）", debugPath, images[i].Length);
                     }
                 }
                 catch (Exception ex)
@@ -454,8 +436,6 @@ namespace ERPCore2.Services.Reports
                             return ReportPrintResult.Failure($"印表機 '{printerName}' 無效或不可用");
                         }
 
-                        _logger?.LogInformation("印表機有效：{PrinterName}", printerName);
-
                         // 設定紙張（可選）
                         // 注意：PaperSetting 的 Width/Height 是「公分」，PaperSize 需要「百分之一英吋」
                         // 換算：公分 / 2.54 * 100 = 百分之一英吋
@@ -463,9 +443,6 @@ namespace ERPCore2.Services.Reports
                         {
                             int widthHundredths = (int)(paperSetting.Width / 2.54m * 100);
                             int heightHundredths = (int)(paperSetting.Height / 2.54m * 100);
-                            
-                            _logger?.LogInformation("紙張尺寸：{W} x {H} cm → {WH} x {HH} 百分之一英吋", 
-                                paperSetting.Width, paperSetting.Height, widthHundredths, heightHundredths);
                             
                             printDocument.DefaultPageSettings.PaperSize = new PaperSize(
                                 paperSetting.Name ?? "Custom", widthHundredths, heightHundredths);
@@ -515,9 +492,6 @@ namespace ERPCore2.Services.Reports
                                     // 水平可以置中，但垂直從頂部開始
                                     float drawX = x + (maxWidth - scaledWidth) / 2; // 水平置中
                                     float drawY = y; // 垂直從頂部開始，不置中
-
-                                    _logger?.LogInformation("繪製圖片：位置({DrawX},{DrawY})，大小({W}x{H})，縮放比例:{Scale}",
-                                        drawX, drawY, scaledWidth, scaledHeight, scale);
 
                                     // 繪製圖片
                                     e.Graphics.DrawImage(image, drawX, drawY, scaledWidth, scaledHeight);
@@ -581,13 +555,10 @@ namespace ERPCore2.Services.Reports
                 if (_browserDownloaded)
                     return;
 
-                _logger?.LogInformation("正在檢查/下載 Chromium 瀏覽器...");
-                
                 var browserFetcher = new BrowserFetcher();
                 await browserFetcher.DownloadAsync();
                 
                 _browserDownloaded = true;
-                _logger?.LogInformation("Chromium 瀏覽器已就緒");
             }
             finally
             {
@@ -693,7 +664,6 @@ namespace ERPCore2.Services.Reports
             var inlineStyle = $"<style type=\"text/css\">\n{cssContent}\n</style>";
             var result = Regex.Replace(htmlContent, linkPattern, inlineStyle, RegexOptions.IgnoreCase);
 
-            _logger?.LogInformation("已將外部 CSS 轉換為內嵌樣式（CSS 長度：{CssLength} 字元）", cssContent.Length);
             return result;
         }
 
@@ -718,7 +688,6 @@ namespace ERPCore2.Services.Reports
                     if (File.Exists(cssPath))
                     {
                         _cachedPrintStylesCss = File.ReadAllText(cssPath, Encoding.UTF8);
-                        _logger?.LogInformation("已載入 print-styles.css（{Length} 字元）", _cachedPrintStylesCss.Length);
                         return _cachedPrintStylesCss;
                     }
                     else

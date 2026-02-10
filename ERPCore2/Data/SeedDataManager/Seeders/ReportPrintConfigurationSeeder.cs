@@ -26,9 +26,13 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 return;
             }
 
-            // 取得已存在的報表配置（透過 ReportId 檢查）
+            // 取得已存在的報表配置（透過 ReportId 和 ReportName 檢查）
             var existingReportIds = await context.ReportPrintConfigurations
                 .Select(r => r.ReportId)
+                .ToListAsync();
+            
+            var existingReportNames = await context.ReportPrintConfigurations
+                .Select(r => r.ReportName)
                 .ToListAsync();
 
             // 建立尚未存在的報表配置
@@ -37,8 +41,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             foreach (var report in allReports)
             {
-                // 如果 ReportId 已存在，跳過
-                if (existingReportIds.Contains(report.Id))
+                // 如果 ReportId 或 ReportName 已存在，跳過（避免違反唯一索引）
+                if (existingReportIds.Contains(report.Id) || existingReportNames.Contains(report.Name))
                 {
                     continue;
                 }

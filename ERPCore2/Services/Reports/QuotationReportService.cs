@@ -94,8 +94,6 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var document = await GenerateReportAsync(quotationId);
-                
-                _logger?.LogInformation("開始列印報價單 {QuotationId}，使用配置：{ReportId}", quotationId, reportId);
 
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
@@ -144,8 +142,6 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"無符合條件的報價單\n篩選條件：{criteria.GetSummary()}");
                 }
 
-                _logger?.LogInformation("開始批次列印 {Count} 張報價單，使用配置：{ReportId}", quotations.Count, reportId);
-
                 // 逐一列印
                 foreach (var quotation in quotations)
                 {
@@ -156,7 +152,6 @@ namespace ERPCore2.Services.Reports
                     }
                 }
 
-                _logger?.LogInformation("已完成 {Count} 張報價單的列印", quotations.Count);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

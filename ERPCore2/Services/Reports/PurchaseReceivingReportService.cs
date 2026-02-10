@@ -85,8 +85,6 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var document = await GenerateReportAsync(purchaseReceivingId);
-                
-                _logger?.LogInformation("開始列印進貨單 {OrderId}，使用配置：{ReportId}", purchaseReceivingId, reportId);
 
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
@@ -135,8 +133,6 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"無符合條件的進貨單\n篩選條件：{criteria.GetSummary()}");
                 }
 
-                _logger?.LogInformation("開始批次列印 {Count} 張進貨單，使用配置：{ReportId}", purchaseReceivings.Count, reportId);
-
                 // 逐一列印
                 foreach (var purchaseReceiving in purchaseReceivings)
                 {
@@ -147,7 +143,6 @@ namespace ERPCore2.Services.Reports
                     }
                 }
 
-                _logger?.LogInformation("已完成 {Count} 張進貨單的列印", purchaseReceivings.Count);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

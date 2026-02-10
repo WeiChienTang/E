@@ -172,9 +172,6 @@ namespace ERPCore2.Services.Reports
                 // 使用預設邊距（0.5 公分）如果未提供
                 margins ??= PrintMargins.FromPaperSetting(null);
 
-                _logger?.LogInformation("開始列印 {DocumentName}，印表機：{PrinterName}，份數：{Copies}，邊距(百分之一英寸)：L={Left}, T={Top}, R={Right}, B={Bottom}", 
-                    documentName, printerName, copies, margins.Left, margins.Top, margins.Right, margins.Bottom);
-
                 using var printDocument = new System.Drawing.Printing.PrintDocument();
                 printDocument.PrinterSettings.PrinterName = printerName;
                 printDocument.DocumentName = documentName;
@@ -252,7 +249,6 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"列印時發生錯誤: {printException.Message}");
                 }
 
-                _logger?.LogInformation("{DocumentName} 列印完成", documentName);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -298,12 +294,6 @@ namespace ERPCore2.Services.Reports
                 if (printConfig.PaperSettingId.HasValue)
                 {
                     paperSetting = await _paperSettingService.GetByIdAsync(printConfig.PaperSettingId.Value);
-                    _logger?.LogInformation("載入紙張設定：{PaperName}，邊距(cm)：L={Left}, T={Top}, R={Right}, B={Bottom}",
-                        paperSetting?.Name ?? "未知",
-                        paperSetting?.LeftMargin ?? 0,
-                        paperSetting?.TopMargin ?? 0,
-                        paperSetting?.RightMargin ?? 0,
-                        paperSetting?.BottomMargin ?? 0);
                 }
 
                 // 從紙張設定建立邊距

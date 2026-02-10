@@ -1,7 +1,7 @@
 # 報表檔案架構說明
 
 ## 更新日期
-2026-02-09
+2026-02-10
 
 ---
 
@@ -36,6 +36,7 @@ Services/Reports/
 └── ...
 
 Models/Reports/
+├── ReportIds.cs                            # 報表 ID 常數（唯一來源）
 ├── BatchPrintCriteria.cs                   # 批次列印篩選條件（含 PaperSetting）
 ├── FormattedDocument.cs                    # 格式化報表文件模型（含 MergeFrom 方法）
 ├── TableDefinition.cs                      # 表格定義
@@ -43,8 +44,8 @@ Models/Reports/
 │   ├── IReportFilterCriteria.cs
 │   └── PurchaseOrderBatchPrintCriteria.cs
 └── FilterTemplates/                        # 篩選模板配置
-    ├── ReportFilterConfig.cs
-    └── FilterTemplateRegistry.cs
+    ├── ReportFilterConfig.cs               # 篩選配置模型
+    └── FilterTemplateRegistry.cs           # 模板註冊表（集中管理所有配置）
 
 Components/Shared/Report/
 ├── ReportPreviewModalComponent.razor       # 報表預覽 Modal
@@ -80,7 +81,7 @@ Components/Shared/Report/
 
 流程：報表中心 → 篩選 Modal → 預覽 → 列印
 
-參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
+參考 [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md)
 
 ---
 
@@ -332,7 +333,7 @@ mergedDocument.MergeFrom(document);
 2. **建立服務實作**（參考 `PurchaseOrderReportService.cs`）
 3. **在 ServiceRegistration.cs 註冊服務**
 4. **在 ReportRegistry.cs 註冊報表定義**
-5. **（可選）建立篩選模板**（參考 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)）
+5. **（可選）建立篩選模板**（參考 [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md)）
 
 ### 報表 ID 命名規則
 
@@ -353,3 +354,12 @@ mergedDocument.MergeFrom(document);
 2. **Excel 匯出跨平台**：`ExcelExportService` 使用 ClosedXML，支援所有平台
 3. **預覽與列印一致**：`RenderToImages` 和 `Print` 使用相同的渲染邏輯
 4. **SQL 配置印表機**：透過 `ReportPrintConfiguration` 資料表設定預設印表機
+
+---
+
+## 相關檔案
+
+- [README_報表系統總綱.md](README_報表系統總綱.md) - 報表系統入口
+- [README_報表篩選架構設計總綱.md](../Components/Shared/Report/README_報表篩選架構設計總綱.md) - 篩選模板機制
+- [README_報表中心設計.md](../Components/Pages/Reports/README_報表中心設計.md) - 報表中心入口
+- [README_報表Index設計總綱.md](README_報表Index設計總綱.md) - Index 批次列印

@@ -18,7 +18,7 @@ public static class ReportRegistry
             // ==================== 客戶報表 ====================
             new ReportDefinition
             {
-                Id = "AR001",
+                Id = ReportIds.AccountsReceivable,
                 Name = "應收帳款報表",
                 Description = "查詢和列印客戶應收帳款明細資料",
                 IconClass = "bi bi-cash-stack",
@@ -30,7 +30,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "AR002",
+                Id = ReportIds.CustomerStatement,
                 Name = "客戶對帳單",
                 Description = "產生指定期間的客戶對帳單",
                 IconClass = "bi bi-file-earmark-ruled",
@@ -42,7 +42,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "AR003",
+                Id = ReportIds.CustomerSalesAnalysis,
                 Name = "客戶銷售分析",
                 Description = "分析客戶銷售金額與趨勢",
                 IconClass = "bi bi-graph-up",
@@ -54,7 +54,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "AR004",
+                Id = ReportIds.CustomerTransaction,
                 Name = "客戶交易明細",
                 Description = "查詢客戶所有交易記錄明細",
                 IconClass = "bi bi-list-check",
@@ -68,7 +68,7 @@ public static class ReportRegistry
             // ==================== 廠商報表 ====================
             new ReportDefinition
             {
-                Id = "AP001",
+                Id = ReportIds.AccountsPayable,
                 Name = "應付帳款報表",
                 Description = "查詢和列印廠商應付帳款明細資料",
                 IconClass = "bi bi-cash-stack",
@@ -80,7 +80,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "AP002",
+                Id = ReportIds.SupplierStatement,
                 Name = "廠商對帳單",
                 Description = "產生指定期間的廠商對帳單",
                 IconClass = "bi bi-file-earmark-ruled",
@@ -92,7 +92,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "AP003",
+                Id = ReportIds.SupplierPurchaseAnalysis,
                 Name = "廠商進貨分析",
                 Description = "分析廠商進貨金額與趨勢",
                 IconClass = "bi bi-graph-up",
@@ -106,7 +106,7 @@ public static class ReportRegistry
             // ==================== 採購報表 ====================
             new ReportDefinition
             {
-                Id = "PO001",
+                Id = ReportIds.PurchaseOrder,
                 Name = "採購單",
                 Description = "列印採購訂單（含廠商資訊、商品明細、金額統計）",
                 IconClass = "bi bi-cart-plus",
@@ -118,7 +118,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "PO002",
+                Id = ReportIds.PurchaseReceiving,
                 Name = "進貨單",
                 Description = "列印進貨單（含驗收資訊、入庫明細）",
                 IconClass = "bi bi-box-seam",
@@ -130,7 +130,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "PO003",
+                Id = ReportIds.PurchaseReturn,
                 Name = "進貨退出單",
                 Description = "列印進貨退出單（含退貨原因、退貨明細）",
                 IconClass = "bi bi-arrow-return-left",
@@ -145,7 +145,7 @@ public static class ReportRegistry
             // ==================== 銷售報表 ====================
             new ReportDefinition
             {
-                Id = "SO001",
+                Id = ReportIds.Quotation,
                 Name = "報價單",
                 Description = "列印報價單（含客戶資訊、商品明細、金額統計）",
                 IconClass = "bi bi-file-earmark-text",
@@ -157,7 +157,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "SO002",
+                Id = ReportIds.SalesOrder,
                 Name = "銷貨訂單",
                 Description = "列印銷貨訂單（含客戶資訊、商品明細、金額統計）",
                 IconClass = "bi bi-receipt",
@@ -169,7 +169,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "SO003",
+                Id = ReportIds.SalesReturn,
                 Name = "銷貨退回單",
                 Description = "列印銷貨退回單（含退貨原因、退貨明細）",
                 IconClass = "bi bi-arrow-return-right",
@@ -181,7 +181,7 @@ public static class ReportRegistry
             },
             new ReportDefinition
             {
-                Id = "SO004",
+                Id = ReportIds.SalesDelivery,
                 Name = "出貨單",
                 Description = "列印出貨單（含客戶資訊、商品明細、金額統計）",
                 IconClass = "bi bi-truck",

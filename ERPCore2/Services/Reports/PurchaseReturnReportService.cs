@@ -79,8 +79,6 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var document = await GenerateReportAsync(purchaseReturnId);
-                
-                _logger?.LogInformation("開始列印進貨退出單 {OrderId}，使用配置：{ReportId}", purchaseReturnId, reportId);
 
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
@@ -129,8 +127,6 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"無符合條件的進貨退出單\n篩選條件：{criteria.GetSummary()}");
                 }
 
-                _logger?.LogInformation("開始批次列印 {Count} 張進貨退出單，使用配置：{ReportId}", purchaseReturns.Count, reportId);
-
                 // 逐一列印
                 foreach (var purchaseReturn in purchaseReturns)
                 {
@@ -141,7 +137,6 @@ namespace ERPCore2.Services.Reports
                     }
                 }
 
-                _logger?.LogInformation("已完成 {Count} 張進貨退出單的列印", purchaseReturns.Count);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

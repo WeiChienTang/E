@@ -1373,10 +1373,6 @@ namespace ERPCore2.Services
                 
                 await context.SaveChangesAsync();
                 
-                _logger?.LogInformation(
-                    "成本調整完成 - 商品:{ProductId}, 倉庫:{WarehouseId}, 舊成本:{OldCost}→新成本:{NewCost}, 平均成本:{OldAvg}→{NewAvg}",
-                    productId, warehouseId, oldUnitCost, newUnitCost, currentAverageCost, newAverageCost);
-                
                 return ServiceResult.Success();
             }
             catch (Exception ex)

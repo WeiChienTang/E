@@ -99,8 +99,6 @@ namespace ERPCore2.Services.Reports
             try
             {
                 var document = await GenerateReportAsync(salesReturnId);
-                
-                _logger?.LogInformation("開始列印銷貨退回單 {SalesReturnId}，使用配置：{ReportId}", salesReturnId, reportId);
 
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, copies);
             }
@@ -163,8 +161,6 @@ namespace ERPCore2.Services.Reports
                     return ServiceResult.Failure($"無符合條件的銷貨退回單\n篩選條件：{criteria.GetSummary()}");
                 }
 
-                _logger?.LogInformation("開始批次列印 {Count} 張銷貨退回單，使用配置：{ReportId}", filteredReturns.Count, reportId);
-
                 // 逐一列印
                 foreach (var salesReturn in filteredReturns)
                 {
@@ -175,7 +171,6 @@ namespace ERPCore2.Services.Reports
                     }
                 }
 
-                _logger?.LogInformation("已完成 {Count} 張銷貨退回單的列印", filteredReturns.Count);
                 return ServiceResult.Success();
             }
             catch (Exception ex)

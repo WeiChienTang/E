@@ -1,7 +1,7 @@
 # 報表篩選架構設計說明
 
 ## 更新日期
-2026-02-09
+2026-02-10
 
 ---
 
@@ -54,6 +54,7 @@
 
 ```
 Models/Reports/
+├── ReportIds.cs                             # 報表 ID 常數（唯一來源）
 ├── FilterCriteria/                          # 篩選條件 DTO
 │   ├── IReportFilterCriteria.cs            # 基礎介面
 │   ├── AccountsReceivableCriteria.cs       # 應收帳款篩選條件
@@ -61,7 +62,7 @@ Models/Reports/
 │
 └── FilterTemplates/                         # 模板配置
     ├── ReportFilterConfig.cs               # 篩選配置模型 + IFilterTemplateComponent
-    └── FilterTemplateRegistry.cs           # 模板註冊表
+    └── FilterTemplateRegistry.cs           # 模板註冊表（集中管理所有配置）
 
 Components/Shared/Report/
 ├── GenericReportFilterModalComponent.razor  # 通用篩選 Modal
@@ -71,8 +72,8 @@ Components/Shared/Report/
 ├── MultiSelectFilterComponent.razor         # 多選
 │
 └── FilterTemplates/                         # 篩選模板組件
-    ├── AccountsReceivableFilterTemplate.razor    # AR001
-    └── PurchaseOrderBatchFilterTemplate.razor    # PO001
+    ├── AccountsReceivableFilterTemplate.razor
+    └── PurchaseOrderBatchFilterTemplate.razor
 ```
 
 ---
@@ -110,14 +111,17 @@ public interface IFilterTemplateComponent
 ```csharp
 public class ReportFilterConfig
 {
-    public string ReportId { get; set; }              // 報表 ID
-    public Type FilterTemplateType { get; set; }     // 模板組件類型
-    public Type CriteriaType { get; set; }           // 篩選條件 DTO 類型
-    public Type? ReportServiceType { get; set; }     // 報表服務類型
-    public string PreviewTitle { get; set; }         // 預覽標題
-    public string FilterTitle { get; set; }          // 篩選 Modal 標題
-    public string IconClass { get; set; }            // 圖示類別
+    public string ReportId { get; set; }                   // 報表 ID
+    public string FilterTemplateTypeName { get; set; }     // 模板組件完整類別名稱
+    public Type CriteriaType { get; set; }                 // 篩選條件 DTO 類型
+    public Type? ReportServiceType { get; set; }           // 報表服務類型
+    public string PreviewTitle { get; set; }               // 預覽標題
+    public string FilterTitle { get; set; }                // 篩選 Modal 標題
+    public string IconClass { get; set; }                  // 圖示類別
     public Func<IReportFilterCriteria, string>? GetDocumentName { get; set; }
+    
+    // 延遲解析模板類型
+    public Type GetFilterTemplateType() { ... }
 }
 ```
 
@@ -210,25 +214,7 @@ public class CustomerStatementCriteria : IReportFilterCriteria
 }
 ```
 
-### 3. 在 FilterTemplateInitializer 註冊模板類型
-
-```csharp
-// Components/Shared/Report/FilterTemplateInitializer.cs
-public static void Initialize()
-{
-    if (_isInitialized) return;
-    
-    // 註冊所有模板類型
-    FilterTemplateRegistry.RegisterTemplateType("AR001", typeof(AccountsReceivableFilterTemplate));
-    FilterTemplateRegistry.RegisterTemplateType("AR002", typeof(CustomerStatementFilterTemplate)); // 新增
-    FilterTemplateRegistry.RegisterTemplateType("PO001", typeof(PurchaseOrderBatchFilterTemplate));
-    
-    FilterTemplateRegistry.Initialize();
-    _isInitialized = true;
-}
-```
-
-### 4. 在 FilterTemplateRegistry 註冊篩選配置
+### 3. 在 FilterTemplateRegistry 註冊篩選配置
 
 ```csharp
 // Models/Reports/FilterTemplates/FilterTemplateRegistry.cs
@@ -239,8 +225,8 @@ public static void Initialize()
     // 新增配置
     RegisterConfig(new ReportFilterConfig
     {
-        ReportId = "AR002",
-        FilterTemplateType = _templateTypes.GetValueOrDefault("AR002") ?? typeof(object),
+        ReportId = ReportIds.CustomerStatement,
+        FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.CustomerStatementFilterTemplate",
         CriteriaType = typeof(CustomerStatementCriteria),
         ReportServiceType = typeof(ICustomerStatementReportService),
         PreviewTitle = "客戶對帳單預覽",
@@ -255,7 +241,9 @@ public static void Initialize()
 }
 ```
 
-### 5. 在 ReportRegistry 新增報表定義
+> **重要**：`FilterTemplateTypeName` 必須是完整的類別名稱（含命名空間），系統會在執行時期延遲解析。
+
+### 4. 在 ReportRegistry 新增報表定義
 
 ```csharp
 // Data/Reports/ReportRegistry.cs
@@ -339,12 +327,14 @@ new ReportDefinition
 
 ## 📝 新增報表篩選 Checklist
 
-1. ☐ 建立篩選條件 DTO（`Models/Reports/FilterCriteria/`）
+1. ☐ 在 `ReportIds.cs` 新增報表 ID 常數
+2. ☐ 建立篩選條件 DTO（`Models/Reports/FilterCriteria/`）
    - 實作 `IReportFilterCriteria` 介面
-   - 實作 `ToBatchPrintCriteria()` 方法（用於轉換為批次篩選條件）
-2. ☐ 建立篩選模板組件（`Components/Shared/Report/FilterTemplates/`）
-3. ☐ 在 `FilterTemplateInitializer.cs` 中註冊模板類型
-4. ☐ 在 `FilterTemplateRegistry.cs` 的 `Initialize()` 中註冊配置（包含 ReportServiceType）
+   - 實作 `ToBatchPrintCriteria()` 方法
+3. ☐ 建立篩選模板組件（`Components/Shared/Report/FilterTemplates/`）
+   - 建立 `.razor` 檔案（實作 `IFilterTemplateComponent`）
+4. ☐ 在 `FilterTemplateRegistry.cs` 的 `Initialize()` 中註冊配置
+   - 設定 `FilterTemplateTypeName` 為完整類別名稱
 5. ☐ 在 `ReportRegistry.cs` 中確認報表 `IsEnabled = true`
 6. ☐ 報表服務實作 `RenderBatchToImagesAsync`（使用 `BatchReportHelper`）
 
@@ -358,3 +348,12 @@ new ReportDefinition
 4. **篩選條件須實作 `ToBatchPrintCriteria()`**：用於轉換為報表服務可用的批次篩選條件
 5. **報表服務使用 `BatchReportHelper`**：避免重複實作批次預覽邏輯，只需專注於資料查詢
 6. **紙張變更會觸發重新渲染**：GenericReportFilterModalComponent 處理 OnPaperSettingChanged 事件，更新 BatchPrintCriteria.PaperSetting 並重新產生預覽
+
+---
+
+## 相關檔案
+
+- [README_報表系統總綱.md](../../../Documentation/README_報表系統總綱.md) - 報表系統入口
+- [README_報表中心設計.md](../../Pages/Reports/README_報表中心設計.md) - 報表中心入口
+- [README_報表檔設計總綱.md](../../../Documentation/README_報表檔設計總綱.md) - 報表服務與列印
+- [README_Index列印實作指南.md](../../../Documentation/README_Index列印實作指南.md) - Index 批次列印

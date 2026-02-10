@@ -3,6 +3,7 @@
 @using ERPCore2.Helpers
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.Reports
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
@@ -51,7 +52,7 @@
                           ShowPrintButton = "true"
                           PrintButtonText="列印"
                           ReportService="@PurchaseOrderReportService"
-                          ReportId="PO001"
+                          ReportId="@ReportIds.PurchaseOrder"
                           ReportPreviewTitle="採購單預覽"
                           GetReportDocumentName="@(e => $"採購單-{e.Code}")"
                           ShowApprovalSection="@ShouldShowApprovalSection()"

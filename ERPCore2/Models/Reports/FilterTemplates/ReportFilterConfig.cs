@@ -13,9 +13,28 @@ public class ReportFilterConfig
     public string ReportId { get; set; } = string.Empty;
     
     /// <summary>
-    /// 篩選模板組件類型（Blazor Component）
+    /// 篩選模板組件類型名稱（完整類別名稱，用於延遲解析避免循環參考）
+    /// 格式：ERPCore2.Components.Shared.Report.FilterTemplates.XxxFilterTemplate
     /// </summary>
-    public Type FilterTemplateType { get; set; } = null!;
+    public string FilterTemplateTypeName { get; set; } = string.Empty;
+    
+    // 快取解析後的類型
+    private Type? _filterTemplateType;
+    
+    /// <summary>
+    /// 取得篩選模板組件類型（延遲解析）
+    /// </summary>
+    public Type GetFilterTemplateType()
+    {
+        if (_filterTemplateType == null && !string.IsNullOrEmpty(FilterTemplateTypeName))
+        {
+            _filterTemplateType = Type.GetType(FilterTemplateTypeName) 
+                ?? AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(a => a.GetTypes())
+                    .FirstOrDefault(t => t.FullName == FilterTemplateTypeName);
+        }
+        return _filterTemplateType ?? typeof(object);
+    }
     
     /// <summary>
     /// 篩選條件 DTO 類型（實作 IReportFilterCriteria）

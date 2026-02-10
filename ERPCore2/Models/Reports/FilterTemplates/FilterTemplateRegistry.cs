@@ -4,35 +4,27 @@ namespace ERPCore2.Models.Reports.FilterTemplates;
 
 /// <summary>
 /// 報表篩選模板註冊表 - 集中管理報表 ID 與篩選模板的對應
+/// 新增報表篩選時，只需在此檔案新增配置即可
 /// </summary>
 public static class FilterTemplateRegistry
 {
     private static readonly Dictionary<string, ReportFilterConfig> _configs = new();
     private static bool _isInitialized = false;
     
-    // 模板類型註冊表（由 Blazor 組件層註冊）
-    private static readonly Dictionary<string, Type> _templateTypes = new();
-    
     /// <summary>
-    /// 註冊模板類型（需在應用程式啟動時呼叫，由 Blazor 組件層負責）
-    /// </summary>
-    public static void RegisterTemplateType(string reportId, Type templateType)
-    {
-        _templateTypes[reportId] = templateType;
-    }
-    
-    /// <summary>
-    /// 初始化註冊表（自動使用已註冊的模板類型）
+    /// 初始化註冊表（直接在此定義所有模板配置）
     /// </summary>
     public static void Initialize()
     {
         if (_isInitialized) return;
         
-        // 客戶報表 - 應收帳款
+        // ==================== 客戶報表 ====================
+        
+        // 應收帳款報表
         RegisterConfig(new ReportFilterConfig
         {
-            ReportId = "AR001",
-            FilterTemplateType = _templateTypes.GetValueOrDefault("AR001") ?? typeof(object),
+            ReportId = ReportIds.AccountsReceivable,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.AccountsReceivableFilterTemplate",
             CriteriaType = typeof(AccountsReceivableCriteria),
             ReportServiceType = null,  // TODO: 待實作 IAccountsReceivableReportService
             PreviewTitle = "應收帳款報表預覽",
@@ -48,13 +40,13 @@ public static class FilterTemplateRegistry
             }
         });
         
-        // 可在此繼續註冊其他報表...
+        // ==================== 採購報表 ====================
         
-        // 採購報表 - 採購單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
+        // 採購單（報表中心進入時顯示篩選，EditModal 直接單筆列印）
         RegisterConfig(new ReportFilterConfig
         {
-            ReportId = "PO001",
-            FilterTemplateType = _templateTypes.GetValueOrDefault("PO001") ?? typeof(object),
+            ReportId = ReportIds.PurchaseOrder,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.PurchaseOrderBatchFilterTemplate",
             CriteriaType = typeof(PurchaseOrderBatchPrintCriteria),
             ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IPurchaseOrderReportService),
             PreviewTitle = "採購單列印預覽",
