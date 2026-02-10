@@ -4,7 +4,10 @@ using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Services;
 using ERPCore2.Components.Shared.UI.Form;
-using ERPCore2.Components.Shared.PageTemplate;
+using ERPCore2.Components.Shared.Modal;
+using ERPCore2.Components.Shared.Table;
+using ERPCore2.Components.Shared.Page;
+using ERPCore2.Components.Shared.Statistics;
 using Microsoft.AspNetCore.Components;
 
 namespace ERPCore2.FieldConfiguration

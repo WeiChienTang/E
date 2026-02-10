@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using ERPCore2.Components.Shared.UI.Button;
 
-namespace ERPCore2.Components.Shared.Base
+namespace ERPCore2.Components.Shared.Table
 {
     /// <summary>
     /// 互動表格下拉選單選項模型

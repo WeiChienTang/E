@@ -2,8 +2,10 @@ using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using ERPCore2.Components.Shared.PageTemplate;
-
+using ERPCore2.Components.Shared.Modal;
+using ERPCore2.Components.Shared.Table;
+using ERPCore2.Components.Shared.Page;
+using ERPCore2.Components.Shared.Statistics;
 namespace ERPCore2.FieldConfiguration
 {
     /// <summary>

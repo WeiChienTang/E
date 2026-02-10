@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using ERPCore2.Components.Shared.UI.Form;
 
-namespace ERPCore2.Components.Shared.PageTemplate;
+namespace ERPCore2.Components.Shared.UI.Form;
 
 /// <summary>
 /// 搜尋篩選類型枚舉

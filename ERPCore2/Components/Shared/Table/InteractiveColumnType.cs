@@ -1,4 +1,4 @@
-namespace ERPCore2.Components.Shared.Base
+namespace ERPCore2.Components.Shared.Table
 {
     /// <summary>
     /// 互動表格欄位類型枚舉

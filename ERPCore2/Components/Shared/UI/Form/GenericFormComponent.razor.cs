@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Helpers;
 
-namespace ERPCore2.Components.Shared.PageTemplate;
+namespace ERPCore2.Components.Shared.UI.Form;
 
 /// <summary>
 /// 通用表單組件 - 基於配置驅動的動態表單

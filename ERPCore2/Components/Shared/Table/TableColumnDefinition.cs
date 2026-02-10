@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace ERPCore2.Components.Shared.PageTemplate;
+namespace ERPCore2.Components.Shared.Table;
 
 /// <summary>
 /// 資料表格欄位定義
