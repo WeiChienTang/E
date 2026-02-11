@@ -142,6 +142,13 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "在職狀態")]
         public EmployeeStatus EmploymentStatus { get; set; } = EmployeeStatus.Active;
+
+        /// <summary>
+        /// 是否已初始化首頁儀表板
+        /// false = 新用戶，首次登入時會自動套用預設配置
+        /// true = 已初始化，即使配置為空也不會自動重置
+        /// </summary>
+        public bool HasInitializedDashboard { get; set; } = false;
         
         // 導航屬性
         public Role? Role { get; set; }

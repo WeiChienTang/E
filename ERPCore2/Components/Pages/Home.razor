@@ -31,18 +31,25 @@
         <div>
             @if (isEditMode)
             {
-                <button class="btn btn-outline-warning btn-sm me-2" @onclick="HandleResetToDefault" title="重置為預設配置">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>重置預設
-                </button>
-                <button class="btn btn-primary btn-sm" @onclick="ToggleEditMode">
-                    <i class="bi bi-check-lg me-1"></i>完成編輯
-                </button>
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        Text="完成編輯"
+                                        OnClick="@ToggleEditMode" />
+                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                        Size="ButtonSize.Small"
+                                        Text="重置預設"
+                                        Title="重置為預設配置"
+                                        CssClass="me-2"
+                                        OnClick="@HandleResetToDefault" />
+
             }
             else
             {
-                <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleEditMode" title="編輯首頁捷徑">
-                    <i class="bi bi-pencil-square me-1"></i>編輯首頁
-                </button>
+                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Small"
+                                        Text="編輯"
+                                        Title="編輯首頁捷徑"
+                                        OnClick="@ToggleEditMode" />
             }
         </div>
     </div>
@@ -63,7 +70,7 @@
             @foreach (var configWithNav in dashboardConfigs)
             {
                 var capturedConfig = configWithNav;
-                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6"
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4"
                      draggable="@(isEditMode ? "true" : "false")"
                      @ondragstart="@(() => HandleDragStart(capturedConfig))"
                      @ondragover:preventDefault="true"
@@ -80,7 +87,7 @@
             @* 編輯模式下的「新增捷徑」卡片 *@
             @if (isEditMode)
             {
-                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4">
                     <div class="add-shortcut-card" @onclick="OpenWidgetPicker">
                         <i class="bi bi-plus-circle fs-2"></i>
                         <span class="small fw-semibold mt-1">新增捷徑</span>
@@ -94,9 +101,10 @@
         <div class="text-center py-5">
             <i class="bi bi-grid-1x2 text-muted" style="font-size: 3rem;"></i>
             <p class="text-muted mt-3 mb-2">尚未設定首頁捷徑</p>
-            <button class="btn btn-primary btn-sm" @onclick="OpenWidgetPicker">
-                <i class="bi bi-plus-lg me-1"></i>新增捷徑
-            </button>
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                    Size="ButtonSize.Small"
+                                    Text="新增捷徑"
+                                    OnClick="@OpenWidgetPicker" />
         </div>
     }
 

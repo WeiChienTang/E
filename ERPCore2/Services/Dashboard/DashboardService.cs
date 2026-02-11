@@ -71,10 +71,18 @@ namespace ERPCore2.Services
                     .OrderBy(c => c.SortOrder)
                     .ToListAsync();
 
-                // 如果沒有任何配置，自動建立預設配置
+                // 如果沒有任何配置，檢查是否為新用戶
                 if (!configs.Any())
                 {
-                    return await InitializeDefaultDashboardAsync(employeeId);
+                    // 查詢員工是否已初始化過儀表板
+                    var employee = await context.Employees.FindAsync(employeeId);
+                    if (employee != null && !employee.HasInitializedDashboard)
+                    {
+                        // 新用戶，自動套用預設配置
+                        return await InitializeDefaultDashboardAsync(employeeId);
+                    }
+                    // 已初始化過但配置為空，回傳空清單
+                    return new List<DashboardConfigWithNavItem>();
                 }
 
                 // 取得員工權限
@@ -155,6 +163,14 @@ namespace ERPCore2.Services
                 };
 
                 context.EmployeeDashboardConfigs.Add(config);
+
+                // 標記員工已初始化儀表板
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
                 await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
@@ -229,8 +245,16 @@ namespace ERPCore2.Services
                 if (newConfigs.Any())
                 {
                     context.EmployeeDashboardConfigs.AddRange(newConfigs);
-                    await context.SaveChangesAsync();
                 }
+
+                // 標記員工已初始化儀表板
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
+                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -259,6 +283,14 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到該配置");
 
                 context.EmployeeDashboardConfigs.Remove(config);
+
+                // 標記員工已初始化儀表板（避免移除全部後又自動套用預設）
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
                 await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
@@ -354,23 +386,31 @@ namespace ERPCore2.Services
                     newConfigs.Add(config);
                 }
 
+                // 標記員工已初始化儀表板
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
                 if (newConfigs.Any())
                 {
                     context.EmployeeDashboardConfigs.AddRange(newConfigs);
-                    await context.SaveChangesAsync();
+                }
 
-                    // 建立回傳結果
-                    foreach (var config in newConfigs)
+                await context.SaveChangesAsync();
+
+                // 建立回傳結果
+                foreach (var config in newConfigs)
+                {
+                    var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
+                    if (navItem != null)
                     {
-                        var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
-                        if (navItem != null)
+                        result.Add(new DashboardConfigWithNavItem
                         {
-                            result.Add(new DashboardConfigWithNavItem
-                            {
-                                Config = config,
-                                NavigationItem = navItem
-                            });
-                        }
+                            Config = config,
+                            NavigationItem = navItem
+                        });
                     }
                 }
 

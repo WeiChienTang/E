@@ -28,9 +28,34 @@
     transform: scale(1.15);
 }
 
-/* ===== 響應式調整 ===== */
+/* ===== 響應式調整 - 平板 ===== */
+@media (max-width: 768px) {
+    .add-shortcut-card {
+        min-height: 100px;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .add-shortcut-card i {
+        font-size: 1.5rem !important;
+    }
+
+    .add-shortcut-card span {
+        font-size: 0.7rem;
+    }
+}
+
+/* ===== 響應式調整 - 手機 ===== */
 @media (max-width: 576px) {
     .add-shortcut-card {
-        min-height: 120px;
+        min-height: 80px;
+        padding: 0.5rem 0.35rem;
+    }
+
+    .add-shortcut-card i {
+        font-size: 1.25rem !important;
+    }
+
+    .add-shortcut-card span {
+        font-size: 0.6rem;
     }
 }

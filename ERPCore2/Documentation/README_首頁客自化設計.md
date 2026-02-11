@@ -26,6 +26,7 @@
 NavigationConfig（靜態類）
   └─ GetDashboardWidgetItems() → 取得所有可作為捷徑的導航項目
   └─ GetNavigationItemByKey(key) → 根據識別鍵取得導航項目
+  └─ GetCategoryIcon(category) → 根據分類取得對應圖示（圖示備援用）
 
 DashboardDefaults（靜態類）
   └─ DefaultWidgetKeys → 預設捷徑識別鍵清單
@@ -42,12 +43,21 @@ EmployeeDashboardConfig（資料表）
 首頁載入
   ├─ DashboardService.GetEmployeeDashboardAsync(employeeId)
   │     ├─ 查詢 EmployeeDashboardConfig（從資料庫）
+  │     ├─ 如果配置為空：
+  │     │     ├─ 檢查 Employee.HasInitializedDashboard
+  │     │     ├─ false → 新用戶，呼叫 InitializeDefaultDashboardAsync()
+  │     │     └─ true → 用戶故意清空，回傳空清單
   │     ├─ 用 NavigationItemKey 對應 NavigationConfig（從靜態類）
   │     ├─ 過濾權限
   │     └─ 回傳 List<DashboardConfigWithNavItem>
   └─ Home.razor 渲染捷徑卡片
 
-新增捷徑
+新增/移除捷徑
+  ├─ 執行新增或移除操作
+  ├─ 設定 Employee.HasInitializedDashboard = true
+  └─ 儲存變更
+
+新增捷徑選單
   ├─ DashboardService.GetAvailableWidgetsAsync(employeeId)
   │     ├─ 從 NavigationConfig.GetDashboardWidgetItems() 取得所有項目
   │     ├─ 過濾有權限的項目
@@ -58,6 +68,18 @@ EmployeeDashboardConfig（資料表）
 ---
 
 ## 資料表設計
+
+### Employee（員工表 - 相關欄位）
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| HasInitializedDashboard | bool | 是否已初始化首頁儀表板（預設 false） |
+
+**初始化邏輯：**
+- `false`：新用戶，首次登入時自動套用預設配置
+- `true`：已初始化，即使配置為空也不會自動重置（用戶可能故意清空）
+
+**設定時機：** 任何儀表板操作（新增、移除、初始化）均會設定為 `true`
 
 ### EmployeeDashboardConfig（員工儀表板配置表）
 
@@ -177,13 +199,13 @@ public static readonly List<string> DefaultWidgetKeys = new()
 | 方法 | 說明 |
 |------|------|
 | `GetAvailableWidgetsAsync(int employeeId)` | 取得該員工有權限使用的所有導航項目（用於「新增捷徑」選擇畫面） |
-| `GetEmployeeDashboardAsync(int employeeId)` | 取得該員工目前的首頁配置，如果沒有任何配置則自動建立預設配置 |
-| `AddWidgetAsync(int employeeId, string navigationItemKey)` | 新增一個捷徑到員工首頁 |
-| `AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys)` | 批次新增捷徑 |
-| `RemoveWidgetAsync(int employeeId, int configId)` | 從員工首頁移除一個捷徑 |
+| `GetEmployeeDashboardAsync(int employeeId)` | 取得該員工目前的首頁配置；若配置為空且未初始化過 → 自動建立預設配置；若已初始化過 → 回傳空清單 |
+| `AddWidgetAsync(int employeeId, string navigationItemKey)` | 新增一個捷徑到員工首頁，並標記 HasInitializedDashboard = true |
+| `AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys)` | 批次新增捷徑，並標記 HasInitializedDashboard = true |
+| `RemoveWidgetAsync(int employeeId, int configId)` | 從員工首頁移除一個捷徑，並標記 HasInitializedDashboard = true |
 | `UpdateSortOrderAsync(int employeeId, List<int> configIds)` | 批次更新排序（拖曳排序後呼叫） |
-| `InitializeDefaultDashboardAsync(int employeeId)` | 根據員工權限建立預設配置 |
-| `ResetToDefaultAsync(int employeeId)` | 重置為預設配置 |
+| `InitializeDefaultDashboardAsync(int employeeId)` | 根據員工權限建立預設配置，並標記 HasInitializedDashboard = true |
+| `ResetToDefaultAsync(int employeeId)` | 刪除現有配置並重新建立預設配置 |
 
 ### DashboardConfigWithNavItem 回傳類別
 
@@ -228,6 +250,23 @@ Home.razor
 | IsEditMode | bool | 是否處於編輯模式 |
 | OnRemove | EventCallback | 移除回呼 |
 | OnClick | EventCallback | 點擊回呼（導航或觸發動作） |
+
+**圖示備援邏輯：**
+元件內部的 `GetEffectiveIcon()` 方法會自動處理圖示：
+- 如果導航項目有有效圖示（如 `bi-printer-fill`）→ 使用原圖示
+- 如果圖示為空或箭頭（`bi-caret-right-fill`）→ 使用 Category 對應圖示
+
+| Category | 備援圖示 |
+|----------|----------|
+| 人力資源管理 | bi-person-badge-fill |
+| 供應鏈管理 | bi-building-gear |
+| 客戶關係管理 | bi-people-fill |
+| 商品管理 | bi-box-seam-fill |
+| 庫存管理 | bi-boxes |
+| 採購管理 | bi-truck |
+| 銷售管理 | bi-cart-fill |
+| 財務管理 | bi-journal-text |
+| 系統管理 | bi-gear-fill |
 
 ### DashboardWidgetPickerModal.razor
 

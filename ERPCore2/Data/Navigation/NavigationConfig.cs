@@ -716,6 +716,30 @@ public static class NavigationConfig
     }
 
     /// <summary>
+    /// 根據分類取得對應的圖示
+    /// 用於子項目無圖示時的備援顯示
+    /// </summary>
+    /// <param name="category">分類名稱</param>
+    /// <returns>對應的 Bootstrap Icon class</returns>
+    public static string GetCategoryIcon(string? category)
+    {
+        return category switch
+        {
+            "人力資源管理" => "bi bi-person-badge-fill",
+            "供應鏈管理" => "bi bi-building-gear",
+            "客戶關係管理" => "bi bi-people-fill",
+            "商品管理" => "bi bi-box-seam-fill",
+            "庫存管理" => "bi bi-boxes",
+            "採購管理" => "bi bi-truck",
+            "銷售管理" => "bi bi-cart-fill",
+            "財務管理" => "bi bi-journal-text",
+            "系統管理" => "bi bi-gear-fill",
+            "基礎功能" => "bi bi-house-door-fill",
+            _ => "bi bi-link-45deg" // 預設圖示
+        };
+    }
+
+    /// <summary>
     /// 根據識別鍵取得導航項目
     /// </summary>
     /// <param name="key">識別鍵（Route 或 "Action:{ActionId}"）</param>
