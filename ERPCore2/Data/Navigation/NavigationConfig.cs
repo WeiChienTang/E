@@ -324,7 +324,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "倉庫內位置",
+                        Name = "庫位",
                         Description = "管理倉庫內的儲位配置",
                         Route = "/warehouseLocations",
                         IconClass = "",
@@ -381,7 +381,7 @@ public static class NavigationConfig
                 {
                     new NavigationItem
                     {
-                        Name = "採購單管理",
+                        Name = "採購管理",
                         Description = "管理採購訂單",
                         Route = "/purchase/orders",
                         IconClass = "bi bi-caret-right-fill",
@@ -391,7 +391,7 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
-                        Name = "進貨",
+                        Name = "進貨管理",
                         Description = "管理進貨作業",
                         Route = "/purchase/receiving",
                         IconClass = "bi bi-caret-right-fill",

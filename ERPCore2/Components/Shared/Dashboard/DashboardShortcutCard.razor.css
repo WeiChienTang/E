@@ -129,7 +129,7 @@
     }
 
     .shortcut-name {
-        font-size: 0.75rem;
+        font-size: 0.80rem;
         margin-bottom: 0.15rem;
     }
 
@@ -141,7 +141,7 @@
 /* 響應式 - 手機 */
 @media (max-width: 576px) {
     .shortcut-card {
-        min-height: 80px;
+        min-height: 70px;
         padding: 0.5rem 0.35rem;
     }
 
@@ -151,12 +151,14 @@
     }
 
     .shortcut-name {
-        font-size: 0.65rem;
-        margin-bottom: 0.1rem;
+        font-size: 0.80rem;
+        margin-bottom: 0;
+        line-height: 1.2;
     }
 
+    /* 手機模式隱藏分類標籤 */
     .shortcut-category {
-        font-size: 0.5rem;
+        display: none;
     }
 
     .btn-remove {
