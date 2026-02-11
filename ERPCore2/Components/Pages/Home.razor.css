@@ -1,150 +1,36 @@
-/* 庫存警戒卡片樣式 */
-.inventory-alert-card {
-    transition: all 0.3s ease;
-    border-width: 2px !important;
-}
-
-.inventory-alert-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
-}
-
-.inventory-alert-card.alert-active:hover {
-    border-width: 3px !important;
-}
-
-/* 無警戒項目時，禁用 hover 效果 */
-.inventory-alert-card:not(.alert-active) {
-    cursor: default !important;
-    opacity: 0.7;
-}
-
-.inventory-alert-card:not(.alert-active):hover {
-    transform: none;
-    box-shadow: none !important;
-}
-
-/* 卡片內圖示動畫 */
-.inventory-alert-card .bi {
-    transition: transform 0.3s ease;
-}
-
-.inventory-alert-card.alert-active:hover .bi {
-    transform: scale(1.1);
-}
-
-/* 徽章動畫 */
-.inventory-alert-card .badge {
-    transition: all 0.2s ease;
-}
-
-.inventory-alert-card:hover .badge {
-    transform: scale(1.05);
-}
-
-/* 統計卡片容器 */
-.statistics-cards-container {
-    gap: 1rem;
-}
-
-.statistics-card-wrapper {
-    flex: 1 1 300px;
-    min-width: 250px;
-}
-
-/* 區段卡片樣式 - Home 頁面專用 */
-.section-card {
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: box-shadow 0.3s ease;
-}
-
-.section-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-/* 區段標題樣式 - 警告主題（庫存狀態） */
-.section-header-warning {
-    background-color: #1F2937;
-    color: #FFFFFF;
-    border-bottom: none;
-    padding: 0.75rem 1.25rem;
-}
-
-.section-header-warning .card-title {
-    font-weight: 600;
-    margin-bottom: 0;
-}
-
-/* 區段標題樣式 - 主要主題（頁面搜尋） - Home 頁面專用 */
-.section-header-primary {
-    background-color: #1F2937;
-    color: #FFFFFF;
-    border-bottom: none;
-    padding: 0.75rem 1.25rem;
-}
-
-.section-header-primary .card-title {
-    font-weight: 600;
-    margin-bottom: 0;
-}
-
-/* 搜尋結果卡片 */
-.search-result-card {
-    transition: transform 0.2s ease;
-}
-
-.search-result-card:hover {
-    transform: translateY(-2px);
-}
-
-/* 搜尋輸入框樣式 */
-.form-control-lg {
-    border-radius: 0.5rem;
-    border: 2px solid #e5e7eb;
-    transition: all 0.3s ease;
-}
-
-.form-control-lg:focus {
-    border-color: #1F2937;
-    box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.15);
-}
-
-.form-control-lg::placeholder {
+/* ===== 新增捷徑卡片 ===== */
+.add-shortcut-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 1rem;
+    background-color: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-height: 140px;
     color: #9ca3af;
 }
 
-/* 搜尋空白狀態 */
-.search-empty-state {
-    padding: 3rem 1rem;
-    color: #6c757d;
+.add-shortcut-card:hover {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
 }
 
-.search-empty-state .bi {
-    color: #dee2e6;
+.add-shortcut-card i {
+    transition: transform 0.25s ease;
 }
 
-/* 響應式調整 */
-@media (max-width: 768px) {
-    .statistics-card-wrapper {
-        flex: 1 1 100%;
-    }
-    
-    .inventory-alert-card {
-        margin-bottom: 1rem;
-    }
+.add-shortcut-card:hover i {
+    transform: scale(1.15);
 }
 
-/* Loading 動畫 */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
+/* ===== 響應式調整 ===== */
+@media (max-width: 576px) {
+    .add-shortcut-card {
+        min-height: 120px;
     }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-.spinner-border-sm {
-    animation: pulse 1.5s ease-in-out infinite;
 }

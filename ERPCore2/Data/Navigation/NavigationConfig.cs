@@ -698,4 +698,47 @@ public static class NavigationConfig
 
         return result;
     }
+
+    /// <summary>
+    /// 取得可作為儀表板捷徑的導航項目
+    /// 過濾掉：首頁、父級選單容器、分隔線、無路由的項目
+    /// </summary>
+    public static List<NavigationItem> GetDashboardWidgetItems()
+    {
+        return GetFlattenedNavigationItems()
+            .Where(item => 
+                !item.IsDivider &&
+                !item.IsParent &&
+                !string.IsNullOrEmpty(item.Name) &&
+                (item.ItemType == NavigationItemType.Action || 
+                 (!string.IsNullOrEmpty(item.Route) && item.Route != "/" && item.Route != "#")))
+            .ToList();
+    }
+
+    /// <summary>
+    /// 根據識別鍵取得導航項目
+    /// </summary>
+    /// <param name="key">識別鍵（Route 或 "Action:{ActionId}"）</param>
+    /// <returns>對應的導航項目，找不到則回傳 null</returns>
+    public static NavigationItem? GetNavigationItemByKey(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+            return null;
+
+        var allItems = GetDashboardWidgetItems();
+
+        // Action 類型
+        if (key.StartsWith("Action:"))
+        {
+            var actionId = key.Substring(7); // 移除 "Action:" 前綴
+            return allItems.FirstOrDefault(item => 
+                item.ItemType == NavigationItemType.Action && 
+                item.ActionId == actionId);
+        }
+
+        // Route 類型
+        return allItems.FirstOrDefault(item => 
+            item.ItemType == NavigationItemType.Route && 
+            item.Route == key);
+    }
 }

@@ -1,0 +1,69 @@
+/* 選擇項目 */
+.picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
+}
+
+.picker-item:hover {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+/* 已選取 */
+.picker-item.selected {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+}
+
+/* 已加入首頁（禁用） */
+.picker-item.existing {
+    background-color: #f9fafb;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.picker-item.existing:hover {
+    background-color: #f9fafb;
+    border-color: #e5e7eb;
+}
+
+/* Checkbox 圖示 */
+.picker-checkbox {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* 小工具圖示 */
+.picker-icon {
+    font-size: 1.2rem;
+    color: #1F2937;
+    flex-shrink: 0;
+}
+
+/* 名稱 */
+.picker-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1F2937;
+    line-height: 1.3;
+}
+
+/* 描述 */
+.picker-desc {
+    font-size: 0.72rem;
+    color: #9ca3af;
+    line-height: 1.3;
+    margin-top: 1px;
+}
+
+.picker-info {
+    min-width: 0;
+    overflow: hidden;
+}

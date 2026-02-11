@@ -93,6 +93,7 @@ namespace ERPCore2.Data.Context
       public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
       public DbSet<ReportPrintConfiguration> ReportPrintConfigurations { get; set; }
       public DbSet<TextMessageTemplate> TextMessageTemplates { get; set; }
+      public DbSet<EmployeeDashboardConfig> EmployeeDashboardConfigs { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1259,6 +1260,18 @@ namespace ERPCore2.Data.Context
                         // 設定索引
                         entity.HasIndex(e => new { e.ProductionScheduleItemId, e.ComponentProductId });
                         entity.HasIndex(e => e.ComponentProductId);
+                  });
+
+                  // 員工儀表板配置
+                  modelBuilder.Entity<EmployeeDashboardConfig>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 員工關聯
+                        entity.HasOne(edc => edc.Employee)
+                              .WithMany()
+                              .HasForeignKey(edc => edc.EmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
                   });
             }
     }

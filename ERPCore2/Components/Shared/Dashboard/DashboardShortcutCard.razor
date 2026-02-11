@@ -1,0 +1,51 @@
+@using ERPCore2.Models.Navigation
+
+<div class="shortcut-card @(IsEditMode ? "edit-mode" : "")"
+     @onclick="HandleClick"
+     title="@NavigationItem.Description">
+
+    @if (IsEditMode)
+    {
+        <button class="btn-remove" @onclick="HandleRemove" @onclick:stopPropagation="true" title="移除捷徑">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    }
+
+    <div class="shortcut-icon">
+        <i class="@NavigationItem.IconClass"></i>
+    </div>
+    <div class="shortcut-name">@NavigationItem.Name</div>
+    <div class="shortcut-category">
+        @NavigationItem.Category
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public NavigationItem NavigationItem { get; set; } = default!;
+
+    [Parameter]
+    public bool IsEditMode { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    private async Task HandleClick()
+    {
+        if (!IsEditMode && OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandleRemove()
+    {
+        if (OnRemove.HasDelegate)
+        {
+            await OnRemove.InvokeAsync();
+        }
+    }
+}

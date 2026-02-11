@@ -1,268 +1,365 @@
 @page "/"
 @attribute [Authorize]
-@inject IInventoryStockService InventoryStockService
+@using ERPCore2.Data.Entities
+@using ERPCore2.Data.Navigation
+@using ERPCore2.Models.Navigation
+@using ERPCore2.Components.Shared.Dashboard
+@inject IDashboardService DashboardService
 @inject INotificationService NotificationService
 @inject IPermissionService PermissionService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 @implements IDisposable
 
 <PageTitle>美莊磚業 - 系統首頁</PageTitle>
 
+@* 從 MainLayout 接收 Action 處理器 *@
+@code {
+    [CascadingParameter(Name = "NavigationActionHandler")]
+    private Action<string>? NavigationActionHandler { get; set; }
+}
+
 <div class="container-fluid">
 
-    @* 庫存狀態總覽區域 *@
-    @if (hasInventoryPermission)
+    @* 頂部工具列 *@
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 fw-bold">
+            <i class="bi bi-house-fill me-2"></i>系統首頁
+        </h5>
+        <div>
+            @if (isEditMode)
+            {
+                <button class="btn btn-outline-warning btn-sm me-2" @onclick="HandleResetToDefault" title="重置為預設配置">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>重置預設
+                </button>
+                <button class="btn btn-primary btn-sm" @onclick="ToggleEditMode">
+                    <i class="bi bi-check-lg me-1"></i>完成編輯
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleEditMode" title="編輯首頁捷徑">
+                    <i class="bi bi-pencil-square me-1"></i>編輯首頁
+                </button>
+            }
+        </div>
+    </div>
+
+    @* 捷徑卡片區域 *@
+    @if (isLoading)
     {
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card section-card">
-                    <div class="card-header section-header-warning">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            庫存狀態總覽
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        @if (isLoadingInventoryStats)
-                        {
-                            <div class="text-center py-3">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">載入中...</span>
-                                </div>
-                                <span class="ms-2 text-muted">載入庫存統計中...</span>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="row g-3">
-                                 @* 未設警戒線卡片 *@
-                                <div class="col-lg-4 col-md-6">
-                                    <div class="card border-secondary inventory-alert-card @(noWarningLevelCount > 0 ? "alert-active" : "")"
-                                         @onclick="@HandleNoWarningLevelClick"
-                                         style="cursor: pointer;">
-                                        <div class="card-body d-flex align-items-center py-3">
-                                            <i class="bi bi-gear-fill text-secondary fs-3 me-3"></i>
-                                            <GenericStatusBadgeComponent Status="EntityStatus.Inactive" 
-                                                                 CustomText="未設警戒線" 
-                                                                 CssClass="bg-secondary me-2"
-                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
-                                                                 UseCustomColor="true" />
-                                            <span class="fs-4 fw-bold text-secondary ms-auto">@noWarningLevelCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                @* 低庫存警戒卡片 *@
-                                <div class="col-lg-4 col-md-6">
-                                    <div class="card border-warning inventory-alert-card @(lowStockCount > 0 ? "alert-active" : "")"
-                                         @onclick="@HandleLowStockClick"
-                                         style="cursor: pointer;">
-                                        <div class="card-body d-flex align-items-center py-3">
-                                            <i class="bi bi-exclamation-triangle-fill text-warning fs-3 me-3"></i>
-                                            <GenericStatusBadgeComponent Status="EntityStatus.Active" 
-                                                                 CustomText="低庫存警戒" 
-                                                                 CssClass="bg-warning text-dark me-2"
-                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
-                                                                 UseCustomColor="true" />
-                                            <span class="fs-4 fw-bold text-warning ms-auto">@lowStockCount</span>
-                                        </div>
-                                    </div>
-                                </div>
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="text-muted mt-2">載入首頁配置中...</p>
+        </div>
+    }
+    else if (dashboardConfigs.Any())
+    {
+        <div class="row g-3">
+            @foreach (var configWithNav in dashboardConfigs)
+            {
+                var capturedConfig = configWithNav;
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6"
+                     draggable="@(isEditMode ? "true" : "false")"
+                     @ondragstart="@(() => HandleDragStart(capturedConfig))"
+                     @ondragover:preventDefault="true"
+                     @ondragover="@(() => HandleDragOver(capturedConfig))"
+                     @ondrop="@(() => HandleDrop(capturedConfig))">
 
-                                @* 庫存過多警戒卡片 *@
-                                <div class="col-lg-4 col-md-6">
-                                    <div class="card border-info inventory-alert-card @(overStockCount > 0 ? "alert-active" : "")"
-                                         @onclick="@HandleOverStockClick"
-                                         style="cursor: pointer;">
-                                        <div class="card-body d-flex align-items-center py-3">
-                                            <i class="bi bi-inbox-fill text-info fs-3 me-3"></i>
-                                            <GenericStatusBadgeComponent Status="EntityStatus.Active" 
-                                                                 CustomText="庫存過多警戒" 
-                                                                 CssClass="bg-info me-2"
-                                                                 Size="GenericStatusBadgeComponent.BadgeSize.Large"
-                                                                 UseCustomColor="true" />
-                                            <span class="fs-4 fw-bold text-info ms-auto">@overStockCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <DashboardShortcutCard NavigationItem="@capturedConfig.NavigationItem"
+                                           IsEditMode="@isEditMode"
+                                           OnClick="@(() => HandleWidgetClick(capturedConfig.NavigationItem))"
+                                           OnRemove="@(() => HandleRemoveWidget(capturedConfig))" />
+                </div>
+            }
 
-                            @* 提示訊息 *@
-                            @if (lowStockCount == 0 && overStockCount == 0 && noWarningLevelCount == 0)
-                            {
-                                <div class="alert alert-success mt-3 mb-0">
-                                    <i class="bi bi-check-circle-fill me-2"></i>
-                                    <strong>太棒了！</strong> 所有庫存狀態正常，且已設定警戒線。
-                                </div>
-                            }
-                        }
+            @* 編輯模式下的「新增捷徑」卡片 *@
+            @if (isEditMode)
+            {
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                    <div class="add-shortcut-card" @onclick="OpenWidgetPicker">
+                        <i class="bi bi-plus-circle fs-2"></i>
+                        <span class="small fw-semibold mt-1">新增捷徑</span>
                     </div>
                 </div>
-            </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-grid-1x2 text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3 mb-2">尚未設定首頁捷徑</p>
+            <button class="btn btn-primary btn-sm" @onclick="OpenWidgetPicker">
+                <i class="bi bi-plus-lg me-1"></i>新增捷徑
+            </button>
         </div>
     }
 
 </div>
 
-@* 庫存警戒檢視 Modal *@
-<StockAlertViewModalComponent IsVisible="@showStockAlertViewModal"
-                             IsVisibleChanged="@((bool visible) => showStockAlertViewModal = visible)"
-                             AlertType="@currentAlertType" />
+@* 新增捷徑選擇 Modal *@
+<DashboardWidgetPickerModal IsVisible="@showWidgetPicker"
+                            IsVisibleChanged="@((bool v) => showWidgetPicker = v)"
+                            AvailableWidgets="@availableWidgets"
+                            ExistingWidgetKeys="@existingWidgetKeys"
+                            OnConfirm="@HandleAddWidgets" />
 
-@* 庫存警戒線設定 Modal *@
-<StockLevelAlertModalComponent IsVisible="@showStockLevelAlertModal"
-                              IsVisibleChanged="@((bool visible) => showStockLevelAlertModal = visible)"
-                              OnSaved="@OnStockLevelAlertSaved" />
-
-
+@* 重置確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showResetConfirm"
+                             IsVisibleChanged="@((bool v) => showResetConfirm = v)"
+                             Title="重置首頁配置"
+                             Icon="bi-arrow-counterclockwise"
+                             Message="確定要將首頁捷徑重置為預設配置嗎？現有的自訂配置將被清除。"
+                             ConfirmButtonText="確定重置"
+                             HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                             OnConfirm="@ConfirmResetToDefault" />
 
 @code {
-    // ===== 庫存狀態相關 =====
-    // 權限控制
-    private bool hasInventoryPermission = false;
-    
-    // Modal 相關狀態
-    private bool showStockAlertViewModal = false;
-    private bool showStockLevelAlertModal = false;
-    private StockAlertViewModalComponent.StockAlertType currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
-    
-    // 統計資料
-    private bool isLoadingInventoryStats = false;
-    private int lowStockCount = 0;
-    private int overStockCount = 0;
-    private int noWarningLevelCount = 0;
+    // ===== 狀態欄位 =====
+    private int currentEmployeeId = 0;
+    private bool isLoading = true;
+    private bool isEditMode = false;
+
+    // 儀表板配置
+    private List<DashboardConfigWithNavItem> dashboardConfigs = new();
+    private List<NavigationItem> availableWidgets = new();
+    private HashSet<string> existingWidgetKeys = new();
+
+    // Modal 狀態
+    private bool showWidgetPicker = false;
+    private bool showResetConfirm = false;
+
+    // 拖曳排序
+    private DashboardConfigWithNavItem? draggedItem = null;
+
+    // ===== 生命週期 =====
 
     protected override async Task OnInitializedAsync()
     {
-        // 取得當前使用者的 EmployeeId
-        var currentEmployeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
-        
-        if (currentEmployeeId.HasValue)
+        var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+
+        if (employeeId.HasValue)
         {
-            // 檢查庫存查詢權限
-            var permissionResult = await PermissionService.HasPermissionAsync(currentEmployeeId.Value, "InventoryStock.Read");
-            hasInventoryPermission = permissionResult.IsSuccess && permissionResult.Data;
-            
-            // 如果有權限，則載入庫存統計
-            if (hasInventoryPermission)
-            {
-                await LoadInventoryStatsAsync();
-            }
+            currentEmployeeId = employeeId.Value;
+            await LoadDashboardAsync();
         }
+
+        isLoading = false;
     }
 
-    // ===== 庫存統計相關方法 =====
+    // ===== 資料載入 =====
 
-    /// <summary>
-    /// 載入庫存統計資料
-    /// </summary>
-    private async Task LoadInventoryStatsAsync()
+    private async Task LoadDashboardAsync()
     {
         try
         {
-            isLoadingInventoryStats = true;
-            StateHasChanged();
-
-            var stats = await InventoryStockService.GetInventoryStatisticsAsync();
-            
-            // 提取統計數據
-            lowStockCount = Convert.ToInt32(stats.GetValueOrDefault("LowStockCount", 0));
-            overStockCount = Convert.ToInt32(stats.GetValueOrDefault("OverStockCount", 0));
-            noWarningLevelCount = Convert.ToInt32(stats.GetValueOrDefault("NoWarningLevelCount", 0));
+            dashboardConfigs = await DashboardService.GetEmployeeDashboardAsync(currentEmployeeId);
+            UpdateExistingWidgetKeys();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadInventoryStatsAsync), GetType(), additionalData: "載入庫存統計失敗");
-            await NotificationService.ShowErrorAsync("載入庫存統計失敗");
-            // 設定安全的預設值
-            lowStockCount = 0;
-            overStockCount = 0;
-            noWarningLevelCount = 0;
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDashboardAsync), GetType());
+            await NotificationService.ShowErrorAsync("載入首頁配置失敗");
+        }
+    }
+
+    private void UpdateExistingWidgetKeys()
+    {
+        existingWidgetKeys = dashboardConfigs
+            .Select(c => c.Config.NavigationItemKey)
+            .ToHashSet();
+    }
+
+    // ===== 編輯模式 =====
+
+    private void ToggleEditMode()
+    {
+        isEditMode = !isEditMode;
+    }
+
+    // ===== 捷徑點擊處理 =====
+
+    private void HandleWidgetClick(NavigationItem navItem)
+    {
+        try
+        {
+            switch (navItem.ItemType)
+            {
+                case NavigationItemType.Route:
+                    if (!string.IsNullOrEmpty(navItem.Route) && navItem.Route != "#")
+                    {
+                        NavigationManager.NavigateTo(navItem.Route);
+                    }
+                    break;
+
+                case NavigationItemType.Action:
+                    if (!string.IsNullOrEmpty(navItem.ActionId) && NavigationActionHandler != null)
+                    {
+                        NavigationActionHandler.Invoke(navItem.ActionId);
+                    }
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleWidgetClick), GetType());
+            _ = NotificationService.ShowErrorAsync("開啟功能失敗");
+        }
+    }
+
+    // ===== 新增捷徑 =====
+
+    private async Task OpenWidgetPicker()
+    {
+        try
+        {
+            availableWidgets = await DashboardService.GetAvailableWidgetsAsync(currentEmployeeId);
+            UpdateExistingWidgetKeys();
+            showWidgetPicker = true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenWidgetPicker), GetType());
+            await NotificationService.ShowErrorAsync("載入可用捷徑失敗");
+        }
+    }
+
+    private async Task HandleAddWidgets(List<string> navigationItemKeys)
+    {
+        try
+        {
+            var result = await DashboardService.AddWidgetBatchAsync(currentEmployeeId, navigationItemKeys);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("捷徑已新增");
+                await LoadDashboardAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddWidgets), GetType());
+            await NotificationService.ShowErrorAsync("新增捷徑失敗");
+        }
+    }
+
+    // ===== 移除捷徑 =====
+
+    private async Task HandleRemoveWidget(DashboardConfigWithNavItem configWithNav)
+    {
+        try
+        {
+            var result = await DashboardService.RemoveWidgetAsync(currentEmployeeId, configWithNav.Config.Id);
+
+            if (result.IsSuccess)
+            {
+                dashboardConfigs.Remove(configWithNav);
+                UpdateExistingWidgetKeys();
+                await NotificationService.ShowSuccessAsync("已移除捷徑");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleRemoveWidget), GetType());
+            await NotificationService.ShowErrorAsync("移除捷徑失敗");
+        }
+    }
+
+    // ===== 重置預設 =====
+
+    private void HandleResetToDefault()
+    {
+        showResetConfirm = true;
+    }
+
+    private async Task ConfirmResetToDefault()
+    {
+        try
+        {
+            var result = await DashboardService.ResetToDefaultAsync(currentEmployeeId);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("已重置為預設配置");
+                await LoadDashboardAsync();
+                isEditMode = false;
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmResetToDefault), GetType());
+            await NotificationService.ShowErrorAsync("重置配置失敗");
+        }
+    }
+
+    // ===== 拖曳排序 =====
+
+    private void HandleDragStart(DashboardConfigWithNavItem configWithNav)
+    {
+        draggedItem = configWithNav;
+    }
+
+    private void HandleDragOver(DashboardConfigWithNavItem target)
+    {
+        // 僅觸發 UI 效果，實際排序在 Drop 時處理
+    }
+
+    private async Task HandleDrop(DashboardConfigWithNavItem target)
+    {
+        if (draggedItem == null || draggedItem.Config.Id == target.Config.Id)
+        {
+            draggedItem = null;
+            return;
+        }
+
+        try
+        {
+            // 在本地清單中調整順序
+            var oldIndex = dashboardConfigs.IndexOf(draggedItem);
+            var newIndex = dashboardConfigs.IndexOf(target);
+
+            if (oldIndex >= 0 && newIndex >= 0)
+            {
+                dashboardConfigs.RemoveAt(oldIndex);
+                dashboardConfigs.Insert(newIndex, draggedItem);
+
+                // 儲存新排序到資料庫
+                var configIds = dashboardConfigs.Select(c => c.Config.Id).ToList();
+                var result = await DashboardService.UpdateSortOrderAsync(currentEmployeeId, configIds);
+
+                if (!result.IsSuccess)
+                {
+                    // 排序儲存失敗，重新載入
+                    await LoadDashboardAsync();
+                    await NotificationService.ShowErrorAsync("排序更新失敗");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleDrop), GetType());
+            await NotificationService.ShowErrorAsync("排序更新失敗");
         }
         finally
         {
-            isLoadingInventoryStats = false;
-            StateHasChanged();
-        }
-    }
-
-    /// <summary>
-    /// 處理低庫存卡片點擊
-    /// </summary>
-    private async Task HandleLowStockClick()
-    {
-        try
-        {
-            if (lowStockCount > 0)
-            {
-                currentAlertType = StockAlertViewModalComponent.StockAlertType.LowStock;
-                showStockAlertViewModal = true;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleLowStockClick), GetType());
-            await NotificationService.ShowErrorAsync("開啟低庫存警戒清單失敗");
-        }
-    }
-
-    /// <summary>
-    /// 處理庫存過多卡片點擊
-    /// </summary>
-    private async Task HandleOverStockClick()
-    {
-        try
-        {
-            if (overStockCount > 0)
-            {
-                currentAlertType = StockAlertViewModalComponent.StockAlertType.OverStock;
-                showStockAlertViewModal = true;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleOverStockClick), GetType());
-            await NotificationService.ShowErrorAsync("開啟庫存過多警戒清單失敗");
-        }
-    }
-
-    /// <summary>
-    /// 處理未設警戒線卡片點擊
-    /// </summary>
-    private async Task HandleNoWarningLevelClick()
-    {
-        try
-        {
-            if (noWarningLevelCount > 0)
-            {
-                showStockLevelAlertModal = true;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleNoWarningLevelClick), GetType());
-            await NotificationService.ShowErrorAsync("開啟警戒線設定視窗失敗");
-        }
-    }
-
-    /// <summary>
-    /// 處理警戒線設定儲存後的刷新
-    /// </summary>
-    private async Task OnStockLevelAlertSaved()
-    {
-        try
-        {
-            // 重新載入統計資料
-            await LoadInventoryStatsAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnStockLevelAlertSaved), GetType());
+            draggedItem = null;
         }
     }
 

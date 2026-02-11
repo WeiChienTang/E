@@ -144,6 +144,9 @@ namespace ERPCore2.Data
             // 記憶體快取服務（用於權限快取）
             services.AddMemoryCache();
 
+            // 儀表板服務
+            services.AddScoped<IDashboardService, DashboardService>();
+
             // 導航權限收集服務
             services.AddSingleton<INavigationPermissionCollector, NavigationPermissionCollector>();
             

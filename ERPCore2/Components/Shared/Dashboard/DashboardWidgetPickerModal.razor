@@ -1,0 +1,169 @@
+@using ERPCore2.Models.Navigation
+@using ERPCore2.Data.Navigation
+
+@* 新增捷徑選擇 Modal *@
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="新增首頁捷徑"
+                    Icon="bi-grid-3x3-gap-fill"
+                    Size="BaseModalComponent.ModalSize.Large"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                    UseWhiteCloseButton="true"
+                    CloseOnEscape="true"
+                    CloseOnBackdropClick="true"
+                    OnClose="@HandleCancel">
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.Blue"
+                               Text="@($"確認新增 ({selectedItemKeys.Count})")"
+                               OnClick="HandleConfirm"
+                               IsDisabled="@(!selectedItemKeys.Any())"
+                               Title="新增選取的捷徑" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               Text="取消"
+                               OnClick="HandleCancel"
+                               Title="取消" />
+    </HeaderButtons>
+    <BodyContent>
+        @if (AvailableWidgets == null || !AvailableWidgets.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-emoji-neutral fs-1"></i>
+                <p class="mt-2">目前沒有可新增的捷徑</p>
+            </div>
+        }
+        else
+        {
+            @* 依分類分組顯示 *@
+            @foreach (var group in AvailableWidgets
+                .GroupBy(w => w.Category)
+                .OrderBy(g => g.Key))
+            {
+                <div class="mb-3">
+                    <h6 class="fw-bold text-muted border-bottom pb-2 mb-2">
+                        <i class="bi bi-folder2 me-1"></i>
+                        @group.Key
+                    </h6>
+                    <div class="row g-2">
+                        @foreach (var widget in group.OrderBy(w => w.Name))
+                        {
+                            var itemKey = DashboardDefaults.GetNavigationItemKey(widget);
+                            var isExisting = ExistingWidgetKeys.Contains(itemKey);
+                            var isSelected = selectedItemKeys.Contains(itemKey);
+                            var capturedItemKey = itemKey;
+
+                            <div class="col-lg-4 col-md-6">
+                                <div class="picker-item @(isExisting ? "existing" : isSelected ? "selected" : "")"
+                                     @onclick="@(() => ToggleWidget(capturedItemKey, isExisting))">
+                                    <div class="d-flex align-items-center">
+                                        <div class="picker-checkbox me-2">
+                                            @if (isExisting)
+                                            {
+                                                <i class="bi bi-check-square-fill text-secondary"></i>
+                                            }
+                                            else if (isSelected)
+                                            {
+                                                <i class="bi bi-check-square-fill text-primary"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-square text-muted"></i>
+                                            }
+                                        </div>
+                                        <div class="picker-icon me-2">
+                                            <i class="@widget.IconClass"></i>
+                                        </div>
+                                        <div class="picker-info">
+                                            <div class="picker-name">@widget.Name</div>
+                                            @if (!string.IsNullOrEmpty(widget.Description))
+                                            {
+                                                <div class="picker-desc">@widget.Description</div>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (isExisting)
+                                    {
+                                        <span class="badge bg-secondary ms-auto">已加入</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@code {
+    // ===== 參數 =====
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    /// <summary>
+    /// 可選的導航項目清單（已過濾權限）
+    /// </summary>
+    [Parameter]
+    public List<NavigationItem> AvailableWidgets { get; set; } = new();
+
+    /// <summary>
+    /// 已存在於首頁的導航項目識別鍵集合
+    /// </summary>
+    [Parameter]
+    public HashSet<string> ExistingWidgetKeys { get; set; } = new();
+
+    /// <summary>
+    /// 確認新增事件（回傳選取的 NavigationItemKey 清單）
+    /// </summary>
+    [Parameter]
+    public EventCallback<List<string>> OnConfirm { get; set; }
+
+    // ===== 狀態 =====
+
+    private HashSet<string> selectedItemKeys = new();
+
+    // ===== 方法 =====
+
+    private void ToggleWidget(string itemKey, bool isExisting)
+    {
+        // 已加入的不可操作
+        if (isExisting) return;
+
+        if (selectedItemKeys.Contains(itemKey))
+        {
+            selectedItemKeys.Remove(itemKey);
+        }
+        else
+        {
+            selectedItemKeys.Add(itemKey);
+        }
+    }
+
+    private async Task HandleConfirm()
+    {
+        if (selectedItemKeys.Any() && OnConfirm.HasDelegate)
+        {
+            await OnConfirm.InvokeAsync(selectedItemKeys.ToList());
+        }
+
+        selectedItemKeys.Clear();
+        await CloseModal();
+    }
+
+    private async Task HandleCancel()
+    {
+        selectedItemKeys.Clear();
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        if (IsVisibleChanged.HasDelegate)
+        {
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+    }
+}

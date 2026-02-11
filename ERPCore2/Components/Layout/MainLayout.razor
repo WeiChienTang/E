@@ -15,6 +15,7 @@
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
+<CascadingValue Value="@((Action<string>)HandleNavigationAction)" Name="NavigationActionHandler">
 <div class="page">    
     <div class="sidebar">
         <NavMenu OnActionTriggered="@HandleNavigationAction" />
@@ -26,6 +27,7 @@
         </article>
     </main>
 </div>
+</CascadingValue>
 
 @* 全域頁面搜尋 Modal *@
 <GenericSearchModalComponent @ref="pageSearchModal" 
