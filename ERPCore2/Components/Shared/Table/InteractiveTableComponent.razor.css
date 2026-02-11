@@ -2,9 +2,9 @@
 
 /* ===== 序號欄位固定寬度 ===== */
 .row-number-column {
-    width: 40px !important;
-    min-width: 40px !important;
-    max-width: 40px !important;
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
     box-sizing: border-box !important;
 }
 
@@ -262,9 +262,9 @@
     
     /* 行號欄位保持固定寬度 */
     .row-number-column {
-        width: 40px !important;
-        min-width: 40px !important;
-        max-width: 40px !important;
+        width: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
         padding: 0.5rem 0.25rem !important;
         box-sizing: border-box !important;
     }

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using ERPCore2.Models.Reports.FilterCriteria;
 
 namespace ERPCore2.Models.Reports.FilterTemplates;
@@ -8,8 +9,9 @@ namespace ERPCore2.Models.Reports.FilterTemplates;
 /// </summary>
 public static class FilterTemplateRegistry
 {
-    private static readonly Dictionary<string, ReportFilterConfig> _configs = new();
-    private static bool _isInitialized = false;
+    private static readonly ConcurrentDictionary<string, ReportFilterConfig> _configs = new();
+    private static readonly object _initLock = new();
+    private static volatile bool _isInitialized = false;
     
     /// <summary>
     /// 初始化註冊表（直接在此定義所有模板配置）
@@ -17,6 +19,10 @@ public static class FilterTemplateRegistry
     public static void Initialize()
     {
         if (_isInitialized) return;
+        
+        lock (_initLock)
+        {
+            if (_isInitialized) return;
         
         // ==================== 客戶報表 ====================
         
@@ -207,7 +213,8 @@ public static class FilterTemplateRegistry
         
         // 可在此繼續註冊其他報表...
         
-        _isInitialized = true;
+            _isInitialized = true;
+        }
     }
     
     /// <summary>
@@ -226,7 +233,7 @@ public static class FilterTemplateRegistry
     /// </summary>
     public static void RegisterConfig(ReportFilterConfig config)
     {
-        _configs[config.ReportId] = config;
+        _configs.TryAdd(config.ReportId, config);
     }
     
     /// <summary>

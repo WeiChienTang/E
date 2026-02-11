@@ -695,9 +695,7 @@ namespace ERPCore2.Services
 
                     // 已移除審核狀態檢查，簡化流程
 
-                    if (stockTaking.IsAdjustmentGenerated)
-                        return ServiceResult.Failure("此盤點已產生過調整單");
-
+                    // 只處理尚未調整的差異項目（支援分批調整）
                     var differenceItems = stockTaking.StockTakingDetails
                         .Where(d => d.HasDifference && !d.IsAdjusted)
                         .ToList();
@@ -739,7 +737,14 @@ namespace ERPCore2.Services
                         }
                     }
 
-                    stockTaking.IsAdjustmentGenerated = true;
+                    // 檢查是否所有差異項目都已調整完成，才標記整單完成
+                    var allDifferenceAdjusted = stockTaking.StockTakingDetails
+                        .Where(d => d.HasDifference)
+                        .All(d => d.IsAdjusted);
+                    if (allDifferenceAdjusted)
+                    {
+                        stockTaking.IsAdjustmentGenerated = true;
+                    }
                     stockTaking.UpdatedAt = DateTime.Now;
 
                     await context.SaveChangesAsync();

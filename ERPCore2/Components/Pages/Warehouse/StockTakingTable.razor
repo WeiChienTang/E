@@ -41,12 +41,11 @@ else
             <div class="card-footer">
                 <div class="table-action-bar">
                     <div class="btn-group-left">
-                        <GenericButtonComponent Text="帶入倉庫商品"
+                        <GenericButtonComponent Text="載入倉庫商品"
                                               Variant="ButtonVariant.DarkBlue"
-                                              IconClass="bi bi-box-seam"
                                               OnClick="LoadWarehouseProducts"
-                                              IsDisabled="@(!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0)"
-                                              Title="@(SelectedWarehouseId.HasValue ? "從選定倉庫帶入所有商品庫存" : "請先選擇倉庫")" />
+                                              IsDisabled="@(!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0 || HasAdjustedItems())"
+                                              Title="@GetLoadButtonTitle()" />
                     </div>
                 </div>
             </div>
@@ -235,17 +234,6 @@ else
             errors.Add("請至少新增一筆盤點商品");
         }
 
-        // 檢查重複的商品+庫位組合
-        var duplicates = validItems
-            .GroupBy(x => new { x.SelectedProductId, x.SelectedWarehouseLocationId })
-            .Where(g => g.Count() > 1)
-            .ToList();
-
-        if (duplicates.Any())
-        {
-            errors.Add("存在重複的商品與庫位組合，請確認後再試");
-        }
-
         if (errors.Any())
         {
             await NotificationService.ShowErrorAsync(string.Join("\n", errors));
@@ -291,6 +279,7 @@ else
                 UnitCost = detail.UnitCost,
                 DetailStatus = detail.DetailStatus,
                 DetailRemarks = detail.DetailRemarks,
+                IsAdjusted = detail.IsAdjusted,  // 讀取是否已調整庫存
                 ExistingDetailEntity = detail
             };
             
@@ -347,8 +336,8 @@ else
             IsDisabledFunc = item =>
             {
                 var detailItem = (StockTakingDetailItem)item;
-                // 已盤點的項目不允許修改商品
-                return IsReadOnly || detailItem.DetailStatus == StockTakingDetailStatusEnum.Counted;
+                // 已執行庫存調整的項目不允許修改商品
+                return IsReadOnly || detailItem.IsAdjusted;
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
@@ -410,7 +399,7 @@ else
                 var selectedValue = detailItem.SelectedWarehouseLocationId?.ToString() ?? "";
                 // 如果主表有選擇庫位，則鎖定明細的庫位欄位
                 var isLockedByMaster = SelectedWarehouseLocationId.HasValue;
-                var isDisabled = IsReadOnly || detailItem.DetailStatus == StockTakingDetailStatusEnum.Counted || isLockedByMaster;
+                var isDisabled = IsReadOnly || detailItem.IsAdjusted || isLockedByMaster;
                 
                 // 判斷是否已載入商品的庫位資訊（商品已選擇且有任一庫位資訊）
                 var hasProductLocationInfo = detailItem.SelectedProduct != null && 
@@ -456,7 +445,7 @@ else
             Title = "庫存",
             PropertyName = "SystemStock",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "系統中記錄的庫存數量（唯讀）",
             CustomTemplate = item =>
             {
@@ -472,11 +461,15 @@ else
             Title = "實盤數量",
             PropertyName = "ActualStock",
             ColumnType = InteractiveColumnType.Number,
-            Width = "100px",
+            Width = "80px",
             CellCssClass = "text-end",
             Tooltip = "請輸入實際盤點的數量",
             MinValue = 0,
-            IsDisabledFunc = item => IsReadOnly,
+            IsDisabledFunc = item => 
+            {
+                var detailItem = (StockTakingDetailItem)item;
+                return IsReadOnly || detailItem.IsAdjusted;
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 var (item, valueString) = args;
@@ -490,7 +483,7 @@ else
             Title = "差異",
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
+            Width = "80px",
             Tooltip = "差異 = 實盤數量 - 系統庫存",
             CustomTemplate = item =>
             {
@@ -520,7 +513,11 @@ else
             CellCssClass = "text-end",
             Tooltip = "商品的單位成本（用於計算盤盈盤虧）",
             MinValue = 0,
-            IsDisabledFunc = item => IsReadOnly,
+            IsDisabledFunc = item => 
+            {
+                var detailItem = (StockTakingDetailItem)item;
+                return IsReadOnly || detailItem.IsAdjusted;
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 var (item, valueString) = args;
@@ -560,7 +557,7 @@ else
             Title = "狀態",
             PropertyName = "DetailStatus",
             ColumnType = InteractiveColumnType.Custom,
-            Width = "100px",
+            Width = "80px",
             CustomTemplate = item =>
             {
                 var detailItem = (StockTakingDetailItem)item;
@@ -579,7 +576,11 @@ else
             Width = "200px",
             Placeholder = "",
             ExcludeFromEmptyCheck = true,
-            IsDisabledFunc = item => IsReadOnly,
+            IsDisabledFunc = item => 
+            {
+                var detailItem = (StockTakingDetailItem)item;
+                return IsReadOnly || detailItem.IsAdjusted;
+            },
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 var (item, valueString) = args;
@@ -592,10 +593,11 @@ else
 
     private RenderFragment<StockTakingDetailItem> GetCustomActionsTemplate => item => __builder =>
     {
-        var canDelete = item.DetailStatus == StockTakingDetailStatusEnum.Pending && !IsReadOnly;
+        // 已調整庫存的項目不可刪除
+        var canDelete = !item.IsAdjusted && !IsReadOnly;
         var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         var isDisabled = !canDelete || isLastEmptyRow;
-        var title = isLastEmptyRow ? "至少需要保留一個空行" : (canDelete ? "刪除" : "已盤點項目無法刪除");
+        var title = isLastEmptyRow ? "至少需要保留一個空行" : (canDelete ? "刪除" : "已調整庫存的項目無法刪除");
 
         <GenericButtonComponent Variant="ButtonVariant.Red"
                                IconClass="bi bi-trash text-white"
@@ -639,24 +641,6 @@ else
     {
         if (selectedProduct != null)
         {
-            // 檢查是否重複：同商品+同庫位
-            if (IsDuplicateProductLocation(item, selectedProduct.Id, item.SelectedWarehouseLocationId))
-            {
-                var locationName = GetLocationDisplayName(item.SelectedWarehouseLocationId);
-                await NotificationService.ShowWarningAsync($"商品 [{selectedProduct.Code}] {selectedProduct.Name} 在{locationName}已存在，請選擇其他商品或變更庫位");
-                
-                // 清空選擇
-                item.SelectedProductId = null;
-                item.SelectedProduct = null;
-                item.ProductSearchValue = string.Empty;
-                item.SystemStock = 0;
-                item.UnitCost = null;
-                item.ShowProductDropdown = false;
-                item.ProductSelectedIndex = -1;
-                StateHasChanged();
-                return;
-            }
-            
             item.SelectedProductId = selectedProduct.Id;
             item.SelectedProduct = selectedProduct;
             item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
@@ -784,20 +768,6 @@ else
         var locationIdStr = value?.ToString();
         var newLocationId = string.IsNullOrEmpty(locationIdStr) ? (int?)null : int.Parse(locationIdStr);
         
-        // 檢查是否重複：同商品+同庫位（僅當已選擇商品時才檢查）
-        if (item.SelectedProductId.HasValue && IsDuplicateProductLocation(item, item.SelectedProductId.Value, newLocationId))
-        {
-            var productName = item.SelectedProduct != null 
-                ? $"[{item.SelectedProduct.Code}] {item.SelectedProduct.Name}" 
-                : "此商品";
-            var locationName = GetLocationDisplayName(newLocationId);
-            await NotificationService.ShowWarningAsync($"{productName} 在{locationName}已存在，請選擇其他庫位");
-            
-            // 不變更庫位，維持原值
-            StateHasChanged();
-            return;
-        }
-        
         item.SelectedWarehouseLocationId = newLocationId;
 
         // 重新載入庫存資訊
@@ -862,7 +832,10 @@ else
             }
 
             _dataLoadCompleted = false;
-            DetailItems.Clear();
+
+            // 保留已有明細（包含已調整和未調整的），只新增尚未存在的商品
+            var existingItems = DetailItems.Where(x => x.SelectedProduct != null).ToList();
+            var newItems = new List<StockTakingDetailItem>();
 
             // 遍歷每個商品的庫存明細（按倉庫+庫位細分）
             foreach (var stock in inventoryStocks)
@@ -899,7 +872,7 @@ else
                             UnitCost = stock.WeightedAverageCost,
                             DetailStatus = StockTakingDetailStatusEnum.Pending
                         };
-                        DetailItems.Add(item);
+                        newItems.Add(item);
                     }
                 }
                 else
@@ -918,16 +891,19 @@ else
                             UnitCost = detail.AverageCost,
                             DetailStatus = StockTakingDetailStatusEnum.Pending
                         };
-                        DetailItems.Add(item);
+                        newItems.Add(item);
                     }
                 }
             }
+
+            // 將新商品加入已有明細後方
+            DetailItems.AddRange(newItems);
 
             _dataLoadCompleted = true;
             await NotifyDetailsChanged();
             StateHasChanged();
 
-            await NotificationService.ShowSuccessAsync($"已帶入 {DetailItems.Count} 筆庫存商品");
+            await NotificationService.ShowSuccessAsync($"已帶入 {newItems.Count} 筆庫存商品（保留原有 {existingItems.Count} 筆）");
         }
         catch (Exception ex)
         {
@@ -988,21 +964,6 @@ else
     }
     
     /// <summary>
-    /// 檢查商品+庫位組合是否已存在於其他明細中
-    /// </summary>
-    /// <param name="currentItem">當前正在編輯的項目（排除自己）</param>
-    /// <param name="productId">要檢查的商品ID</param>
-    /// <param name="locationId">要檢查的庫位ID</param>
-    /// <returns>是否重複</returns>
-    private bool IsDuplicateProductLocation(StockTakingDetailItem currentItem, int productId, int? locationId)
-    {
-        return DetailItems.Any(x => 
-            x != currentItem && // 排除自己
-            x.SelectedProductId == productId && 
-            x.SelectedWarehouseLocationId == locationId);
-    }
-    
-    /// <summary>
     /// 取得庫位顯示名稱
     /// </summary>
     private string GetLocationDisplayName(int? locationId)
@@ -1014,6 +975,23 @@ else
         
         var location = WarehouseLocations.FirstOrDefault(l => l.Id == locationId.Value);
         return location != null ? $"庫位「{location.Name}」" : "此庫位";
+    }
+
+    /// <summary>
+    /// 檢查是否有已調整庫存的明細
+    /// </summary>
+    private bool HasAdjustedItems() => DetailItems.Any(x => x.IsAdjusted);
+    
+    /// <summary>
+    /// 取得「載入倉庫商品」按鈕的 Title 提示
+    /// </summary>
+    private string GetLoadButtonTitle()
+    {
+        if (!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0)
+            return "請先選擇倉庫";
+        if (HasAdjustedItems())
+            return "已有明細完成庫存調整，無法重新載入";
+        return "從選定倉庫載入所有商品庫存";
     }
 
     private int GetValidItemCount() => DetailItems.Count(x => x.SelectedProduct != null);
@@ -1113,6 +1091,11 @@ else
         // 狀態
         public StockTakingDetailStatusEnum DetailStatus { get; set; } = StockTakingDetailStatusEnum.Pending;
         public string? DetailRemarks { get; set; }
+        
+        /// <summary>
+        /// 是否已執行庫存調整（鎖定條件）
+        /// </summary>
+        public bool IsAdjusted { get; set; } = false;
 
         // 現有實體參考
         public StockTakingDetail? ExistingDetailEntity { get; set; }

@@ -1,5 +1,5 @@
 @*
-    庫存警戒檢視 Modal 組件
+    庫存檢視 Modal 組件
     用於顯示低庫存或庫存過多的商品清單（唯讀）
 *@
 @using ERPCore2.Data.Entities
@@ -19,7 +19,7 @@
                    HeaderColor="@GetHeaderColor()"
                    UseWhiteCloseButton="@(AlertType == StockAlertType.OverStock)"
                    IsLoading="@isLoading"
-                   LoadingMessage="正在載入庫存警戒資訊..."
+                   LoadingMessage="正在載入庫存資訊..."
                    BodyCssClass="p-4"
                    OnClose="@HandleClose">
     
@@ -32,12 +32,7 @@
             </div>
         }
         else
-        {
-            <div class="alert @GetAlertCssClass() mb-3">
-                <i class="bi @GetAlertIcon() me-2"></i>
-                共發現 <strong>@stockAlertItems.Count</strong> 筆 @GetAlertTypeText() 的商品
-            </div>
-            
+        {            
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <InteractiveTableComponent TItem="StockAlertViewItem"
@@ -90,7 +85,7 @@
     public EventCallback<bool> IsVisibleChanged { get; set; }
 
     /// <summary>
-    /// 警戒類型：LowStock（低庫存）或 OverStock（庫存過多）
+    /// 類型：LowStock（低庫存）或 OverStock（庫存過多）
     /// </summary>
     [Parameter]
     public StockAlertType AlertType { get; set; } = StockAlertType.LowStock;
@@ -124,7 +119,7 @@
     // ===== 資料載入方法 =====
 
     /// <summary>
-    /// 載入庫存警戒資料
+    /// 載入庫存資料
     /// </summary>
     private async Task LoadStockAlertDataAsync()
     {
@@ -160,7 +155,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync($"載入庫存警戒資訊失敗：{ex.Message}");
+            await NotificationService.ShowErrorAsync($"載入庫存資訊失敗：{ex.Message}");
         }
         finally
         {
@@ -187,28 +182,28 @@
                 Title = "商品名稱",
                 PropertyName = nameof(StockAlertViewItem.ProductName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "140px"
+                Width = "180px"
             },
             new()
             {
                 Title = "倉庫",
                 PropertyName = nameof(StockAlertViewItem.WarehouseName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "120px"
+                Width = "100px"
             },
             new()
             {
                 Title = "庫位",
                 PropertyName = nameof(StockAlertViewItem.WarehouseLocationName),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "120px"
+                Width = "100px"
             },
             new()
             {
-                Title = "當前量",
+                Title = "存量",
                 PropertyName = nameof(StockAlertViewItem.CurrentStock),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "100px",
+                Width = "70px",
                 CellCssClass = "text-end fw-bold",
                 SmartDecimalDisplay = true
             },
@@ -217,7 +212,7 @@
                 Title = "最低量",
                 PropertyName = nameof(StockAlertViewItem.MinStockLevel),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "100px",
+                Width = "70px",
                 CellCssClass = "text-end",
                 SmartDecimalDisplay = true
             },
@@ -226,21 +221,21 @@
                 Title = "最高量",
                 PropertyName = nameof(StockAlertViewItem.MaxStockLevel),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "100px",
+                Width = "70px",
                 CellCssClass = "text-end",
                 SmartDecimalDisplay = true
             },
             new()
             {
-                Title = "警戒狀態",
+                Title = "狀態",
                 PropertyName = nameof(StockAlertViewItem.AlertStatus),
                 ColumnType = InteractiveColumnType.Display,
-                Width = "180px",
+                Width = "100px",
                 CellCssClass = AlertType == StockAlertType.LowStock ? "text-warning" : "text-info"
             }
         };
         
-        // 如果是低庫存警戒，加入「尋找供應商」按鈕欄位
+        // 如果是低庫存，加入「尋找供應商」按鈕欄位
         if (AlertType == StockAlertType.LowStock)
         {
             columns.Add(new InteractiveColumnDefinition
@@ -248,7 +243,7 @@
                 Title = "操作",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
-                Width = "80px",
+                Width = "60px",
                 TextAlign = "center",
                 CustomTemplate = item =>
                 {
@@ -285,8 +280,8 @@
     private string GetTitle()
     {
         return AlertType == StockAlertType.LowStock 
-            ? "低庫存警戒商品清單" 
-            : "庫存過多警戒商品清單";
+            ? "低庫存商品清單" 
+            : "庫存過多商品清單";
     }
 
     private string GetAlertCssClass()
@@ -307,14 +302,14 @@
     {
         return AlertType == StockAlertType.LowStock 
             ? "低庫存" 
-            : "庫存過多";
+            : "高庫存";
     }
 
     private string GetEmptyMessage()
     {
         return AlertType == StockAlertType.LowStock 
-            ? "太棒了！目前沒有低於警戒線的商品。" 
-            : "太棒了！目前沒有超過警戒線的商品。";
+            ? "目前沒有缺乏的商品。" 
+            : "目前沒有過量的商品。";
     }
 
     // ===== 事件處理方法 =====
@@ -451,14 +446,14 @@
         showPurchaseOrderModal = false;
         await NotificationService.ShowSuccessAsync($"採購單 {savedOrder.Code} 已建立成功");
         
-        // 可選：重新載入庫存警戒資料
+        // 可選：重新載入庫存資料
         // await LoadStockAlertDataAsync();
     }
 
     // ===== 列舉與內部類別 =====
 
     /// <summary>
-    /// 庫存警戒類型
+    /// 庫存類型
     /// </summary>
     public enum StockAlertType
     {
@@ -474,7 +469,7 @@
     }
 
     /// <summary>
-    /// 庫存警戒檢視項目
+    /// 庫存檢視項目
     /// </summary>
     public class StockAlertViewItem
     {
@@ -490,7 +485,7 @@
         public StockAlertType AlertType { get; set; }
 
         /// <summary>
-        /// 警戒狀態文字
+        /// 狀態文字
         /// </summary>
         public string AlertStatus
         {
@@ -499,12 +494,12 @@
                 if (AlertType == StockAlertType.LowStock)
                 {
                     var shortage = MinStockLevel - CurrentStock;
-                    return $"低於警戒線 {NumberFormatHelper.FormatSmart(shortage, useThousandsSeparator: false)} 個";
+                    return $"缺乏 {NumberFormatHelper.FormatSmart(shortage, useThousandsSeparator: false)} 個";
                 }
                 else
                 {
                     var excess = CurrentStock - MaxStockLevel;
-                    return $"超出警戒線 {NumberFormatHelper.FormatSmart(excess, useThousandsSeparator: false)} 個";
+                    return $"過量 {NumberFormatHelper.FormatSmart(excess, useThousandsSeparator: false)} 個";
                 }
             }
         }

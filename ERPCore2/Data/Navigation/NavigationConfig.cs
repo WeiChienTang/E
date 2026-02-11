@@ -342,16 +342,17 @@ public static class NavigationConfig
                         RequiredPermission = "StockTaking.Read",
                         SearchKeywords = new List<string> { "庫存盤點", "盤點作業", "stock taking", "inventory audit" }
                     },
-                    new NavigationItem
-                    {
-                        Name = "庫存異動記錄",
-                        Description = "查看庫存異動歷史記錄",
-                        Route = "/inventoryTransactions",
-                        IconClass = "bi bi-caret-right-fill",
-                        Category = "庫存管理",
-                        RequiredPermission = "InventoryTransaction.Read",
-                        SearchKeywords = new List<string> { "庫存異動", "異動記錄", "transaction" }
-                    },
+                    // 暫時關閉，因為目前意義不明，尚無法明確表示任何有意義的資訊
+                    // new NavigationItem
+                    // {
+                    //     Name = "庫存異動記錄",
+                    //     Description = "查看庫存異動歷史記錄",
+                    //     Route = "/inventoryTransactions",
+                    //     IconClass = "bi bi-caret-right-fill",
+                    //     Category = "庫存管理",
+                    //     RequiredPermission = "InventoryTransaction.Read",
+                    //     SearchKeywords = new List<string> { "庫存異動", "異動記錄", "transaction" }
+                    // },
                     new NavigationItem
                     {
                         Name = "領料",
@@ -573,22 +574,6 @@ public static class NavigationConfig
                         RequiredPermission = "SetoffDocument.Read",
                         SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" }
                     },
-                    
-                    // 分隔線 - 區分輸入檔與報表
-                    new NavigationItem
-                    {
-                        IsDivider = true
-                    },
-                    
-                    NavigationActionHelper.CreateActionItem(
-                        name: "應收帳款報表",
-                        description: "查詢和列印客戶應收帳款資料",
-                        iconClass: "bi bi-printer-fill",
-                        actionId: "OpenAccountsReceivableReport",
-                        category: "財務管理",
-                        requiredPermission: "SetoffDocument.Read",
-                        searchKeywords: new List<string> { "應收帳款報表", "AR報表", "receivable report", "收款報表" }
-                    ),
                 }
             },
 

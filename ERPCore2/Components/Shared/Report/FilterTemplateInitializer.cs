@@ -8,7 +8,8 @@ namespace ERPCore2.Components.Shared.Report;
 /// </summary>
 public static class FilterTemplateInitializer
 {
-    private static bool _isInitialized = false;
+    private static readonly object _initLock = new();
+    private static volatile bool _isInitialized = false;
     
     /// <summary>
     /// 初始化所有篩選模板配置
@@ -17,10 +18,15 @@ public static class FilterTemplateInitializer
     {
         if (_isInitialized) return;
         
-        // 初始化 FilterTemplateRegistry（所有配置已集中定義在該類別中）
-        FilterTemplateRegistry.Initialize();
-        
-        _isInitialized = true;
+        lock (_initLock)
+        {
+            if (_isInitialized) return;
+            
+            // 初始化 FilterTemplateRegistry（所有配置已集中定義在該類別中）
+            FilterTemplateRegistry.Initialize();
+            
+            _isInitialized = true;
+        }
     }
     
     /// <summary>
