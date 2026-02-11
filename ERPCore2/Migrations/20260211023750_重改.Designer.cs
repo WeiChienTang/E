@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERPCore2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260205135819_RemoveMaxPrintableWidthFromPaperSetting")]
-    partial class RemoveMaxPrintableWidthFromPaperSetting
+    [Migration("20260211023750_重改")]
+    partial class 重改
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

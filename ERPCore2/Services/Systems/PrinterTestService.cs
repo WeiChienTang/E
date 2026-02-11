@@ -167,86 +167,46 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 測試網路印表機列印
+        /// 對於一般辦公室網路印表機（透過 Windows 驅動程式），使用與 USB 相同的列印方式
         /// </summary>
+        [SupportedOSPlatform("windows6.1")]
         private async Task<ServiceResult> TestNetworkPrintAsync(PrinterConfiguration printerConfiguration)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(printerConfiguration.IpAddress))
-                    return ServiceResult.Failure("網路印表機必須設定IP位址");
+                var printerName = printerConfiguration.Name;
+                
+                if (string.IsNullOrWhiteSpace(printerName))
+                {
+                    return ServiceResult.Failure("印表機名稱不能為空");
+                }
 
                 var testContent = GenerateTestPageContent(printerConfiguration);
-                
-                // 嘗試不同的印表機格式，針對常見印表機優化順序
-                var printDataFormats = new Dictionary<string, byte[]>
+
+                // 對於透過 Windows 驅動程式的網路印表機，使用與 USB 相同的列印方式
+                // 因為 Windows 已經處理了網路連線細節
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    { "PCL", GeneratePclData(testContent) },
-                    { "Plain Text with FF", GeneratePlainTextData(testContent) },
-                    { "ESC/POS", GenerateEscPosData(testContent) }
-                };
-
-                // 使用預設印表機連接埠 9100
-                int port = 9100;
-                bool printSuccess = false;
-                string lastError = "";
-
-                foreach (var format in printDataFormats)
-                {
-                    try
+                    // 方法 1: 優先使用 System.Drawing.Printing (更可靠，使用印表機驅動程式)
+                    var systemDrawingResult = await PrintUsingSystemDrawing(printerName, testContent);
+                    if (systemDrawingResult.IsSuccess)
                     {
-                        using var client = new TcpClient();
-                        
-                        // 設定連接超時時間
-                        var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, port);
-                        var timeoutTask = Task.Delay(5000); // 5秒超時
-
-                        var completedTask = await Task.WhenAny(connectTask, timeoutTask);
-                        
-                        if (completedTask == timeoutTask)
-                        {
-                            lastError = "連接印表機超時，請檢查網路連接";
-                            continue;
-                        }
-
-                        if (!client.Connected)
-                        {
-                            lastError = "無法連接到印表機";
-                            continue;
-                        }
-
-                        // 發送測試資料
-                        using var stream = client.GetStream();
-                        await stream.WriteAsync(format.Value, 0, format.Value.Length);
-                        await stream.FlushAsync();
-
-                        // 給印表機一些時間處理資料
-                        await Task.Delay(2000);
-                        
-                        printSuccess = true;
-                        break; // 成功發送，跳出迴圈
+                        return ServiceResult.Success();
                     }
-                    catch (SocketException ex)
+
+                    // 方法 2: 如果方法 1 失敗，使用 Windows API 直接寫入
+                    var textData = Encoding.UTF8.GetBytes(testContent);
+                    var apiResult = await PrintUsingWindowsApi(printerName, textData, "ERP 測試頁");
+
+                    if (apiResult.IsSuccess)
                     {
-                        lastError = $"網路連接錯誤: {ex.Message}";
+                        return ServiceResult.Success();
                     }
-                    catch (Exception ex)
-                    {
-                        lastError = $"發送 {format.Key} 格式時發生錯誤: {ex.Message}";
-                    }
+
+                    return ServiceResult.Failure($"列印失敗: {apiResult.ErrorMessage}");
                 }
 
-                if (printSuccess)
-                {
-                    return ServiceResult.Success();
-                }
-                else
-                {
-                    return ServiceResult.Failure($"所有格式都嘗試失敗。最後錯誤: {lastError}");
-                }
-            }
-            catch (SocketException ex)
-            {
-                return ServiceResult.Failure($"網路連接錯誤: {ex.Message}");
+                return ServiceResult.Failure("網路印表機測試列印僅支援 Windows 平台");
             }
             catch (Exception ex)
             {
@@ -254,7 +214,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(TestNetworkPrintAsync),
                     ServiceType = GetType().Name,
-                    IpAddress = printerConfiguration.IpAddress
+                    PrinterName = printerConfiguration.Name
                 });
                 return ServiceResult.Failure("網路列印測試失敗");
             }
@@ -313,35 +273,40 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 檢查網路印表機連接
+        /// 對於透過 Windows 驅動程式的網路印表機，只需驗證印表機名稱在系統中存在即可
         /// </summary>
         private async Task<ServiceResult> CheckNetworkConnectionAsync(PrinterConfiguration printerConfiguration)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(printerConfiguration.IpAddress))
-                    return ServiceResult.Failure("網路印表機必須設定IP位址");
-
-                // 先檢查IP是否可以ping通
-                using var ping = new Ping();
-                var reply = await ping.SendPingAsync(printerConfiguration.IpAddress, 3000);
+                // 對於透過 Windows 驅動程式的網路印表機，主要透過印表機名稱進行列印
+                // 因此只需驗證印表機名稱在系統中存在即可（與 USB 相同的邏輯）
+                var printerName = printerConfiguration.Name;
                 
-                if (reply.Status != IPStatus.Success)
-                    return ServiceResult.Failure($"無法ping通印表機IP: {printerConfiguration.IpAddress}");
+                if (string.IsNullOrWhiteSpace(printerName))
+                    return ServiceResult.Failure("印表機名稱不能為空");
 
-                // 檢查預設印表機連接埠 9100 是否開放
-                using var client = new TcpClient();
-                var connectTask = client.ConnectAsync(printerConfiguration.IpAddress, 9100);
-                var timeoutTask = Task.Delay(3000);
+                // 檢查系統中是否存在此印表機（與 CheckUsbConnection 相同邏輯）
+                var availablePrinters = GetAvailablePrinters();
+                var matchedPrinter = availablePrinters.FirstOrDefault(p => 
+                    string.Equals(p.Name, printerName, StringComparison.OrdinalIgnoreCase));
 
-                var completedTask = await Task.WhenAny(connectTask, timeoutTask);
-                
-                if (completedTask == timeoutTask)
-                    return ServiceResult.Failure("印表機連接埠 9100 無回應");
-
-                if (!client.Connected)
-                    return ServiceResult.Failure("無法連接到印表機連接埠 9100");
-
-                return ServiceResult.Success();
+                if (matchedPrinter != null)
+                {
+                    return await Task.FromResult(ServiceResult.Success());
+                }
+                else
+                {
+                    if (availablePrinters.Any())
+                    {
+                        var availableNames = string.Join(", ", availablePrinters.Select(p => $"'{p.Name}'"));
+                        return ServiceResult.Failure($"找不到印表機 '{printerName}'。可用印表機: {availableNames}");
+                    }
+                    else
+                    {
+                        return ServiceResult.Failure($"找不到印表機 '{printerName}'，且系統中沒有已安裝的印表機");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -349,7 +314,7 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(CheckNetworkConnectionAsync),
                     ServiceType = GetType().Name,
-                    IpAddress = printerConfiguration.IpAddress
+                    PrinterName = printerConfiguration.Name
                 });
                 return ServiceResult.Failure("檢查網路連接時發生錯誤");
             }

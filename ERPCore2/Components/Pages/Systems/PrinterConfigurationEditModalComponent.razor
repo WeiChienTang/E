@@ -361,20 +361,19 @@
             var entity = editModalComponent.Entity;
             entity.Name = selectedPrinter.Name;
             
-            // 根據印表機類型填入連接資訊
+            // 根據印表機類型填入連接資訊與連接方式
             if (selectedPrinter.IsNetworkPrinter)
             {
-                // 網路印表機：嘗試從共用名稱取得伺服器資訊
-                if (!string.IsNullOrEmpty(selectedPrinter.ShareName))
-                {
-                    entity.UsbPort = string.Empty;
-                    // 將共用路徑作為備註或 IP 位址處理
-                    // 實際 IP 需要使用者手動輸入
-                }
+                // 網路印表機：設定連接方式為網路
+                entity.ConnectionType = PrinterConnectionType.Network;
+                entity.UsbPort = string.Empty;
+                // 如果有共用名稱，嘗試從中取得伺服器資訊
+                // 實際 IP 需要使用者手動輸入
             }
             else
             {
-                // USB/本機印表機：填入連接埠
+                // USB/本機印表機：設定連接方式為 USB，填入連接埠
+                entity.ConnectionType = PrinterConnectionType.USB;
                 entity.UsbPort = selectedPrinter.PortName;
                 entity.IpAddress = string.Empty;
             }
