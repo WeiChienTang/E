@@ -89,19 +89,11 @@
 
 /* 名稱 */
 .shortcut-name {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #1F2937;
     text-align: center;
     line-height: 1.3;
-    margin-bottom: 0.25rem;
-}
-
-/* 分類標籤 */
-.shortcut-category {
-    font-size: 0.7rem;
-    color: #9ca3af;
-    text-align: center;
 }
 
 /* 拖曳中狀態 */
@@ -129,12 +121,7 @@
     }
 
     .shortcut-name {
-        font-size: 0.80rem;
-        margin-bottom: 0.15rem;
-    }
-
-    .shortcut-category {
-        font-size: 0.6rem;
+        font-size: 0.85rem;
     }
 }
 
@@ -152,13 +139,7 @@
 
     .shortcut-name {
         font-size: 0.80rem;
-        margin-bottom: 0;
         line-height: 1.2;
-    }
-
-    /* 手機模式隱藏分類標籤 */
-    .shortcut-category {
-        display: none;
     }
 
     .btn-remove {

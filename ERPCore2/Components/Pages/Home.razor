@@ -26,18 +26,18 @@
     @* 頂部工具列 *@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0 fw-bold">
-            <i class="bi bi-house-fill me-2"></i>系統首頁
+            <i class="bi bi-house-fill me-2"></i>頁面捷徑
         </h5>
         <div>
             @if (isEditMode)
             {
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                         Size="ButtonSize.Small"
-                                        Text="完成編輯"
+                                        Text="完成"
                                         OnClick="@ToggleEditMode" />
                 <GenericButtonComponent Variant="ButtonVariant.Red"
                                         Size="ButtonSize.Small"
-                                        Text="重置預設"
+                                        Text="預設"
                                         Title="重置為預設配置"
                                         CssClass="me-2"
                                         OnClick="@HandleResetToDefault" />
@@ -53,6 +53,9 @@
             }
         </div>
     </div>
+
+    @* 分隔線 *@
+    <hr class="mt-2 mb-3" />
 
     @* 捷徑卡片區域 *@
     @if (isLoading)
