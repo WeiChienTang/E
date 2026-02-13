@@ -140,6 +140,12 @@ else
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
+    
+    // 方案 D 改良版：資料版本追蹤
+    [Parameter] public int DataVersion { get; set; } = 0;
+    
+    // 修正：父元件載入中標記
+    [Parameter] public bool IsParentLoading { get; set; } = false;
 
     private List<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
@@ -152,6 +158,10 @@ else
     // ===== 資料載入狀態控制 =====
     private bool _dataLoadCompleted = true;  // 資料載入完成標記
     private bool _hasUndeletableDetails = false;  // 是否有不可刪除的明細(已有沖款記錄)
+    
+    // 方案 D 改良版：資料版本追蹤
+    private int _previousDataVersion = 0;
+    private bool _isLoadingDetails = false;
     
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -272,6 +282,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // 修正：父元件載入中時不執行初始化
+        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading) { return; }
+        
+        // 只有在成功載入後才設定 _previousDataVersion
+        _previousDataVersion = DataVersion;
+        
         // 初始化時記錄當前廠商ID，避免 OnParametersSetAsync 誤判為變更
         _previousSelectedSupplierId = EffectiveSupplierId;
         _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
@@ -506,6 +523,34 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        // 防止重入
+        if (_isLoadingDetails) { return; }
+        
+        // 方案 D 改良版：優先檢查 DataVersion
+        bool versionChanged = DataVersion != _previousDataVersion;
+        
+        if (versionChanged)
+        {
+            // 同時更新所有追蹤變數
+            _previousDataVersion = DataVersion;
+            _previousSelectedSupplierId = EffectiveSupplierId;
+            _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
+            _previousFilterProductId = EffectiveFilterProductId;
+            
+            _isLoadingDetails = true;
+            try
+            {
+                // 重新載入資料
+                await LoadExistingDetailsAsync();
+                tableComponent?.RefreshEmptyRow();
+            }
+            finally
+            {
+                _isLoadingDetails = false;
+            }
+            return;
+        }
+        
         base.OnParametersSet();
         
         // 檢查篩選參數是否變更
@@ -530,12 +575,10 @@ else
         }
         
         // 如果只是進貨單或商品篩選變更，只需要更新篩選狀態
-        // ✅ 篩選邏輯會在 GetAvailableReceivingDetails() 中自動套用，不需要重新載入或渲染
         if (purchaseReceivingChanged || productFilterChanged)
         {
             _previousSelectedPurchaseReceivingId = EffectivePurchaseReceivingId;
             _previousFilterProductId = EffectiveFilterProductId;
-            // ✅ 不需要 StateHasChanged()，篩選會在下次渲染時自動生效
             return;
         }
     }
@@ -1356,8 +1399,9 @@ else
 
     private async Task NotifyDetailsChanged()
     {
-        // 轉換為 PurchaseReturnDetail 實體
-        var details = ReturnItems.Where(item => item.SelectedReceivingDetail != null && item.ReturnQuantity > 0)
+        // 🔧 修正：只檢查 SelectedReceivingDetail != null，不過濾 ReturnQuantity
+        // 這樣剛選擇的商品也會被保留，不會因為數量為 0 而被過濾掉
+        var details = ReturnItems.Where(item => item.SelectedReceivingDetail != null)
                                  .Select(ConvertToEntity)
                                  .Where(detail => detail != null)
                                  .Cast<PurchaseReturnDetail>()
@@ -1383,11 +1427,17 @@ else
 
         // 通知父組件是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();
+        
+        // 🔧 修正：無條件刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
 
     private PurchaseReturnDetail? ConvertToEntity(ReturnItem item)
     {
-        if (item.SelectedReceivingDetail == null || item.SelectedProduct == null || item.ReturnQuantity <= 0)
+        // 修正：只檢查 SelectedReceivingDetail 和 SelectedProduct，不過濾 ReturnQuantity
+        // 這樣剛選擇的商品也會被保留
+        if (item.SelectedReceivingDetail == null || item.SelectedProduct == null)
         {
             return null;
         }

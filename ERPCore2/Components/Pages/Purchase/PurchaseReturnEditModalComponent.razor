@@ -113,39 +113,22 @@
     private List<PurchaseReturnDetail> purchaseReturnDetails = new();
     private PurchaseReturnTable? purchaseReturnDetailManager;
     
+    // 方案 D 改良版：資料版本計數器
+    private int _detailsDataVersion = 0;
+    
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的明細資料
+    /// 方案 A + D 重構：明細已由 DataLoader 載入，Table 自動偵測參數變化
+    /// 只需處理 UI 刷新
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            // 1. 從 Service 直接載入完整實體（含明細）
-            var purchaseReturn = await PurchaseReturnService.GetWithDetailsAsync(loadedEntityId);
-            if (purchaseReturn?.PurchaseReturnDetails != null)
-            {
-                purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
-            }
-            else
-            {
-                purchaseReturnDetails = new List<PurchaseReturnDetail>();
-            }
-            
-            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingReturnDetails 參數
-            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料
-            StateHasChanged();
-            
-            // 2. 載入明細相關資料（沖款記錄）並檢查不可刪除狀態
-            await LoadDetailRelatedDataAsync();
-            
-            // 3. 觸發 Table 元件刷新（此時 ExistingReturnDetails 已經是新的資料）
-            if (purchaseReturnDetailManager != null)
-            {
-                await purchaseReturnDetailManager.RefreshDetailsAsync();
-            }
-            
-            // 4. 最後再次更新 UI（確保所有變更都反映在畫面上）
+            // 方案 A + D：
+            // - 明細已由 DataLoader (LoadPurchaseReturnData) 載入完成
+            // - Table 組件會自動偵測 ExistingReturnDetails 參數變化並重新載入
+            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
             StateHasChanged();
         }
         catch (Exception ex)
@@ -342,6 +325,9 @@
                         // 使用硬刪除後不需要篩選 IsDeleted，因為已刪除的記錄不會存在於資料庫中
                         purchaseReturnDetails = purchaseReturn.PurchaseReturnDetails.ToList();
                     }
+                    
+                    // 方案 D 改良版：遞增版本號
+                    _detailsDataVersion++;
                     
                     //  關鍵：載入明細相關資料（沖款記錄）
                     await LoadDetailRelatedDataAsync();
@@ -1237,6 +1223,8 @@
                             TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                             IsEditMode="@(PurchaseReturnId.HasValue)"
                             ExistingReturnDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
+                            DataVersion="@_detailsDataVersion"
+                            IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                             OnReturnDetailsChanged="@HandleReturnDetailsChanged"
                             OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                             OnOpenRelatedDocument="@HandleOpenRelatedDocument" />

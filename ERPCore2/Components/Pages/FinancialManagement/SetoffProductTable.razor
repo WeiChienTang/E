@@ -103,6 +103,12 @@ else
     // 轉單篩選參數（用於進貨轉沖款等場景）
     [Parameter] public int? FilterPurchaseReceivingId { get; set; }
     
+    // 方案 D 改良版：資料版本追蹤
+    [Parameter] public int DataVersion { get; set; } = 0;
+    
+    // 修正：父元件載入中標記
+    [Parameter] public bool IsParentLoading { get; set; } = false;
+    
     // ===== 內部狀態 =====
     private List<UnsettledDetailDto> UnsettledDetails { get; set; } = new();
     private List<SetoffProductDetailItem> SetoffItems { get; set; } = new();
@@ -115,9 +121,24 @@ else
     private string _loadSummaryMessage = string.Empty;
     private bool _dataLoaded = false;
 
+    // 方案 D：追蹤 ExistingDetails 參數變化
+    private List<SetoffProductDetail>? _previousExistingDetails = null;
+    
+    // 方案 D 改良版：資料版本追蹤
+    private int _previousDataVersion = 0;
+    private bool _isLoadingDetails = false;
+
     // ===== 生命週期方法 =====
     protected override async Task OnInitializedAsync()
     {
+        // 修正：父元件載入中時不執行初始化
+        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading) { return; }
+        
+        // 只有在成功載入後才設定追蹤變數
+        _previousDataVersion = DataVersion;
+        _previousExistingDetails = ExistingDetails;
+        
         await LoadProductsAsync();
         
         // 編輯模式下需要載入未結清明細（用於顯示來源資訊）
@@ -136,6 +157,51 @@ else
     
     protected override async Task OnParametersSetAsync()
     {
+        // 防止重入
+        if (_isLoadingDetails) { return; }
+        
+        // 方案 D 改良版：優先檢查 DataVersion
+        bool versionChanged = DataVersion != _previousDataVersion;
+        
+        if (versionChanged)
+        {
+            // 同時更新所有追蹤變數
+            _previousDataVersion = DataVersion;
+            _previousExistingDetails = ExistingDetails;
+            _lastRelatedPartyId = RelatedPartyId;
+            _lastStartDate = StartDate;
+            _lastEndDate = EndDate;
+            
+            _isLoadingDetails = true;
+            try
+            {
+                // 重新載入資料
+                if (IsEditMode())
+                {
+                    await LoadUnsettledDetailsAsync();
+                    LoadExistingDetails();
+                    _dataLoaded = true;
+                }
+            }
+            finally
+            {
+                _isLoadingDetails = false;
+            }
+            return;
+        }
+        
+        // 方案 D：偵測 ExistingDetails 是否被父元件重新賦值
+        if (!ReferenceEquals(ExistingDetails, _previousExistingDetails))
+        {
+            _previousExistingDetails = ExistingDetails;
+            if (IsEditMode())
+            {
+                await LoadUnsettledDetailsAsync();
+                LoadExistingDetails();
+                _dataLoaded = true;
+            }
+        }
+        
         // 檢查關聯方是否變更
         bool relatedPartyChanged = _lastRelatedPartyId != RelatedPartyId;
         

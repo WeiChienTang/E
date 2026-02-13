@@ -134,6 +134,11 @@
     private List<SetoffPrepayment> setoffPrepayments = new();
     private SetoffPrepaymentTable? setoffPrepaymentDetailManager;
     
+    // DataVersion 計數器（防止重複載入）
+    private int _productDetailsDataVersion = 0;
+    private int _paymentDetailsDataVersion = 0;
+    private int _prepaymentDetailsDataVersion = 0;
+    
     // 日期篩選
     private DateTime? filterStartDate;
     private DateTime? filterEndDate;
@@ -146,37 +151,9 @@
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
-        try
-        {
-            // 1. 重新載入三個明細資料（從資料庫）
-            await LoadSetoffDocumentDetails(loadedEntityId);
-            
-            // 🔑 關鍵：立即觸發 UI 更新，讓 Table 元件收到新的參數
-            StateHasChanged();
-            
-            // 2. 觸發三個 Table 元件刷新
-            if (setoffProductDetailManager != null)
-            {
-                await setoffProductDetailManager.RefreshDetailsAsync();
-            }
-            if (setoffPaymentTable != null)
-            {
-                await setoffPaymentTable.RefreshDetailsAsync();
-            }
-            if (setoffPrepaymentDetailManager != null)
-            {
-                await setoffPrepaymentDetailManager.RefreshDetailsAsync();
-            }
-            
-            // 3. 最後再次更新 UI
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleEntityLoaded), GetType(), 
-                additionalData: $"處理實體載入事件失敗 - EntityId: {loadedEntityId}");
-            await NotificationService.ShowErrorAsync("載入明細資料時發生錯誤");
-        }
+        // 方案 A + D：明細已由 DataLoader 載入，三個 Table 自動偵測參數變化
+        await LoadSetoffDocumentDetails(loadedEntityId);
+        StateHasChanged();
     }
     
     /// <summary>
@@ -229,6 +206,11 @@
                 });
             }
         }
+        
+        // 遞增 DataVersion 通知 Table 組件資料已更新
+        _productDetailsDataVersion++;
+        _paymentDetailsDataVersion++;
+        _prepaymentDetailsDataVersion++;
     }
     
     // 資料載入狀態標記
@@ -1500,7 +1482,6 @@
             {
                 <SetoffProductTable 
                     @ref="setoffProductDetailManager"
-                    @key="@editModalComponent.Entity.Id"
                     SetoffDocumentId="@SetoffDocumentId"
                     SetoffType="@editModalComponent.Entity.SetoffType"
                     RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
@@ -1510,7 +1491,9 @@
                     EndDate="@filterEndDate"
                     ExistingDetails="@setoffProductDetails"
                     OnDetailsChanged="@HandleProductDetailsChanged"
-                    IsReadOnly="@IsReadOnly" />
+                    IsReadOnly="@IsReadOnly"
+                    DataVersion="@_productDetailsDataVersion"
+                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)" />
             }
             else
             {
@@ -1543,7 +1526,9 @@
                     SetoffType="@(editModalComponent.Entity.SetoffType)"
                     ExistingPayments="@setoffPayments"
                     OnPaymentsChanged="@HandlePaymentsChanged"
-                    IsReadOnly="@IsReadOnly" />
+                    IsReadOnly="@IsReadOnly"
+                    DataVersion="@_paymentDetailsDataVersion"
+                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)" />
             }
         }
         catch
@@ -1571,7 +1556,9 @@
                                                        ExistingPrepayments="@setoffPrepayments"
                                                        OnPrepaymentsChanged="@HandlePrepaymentsChanged"
                                                        OnOpenRelatedDocument="@HandleOpenRelatedDocument"
-                                                       IsReadOnly="@IsReadOnly" />
+                                                       IsReadOnly="@IsReadOnly"
+                                                       DataVersion="@_prepaymentDetailsDataVersion"
+                                                       IsParentLoading="@(editModalComponent?.IsLoading ?? false)" />
             }
         }
         catch

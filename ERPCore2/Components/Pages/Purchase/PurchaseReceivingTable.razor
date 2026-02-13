@@ -159,10 +159,18 @@ else
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new();
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
     
+    // 方案 D 改良版：資料版本追蹤
+    [Parameter] public int DataVersion { get; set; } = 0;
+    
+    // 修正：父元件載入中標記
+    [Parameter] public bool IsParentLoading { get; set; } = false;
+    
     // ===== 私有欄位 =====
     private InteractiveTableComponent<ReceivingItem>? tableComponent;
     private List<ReceivingItem> ReceivingItems { get; set; } = new();
     private List<Product> AvailableProducts { get; set; } = new();
+    private int _previousDataVersion = 0;
+    private bool _isLoadingDetails = false;
     private List<PurchaseOrderDetail> AvailablePurchaseDetails { get; set; } = new();
     private bool _dataLoadCompleted = true;
     private int? _previousSupplierId = null;
@@ -237,13 +245,55 @@ else
         _previousSupplierId = SelectedSupplierId;
         _previousPurchaseOrderId = SelectedPurchaseOrderId;
         _previousFilterProductId = FilterProductId;
+        
+        // 修正：如果父元件正在載入中，跳過資料載入
+        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading)
+        {
+            return;
+        }
+        
+        // 只有在成功載入後才設定 _previousDataVersion
+        _previousDataVersion = DataVersion;
+        
         await LoadProductsAsync();
         await LoadExistingDetailsAsync();
     }
     
     protected override async Task OnParametersSetAsync()
     {
-        // 檢查篩選參數是否變更
+        // 防止重入
+        if (_isLoadingDetails)
+        {
+            return;
+        }
+        
+        // 方案 D 改良版：優先檢查 DataVersion
+        bool versionChanged = DataVersion != _previousDataVersion;
+        
+        if (versionChanged)
+        {
+            // 同時更新所有追蹤變數
+            _previousDataVersion = DataVersion;
+            _previousSupplierId = SelectedSupplierId;
+            _previousPurchaseOrderId = SelectedPurchaseOrderId;
+            _previousFilterProductId = FilterProductId;
+            
+            _isLoadingDetails = true;
+            try
+            {
+                await LoadProductsAsync();
+                await LoadExistingDetailsAsync();
+                tableComponent?.RefreshEmptyRow();
+            }
+            finally
+            {
+                _isLoadingDetails = false;
+            }
+            return;
+        }
+        
+        // 原有的篩選參數變更邏輯（只在 DataVersion 沒變時才執行）
         bool needReload = false;
         
         // 廠商變更時重新載入
@@ -734,10 +784,7 @@ else
     // 備註輸入 - 用於 Custom 類型的 @oninput 事件
     private async Task OnRemarksInput(ReceivingItem item, string? value)
     {
-        ConsoleHelper.WriteDebug($"[OnRemarksInput] 收到備註輸入: '{value}'");
         item.Remarks = InputEventHelper.HandleTextInput(value);
-        ConsoleHelper.WriteDebug($"[OnRemarksInput] 處理後備註值: '{item.Remarks}'");
-        ConsoleHelper.WriteDebug($"[OnRemarksInput] 商品: {item.SelectedProduct?.Name ?? "無"}, ExistingDetailEntity: {(item.ExistingDetailEntity != null ? "有" : "無")}");
         await NotifyChange();
     }
     
@@ -881,7 +928,7 @@ else
                         : (purchaseDetail.Product != null ? FormatProductDisplay(purchaseDetail.Product) : ""),
                     OrderQuantity = purchaseDetail.OrderQuantity,
                     ReceivedQuantity = purchaseDetail.ReceivedQuantity,
-                    TotalReturnedQuantity = purchaseDetail.TotalReturnedQuantity, // 🔥 載入累計退貨數量
+                    TotalReturnedQuantity = purchaseDetail.TotalReturnedQuantity, // 載入累計退貨數量
                     UnitPrice = purchaseDetail.UnitPrice,
                     TaxRate = purchaseDetail.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
                     SelectedWarehouse = purchaseDetail.Warehouse,
@@ -897,7 +944,7 @@ else
         // 載入退貨數量（用於鎖定檢查）
         await LoadReturnedQuantitiesAsync();
         
-        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
+        // 關鍵：載入後立即檢查是否有不可刪除的明細
         bool hasUndeletableDetails = ReceivingItems.Any(item => 
             item.ExistingDetailEntity != null && 
             !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
@@ -1036,9 +1083,7 @@ else
             SetPropertyValue(entity, "OrderQuantity", item.OrderQuantity > 0 ? item.OrderQuantity : item.ReceivedQuantity);
             SetPropertyValue(entity, UnitPricePropertyName, item.UnitPrice);
             SetPropertyValue(entity, "TaxRate", item.TaxRate);
-            ConsoleHelper.WriteDebug($"[ConvertToEntities] 準備設定備註, RemarksPropertyName='{RemarksPropertyName}', item.Remarks='{item.Remarks}'");
             SetPropertyValue(entity, RemarksPropertyName, item.Remarks);
-            ConsoleHelper.WriteDebug($"[ConvertToEntities] 設定後 entity.{RemarksPropertyName}='{GetPropertyValue<string>(entity, RemarksPropertyName)}'");
             
             // 保存採購明細關聯（支援無採購單：只有在有採購單時才設定）
             if (!string.IsNullOrEmpty(PurchaseOrderDetailIdPropertyName))
@@ -1067,15 +1112,7 @@ else
     // 通知變更
     private async Task NotifyChange()
     {
-        ConsoleHelper.WriteInfo($"[NotifyChange] 開始通知變更...");
         var entities = ConvertToEntities();
-        ConsoleHelper.WriteInfo($"[NotifyChange] 轉換後實體數量: {entities.Count}");
-        foreach (var e in entities)
-        {
-            var remarks = GetPropertyValue<string>(e, RemarksPropertyName);
-            var productId = GetPropertyValue<int?>(e, "ProductId");
-            ConsoleHelper.WriteDebug($"[NotifyChange] 實體 ProductId={productId}, Remarks='{remarks}'");
-        }
         await DetailSyncHelper.SyncToParentAsync(entities, OnDetailsChanged);
         
         // 檢查是否有不可刪除的明細（已有退貨或沖款記錄）
@@ -1084,17 +1121,16 @@ else
             !DetailLockHelper.CanDeleteItem(item.ExistingDetailEntity, out _, 
                 checkReturn: true, checkPayment: true, returnedQuantities: _returnedQuantities));
         
-        // 狀態變更時才通知父組件並觸發 UI 更新
+        // 狀態變更時通知父組件
         if (_hasUndeletableDetails != hasUndeletableDetails)
         {
             _hasUndeletableDetails = hasUndeletableDetails;
             await OnHasUndeletableDetailsChanged.InvokeAsync(hasUndeletableDetails);
-            
-            // 🔥 關鍵：狀態變更後，立即刷新空行（移除或新增）
-            tableComponent?.RefreshEmptyRow();
-            
-            StateHasChanged();  // 觸發 UI 更新，讓 AllowAddNewRow 參數生效
         }
+        
+        // 🔧 修正：無條件刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
     
     /// <summary>
@@ -1211,7 +1247,7 @@ else
     
     /// <summary>
     /// 載入退貨數量 - 從進貨明細的 TotalReturnedQuantity 欄位直接讀取
-    /// 🔥 簡化版：不再需要查詢 PurchaseReturnDetail 表，直接從 Entity 讀取
+    /// 簡化版：不再需要查詢 PurchaseReturnDetail 表，直接從 Entity 讀取
     /// </summary>
     public async Task LoadReturnedQuantitiesAsync()
     {

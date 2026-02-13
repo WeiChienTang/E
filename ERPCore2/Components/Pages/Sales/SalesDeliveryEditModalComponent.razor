@@ -124,6 +124,9 @@
     // 銷貨出貨明細
     private List<SalesDeliveryDetail> salesDeliveryDetails = new();
     
+    // 方案 D 改良版：資料版本計數器
+    private int _detailsDataVersion = 0;
+    
     // 明細管理組件引用
     private SalesDeliveryTable<SalesDelivery, SalesDeliveryDetail>? salesDeliveryDetailManager;
     
@@ -754,26 +757,17 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的明細資料
+    /// 方案 A + D 重構：明細已由 DataLoader 載入，Table 自動偵測參數變化
+    /// 只需處理 UI 刷新
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
-            // 1. 重新載入明細資料
-            await LoadSalesDeliveryDetailsInternal(loadedEntityId);
-            
-            //  關鍵修正：立即觸發 UI 更新，確保 Table 元件收到新的 ExistingDetails 參數
-            // 這樣 RefreshDetailsAsync() 才能讀取到正確的明細資料（與 QuotationEditModalComponent 保持一致）
-            StateHasChanged();
-            
-            // 2. 觸發 Table 元件刷新（此時 ExistingDetails 已經是新的資料）
-            if (salesDeliveryDetailManager != null)
-            {
-                await salesDeliveryDetailManager.RefreshDetailsAsync();
-            }
-            
-            // 3. 最後再次更新 UI（確保所有變更都反映在畫面上）
+            // 方案 A + D：
+            // - 明細已由 DataLoader (LoadSalesDeliveryData) 載入完成
+            // - Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
+            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
             StateHasChanged();
         }
         catch (Exception ex)
@@ -792,6 +786,9 @@
             // 這確保 Product 等關聯物件都已載入，與 QuotationEditModalComponent 保持一致
             var salesDelivery = await SalesDeliveryService.GetByIdAsync(salesDeliveryId);
             salesDeliveryDetails = await SalesDeliveryDetailService.GetByDeliveryIdAsync(salesDeliveryId);
+            
+            // 方案 D 改良版：遞增版本號
+            _detailsDataVersion++;
             
             //  關鍵：載入退貨數量資料，用於判斷是否可刪除明細
             await LoadDetailRelatedDataAsync();
@@ -1296,11 +1293,12 @@
                     try
                     {
                         <SalesDeliveryTable @ref="salesDeliveryDetailManager"
-                                           @key="@editModalComponent.Entity.Id"
                                            TMainEntity="SalesDelivery"
                                            TDetailEntity="SalesDeliveryDetail"
                                            MainEntity="@editModalComponent.Entity"
                                            ExistingDetails="@salesDeliveryDetails"
+                                           DataVersion="@_detailsDataVersion"
+                                           IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                            OnDetailsChanged="@HandleDeliveryDetailsChanged"
                                            OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
                                            OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"

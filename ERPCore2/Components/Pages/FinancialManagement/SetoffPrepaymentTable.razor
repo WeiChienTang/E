@@ -52,6 +52,12 @@
     // 顯示控制
     [Parameter] public bool IsReadOnly { get; set; } = false;
     
+    // 方案 D 改良版：使用 DataVersion 追蹤
+    [Parameter] public int DataVersion { get; set; } = 0;
+    
+    // 修正：父元件載入中標記
+    [Parameter] public bool IsParentLoading { get; set; } = false;
+    
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
     
@@ -65,6 +71,12 @@
     private int? _previousCustomerId;
     private int? _previousSupplierId;
     private int _previousExistingPrepaymentsCount;
+
+    // 方案 D 改良版：追蹤 DataVersion
+    private int _previousDataVersion = 0;
+    
+    // 防止重入
+    private bool _isLoadingData = false;
 
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
@@ -97,6 +109,15 @@
     // ===== 生命週期方法 =====
     protected override async Task OnInitializedAsync()
     {
+        // 修正：如果父元件正在載入中，跳過資料載入
+        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading) { return; }
+        
+        // 只有在成功載入後才設定追蹤變數
+        _previousDataVersion = DataVersion;
+        _previousCustomerId = CustomerId;
+        _previousSupplierId = SupplierId;
+        
         await LoadPrepaymentTypesAsync();
         // 此時不篩選類型，因為 SetoffType 參數可能還未設定
         // FilterPrepaymentTypes() 會在 OnParametersSetAsync() 中執行
@@ -104,8 +125,6 @@
         LoadExistingPrepayments();
         
         // 初始化追蹤變數
-        _previousCustomerId = CustomerId;
-        _previousSupplierId = SupplierId;
         _previousExistingPrepaymentsCount = ExistingPrepayments?.Count ?? 0;
     }
 
@@ -114,20 +133,47 @@
         // 篩選預收付類型（確保 SetoffType 已正確設定）
         FilterPrepaymentTypes();
         
-        // 只有當 CustomerId 或 SupplierId 真正變更時，才重新載入可用的預收付款項
-        if (_previousCustomerId != CustomerId || _previousSupplierId != SupplierId)
+        // 防止重入
+        if (_isLoadingData) { return; }
+        
+        // 方案 D 改良版：優先檢查 DataVersion
+        bool versionChanged = DataVersion != _previousDataVersion;
+        
+        if (versionChanged)
         {
-            await LoadAvailablePrepaymentsAsync();
+            _previousDataVersion = DataVersion;
             _previousCustomerId = CustomerId;
             _previousSupplierId = SupplierId;
+            
+            _isLoadingData = true;
+            try
+            {
+                await LoadAvailablePrepaymentsAsync();
+                LoadExistingPrepayments();
+                _previousExistingPrepaymentsCount = ExistingPrepayments?.Count ?? 0;
+            }
+            finally
+            {
+                _isLoadingData = false;
+            }
         }
-        
-        // 只有當 ExistingPrepayments 真正變更時（數量不同），才重新載入資料
-        var currentCount = ExistingPrepayments?.Count ?? 0;
-        if (_previousExistingPrepaymentsCount != currentCount)
+        else
         {
-            LoadExistingPrepayments();
-            _previousExistingPrepaymentsCount = currentCount;
+            // 只有當 CustomerId 或 SupplierId 真正變更時，才重新載入可用的預收付款項
+            if (_previousCustomerId != CustomerId || _previousSupplierId != SupplierId)
+            {
+                await LoadAvailablePrepaymentsAsync();
+                _previousCustomerId = CustomerId;
+                _previousSupplierId = SupplierId;
+            }
+            
+            // 只有當 ExistingPrepayments 真正變更時（數量不同），才重新載入資料
+            var currentCount = ExistingPrepayments?.Count ?? 0;
+            if (_previousExistingPrepaymentsCount != currentCount)
+            {
+                LoadExistingPrepayments();
+                _previousExistingPrepaymentsCount = currentCount;
+            }
         }
         
         await base.OnParametersSetAsync();

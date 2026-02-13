@@ -471,5 +471,216 @@ namespace ERPCore2.Helpers
             
             return documents.OrderByDescending(d => d.DocumentDate).ToList();
         }
+
+        #region 批次查詢方法 - 解決 N+1 問題
+
+        /// <summary>
+        /// 批次檢查多個採購訂單明細是否有使用紀錄（入庫單）
+        /// 優化 N+1 查詢問題：將 N 次查詢合併為 1 次
+        /// </summary>
+        /// <param name="detailIds">採購訂單明細 ID 列表</param>
+        /// <returns>Dictionary，Key 為明細 ID，Value 為是否有使用紀錄</returns>
+        public async Task<Dictionary<int, bool>> HasUsageRecordBatchForPurchaseOrderDetailsAsync(List<int> detailIds)
+        {
+            var result = new Dictionary<int, bool>();
+            if (detailIds == null || !detailIds.Any()) return result;
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 單次 DB 查詢：找出所有有入庫紀錄的 PurchaseOrderDetailId
+                var usedIds = await context.PurchaseReceivingDetails
+                    .Where(d => d.PurchaseOrderDetailId.HasValue && detailIds.Contains(d.PurchaseOrderDetailId.Value))
+                    .Select(d => d.PurchaseOrderDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var id in detailIds)
+                {
+                    result[id] = usedIds.Contains(id);
+                }
+            }
+            catch
+            {
+                // 發生錯誤時，全部回傳 false
+                foreach (var id in detailIds)
+                {
+                    result[id] = false;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 批次檢查多個進貨明細是否有使用紀錄（退貨單 + 沖款單）
+        /// </summary>
+        public async Task<Dictionary<int, bool>> HasUsageRecordBatchForPurchaseReceivingDetailsAsync(List<int> detailIds)
+        {
+            var result = new Dictionary<int, bool>();
+            if (detailIds == null || !detailIds.Any()) return result;
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 查詢退貨單使用紀錄 (PurchaseReceivingDetailId 是 int? 類型)
+                var returnUsedIds = await context.PurchaseReturnDetails
+                    .Where(d => d.PurchaseReceivingDetailId.HasValue && detailIds.Contains(d.PurchaseReceivingDetailId.Value))
+                    .Select(d => d.PurchaseReceivingDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 查詢沖款單使用紀錄
+                var setoffUsedIds = await context.SetoffProductDetails
+                    .Where(d => d.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail 
+                             && detailIds.Contains(d.SourceDetailId))
+                    .Select(d => d.SourceDetailId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var allUsedIds = returnUsedIds.Concat(setoffUsedIds).Distinct().ToHashSet();
+
+                foreach (var id in detailIds)
+                {
+                    result[id] = allUsedIds.Contains(id);
+                }
+            }
+            catch
+            {
+                foreach (var id in detailIds)
+                {
+                    result[id] = false;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 批次檢查多個銷貨訂單明細是否有使用紀錄（出貨單 + 排程）
+        /// </summary>
+        public async Task<Dictionary<int, bool>> HasUsageRecordBatchForSalesOrderDetailsAsync(List<int> detailIds)
+        {
+            var result = new Dictionary<int, bool>();
+            if (detailIds == null || !detailIds.Any()) return result;
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 查詢出貨單使用紀錄
+                var deliveryUsedIds = await context.SalesDeliveryDetails
+                    .Where(d => d.SalesOrderDetailId.HasValue && detailIds.Contains(d.SalesOrderDetailId.Value))
+                    .Select(d => d.SalesOrderDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 查詢生產排程使用紀錄
+                var scheduleUsedIds = await context.ProductionScheduleItems
+                    .Where(i => i.SalesOrderDetailId.HasValue && detailIds.Contains(i.SalesOrderDetailId.Value))
+                    .Select(i => i.SalesOrderDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var allUsedIds = deliveryUsedIds.Concat(scheduleUsedIds).Distinct().ToHashSet();
+
+                foreach (var id in detailIds)
+                {
+                    result[id] = allUsedIds.Contains(id);
+                }
+            }
+            catch
+            {
+                foreach (var id in detailIds)
+                {
+                    result[id] = false;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 批次檢查多個報價單明細是否有使用紀錄（銷貨訂單）
+        /// </summary>
+        public async Task<Dictionary<int, bool>> HasUsageRecordBatchForQuotationDetailsAsync(List<int> detailIds)
+        {
+            var result = new Dictionary<int, bool>();
+            if (detailIds == null || !detailIds.Any()) return result;
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var usedIds = await context.SalesOrderDetails
+                    .Where(d => d.QuotationDetailId.HasValue && detailIds.Contains(d.QuotationDetailId.Value))
+                    .Select(d => d.QuotationDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var id in detailIds)
+                {
+                    result[id] = usedIds.Contains(id);
+                }
+            }
+            catch
+            {
+                foreach (var id in detailIds)
+                {
+                    result[id] = false;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 批次檢查多個銷貨出貨明細是否有使用紀錄（退貨單 + 沖款單）
+        /// </summary>
+        public async Task<Dictionary<int, bool>> HasUsageRecordBatchForSalesDeliveryDetailsAsync(List<int> detailIds)
+        {
+            var result = new Dictionary<int, bool>();
+            if (detailIds == null || !detailIds.Any()) return result;
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 查詢退貨單使用紀錄
+                var returnUsedIds = await context.SalesReturnDetails
+                    .Where(d => d.SalesDeliveryDetailId.HasValue && detailIds.Contains(d.SalesDeliveryDetailId.Value))
+                    .Select(d => d.SalesDeliveryDetailId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 查詢沖款單使用紀錄
+                var setoffUsedIds = await context.SetoffProductDetails
+                    .Where(d => d.SourceDetailType == SetoffDetailType.SalesDeliveryDetail 
+                             && detailIds.Contains(d.SourceDetailId))
+                    .Select(d => d.SourceDetailId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var allUsedIds = returnUsedIds.Concat(setoffUsedIds).Distinct().ToHashSet();
+
+                foreach (var id in detailIds)
+                {
+                    result[id] = allUsedIds.Contains(id);
+                }
+            }
+            catch
+            {
+                foreach (var id in detailIds)
+                {
+                    result[id] = false;
+                }
+            }
+
+            return result;
+        }
+
+        #endregion
     }
 }

@@ -87,6 +87,11 @@
     
     // 資料載入狀態標記
     private bool isDataLoaded = false;
+    
+    // 防止重複載入的標記
+    private bool _isLoadingScheduleItems = false;
+    private bool _isLoadingPendingDetails = false;
+    private int? _lastLoadedScheduleId = null;
 
     // ===== 生命週期 =====
     
@@ -108,8 +113,24 @@
         }
     }
     
-    private async Task LoadScheduleItemsAsync(int scheduleId)
+    private async Task LoadScheduleItemsAsync(int scheduleId, bool forceReload = false)
     {
+        // 防止重複載入：如果正在載入，跳過
+        if (_isLoadingScheduleItems)
+        {
+            return;
+        }
+        
+        // 防止重複載入：如果已載入相同 ID 且資料存在且非強制重載，跳過
+        if (!forceReload && _lastLoadedScheduleId == scheduleId && currentScheduleItems.Any())
+        {
+            return;
+        }
+        
+        // 設定載入中標記
+        _isLoadingScheduleItems = true;
+        _lastLoadedScheduleId = scheduleId;
+        
         try
         {
             // 清空待刪除列表（載入新資料時重置）
@@ -143,6 +164,11 @@
             await NotificationService.ShowErrorAsync($"載入排程項目失敗: {ex.Message}");
             scheduleItems = new();
             currentScheduleItems = new();
+        }
+        finally
+        {
+            // 重設載入中標記
+            _isLoadingScheduleItems = false;
         }
     }
 
@@ -304,11 +330,11 @@
                 await NotificationService.ShowWarningAsync($"部分項目儲存失敗：\n{string.Join("\n", failedItems)}");
             }
             
-            // 重新載入已儲存的排程項目（這會重新設定 currentScheduleItems）
-            await LoadScheduleItemsAsync(savedSchedule.Id);
+            // 重新載入已儲存的排程項目（強制重載，因為資料已變更）
+            await LoadScheduleItemsAsync(savedSchedule.Id, forceReload: true);
             
-            // 重新載入待排程明細
-            await LoadPendingDetailsAsync();
+            // 重新載入待排程明細（強制重載）
+            await LoadPendingDetailsAsync(forceReload: true);
             
             StateHasChanged();
         }
@@ -549,6 +575,10 @@
         else if (!IsVisible)
         {
             isDataLoaded = false;
+            // 重設所有載入狀態標記，確保下次開啟時乾淨狀態
+            _isLoadingScheduleItems = false;
+            _isLoadingPendingDetails = false;
+            _lastLoadedScheduleId = null;
         }
     }
 
@@ -706,8 +736,23 @@
     /// <summary>
     /// 載入待排程明細列表（以明細為核心，直接顯示所有待排程商品）
     /// </summary>
-    private async Task LoadPendingDetailsAsync()
+    private async Task LoadPendingDetailsAsync(bool forceReload = false)
     {
+        // 防止重複載入：如果正在載入，跳過
+        if (_isLoadingPendingDetails)
+        {
+            return;
+        }
+        
+        // 防止重複載入：如果資料已存在且非強制重載，跳過
+        if (!forceReload && pendingDetails.Any())
+        {
+            return;
+        }
+        
+        // 設定載入中標記
+        _isLoadingPendingDetails = true;
+        
         try
         {
             pendingDetails = new List<PendingScheduleDetailDto>();
@@ -766,6 +811,11 @@
         {
             await NotificationService.ShowErrorAsync($"載入待排程明細失敗: {ex.Message}");
             pendingDetails = new();
+        }
+        finally
+        {
+            // 重設載入中標記
+            _isLoadingPendingDetails = false;
         }
     }
 
@@ -842,8 +892,8 @@
                 });
             }
             
-            // 重新載入待排程明細列表
-            await LoadPendingDetailsAsync();
+            // 重新載入待排程明細列表（強制重載，因為已排程數量變更）
+            await LoadPendingDetailsAsync(forceReload: true);
             
             StateHasChanged();
         }
@@ -870,8 +920,8 @@
             // 從顯示列表中移除
             currentScheduleItems.Remove(item);
             
-            // 重新載入待排程明細列表（顯示可用的待排程項目）
-            await LoadPendingDetailsAsync();
+            // 重新載入待排程明細列表（強制重載，因為已排程數量變更）
+            await LoadPendingDetailsAsync(forceReload: true);
             
             StateHasChanged();
         }
@@ -918,7 +968,8 @@
     /// </summary>
     private async Task HandleRefreshPendingDetails()
     {
-        await LoadPendingDetailsAsync();
+        // 強制重載，因為使用者明確要求刷新
+        await LoadPendingDetailsAsync(forceReload: true);
         StateHasChanged();
     }
 

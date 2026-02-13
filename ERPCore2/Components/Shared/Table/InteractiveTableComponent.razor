@@ -1804,6 +1804,9 @@
         {
             AutoAddEmptyRowIfNeeded();
         }
+        
+        // 🔧 修正：點擊選擇項目後需要觸發 UI 更新，確保商品名稱等資料正確渲染
+        StateHasChanged();
     }
     
     private async Task HandleSearchableSelectItemMouseEnter(InteractiveColumnDefinition column, TItem item, int index)

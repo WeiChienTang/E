@@ -483,7 +483,8 @@
     
     // ===== 內部狀態 =====
     
-    private bool IsLoading { get; set; } = false;
+    // 改為 public 以便子元件檢查父元件載入狀態
+    public bool IsLoading { get; private set; } = false;
     private bool IsSubmitting { get; set; } = false;
     private string ErrorMessage { get; set; } = string.Empty;
     private int? _lastId = null;
@@ -2322,12 +2323,14 @@
     
     /// <summary>
     /// 導航到指定的記錄
+    ///  方案 A 重構：改為呼叫 DataLoader，統一載入路徑
+    /// 這樣導航和初次開啟都走同一條路徑，消除 HandleEntityLoaded 中的重複程式碼
     /// </summary>
     private async Task NavigateToRecordAsync(int targetId)
     {
         try
         {
-            //  關鍵修復：設置導航標記，防止 LoadAllData 呼叫 DataLoader 覆蓋資料
+            //  關鍵修復：設置導航標記
             _isNavigating = true;
             
             //  優化：不使用 IsLoading，避免顯示載入動畫造成閃爍
@@ -2339,10 +2342,54 @@
             _lastId = targetId;
             _currentId = targetId;  // 使用內部變數追蹤
             
-            // 使用 Service 直接載入新的實體資料（不依賴 DataLoader）
-            if (Service != null)
+            //  方案 A 核心修改：先通知父組件更新 Id（確保 DataLoader 走編輯路徑）
+            if (IdChanged.HasDelegate)
             {
-                // 使用反射調用 Service.GetByIdAsync 方法
+                await IdChanged.InvokeAsync(targetId);
+            }
+            
+            //  方案 A 核心修改：直接呼叫 DataLoader（包含載入主檔 + 明細）
+            // 這樣導航時明細載入邏輯統一在 DataLoader 中，不需要在 HandleEntityLoaded 重複
+            if (DataLoader != null)
+            {
+                // 暫時清除導航標記，讓 LoadAllData 可以呼叫 DataLoader
+                _isNavigating = false;
+                
+                var loadedEntity = await DataLoader();
+                
+                if (loadedEntity != null)
+                {
+                    Entity = loadedEntity;
+                    editContext = new EditContext(Entity);
+                    
+                    // 更新 ActionButtons（基於新的 Entity 資料）
+                    UpdateAllActionButtons();
+                    
+                    // 重新載入狀態訊息
+                    await LoadStatusMessageData();
+                    
+                    // 重新載入導航狀態（基於新的 Id）
+                    await LoadNavigationStateAsync();
+                    
+                    //  觸發實體載入完成事件
+                    //  方案 A：此時明細已由 DataLoader 載入完成
+                    // HandleEntityLoaded 只需處理 UI 刷新，不需要重新載入明細
+                    if (OnEntityLoaded.HasDelegate)
+                    {
+                        await OnEntityLoaded.InvokeAsync(targetId);
+                    }
+                    
+                    //  優化：所有資料更新完成後，只觸發一次 UI 重繪
+                    StateHasChanged();
+                }
+                else
+                {
+                    await ShowErrorMessage($"找不到指定的{EntityName}");
+                }
+            }
+            else if (Service != null)
+            {
+                // 後備方案：如果沒有 DataLoader，使用 Service 直接載入
                 var serviceType = Service.GetType();
                 var getByIdMethod = serviceType.GetMethod("GetByIdAsync");
                 
@@ -2354,39 +2401,17 @@
                         var loadedEntity = await getByIdTask;
                         if (loadedEntity != null)
                         {
-                            //  優化：先完成所有資料更新，最後才觸發一次 UI 重繪
                             Entity = loadedEntity;
                             editContext = new EditContext(Entity);
-                            
-                            //  觸發 IdChanged 事件，通知父組件 ID 已變更（雙向綁定）
-                            if (IdChanged.HasDelegate)
-                            {
-                                await IdChanged.InvokeAsync(targetId);
-                            }
-                            
-                            //  重要：不需要遞增 _autoCompleteVersion
-                            // 因為 @key="@(Entity?.Id ?? 0)"，Entity.Id 變化時組件會自動重新創建
-                            
-                            //  重要：不呼叫 AdditionalDataLoader
-                            // 導航時資料已經載入，重複呼叫可能導致 JavaScript 重複初始化錯誤
-                            // AdditionalDataLoader 主要用於 Modal 首次開啟時載入選項資料
-                            
-                            // 更新 ActionButtons（基於新的 Entity 資料）
                             UpdateAllActionButtons();
-                            
-                            // 重新載入狀態訊息
                             await LoadStatusMessageData();
-                            
-                            // 重新載入導航狀態（基於新的 Id）
                             await LoadNavigationStateAsync();
                             
-                            //  新增：觸發實體載入完成事件，通知父組件重新載入明細資料
                             if (OnEntityLoaded.HasDelegate)
                             {
                                 await OnEntityLoaded.InvokeAsync(targetId);
                             }
                             
-                            //  優化：所有資料更新完成後，只觸發一次 UI 重繪
                             StateHasChanged();
                         }
                         else
@@ -2395,12 +2420,6 @@
                         }
                     }
                 }
-            }
-            else if (DataLoader != null)
-            {
-                // 後備方案：如果沒有 Service，嘗試使用 DataLoader
-                // 但這可能不會正確載入新 ID 的資料
-                await LoadAllData();
             }
         }
         catch (Exception ex)

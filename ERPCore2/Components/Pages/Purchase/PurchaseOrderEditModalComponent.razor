@@ -117,6 +117,9 @@
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
     private PurchaseOrderTable<PurchaseOrder, PurchaseOrderDetail>? purchaseOrderDetailManager;
     
+    // 方案 D 改良版：資料版本計數器，每次載入新資料時遞增
+    private int _detailsDataVersion = 0;
+    
     // Modal 管理器
     private SupplierEditModalComponent? supplierEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
@@ -352,19 +355,9 @@
                 // 載入採購單明細
                 await LoadPurchaseOrderDetails(PurchaseOrderId.Value);
                 
-                // 在實體載入後重新初始化表單欄位以反映正確的唯讀狀態
-                await Task.Delay(10); // 短暫延遲確保實體已設定
-                _ = Task.Run(async () =>
-                {
-                    await InvokeAsync(async () =>
-                    {
-                        await InitializeFormFieldsAsync();
-                        StateHasChanged();
-                    });
-                });
-                
-                // 觸發重新渲染以更新 ProductManagerComponent
-                StateHasChanged();
+                // 修正 2：直接初始化表單欄位，移除 Task.Run + Task.Delay 延遲模式
+                // NavigateToRecordAsync 會在 DataLoader 返回後呼叫 StateHasChanged()，不需要在這裡額外呼叫
+                await InitializeFormFieldsAsync();
             }
             
             return purchaseOrder;
@@ -657,17 +650,26 @@
                 // 檢查是否有可用的商品資料
                 @if (availableProducts != null && availableProducts.Any())
                 {
-                    // 檢查是否已選擇廠商
-                    @if (editModalComponent.Entity.SupplierId > 0)
+                    // 修正：使用 CSS 隱藏而非條件卸載，避免元件重建
+                    // 當 SupplierId <= 0 時隱藏 Table，但不卸載元件
+                    @if (editModalComponent.Entity.SupplierId <= 0)
                     {
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            請先選擇廠商後再進行採購明細管理
+                        </div>
+                    }
+                    
+                    <div style="@(editModalComponent.Entity.SupplierId > 0 ? "" : "display:none")">
                         <PurchaseOrderTable @ref="purchaseOrderDetailManager"
-                                                   @key="@editModalComponent.Entity.Id"
                                                    TMainEntity="PurchaseOrder" 
                                                    TDetailEntity="PurchaseOrderDetail"
                                                    Products="@availableProducts"
                                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                    MainEntity="@editModalComponent.Entity"
                                                    ExistingDetails="@purchaseOrderDetails"
+                                                   DataVersion="@_detailsDataVersion"
+                                                   IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                                    OnDetailsChanged="@HandleDetailsChanged"
                                                    MainEntityIdPropertyName="PurchaseOrderId"
                                                    QuantityPropertyName="OrderQuantity"
@@ -680,14 +682,7 @@
                                                    TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                                    OnHasUndeletableDetailsChanged="@(async (hasUndeletable) => await HandleHasUndeletableDetailsChanged(hasUndeletable))"
                                                    OnOpenRelatedDocument="@(async (doc) => await HandleOpenRelatedDocument(doc))" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            請先選擇廠商後再進行採購明細管理
-                        </div>
-                    }
+                    </div>
                 }
                 else
                 {
@@ -869,27 +864,22 @@
     
     /// <summary>
     /// 處理實體載入完成事件（由 GenericEditModalComponent 的導航觸發）
-    /// 當上下筆切換時，重新載入對應的明細資料
+    /// 方案 A + D 重構：明細已由 DataLoader 載入，Table 自動偵測參數變化
+    /// 只需處理 UI 刷新和業務狀態設定
     /// </summary>
     private async Task HandleEntityLoaded(int loadedEntityId)
     {
         try
         {
             //  關鍵修復：導航到已存在的記錄時，允許轉單
-            // 因為 NavigateToRecordAsync 不會呼叫 LoadPurchaseOrderData，
-            // 所以需要在這裡手動設置狀態
+            // 這些狀態設定仍然需要，因為是業務邏輯
             canCreateReceiving = true;
             canCopyMessage = true;
             
-            // 重新載入明細資料
-            await LoadPurchaseOrderDetails(loadedEntityId);
-            
-            // 觸發 Table 元件刷新
-            if (purchaseOrderDetailManager != null)
-            {
-                await purchaseOrderDetailManager.RefreshDetailsAsync();
-            }
-            
+            // 方案 A + D：
+            // - 明細已由 DataLoader (LoadPurchaseOrderData) 載入完成
+            // - Table 組件會自動偵測 ExistingDetails 參數變化並重新載入
+            // - 只需觸發 StateHasChanged() 讓 Table 收到新的參數
             StateHasChanged();
         }
         catch (Exception ex)
@@ -937,6 +927,9 @@
             {
                 purchaseOrderDetails = new List<PurchaseOrderDetail>();
             }
+            
+            // 方案 D 改良版：遞增版本號，通知 Table 重新載入
+            _detailsDataVersion++;
             
             //  載入明細後,檢查是否有不可刪除的明細(有進貨記錄)
             var hasReceiving = purchaseOrderDetails.Any(d => d.ReceivedQuantity > 0);

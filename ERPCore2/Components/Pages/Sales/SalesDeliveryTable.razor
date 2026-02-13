@@ -173,6 +173,10 @@ else
     private int? _previousSelectedCustomerId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
     
+    // 方案 D 改良版：資料版本追蹤
+    private int _previousDataVersion = 0;
+    private bool _isLoadingDetails = false;
+    
     // 稅率快取變數
     private decimal currentTaxRate = 5.0m;
     
@@ -184,6 +188,12 @@ else
     
     // ===== 相關單據開啟事件 =====
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
+    
+    // 方案 D 改良版：資料版本追蹤
+    [Parameter] public int DataVersion { get; set; } = 0;
+    
+    // 修正：父元件載入中標記
+    [Parameter] public bool IsParentLoading { get; set; } = false;
     
     // ===== 輔助計算屬性 =====
     private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
@@ -269,6 +279,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // 修正：父元件載入中時不執行初始化
+        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading) { return; }
+        
+        // 只有在成功載入後才設定 _previousDataVersion
+        _previousDataVersion = DataVersion;
+        
         // 初始化時記錄當前客戶ID，避免 OnParametersSetAsync 誤判為變更
         _previousSelectedCustomerId = SelectedCustomerId;
         
@@ -293,10 +310,38 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        // 防止重入
+        if (_isLoadingDetails) { return; }
+        
+        // 方案 D 改良版：優先檢查 DataVersion
+        bool versionChanged = DataVersion != _previousDataVersion;
+        
+        if (versionChanged)
+        {
+            // 同時更新所有追蹤變數
+            _previousDataVersion = DataVersion;
+            _previousSelectedCustomerId = SelectedCustomerId;
+            
+            _isLoadingDetails = true;
+            try
+            {
+                // 重新載入資料
+                await LoadExistingDetailsAsync();
+                tableComponent?.RefreshEmptyRow();
+            }
+            finally
+            {
+                _isLoadingDetails = false;
+            }
+            return;
+        }
+        
         base.OnParametersSet();
         
         // 客戶變更時重新載入
-        if (_previousSelectedCustomerId != SelectedCustomerId)
+        bool customerChanged = _previousSelectedCustomerId != SelectedCustomerId;
+        
+        if (customerChanged)
         {
             _previousSelectedCustomerId = SelectedCustomerId;
             await LoadAvailableProductsAsync();
@@ -900,7 +945,7 @@ else
             // 使用 AvailableProducts 而非 Products 參數（與 PurchaseReceivingTable 一致）
             var product = AvailableProducts.FirstOrDefault(p => p.Id == productId);
             
-            // 🔥 從 Entity 讀取累計退貨數量
+            // 從 Entity 讀取累計退貨數量
             var totalReturnedQuantity = detail is SalesDeliveryDetail salesDetail 
                 ? salesDetail.TotalReturnedQuantity 
                 : 0;
@@ -910,7 +955,7 @@ else
                 ProductId = productId,
                 SelectedProduct = product,
                 DeliveryQuantity = quantity,
-                TotalReturnedQuantity = totalReturnedQuantity, // 🔥 載入累計退貨數量
+                TotalReturnedQuantity = totalReturnedQuantity, // 載入累計退貨數量
                 UnitPrice = unitPrice,
                 DiscountPercentage = discountPercentage,
                 Remarks = remarks ?? string.Empty,
@@ -967,7 +1012,7 @@ else
             // 設定商品ID
             SetPropertyValue(detailEntity, nameof(DeliveryItem.ProductId), item.ProductId);
             
-            // 🔥 關鍵：設定來源銷貨訂單明細ID（如果是從訂單載入的）
+            // 關鍵：設定來源銷貨訂單明細ID（如果是從訂單載入的）
             if (item.SelectedSalesDetail != null)
             {
                 SetPropertyValue(detailEntity, "SalesOrderDetailId", item.SelectedSalesDetail.Id);
@@ -1011,10 +1056,6 @@ else
         {
             await DetailSyncHelper.SyncToParentAsync(detailEntities, OnDetailsChanged);
         }
-        else
-        {
-            StateHasChanged();
-        }
         
         // 檢查並更新不可刪除明細的狀態
         bool hasUndeletableDetails = DeliveryItems.Any(item => 
@@ -1026,9 +1067,11 @@ else
         {
             _hasUndeletableDetails = hasUndeletableDetails;
             await NotifyHasUndeletableDetailsChanged();
-            tableComponent?.RefreshEmptyRow();  // 刷新空行狀態
-            StateHasChanged();
         }
+        
+        // 🔧 修正：無條件刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
 
     /// <summary>

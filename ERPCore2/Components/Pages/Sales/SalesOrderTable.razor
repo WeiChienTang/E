@@ -216,6 +216,12 @@ else
     [Parameter] public bool IsApprovalEnabled { get; set; } = false; // 是否啟用報價單審核（從系統參數載入）
     [Parameter] public int? SourceQuotationId { get; set; } // 來源報價單ID（用於從報價單轉單時）
     [Parameter] public bool? IsSourceQuotationApproved { get; set; } // 來源報價單是否已審核
+    
+    // 方案 D 改良版：資料版本追蹤
+    [Parameter] public int DataVersion { get; set; } = 0;
+    
+    // 修正：父元件載入中標記
+    [Parameter] public bool IsParentLoading { get; set; } = false;
 
     public List<SalesItem> SalesItems { get; set; } = new List<SalesItem>();
     private List<Product> AvailableProducts { get; set; } = new List<Product>();
@@ -225,6 +231,10 @@ else
     private int? _previousFilterProductId = null;
     private List<int> _deletedDetailIds { get; set; } = new List<int>();
     private int _previousExistingDetailsCount = 0;  // 追蹤 ExistingDetails 數量變化
+    
+    // 方案 D 改良版：資料版本追蹤
+    private int _previousDataVersion = 0;
+    private bool _isLoadingDetails = false;
     
     // ===== 退貨數量管理 =====
     private Dictionary<int, decimal> _returnedQuantities = new(); // Key: SalesOrderDetailId, Value: 已退貨數量
@@ -381,6 +391,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // 修正：父元件載入中時不執行初始化
+        // 🔥 重要：此時不設定 _previousDataVersion，讓 OnParametersSetAsync 能夠偵測到變化
+        if (IsParentLoading) { return; }
+        
+        // 只有在成功載入後才設定 _previousDataVersion
+        _previousDataVersion = DataVersion;
+        
         // 初始化追蹤變數 (在載入資料前設定，避免 OnParametersSetAsync 誤判)
         _previousSelectedCustomerId = SelectedCustomerId;
         _previousSelectedQuotationId = SelectedQuotationId;
@@ -396,6 +413,35 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        // 防止重入
+        if (_isLoadingDetails) { return; }
+        
+        // 方案 D 改良版：優先檢查 DataVersion
+        bool versionChanged = DataVersion != _previousDataVersion;
+        
+        if (versionChanged)
+        {
+            // 同時更新所有追蹤變數
+            _previousDataVersion = DataVersion;
+            _previousSelectedCustomerId = SelectedCustomerId;
+            _previousSelectedQuotationId = SelectedQuotationId;
+            _previousFilterProductId = FilterProductId;
+            _previousExistingDetailsCount = ExistingDetails?.Count ?? 0;
+            
+            _isLoadingDetails = true;
+            try
+            {
+                // 重新載入資料
+                await LoadExistingDetailsAsync();
+                tableComponent?.RefreshEmptyRow();
+            }
+            finally
+            {
+                _isLoadingDetails = false;
+            }
+            return;
+        }
+        
         base.OnParametersSet();
         
         // 檢查篩選參數是否變更
@@ -437,7 +483,7 @@ else
             _previousExistingDetailsCount = currentExistingDetailsCount;
         }
         
-        // 如果商品篩選變更，需要重新載入可用商品清單（篩選 AvailableQuotationDetails 和 AvailableProducts）
+        // 如果商品篩選變更，需要重新載入可用商品清單
         if (productFilterChanged)
         {
             _previousFilterProductId = FilterProductId;
@@ -549,7 +595,7 @@ else
     /// <returns>true 表示可以刪除，false 表示不可刪除</returns>
     private bool CanDeleteItem(SalesItem item, out string reason)
     {
-        // 🔥 使用 DetailLockHelper 統一檢查（檢查：出貨、排程、收款）
+        // 使用 DetailLockHelper 統一檢查（檢查：出貨、排程、收款）
         // 注意：銷貨訂單需要同時檢查多個條件
         return DetailLockHelper.CanDeleteItem(
             item.ExistingDetailEntity,
@@ -1057,7 +1103,7 @@ else
             }
         }
         
-        // 🔥 關鍵：載入後立即檢查是否有不可刪除的明細
+        // 關鍵：載入後立即檢查是否有不可刪除的明細
         bool hasUndeletableDetails = SalesItems.Any(item => 
             item.SelectedProduct != null && 
             !DetailLockHelper.CanDeleteItem(
@@ -1164,6 +1210,10 @@ else
         
         // 通知是否有不可刪除的明細
         await NotifyHasUndeletableDetailsChanged();
+        
+        // 🔧 修正：無條件刷新空行和觸發 UI 更新，確保選擇商品後立即顯示
+        tableComponent?.RefreshEmptyRow();
+        StateHasChanged();
     }
 
     private T? GetPropertyValue<T>(object obj, string propertyName)
