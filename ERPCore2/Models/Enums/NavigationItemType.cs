@@ -11,8 +11,13 @@ namespace ERPCore2.Models.Enums
         Route,
         
         /// <summary>
-        /// 觸發動作（用於開啟 Modal 等）
+        /// 觸發動作（用於開啟 Modal 等，由 MainLayout 處理）
         /// </summary>
-        Action
+        Action,
+        
+        /// <summary>
+        /// 快速功能（用於在首頁直接開啟業務 EditModal，由 Home.razor 處理）
+        /// </summary>
+        QuickAction
     }
 }

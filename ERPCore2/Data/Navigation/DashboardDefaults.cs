@@ -8,7 +8,7 @@ namespace ERPCore2.Data.Navigation;
 public static class DashboardDefaults
 {
     /// <summary>
-    /// 預設的首頁捷徑識別鍵清單（按排序順序）
+    /// 預設的頁面連結捷徑識別鍵清單（按排序順序）
     /// 新使用者會自動套用這些捷徑（需有對應權限）
     /// </summary>
     public static readonly List<string> DefaultWidgetKeys = new()
@@ -23,12 +23,27 @@ public static class DashboardDefaults
     };
 
     /// <summary>
+    /// 預設的快速功能識別鍵清單（按排序順序）
+    /// 新使用者會自動套用這些快速功能（需有對應權限）
+    /// </summary>
+    public static readonly List<string> DefaultQuickActionKeys = new()
+    {
+        "QuickAction:NewPurchaseOrder",  // 新增採購單
+        "QuickAction:NewSalesOrder",      // 新增訂單
+    };
+
+    /// <summary>
     /// 從 NavigationItem 生成識別鍵
     /// Route 類型：使用 Route（如 "/employees"）
     /// Action 類型：使用 "Action:{ActionId}"
+    /// QuickAction 類型：使用 "QuickAction:{ActionId}"
     /// </summary>
     public static string GetNavigationItemKey(NavigationItem item)
     {
+        if (item.ItemType == NavigationItemType.QuickAction && !string.IsNullOrEmpty(item.ActionId))
+        {
+            return $"QuickAction:{item.ActionId}";
+        }
         if (item.ItemType == NavigationItemType.Action && !string.IsNullOrEmpty(item.ActionId))
         {
             return $"Action:{item.ActionId}";
@@ -37,7 +52,17 @@ public static class DashboardDefaults
     }
 
     /// <summary>
-    /// 取得預設捷徑的排序順序
+    /// 根據 NavigationItemKey 推斷區塊類型
+    /// </summary>
+    /// <param name="navigationItemKey">導航項目識別鍵</param>
+    /// <returns>"QuickAction" 或 "Shortcut"</returns>
+    public static string GetSectionType(string navigationItemKey)
+    {
+        return navigationItemKey.StartsWith("QuickAction:") ? "QuickAction" : "Shortcut";
+    }
+
+    /// <summary>
+    /// 取得預設捷徑的排序順序（頁面連結）
     /// </summary>
     public static int GetDefaultSortOrder(string navigationItemKey)
     {
@@ -46,10 +71,27 @@ public static class DashboardDefaults
     }
 
     /// <summary>
-    /// 判斷是否為預設捷徑
+    /// 取得預設快速功能的排序順序
+    /// </summary>
+    public static int GetDefaultQuickActionSortOrder(string navigationItemKey)
+    {
+        var index = DefaultQuickActionKeys.IndexOf(navigationItemKey);
+        return index >= 0 ? (index + 1) * 10 : 1000;
+    }
+
+    /// <summary>
+    /// 判斷是否為預設捷徑（頁面連結）
     /// </summary>
     public static bool IsDefaultWidget(string navigationItemKey)
     {
         return DefaultWidgetKeys.Contains(navigationItemKey);
+    }
+
+    /// <summary>
+    /// 判斷是否為預設快速功能
+    /// </summary>
+    public static bool IsDefaultQuickAction(string navigationItemKey)
+    {
+        return DefaultQuickActionKeys.Contains(navigationItemKey);
     }
 }

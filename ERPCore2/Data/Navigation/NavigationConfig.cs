@@ -48,7 +48,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "人力資源管理",
                         RequiredPermission = "Employee.Read",
-                        SearchKeywords = new List<string> { "員工管理", "員工資料", "人員管理" }
+                        SearchKeywords = new List<string> { "員工管理", "員工資料", "人員管理" },
+                        QuickActionId = "NewEmployee",
+                        QuickActionName = "新增員工"
                     },
                     new NavigationItem
                     {
@@ -58,7 +60,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "人力資源管理",
                         RequiredPermission = "Department.Read",
-                        SearchKeywords = new List<string> { "部門", "組織", "department" }
+                        SearchKeywords = new List<string> { "部門", "組織", "department" },
+                        QuickActionId = "NewDepartment",
+                        QuickActionName = "新增部門"
                     },
                     new NavigationItem
                     {
@@ -68,7 +72,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "人力資源管理",
                         RequiredPermission = "EmployeePosition.Read",
-                        SearchKeywords = new List<string> { "職位", "職稱", "position" }
+                        SearchKeywords = new List<string> { "職位", "職稱", "position" },
+                        QuickActionId = "NewEmployeePosition",
+                        QuickActionName = "新增職位"
                     },
                     NavigationActionHelper.CreateActionItem(
                         name: "權限分配管理",
@@ -77,7 +83,10 @@ public static class NavigationConfig
                         actionId: "OpenRolePermissionManagement",
                         category: "人力資源管理",
                         requiredPermission: "Role.Read",
-                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" }
+                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" },
+                        QuickActionId = "NewRolePermissionAssignment",
+                        QuickActionName = "新增權限分配"
+
                     ),
                     new NavigationItem
                     {
@@ -87,7 +96,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "人力資源管理",
                         RequiredPermission = "Role.Read",
-                        SearchKeywords = new List<string> { "權限組", "角色", "role" }
+                        SearchKeywords = new List<string> { "權限組", "角色", "role" },
+                        QuickActionId = "NewRole",
+                        QuickActionName = "新增權限組"
                     },
                     new NavigationItem
                     {
@@ -97,7 +108,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "人力資源管理",
                         RequiredPermission = "Permission.Read",
-                        SearchKeywords = new List<string> { "權限", "permission", "授權" }
+                        SearchKeywords = new List<string> { "權限", "permission", "授權" },
+                        QuickActionId = "NewPermission",
+                        QuickActionName = "新增權限"
                     }
                 }
             },
@@ -123,7 +136,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "供應鏈管理",
                         RequiredPermission = "Supplier.Read",
-                        SearchKeywords = new List<string> { "廠商管理", "供應商資料", "廠商管理" }
+                        SearchKeywords = new List<string> { "廠商管理", "供應商資料", "廠商管理" },
+                        QuickActionId = "NewSupplier",
+                        QuickActionName = "新增廠商"
                     },
                     
                     // 分隔線 - 區分資料維護與報表
@@ -165,7 +180,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "客戶關係管理",
                         RequiredPermission = "Customer.Read",
-                        SearchKeywords = new List<string> { "客戶管理", "客戶資料", "客戶管理", "聯絡人" }
+                        SearchKeywords = new List<string> { "客戶管理", "客戶資料", "客戶管理", "聯絡人" },
+                        QuickActionId = "NewCustomer",
+                        QuickActionName = "新增客戶"
                     },
                     
                     // 分隔線 - 區分資料維護與報表
@@ -207,7 +224,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "商品管理",
                         RequiredPermission = "Product.Read",
-                        SearchKeywords = new List<string> { "商品管理", "商品資料", "商品目錄", "品項","條碼" }
+                        SearchKeywords = new List<string> { "商品管理", "商品資料", "商品目錄", "品項","條碼" },
+                        QuickActionId = "NewProduct",
+                        QuickActionName = "新增商品"
                     },
                     new NavigationItem
                     {
@@ -217,7 +236,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "商品管理",
                         RequiredPermission = "ProductCategory.Read",
-                        SearchKeywords = new List<string> { "商品類型", "商品分類", "category" }
+                        SearchKeywords = new List<string> { "商品類型", "商品分類", "category" },
+                        QuickActionId = "NewProductCategory",
+                        QuickActionName = "新增商品類型"
                     },
                     new NavigationItem
                     {
@@ -227,7 +248,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "商品管理",
                         RequiredPermission = "Unit.Read",
-                        SearchKeywords = new List<string> { "單位", "計量單位", "unit" }
+                        SearchKeywords = new List<string> { "單位", "計量單位", "unit" },
+                        QuickActionId = "NewUnit",
+                        QuickActionName = "新增單位"
                     },
 
                     new NavigationItem
@@ -238,7 +261,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "商品管理",
                         RequiredPermission = "Size.Read",
-                        SearchKeywords = new List<string> { "尺寸", "規格", "size" }
+                        SearchKeywords = new List<string> { "尺寸", "規格", "size" },
+                        QuickActionId = "NewSize",
+                        QuickActionName = "新增尺寸"
                     },
                     new NavigationItem
                     {
@@ -248,7 +273,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "商品管理",
                         RequiredPermission = "ProductComposition.Read",
-                        SearchKeywords = new List<string> { "商品合成", "BOM", "物料清單", "Bill of Materials" }
+                        SearchKeywords = new List<string> { "商品合成", "BOM", "物料清單", "Bill of Materials" },
+                        QuickActionId = "NewProductComposition",
+                        QuickActionName = "新增物料清單"
                     },
                     new NavigationItem
                     {
@@ -258,7 +285,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "商品管理",
                         RequiredPermission = "CompositionCategory.Read",
-                        SearchKeywords = new List<string> { "物料清單類型", "BOM類型", "category" }
+                        SearchKeywords = new List<string> { "物料清單類型", "BOM類型", "category" },
+                        QuickActionId = "NewCompositionCategory",
+                        QuickActionName = "新增物料清單類型"
                     },
                     new NavigationItem
                     {
@@ -268,7 +297,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "商品管理",
                         RequiredPermission = "ProductionSchedule.Read",
-                        SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" }
+                        SearchKeywords = new List<string> { "生產排程", "排程管理", "production schedule" },
+                        QuickActionId = "NewProductionSchedule",
+                        QuickActionName = "新增生產排程"
                     },
 
                                         // 分隔線 - 區分資料維護與報表
@@ -310,7 +341,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "庫存管理",
                         RequiredPermission = "InventoryStock.Read",
-                        SearchKeywords = new List<string> { "庫存查詢", "庫存資料", "stock inquiry" }
+                        SearchKeywords = new List<string> { "庫存查詢", "庫存資料", "stock inquiry" },
+                        QuickActionId = "NewInventoryStock",
+                        QuickActionName = "新增庫存查詢"
                     },
                     new NavigationItem
                     {
@@ -320,7 +353,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "庫存管理",
                         RequiredPermission = "Warehouse.Read",
-                        SearchKeywords = new List<string> { "倉庫", "倉庫管理", "warehouse" }
+                        SearchKeywords = new List<string> { "倉庫", "倉庫管理", "warehouse" },
+                        QuickActionId = "NewWarehouse",
+                        QuickActionName = "新增倉庫"
                     },
                     new NavigationItem
                     {
@@ -330,7 +365,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "庫存管理",
                         RequiredPermission = "WarehouseLocation.Read",
-                        SearchKeywords = new List<string> { "倉庫位置", "庫位", "儲位", "location" }
+                        SearchKeywords = new List<string> { "倉庫位置", "庫位", "儲位", "location" },
+                        QuickActionId = "NewWarehouseLocation",
+                        QuickActionName = "新增庫位"
                     },
                     new NavigationItem
                     {
@@ -340,7 +377,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "庫存管理",
                         RequiredPermission = "StockTaking.Read",
-                        SearchKeywords = new List<string> { "庫存盤點", "盤點作業", "stock taking", "inventory audit" }
+                        SearchKeywords = new List<string> { "庫存盤點", "盤點作業", "stock taking", "inventory audit" },
+                        QuickActionId = "NewStockTaking",
+                        QuickActionName = "新增庫存盤點"
                     },
                     // 暫時關閉，因為目前意義不明，尚無法明確表示任何有意義的資訊
                     // new NavigationItem
@@ -361,7 +400,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "庫存管理",
                         RequiredPermission = "MaterialIssue.Read",
-                        SearchKeywords = new List<string> { "領料", "物料領用", "material issue" }
+                        SearchKeywords = new List<string> { "領料", "物料領用", "material issue" },
+                        QuickActionId = "NewMaterialIssue",
+                        QuickActionName = "新增領料"
                     }
                 }
             },
@@ -387,7 +428,10 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "採購管理",
                         RequiredPermission = "PurchaseOrder.Read",
-                        SearchKeywords = new List<string> { "採購單", "訂購單", "purchase order", "PO" }
+                        SearchKeywords = new List<string> { "採購單", "訂購單", "purchase order", "PO" },
+                        // QuickAction: 在首頁快速開啟採購單新增 Modal
+                        QuickActionId = "NewPurchaseOrder",
+                        QuickActionName = "新增採購單",
                     },
                     new NavigationItem
                     {
@@ -397,7 +441,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "採購管理",
                         RequiredPermission = "PurchaseReceiving.Read",
-                        SearchKeywords = new List<string> { "進貨", "收貨", "receiving", "GR" }
+                        SearchKeywords = new List<string> { "進貨", "收貨", "receiving", "GR" },
+                        QuickActionId = "NewPurchaseReceiving",
+                        QuickActionName = "新增進貨單"
                     },
                     new NavigationItem
                     {
@@ -407,7 +453,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "採購管理",
                         RequiredPermission = "PurchaseReturn.Read",
-                        SearchKeywords = new List<string> { "進貨退出", "退貨", "return", "退回" }
+                        SearchKeywords = new List<string> { "進貨退出", "退貨", "return", "退回" },
+                        QuickActionId = "NewPurchaseReturn",
+                        QuickActionName = "新增進貨退出單"
                     },
                     
                     // 分隔線 - 區分資料維護與報表
@@ -449,7 +497,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "銷售管理",
                         RequiredPermission = "Quotation.Read",
-                        SearchKeywords = new List<string> { "報價單", "銷售報價", "quotation", "quote" }
+                        SearchKeywords = new List<string> { "報價單", "銷售報價", "quotation", "quote" },
+                        QuickActionId = "NewQuotation",
+                        QuickActionName = "新增報價單"
                     },
                     new NavigationItem
                     {
@@ -459,7 +509,10 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "銷售管理",
                         RequiredPermission = "SalesOrder.Read",
-                        SearchKeywords = new List<string> { "訂單", "sales order", "SO" }
+                        SearchKeywords = new List<string> { "訂單", "sales order", "SO" },
+                        // QuickAction: 在首頁快速開啟訂單新增 Modal
+                        QuickActionId = "NewSalesOrder",
+                        QuickActionName = "新增訂單",
                     },
                     new NavigationItem
                     {
@@ -469,7 +522,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "銷售管理",
                         RequiredPermission = "SalesDelivery.Read",
-                        SearchKeywords = new List<string> { "出貨","銷貨單", "銷貨單", "delivery", "銷貨" }
+                        SearchKeywords = new List<string> { "出貨","銷貨單", "銷貨單", "delivery", "銷貨" },
+                        QuickActionId = "NewSalesDelivery",
+                        QuickActionName = "新增銷貨單"
                     },
                     new NavigationItem
                     {
@@ -479,7 +534,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "銷售管理",
                         RequiredPermission = "SalesReturn.Read",
-                        SearchKeywords = new List<string> { "銷貨退回", "退貨", "sales return" }
+                        SearchKeywords = new List<string> { "銷貨退回", "退貨", "sales return" },
+                        QuickActionId = "NewSalesReturn",
+                        QuickActionName = "新增銷貨退回單"
                     },
                     new NavigationItem
                     {
@@ -489,7 +546,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "銷售管理",
                         RequiredPermission = "SalesReturnReason.Read",
-                        SearchKeywords = new List<string> { "退回原因", "退貨原因", "return reason" }
+                        SearchKeywords = new List<string> { "退回原因", "退貨原因", "return reason" },
+                        QuickActionId = "NewSalesReturnReason",
+                        QuickActionName = "新增銷貨退回原因"
                     },
                     
                     // 分隔線 - 區分資料維護與報表
@@ -532,7 +591,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "財務管理",
                         RequiredPermission = "SetoffDocument.Read",
-                        SearchKeywords = new List<string> { "應收帳款", "AR", "receivable", "收款","沖款" }
+                        SearchKeywords = new List<string> { "應收帳款", "AR", "receivable", "收款","沖款" },
+                        QuickActionId = "NewARSetoff",
+                        QuickActionName = "新增應收沖款"
                     },
                     new NavigationItem
                     {
@@ -542,7 +603,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "財務管理",
                         RequiredPermission = "PaymentMethod.Read",
-                        SearchKeywords = new List<string> { "付款方式", "payment method", "支付" }
+                        SearchKeywords = new List<string> { "付款方式", "payment method", "支付" },
+                        QuickActionId = "NewPaymentMethod",
+                        QuickActionName = "新增付款方式"
                     },
                     new NavigationItem
                     {
@@ -552,7 +615,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "財務管理",
                         RequiredPermission = "Bank.Read",
-                        SearchKeywords = new List<string> { "銀行", "帳戶", "bank" }
+                        SearchKeywords = new List<string> { "銀行", "帳戶", "bank" },
+                        QuickActionId = "NewBank",
+                        QuickActionName = "新增銀行"
                     },
                     new NavigationItem
                     {
@@ -562,7 +627,9 @@ public static class NavigationConfig
                         IconClass = "",
                         Category = "財務管理",
                         RequiredPermission = "Currency.Read",
-                        SearchKeywords = new List<string> { "貨幣", "幣別", "currency", "匯率" }
+                        SearchKeywords = new List<string> { "貨幣", "幣別", "currency", "匯率" },
+                        QuickActionId = "NewCurrency",
+                        QuickActionName = "新增貨幣"
                     },
                     new NavigationItem
                     {
@@ -572,7 +639,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "財務管理",
                         RequiredPermission = "SetoffDocument.Read",
-                        SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" }
+                        SearchKeywords = new List<string> { "應付帳款", "AP", "payable", "付款","沖款" },
+                        QuickActionId = "NewAPSetoff",
+                        QuickActionName = "新增應付沖款"
                     },
                 }
             },
@@ -598,7 +667,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "系統管理",
                         RequiredPermission = "Company.Read",
-                        SearchKeywords = new List<string> { "公司資料", "公司設定", "company" }
+                        SearchKeywords = new List<string> { "公司資料", "公司設定", "company" },
+                        QuickActionId = "NewCompany",
+                        QuickActionName = "新增公司"
                     },
                     new NavigationItem
                     {
@@ -628,7 +699,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "系統管理",
                         RequiredPermission = "PrinterSetting.Read",
-                        SearchKeywords = new List<string> { "印表機", "列印設定", "printer" }
+                        SearchKeywords = new List<string> { "印表機", "列印設定", "printer" },
+                        QuickActionId = "NewPrinterConfiguration",
+                        QuickActionName = "新增印表機設定"
                     },
                     new NavigationItem
                     {
@@ -638,7 +711,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "系統管理",
                         RequiredPermission = "PaperSetting.Read",
-                        SearchKeywords = new List<string> { "紙張設定", "列印設定", "paper setting" }
+                        SearchKeywords = new List<string> { "紙張設定", "列印設定", "paper setting" },
+                        QuickActionId = "NewPaperSetting",
+                        QuickActionName = "新增紙張設定"
                     },
                     new NavigationItem
                     {
@@ -648,7 +723,9 @@ public static class NavigationConfig
                         IconClass = "bi bi-caret-right-fill",
                         Category = "系統管理",
                         RequiredPermission = "ReportPrintConfiguration.Read",
-                        SearchKeywords = new List<string> { "報表設定", "報表配置", "report configuration" }
+                        SearchKeywords = new List<string> { "報表設定", "報表配置", "report configuration" },
+                        QuickActionId = "NewReportPrintConfiguration",
+                        QuickActionName = "新增報表設定"
                     }
                 }
             }
@@ -700,10 +777,32 @@ public static class NavigationConfig
     }
 
     /// <summary>
-    /// 取得可作為儀表板捷徑的導航項目
+    /// 取得可作為儀表板捷徑的導航項目（不含 QuickAction 衍生項目）
     /// 過濾掉：首頁、父級選單容器、分隔線、無路由的項目
     /// </summary>
     public static List<NavigationItem> GetDashboardWidgetItems()
+    {
+        var shortcutItems = GetFlattenedNavigationItems()
+            .Where(item => 
+                !item.IsDivider &&
+                !item.IsParent &&
+                !string.IsNullOrEmpty(item.Name) &&
+                (item.ItemType == NavigationItemType.Action || 
+                 (!string.IsNullOrEmpty(item.Route) && item.Route != "/" && item.Route != "#")))
+            .ToList();
+
+        // 加入衍生的 QuickAction 項目
+        var quickActionItems = DeriveQuickActionItems();
+
+        var result = new List<NavigationItem>(shortcutItems);
+        result.AddRange(quickActionItems);
+        return result;
+    }
+
+    /// <summary>
+    /// 取得可作為頁面連結捷徑的導航項目（Route + Action 類型）
+    /// </summary>
+    public static List<NavigationItem> GetShortcutWidgetItems()
     {
         return GetFlattenedNavigationItems()
             .Where(item => 
@@ -712,6 +811,42 @@ public static class NavigationConfig
                 !string.IsNullOrEmpty(item.Name) &&
                 (item.ItemType == NavigationItemType.Action || 
                  (!string.IsNullOrEmpty(item.Route) && item.Route != "/" && item.Route != "#")))
+            .ToList();
+    }
+
+    /// <summary>
+    /// 取得可作為快速功能的導航項目（從有設定 QuickActionId 的現有項目自動衍生）
+    /// </summary>
+    public static List<NavigationItem> GetQuickActionWidgetItems()
+    {
+        return DeriveQuickActionItems();
+    }
+
+    /// <summary>
+    /// 從現有導航項目中衍生 QuickAction 項目
+    /// 掃描所有設有 QuickActionId 的項目，自動產生對應的 QuickAction NavigationItem
+    /// </summary>
+    private static List<NavigationItem> DeriveQuickActionItems()
+    {
+        return GetFlattenedNavigationItems()
+            .Where(item => !string.IsNullOrEmpty(item.QuickActionId))
+            .Select(item => new NavigationItem
+            {
+                Name = item.QuickActionName ?? $"新增{item.Name}",
+                Description = item.QuickActionDescription ?? $"快速開啟{item.Name}新增畫面",
+                Route = "",
+                ItemType = NavigationItemType.QuickAction,
+                ActionId = item.QuickActionId,
+                IconClass = item.QuickActionIconClass ?? "bi bi-plus-circle-fill",
+                Category = item.Category,
+                RequiredPermission = item.RequiredPermission,
+                SearchKeywords = new List<string>
+                {
+                    item.QuickActionName ?? $"新增{item.Name}",
+                    $"快速{item.Name}",
+                    $"new {item.Name}"
+                }
+            })
             .ToList();
     }
 
@@ -750,6 +885,15 @@ public static class NavigationConfig
             return null;
 
         var allItems = GetDashboardWidgetItems();
+
+        // QuickAction 類型
+        if (key.StartsWith("QuickAction:"))
+        {
+            var actionId = key.Substring(12); // 移除 "QuickAction:" 前綴
+            return allItems.FirstOrDefault(item => 
+                item.ItemType == NavigationItemType.QuickAction && 
+                item.ActionId == actionId);
+        }
 
         // Action 類型
         if (key.StartsWith("Action:"))

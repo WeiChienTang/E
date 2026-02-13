@@ -353,9 +353,6 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 取得預設捷徑清單
-                var defaultKeys = DashboardDefaults.DefaultWidgetKeys;
-
                 // 取得員工權限
                 var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
                 var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
@@ -363,27 +360,48 @@ namespace ERPCore2.Services
                 var newConfigs = new List<EmployeeDashboardConfig>();
                 var result = new List<DashboardConfigWithNavItem>();
 
-                foreach (var key in defaultKeys)
+                // 初始化頁面連結區塊
+                foreach (var key in DashboardDefaults.DefaultWidgetKeys)
                 {
                     var navItem = NavigationConfig.GetNavigationItemByKey(key);
                     if (navItem == null) continue;
 
-                    // 檢查權限
                     if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
                         !permissionCodes.Contains(navItem.RequiredPermission))
                         continue;
 
-                    var config = new EmployeeDashboardConfig
+                    newConfigs.Add(new EmployeeDashboardConfig
                     {
                         EmployeeId = employeeId,
                         NavigationItemKey = key,
                         SortOrder = DashboardDefaults.GetDefaultSortOrder(key),
                         IsVisible = true,
+                        SectionType = "Shortcut",
                         Status = EntityStatus.Active,
                         CreatedAt = DateTime.Now
-                    };
+                    });
+                }
 
-                    newConfigs.Add(config);
+                // 初始化快速功能區塊
+                foreach (var key in DashboardDefaults.DefaultQuickActionKeys)
+                {
+                    var navItem = NavigationConfig.GetNavigationItemByKey(key);
+                    if (navItem == null) continue;
+
+                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains(navItem.RequiredPermission))
+                        continue;
+
+                    newConfigs.Add(new EmployeeDashboardConfig
+                    {
+                        EmployeeId = employeeId,
+                        NavigationItemKey = key,
+                        SortOrder = DashboardDefaults.GetDefaultQuickActionSortOrder(key),
+                        IsVisible = true,
+                        SectionType = "QuickAction",
+                        Status = EntityStatus.Active,
+                        CreatedAt = DateTime.Now
+                    });
                 }
 
                 // 標記員工已初始化儀表板
@@ -456,6 +474,264 @@ namespace ERPCore2.Services
                     EmployeeId = employeeId
                 });
                 return ServiceResult.Failure("重置配置失敗");
+            }
+        }
+
+        // ===== 分區查詢方法（支援快速功能區塊） =====
+
+        /// <inheritdoc/>
+        public async Task<List<NavigationItem>> GetAvailableWidgetsBySectionAsync(int employeeId, string sectionType)
+        {
+            try
+            {
+                // 根據區塊類型取得對應的導航項目
+                var allWidgets = sectionType == "QuickAction"
+                    ? NavigationConfig.GetQuickActionWidgetItems()
+                    : NavigationConfig.GetShortcutWidgetItems();
+
+                // 取得員工的所有權限代碼
+                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
+                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+
+                // 過濾有權限的項目
+                var availableWidgets = allWidgets.Where(item =>
+                    string.IsNullOrEmpty(item.RequiredPermission) ||
+                    permissionCodes.Contains(item.RequiredPermission)
+                ).ToList();
+
+                return availableWidgets;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableWidgetsBySectionAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId,
+                    SectionType = sectionType
+                });
+                return new List<NavigationItem>();
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<DashboardConfigWithNavItem>> GetEmployeeDashboardBySectionAsync(int employeeId, string sectionType)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 查詢員工指定區塊的儀表板配置
+                var configs = await context.EmployeeDashboardConfigs
+                    .Where(c => c.EmployeeId == employeeId && c.IsVisible && c.SectionType == sectionType)
+                    .OrderBy(c => c.SortOrder)
+                    .ToListAsync();
+
+                // 如果沒有任何配置，檢查是否為新用戶
+                if (!configs.Any())
+                {
+                    var employee = await context.Employees.FindAsync(employeeId);
+                    if (employee != null && !employee.HasInitializedDashboard)
+                    {
+                        // 新用戶，自動套用預設配置（兩個區塊都初始化）
+                        var allDefaults = await InitializeDefaultDashboardAsync(employeeId);
+                        // 過濾返回指定區塊的配置
+                        return allDefaults.Where(d => d.Config.SectionType == sectionType).ToList();
+                    }
+                    return new List<DashboardConfigWithNavItem>();
+                }
+
+                // 取得員工權限
+                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
+                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+
+                // 將配置與導航項目對應
+                var result = new List<DashboardConfigWithNavItem>();
+                foreach (var config in configs)
+                {
+                    var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
+                    if (navItem == null) continue;
+
+                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains(navItem.RequiredPermission))
+                        continue;
+
+                    result.Add(new DashboardConfigWithNavItem
+                    {
+                        Config = config,
+                        NavigationItem = navItem
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeeDashboardBySectionAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId,
+                    SectionType = sectionType
+                });
+                return new List<DashboardConfigWithNavItem>();
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ServiceResult> AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys, string sectionType)
+        {
+            try
+            {
+                if (navigationItemKeys == null || !navigationItemKeys.Any())
+                    return ServiceResult.Failure("請選擇至少一個捷徑");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 取得已存在的配置
+                var existingKeys = await context.EmployeeDashboardConfigs
+                    .Where(c => c.EmployeeId == employeeId && navigationItemKeys.Contains(c.NavigationItemKey))
+                    .Select(c => c.NavigationItemKey)
+                    .ToListAsync();
+
+                // 取得員工權限
+                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
+                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+
+                // 取得指定區塊目前最大排序值
+                var maxSortOrder = await context.EmployeeDashboardConfigs
+                    .Where(c => c.EmployeeId == employeeId && c.SectionType == sectionType)
+                    .MaxAsync(c => (int?)c.SortOrder) ?? 0;
+
+                var newConfigs = new List<EmployeeDashboardConfig>();
+                var sortOrder = maxSortOrder;
+
+                foreach (var key in navigationItemKeys)
+                {
+                    if (existingKeys.Contains(key))
+                        continue;
+
+                    var navItem = NavigationConfig.GetNavigationItemByKey(key);
+                    if (navItem == null)
+                        continue;
+
+                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains(navItem.RequiredPermission))
+                        continue;
+
+                    sortOrder += 10;
+                    newConfigs.Add(new EmployeeDashboardConfig
+                    {
+                        EmployeeId = employeeId,
+                        NavigationItemKey = key,
+                        SortOrder = sortOrder,
+                        IsVisible = true,
+                        SectionType = sectionType,
+                        Status = EntityStatus.Active,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+
+                if (newConfigs.Any())
+                {
+                    context.EmployeeDashboardConfigs.AddRange(newConfigs);
+                }
+
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddWidgetBatchAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId,
+                    KeyCount = navigationItemKeys?.Count ?? 0,
+                    SectionType = sectionType
+                });
+                return ServiceResult.Failure("批次新增捷徑失敗");
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ServiceResult> ResetSectionToDefaultAsync(int employeeId, string sectionType)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 刪除指定區塊的現有配置
+                var existingConfigs = await context.EmployeeDashboardConfigs
+                    .Where(c => c.EmployeeId == employeeId && c.SectionType == sectionType)
+                    .ToListAsync();
+
+                if (existingConfigs.Any())
+                {
+                    context.EmployeeDashboardConfigs.RemoveRange(existingConfigs);
+                    await context.SaveChangesAsync();
+                }
+
+                // 取得對應的預設清單
+                var defaultKeys = sectionType == "QuickAction"
+                    ? DashboardDefaults.DefaultQuickActionKeys
+                    : DashboardDefaults.DefaultWidgetKeys;
+
+                // 取得員工權限
+                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
+                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+
+                var newConfigs = new List<EmployeeDashboardConfig>();
+
+                foreach (var key in defaultKeys)
+                {
+                    var navItem = NavigationConfig.GetNavigationItemByKey(key);
+                    if (navItem == null) continue;
+
+                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                        !permissionCodes.Contains(navItem.RequiredPermission))
+                        continue;
+
+                    var sortOrder = sectionType == "QuickAction"
+                        ? DashboardDefaults.GetDefaultQuickActionSortOrder(key)
+                        : DashboardDefaults.GetDefaultSortOrder(key);
+
+                    newConfigs.Add(new EmployeeDashboardConfig
+                    {
+                        EmployeeId = employeeId,
+                        NavigationItemKey = key,
+                        SortOrder = sortOrder,
+                        IsVisible = true,
+                        SectionType = sectionType,
+                        Status = EntityStatus.Active,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+
+                if (newConfigs.Any())
+                {
+                    context.EmployeeDashboardConfigs.AddRange(newConfigs);
+                }
+
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetSectionToDefaultAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId,
+                    SectionType = sectionType
+                });
+                return ServiceResult.Failure("重置區塊配置失敗");
             }
         }
     }

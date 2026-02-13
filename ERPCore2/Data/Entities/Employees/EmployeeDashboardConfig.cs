@@ -43,6 +43,13 @@ namespace ERPCore2.Data.Entities
         public bool IsVisible { get; set; } = true;
 
         /// <summary>
+        /// 區塊類型："Shortcut"（頁面連結）或 "QuickAction"（快速功能）
+        /// </summary>
+        [MaxLength(50)]
+        [Display(Name = "區塊類型")]
+        public string SectionType { get; set; } = "Shortcut";
+
+        /// <summary>
         /// 個人化參數（JSON 格式，預留給未來進階功能）
         /// </summary>
         [Display(Name = "個人化設定")]

@@ -72,5 +72,28 @@ namespace ERPCore2.Models.Navigation
         /// 是否為分隔線（用於視覺分隔不同類型的選單項目）
         /// </summary>
         public bool IsDivider { get; set; } = false;
+
+        // ===== QuickAction 支援（可選，設定後此項目可作為首頁快速功能） =====
+
+        /// <summary>
+        /// 快速功能識別碼（設定後表示此項目支援在首頁直接開啟 EditModal）
+        /// Home.razor 透過此 Id 對應要開啟的 Modal 元件
+        /// </summary>
+        public string? QuickActionId { get; set; }
+
+        /// <summary>
+        /// 快速功能顯示名稱（選填，預設自動衍生為「新增」+ Name）
+        /// </summary>
+        public string? QuickActionName { get; set; }
+
+        /// <summary>
+        /// 快速功能描述（選填，預設自動衍生）
+        /// </summary>
+        public string? QuickActionDescription { get; set; }
+
+        /// <summary>
+        /// 快速功能圖示（選填，預設 "bi bi-plus-circle-fill"）
+        /// </summary>
+        public string? QuickActionIconClass { get; set; }
     }
 }

@@ -69,6 +69,41 @@ namespace ERPCore2.Services
         /// <param name="employeeId">員工ID</param>
         /// <returns>操作結果</returns>
         Task<ServiceResult> ResetToDefaultAsync(int employeeId);
+
+        // ===== 分區查詢方法（支援快速功能區塊） =====
+
+        /// <summary>
+        /// 按區塊類型取得該員工有權限使用的導航項目
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
+        /// <returns>有權限的導航項目清單</returns>
+        Task<List<NavigationItem>> GetAvailableWidgetsBySectionAsync(int employeeId, string sectionType);
+
+        /// <summary>
+        /// 按區塊類型取得該員工目前的首頁配置
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
+        /// <returns>員工的儀表板配置清單</returns>
+        Task<List<DashboardConfigWithNavItem>> GetEmployeeDashboardBySectionAsync(int employeeId, string sectionType);
+
+        /// <summary>
+        /// 批次新增捷徑到員工首頁（指定區塊類型）
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="navigationItemKeys">導航項目識別鍵清單</param>
+        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
+        /// <returns>操作結果</returns>
+        Task<ServiceResult> AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys, string sectionType);
+
+        /// <summary>
+        /// 重置指定區塊為預設配置
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
+        /// <returns>操作結果</returns>
+        Task<ServiceResult> ResetSectionToDefaultAsync(int employeeId, string sectionType);
     }
 
     /// <summary>

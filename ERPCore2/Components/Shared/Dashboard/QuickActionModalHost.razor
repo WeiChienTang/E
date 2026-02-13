@@ -1,0 +1,224 @@
+@*
+    快速功能 Modal 集中管理組件
+    ============================
+    設計原則：
+    1. 所有 EditModal 透過靜態註冊表（Registry）統一管理
+    2. Modal 預先渲染（IsVisible=false），確保 firstRender 不觸發 setupButtonTabNavigation
+    3. 避免 @if 包裹造成 firstRender + IsVisible 同時為 true 的 ActionButtons 問題
+
+    新增快速功能只需兩步：
+    1. 在 NavigationConfig.cs 為 NavigationItem 設定 QuickActionId
+    2. 在此組件的 _registry 新增一行註冊
+    Home.razor 不需要任何修改。
+*@
+
+@foreach (var actionId in _activeActionIds.ToList())
+{
+    var capturedId = actionId;
+    @if (_registry.TryGetValue(capturedId, out var reg))
+    {
+        <DynamicComponent @key="capturedId"
+                          Type="@reg.ComponentType"
+                          Parameters="@BuildParameters(capturedId, reg)" />
+    }
+}
+
+@code {
+    // ===== 參數 =====
+
+    /// <summary>
+    /// 目前使用者已配置的 QuickAction Id 清單
+    /// Host 會預先渲染這些 Modal（IsVisible=false），確保 firstRender 在非顯示狀態完成
+    /// </summary>
+    [Parameter] public List<string> ConfiguredActionIds { get; set; } = new();
+
+    // ===== 註冊表 =====
+
+    /// <summary>
+    /// QuickAction 註冊資訊
+    /// </summary>
+    private class QuickActionRegistration
+    {
+        public Type ComponentType { get; }
+        public string IdParameterName { get; }
+        public Dictionary<string, object>? ExtraParameters { get; }
+
+        public QuickActionRegistration(Type componentType, string idParameterName, Dictionary<string, object>? extraParameters = null)
+        {
+            ComponentType = componentType;
+            IdParameterName = idParameterName;
+            ExtraParameters = extraParameters;
+        }
+    }
+
+    /// <summary>
+    /// QuickAction 註冊表 - 映射 QuickActionId → (元件類型, Id參數名, 額外參數)
+    /// ★ 新增快速功能時，只需在此處新增一行註冊 ★
+    /// </summary>
+    private static readonly Dictionary<string, QuickActionRegistration> _registry = new()
+    {
+        // ===== 人力資源管理 =====
+        ["NewEmployee"] = new(typeof(EmployeeEditModalComponent), "EmployeeId"),
+        ["NewDepartment"] = new(typeof(DepartmentEditModalComponent), "DepartmentId"),
+        ["NewEmployeePosition"] = new(typeof(EmployeePositionEditModalComponent), "EmployeePositionId"),
+        ["NewRole"] = new(typeof(RoleEditModalComponent), "RoleId"),
+        ["NewPermission"] = new(typeof(PermissionEditModalComponent), "PermissionId"),
+        ["NewRolePermissionAssignment"] = new(typeof(RolePermissionAssignmentEditModalComponent), "RolePermissionAssignmentId"),
+
+        // ===== 廠商管理 =====
+        ["NewSupplier"] = new(typeof(SupplierEditModalComponent), "SupplierId"),
+
+        // ===== 客戶管理 =====
+        ["NewCustomer"] = new(typeof(CustomerEditModalComponent), "CustomerId"),
+
+        // ===== 商品管理 =====
+        ["NewProduct"] = new(typeof(ProductEditModalComponent), "ProductId"),
+        ["NewProductCategory"] = new(typeof(ProductCategoryEditModalComponent), "ProductCategoryId"),
+        ["NewUnit"] = new(typeof(UnitEditModalComponent), "UnitId"),
+        ["NewSize"] = new(typeof(SizeEditModalComponent), "SizeId"),
+        ["NewProductComposition"] = new(typeof(ProductCompositionEditModalComponent), "ProductCompositionId"),
+        ["NewCompositionCategory"] = new(typeof(CompositionCategoryEditModalComponent), "CompositionCategoryId"),
+        ["NewProductionSchedule"] = new(typeof(ProductionScheduleEditModalComponent), "ProductionScheduleId"),
+
+        // ===== 庫存管理 =====
+        ["NewInventoryStock"] = new(typeof(InventoryStockEditModalComponent), "InventoryStockId"),
+        ["NewWarehouse"] = new(typeof(WarehouseEditModalComponent), "WarehouseId"),
+        ["NewWarehouseLocation"] = new(typeof(WarehouseLocationEditModalComponent), "WarehouseLocationId"),
+        ["NewStockTaking"] = new(typeof(StockTakingEditModalComponent), "StockTakingId"),
+        ["NewMaterialIssue"] = new(typeof(MaterialIssueEditModalComponent), "MaterialIssueId"),
+
+        // ===== 採購管理 =====
+        ["NewPurchaseOrder"] = new(typeof(PurchaseOrderEditModalComponent), "PurchaseOrderId"),
+        ["NewPurchaseReceiving"] = new(typeof(PurchaseReceivingEditModalComponent), "PurchaseReceivingId"),
+        ["NewPurchaseReturn"] = new(typeof(PurchaseReturnEditModalComponent), "PurchaseReturnId"),
+
+        // ===== 銷貨管理 =====
+        ["NewQuotation"] = new(typeof(QuotationEditModalComponent), "QuotationId"),
+        ["NewSalesOrder"] = new(typeof(SalesOrderEditModalComponent), "SalesOrderId"),
+        ["NewSalesDelivery"] = new(typeof(SalesDeliveryEditModalComponent), "SalesDeliveryId"),
+        ["NewSalesReturn"] = new(typeof(SalesReturnEditModalComponent), "SalesReturnId"),
+        ["NewSalesReturnReason"] = new(typeof(SalesReturnReasonEditModalComponent), "SalesReturnReasonId"),
+
+        // ===== 財務管理 =====
+        ["NewARSetoff"] = new(typeof(SetoffDocumentEditModalComponent), "SetoffDocumentId",
+            new() { ["DefaultSetoffType"] = SetoffType.AccountsReceivable }),
+        ["NewAPSetoff"] = new(typeof(SetoffDocumentEditModalComponent), "SetoffDocumentId",
+            new() { ["DefaultSetoffType"] = SetoffType.AccountsPayable }),
+        ["NewPaymentMethod"] = new(typeof(PaymentMethodEditModalComponent), "PaymentMethodId"),
+        ["NewBank"] = new(typeof(BankEditModalComponent), "BankId"),
+        ["NewCurrency"] = new(typeof(CurrencyEditModalComponent), "CurrencyId"),
+
+        // ===== 系統管理 =====
+        ["NewCompany"] = new(typeof(CompanyEditModalComponent), "CompanyId"),
+        ["NewPrinterConfiguration"] = new(typeof(PrinterConfigurationEditModalComponent), "PrinterConfigurationId"),
+        ["NewPaperSetting"] = new(typeof(PaperSettingEditModalComponent), "PaperSettingId"),
+        ["NewReportPrintConfiguration"] = new(typeof(ReportPrintConfigurationEditModalComponent), "ReportPrintConfigurationId"),
+    };
+
+    // ===== 內部狀態 =====
+
+    /// <summary>已啟動的 Modal Id 清單（已渲染或準備渲染）</summary>
+    private List<string> _activeActionIds = new();
+
+    /// <summary>各 Modal 的顯示狀態</summary>
+    private Dictionary<string, bool> _visibilityState = new();
+
+    /// <summary>等待下一個渲染週期後才開啟的 ActionId</summary>
+    private string? _pendingOpenActionId;
+
+    // ===== 生命週期 =====
+
+    protected override void OnParametersSet()
+    {
+        // 預先註冊所有已配置的快速功能（確保 firstRender 在 IsVisible=false 時完成）
+        foreach (var actionId in ConfiguredActionIds)
+        {
+            if (_registry.ContainsKey(actionId) && !_activeActionIds.Contains(actionId))
+            {
+                _activeActionIds.Add(actionId);
+                _visibilityState[actionId] = false;
+            }
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // 延遲開啟：等待子元件完成 firstRender 後再設定 IsVisible=true
+        if (_pendingOpenActionId != null)
+        {
+            var actionId = _pendingOpenActionId;
+            _pendingOpenActionId = null;
+            _visibilityState[actionId] = true;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 公開方法 =====
+
+    /// <summary>
+    /// 開啟指定 QuickAction 的 EditModal
+    /// </summary>
+    /// <param name="actionId">QuickAction 識別碼（對應 NavigationItem.QuickActionId）</param>
+    public void Open(string actionId)
+    {
+        if (string.IsNullOrEmpty(actionId) || !_registry.ContainsKey(actionId))
+            return;
+
+        if (_activeActionIds.Contains(actionId))
+        {
+            // 已渲染過，直接顯示
+            _visibilityState[actionId] = true;
+            StateHasChanged();
+        }
+        else
+        {
+            // 首次啟動：先渲染（IsVisible=false），下一個 render cycle 再顯示
+            _activeActionIds.Add(actionId);
+            _visibilityState[actionId] = false;
+            _pendingOpenActionId = actionId;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 檢查指定的 QuickActionId 是否已在註冊表中
+    /// </summary>
+    public static bool IsRegistered(string? actionId)
+    {
+        return !string.IsNullOrEmpty(actionId) && _registry.ContainsKey(actionId);
+    }
+
+    // ===== 內部方法 =====
+
+    /// <summary>
+    /// 建構 DynamicComponent 的參數字典
+    /// </summary>
+    private Dictionary<string, object> BuildParameters(string actionId, QuickActionRegistration reg)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            ["IsVisible"] = _visibilityState.GetValueOrDefault(actionId, false),
+            ["IsVisibleChanged"] = EventCallback.Factory.Create<bool>(this, (bool visible) =>
+            {
+                _visibilityState[actionId] = visible;
+                StateHasChanged();
+            }),
+            ["OnCancel"] = EventCallback.Factory.Create(this, () =>
+            {
+                _visibilityState[actionId] = false;
+                StateHasChanged();
+            })
+        };
+
+        // 加入額外參數（例如 SetoffDocument 的 DefaultSetoffType）
+        if (reg.ExtraParameters != null)
+        {
+            foreach (var kvp in reg.ExtraParameters)
+            {
+                parameters[kvp.Key] = kvp.Value;
+            }
+        }
+
+        return parameters;
+    }
+}

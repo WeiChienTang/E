@@ -4,7 +4,7 @@
 @* 新增捷徑選擇 Modal *@
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="新增首頁捷徑"
+                    Title="@PickerTitle"
                     Icon="bi-grid-3x3-gap-fill"
                     Size="BaseModalComponent.ModalSize.Large"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
@@ -120,6 +120,12 @@
     /// </summary>
     [Parameter]
     public EventCallback<List<string>> OnConfirm { get; set; }
+
+    /// <summary>
+    /// Modal 標題（預設「新增首頁捷徑」）
+    /// </summary>
+    [Parameter]
+    public string PickerTitle { get; set; } = "新增首頁捷徑";
 
     // ===== 狀態 =====
 
