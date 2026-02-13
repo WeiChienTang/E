@@ -19,6 +19,8 @@ public static class NavigationActionHelper
     /// <param name="category">分類</param>
     /// <param name="requiredPermission">權限要求（可選）</param>
     /// <param name="searchKeywords">搜尋關鍵字（可選）</param>
+    /// <param name="quickActionId">快速功能識別碼（可選，設定後此項目支援快速功能）</param>
+    /// <param name="quickActionName">快速功能顯示名稱（可選）</param>
     /// <returns>設定好的 Action 類型導航項目</returns>
     public static NavigationItem CreateActionItem(
         string name,
@@ -27,7 +29,9 @@ public static class NavigationActionHelper
         string actionId,
         string category = "",
         string? requiredPermission = null,
-        List<string>? searchKeywords = null)
+        List<string>? searchKeywords = null,
+        string? quickActionId = null,
+        string? quickActionName = null)
     {
         return new NavigationItem
         {
@@ -39,7 +43,9 @@ public static class NavigationActionHelper
             Route = "", // Action 類型不需要路由
             Category = category,
             RequiredPermission = requiredPermission,
-            SearchKeywords = searchKeywords ?? new List<string>()
+            SearchKeywords = searchKeywords ?? new List<string>(),
+            QuickActionId = quickActionId,
+            QuickActionName = quickActionName
         };
     }
 

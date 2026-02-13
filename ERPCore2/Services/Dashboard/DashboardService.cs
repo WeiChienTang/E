@@ -9,8 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 儀表板服務 - 管理首頁小工具配置
-    /// 使用 NavigationConfig 作為小工具資料來源
+    /// 儀表板服務 - 管理首頁動態面板與項目配置
     /// </summary>
     public class DashboardService : IDashboardService
     {
@@ -28,19 +27,267 @@ namespace ERPCore2.Services
             _logger = logger;
         }
 
+        #region 面板管理
+
         /// <inheritdoc/>
-        public async Task<List<NavigationItem>> GetAvailableWidgetsAsync(int employeeId)
+        public async Task<List<DashboardPanelWithItems>> GetEmployeePanelsAsync(int employeeId)
         {
             try
             {
-                // 從 NavigationConfig 取得所有可作為捷徑的項目
-                var allWidgets = NavigationConfig.GetDashboardWidgetItems();
+                using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 取得員工的所有權限代碼
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+                // 查詢員工的所有面板與項目
+                var panels = await context.EmployeeDashboardPanels
+                    .Where(p => p.EmployeeId == employeeId)
+                    .Include(p => p.DashboardConfigs.Where(c => c.IsVisible).OrderBy(c => c.SortOrder))
+                    .OrderBy(p => p.SortOrder)
+                    .ToListAsync();
+
+                // 如果沒有任何面板，檢查是否為新用戶
+                if (!panels.Any())
+                {
+                    var employee = await context.Employees.FindAsync(employeeId);
+                    if (employee != null && !employee.HasInitializedDashboard)
+                    {
+                        // 新用戶，自動套用預設配置
+                        return await InitializeDefaultDashboardAsync(employeeId);
+                    }
+                    return new List<DashboardPanelWithItems>();
+                }
+
+                // 取得員工權限
+                var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+
+                // 組裝結果
+                var result = new List<DashboardPanelWithItems>();
+                foreach (var panel in panels)
+                {
+                    var panelWithItems = new DashboardPanelWithItems
+                    {
+                        Panel = panel,
+                        Items = new List<DashboardConfigWithNavItem>()
+                    };
+
+                    foreach (var config in panel.DashboardConfigs)
+                    {
+                        var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
+                        if (navItem == null) continue;
+
+                        // 檢查權限
+                        if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                            !permissionCodes.Contains(navItem.RequiredPermission))
+                            continue;
+
+                        panelWithItems.Items.Add(new DashboardConfigWithNavItem
+                        {
+                            Config = config,
+                            NavigationItem = navItem
+                        });
+                    }
+
+                    result.Add(panelWithItems);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeePanelsAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId
+                });
+                return new List<DashboardPanelWithItems>();
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ServiceResult<DashboardPanelWithItems>> CreatePanelAsync(int employeeId, string title)
+        {
+            try
+            {
+                // 驗證標題
+                if (string.IsNullOrWhiteSpace(title))
+                    return ServiceResult<DashboardPanelWithItems>.Failure("面板標題不可為空");
+
+                title = title.Trim();
+                if (title.Length > DashboardDefaults.MaxPanelTitleLength)
+                    return ServiceResult<DashboardPanelWithItems>.Failure($"面板標題不可超過 {DashboardDefaults.MaxPanelTitleLength} 字");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                // 檢查面板數量上限
+                var panelCount = await context.EmployeeDashboardPanels
+                    .CountAsync(p => p.EmployeeId == employeeId);
+
+                if (panelCount >= DashboardDefaults.MaxPanelCount)
+                    return ServiceResult<DashboardPanelWithItems>.Failure($"面板數量已達上限（{DashboardDefaults.MaxPanelCount} 個）");
+
+                // 取得目前最大排序值
+                var maxSortOrder = await context.EmployeeDashboardPanels
+                    .Where(p => p.EmployeeId == employeeId)
+                    .MaxAsync(p => (int?)p.SortOrder) ?? -1;
+
+                var panel = new EmployeeDashboardPanel
+                {
+                    EmployeeId = employeeId,
+                    Title = title,
+                    SortOrder = maxSortOrder + 1,
+                    IconClass = "bi bi-grid-fill",
+                    Status = EntityStatus.Active,
+                    CreatedAt = DateTime.Now
+                };
+
+                context.EmployeeDashboardPanels.Add(panel);
+
+                // 標記員工已初始化儀表板
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null && !employee.HasInitializedDashboard)
+                {
+                    employee.HasInitializedDashboard = true;
+                }
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult<DashboardPanelWithItems>.Success(new DashboardPanelWithItems
+                {
+                    Panel = panel,
+                    Items = new List<DashboardConfigWithNavItem>()
+                });
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreatePanelAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId,
+                    Title = title
+                });
+                return ServiceResult<DashboardPanelWithItems>.Failure("建立面板失敗");
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ServiceResult> UpdatePanelTitleAsync(int panelId, string title)
+        {
+            try
+            {
+                // 驗證標題
+                if (string.IsNullOrWhiteSpace(title))
+                    return ServiceResult.Failure("面板標題不可為空");
+
+                title = title.Trim();
+                if (title.Length > DashboardDefaults.MaxPanelTitleLength)
+                    return ServiceResult.Failure($"面板標題不可超過 {DashboardDefaults.MaxPanelTitleLength} 字");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var panel = await context.EmployeeDashboardPanels.FindAsync(panelId);
+                if (panel == null)
+                    return ServiceResult.Failure("找不到該面板");
+
+                panel.Title = title;
+                panel.UpdatedAt = DateTime.Now;
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePanelTitleAsync), GetType(), _logger, new
+                {
+                    PanelId = panelId,
+                    Title = title
+                });
+                return ServiceResult.Failure("更新面板標題失敗");
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ServiceResult> DeletePanelAsync(int panelId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var panel = await context.EmployeeDashboardPanels
+                    .Include(p => p.DashboardConfigs)
+                    .FirstOrDefaultAsync(p => p.Id == panelId);
+
+                if (panel == null)
+                    return ServiceResult.Failure("找不到該面板");
+
+                // 刪除面板（Cascade Delete 會自動刪除其下項目）
+                context.EmployeeDashboardPanels.Remove(panel);
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(DeletePanelAsync), GetType(), _logger, new
+                {
+                    PanelId = panelId
+                });
+                return ServiceResult.Failure("刪除面板失敗");
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ServiceResult> UpdatePanelSortOrderAsync(int employeeId, List<int> panelIds)
+        {
+            try
+            {
+                if (panelIds == null || !panelIds.Any())
+                    return ServiceResult.Failure("排序清單不可為空");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var panels = await context.EmployeeDashboardPanels
+                    .Where(p => p.EmployeeId == employeeId && panelIds.Contains(p.Id))
+                    .ToListAsync();
+
+                for (int i = 0; i < panelIds.Count; i++)
+                {
+                    var panel = panels.FirstOrDefault(p => p.Id == panelIds[i]);
+                    if (panel != null)
+                    {
+                        panel.SortOrder = i;
+                        panel.UpdatedAt = DateTime.Now;
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdatePanelSortOrderAsync), GetType(), _logger, new
+                {
+                    EmployeeId = employeeId,
+                    PanelCount = panelIds?.Count ?? 0
+                });
+                return ServiceResult.Failure("更新面板排序失敗");
+            }
+        }
+
+        #endregion
+
+        #region 項目管理
+
+        /// <inheritdoc/>
+        public async Task<List<NavigationItem>> GetAvailableWidgetsAsync(int employeeId, bool isQuickAction)
+        {
+            try
+            {
+                // 根據類型取得對應的導航項目
+                var allWidgets = isQuickAction
+                    ? NavigationConfig.GetQuickActionWidgetItems()
+                    : NavigationConfig.GetShortcutWidgetItems();
 
                 // 過濾有權限的項目
+                var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
+
                 var availableWidgets = allWidgets.Where(item =>
                     string.IsNullOrEmpty(item.RequiredPermission) ||
                     permissionCodes.Contains(item.RequiredPermission)
@@ -52,163 +299,64 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableWidgetsAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId
+                    EmployeeId = employeeId,
+                    IsQuickAction = isQuickAction
                 });
                 return new List<NavigationItem>();
             }
         }
 
         /// <inheritdoc/>
-        public async Task<List<DashboardConfigWithNavItem>> GetEmployeeDashboardAsync(int employeeId)
+        public async Task<HashSet<string>> GetPanelExistingKeysAsync(int panelId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 查詢員工的儀表板配置
-                var configs = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && c.IsVisible)
-                    .OrderBy(c => c.SortOrder)
+                var keys = await context.EmployeeDashboardConfigs
+                    .Where(c => c.PanelId == panelId)
+                    .Select(c => c.NavigationItemKey)
                     .ToListAsync();
 
-                // 如果沒有任何配置，檢查是否為新用戶
-                if (!configs.Any())
-                {
-                    // 查詢員工是否已初始化過儀表板
-                    var employee = await context.Employees.FindAsync(employeeId);
-                    if (employee != null && !employee.HasInitializedDashboard)
-                    {
-                        // 新用戶，自動套用預設配置
-                        return await InitializeDefaultDashboardAsync(employeeId);
-                    }
-                    // 已初始化過但配置為空，回傳空清單
-                    return new List<DashboardConfigWithNavItem>();
-                }
-
-                // 取得員工權限
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
-
-                // 將配置與導航項目對應
-                var result = new List<DashboardConfigWithNavItem>();
-                foreach (var config in configs)
-                {
-                    var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
-                    if (navItem == null) continue; // 導航項目已不存在，跳過
-
-                    // 檢查權限
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
-                        continue;
-
-                    result.Add(new DashboardConfigWithNavItem
-                    {
-                        Config = config,
-                        NavigationItem = navItem
-                    });
-                }
-
-                return result;
+                return keys.ToHashSet();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeeDashboardAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPanelExistingKeysAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId
+                    PanelId = panelId
                 });
-                return new List<DashboardConfigWithNavItem>();
+                return new HashSet<string>();
             }
         }
 
         /// <inheritdoc/>
-        public async Task<ServiceResult> AddWidgetAsync(int employeeId, string navigationItemKey)
-        {
-            try
-            {
-                // 檢查導航項目是否存在
-                var navItem = NavigationConfig.GetNavigationItemByKey(navigationItemKey);
-                if (navItem == null)
-                    return ServiceResult.Failure("找不到對應的功能項目");
-
-                // 檢查權限
-                if (!string.IsNullOrEmpty(navItem.RequiredPermission))
-                {
-                    var permResult = await _permissionService.HasPermissionAsync(employeeId, navItem.RequiredPermission);
-                    if (!permResult.IsSuccess || !permResult.Data)
-                        return ServiceResult.Failure("您沒有此功能的權限");
-                }
-
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                // 檢查是否已存在
-                var exists = await context.EmployeeDashboardConfigs
-                    .AnyAsync(c => c.EmployeeId == employeeId && c.NavigationItemKey == navigationItemKey);
-
-                if (exists)
-                    return ServiceResult.Failure("此捷徑已存在於首頁中");
-
-                // 取得目前最大排序值
-                var maxSortOrder = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId)
-                    .MaxAsync(c => (int?)c.SortOrder) ?? 0;
-
-                var config = new EmployeeDashboardConfig
-                {
-                    EmployeeId = employeeId,
-                    NavigationItemKey = navigationItemKey,
-                    SortOrder = maxSortOrder + 10,
-                    IsVisible = true,
-                    Status = EntityStatus.Active,
-                    CreatedAt = DateTime.Now
-                };
-
-                context.EmployeeDashboardConfigs.Add(config);
-
-                // 標記員工已初始化儀表板
-                var employee = await context.Employees.FindAsync(employeeId);
-                if (employee != null && !employee.HasInitializedDashboard)
-                {
-                    employee.HasInitializedDashboard = true;
-                }
-
-                await context.SaveChangesAsync();
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddWidgetAsync), GetType(), _logger, new
-                {
-                    EmployeeId = employeeId,
-                    NavigationItemKey = navigationItemKey
-                });
-                return ServiceResult.Failure("新增捷徑失敗");
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<ServiceResult> AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys)
+        public async Task<ServiceResult> AddWidgetBatchAsync(int panelId, List<string> navigationItemKeys)
         {
             try
             {
                 if (navigationItemKeys == null || !navigationItemKeys.Any())
-                    return ServiceResult.Failure("請選擇至少一個捷徑");
+                    return ServiceResult.Failure("請選擇至少一個項目");
 
                 using var context = await _contextFactory.CreateDbContextAsync();
 
+                // 取得面板資訊
+                var panel = await context.EmployeeDashboardPanels.FindAsync(panelId);
+                if (panel == null)
+                    return ServiceResult.Failure("找不到該面板");
+
                 // 取得已存在的配置
                 var existingKeys = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && navigationItemKeys.Contains(c.NavigationItemKey))
+                    .Where(c => c.PanelId == panelId && navigationItemKeys.Contains(c.NavigationItemKey))
                     .Select(c => c.NavigationItemKey)
                     .ToListAsync();
 
                 // 取得員工權限
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+                var permissionCodes = await GetEmployeePermissionCodesAsync(panel.EmployeeId);
 
                 // 取得目前最大排序值
                 var maxSortOrder = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId)
+                    .Where(c => c.PanelId == panelId)
                     .MaxAsync(c => (int?)c.SortOrder) ?? 0;
 
                 var newConfigs = new List<EmployeeDashboardConfig>();
@@ -216,16 +364,13 @@ namespace ERPCore2.Services
 
                 foreach (var key in navigationItemKeys)
                 {
-                    // 跳過已存在的
                     if (existingKeys.Contains(key))
                         continue;
 
-                    // 檢查導航項目是否存在
                     var navItem = NavigationConfig.GetNavigationItemByKey(key);
                     if (navItem == null)
                         continue;
 
-                    // 跳過沒有權限的
                     if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
                         !permissionCodes.Contains(navItem.RequiredPermission))
                         continue;
@@ -233,7 +378,8 @@ namespace ERPCore2.Services
                     sortOrder += 10;
                     newConfigs.Add(new EmployeeDashboardConfig
                     {
-                        EmployeeId = employeeId,
+                        PanelId = panelId,
+                        EmployeeId = panel.EmployeeId,
                         NavigationItemKey = key,
                         SortOrder = sortOrder,
                         IsVisible = true,
@@ -245,16 +391,8 @@ namespace ERPCore2.Services
                 if (newConfigs.Any())
                 {
                     context.EmployeeDashboardConfigs.AddRange(newConfigs);
+                    await context.SaveChangesAsync();
                 }
-
-                // 標記員工已初始化儀表板
-                var employee = await context.Employees.FindAsync(employeeId);
-                if (employee != null && !employee.HasInitializedDashboard)
-                {
-                    employee.HasInitializedDashboard = true;
-                }
-
-                await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
             }
@@ -262,35 +400,25 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddWidgetBatchAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId,
+                    PanelId = panelId,
                     KeyCount = navigationItemKeys?.Count ?? 0
                 });
-                return ServiceResult.Failure("批次新增捷徑失敗");
+                return ServiceResult.Failure("新增項目失敗");
             }
         }
 
         /// <inheritdoc/>
-        public async Task<ServiceResult> RemoveWidgetAsync(int employeeId, int configId)
+        public async Task<ServiceResult> RemoveWidgetAsync(int configId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                var config = await context.EmployeeDashboardConfigs
-                    .FirstOrDefaultAsync(c => c.Id == configId && c.EmployeeId == employeeId);
-
+                var config = await context.EmployeeDashboardConfigs.FindAsync(configId);
                 if (config == null)
                     return ServiceResult.Failure("找不到該配置");
 
                 context.EmployeeDashboardConfigs.Remove(config);
-
-                // 標記員工已初始化儀表板（避免移除全部後又自動套用預設）
-                var employee = await context.Employees.FindAsync(employeeId);
-                if (employee != null && !employee.HasInitializedDashboard)
-                {
-                    employee.HasInitializedDashboard = true;
-                }
-
                 await context.SaveChangesAsync();
 
                 return ServiceResult.Success();
@@ -299,15 +427,14 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RemoveWidgetAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId,
                     ConfigId = configId
                 });
-                return ServiceResult.Failure("移除捷徑失敗");
+                return ServiceResult.Failure("移除項目失敗");
             }
         }
 
         /// <inheritdoc/>
-        public async Task<ServiceResult> UpdateSortOrderAsync(int employeeId, List<int> configIds)
+        public async Task<ServiceResult> UpdateItemSortOrderAsync(int panelId, List<int> configIds)
         {
             try
             {
@@ -317,10 +444,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 var configs = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && configIds.Contains(c.Id))
+                    .Where(c => c.PanelId == panelId && configIds.Contains(c.Id))
                     .ToListAsync();
 
-                // 按照 configIds 的順序更新 SortOrder
                 for (int i = 0; i < configIds.Count; i++)
                 {
                     var config = configs.FirstOrDefault(c => c.Id == configIds[i]);
@@ -337,71 +463,86 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateSortOrderAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateItemSortOrderAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId,
+                    PanelId = panelId,
                     ConfigCount = configIds?.Count ?? 0
                 });
                 return ServiceResult.Failure("更新排序失敗");
             }
         }
 
+        #endregion
+
+        #region 初始化與重置
+
         /// <inheritdoc/>
-        public async Task<List<DashboardConfigWithNavItem>> InitializeDefaultDashboardAsync(int employeeId)
+        public async Task<List<DashboardPanelWithItems>> InitializeDefaultDashboardAsync(int employeeId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 // 取得員工權限
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+                var permissionCodes = await GetEmployeePermissionCodesAsync(employeeId);
 
-                var newConfigs = new List<EmployeeDashboardConfig>();
-                var result = new List<DashboardConfigWithNavItem>();
+                var result = new List<DashboardPanelWithItems>();
 
-                // 初始化頁面連結區塊
-                foreach (var key in DashboardDefaults.DefaultWidgetKeys)
+                // 根據預設定義建立面板
+                foreach (var panelDef in DashboardDefaults.DefaultPanelDefinitions)
                 {
-                    var navItem = NavigationConfig.GetNavigationItemByKey(key);
-                    if (navItem == null) continue;
-
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
-                        continue;
-
-                    newConfigs.Add(new EmployeeDashboardConfig
+                    var panel = new EmployeeDashboardPanel
                     {
                         EmployeeId = employeeId,
-                        NavigationItemKey = key,
-                        SortOrder = DashboardDefaults.GetDefaultSortOrder(key),
-                        IsVisible = true,
-                        SectionType = "Shortcut",
+                        Title = panelDef.Title,
+                        SortOrder = panelDef.SortOrder,
+                        IconClass = panelDef.IconClass,
                         Status = EntityStatus.Active,
                         CreatedAt = DateTime.Now
-                    });
-                }
+                    };
 
-                // 初始化快速功能區塊
-                foreach (var key in DashboardDefaults.DefaultQuickActionKeys)
-                {
-                    var navItem = NavigationConfig.GetNavigationItemByKey(key);
-                    if (navItem == null) continue;
+                    context.EmployeeDashboardPanels.Add(panel);
+                    await context.SaveChangesAsync(); // 先儲存以取得 Panel Id
 
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
-                        continue;
-
-                    newConfigs.Add(new EmployeeDashboardConfig
+                    var panelWithItems = new DashboardPanelWithItems
                     {
-                        EmployeeId = employeeId,
-                        NavigationItemKey = key,
-                        SortOrder = DashboardDefaults.GetDefaultQuickActionSortOrder(key),
-                        IsVisible = true,
-                        SectionType = "QuickAction",
-                        Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
-                    });
+                        Panel = panel,
+                        Items = new List<DashboardConfigWithNavItem>()
+                    };
+
+                    // 建立面板內的項目
+                    var sortOrder = 0;
+                    foreach (var key in panelDef.ItemKeys)
+                    {
+                        var navItem = NavigationConfig.GetNavigationItemByKey(key);
+                        if (navItem == null) continue;
+
+                        if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
+                            !permissionCodes.Contains(navItem.RequiredPermission))
+                            continue;
+
+                        sortOrder += 10;
+                        var config = new EmployeeDashboardConfig
+                        {
+                            PanelId = panel.Id,
+                            EmployeeId = employeeId,
+                            NavigationItemKey = key,
+                            SortOrder = sortOrder,
+                            IsVisible = true,
+                            Status = EntityStatus.Active,
+                            CreatedAt = DateTime.Now
+                        };
+
+                        context.EmployeeDashboardConfigs.Add(config);
+
+                        panelWithItems.Items.Add(new DashboardConfigWithNavItem
+                        {
+                            Config = config,
+                            NavigationItem = navItem
+                        });
+                    }
+
+                    result.Add(panelWithItems);
                 }
 
                 // 標記員工已初始化儀表板
@@ -411,28 +552,9 @@ namespace ERPCore2.Services
                     employee.HasInitializedDashboard = true;
                 }
 
-                if (newConfigs.Any())
-                {
-                    context.EmployeeDashboardConfigs.AddRange(newConfigs);
-                }
-
                 await context.SaveChangesAsync();
 
-                // 建立回傳結果
-                foreach (var config in newConfigs)
-                {
-                    var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
-                    if (navItem != null)
-                    {
-                        result.Add(new DashboardConfigWithNavItem
-                        {
-                            Config = config,
-                            NavigationItem = navItem
-                        });
-                    }
-                }
-
-                return result.OrderBy(r => r.Config.SortOrder).ToList();
+                return result;
             }
             catch (Exception ex)
             {
@@ -440,203 +562,59 @@ namespace ERPCore2.Services
                 {
                     EmployeeId = employeeId
                 });
-                return new List<DashboardConfigWithNavItem>();
+                return new List<DashboardPanelWithItems>();
             }
         }
 
         /// <inheritdoc/>
-        public async Task<ServiceResult> ResetToDefaultAsync(int employeeId)
+        public async Task<ServiceResult> ResetPanelToDefaultAsync(int panelId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 刪除現有配置
-                var existingConfigs = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId)
-                    .ToListAsync();
+                var panel = await context.EmployeeDashboardPanels
+                    .Include(p => p.DashboardConfigs)
+                    .FirstOrDefaultAsync(p => p.Id == panelId);
 
-                if (existingConfigs.Any())
-                {
-                    context.EmployeeDashboardConfigs.RemoveRange(existingConfigs);
-                    await context.SaveChangesAsync();
-                }
+                if (panel == null)
+                    return ServiceResult.Failure("找不到該面板");
 
-                // 重新初始化預設配置
-                await InitializeDefaultDashboardAsync(employeeId);
+                // 尋找對應的預設定義
+                var defaultDef = DashboardDefaults.DefaultPanelDefinitions
+                    .FirstOrDefault(d => d.Title == panel.Title);
 
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetToDefaultAsync), GetType(), _logger, new
-                {
-                    EmployeeId = employeeId
-                });
-                return ServiceResult.Failure("重置配置失敗");
-            }
-        }
+                if (defaultDef == null)
+                    return ServiceResult.Failure("此面板沒有對應的預設配置");
 
-        // ===== 分區查詢方法（支援快速功能區塊） =====
-
-        /// <inheritdoc/>
-        public async Task<List<NavigationItem>> GetAvailableWidgetsBySectionAsync(int employeeId, string sectionType)
-        {
-            try
-            {
-                // 根據區塊類型取得對應的導航項目
-                var allWidgets = sectionType == "QuickAction"
-                    ? NavigationConfig.GetQuickActionWidgetItems()
-                    : NavigationConfig.GetShortcutWidgetItems();
-
-                // 取得員工的所有權限代碼
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
-
-                // 過濾有權限的項目
-                var availableWidgets = allWidgets.Where(item =>
-                    string.IsNullOrEmpty(item.RequiredPermission) ||
-                    permissionCodes.Contains(item.RequiredPermission)
-                ).ToList();
-
-                return availableWidgets;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailableWidgetsBySectionAsync), GetType(), _logger, new
-                {
-                    EmployeeId = employeeId,
-                    SectionType = sectionType
-                });
-                return new List<NavigationItem>();
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<List<DashboardConfigWithNavItem>> GetEmployeeDashboardBySectionAsync(int employeeId, string sectionType)
-        {
-            try
-            {
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                // 查詢員工指定區塊的儀表板配置
-                var configs = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && c.IsVisible && c.SectionType == sectionType)
-                    .OrderBy(c => c.SortOrder)
-                    .ToListAsync();
-
-                // 如果沒有任何配置，檢查是否為新用戶
-                if (!configs.Any())
-                {
-                    var employee = await context.Employees.FindAsync(employeeId);
-                    if (employee != null && !employee.HasInitializedDashboard)
-                    {
-                        // 新用戶，自動套用預設配置（兩個區塊都初始化）
-                        var allDefaults = await InitializeDefaultDashboardAsync(employeeId);
-                        // 過濾返回指定區塊的配置
-                        return allDefaults.Where(d => d.Config.SectionType == sectionType).ToList();
-                    }
-                    return new List<DashboardConfigWithNavItem>();
-                }
+                // 刪除現有項目
+                context.EmployeeDashboardConfigs.RemoveRange(panel.DashboardConfigs);
 
                 // 取得員工權限
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+                var permissionCodes = await GetEmployeePermissionCodesAsync(panel.EmployeeId);
 
-                // 將配置與導航項目對應
-                var result = new List<DashboardConfigWithNavItem>();
-                foreach (var config in configs)
+                // 重新建立預設項目
+                var sortOrder = 0;
+                foreach (var key in defaultDef.ItemKeys)
                 {
-                    var navItem = NavigationConfig.GetNavigationItemByKey(config.NavigationItemKey);
-                    if (navItem == null) continue;
-
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
-                        continue;
-
-                    result.Add(new DashboardConfigWithNavItem
-                    {
-                        Config = config,
-                        NavigationItem = navItem
-                    });
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEmployeeDashboardBySectionAsync), GetType(), _logger, new
-                {
-                    EmployeeId = employeeId,
-                    SectionType = sectionType
-                });
-                return new List<DashboardConfigWithNavItem>();
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<ServiceResult> AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys, string sectionType)
-        {
-            try
-            {
-                if (navigationItemKeys == null || !navigationItemKeys.Any())
-                    return ServiceResult.Failure("請選擇至少一個捷徑");
-
-                using var context = await _contextFactory.CreateDbContextAsync();
-
-                // 取得已存在的配置
-                var existingKeys = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && navigationItemKeys.Contains(c.NavigationItemKey))
-                    .Select(c => c.NavigationItemKey)
-                    .ToListAsync();
-
-                // 取得員工權限
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
-
-                // 取得指定區塊目前最大排序值
-                var maxSortOrder = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && c.SectionType == sectionType)
-                    .MaxAsync(c => (int?)c.SortOrder) ?? 0;
-
-                var newConfigs = new List<EmployeeDashboardConfig>();
-                var sortOrder = maxSortOrder;
-
-                foreach (var key in navigationItemKeys)
-                {
-                    if (existingKeys.Contains(key))
-                        continue;
-
                     var navItem = NavigationConfig.GetNavigationItemByKey(key);
-                    if (navItem == null)
-                        continue;
+                    if (navItem == null) continue;
 
                     if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
                         !permissionCodes.Contains(navItem.RequiredPermission))
                         continue;
 
                     sortOrder += 10;
-                    newConfigs.Add(new EmployeeDashboardConfig
+                    context.EmployeeDashboardConfigs.Add(new EmployeeDashboardConfig
                     {
-                        EmployeeId = employeeId,
+                        PanelId = panelId,
+                        EmployeeId = panel.EmployeeId,
                         NavigationItemKey = key,
                         SortOrder = sortOrder,
                         IsVisible = true,
-                        SectionType = sectionType,
                         Status = EntityStatus.Active,
                         CreatedAt = DateTime.Now
                     });
-                }
-
-                if (newConfigs.Any())
-                {
-                    context.EmployeeDashboardConfigs.AddRange(newConfigs);
-                }
-
-                var employee = await context.Employees.FindAsync(employeeId);
-                if (employee != null && !employee.HasInitializedDashboard)
-                {
-                    employee.HasInitializedDashboard = true;
                 }
 
                 await context.SaveChangesAsync();
@@ -645,94 +623,69 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddWidgetBatchAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetPanelToDefaultAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId,
-                    KeyCount = navigationItemKeys?.Count ?? 0,
-                    SectionType = sectionType
+                    PanelId = panelId
                 });
-                return ServiceResult.Failure("批次新增捷徑失敗");
+                return ServiceResult.Failure("重置面板失敗");
             }
         }
 
         /// <inheritdoc/>
-        public async Task<ServiceResult> ResetSectionToDefaultAsync(int employeeId, string sectionType)
+        public async Task<ServiceResult> ResetAllPanelsToDefaultAsync(int employeeId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 刪除指定區塊的現有配置
-                var existingConfigs = await context.EmployeeDashboardConfigs
-                    .Where(c => c.EmployeeId == employeeId && c.SectionType == sectionType)
+                // 刪除所有現有面板（Cascade Delete 會自動刪除項目）
+                var existingPanels = await context.EmployeeDashboardPanels
+                    .Where(p => p.EmployeeId == employeeId)
                     .ToListAsync();
 
-                if (existingConfigs.Any())
+                if (existingPanels.Any())
                 {
-                    context.EmployeeDashboardConfigs.RemoveRange(existingConfigs);
+                    context.EmployeeDashboardPanels.RemoveRange(existingPanels);
                     await context.SaveChangesAsync();
                 }
 
-                // 取得對應的預設清單
-                var defaultKeys = sectionType == "QuickAction"
-                    ? DashboardDefaults.DefaultQuickActionKeys
-                    : DashboardDefaults.DefaultWidgetKeys;
-
-                // 取得員工權限
-                var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
-                var permissionCodes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
-
-                var newConfigs = new List<EmployeeDashboardConfig>();
-
-                foreach (var key in defaultKeys)
-                {
-                    var navItem = NavigationConfig.GetNavigationItemByKey(key);
-                    if (navItem == null) continue;
-
-                    if (!string.IsNullOrEmpty(navItem.RequiredPermission) &&
-                        !permissionCodes.Contains(navItem.RequiredPermission))
-                        continue;
-
-                    var sortOrder = sectionType == "QuickAction"
-                        ? DashboardDefaults.GetDefaultQuickActionSortOrder(key)
-                        : DashboardDefaults.GetDefaultSortOrder(key);
-
-                    newConfigs.Add(new EmployeeDashboardConfig
-                    {
-                        EmployeeId = employeeId,
-                        NavigationItemKey = key,
-                        SortOrder = sortOrder,
-                        IsVisible = true,
-                        SectionType = sectionType,
-                        Status = EntityStatus.Active,
-                        CreatedAt = DateTime.Now
-                    });
-                }
-
-                if (newConfigs.Any())
-                {
-                    context.EmployeeDashboardConfigs.AddRange(newConfigs);
-                }
-
+                // 重置初始化狀態以觸發重新初始化
                 var employee = await context.Employees.FindAsync(employeeId);
-                if (employee != null && !employee.HasInitializedDashboard)
+                if (employee != null)
                 {
-                    employee.HasInitializedDashboard = true;
+                    employee.HasInitializedDashboard = false;
+                    await context.SaveChangesAsync();
                 }
 
-                await context.SaveChangesAsync();
+                // 重新初始化
+                await InitializeDefaultDashboardAsync(employeeId);
 
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetSectionToDefaultAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ResetAllPanelsToDefaultAsync), GetType(), _logger, new
                 {
-                    EmployeeId = employeeId,
-                    SectionType = sectionType
+                    EmployeeId = employeeId
                 });
-                return ServiceResult.Failure("重置區塊配置失敗");
+                return ServiceResult.Failure("重置所有面板失敗");
             }
         }
+
+        #endregion
+
+        #region 私有方法
+
+        /// <summary>
+        /// 取得員工權限代碼清單
+        /// </summary>
+        private async Task<HashSet<string>> GetEmployeePermissionCodesAsync(int employeeId)
+        {
+            var permissionResult = await _permissionService.GetEmployeePermissionCodesAsync(employeeId);
+            var codes = permissionResult.IsSuccess ? permissionResult.Data ?? new List<string>() : new List<string>();
+            return codes.ToHashSet();
+        }
+
+        #endregion
     }
 }

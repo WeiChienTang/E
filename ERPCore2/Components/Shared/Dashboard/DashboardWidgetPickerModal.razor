@@ -1,10 +1,10 @@
 @using ERPCore2.Models.Navigation
 @using ERPCore2.Data.Navigation
 
-@* 新增捷徑選擇 Modal *@
+@* 新增項目選擇 Modal（雙 Tab：頁面連結 / 快速功能） *@
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="@PickerTitle"
+                    Title="新增捷徑項目"
                     Icon="bi-grid-3x3-gap-fill"
                     Size="BaseModalComponent.ModalSize.Large"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
@@ -17,24 +17,55 @@
                                Text="@($"確認新增 ({selectedItemKeys.Count})")"
                                OnClick="HandleConfirm"
                                IsDisabled="@(!selectedItemKeys.Any())"
-                               Title="新增選取的捷徑" />
+                               Title="新增選取的項目" />
         <GenericButtonComponent Variant="ButtonVariant.Red"
                                Text="取消"
                                OnClick="HandleCancel"
                                Title="取消" />
     </HeaderButtons>
     <BodyContent>
-        @if (AvailableWidgets == null || !AvailableWidgets.Any())
+        @* Tab 切換 *@
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "shortcut" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "shortcut")'>
+                    <i class="bi bi-link-45deg me-1"></i>頁面連結
+                    @if (AvailableShortcutWidgets.Any())
+                    {
+                        <span class="badge bg-secondary ms-1">@AvailableShortcutWidgets.Count</span>
+                    }
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "quickaction" ? "active" : "")"
+                        type="button"
+                        @onclick='@(() => activeTab = "quickaction")'>
+                    <i class="bi bi-lightning-fill me-1"></i>快速功能
+                    @if (AvailableQuickActionWidgets.Any())
+                    {
+                        <span class="badge bg-secondary ms-1">@AvailableQuickActionWidgets.Count</span>
+                    }
+                </button>
+            </li>
+        </ul>
+
+        @* Tab 內容 *@
+        @{
+            var currentWidgets = activeTab == "quickaction" ? AvailableQuickActionWidgets : AvailableShortcutWidgets;
+        }
+
+        @if (currentWidgets == null || !currentWidgets.Any())
         {
             <div class="text-center py-4 text-muted">
                 <i class="bi bi-emoji-neutral fs-1"></i>
-                <p class="mt-2">目前沒有可新增的捷徑</p>
+                <p class="mt-2">目前沒有可新增的@(activeTab == "quickaction" ? "快速功能" : "頁面連結")</p>
             </div>
         }
         else
         {
             @* 依分類分組顯示 *@
-            @foreach (var group in AvailableWidgets
+            @foreach (var group in currentWidgets
                 .GroupBy(w => w.Category)
                 .OrderBy(g => g.Key))
             {
@@ -104,13 +135,19 @@
     public EventCallback<bool> IsVisibleChanged { get; set; }
 
     /// <summary>
-    /// 可選的導航項目清單（已過濾權限）
+    /// 可選的頁面連結項目清單（Route + Action 類型）
     /// </summary>
     [Parameter]
-    public List<NavigationItem> AvailableWidgets { get; set; } = new();
+    public List<NavigationItem> AvailableShortcutWidgets { get; set; } = new();
 
     /// <summary>
-    /// 已存在於首頁的導航項目識別鍵集合
+    /// 可選的快速功能項目清單（QuickAction 類型）
+    /// </summary>
+    [Parameter]
+    public List<NavigationItem> AvailableQuickActionWidgets { get; set; } = new();
+
+    /// <summary>
+    /// 已存在於面板的導航項目識別鍵集合
     /// </summary>
     [Parameter]
     public HashSet<string> ExistingWidgetKeys { get; set; } = new();
@@ -121,17 +158,29 @@
     [Parameter]
     public EventCallback<List<string>> OnConfirm { get; set; }
 
-    /// <summary>
-    /// Modal 標題（預設「新增首頁捷徑」）
-    /// </summary>
-    [Parameter]
-    public string PickerTitle { get; set; } = "新增首頁捷徑";
-
     // ===== 狀態 =====
 
+    private string activeTab = "shortcut"; // "shortcut" 或 "quickaction"
     private HashSet<string> selectedItemKeys = new();
 
     // ===== 方法 =====
+
+    protected override void OnParametersSet()
+    {
+        // 當 Modal 開啟時重置狀態
+        if (IsVisible)
+        {
+            // 如果快速功能 Tab 有項目而頁面連結沒有，預設選快速功能 Tab
+            if (!AvailableShortcutWidgets.Any() && AvailableQuickActionWidgets.Any())
+            {
+                activeTab = "quickaction";
+            }
+            else if (AvailableShortcutWidgets.Any())
+            {
+                activeTab = "shortcut";
+            }
+        }
+    }
 
     private void ToggleWidget(string itemKey, bool isExisting)
     {

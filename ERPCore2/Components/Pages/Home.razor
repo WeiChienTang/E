@@ -23,38 +23,6 @@
 
 <div class="container-fluid">
 
-    @* ==================== 頁面連結區塊 ==================== *@
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0 fw-bold">
-            <i class="bi bi-house-fill me-2"></i>頁面捷徑
-        </h5>
-        <div>
-            @if (isShortcutEditMode)
-            {
-                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
-                                        Text="完成"
-                                        OnClick="@ToggleShortcutEditMode" />
-                <GenericButtonComponent Variant="ButtonVariant.Red"
-                                        Size="ButtonSize.Small"
-                                        Text="預設"
-                                        Title="重置為預設配置"
-                                        CssClass="me-2"
-                                        OnClick="@HandleResetShortcutToDefault" />
-            }
-            else
-            {
-                <GenericButtonComponent Variant="ButtonVariant.Green"
-                                        Size="ButtonSize.Small"
-                                        Text="編輯"
-                                        Title="編輯頁面捷徑"
-                                        OnClick="@ToggleShortcutEditMode" />
-            }
-        </div>
-    </div>
-
-    <hr class="mt-2 mb-3" />
-
     @if (isLoading)
     {
         <div class="text-center py-5">
@@ -64,149 +32,211 @@
             <p class="text-muted mt-2">載入首頁配置中...</p>
         </div>
     }
-    else if (shortcutConfigs.Any())
-    {
-        <div class="row g-3">
-            @foreach (var configWithNav in shortcutConfigs)
-            {
-                var capturedConfig = configWithNav;
-                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4"
-                     draggable="@(isShortcutEditMode ? "true" : "false")"
-                     @ondragstart="@(() => HandleDragStart(capturedConfig, "Shortcut"))"
-                     @ondragover:preventDefault="true"
-                     @ondragover="@(() => HandleDragOver(capturedConfig))"
-                     @ondrop="@(() => HandleDrop(capturedConfig, "Shortcut"))">
-
-                    <DashboardShortcutCard NavigationItem="@capturedConfig.NavigationItem"
-                                           IsEditMode="@isShortcutEditMode"
-                                           OnClick="@(() => HandleWidgetClick(capturedConfig.NavigationItem))"
-                                           OnRemove="@(() => HandleRemoveWidget(capturedConfig, "Shortcut"))" />
-                </div>
-            }
-
-            @if (isShortcutEditMode)
-            {
-                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4">
-                    <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker("Shortcut"))">
-                        <i class="bi bi-plus-circle fs-2"></i>
-                        <span class="small fw-semibold mt-1">新增捷徑</span>
-                    </div>
-                </div>
-            }
-        </div>
-    }
     else
     {
-        <div class="text-center py-5">
-            <i class="bi bi-grid-1x2 text-muted" style="font-size: 3rem;"></i>
-            <p class="text-muted mt-3 mb-2">尚未設定頁面捷徑</p>
-            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                    Size="ButtonSize.Small"
-                                    Text="新增捷徑"
-                                    OnClick="@(() => OpenWidgetPicker("Shortcut"))" />
-        </div>
-    }
-
-    @* ==================== 快速功能區塊 ==================== *@
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h5 class="mb-0 fw-bold">
-            <i class="bi bi-lightning-fill me-2"></i>快速功能
-        </h5>
-        <div>
-            @if (isQuickActionEditMode)
-            {
-                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
-                                        Text="完成"
-                                        OnClick="@ToggleQuickActionEditMode" />
-                <GenericButtonComponent Variant="ButtonVariant.Red"
-                                        Size="ButtonSize.Small"
-                                        Text="預設"
-                                        Title="重置為預設配置"
-                                        CssClass="me-2"
-                                        OnClick="@HandleResetQuickActionToDefault" />
-            }
-            else
-            {
-                <GenericButtonComponent Variant="ButtonVariant.Green"
-                                        Size="ButtonSize.Small"
-                                        Text="編輯"
-                                        Title="編輯快速功能"
-                                        OnClick="@ToggleQuickActionEditMode" />
-            }
-        </div>
-    </div>
-
-    <hr class="mt-2 mb-3" />
-
-    @if (!isLoading)
-    {
-        @if (quickActionConfigs.Any())
+        @* ==================== 動態面板列表 ==================== *@
+        @foreach (var panelWithItems in panels)
         {
-            <div class="row g-3">
-                @foreach (var configWithNav in quickActionConfigs)
-                {
-                    var capturedConfig = configWithNav;
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4"
-                         draggable="@(isQuickActionEditMode ? "true" : "false")"
-                         @ondragstart="@(() => HandleDragStart(capturedConfig, "QuickAction"))"
-                         @ondragover:preventDefault="true"
-                         @ondragover="@(() => HandleDragOver(capturedConfig))"
-                         @ondrop="@(() => HandleDrop(capturedConfig, "QuickAction"))">
+            var panel = panelWithItems.Panel;
+            var isEditMode = editingPanelId == panel.Id;
 
-                        <DashboardShortcutCard NavigationItem="@capturedConfig.NavigationItem"
-                                               IsEditMode="@isQuickActionEditMode"
-                                               OnClick="@(() => HandleWidgetClick(capturedConfig.NavigationItem))"
-                                               OnRemove="@(() => HandleRemoveWidget(capturedConfig, "QuickAction"))" />
+            <div class="dashboard-panel mb-4">
+                @* 面板標題列 *@
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="@(panel.IconClass ?? "bi bi-grid-fill") me-2"></i>
+                        @if (isEditMode)
+                        {
+                            <input type="text"
+                                   class="form-control form-control-sm d-inline-block"
+                                   style="width: auto; max-width: 200px;"
+                                   value="@panel.Title"
+                                   maxlength="@DashboardDefaults.MaxPanelTitleLength"
+                                   @onchange="@(e => HandlePanelTitleChange(panel.Id, e.Value?.ToString()))" />
+                        }
+                        else
+                        {
+                            @panel.Title
+                        }
+                    </h5>
+                    <div>
+                        @if (isEditMode)
+                        {
+                            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                    Size="ButtonSize.Small"
+                                                    Text="完成"
+                                                    OnClick="@(() => FinishEditPanel())" />
+                            @if (HasDefaultDefinition(panel.Title))
+                            {
+                                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                                        Size="ButtonSize.Small"
+                                                        Text="預設"
+                                                        Title="重置為預設配置"
+                                                        CssClass="ms-1"
+                                                        OnClick="@(() => HandleResetPanelToDefault(panel))" />
+                            }
+                            @if (panels.Count > 1)
+                            {
+                                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                                        Size="ButtonSize.Small"
+                                                        Text="刪除"
+                                                        Title="刪除此面板"
+                                                        CssClass="ms-1"
+                                                        OnClick="@(() => HandleDeletePanel(panel))" />
+                            }
+                        }
+                        else
+                        {
+                            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                                    Size="ButtonSize.Small"
+                                                    Text="編輯"
+                                                    Title="編輯此面板"
+                                                    OnClick="@(() => StartEditPanel(panel.Id))" />
+                        }
+                    </div>
+                </div>
+
+                <hr class="mt-2 mb-3" />
+
+                @* 面板內容 *@
+                @if (panelWithItems.Items.Any())
+                {
+                    <div class="row g-3">
+                        @foreach (var configWithNav in panelWithItems.Items)
+                        {
+                            var capturedConfig = configWithNav;
+                            var capturedPanelId = panel.Id;
+                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4"
+                                 draggable="@(isEditMode ? "true" : "false")"
+                                 @ondragstart="@(() => HandleDragStart(capturedConfig, capturedPanelId))"
+                                 @ondragover:preventDefault="true"
+                                 @ondragover="@(() => HandleDragOver(capturedConfig))"
+                                 @ondrop="@(() => HandleDrop(capturedConfig, capturedPanelId))">
+
+                                <DashboardShortcutCard NavigationItem="@capturedConfig.NavigationItem"
+                                                       IsEditMode="@isEditMode"
+                                                       OnClick="@(() => HandleWidgetClick(capturedConfig.NavigationItem))"
+                                                       OnRemove="@(() => HandleRemoveWidget(capturedConfig, panelWithItems))" />
+                            </div>
+                        }
+
+                        @if (isEditMode)
+                        {
+                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4">
+                                <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker(panel.Id))">
+                                    <i class="bi bi-plus-circle fs-2"></i>
+                                    <span class="small fw-semibold mt-1">新增項目</span>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
-
-                @if (isQuickActionEditMode)
+                else
                 {
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-4 col-4">
-                        <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker("QuickAction"))">
-                            <i class="bi bi-plus-circle fs-2"></i>
-                            <span class="small fw-semibold mt-1">新增快速功能</span>
-                        </div>
+                    <div class="text-center py-4">
+                        <i class="bi bi-grid-1x2 text-muted" style="font-size: 2.5rem;"></i>
+                        <p class="text-muted mt-3 mb-2">此面板尚無項目</p>
+                        @if (isEditMode)
+                        {
+                            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                    Size="ButtonSize.Small"
+                                                    Text="新增項目"
+                                                    OnClick="@(() => OpenWidgetPicker(panel.Id))" />
+                        }
                     </div>
                 }
             </div>
         }
-        else
+
+        @* 新增面板按鈕（僅在有編輯中的面板時顯示，且未達上限） *@
+        @if (editingPanelId.HasValue && panels.Count < DashboardDefaults.MaxPanelCount)
+        {
+            <div class="text-center mt-4 mb-4">
+                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                        Size="ButtonSize.Normal"
+                                        IconClass="bi bi-plus-lg"
+                                        Text="新增面板"
+                                        OnClick="@HandleCreatePanel" />
+            </div>
+        }
+
+        @* 沒有任何面板時的空狀態 *@
+        @if (!panels.Any())
         {
             <div class="text-center py-5">
-                <i class="bi bi-lightning text-muted" style="font-size: 3rem;"></i>
-                <p class="text-muted mt-3 mb-2">尚未設定快速功能</p>
+                <i class="bi bi-grid text-muted" style="font-size: 4rem;"></i>
+                <p class="text-muted mt-3 mb-3">尚未設定任何面板</p>
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
-                                        Text="新增快速功能"
-                                        OnClick="@(() => OpenWidgetPicker("QuickAction"))" />
+                                        Size="ButtonSize.Normal"
+                                        IconClass="bi bi-plus-lg"
+                                        Text="建立第一個面板"
+                                        OnClick="@HandleCreatePanel" />
             </div>
         }
     }
 
 </div>
 
-@* 新增捷徑選擇 Modal *@
+@* 新增項目選擇 Modal（雙 Tab：頁面連結 / 快速功能） *@
 <DashboardWidgetPickerModal IsVisible="@showWidgetPicker"
                             IsVisibleChanged="@((bool v) => showWidgetPicker = v)"
-                            AvailableWidgets="@availableWidgets"
+                            AvailableShortcutWidgets="@availableShortcutWidgets"
+                            AvailableQuickActionWidgets="@availableQuickActionWidgets"
                             ExistingWidgetKeys="@currentPickerExistingKeys"
-                            OnConfirm="@HandleAddWidgets"
-                            PickerTitle="@currentPickerTitle" />
+                            OnConfirm="@HandleAddWidgets" />
 
 @* 重置確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showResetConfirm"
                              IsVisibleChanged="@((bool v) => showResetConfirm = v)"
-                             Title="重置配置"
+                             Title="重置面板"
                              Icon="bi-arrow-counterclockwise"
                              Message="@resetConfirmMessage"
                              ConfirmButtonText="確定重置"
                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
-                             OnConfirm="@ConfirmResetToDefault" />
+                             OnConfirm="@ConfirmResetPanelToDefault" />
+
+@* 刪除面板確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeletePanelConfirm"
+                             IsVisibleChanged="@((bool v) => showDeletePanelConfirm = v)"
+                             Title="刪除面板"
+                             Icon="bi-trash"
+                             Message="@deleteConfirmMessage"
+                             ConfirmButtonText="確定刪除"
+                             HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                             OnConfirm="@ConfirmDeletePanel" />
+
+@* 新增面板 Modal *@
+<BaseModalComponent IsVisible="@showCreatePanelModal"
+                    IsVisibleChanged="@((bool v) => showCreatePanelModal = v)"
+                    Title="新增面板"
+                    Icon="bi-plus-lg"
+                    Size="BaseModalComponent.ModalSize.Small"
+                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                    UseWhiteCloseButton="true">
+    <HeaderButtons>
+        <GenericButtonComponent Variant="ButtonVariant.Blue"
+                               Text="建立"
+                               OnClick="@ConfirmCreatePanel"
+                               IsDisabled="@string.IsNullOrWhiteSpace(newPanelTitle)" />
+        <GenericButtonComponent Variant="ButtonVariant.Red"
+                               Text="取消"
+                               OnClick="@CancelCreatePanel" />
+    </HeaderButtons>
+    <BodyContent>
+        <div class="mb-3">
+            <label class="form-label">面板標題</label>
+            <input type="text"
+                   class="form-control"
+                   placeholder="請輸入面板標題"
+                   maxlength="@DashboardDefaults.MaxPanelTitleLength"
+                   @bind="newPanelTitle"
+                   @bind:event="oninput" />
+            <div class="form-text">最多 @DashboardDefaults.MaxPanelTitleLength 字</div>
+        </div>
+    </BodyContent>
+</BaseModalComponent>
 
 @* ==================== 快速功能 Modal Host ==================== *@
-@* 集中管理所有 QuickAction Modal，新增 QuickAction 只需修改 QuickActionModalHost.razor *@
 <QuickActionModalHost @ref="quickActionHost" 
                       ConfiguredActionIds="@GetConfiguredQuickActionIds()" />
 
@@ -215,29 +245,36 @@
     private int currentEmployeeId = 0;
     private bool isLoading = true;
 
-    // 頁面連結區塊
-    private bool isShortcutEditMode = false;
-    private List<DashboardConfigWithNavItem> shortcutConfigs = new();
+    // 面板資料
+    private List<DashboardPanelWithItems> panels = new();
 
-    // 快速功能區塊
-    private bool isQuickActionEditMode = false;
-    private List<DashboardConfigWithNavItem> quickActionConfigs = new();
+    // 編輯狀態
+    private int? editingPanelId = null;
 
     // Widget Picker Modal 狀態
     private bool showWidgetPicker = false;
-    private List<NavigationItem> availableWidgets = new();
+    private List<NavigationItem> availableShortcutWidgets = new();
+    private List<NavigationItem> availableQuickActionWidgets = new();
     private HashSet<string> currentPickerExistingKeys = new();
-    private string currentPickerSectionType = "Shortcut";
-    private string currentPickerTitle = "新增首頁捷徑";
+    private int currentPickerPanelId = 0;
 
     // 重置確認 Modal
     private bool showResetConfirm = false;
     private string resetConfirmMessage = "";
-    private string resetSectionType = "Shortcut";
+    private int resetPanelId = 0;
+
+    // 刪除面板確認 Modal
+    private bool showDeletePanelConfirm = false;
+    private string deleteConfirmMessage = "";
+    private int deletePanelId = 0;
+
+    // 新增面板 Modal
+    private bool showCreatePanelModal = false;
+    private string newPanelTitle = "";
 
     // 拖曳排序
     private DashboardConfigWithNavItem? draggedItem = null;
-    private string draggedSectionType = "Shortcut";
+    private int draggedPanelId = 0;
 
     // QuickAction Modal Host
     private QuickActionModalHost? quickActionHost;
@@ -263,9 +300,7 @@
     {
         try
         {
-            // 分別載入兩個區塊的配置
-            shortcutConfigs = await DashboardService.GetEmployeeDashboardBySectionAsync(currentEmployeeId, "Shortcut");
-            quickActionConfigs = await DashboardService.GetEmployeeDashboardBySectionAsync(currentEmployeeId, "QuickAction");
+            panels = await DashboardService.GetEmployeePanelsAsync(currentEmployeeId);
         }
         catch (Exception ex)
         {
@@ -274,33 +309,172 @@
         }
     }
 
-    private HashSet<string> GetExistingKeys(string sectionType)
-    {
-        var configs = sectionType == "QuickAction" ? quickActionConfigs : shortcutConfigs;
-        return configs.Select(c => c.Config.NavigationItemKey).ToHashSet();
-    }
-
     /// <summary>
     /// 取得已配置的快速功能 ActionId 清單，用於 QuickActionModalHost 預先渲染
     /// </summary>
     private List<string> GetConfiguredQuickActionIds()
     {
-        return quickActionConfigs
-            .Where(c => c.NavigationItem?.ActionId != null)
+        return panels
+            .SelectMany(p => p.Items)
+            .Where(c => c.NavigationItem?.ItemType == NavigationItemType.QuickAction && c.NavigationItem?.ActionId != null)
             .Select(c => c.NavigationItem!.ActionId!)
+            .Distinct()
             .ToList();
     }
 
-    // ===== 編輯模式 =====
-
-    private void ToggleShortcutEditMode()
+    /// <summary>
+    /// 檢查面板標題是否有對應的預設定義
+    /// </summary>
+    private bool HasDefaultDefinition(string title)
     {
-        isShortcutEditMode = !isShortcutEditMode;
+        return DashboardDefaults.DefaultPanelDefinitions.Any(d => d.Title == title);
     }
 
-    private void ToggleQuickActionEditMode()
+    // ===== 面板編輯 =====
+
+    private void StartEditPanel(int panelId)
     {
-        isQuickActionEditMode = !isQuickActionEditMode;
+        editingPanelId = panelId;
+    }
+
+    private void FinishEditPanel()
+    {
+        editingPanelId = null;
+    }
+
+    private async Task HandlePanelTitleChange(int panelId, string? newTitle)
+    {
+        if (string.IsNullOrWhiteSpace(newTitle)) return;
+
+        try
+        {
+            var result = await DashboardService.UpdatePanelTitleAsync(panelId, newTitle);
+            if (result.IsSuccess)
+            {
+                var panel = panels.FirstOrDefault(p => p.Panel.Id == panelId);
+                if (panel != null)
+                {
+                    panel.Panel.Title = newTitle.Trim();
+                }
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePanelTitleChange), GetType());
+            await NotificationService.ShowErrorAsync("更新標題失敗");
+        }
+    }
+
+    // ===== 新增面板 =====
+
+    private void HandleCreatePanel()
+    {
+        newPanelTitle = "";
+        showCreatePanelModal = true;
+    }
+
+    private void CancelCreatePanel()
+    {
+        newPanelTitle = "";
+        showCreatePanelModal = false;
+    }
+
+    private async Task ConfirmCreatePanel()
+    {
+        if (string.IsNullOrWhiteSpace(newPanelTitle))
+        {
+            await NotificationService.ShowWarningAsync("請輸入面板標題");
+            return;
+        }
+
+        try
+        {
+            var result = await DashboardService.CreatePanelAsync(currentEmployeeId, newPanelTitle);
+            if (result.IsSuccess && result.Data != null)
+            {
+                panels.Add(result.Data);
+                editingPanelId = result.Data.Panel.Id; // 自動進入編輯模式
+                showCreatePanelModal = false;
+                newPanelTitle = "";
+                await NotificationService.ShowSuccessAsync("面板已建立");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmCreatePanel), GetType());
+            await NotificationService.ShowErrorAsync("建立面板失敗");
+        }
+    }
+
+    // ===== 刪除面板 =====
+
+    private void HandleDeletePanel(EmployeeDashboardPanel panel)
+    {
+        deletePanelId = panel.Id;
+        deleteConfirmMessage = $"確定要刪除「{panel.Title}」面板嗎？面板內的所有項目將一併刪除。";
+        showDeletePanelConfirm = true;
+    }
+
+    private async Task ConfirmDeletePanel()
+    {
+        try
+        {
+            var result = await DashboardService.DeletePanelAsync(deletePanelId);
+            if (result.IsSuccess)
+            {
+                panels.RemoveAll(p => p.Panel.Id == deletePanelId);
+                editingPanelId = null;
+                await NotificationService.ShowSuccessAsync("面板已刪除");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmDeletePanel), GetType());
+            await NotificationService.ShowErrorAsync("刪除面板失敗");
+        }
+    }
+
+    // ===== 重置面板 =====
+
+    private void HandleResetPanelToDefault(EmployeeDashboardPanel panel)
+    {
+        resetPanelId = panel.Id;
+        resetConfirmMessage = $"確定要將「{panel.Title}」重置為預設配置嗎？現有的自訂配置將被清除。";
+        showResetConfirm = true;
+    }
+
+    private async Task ConfirmResetPanelToDefault()
+    {
+        try
+        {
+            var result = await DashboardService.ResetPanelToDefaultAsync(resetPanelId);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("已重置為預設配置");
+                await LoadDashboardAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmResetPanelToDefault), GetType());
+            await NotificationService.ShowErrorAsync("重置配置失敗");
+        }
     }
 
     // ===== 捷徑點擊處理 =====
@@ -340,22 +514,25 @@
         }
     }
 
-    // ===== 新增捷徑 =====
+    // ===== 新增項目 =====
 
-    private async Task OpenWidgetPicker(string sectionType)
+    private async Task OpenWidgetPicker(int panelId)
     {
         try
         {
-            currentPickerSectionType = sectionType;
-            currentPickerTitle = sectionType == "QuickAction" ? "新增快速功能" : "新增首頁捷徑";
-            availableWidgets = await DashboardService.GetAvailableWidgetsBySectionAsync(currentEmployeeId, sectionType);
-            currentPickerExistingKeys = GetExistingKeys(sectionType);
+            currentPickerPanelId = panelId;
+            
+            // 同時載入兩種類型的可用項目
+            availableShortcutWidgets = await DashboardService.GetAvailableWidgetsAsync(currentEmployeeId, false);
+            availableQuickActionWidgets = await DashboardService.GetAvailableWidgetsAsync(currentEmployeeId, true);
+            currentPickerExistingKeys = await DashboardService.GetPanelExistingKeysAsync(panelId);
+            
             showWidgetPicker = true;
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OpenWidgetPicker), GetType());
-            await NotificationService.ShowErrorAsync("載入可用捷徑失敗");
+            await NotificationService.ShowErrorAsync("載入可用項目失敗");
         }
     }
 
@@ -363,11 +540,11 @@
     {
         try
         {
-            var result = await DashboardService.AddWidgetBatchAsync(currentEmployeeId, navigationItemKeys, currentPickerSectionType);
+            var result = await DashboardService.AddWidgetBatchAsync(currentPickerPanelId, navigationItemKeys);
 
             if (result.IsSuccess)
             {
-                await NotificationService.ShowSuccessAsync(currentPickerSectionType == "QuickAction" ? "快速功能已新增" : "捷徑已新增");
+                await NotificationService.ShowSuccessAsync("項目已新增");
                 await LoadDashboardAsync();
             }
             else
@@ -378,28 +555,21 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleAddWidgets), GetType());
-            await NotificationService.ShowErrorAsync("新增捷徑失敗");
+            await NotificationService.ShowErrorAsync("新增項目失敗");
         }
     }
 
-    // ===== 移除捷徑 =====
+    // ===== 移除項目 =====
 
-    private async Task HandleRemoveWidget(DashboardConfigWithNavItem configWithNav, string sectionType)
+    private async Task HandleRemoveWidget(DashboardConfigWithNavItem configWithNav, DashboardPanelWithItems panelWithItems)
     {
         try
         {
-            var result = await DashboardService.RemoveWidgetAsync(currentEmployeeId, configWithNav.Config.Id);
+            var result = await DashboardService.RemoveWidgetAsync(configWithNav.Config.Id);
 
             if (result.IsSuccess)
             {
-                if (sectionType == "QuickAction")
-                {
-                    quickActionConfigs.Remove(configWithNav);
-                }
-                else
-                {
-                    shortcutConfigs.Remove(configWithNav);
-                }
+                panelWithItems.Items.Remove(configWithNav);
                 await NotificationService.ShowSuccessAsync("已移除");
             }
             else
@@ -414,56 +584,12 @@
         }
     }
 
-    // ===== 重置預設 =====
-
-    private void HandleResetShortcutToDefault()
-    {
-        resetSectionType = "Shortcut";
-        resetConfirmMessage = "確定要將頁面捷徑重置為預設配置嗎？現有的自訂配置將被清除。";
-        showResetConfirm = true;
-    }
-
-    private void HandleResetQuickActionToDefault()
-    {
-        resetSectionType = "QuickAction";
-        resetConfirmMessage = "確定要將快速功能重置為預設配置嗎？現有的自訂配置將被清除。";
-        showResetConfirm = true;
-    }
-
-    private async Task ConfirmResetToDefault()
-    {
-        try
-        {
-            var result = await DashboardService.ResetSectionToDefaultAsync(currentEmployeeId, resetSectionType);
-
-            if (result.IsSuccess)
-            {
-                await NotificationService.ShowSuccessAsync("已重置為預設配置");
-                await LoadDashboardAsync();
-
-                if (resetSectionType == "QuickAction")
-                    isQuickActionEditMode = false;
-                else
-                    isShortcutEditMode = false;
-            }
-            else
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage);
-            }
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ConfirmResetToDefault), GetType());
-            await NotificationService.ShowErrorAsync("重置配置失敗");
-        }
-    }
-
     // ===== 拖曳排序 =====
 
-    private void HandleDragStart(DashboardConfigWithNavItem configWithNav, string sectionType)
+    private void HandleDragStart(DashboardConfigWithNavItem configWithNav, int panelId)
     {
         draggedItem = configWithNav;
-        draggedSectionType = sectionType;
+        draggedPanelId = panelId;
     }
 
     private void HandleDragOver(DashboardConfigWithNavItem target)
@@ -471,10 +597,10 @@
         // 僅觸發 UI 效果
     }
 
-    private async Task HandleDrop(DashboardConfigWithNavItem target, string sectionType)
+    private async Task HandleDrop(DashboardConfigWithNavItem target, int panelId)
     {
-        // 不允許跨區塊拖曳
-        if (draggedItem == null || draggedSectionType != sectionType || draggedItem.Config.Id == target.Config.Id)
+        // 不允許跨面板拖曳
+        if (draggedItem == null || draggedPanelId != panelId || draggedItem.Config.Id == target.Config.Id)
         {
             draggedItem = null;
             return;
@@ -482,17 +608,20 @@
 
         try
         {
-            var configs = sectionType == "QuickAction" ? quickActionConfigs : shortcutConfigs;
-            var oldIndex = configs.IndexOf(draggedItem);
-            var newIndex = configs.IndexOf(target);
+            var panelWithItems = panels.FirstOrDefault(p => p.Panel.Id == panelId);
+            if (panelWithItems == null) return;
+
+            var items = panelWithItems.Items;
+            var oldIndex = items.IndexOf(draggedItem);
+            var newIndex = items.IndexOf(target);
 
             if (oldIndex >= 0 && newIndex >= 0)
             {
-                configs.RemoveAt(oldIndex);
-                configs.Insert(newIndex, draggedItem);
+                items.RemoveAt(oldIndex);
+                items.Insert(newIndex, draggedItem);
 
-                var configIds = configs.Select(c => c.Config.Id).ToList();
-                var result = await DashboardService.UpdateSortOrderAsync(currentEmployeeId, configIds);
+                var configIds = items.Select(c => c.Config.Id).ToList();
+                var result = await DashboardService.UpdateItemSortOrderAsync(panelId, configIds);
 
                 if (!result.IsSuccess)
                 {

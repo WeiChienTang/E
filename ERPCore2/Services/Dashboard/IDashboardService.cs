@@ -4,106 +4,106 @@ using ERPCore2.Models.Navigation;
 namespace ERPCore2.Services
 {
     /// <summary>
-    /// 儀表板服務介面 - 管理首頁小工具配置
-    /// 使用 NavigationConfig 作為小工具資料來源
+    /// 儀表板服務介面 - 管理首頁動態面板與項目配置
     /// </summary>
     public interface IDashboardService
     {
-        /// <summary>
-        /// 取得該員工有權限使用的所有導航項目（用於「新增捷徑」選擇畫面）
-        /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <returns>有權限的導航項目清單</returns>
-        Task<List<NavigationItem>> GetAvailableWidgetsAsync(int employeeId);
+        // ===== 面板管理 =====
 
         /// <summary>
-        /// 取得該員工目前的首頁配置（已選用的捷徑 + 排序）
-        /// 如果沒有任何配置則自動建立預設配置
+        /// 取得員工的所有面板（含面板內的項目）
+        /// 如果沒有任何面板且未初始化，則自動套用預設配置
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <returns>員工的儀表板配置清單（包含對應的 NavigationItem）</returns>
-        Task<List<DashboardConfigWithNavItem>> GetEmployeeDashboardAsync(int employeeId);
+        Task<List<DashboardPanelWithItems>> GetEmployeePanelsAsync(int employeeId);
 
         /// <summary>
-        /// 新增一個捷徑到員工首頁
+        /// 建立新面板
         /// </summary>
         /// <param name="employeeId">員工ID</param>
-        /// <param name="navigationItemKey">導航項目識別鍵</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> AddWidgetAsync(int employeeId, string navigationItemKey);
+        /// <param name="title">面板標題</param>
+        /// <returns>新建立的面板（含空項目清單）</returns>
+        Task<ServiceResult<DashboardPanelWithItems>> CreatePanelAsync(int employeeId, string title);
 
         /// <summary>
-        /// 批次新增捷徑到員工首頁
+        /// 更新面板標題
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="navigationItemKeys">導航項目識別鍵清單</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys);
+        Task<ServiceResult> UpdatePanelTitleAsync(int panelId, string title);
 
         /// <summary>
-        /// 從員工首頁移除一個捷徑
+        /// 刪除面板（連同其下所有項目）
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="configId">配置ID</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> RemoveWidgetAsync(int employeeId, int configId);
+        Task<ServiceResult> DeletePanelAsync(int panelId);
 
         /// <summary>
-        /// 批次更新排序（拖曳排序後呼叫，configIds 的順序即為新排序）
+        /// 更新面板排序
         /// </summary>
         /// <param name="employeeId">員工ID</param>
+        /// <param name="panelIds">按新排序排列的面板ID清單</param>
+        Task<ServiceResult> UpdatePanelSortOrderAsync(int employeeId, List<int> panelIds);
+
+        // ===== 項目管理 =====
+
+        /// <summary>
+        /// 取得員工有權限使用的所有導航項目（用於「新增捷徑」選擇畫面）
+        /// </summary>
+        /// <param name="employeeId">員工ID</param>
+        /// <param name="isQuickAction">true 取得快速功能項目，false 取得頁面連結項目</param>
+        Task<List<NavigationItem>> GetAvailableWidgetsAsync(int employeeId, bool isQuickAction);
+
+        /// <summary>
+        /// 取得面板內已存在的項目識別鍵（用於排除已加入的項目）
+        /// </summary>
+        Task<HashSet<string>> GetPanelExistingKeysAsync(int panelId);
+
+        /// <summary>
+        /// 批次新增項目到面板
+        /// </summary>
+        Task<ServiceResult> AddWidgetBatchAsync(int panelId, List<string> navigationItemKeys);
+
+        /// <summary>
+        /// 從面板移除一個項目
+        /// </summary>
+        Task<ServiceResult> RemoveWidgetAsync(int configId);
+
+        /// <summary>
+        /// 更新面板內項目的排序
+        /// </summary>
+        /// <param name="panelId">面板ID</param>
         /// <param name="configIds">按新排序排列的配置ID清單</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> UpdateSortOrderAsync(int employeeId, List<int> configIds);
+        Task<ServiceResult> UpdateItemSortOrderAsync(int panelId, List<int> configIds);
+
+        // ===== 初始化與重置 =====
 
         /// <summary>
-        /// 根據員工權限，從預設捷徑清單建立預設配置
+        /// 根據員工權限，建立預設面板與項目配置
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <returns>新建立的配置清單</returns>
-        Task<List<DashboardConfigWithNavItem>> InitializeDefaultDashboardAsync(int employeeId);
+        Task<List<DashboardPanelWithItems>> InitializeDefaultDashboardAsync(int employeeId);
 
         /// <summary>
-        /// 重置為預設配置（清除現有配置後重新初始化）
+        /// 重置指定面板為預設配置（根據面板標題匹配預設定義）
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> ResetToDefaultAsync(int employeeId);
-
-        // ===== 分區查詢方法（支援快速功能區塊） =====
+        Task<ServiceResult> ResetPanelToDefaultAsync(int panelId);
 
         /// <summary>
-        /// 按區塊類型取得該員工有權限使用的導航項目
+        /// 重置所有面板為預設配置
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
-        /// <returns>有權限的導航項目清單</returns>
-        Task<List<NavigationItem>> GetAvailableWidgetsBySectionAsync(int employeeId, string sectionType);
+        Task<ServiceResult> ResetAllPanelsToDefaultAsync(int employeeId);
+    }
+
+    /// <summary>
+    /// 面板與其項目的組合類別
+    /// </summary>
+    public class DashboardPanelWithItems
+    {
+        /// <summary>
+        /// 面板實體
+        /// </summary>
+        public EmployeeDashboardPanel Panel { get; set; } = null!;
 
         /// <summary>
-        /// 按區塊類型取得該員工目前的首頁配置
+        /// 面板內的項目清單（已對應導航項目）
         /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
-        /// <returns>員工的儀表板配置清單</returns>
-        Task<List<DashboardConfigWithNavItem>> GetEmployeeDashboardBySectionAsync(int employeeId, string sectionType);
-
-        /// <summary>
-        /// 批次新增捷徑到員工首頁（指定區塊類型）
-        /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="navigationItemKeys">導航項目識別鍵清單</param>
-        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> AddWidgetBatchAsync(int employeeId, List<string> navigationItemKeys, string sectionType);
-
-        /// <summary>
-        /// 重置指定區塊為預設配置
-        /// </summary>
-        /// <param name="employeeId">員工ID</param>
-        /// <param name="sectionType">區塊類型："Shortcut" 或 "QuickAction"</param>
-        /// <returns>操作結果</returns>
-        Task<ServiceResult> ResetSectionToDefaultAsync(int employeeId, string sectionType);
+        public List<DashboardConfigWithNavItem> Items { get; set; } = new();
     }
 
     /// <summary>

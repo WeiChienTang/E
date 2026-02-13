@@ -6,15 +6,23 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 員工儀表板配置 - 每位員工的個人首頁配置
+    /// 員工儀表板配置 - 每個面板中的個別項目配置
     /// 使用 NavigationItemKey 對應 NavigationConfig 中的導航項目
     /// </summary>
-    [Index(nameof(EmployeeId), nameof(NavigationItemKey), IsUnique = true)]
-    [Index(nameof(EmployeeId), nameof(SortOrder))]
+    [Index(nameof(PanelId), nameof(NavigationItemKey), IsUnique = true)]
+    [Index(nameof(PanelId), nameof(SortOrder))]
     public class EmployeeDashboardConfig : BaseEntity
     {
         /// <summary>
-        /// 所屬員工
+        /// 所屬面板
+        /// </summary>
+        [Required]
+        [Display(Name = "面板")]
+        [ForeignKey(nameof(Panel))]
+        public int PanelId { get; set; }
+
+        /// <summary>
+        /// 所屬員工（冗餘欄位，方便查詢）
         /// </summary>
         [Required]
         [Display(Name = "員工")]
@@ -23,7 +31,7 @@ namespace ERPCore2.Data.Entities
 
         /// <summary>
         /// 導航項目識別鍵（對應 NavigationConfig 中的 Route 或 ActionId）
-        /// 格式：Route 類型使用路由路徑（如 "/employees"）；Action 類型使用 "Action:{ActionId}"
+        /// 格式：Route 類型使用路由路徑（如 "/employees"）；Action 類型使用 "Action:{ActionId}"；QuickAction 類型使用 "QuickAction:{ActionId}"
         /// </summary>
         [Required]
         [MaxLength(200)]
@@ -43,19 +51,13 @@ namespace ERPCore2.Data.Entities
         public bool IsVisible { get; set; } = true;
 
         /// <summary>
-        /// 區塊類型："Shortcut"（頁面連結）或 "QuickAction"（快速功能）
-        /// </summary>
-        [MaxLength(50)]
-        [Display(Name = "區塊類型")]
-        public string SectionType { get; set; } = "Shortcut";
-
-        /// <summary>
         /// 個人化參數（JSON 格式，預留給未來進階功能）
         /// </summary>
         [Display(Name = "個人化設定")]
         public string? WidgetSettings { get; set; }
 
         // 導航屬性
+        public EmployeeDashboardPanel Panel { get; set; } = null!;
         public Employee Employee { get; set; } = null!;
     }
 }

@@ -93,6 +93,7 @@ namespace ERPCore2.Data.Context
       public DbSet<PrinterConfiguration> PrinterConfigurations { get; set; }
       public DbSet<ReportPrintConfiguration> ReportPrintConfigurations { get; set; }
       public DbSet<TextMessageTemplate> TextMessageTemplates { get; set; }
+      public DbSet<EmployeeDashboardPanel> EmployeeDashboardPanels { get; set; }
       public DbSet<EmployeeDashboardConfig> EmployeeDashboardConfigs { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -1262,16 +1263,36 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.ComponentProductId);
                   });
 
+                  // 員工儀表板面板
+                  modelBuilder.Entity<EmployeeDashboardPanel>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                        // 員工關聯
+                        entity.HasOne(p => p.Employee)
+                              .WithMany()
+                              .HasForeignKey(p => p.EmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        // 面板項目集合
+                        entity.HasMany(p => p.DashboardConfigs)
+                              .WithOne(c => c.Panel)
+                              .HasForeignKey(c => c.PanelId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
                   // 員工儀表板配置
                   modelBuilder.Entity<EmployeeDashboardConfig>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                        // 員工關聯
+                        // 員工關聯（冗餘，方便查詢）
                         entity.HasOne(edc => edc.Employee)
                               .WithMany()
                               .HasForeignKey(edc => edc.EmployeeId)
-                              .OnDelete(DeleteBehavior.Cascade);
+                              .OnDelete(DeleteBehavior.NoAction);
+
+                        // 面板關聯（已在 Panel Entity 設定，此處可省略）
                   });
             }
     }

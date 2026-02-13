@@ -83,10 +83,7 @@ public static class NavigationConfig
                         actionId: "OpenRolePermissionManagement",
                         category: "人力資源管理",
                         requiredPermission: "Role.Read",
-                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" },
-                        QuickActionId = "NewRolePermissionAssignment",
-                        QuickActionName = "新增權限分配"
-
+                        searchKeywords: new List<string> { "權限分配", "角色權限", "role permission", "權限設定" }
                     ),
                     new NavigationItem
                     {

@@ -3,33 +3,52 @@ using ERPCore2.Models.Navigation;
 namespace ERPCore2.Data.Navigation;
 
 /// <summary>
-/// 儀表板預設配置 - 定義預設捷徑清單和排序
+/// 儀表板預設配置 - 定義預設面板與項目
 /// </summary>
 public static class DashboardDefaults
 {
     /// <summary>
-    /// 預設的頁面連結捷徑識別鍵清單（按排序順序）
-    /// 新使用者會自動套用這些捷徑（需有對應權限）
+    /// 面板最大數量限制
     /// </summary>
-    public static readonly List<string> DefaultWidgetKeys = new()
-    {
-        "/employees",           // 員工管理
-        "/customers",           // 客戶管理
-        "/suppliers",           // 廠商管理
-        "/products",            // 商品管理
-        "/inventoryStocks",     // 庫存查詢
-        "/purchase/orders",     // 採購單管理
-        "/salesOrders",         // 訂單管理
-    };
+    public const int MaxPanelCount = 6;
 
     /// <summary>
-    /// 預設的快速功能識別鍵清單（按排序順序）
-    /// 新使用者會自動套用這些快速功能（需有對應權限）
+    /// 面板標題最大長度
     /// </summary>
-    public static readonly List<string> DefaultQuickActionKeys = new()
+    public const int MaxPanelTitleLength = 20;
+
+    /// <summary>
+    /// 預設面板定義
+    /// </summary>
+    public static readonly List<DefaultPanelDefinition> DefaultPanelDefinitions = new()
     {
-        "QuickAction:NewPurchaseOrder",  // 新增採購單
-        "QuickAction:NewSalesOrder",      // 新增訂單
+        new DefaultPanelDefinition
+        {
+            Title = "頁面捷徑",
+            SortOrder = 0,
+            IconClass = "bi bi-grid-fill",
+            ItemKeys = new List<string>
+            {
+                "/employees",           // 員工管理
+                "/customers",           // 客戶管理
+                "/suppliers",           // 廠商管理
+                "/products",            // 商品管理
+                "/inventoryStocks",     // 庫存查詢
+                "/purchase/orders",     // 採購單管理
+                "/salesOrders",         // 訂單管理
+            }
+        },
+        new DefaultPanelDefinition
+        {
+            Title = "快速功能",
+            SortOrder = 1,
+            IconClass = "bi bi-lightning-fill",
+            ItemKeys = new List<string>
+            {
+                "QuickAction:NewPurchaseOrder",  // 新增採購單
+                "QuickAction:NewSalesOrder",      // 新增訂單
+            }
+        }
     };
 
     /// <summary>
@@ -52,46 +71,48 @@ public static class DashboardDefaults
     }
 
     /// <summary>
-    /// 根據 NavigationItemKey 推斷區塊類型
+    /// 判斷 Key 是否為 QuickAction 類型
     /// </summary>
-    /// <param name="navigationItemKey">導航項目識別鍵</param>
-    /// <returns>"QuickAction" 或 "Shortcut"</returns>
-    public static string GetSectionType(string navigationItemKey)
+    public static bool IsQuickActionKey(string navigationItemKey)
     {
-        return navigationItemKey.StartsWith("QuickAction:") ? "QuickAction" : "Shortcut";
+        return navigationItemKey?.StartsWith("QuickAction:") == true;
     }
 
     /// <summary>
-    /// 取得預設捷徑的排序順序（頁面連結）
+    /// 取得預設面板中項目的排序順序
     /// </summary>
-    public static int GetDefaultSortOrder(string navigationItemKey)
+    public static int GetDefaultItemSortOrder(string panelTitle, string navigationItemKey)
     {
-        var index = DefaultWidgetKeys.IndexOf(navigationItemKey);
+        var panel = DefaultPanelDefinitions.FirstOrDefault(p => p.Title == panelTitle);
+        if (panel == null) return 1000;
+
+        var index = panel.ItemKeys.IndexOf(navigationItemKey);
         return index >= 0 ? (index + 1) * 10 : 1000;
     }
+}
+
+/// <summary>
+/// 預設面板定義
+/// </summary>
+public class DefaultPanelDefinition
+{
+    /// <summary>
+    /// 面板標題
+    /// </summary>
+    public string Title { get; set; } = string.Empty;
 
     /// <summary>
-    /// 取得預設快速功能的排序順序
+    /// 面板排序
     /// </summary>
-    public static int GetDefaultQuickActionSortOrder(string navigationItemKey)
-    {
-        var index = DefaultQuickActionKeys.IndexOf(navigationItemKey);
-        return index >= 0 ? (index + 1) * 10 : 1000;
-    }
+    public int SortOrder { get; set; }
 
     /// <summary>
-    /// 判斷是否為預設捷徑（頁面連結）
+    /// 面板圖示
     /// </summary>
-    public static bool IsDefaultWidget(string navigationItemKey)
-    {
-        return DefaultWidgetKeys.Contains(navigationItemKey);
-    }
+    public string? IconClass { get; set; }
 
     /// <summary>
-    /// 判斷是否為預設快速功能
+    /// 面板內的項目識別鍵清單（按排序順序）
     /// </summary>
-    public static bool IsDefaultQuickAction(string navigationItemKey)
-    {
-        return DefaultQuickActionKeys.Contains(navigationItemKey);
-    }
+    public List<string> ItemKeys { get; set; } = new();
 }
